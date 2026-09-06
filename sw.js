@@ -1,14 +1,14 @@
-const CACHE_NAME = 'lucky777-pwa-v659';
+const CACHE_NAME = 'lucky777-pwa-v663';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app_v2.js',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icons/apple-touch-icon.png',
-  '/icons/favicon.png'
+  './',
+  './index.html',
+  './styles.css',
+  './app_v2.js',
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/apple-touch-icon.png',
+  './icons/favicon.png'
 ];
 
 self.addEventListener('install', (e) => {
@@ -41,7 +41,7 @@ self.addEventListener('fetch', (e) => {
 
   // Bypass Firestore, Kakao, External APIs
   const url = e.request.url;
-  if (url.includes('firestore') || url.includes('kakao') || url.includes('googleapis') || url.includes('dhlottery')) {
+  if (url.includes('firestore') || url.includes('kakao') || url.includes('googleapis') || url.includes('dhlottery') || url.includes('gstatic.com') || url.includes('cloudflare.com') || url.includes('jsdelivr.net') || url.includes('unpkg.com')) {
     return;
   }
 
@@ -60,7 +60,7 @@ self.addEventListener('fetch', (e) => {
         return caches.match(e.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
           if (e.request.headers.get('accept') && e.request.headers.get('accept').includes('text/html')) {
-            return caches.match('/index.html');
+            return caches.match('./index.html');
           }
         });
       })
