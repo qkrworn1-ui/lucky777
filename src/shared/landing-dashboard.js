@@ -16,7 +16,7 @@ export async function renderLandingDashboard() {
     // 1. Calculate Individual User's Actual Lotto Financials
     //    관리자(master/admin)도 홈 화면 '나의 실구매 당첨' 카드는 본인 장부만 계산해야 함
     //    adminViewingTarget을 'my'로 임시 전환 후 본인 데이터만 계산하고 복원
-    const isAdmin = (authId === 'master' || authId === 'admin');
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     let myFin;
     if (isAdmin) {
         const prevTarget = state.adminViewingTarget;

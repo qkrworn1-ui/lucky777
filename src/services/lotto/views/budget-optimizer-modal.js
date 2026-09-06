@@ -205,7 +205,7 @@ export async function runBudgetOptimizationSimulation() {
     const totalPortfolioGames = ownedGames + additionalGames;
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin');
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const targetViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
     const effectiveUserId = (isAdmin && targetViewingUser ? targetViewingUser : authId).toLowerCase().trim();
 
@@ -380,7 +380,7 @@ export function applyOptimizedCombinationToApp() {
     const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin');
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const targetViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
     const effectiveUserId = (isAdmin && targetViewingUser ? targetViewingUser : authId).toLowerCase().trim();
 

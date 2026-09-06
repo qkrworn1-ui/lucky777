@@ -12,7 +12,7 @@ export async function renderConfirmedPurchasesList() {
     if (!container) return;
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin');
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
 
     // If Admin, prefetch all users' purchases if not yet loaded
     if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {

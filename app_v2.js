@@ -1096,17 +1096,33 @@ async function checkUserWeeklyPurchaseStatus(userId, userDocData = null) {
 
 function isAdminUser(authId, userData = null) {
     if (!authId) return false;
-    const lower = authId.toLowerCase().trim();
-    if (lower === 'master' || lower === 'admin') return true;
-    if (userData && (userData.role === 'admin' || userData.isAdmin === true) && (lower === 'master' || lower === 'admin')) return true;
+    const cleanId = String(authId).trim().toLowerCase();
+    if (cleanId === 'master' || cleanId === 'admin') return true;
+    if (userData && (userData.role === 'admin' || userData.isAdmin === true || userData.userType === 'admin')) {
+        setIsAdminCache(cleanId, true);
+        return true;
+    }
+    if (typeof window !== 'undefined') {
+        if (window.__adminUsers && window.__adminUsers[cleanId] === true) return true;
+        try {
+            const sRole = window.sessionStorage.getItem(`role_${cleanId}`);
+            if (sRole === 'admin') return true;
+            const lRole = window.localStorage.getItem(`role_${cleanId}`);
+            if (lRole === 'admin') return true;
+        } catch(e) {}
+    }
     return false;
 }
 
 function setIsAdminCache(authId, isAdmin) {
     try {
         if (authId) {
-            window.sessionStorage.setItem(`role_${authId}`, isAdmin ? 'admin' : 'user');
-            window.localStorage.setItem(`role_${authId}`, isAdmin ? 'admin' : 'user');
+            const cleanId = String(authId).trim().toLowerCase();
+            const val = isAdmin ? 'admin' : 'user';
+            window.sessionStorage.setItem(`role_${cleanId}`, val);
+            window.localStorage.setItem(`role_${cleanId}`, val);
+            if (!window.__adminUsers) window.__adminUsers = {};
+            window.__adminUsers[cleanId] = !!isAdmin;
         }
     } catch(e) {}
 }
@@ -3972,9 +3988,13 @@ async function fetchAllUsersPurchases() {
                 if (d.realName && typeof setUserNameCache === 'function') {
                     setUserNameCache(doc.id, d.realName);
                 }
-                const isPerm = !!(d.isPermanent === true || d.isPermanent === 'true' || d.userType === 'permanent' || d.isAdmin === true || d.role === 'admin' || doc.id === 'master' || doc.id === 'admin');
+                const isAdm = !!(d.isAdmin === true || d.role === 'admin' || doc.id === 'master' || doc.id === 'admin');
+                const isPerm = !!(d.isPermanent === true || d.isPermanent === 'true' || d.userType === 'permanent' || isAdm);
                 if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
                     window.setIsPermanentCache(doc.id, isPerm);
+                }
+                if (typeof window !== 'undefined' && typeof window.setIsAdminCache === 'function') {
+                    window.setIsAdminCache(doc.id, isAdm);
                 }
                 if (d.createdAt) {
                     try { SafeLocalStorage.setItem(`lotto_user_created_${uId}`, d.createdAt); } catch(e) {}
@@ -4683,7 +4703,7 @@ function calculateLedgerFinancials(forceRefresh = false) {
     }
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin');
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
 
     const ledger = getLedger();
 
@@ -12408,7 +12428,7 @@ async function runBudgetOptimizationSimulation() {
     const totalPortfolioGames = ownedGames + additionalGames;
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin');
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const targetViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
     const effectiveUserId = (isAdmin && targetViewingUser ? targetViewingUser : authId).toLowerCase().trim();
 
@@ -12583,7 +12603,7 @@ function applyOptimizedCombinationToApp() {
     const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin');
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const targetViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
     const effectiveUserId = (isAdmin && targetViewingUser ? targetViewingUser : authId).toLowerCase().trim();
 
@@ -13511,7 +13531,7 @@ async function renderConfirmedPurchasesList() {
     if (!container) return;
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin');
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
 
     // If Admin, prefetch all users' purchases if not yet loaded
     if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
@@ -25582,7 +25602,7 @@ const __M_shared_landing_dashboard = (function() {
     try {
 const { state } = __M_services_lotto_state;
 const { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUsersPurchases } = __M_services_lotto_ledger;
-const { SafeAuth, getUserRealName } = __M_shared_auth_mgmt;
+const { SafeAuth, isAdminUser, getUserRealName } = __M_shared_auth_mgmt;
 const { computeUser70RecommendationsReview } = __M_services_lotto_views_review_tab;
 
 /**
@@ -25598,7 +25618,7 @@ async function renderLandingDashboard() {
     // 1. Calculate Individual User's Actual Lotto Financials
     //    관리자(master/admin)도 홈 화면 '나의 실구매 당첨' 카드는 본인 장부만 계산해야 함
     //    adminViewingTarget을 'my'로 임시 전환 후 본인 데이터만 계산하고 복원
-    const isAdmin = (authId === 'master' || authId === 'admin');
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     let myFin;
     if (isAdmin) {
         const prevTarget = state.adminViewingTarget;

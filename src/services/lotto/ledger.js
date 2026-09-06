@@ -133,9 +133,13 @@ export async function fetchAllUsersPurchases() {
                 if (d.realName && typeof setUserNameCache === 'function') {
                     setUserNameCache(doc.id, d.realName);
                 }
-                const isPerm = !!(d.isPermanent === true || d.isPermanent === 'true' || d.userType === 'permanent' || d.isAdmin === true || d.role === 'admin' || doc.id === 'master' || doc.id === 'admin');
+                const isAdm = !!(d.isAdmin === true || d.role === 'admin' || doc.id === 'master' || doc.id === 'admin');
+                const isPerm = !!(d.isPermanent === true || d.isPermanent === 'true' || d.userType === 'permanent' || isAdm);
                 if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
                     window.setIsPermanentCache(doc.id, isPerm);
+                }
+                if (typeof window !== 'undefined' && typeof window.setIsAdminCache === 'function') {
+                    window.setIsAdminCache(doc.id, isAdm);
                 }
                 if (d.createdAt) {
                     try { localStorage.setItem(`lotto_user_created_${uId}`, d.createdAt); } catch(e) {}
@@ -844,7 +848,7 @@ export function calculateLedgerFinancials(forceRefresh = false) {
     }
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin');
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
 
     const ledger = getLedger();
 
