@@ -1,0 +1,33 @@
+{
+  "name": "운도실력 (Lucky 777) - 로또 AI 퀀트 플랫폼",
+  "short_name": "운도실력 777",
+  "description": "빅데이터 기반 프라이빗 퀀트 로또 분석 및 복기 리포트 플랫폼",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#070a14",
+  "theme_color": "#fbbf24",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": [
+    "finance",
+    "utilities"
+  ]
+}
