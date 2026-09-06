@@ -10,6 +10,13 @@
 
     <title>운도실력 | 로또 6/45 & 토토/프로토 AI 분석 플랫폼</title>
 
+    <script>
+        // Ensure canonical URL with trailing slash for PWA scope compatibility
+        if (window.location.pathname === '/lucky777') {
+            window.location.replace('/lucky777/' + window.location.search + window.location.hash);
+        }
+    </script>
+
     <meta name="description" content="운도실력 - 로또 6/45 & 토토/프로토 AI 추천 및 정밀 퀀트 분석 플랫폼">
 
     <!-- Google Fonts -->
@@ -2826,7 +2833,7 @@
         // ========================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=663')
+                navigator.serviceWorker.register('./sw.js?v=666')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();

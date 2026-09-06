@@ -1,14 +1,24 @@
-const CACHE_NAME = 'lucky777-pwa-v663';
+const CACHE_NAME = 'lucky777-pwa-v666';
+
+function getBasePath() {
+  try {
+    return self.registration.scope || '/lucky777/';
+  } catch(e) {
+    return '/lucky777/';
+  }
+}
+
+const BASE_PATH = getBasePath();
 const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  './styles.css',
-  './app_v2.js',
-  './manifest.json',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/apple-touch-icon.png',
-  './icons/favicon.png'
+  BASE_PATH,
+  `${BASE_PATH}index.html`,
+  `${BASE_PATH}styles.css`,
+  `${BASE_PATH}app_v2.js`,
+  `${BASE_PATH}manifest.json`,
+  `${BASE_PATH}icons/icon-192.png`,
+  `${BASE_PATH}icons/icon-512.png`,
+  `${BASE_PATH}icons/apple-touch-icon.png`,
+  `${BASE_PATH}icons/favicon.png`
 ];
 
 self.addEventListener('install', (e) => {
@@ -60,7 +70,7 @@ self.addEventListener('fetch', (e) => {
         return caches.match(e.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
           if (e.request.headers.get('accept') && e.request.headers.get('accept').includes('text/html')) {
-            return caches.match('./index.html');
+            return caches.match(`${BASE_PATH}index.html`) || caches.match(BASE_PATH);
           }
         });
       })
