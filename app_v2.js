@@ -10860,22 +10860,25 @@ function renderReviewDetail(r) {
                         </div>
                     ` : ''}
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span style="font-size: 0.82rem; color: #94a3b8; margin-right: 4px;">당첨번호:</span>
-                    ${actualDraw.numbers.map(n => createBallHtml(n, { size: 'small', isHit: true })).join('')}
-                    <span style="font-size: 1.1rem; color: #94a3b8; margin: 0 4px;">+</span>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                        ${bonus ? createBallHtml(bonus, { size: 'small', isBonusHit: true }) : ''}
-                        <span style="font-size: 0.75rem; color: #f472b6; font-weight: 700; margin-left: 2px;">보너스</span>
-                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 7px 12px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-                        <span style="font-size: 0.74rem; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-shield-check" style="color: #34d399;"></i>
-                            <strong>알고리즘 추천 복기 무결성 및 개인 맞춤 배정 원리:</strong> 본 복기 내역은 해당 회차 추첨 전 회원 고유 ID 시드로 확정된 7개 팩(70게임) 조합과 동행복권 공식 결과를 1:1 대조한 것입니다. 회원마다 고유한 맞춤 조합이 배정되므로 회원별 당첨 결과가 서로 다르게 산출되며, 사후 변경이나 조작이 불가능한 불변 데이터입니다.
-                        </span>
-                        <span style="font-size: 0.68rem; color: #34d399; font-weight: bold; background: rgba(16,185,129,0.15); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.25);">
-                            <i class="fa-solid fa-lock"></i> 추첨 전 데이터 잠금 완료
-                        </span>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: #94a3b8; white-space: nowrap;">당첨번호:</span>
+                    <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: nowrap; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 2px 0;">
+                        ${actualDraw.numbers.map(n => createBallHtml(n, { size: 'small', isHit: true })).join('')}
+                        <span style="font-size: 1.05rem; font-weight: 800; color: #94a3b8; margin: 0 2px;">+</span>
+                        <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(244, 114, 182, 0.12); border: 1px solid rgba(244, 114, 182, 0.35); border-radius: 14px; padding: 2px 6px 2px 2px;">
+                            ${bonus ? createBallHtml(bonus, { size: 'small', isBonusHit: true }) : ''}
+                            <span style="font-size: 0.72rem; color: #f472b6; font-weight: 800; white-space: nowrap;">보너스</span>
+                        </div>
                     </div>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 7px 12px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                    <span style="font-size: 0.74rem; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-shield-check" style="color: #34d399;"></i>
+                        <strong>알고리즘 추천 복기 무결성 및 개인 맞춤 배정 원리:</strong> 본 복기 내역은 해당 회차 추첨 전 회원 고유 ID 시드로 확정된 7개 팩(70게임) 조합과 동행복권 공식 결과를 1:1 대조한 것입니다. 회원마다 고유한 맞춤 조합이 배정되므로 회원별 당첨 결과가 서로 다르게 산출되며, 사후 변경이나 조작이 불가능한 불변 데이터입니다.
+                    </span>
+                    <span style="font-size: 0.68rem; color: #34d399; font-weight: bold; background: rgba(16,185,129,0.15); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.25); white-space: nowrap;">
+                        <i class="fa-solid fa-lock"></i> 추첨 전 데이터 잠금 완료
+                    </span>
                 </div>
             </div>
         `;
@@ -11095,7 +11098,7 @@ function renderReviewDetail(r) {
                         </span>
                         <strong style="color: ${item.resultColor}; font-size: 0.86rem; white-space: nowrap;">${item.resultText}</strong>
                     </div>
-                    <div style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center;">
+                    <div style="display: flex; gap: 5px; flex-wrap: nowrap; align-items: center; overflow-x: auto; padding: 2px 0;">
                         ${item.nums.map(n => {
                             const isHit = actualDraw ? winningSet.has(n) : false;
                             const isBonusHit = actualDraw && bonus ? (n === bonus) : false;

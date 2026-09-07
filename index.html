@@ -2834,7 +2834,7 @@
         // ========================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=667')
+                navigator.serviceWorker.register('./sw.js?v=668')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -2871,7 +2871,7 @@
         });
     </script>
 
-    <script src="data.js?v=667"></script>
-    <script src="app_v2.js?v=667"></script>
+    <script src="data.js?v=668"></script>
+    <script src="app_v2.js?v=668"></script>
 </body>
 </html>
