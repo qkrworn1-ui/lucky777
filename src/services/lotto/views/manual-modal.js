@@ -424,10 +424,10 @@ export async function startLottoQrScanner() {
         fps: 15,
         qrbox: (viewfinderWidth, viewfinderHeight) => {
             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const size = Math.max(200, Math.floor(minEdge * 0.75));
+            const size = Math.max(100, Math.floor(minEdge * 0.85));
             return { width: size, height: size };
         },
-        aspectRatio: 1.0,
+        aspectRatio: 1.33,
         experimentalFeatures: {
             useBarCodeDetectorIfSupported: true
         }
