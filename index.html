@@ -51,7 +51,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
 
-    <link rel="stylesheet" href="styles.css?v=669">
+    <link rel="stylesheet" href="styles.css?v=670">
 </head>
 
 <body>
@@ -2839,7 +2839,7 @@
         // ========================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=669')
+                navigator.serviceWorker.register('./sw.js?v=670')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -2876,7 +2876,7 @@
         });
     </script>
 
-    <script src="data.js?v=669"></script>
-    <script src="app_v2.js?v=669"></script>
+    <script src="data.js?v=670"></script>
+    <script src="app_v2.js?v=670"></script>
 </body>
 </html>

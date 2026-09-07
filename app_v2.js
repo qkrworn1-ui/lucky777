@@ -16246,27 +16246,32 @@ const { renderConfirmedPurchasesList } = __M_services_lotto_views_confirmed_tab;
 const { computeAbsoluteTop10Combinations, findBestRecommendationMatch, crossCheckCombosWithRecommendations } = __M_services_lotto_generator;
 
 let html5QrScanner = null;
+let isStartingScanner = false;
 
-function stopScanning() {
+async function stopScanning() {
+    isStartingScanner = false;
     const qrScannerContainer = document.getElementById('qrScannerContainer');
     if (html5QrScanner) {
         const scanner = html5QrScanner;
         html5QrScanner = null;
         try {
-            scanner.stop().then(() => {
-                try { scanner.clear(); } catch(e) {}
-                if (qrScannerContainer) qrScannerContainer.style.display = 'none';
-            }).catch(() => {
-                try { scanner.clear(); } catch(e) {}
-                if (qrScannerContainer) qrScannerContainer.style.display = 'none';
-            });
-        } catch(e) {
-            try { scanner.clear(); } catch(err) {}
-            if (qrScannerContainer) qrScannerContainer.style.display = 'none';
-        }
-    } else {
-        if (qrScannerContainer) qrScannerContainer.style.display = 'none';
+            await scanner.stop();
+        } catch(e) {}
+        try {
+            await scanner.clear();
+        } catch(e) {}
     }
+    const qrReader = document.getElementById('qrReader');
+    if (qrReader) {
+        qrReader.innerHTML = '';
+    }
+    if (qrScannerContainer) {
+        qrScannerContainer.style.display = 'none';
+    }
+    const btnTorch = document.getElementById('btnToggleTorch');
+    const btnZoom = document.getElementById('btnToggleZoom');
+    if (btnTorch) btnTorch.style.display = 'none';
+    if (btnZoom) btnZoom.style.display = 'none';
 }
 
 function syncLedgerDateGuide(roundVal) {
@@ -16445,39 +16450,9 @@ function setupManualLedgerModal() {
     const btnCloseManualLedgerModal = document.getElementById('closeManualLedgerModal');
     const btnSaveManualLedger = document.getElementById('btnSaveManualLedger');
     
-    if (btnOpenManualLedger && manualLedgerModal) {
+    if (btnOpenManualLedger) {
         btnOpenManualLedger.addEventListener('click', () => {
-            const currentRound = (typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1240);
-            const roundInput = document.getElementById('manualLedgerRound');
-            const combosInput = document.getElementById('manualLedgerCombos');
-            const resultBox = document.getElementById('manualLedgerAiCheckResult');
-
-            // 1) 회차 설정
-            if (roundInput) {
-                roundInput.value = currentRound;
-                syncLedgerDateGuide(currentRound);
-            }
-
-            // 2) 번호 입력란 초기화 (잠금 상태)
-            if (combosInput) {
-                combosInput.value = '';
-                combosInput.setAttribute('readonly', '');
-                combosInput.style.background = 'rgba(5,10,20,0.7)';
-                combosInput.style.borderColor = '';
-                combosInput.style.color = '#94a3b8';
-                combosInput.style.cursor = 'not-allowed';
-                combosInput.dataset.qrScanned = '';
-            }
-            if (resultBox) resultBox.style.display = 'none';
-
-            // 3) 모달 표시
-            manualLedgerModal.style.display = 'flex';
-
-            // 4) 카메라 자동 시작 (100ms 후, 모달 렌더링 완료 시점)
-            setTimeout(() => {
-                const btn = document.getElementById('btnOpenQrScanner');
-                if (btn) btn.click();
-            }, 100);
+            openManualLedgerModal();
         });
     }
 
@@ -16649,23 +16624,34 @@ function processLottoQrPayload(rawText) {
  * 📷 Start QR Scanner with Universal Multi-tier Hardware/Camera Fallbacks
  */
 async function startLottoQrScanner() {
+    if (isStartingScanner) {
+        console.log('[QR Scanner] Scanner launch already in progress, ignoring duplicate request.');
+        return;
+    }
+    isStartingScanner = true;
+
     const qrScannerContainer = document.getElementById('qrScannerContainer');
     const qrReader = document.getElementById('qrReader');
-    if (!qrReader) return;
+    if (!qrReader) {
+        isStartingScanner = false;
+        return;
+    }
 
     if (qrScannerContainer) {
         qrScannerContainer.style.display = 'block';
     }
 
+    // Stop and completely clear any previous scanner & DOM
     if (html5QrScanner) {
-        try { await html5QrScanner.stop(); } catch(e) {}
-        try { html5QrScanner.clear(); } catch(e) {}
+        const prev = html5QrScanner;
         html5QrScanner = null;
+        try { await prev.stop(); } catch(e) {}
+        try { await prev.clear(); } catch(e) {}
     }
-
     qrReader.innerHTML = '';
 
     if (typeof Html5Qrcode === 'undefined') {
+        isStartingScanner = false;
         alert('QR 스캔 엔진을 불러오는 중입니다. 1~2초 후 다시 시도해주세요.');
         return;
     }
@@ -16687,27 +16673,45 @@ async function startLottoQrScanner() {
         }
     };
 
-    html5QrScanner = new Html5Qrcode("qrReader", {
-        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-        verbose: false
-    });
+    // Clean attempt runner: ensures each attempt gets a fresh DOM and single scanner instance
+    async function attemptStart(cameraSource) {
+        try {
+            if (html5QrScanner) {
+                const prev = html5QrScanner;
+                html5QrScanner = null;
+                try { await prev.stop(); } catch(e) {}
+                try { await prev.clear(); } catch(e) {}
+            }
+            if (qrReader) qrReader.innerHTML = '';
 
-    let startSuccess = false;
+            const scanner = new Html5Qrcode("qrReader", {
+                experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+                verbose: false
+            });
 
-    // 1단계: facingMode environment (후면 카메라 기본 시도)
-    try {
-        await html5QrScanner.start(
-            { facingMode: "environment" },
-            config,
-            qrCodeSuccessCallback
-        );
-        startSuccess = true;
-    } catch(envErr) {
-        console.warn('[QR Scanner facingMode:environment failed, trying getCameras]', envErr);
+            await scanner.start(cameraSource, config, qrCodeSuccessCallback);
+            html5QrScanner = scanner;
+            return true;
+        } catch (err) {
+            console.warn('[QR Camera Attempt Failed]:', cameraSource, err);
+            if (html5QrScanner) {
+                const prev = html5QrScanner;
+                html5QrScanner = null;
+                try { await prev.stop(); } catch(e) {}
+                try { await prev.clear(); } catch(e) {}
+            }
+            if (qrReader) qrReader.innerHTML = '';
+            return false;
+        }
     }
 
-    // 2단계: 카메라 목록 조회 후 최적 후면 카메라 ID 직접 선택
-    if (!startSuccess) {
+    let started = false;
+
+    // 1단계: facingMode environment (후면 카메라 기본 시도)
+    started = await attemptStart({ facingMode: "environment" });
+
+    // 2단계: 실패 시 카메라 목록 조회 후 최적 후면 카메라 ID 직접 선택
+    if (!started) {
         try {
             const cameras = await Html5Qrcode.getCameras();
             if (cameras && cameras.length > 0) {
@@ -16718,40 +16722,26 @@ async function startLottoQrScanner() {
                 if (!selectedCam) {
                     selectedCam = cameras[cameras.length - 1];
                 }
-                await html5QrScanner.start(
-                    selectedCam.id,
-                    config,
-                    qrCodeSuccessCallback
-                );
-                startSuccess = true;
+                if (selectedCam && selectedCam.id) {
+                    started = await attemptStart(selectedCam.id);
+                }
             }
         } catch(camListErr) {
-            console.warn('[QR Scanner getCameras start failed]', camListErr);
+            console.warn('[QR Scanner getCameras failed]', camListErr);
         }
     }
 
     // 3단계: 기본 카메라 facingMode user 시도
-    if (!startSuccess) {
-        try {
-            await html5QrScanner.start(
-                { facingMode: "user" },
-                config,
-                qrCodeSuccessCallback
-            );
-            startSuccess = true;
-        } catch(userErr) {
-            console.error('[QR Scanner all live stream options failed]', userErr);
-        }
+    if (!started) {
+        started = await attemptStart({ facingMode: "user" });
     }
 
-    if (startSuccess) {
+    isStartingScanner = false;
+
+    if (started) {
         setupCameraCapabilities();
     } else {
-        if (qrScannerContainer) qrScannerContainer.style.display = 'none';
-        if (html5QrScanner) {
-            try { html5QrScanner.clear(); } catch(e) {}
-            html5QrScanner = null;
-        }
+        await stopScanning();
         alert('📷 실시간 카메라 화면을 시작할 수 없습니다.\n\n카메라 권한이 차단되었거나 인앱 브라우저일 수 있습니다.\n\n바로 옆의 [📸 사진촬영/갤러리] 버튼을 누르시면 사진을 찍어 100% 정상 등록하실 수 있습니다!');
     }
 }
@@ -17178,11 +17168,10 @@ function openManualLedgerModal() {
         if (resultBox) resultBox.style.display = 'none';
         modal.style.display = 'flex';
 
-        // Auto-start camera QR scanner
+        // Auto-start camera QR scanner cleanly
         setTimeout(() => {
-            const btn = document.getElementById('btnOpenQrScanner');
-            if (btn) btn.click();
-        }, 120);
+            startLottoQrScanner();
+        }, 150);
     }
 }
 
