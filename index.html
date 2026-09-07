@@ -51,7 +51,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
 
-    <link rel="stylesheet" href="styles.css?v=657">
+    <link rel="stylesheet" href="styles.css?v=669">
 </head>
 
 <body>
@@ -2784,7 +2784,12 @@
       firebase.initializeApp(firebaseConfig);
       window.db = firebase.firestore();
     </script>
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <script>
+      if (typeof Html5Qrcode === 'undefined') {
+        document.write('<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"><\/script>');
+      }
+    </script>
     <script>
         // ============================================================
         // 🔧 Minimal Bootstrap Helpers (used BEFORE app_v2.js loads)
@@ -2834,7 +2839,7 @@
         // ========================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=668')
+                navigator.serviceWorker.register('./sw.js?v=669')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -2871,7 +2876,7 @@
         });
     </script>
 
-    <script src="data.js?v=668"></script>
-    <script src="app_v2.js?v=668"></script>
+    <script src="data.js?v=669"></script>
+    <script src="app_v2.js?v=669"></script>
 </body>
 </html>

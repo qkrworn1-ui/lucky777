@@ -292,29 +292,37 @@ let isTorchActive = false;
 let currentZoomLevel = 1.0;
 
 /**
- * 🔒 Parse and apply Donghang Lottery QR Payload
+ * 🔒 Parse and apply Donghang Lottery QR Payload (Universal across all smartphone browsers)
  */
 export function processLottoQrPayload(rawText) {
     if (!rawText) return false;
-    const decodedText = String(rawText).trim();
+    let decodedText = String(rawText).trim();
+    try {
+        decodedText = decodeURIComponent(decodedText);
+    } catch(e) {}
     console.log(`[QR Scanner] Processing payload: ${decodedText}`);
 
     try {
         let vParam = null;
-        if (decodedText.includes('v=')) {
-            const match = decodedText.match(/[?&]?v=([^&#\s]+)/);
+        if (/v=/i.test(decodedText)) {
+            const match = decodedText.match(/[?&]?v=([^&#\s\r\n"']+)/i);
             if (match && match[1]) {
-                vParam = match[1];
+                vParam = match[1].trim();
             }
-        } else if (/^\d{4}[a-zA-Z]/.test(decodedText)) {
+        } else if (/^\d{3,4}[a-zA-Z]/.test(decodedText)) {
             vParam = decodedText;
         }
 
         if (vParam) {
-            // Extract 4-digit round number (e.g., 1237, 1238, 1239, 1240)
-            const roundStr = vParam.substring(0, 4);
+            // Extract 3~4 digit round number (e.g., 1239, 1240)
+            const roundMatch = vParam.match(/^(\d{3,4})/);
+            if (!roundMatch) {
+                alert('QR 코드에서 회차 정보를 확인할 수 없습니다.');
+                return false;
+            }
+            const roundStr = roundMatch[1];
             const round = parseInt(roundStr, 10);
-            const gamesStr = vParam.substring(4);
+            const gamesStr = vParam.substring(roundStr.length);
             const gameRegex = /[a-zA-Z]\d{12}/g;
             const matches = gamesStr.match(gameRegex) || [];
             
@@ -326,7 +334,11 @@ export function processLottoQrPayload(rawText) {
                     numbers.push(parseInt(numbersStr.substring(i, i + 2), 10));
                 }
                 if (numbers.length === 6 && numbers.every(n => !isNaN(n) && n >= 1 && n <= 45)) {
-                    combos.push(numbers.join(', '));
+                    const uniqueSet = new Set(numbers);
+                    if (uniqueSet.size === 6) {
+                        numbers.sort((a, b) => a - b);
+                        combos.push(numbers.join(', '));
+                    }
                 }
             });
             
@@ -352,7 +364,7 @@ export function processLottoQrPayload(rawText) {
             const combosEl = document.getElementById('manualLedgerCombos');
             if (combos.length > 0 && combosEl) {
                 const rawQrUrl = decodedText.startsWith('http') ? decodedText : `http://m.dhlottery.co.kr/qr.do?method=winQr&v=${vParam}`;
-                const rawSerial = vParam.replace(/^\d{4}/, '').replace(/[a-zA-Z]\d{12}/g, '').trim();
+                const rawSerial = vParam.replace(/^\d{3,4}/, '').replace(/[a-zA-Z]\d{12}/g, '').trim();
                 const qrSerial = rawSerial || 'TR-정상발권';
 
                 combosEl.removeAttribute('readonly');
@@ -369,7 +381,7 @@ export function processLottoQrPayload(rawText) {
                 // Trigger real-time cross check immediately
                 updateManualModalCrossCheck();
                 
-                // Haptic feedback if supported on Galaxy devices
+                // Haptic feedback & visual indicator
                 if (navigator.vibrate) {
                     try { navigator.vibrate([50, 70, 50]); } catch(e) {}
                 }
@@ -379,11 +391,11 @@ export function processLottoQrPayload(rawText) {
                 showToast(`🎉 QR 인식 성공: 제 ${round}회차 ${isPastRound ? '(과거 회차)' : '(이번 주)'} ${combos.length}게임 등록 완료!`);
                 return true;
             } else {
-                alert(`QR 코드에서 ${round}회차 정보는 확인되었으나, 유효한 6개 번호 조합을 파싱하지 못했습니다.`);
+                alert(`QR 코드에서 ${round}회차 정보는 확인되었으나, 유효한 6개 번호 조합을 파싱하지 못했습니다.\n\n영수증의 QR코드가 훼손되지 않았는지 확인해주세요.`);
                 return false;
             }
         } else {
-            alert('동행복권 로또 QR 코드가 아닙니다. (v 파라미터가 없습니다)\n영수증 상단의 동행복권 QR 코드를 비춰주세요.');
+            alert('동행복권 로또 QR 코드가 아닙니다.\n\n영수증 상단의 동행복권 공식 QR 코드를 비춰주세요.');
             return false;
         }
     } catch(e) {
@@ -394,7 +406,7 @@ export function processLottoQrPayload(rawText) {
 }
 
 /**
- * 📷 Start QR Scanner with Hardware Acceleration & Macro/Zoom controls
+ * 📷 Start QR Scanner with Universal Multi-tier Hardware/Camera Fallbacks
  */
 export async function startLottoQrScanner() {
     const qrScannerContainer = document.getElementById('qrScannerContainer');
@@ -406,53 +418,101 @@ export async function startLottoQrScanner() {
     }
 
     if (html5QrScanner) {
-        try {
-            await html5QrScanner.stop();
-        } catch(e) {}
-        try {
-            html5QrScanner.clear();
-        } catch(e) {}
+        try { await html5QrScanner.stop(); } catch(e) {}
+        try { html5QrScanner.clear(); } catch(e) {}
         html5QrScanner = null;
     }
 
     qrReader.innerHTML = '';
 
     if (typeof Html5Qrcode === 'undefined') {
-        alert('QR 스캔 라이브러리를 로드할 수 없습니다. 네트워크 연결을 확인해주세요.');
+        alert('QR 스캔 엔진을 불러오는 중입니다. 1~2초 후 다시 시도해주세요.');
         return;
     }
 
+    const qrCodeSuccessCallback = (decodedText) => {
+        processLottoQrPayload(decodedText);
+    };
+
+    const config = {
+        fps: 15,
+        qrbox: (viewfinderWidth, viewfinderHeight) => {
+            const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+            const size = Math.max(200, Math.floor(minEdge * 0.75));
+            return { width: size, height: size };
+        },
+        aspectRatio: 1.0,
+        experimentalFeatures: {
+            useBarCodeDetectorIfSupported: true
+        }
+    };
+
+    html5QrScanner = new Html5Qrcode("qrReader", {
+        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        verbose: false
+    });
+
+    let startSuccess = false;
+
+    // 1단계: facingMode environment (후면 카메라 기본 시도)
     try {
-        html5QrScanner = new Html5Qrcode("qrReader");
-
-        const qrCodeSuccessCallback = (decodedText) => {
-            processLottoQrPayload(decodedText);
-        };
-
-        const config = {
-            fps: 15,
-            qrbox: (viewfinderWidth, viewfinderHeight) => {
-                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-                const size = Math.max(220, Math.floor(minEdge * 0.8));
-                return { width: size, height: size };
-            }
-        };
-
         await html5QrScanner.start(
             { facingMode: "environment" },
             config,
             qrCodeSuccessCallback
         );
+        startSuccess = true;
+    } catch(envErr) {
+        console.warn('[QR Scanner facingMode:environment failed, trying getCameras]', envErr);
+    }
 
+    // 2단계: 카메라 목록 조회 후 최적 후면 카메라 ID 직접 선택
+    if (!startSuccess) {
+        try {
+            const cameras = await Html5Qrcode.getCameras();
+            if (cameras && cameras.length > 0) {
+                let selectedCam = cameras.find(c => {
+                    const lbl = (c.label || '').toLowerCase();
+                    return lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment') || lbl.includes('후면');
+                });
+                if (!selectedCam) {
+                    selectedCam = cameras[cameras.length - 1];
+                }
+                await html5QrScanner.start(
+                    selectedCam.id,
+                    config,
+                    qrCodeSuccessCallback
+                );
+                startSuccess = true;
+            }
+        } catch(camListErr) {
+            console.warn('[QR Scanner getCameras start failed]', camListErr);
+        }
+    }
+
+    // 3단계: 기본 카메라 facingMode user 시도
+    if (!startSuccess) {
+        try {
+            await html5QrScanner.start(
+                { facingMode: "user" },
+                config,
+                qrCodeSuccessCallback
+            );
+            startSuccess = true;
+        } catch(userErr) {
+            console.error('[QR Scanner all live stream options failed]', userErr);
+        }
+    }
+
+    if (startSuccess) {
         setupCameraCapabilities();
-    } catch(err) {
-        console.error('[QR Scanner Start Error]:', err);
-        alert('카메라 화면을 열 수 없습니다. 카메라 접근 권한을 확인해주세요.\n\n[📸 사진촬영/갤러리] 버튼을 누르면 사진을 찍어 즉시 등록하실 수 있습니다.');
+    } else {
         if (qrScannerContainer) qrScannerContainer.style.display = 'none';
         if (html5QrScanner) {
             try { html5QrScanner.clear(); } catch(e) {}
             html5QrScanner = null;
         }
+        alert('📷 실시간 카메라 화면을 시작할 수 없습니다.\n\n카메라 권한이 차단되었거나 인앱 브라우저일 수 있습니다.\n\n바로 옆의 [📸 사진촬영/갤러리] 버튼을 누르시면 사진을 찍어 100% 정상 등록하실 수 있습니다!');
     }
 }
 
@@ -558,7 +618,7 @@ export async function handleLottoQrFile(event) {
         }
     }
 
-    // 2. Fallback to Html5Qrcode file scan
+    // 2. Try Html5Qrcode file scan
     if (typeof Html5Qrcode !== 'undefined') {
         try {
             const fileScanner = new Html5Qrcode("qrReader", {
@@ -573,11 +633,11 @@ export async function handleLottoQrFile(event) {
                 }
             }
         } catch(err) {
-            console.warn('[Html5Qrcode file scan failed, trying canvas enhanced scan]', err);
+            console.warn('[Html5Qrcode file scan failed, trying downscaled canvas enhanced scan]', err);
         }
     }
 
-    // 3. Fallback: Contrast-enhanced canvas preprocessor for crumpled/faint receipts
+    // 3. Fallback: Downscaled Multi-contrast Canvas Preprocessor
     try {
         const enhancedResult = await scanWithContrastEnhancement(file);
         if (enhancedResult && processLottoQrPayload(enhancedResult)) {
@@ -589,11 +649,11 @@ export async function handleLottoQrFile(event) {
     }
 
     event.target.value = '';
-    alert('⚠️ 사진에서 로또 QR 코드를 인식하지 못했습니다.\n\n• 영수증 상단의 QR 코드가 잘리지 않고 선명하게 나오도록 다시 촬영해주세요.\n• 밝은 조명 아래에서 그림자가 지지 않도록 해주세요.');
+    alert('⚠️ 사진에서 로또 QR 코드를 인식하지 못했습니다.\n\n• 영수증 상단의 사각형 QR 코드가 화면에 크게 선명하게 나오도록 다시 촬영해주세요.\n• 밝은 조명 아래에서 그림자나 빛 반사가 생기지 않게 해주세요.');
 }
 
 /**
- * Helper to scan with canvas grayscale & contrast boost
+ * Helper to scan with downscaling & canvas grayscale contrast boost
  */
 async function scanWithContrastEnhancement(file) {
     return new Promise((resolve) => {
@@ -602,32 +662,81 @@ async function scanWithContrastEnhancement(file) {
         reader.onload = (e) => {
             img.onload = async () => {
                 try {
+                    // Downscale large camera photos (12MP ~ 48MP) to optimal max 1600px
+                    const maxDim = 1600;
+                    let w = img.width;
+                    let h = img.height;
+                    if (w > maxDim || h > maxDim) {
+                        if (w > h) {
+                            h = Math.round((h * maxDim) / w);
+                            w = maxDim;
+                        } else {
+                            w = Math.round((w * maxDim) / h);
+                            h = maxDim;
+                        }
+                    }
+
                     const canvas = document.createElement('canvas');
                     const ctx = canvas.getContext('2d');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
+                    canvas.width = w;
+                    canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
 
-                    // High contrast filter
-                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    // 1) Try BarcodeDetector on downscaled original
+                    if ('BarcodeDetector' in window) {
+                        try {
+                            const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+                            const barcodes = await detector.detect(canvas);
+                            if (barcodes && barcodes.length > 0) {
+                                resolve(barcodes[0].rawValue);
+                                return;
+                            }
+                        } catch(bErr) {}
+                    }
+
+                    // 2) Apply High Contrast Grayscale Thresholding
+                    const imgData = ctx.getImageData(0, 0, w, h);
                     const d = imgData.data;
                     for (let i = 0; i < d.length; i += 4) {
                         const gray = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
-                        const enhanced = gray > 128 ? 255 : 0;
+                        const enhanced = gray > 120 ? 255 : 0;
                         d[i] = enhanced;
                         d[i + 1] = enhanced;
                         d[i + 2] = enhanced;
                     }
                     ctx.putImageData(imgData, 0, 0);
 
+                    // 3) Try BarcodeDetector on high contrast canvas
                     if ('BarcodeDetector' in window) {
-                        const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-                        const barcodes = await detector.detect(canvas);
-                        if (barcodes && barcodes.length > 0) {
-                            resolve(barcodes[0].rawValue);
-                            return;
-                        }
+                        try {
+                            const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+                            const barcodes = await detector.detect(canvas);
+                            if (barcodes && barcodes.length > 0) {
+                                resolve(barcodes[0].rawValue);
+                                return;
+                            }
+                        } catch(bErr) {}
                     }
+
+                    // 4) Try Html5Qrcode on canvas blob
+                    if (typeof Html5Qrcode !== 'undefined' && canvas.toBlob) {
+                        canvas.toBlob(async (blob) => {
+                            if (blob) {
+                                try {
+                                    const fileScanner = new Html5Qrcode("qrReader", { verbose: false });
+                                    const blobFile = new File([blob], "enhanced_qr.png", { type: "image/png" });
+                                    const decodedText = await fileScanner.scanFile(blobFile, true);
+                                    if (decodedText) {
+                                        resolve(decodedText);
+                                        return;
+                                    }
+                                } catch(scanErr) {}
+                            }
+                            resolve(null);
+                        }, 'image/png');
+                        return;
+                    }
+
                     resolve(null);
                 } catch(err) {
                     resolve(null);
