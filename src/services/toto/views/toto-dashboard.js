@@ -353,15 +353,50 @@ function renderRecommendationView(state, portfolios, displayList) {
                 </div>
             </div>
 
-            <!-- Mode Switcher Tabs -->
-            <div class="rec-mode-tabs">
-                <button type="button" class="rec-mode-tab ${isProtoMode ? 'active' : ''}" onclick="window.setRecommendationMode('proto')">
-                    <i class="fa-solid fa-receipt"></i> 🎯 [프로토] 승부식 AI 추천 (2~4폴더 고정배당)
-                </button>
-                <button type="button" class="rec-mode-tab ${!isProtoMode ? 'active' : ''}" onclick="window.setRecommendationMode('toto')">
-                    <i class="fa-solid fa-trophy"></i> ⚽ [스포츠토토] 승무패 14경기 AI 예측표 (패리뮤추얼)
-                    ${carryover && carryover.hasCarryover ? `<span class="tab-carryover-badge"><i class="fa-solid fa-fire"></i> ${(carryover.carryoverAmount / 100000000).toFixed(1)}억 이월중</span>` : ''}
-                </button>
+            <!-- 🏆 AI 추천 종목 모드 선택기 (프로토 승부식 vs 스포츠토토 14경기) -->
+            <div class="toto-mode-selection-container">
+                <div class="mode-select-header">
+                    <span class="mode-select-label"><i class="fa-solid fa-gamepad"></i> 종목 선택 (Game Mode)</span>
+                    <span class="mode-select-hint">버튼을 터치하여 [프로토 승부식] 또는 [토토 승무패] AI 분석표를 즉시 전환하세요</span>
+                </div>
+                <div class="rec-mode-grid">
+                    <!-- 1. 프로토 승부식 선택 버튼 -->
+                    <button type="button" class="rec-mode-card mode-proto ${isProtoMode ? 'active' : ''}" onclick="window.setRecommendationMode('proto')">
+                        <div class="mode-card-badge">
+                            <i class="fa-solid fa-receipt"></i>
+                            <span class="badge-text">고정배당</span>
+                        </div>
+                        <div class="mode-card-main">
+                            <div class="mode-card-title">
+                                <span>🎯 프로토 승부식 AI 추천</span>
+                                ${isProtoMode ? '<span class="mode-active-pill"><i class="fa-solid fa-circle-check"></i> 선택됨</span>' : ''}
+                            </div>
+                            <div class="mode-card-sub">2~4폴더 엄선 포트폴리오 (안정형 · 중수익 · 고배당)</div>
+                        </div>
+                        <div class="mode-card-status">
+                            <i class="fa-solid ${isProtoMode ? 'fa-circle-dot' : 'fa-circle'}"></i>
+                        </div>
+                    </button>
+
+                    <!-- 2. 스포츠토토 14경기 승무패 선택 버튼 -->
+                    <button type="button" class="rec-mode-card mode-toto ${!isProtoMode ? 'active' : ''}" onclick="window.setRecommendationMode('toto')">
+                        <div class="mode-card-badge">
+                            <i class="fa-solid fa-trophy"></i>
+                            <span class="badge-text">14경기</span>
+                        </div>
+                        <div class="mode-card-main">
+                            <div class="mode-card-title">
+                                <span>⚽ 축구토토 승무패 AI 마킹</span>
+                                ${!isProtoMode ? '<span class="mode-active-pill"><i class="fa-solid fa-circle-check"></i> 선택됨</span>' : ''}
+                                ${carryover && carryover.hasCarryover ? `<span class="tab-carryover-badge"><i class="fa-solid fa-fire"></i> ${(carryover.carryoverAmount / 100000000).toFixed(1)}억 이월</span>` : ''}
+                            </div>
+                            <div class="mode-card-sub">14경기 단식/복식 OMR AI 예측표 & 실물 마킹 생성</div>
+                        </div>
+                        <div class="mode-card-status">
+                            <i class="fa-solid ${!isProtoMode ? 'fa-circle-dot' : 'fa-circle'}"></i>
+                        </div>
+                    </button>
+                </div>
             </div>
             
             ${isProtoMode ? `
