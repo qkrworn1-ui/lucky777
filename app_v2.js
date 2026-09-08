@@ -15548,7 +15548,13 @@ async function renderConfirmedPurchasesList() {
     const container = document.getElementById('confirmedPurchasesListContainer');
     if (!container) return;
 
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
+        } catch (e) {}
+    }
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
 
     // If Admin, prefetch all users' purchases if not yet loaded
@@ -16064,9 +16070,9 @@ async function renderConfirmedPurchasesList() {
             if (hitsSummary[5] > 0) parts.push(`5등 ${hitsSummary[5]}개`);
             
             if (parts.length > 0) {
-                winCountSummary = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; color: #34d399; font-weight: bold; margin-left: 10px;"><i class="fa-solid fa-award"></i> ${parts.join(', ')} 당첨</span>`;
+                winCountSummary = `<span class="confirmed-round-win-badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); padding: 2px 8px; border-radius: 12px; font-size: 0.74rem; color: #34d399; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-award"></i> ${parts.join(', ')} 당첨</span>`;
             } else {
-                winCountSummary = `<span style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; color: #94a3b8; margin-left: 10px;">낙첨</span>`;
+                winCountSummary = `<span class="confirmed-round-win-badge" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2px 8px; border-radius: 12px; font-size: 0.74rem; color: #94a3b8; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">낙첨</span>`;
             }
 
             const getColor = (n) => {
@@ -16078,9 +16084,9 @@ async function renderConfirmedPurchasesList() {
             };
 
             summaryHTML = `
-                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 5px; display:flex; align-items:center; gap: 8px;">
-                    <span>당첨번호:</span>
-                    <div style="display:flex; gap: 3px;">
+                <div class="confirmed-round-summary-row" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 6px; display:flex; align-items:center; gap: 6px; flex-wrap: wrap;">
+                    <span style="white-space: nowrap;">당첨번호:</span>
+                    <div style="display:inline-flex; align-items:center; gap: 3px; flex-wrap: wrap;">
                         ${actualDraw.numbers.map(n => `<span style="background:${getColor(n)}; width:18px; height:18px; line-height:18px; font-size:0.7rem; border-radius:50%; text-align:center; color:#fff; font-weight:bold; display:inline-block;">${n}</span>`).join('')}
                         <span style="font-weight:bold; font-size:0.75rem; margin:0 2px;">+</span>
                         <span style="background:${getColor(actualDraw.bonus)}; width:18px; height:18px; line-height:18px; font-size:0.7rem; border-radius:50%; text-align:center; color:#fff; font-weight:bold; display:inline-block;">${actualDraw.bonus}</span>
@@ -16088,7 +16094,7 @@ async function renderConfirmedPurchasesList() {
                 </div>
             `;
         } else {
-            winCountSummary = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.5); padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; color: #60a5fa; font-weight: bold; margin-left: 10px;"><i class="fa-solid fa-clock"></i> 추첨 대기중</span>`;
+            winCountSummary = `<span class="confirmed-round-win-badge" style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.5); padding: 2px 8px; border-radius: 12px; font-size: 0.74rem; color: #60a5fa; font-weight: bold; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-clock"></i> 추첨 대기중</span>`;
         }
 
         const allPurchasesLocked = purchases.length > 0 && purchases.every(p => !!p.isLocked);
@@ -16098,31 +16104,40 @@ async function renderConfirmedPurchasesList() {
         const roundLockIcon = allPurchasesLocked ? 'fa-lock' : 'fa-lock-open';
         const roundLockText = allPurchasesLocked ? '회차 잠김' : '회차 잠금';
 
-        // Extract registered accounts for this round
+        // Extract registered accounts for this round (clean real names for compact mobile responsiveness)
         const registeredUsers = Array.from(new Set(purchases.map(p => p.user || authId).filter(Boolean)));
-        const usersBadge = registeredUsers.length > 0
-            ? `<span style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; color: #c7d2fe; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-user-check" style="color: #818cf8; font-size: 0.65rem;"></i> 구매자: ${registeredUsers.map(u => {
-                const uName = (typeof getUserRealName === 'function' ? getUserRealName(u) : '') || (state.allUsersPurchasesMap && state.allUsersPurchasesMap[u.toLowerCase()] ? state.allUsersPurchasesMap[u.toLowerCase()].realName : '');
-                return (uName && uName.toLowerCase() !== u.toLowerCase()) ? `<strong style="color: #fff;">${uName}</strong> <span style="color:#94a3b8;font-size:0.68rem;">(${u})</span>` : `<strong style="color: #fff;">${u}</strong>`;
-            }).join(', ')}</span>`
-            : '';
+        let usersBadge = '';
+        if (registeredUsers.length > 0) {
+            const userNames = registeredUsers.map(u => {
+                const uName = (typeof getUserRealName === 'function' ? getUserRealName(u) : '') || 
+                              (state.allUsersPurchasesMap && state.allUsersPurchasesMap[u.toLowerCase()] ? state.allUsersPurchasesMap[u.toLowerCase()].realName : '') || 
+                              u;
+                return `<strong style="color: #fff; font-weight: 700;">${uName}</strong>`;
+            });
+            usersBadge = `
+                <span class="confirmed-round-users-badge" style="background: rgba(99, 102, 241, 0.16); border: 1px solid rgba(99, 102, 241, 0.35); padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; color: #c7d2fe; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; max-width: 100%; word-break: break-word; line-height: 1.35;">
+                    <i class="fa-solid fa-user-check" style="color: #818cf8; font-size: 0.65rem; flex-shrink: 0;"></i> 
+                    <span>구매자: ${userNames.join(', ')}</span>
+                </span>
+            `;
+        }
 
         html += `
-            <div class="confirmed-round-card" style="background: rgba(30, 41, 59, 0.5); border: 1px solid ${allPurchasesLocked ? 'rgba(245, 158, 11, 0.3)' : 'rgba(255,255,255,0.05)'}; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.15);">
-                <div class="confirmed-round-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; cursor:pointer;" onclick="const content = this.nextElementSibling; const icon = this.querySelector('.chevron-icon'); if (content.style.display === 'none') { content.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; } else { content.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; }">
-                    <div>
-                        <div style="display:flex; align-items:center; flex-wrap: wrap; gap: 6px;">
-                            <strong style="font-size: 1.05rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+            <div class="confirmed-round-card" style="background: rgba(30, 41, 59, 0.5); border: 1px solid ${allPurchasesLocked ? 'rgba(245, 158, 11, 0.3)' : 'rgba(255,255,255,0.05)'}; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); box-sizing: border-box; max-width: 100%; overflow: hidden;">
+                <div class="confirmed-round-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; cursor:pointer;" onclick="const content = this.nextElementSibling; const icon = this.querySelector('.chevron-icon'); if (content.style.display === 'none') { content.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; } else { content.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; }">
+                    <div style="flex: 1 1 260px; min-width: 0; max-width: 100%;">
+                        <div class="confirmed-round-title-row" style="display:flex; align-items:center; flex-wrap: wrap; gap: 6px; width: 100%;">
+                            <strong style="font-size: 1.02rem; color: #fff; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;">
                                 <i class="fa-solid fa-chevron-down chevron-icon" style="transition: transform 0.3s; font-size:0.9rem; color: var(--text-secondary); transform: rotate(180deg);"></i>
                                 제 ${round}회차 구매 확정 내역
                             </strong>
                             ${usersBadge}
                             ${winCountSummary}
-                            ${allPurchasesLocked ? '<span style="color: #fbbf24; font-size: 0.75rem; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 2px 8px; border-radius: 12px;"><i class="fa-solid fa-lock"></i> 전체 잠금됨</span>' : ''}
+                            ${allPurchasesLocked ? '<span style="color: #fbbf24; font-size: 0.74rem; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-lock"></i> 전체 잠금됨</span>' : ''}
                         </div>
                         ${summaryHTML}
                     </div>
-                    <div style="display:flex; align-items:center; flex-wrap: wrap; gap: 6px;" onclick="event.stopPropagation();">
+                    <div class="confirmed-round-actions" style="display:flex; align-items:center; flex-wrap: wrap; gap: 6px; flex-shrink: 0;" onclick="event.stopPropagation();">
                         ${isAdmin ? `
                             ${round === 1238 && purchases.length > 3 ? `
                                 <button class="btn-clean-1238-ghosts" data-round="1238" title="1238회 실제 구매(#1~#3) 외 가상 영수증 일괄 정리" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;">
@@ -16136,7 +16151,7 @@ async function renderConfirmedPurchasesList() {
                                 <i class="fa-solid ${roundLockIcon}"></i> ${roundLockText}
                             </button>
                         ` : ''}
-                        <span style="font-size: 0.8rem; color: var(--text-secondary);">총 ${purchases.reduce((acc, p) => acc + p.combos.length, 0)}조합</span>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap;">총 ${purchases.reduce((acc, p) => acc + p.combos.length, 0)}조합</span>
                     </div>
                 </div>
 
