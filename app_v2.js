@@ -2744,6 +2744,16 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     ? `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(245,158,11,0.3); font-weight:700;"><i class="fa-solid fa-trophy"></i> 토토 허용</span>`
                     : `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;"><i class="fa-solid fa-ban"></i> 토토 차단</span>`;
 
+                const hasPledgeSigned = !!(data.agreementDoc && data.agreementDoc.signatureDataUrl);
+                let pledgeBadge = hasPledgeSigned
+                    ? `<span style="font-size:0.7rem; color:#34d399; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.3); font-weight:700;" title="필수 약관 및 전자서약 완료"><i class="fa-solid fa-file-signature"></i> 서약완료</span>`
+                    : `<span style="font-size:0.7rem; color:#f87171; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;" title="필수 약관 및 전자서약 미완료 (접속 시 서약 팝업)"><i class="fa-solid fa-file-excel"></i> 서약미동의</span>`;
+
+                const hasKakaoMsgScope = !!(data.kakaoAuth && data.kakaoAuth.hasTalkMessageScope);
+                let kakaoBadge = hasKakaoMsgScope
+                    ? `<span style="font-size:0.7rem; color:#fee500; background:rgba(254,229,0,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(254,229,0,0.35); font-weight:700;" title="카카오톡 알림 메시지 전송 권한 동의 완료"><i class="fa-solid fa-comment"></i> 카톡알림동의</span>`
+                    : (userId.startsWith('kakao_') ? `<span style="font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; border:1px solid rgba(255,255,255,0.1); font-weight:600;" title="카카오톡 알림 메시지 권한 미동의"><i class="fa-solid fa-comment-slash"></i> 카톡미동의</span>` : '');
+
                 let purchaseBadge = '';
                 if (isUserAdmin || isPermanent) {
                     purchaseBadge = `<span style="font-size:0.7rem; color:#38bdf8; background:rgba(56,189,248,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(56,189,248,0.3); font-weight:700;"><i class="fa-solid fa-infinity"></i> 실구매 평생 면제</span>`;
@@ -2786,6 +2796,8 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                             ${statusBadge}
                             ${lottoPermBadge}
                             ${totoPermBadge}
+                            ${pledgeBadge}
+                            ${kakaoBadge}
                             ${purchaseBadge}
                         </div>
                     </div>
@@ -2805,6 +2817,9 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                         </button>
                         <button type="button" onclick="window.openEditUserModal('${userId}')" title="회원 정보 및 비밀번호 수정" style="background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 2px 6px rgba(59,130,246,0.3); box-sizing:border-box;">
                             <i class="fa-solid fa-user-pen"></i> 정보 수정
+                        </button>
+                        <button type="button" onclick="window.resetUserConsent('${userId}')" title="약관 동의 및 카카오 권한 초기화 (다음 접속 시 동의 팝업)" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
+                            <i class="fa-solid fa-rotate-left"></i> 동의 초기화
                         </button>
                         <button type="button" onclick="window.toggleAdminRole('${userId}', ${isUserAdmin})" title="${adminBtnText}" style="background:${adminBtnColor}; border:${adminBtnBorder}; color:#fff; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
                             <i class="fa-solid fa-crown" style="color:#fbbf24;"></i> ${adminBtnText}
@@ -3714,6 +3729,126 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
         } catch(e) {
             console.error('[Batch Auto Suspend Error]', e);
             if (!isSilent) alert('일괄 처리 중 오류가 발생했습니다.');
+        }
+    };
+
+
+    // ========================================================
+    // 🔄 [관리자] 회원 약관 동의 & 카카오 알림 권한 초기화 기능
+    // ========================================================
+    window.resetUserConsent = async function(userId) {
+        if (!userId || !window.db) return;
+        
+        const confirmMsg = `🔄 [${userId}] 사용자의 필수 약관 동의 및 카카오 권한을 초기화하시겠습니까?\n\n` +
+            `• 계정 자체는 삭제되지 않고 안전하게 유지됩니다.\n` +
+            `• 해당 사용자가 다음에 로그인/접속할 때 필수 약관 서약 팝업과 카카오 메시지 권한 동의창이 다시 표시됩니다.`;
+        
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            showToast(`🔄 [${userId}] 동의 내역 초기화 중...`);
+            
+            // 1. lotto_users 문서 내 agreementDoc, agreedTerms, kakaoAuth 초기화
+            await window.db.collection('lotto_users').doc(userId).set({
+                agreementDoc: null,
+                agreedTerms: null,
+                kakaoAuth: {
+                    accessToken: '',
+                    refreshToken: '',
+                    hasTalkMessageScope: false,
+                    updatedAt: new Date().toISOString()
+                }
+            }, { merge: true });
+
+            // 2. lotto_agreements 컬렉션 내 서약서 삭제
+            try {
+                await window.db.collection('lotto_agreements').doc(userId).delete();
+            } catch(e) {}
+
+            // 3. 만약 현재 관리자 본인 계정인 경우 세션 플래그도 초기화
+            if (userId === SafeAuth.get()) {
+                try { sessionStorage.removeItem('kakao_consent_dismissed'); } catch(e){}
+            }
+
+            showToast(`🎉 [${userId}] 약관 및 카카오 권한 동의가 초기화되었습니다. 다음 접속 시 다시 팝업됩니다.`);
+            if (typeof window.loadUserList === 'function') window.loadUserList();
+        } catch (err) {
+            console.error('[Reset User Consent Error]', err);
+            alert('⚠️ 동의 초기화 중 오류가 발생했습니다: ' + (err.message || err));
+        }
+    };
+
+    window.resetUserConsentFromModal = async function() {
+        const userId = document.getElementById('editUserIdHidden')?.value;
+        if (!userId) {
+            alert('사용자 ID를 확인할 수 없습니다.');
+            return;
+        }
+        await window.resetUserConsent(userId);
+        const modal = document.getElementById('editUserModal');
+        if (modal) modal.style.display = 'none';
+    };
+
+    // ========================================================
+    // 💬 [관리자] 카카오톡 알림 메시지 발송 테스트 기능
+    // ========================================================
+    window.sendAdminKakaoTestMessage = async function(type = 'general') {
+        const now = new Date();
+        const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+        const latestRound = (typeof getLatestDrawnRound === 'function') ? getLatestDrawnRound() : 1162;
+        const nextRound = latestRound + 1;
+
+        let template = null;
+
+        if (type === 'general') {
+            template = {
+                object_type: 'text',
+                text: `🔔 [운도실력] 관리자 카카오톡 알림 발송 테스트\n\n` +
+                      `📅 발송 시각: ${timeStr}\n` +
+                      `🟢 API 연동 상태: 정상 (Kakao SDK 200 OK)\n` +
+                      `👑 발송 주체: 시스템 관리자(Admin)\n\n` +
+                      `회원들에게 발송되는 로또 당첨 리포트 및 토토 AI 분석 알림 시스템이 정상 작동 중입니다.`,
+                link: {
+                    web_url: window.location.origin + window.location.pathname,
+                    mobile_web_url: window.location.origin + window.location.pathname
+                },
+                button_title: '운도실력 시스템 열기'
+            };
+        } else if (type === 'lotto') {
+            template = {
+                object_type: 'text',
+                text: `🎰 [운도실력] 제 ${nextRound}회 로또 AI 퀀트 추천 조합 (테스트 발송)\n\n` +
+                      `[A] 03, 12, 24, 33, 38, 42\n` +
+                      `[B] 07, 11, 19, 28, 35, 45\n` +
+                      `[C] 02, 14, 21, 29, 36, 44\n` +
+                      `[D] 05, 16, 23, 31, 39, 41\n` +
+                      `[E] 09, 18, 25, 30, 37, 43\n\n` +
+                      `💡 V4.0 통계 분산 커버리지 & 기댓값(EV) 가중 모델 엄선 조합입니다.`,
+                link: {
+                    web_url: window.location.origin + window.location.pathname,
+                    mobile_web_url: window.location.origin + window.location.pathname
+                },
+                button_title: '나의 번호 채점 & 분석 보기'
+            };
+        } else if (type === 'custom') {
+            const inputMsg = prompt('💬 스마트폰 카카오톡으로 전송할 테스트 메시지를 입력하세요:', `[운도실력] 공지사항 및 시스템 점검 안내 테스트 (${timeStr})`);
+            if (inputMsg === null || !inputMsg.trim()) return;
+
+            template = {
+                object_type: 'text',
+                text: inputMsg.trim(),
+                link: {
+                    web_url: window.location.origin + window.location.pathname,
+                    mobile_web_url: window.location.origin + window.location.pathname
+                },
+                button_title: '운도실력 바로가기'
+            };
+        }
+
+        if (template && typeof window.sendKakaoCustomMessage === 'function') {
+            await window.sendKakaoCustomMessage(template);
+        } else {
+            alert('⚠️ 카카오 메시지 전송 모듈이 초기화되지 않았습니다.');
         }
     };
 

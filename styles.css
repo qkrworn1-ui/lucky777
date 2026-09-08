@@ -10473,9 +10473,28 @@ html, body {
 }
 
 .term-child-cb {
-    width: 15px;
-    height: 15px;
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
     cursor: pointer;
+    accent-color: #fbbf24;
+}
+
+.terms-scroll-box {
+    scrollbar-width: thin;
+    scrollbar-color: #fbbf24 rgba(15, 23, 42, 0.6);
+}
+.terms-scroll-box::-webkit-scrollbar {
+    width: 6px;
+}
+.terms-scroll-box::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 4px;
+}
+.terms-scroll-box::-webkit-scrollbar-thumb {
+    background: #fbbf24;
+    border-radius: 4px;
 }
 
 /* 1. Modal Overlays with Frosted Blur Backdrop */
@@ -10503,9 +10522,9 @@ html, body {
 }
 
 /* 3. Translucent Input Fields & Selects */
-#loginModalOverlay input,
+#loginModalOverlay input:not([type="checkbox"]):not([type="radio"]),
 #loginModalOverlay select,
-#userMgmtModal input,
+#userMgmtModal input:not([type="checkbox"]):not([type="radio"]),
 #userMgmtModal select {
     background: rgba(15, 23, 42, 0.45) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
@@ -10517,9 +10536,9 @@ html, body {
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.25) !important;
 }
 
-#loginModalOverlay input:focus,
+#loginModalOverlay input:not([type="checkbox"]):not([type="radio"]):focus,
 #loginModalOverlay select:focus,
-#userMgmtModal input:focus,
+#userMgmtModal input:not([type="checkbox"]):not([type="radio"]):focus,
 #userMgmtModal select:focus {
     background: rgba(15, 23, 42, 0.7) !important;
     border-color: rgba(251, 191, 36, 0.55) !important;
