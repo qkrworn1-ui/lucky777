@@ -869,7 +869,10 @@ export function setupAuthEvents(initFirebaseAndData) {
                                     try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
                                     try { if (typeof initFirebaseAndData === 'function') initFirebaseAndData(); } catch(ex) {}
                                     checkAuthOnLoad(initFirebaseAndData).catch(function(err) { console.warn('[BG auth check]', err); });
-                                }, 200);
+
+                                    // 🔔 Check if talk_message is agreed; if not, show dedicated in-app consent modal!
+                                    window.checkAndPromptKakaoScope('talk_message');
+                                }, 300);
 
                             } catch(dbErr) {
                                 console.error('[Kakao DB Sync Error]', dbErr);
@@ -910,6 +913,128 @@ export function setupAuthEvents(initFirebaseAndData) {
 };
 
 /**
+ * 💬 [인앱 카카오톡 알림 권한 안내 모달]
+ * 팝업 차단 및 자동 닫힘 방지를 위해 사용자 제스처(버튼 클릭) 기반으로 안전하게 동의창 실행
+ */
+window.showKakaoMessageConsentModal = function(callback) {
+    let modal = document.getElementById('kakaoMessageConsentModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        return;
+    }
+
+    modal = document.createElement('div');
+    modal.id = 'kakaoMessageConsentModal';
+    modal.className = 'modal-overlay';
+    modal.style.cssText = 'display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 10, 20, 0.88); z-index: 999999; padding: 16px; box-sizing: border-box; backdrop-filter: blur(8px);';
+    modal.innerHTML = `
+        <div style="background: linear-gradient(145deg, #0f172a, #1e293b); border: 2px solid #fee500; border-radius: 20px; max-width: 440px; width: 100%; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); text-align: center; color: #f8fafc; font-family: 'Noto Sans KR', sans-serif;">
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: #fee500; color: #191919; font-size: 1.8rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; box-shadow: 0 4px 16px rgba(254, 229, 0, 0.4);">
+                <i class="fa-solid fa-bell"></i>
+            </div>
+            <h3 style="font-size: 1.2rem; font-weight: 800; margin: 0 0 8px 0; color: #ffffff;">
+                스마트폰 카카오톡 알림 받기
+            </h3>
+            <p style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.55; margin: 0 0 16px 0; word-break: keep-all;">
+                로또 당첨 발표 및 토토/프로토 AI 추천 번호를 스마트폰 <strong style="color: #fee500;">카카오톡(나와의 채팅방)</strong>으로 편리하게 받아보시려면 메시지 전송 권한 동의가 필요합니다.
+            </p>
+            <div style="background: rgba(254, 229, 0, 0.08); border: 1px dashed rgba(254, 229, 0, 0.35); border-radius: 12px; padding: 12px; margin-bottom: 18px; text-align: left; font-size: 0.78rem; color: #fde047; line-height: 1.5;">
+                <div style="font-weight: 700; margin-bottom: 4px;"><i class="fa-solid fa-circle-check"></i> 수신 혜택 안내:</div>
+                • 매주 로또 당첨 발표 시 자동 채점 리포트 발송<br>
+                • 축구토토 14경기 승무패 AI 마킹표 발송<br>
+                • 비용 0원 무료 (언제든 설정에서 해제 가능)
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button type="button" id="btnCancelKakaoConsent" style="flex: 1; padding: 12px; border-radius: 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #94a3b8; font-weight: 700; font-size: 0.88rem; cursor: pointer;">
+                    다음에 하기
+                </button>
+                <button type="button" id="btnAcceptKakaoConsent" style="flex: 1.6; padding: 12px; border-radius: 10px; background: #fee500; border: none; color: #191919; font-weight: 800; font-size: 0.92rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(254, 229, 0, 0.35);">
+                    <i class="fa-solid fa-check"></i> 지금 권한 동의하기
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelector('#btnCancelKakaoConsent').onclick = function() {
+        modal.style.display = 'none';
+        try { sessionStorage.setItem('kakao_consent_dismissed', 'true'); } catch(e){}
+    };
+
+    modal.querySelector('#btnAcceptKakaoConsent').onclick = function() {
+        modal.style.display = 'none';
+        showToast('💬 카카오톡 동의창을 연결 중입니다...');
+        
+        window.Kakao.Auth.login({
+            scope: 'talk_message',
+            persistAccessToken: true,
+            success: function(authRes) {
+                console.log('[Kakao Scope Consent Granted]', authRes);
+                showToast('🎉 카카오톡 메시지 전송 권한이 정상 등록되었습니다!');
+
+                // Save to Firestore
+                const currUser = SafeAuth.get();
+                const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+                if (currUser && firestore) {
+                    firestore.collection('lotto_users').doc(currUser).set({
+                        kakaoAuth: {
+                            accessToken: authRes.access_token || '',
+                            refreshToken: authRes.refresh_token || '',
+                            hasTalkMessageScope: true,
+                            updatedAt: new Date().toISOString()
+                        }
+                    }, { merge: true }).catch(console.warn);
+                }
+
+                if (typeof callback === 'function') callback(true);
+            },
+            fail: function(err) {
+                console.warn('[Kakao Consent Cancelled]', err);
+                alert('⚠️ 카카오톡 권한 동의가 완료되지 않았습니다.');
+                if (typeof callback === 'function') callback(false);
+            }
+        });
+    };
+
+    modal.style.display = 'flex';
+};
+
+/**
+ * 💬 [동의 여부 자동 검사 및 모달 호출]
+ */
+window.checkAndPromptKakaoScope = function(scopeName) {
+    scopeName = scopeName || 'talk_message';
+    try {
+        if (sessionStorage.getItem('kakao_consent_dismissed') === 'true') return;
+    } catch(e){}
+
+    // 🔒 [안전 가드] 카카오 소셜 로그인 사용자(kakao_*)가 아니거나 기존 일반 아이디(ID/PW) 로그인 사용자는 팝업을 띄우지 않음
+    const currUser = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
+    if (!currUser || !String(currUser).toLowerCase().startsWith('kakao_')) {
+        return;
+    }
+
+    if (!window.Kakao || !window.Kakao.Auth) return;
+
+    window.Kakao.API.request({
+        url: '/v2/user/scopes',
+        data: { scopes: [scopeName] },
+        success: function(res) {
+            const targetScope = res.scopes && res.scopes.find(s => s.id === scopeName);
+            if (!targetScope || !targetScope.agreed) {
+                console.log(`[Kakao] [${scopeName}] 미동의 감지 -> 동의 모달 표시`);
+                window.showKakaoMessageConsentModal();
+            } else {
+                console.log(`[Kakao] [${scopeName}] 이미 동의 완료된 상태`);
+            }
+        },
+        fail: function(e) {
+            console.warn('[Kakao Scopes Check Fail]', e);
+        }
+    });
+};
+
+/**
  * 💬 [동적 권한 재동의 핸들러]
  * 기존 사용자(기존에 talk_message 권한 미동의 상태)가 메시지 발송을 시도할 때
  * 자동으로 카카오 동의 팝업창을 띄워 권한을 추가 승인받는 함수
@@ -933,31 +1058,17 @@ window.ensureKakaoScope = function(scopeName) {
                     return resolve(true);
                 }
 
-                // 2. 동의되지 않은 경우 -> 카카오 동의 팝업 자동 실행 (증분 동의)
-                console.log(`[Kakao] [${scopeName}] 권한 미동의 상태 -> 동의 팝업 실행`);
-                showToast('💬 카카오톡 메시지 전송 권한 동의창을 엽니다...');
-                
-                window.Kakao.Auth.login({
-                    scope: scopeName,
-                    throughTalk: true,
-                    success: function(authObj) {
-                        console.log(`[Kakao] [${scopeName}] 추가 권한 승인 완료!`);
-                        resolve(true);
-                    },
-                    fail: function(err) {
-                        console.warn(`[Kakao] 권한 동의 거부 또는 닫힘`, err);
-                        reject(new Error('카카오톡 메시지 전송을 위해 권한 동의가 필요합니다.'));
-                    }
+                // 2. 동의되지 않은 경우 -> 안내 모달 호출
+                console.log(`[Kakao] [${scopeName}] 권한 미동의 상태 -> 모달 팝업 실행`);
+                window.showKakaoMessageConsentModal(function(granted) {
+                    if (granted) resolve(true);
+                    else reject(new Error('카카오톡 메시지 전송을 위해 권한 동의가 필요합니다.'));
                 });
             },
             fail: function(err) {
-                // 토큰이 없거나 만료된 경우 로그인과 함께 동의 요청
-                console.warn('[Kakao] Scope 조회 실패, 로그인 연동 시도', err);
-                window.Kakao.Auth.login({
-                    scope: scopeName,
-                    throughTalk: true,
-                    success: function() { resolve(true); },
-                    fail: function(e) { reject(e); }
+                window.showKakaoMessageConsentModal(function(granted) {
+                    if (granted) resolve(true);
+                    else reject(new Error('카카오톡 메시지 전송을 위해 권한 동의가 필요합니다.'));
                 });
             }
         });
