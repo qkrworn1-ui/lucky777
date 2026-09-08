@@ -777,6 +777,13 @@ export async function handleSaveManualLedger() {
             return;
         }
 
+        // 🔒 Enforce QR Code Verification Only
+        if (combosEl && combosEl.dataset.qrScanned !== 'true' && !combosEl.dataset.qrRawUrl) {
+            alert('⚠️ [실구매 QR 인증 필수]\n\n로또 6/45 실구매 등록은 실물 복권 영수증의 QR코드 인식을 통해서만 등록이 가능합니다.\n\n[📷 QR 코드 다시 스캔하기] 또는 [영수증 사진 선택]을 통해 영수증을 인증해주세요.');
+            startLottoQrScanner();
+            return;
+        }
+
         const lines = combosText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         if (lines.length === 0) {
             alert('최소 1개 이상의 번호 조합을 입력해주세요.');
@@ -923,7 +930,10 @@ export function openManualLedgerModal() {
             combosInput.style.borderColor = '';
             combosInput.style.color = '#94a3b8';
             combosInput.style.cursor = 'not-allowed';
+            combosInput.placeholder = '📷 실물 복권 영수증의 QR코드를 카메라에 비추거나 사진 파일을 선택하면 번호가 자동 등록됩니다. (QR 인증 필수)';
             combosInput.dataset.qrScanned = '';
+            combosInput.dataset.qrRawUrl = '';
+            combosInput.dataset.qrSerial = '';
         }
         if (resultBox) resultBox.style.display = 'none';
         modal.style.display = 'flex';

@@ -142,6 +142,85 @@ export async function renderLandingDashboard() {
     if (typeof window.updatePurchaseDeadlineCountdowns === 'function') {
         try { window.updatePurchaseDeadlineCountdowns(); } catch(e){}
     }
+
+    // 9. Update Service Cards Access Permission Badges
+    updateHomeServiceCardsPermissions();
+}
+
+/**
+ * 🔒 Update Service Entry Cards based on User Program Permissions (Lotto / Toto)
+ */
+export function updateHomeServiceCardsPermissions() {
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
+    const getPerms = typeof getUserPermissions === 'function' ? getUserPermissions : (window.getUserPermissions || (() => ({ allowLotto: true, allowToto: true })));
+    const perms = getPerms(authId);
+
+    const lottoCard = document.getElementById('btnGoLotto');
+    const totoCard = document.getElementById('btnGoToto');
+
+    if (lottoCard) {
+        const badge = lottoCard.querySelector('.lp-card-badge');
+        const btn = lottoCard.querySelector('.lp-btn');
+        if (!perms.allowLotto) {
+            if (badge) {
+                badge.className = 'lp-card-badge';
+                badge.style.background = 'rgba(239, 68, 68, 0.2)';
+                badge.style.color = '#fca5a5';
+                badge.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+                badge.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 이용 권한 없음';
+            }
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 권한 요청 필요';
+                btn.style.opacity = '0.7';
+            }
+            lottoCard.style.opacity = '0.75';
+        } else {
+            if (badge) {
+                badge.className = 'lp-card-badge lp-badge-active';
+                badge.style.background = '';
+                badge.style.color = '';
+                badge.style.border = '';
+                badge.innerHTML = '<i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> 서비스 운영중';
+            }
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i> 지금 이용하기';
+                btn.style.opacity = '1';
+            }
+            lottoCard.style.opacity = '1';
+        }
+    }
+
+    if (totoCard) {
+        const badge = totoCard.querySelector('.lp-card-badge');
+        const btn = totoCard.querySelector('.lp-btn');
+        if (!perms.allowToto) {
+            if (badge) {
+                badge.className = 'lp-card-badge';
+                badge.style.background = 'rgba(239, 68, 68, 0.2)';
+                badge.style.color = '#fca5a5';
+                badge.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+                badge.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 이용 권한 없음';
+            }
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 권한 요청 필요';
+                btn.style.opacity = '0.7';
+            }
+            totoCard.style.opacity = '0.75';
+        } else {
+            if (badge) {
+                badge.className = 'lp-card-badge';
+                badge.style.background = 'rgba(245, 158, 11, 0.2)';
+                badge.style.color = '#fbbf24';
+                badge.style.border = '1px solid rgba(245, 158, 11, 0.45)';
+                badge.innerHTML = '<i class="fa-solid fa-flask"></i> 🧪 테스트중 (Beta)';
+            }
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i> 지금 이용하기 (테스트중)';
+                btn.style.opacity = '1';
+            }
+            totoCard.style.opacity = '1';
+        }
+    }
 }
 
 /**
@@ -465,6 +544,7 @@ if (typeof window !== 'undefined') {
     window.renderLandingDashboard = renderLandingDashboard;
     window.updateHomeReviewDashboard = updateHomeReviewDashboard;
     window.updateHomeWinningTicker = updateHomeWinningTicker;
+    window.updateHomeServiceCardsPermissions = updateHomeServiceCardsPermissions;
 }
 
 

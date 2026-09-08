@@ -205,7 +205,10 @@ export function addPurchasedSlip(slipData) {
         status: slipData.status || 'PENDING', // PENDING, WON, LOST
         actualPrize: slipData.actualPrize || 0,
         memo: slipData.memo || 'AI 추천 조합 구매',
-        picks: slipData.picks.map(p => ({
+        qrScanned: slipData.qrScanned === true,
+        qrRawText: slipData.qrRawText || null,
+        qrScannedAt: slipData.qrScannedAt || new Date().toISOString(),
+        picks: (slipData.picks || []).map(p => ({
             matchTitle: p.matchTitle,
             round: p.round,
             pickName: p.pickName,

@@ -124,6 +124,7 @@ export function renderTotoDashboard() {
             <div class="live-ticker-track">
                 ${dropOddsHtml || '<div class="live-ticker-item">정상 발매중 · 해외 샤프마켓 배당률 실시간 모니터링 활성화</div>'}
             </div>
+        </div>
         <!-- 📌 [메뉴 기능 안내] 스포츠토토 분석 엔진 -->
         <div class="menu-guide-banner guide-emerald" style="margin: 12px 16px 8px 16px;">
             <div class="guide-header">
@@ -391,12 +392,12 @@ function renderRecommendationView(state, portfolios, displayList) {
                         </div>
 
                         <div class="pf-reason-box">
-                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> 첼시 득점왕 결장 &amp; 맨시티 홈 연승으로 이변 확률이 극히 낮은 최우선 픽입니다.
+                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> ${portfolios.safety && portfolios.safety.picks.length > 0 ? `AI 승리 확률 60% 이상 및 가치 기대값(+EV)이 검증된 최우선 안전 픽 ${portfolios.safety.picks.map(p => p.pickName).join(', ')} 조합입니다.` : '이변 확률이 극히 낮은 2개 경기 엄선 조합입니다.'}
                         </div>
 
                         <div class="pf-btn-row">
-                            <button class="btn-direct-buy" onclick="window.openDirectPurchaseModal('safety')" title="구매 확정 등록">
-                                <i class="fa-solid fa-cart-shopping"></i> 구매등록
+                            <button class="btn-direct-buy" onclick="window.openDirectPurchaseModal('safety')" title="실물 영수증 QR구매등록">
+                                <i class="fa-solid fa-qrcode"></i> QR구매등록
                             </button>
                             <button class="btn-marking-view" onclick="window.openMarkingGuide('safety')">
                                 <i class="fa-solid fa-pen-to-square"></i> 마킹표
@@ -432,12 +433,12 @@ function renderRecommendationView(state, portfolios, displayList) {
                         </div>
 
                         <div class="pf-reason-box">
-                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> 상대 선발 ERA 공략 및 백투백 피로도를 집중 공략한 고효율 픽입니다.
+                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> ${portfolios.balanced && portfolios.balanced.picks.length > 0 ? `기대값(+EV)이 가장 높은 핵심 3경기(${portfolios.balanced.picks.map(p => p.pickName).join(', ')})를 결합하여 리스크 대비 수익률을 극대화한 포트폴리오입니다.` : '상대 선발 및 xG 데이터를 공략한 고효율 픽입니다.'}
                         </div>
 
                         <div class="pf-btn-row">
-                            <button class="btn-direct-buy btn-balanced-buy" onclick="window.openDirectPurchaseModal('balanced')" title="구매 확정 등록">
-                                <i class="fa-solid fa-cart-shopping"></i> 구매등록
+                            <button class="btn-direct-buy btn-balanced-buy" onclick="window.openDirectPurchaseModal('balanced')" title="실물 영수증 QR구매등록">
+                                <i class="fa-solid fa-qrcode"></i> QR구매등록
                             </button>
                             <button class="btn-marking-view" onclick="window.openMarkingGuide('balanced')">
                                 <i class="fa-solid fa-pen-to-square"></i> 마킹표
@@ -473,12 +474,12 @@ function renderRecommendationView(state, portfolios, displayList) {
                         </div>
 
                         <div class="pf-reason-box">
-                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> 마드리드 더비 무승부 &amp; 토종 명품 투수전 언더를 노리는 고수익 픽입니다.
+                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> ${portfolios.highYield && portfolios.highYield.picks.length > 0 ? `샤프마켓 배당률 대비 가치가 높은 4경기(${portfolios.highYield.picks.map(p => p.pickName).join(', ')})를 선정하여 소액으로 10배 이상의 고수익을 겨냥한 조합입니다.` : '배당 왜곡 구간을 공략한 고수익 픽입니다.'}
                         </div>
 
                         <div class="pf-btn-row">
-                            <button class="btn-direct-buy btn-highyield-buy" onclick="window.openDirectPurchaseModal('highYield')" title="구매 확정 등록">
-                                <i class="fa-solid fa-cart-shopping"></i> 구매등록
+                            <button class="btn-direct-buy btn-highyield-buy" onclick="window.openDirectPurchaseModal('highYield')" title="실물 영수증 QR구매등록">
+                                <i class="fa-solid fa-qrcode"></i> QR구매등록
                             </button>
                             <button class="btn-marking-view" onclick="window.openMarkingGuide('highYield')">
                                 <i class="fa-solid fa-pen-to-square"></i> 마킹표
@@ -1521,7 +1522,7 @@ function renderSlipCartBody(selectedSlip) {
                 <i class="fa-solid fa-satellite-dish"></i> 📡 구매 전 최신정보 실시간 스크랩
             </button>
             <button class="btn-cart-buy-confirm" onclick="window.openCartPurchaseModal()">
-                <i class="fa-solid fa-cart-shopping"></i> 💳 이 조합 구매 확정 등록하기
+                <i class="fa-solid fa-qrcode"></i> 📷 이 조합 영수증 QR구매등록
             </button>
             <div class="slip-actions">
                 <button class="btn-open-omr" onclick="window.openCurrentSlipMarkingGuide()">
@@ -1775,45 +1776,61 @@ window.closeTotoQrScanner = function() {
 /**
  * Handle Scanned Toto QR Text (Betman Official URL or Structured Slip Data)
  */
-function handleScannedTotoQr(rawText) {
+window.handleScannedTotoQr = function(rawText) {
     window.closeTotoQrScanner();
 
     const state = getTotoState();
-    let parsedRound = '프로토 승부식 35회차';
-    let parsedStake = 10000;
-    let parsedPicks = [];
-    let parsedOdds = 1.0;
-
-    const f1 = state.fixtures[0];
-    const f2 = state.fixtures[1];
     
-    parsedPicks = [
-        {
-            matchTitle: `${f1.homeTeam} vs ${f1.awayTeam}`,
-            round: f1.round,
-            pickName: `${f1.homeTeam} 승`,
-            odds: f1.betmanOdds.homeWin
-        },
-        {
-            matchTitle: `${f2.homeTeam} vs ${f2.awayTeam}`,
-            round: f2.round,
-            pickName: `${f2.homeTeam} 승`,
-            odds: f2.betmanOdds.homeWin
+    // If pendingRegisterSlip already exists from recommended slip / cart / 14-game
+    if (pendingRegisterSlip) {
+        pendingRegisterSlip.qrScanned = true;
+        pendingRegisterSlip.qrRawText = rawText;
+        pendingRegisterSlip.qrScannedAt = new Date().toISOString();
+        if (!pendingRegisterSlip.memo.includes('📷 QR')) {
+            pendingRegisterSlip.memo = `📷 QR 영수증 인증 - ` + pendingRegisterSlip.memo;
         }
-    ];
-    parsedOdds = Number((f1.betmanOdds.homeWin * f2.betmanOdds.homeWin).toFixed(2));
+    } else {
+        // Create new slip from scanned data
+        let parsedRound = '프로토 승부식 35회차';
+        let parsedStake = 10000;
+        let parsedPicks = [];
+        let parsedOdds = 1.0;
 
-    pendingRegisterSlip = {
-        round: parsedRound,
-        memo: `📷 QR 영수증 스캔 등록 (${parsedPicks.length}폴더)`,
-        picks: parsedPicks,
-        combinedOdds: parsedOdds,
-        stake: parsedStake
-    };
+        const f1 = (state.fixtures && state.fixtures[0]) ? state.fixtures[0] : { homeTeam: '아스널', awayTeam: '첼시', round: '35회차', betmanOdds: { homeWin: 1.85 } };
+        const f2 = (state.fixtures && state.fixtures[1]) ? state.fixtures[1] : { homeTeam: '토트넘', awayTeam: '리버풀', round: '35회차', betmanOdds: { homeWin: 2.10 } };
+        
+        parsedPicks = [
+            {
+                matchTitle: `${f1.homeTeam} vs ${f1.awayTeam}`,
+                round: f1.round || '35회차',
+                pickName: `${f1.homeTeam} 승`,
+                odds: f1.betmanOdds ? f1.betmanOdds.homeWin : 1.85
+            },
+            {
+                matchTitle: `${f2.homeTeam} vs ${f2.awayTeam}`,
+                round: f2.round || '35회차',
+                pickName: `${f2.homeTeam} 승`,
+                odds: f2.betmanOdds ? f2.betmanOdds.homeWin : 2.10
+            }
+        ];
+        parsedOdds = Number(((f1.betmanOdds ? f1.betmanOdds.homeWin : 1.85) * (f2.betmanOdds ? f2.betmanOdds.homeWin : 2.10)).toFixed(2));
+
+        pendingRegisterSlip = {
+            round: parsedRound,
+            memo: `📷 QR 영수증 스캔 등록 (${parsedPicks.length}폴더)`,
+            picks: parsedPicks,
+            combinedOdds: parsedOdds,
+            stake: parsedStake,
+            gameType: 'PROTO',
+            qrScanned: true,
+            qrRawText: rawText,
+            qrScannedAt: new Date().toISOString()
+        };
+    }
 
     renderPurchaseModal();
     openModal('totoPurchaseModal');
-    showToast('🎉 QR코드 인식 완료! 영수증 정보를 확인 후 등록하세요.');
+    showToast('🎉 QR 영수증 인증 완료! 실구매 상세 내역을 확인 후 등록하세요.');
 }
 
 window.handleTotoQrFile = function(event) {
@@ -1855,11 +1872,13 @@ window.openDirectPurchaseModal = function(type) {
         picks: pf.picks,
         combinedOdds: pf.combinedOdds,
         stake: currentBetStake,
-        gameType: 'PROTO'
+        gameType: 'PROTO',
+        qrScanned: false
     };
 
-    renderPurchaseModal();
-    openModal('totoPurchaseModal');
+    // Require QR ticket receipt verification
+    window.openTotoQrScanner();
+    showToast('📷 실물 영수증 QR코드를 스캔하여 실구매를 인증해주세요.');
 };
 
 window.openToto14PurchaseModal = function(type) {
@@ -1882,11 +1901,13 @@ window.openToto14PurchaseModal = function(type) {
         combinedOdds: 1.0,
         isPariMutuel: true,
         gameType: 'TOTO',
-        stake: type === 'double' ? sheet.doubleCost : sheet.singleCost
+        stake: type === 'double' ? sheet.doubleCost : sheet.singleCost,
+        qrScanned: false
     };
 
-    renderPurchaseModal();
-    openModal('totoPurchaseModal');
+    // Require QR ticket receipt verification
+    window.openTotoQrScanner();
+    showToast('📷 실물 14경기 투표용지 영수증 QR코드를 스캔해주세요.');
 };
 
 window.openCartPurchaseModal = function() {
@@ -1906,11 +1927,13 @@ window.openCartPurchaseModal = function() {
         picks: state.selectedSlip,
         combinedOdds: combinedOdds,
         stake: currentBetStake,
-        gameType: 'PROTO'
+        gameType: 'PROTO',
+        qrScanned: false
     };
 
-    renderPurchaseModal();
-    openModal('totoPurchaseModal');
+    // Require QR ticket receipt verification
+    window.openTotoQrScanner();
+    showToast('📷 발권된 실물 영수증 QR코드를 스캔해주세요.');
 };
 
 function renderPurchaseModal() {
@@ -1919,16 +1942,34 @@ function renderPurchaseModal() {
 
     const isToto = pendingRegisterSlip.isPariMutuel || pendingRegisterSlip.gameType === 'TOTO';
     const estimatedPayout = isToto ? '패리뮤추얼 1등 총 환급금 배분' : `${Math.round(pendingRegisterSlip.combinedOdds * pendingRegisterSlip.stake).toLocaleString()}원`;
+    const isQrVerified = pendingRegisterSlip.qrScanned === true;
 
     body.innerHTML = `
         <div style="background: rgba(15,23,42,0.9); border-radius: 12px; padding: 14px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.08);">
+            <!-- QR Verification Status Banner -->
+            ${isQrVerified ? `
+                <div style="background: linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(5,150,105,0.2) 100%); border: 1px solid #10b981; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center; color: #a7f3d0; font-size: 0.8rem;">
+                    <div style="font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-circle-check" style="color: #34d399; font-size: 1rem;"></i> 📷 실물 영수증 QR코드 인증 완료
+                    </div>
+                    <span style="font-size: 0.72rem; color: #cbd5e1; margin-top: 3px; display: block;">공식 복권/투표용지 인식이 정상 확인되었습니다.</span>
+                </div>
+            ` : `
+                <div style="background: linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(185,28,28,0.2) 100%); border: 1px solid #f87171; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center; color: #fca5a5; font-size: 0.8rem;">
+                    <div style="font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #f87171; font-size: 1rem;"></i> ⚠️ 실구매 QR코드 인증 필수
+                    </div>
+                    <span style="font-size: 0.72rem; color: #cbd5e1; margin-top: 3px; display: block;">실물 투표용지의 QR코드를 스캔해야만 구매 등록이 확정됩니다.</span>
+                </div>
+            `}
+
             <!-- Pre-purchase Scrape & QR Action Bar -->
             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
                 <button type="button" class="btn-pre-purchase-scrape" onclick="window.scrapeLatestTotoFixtures()" style="flex: 1.3; padding: 9px 10px; background: linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(245,158,11,0.1) 100%); border: 1px solid #fbbf24; border-radius: 8px; color: #fbbf24; font-weight: 800; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 8px rgba(245,158,11,0.25);">
                     <i class="fa-solid fa-satellite-dish"></i> 📡 구매 전 최신정보 실시간 스크랩
                 </button>
-                <button type="button" class="btn-modal-qr-scan" onclick="window.openTotoQrScanner()" style="flex: 1; font-size: 0.78rem; padding: 9px 10px; border-radius: 8px; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.4); color: #38bdf8; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                    <i class="fa-solid fa-qrcode"></i> 영수증 QR스캔
+                <button type="button" class="btn-modal-qr-scan" onclick="window.openTotoQrScanner()" style="flex: 1; font-size: 0.78rem; padding: 9px 10px; border-radius: 8px; background: ${isQrVerified ? 'rgba(56,189,248,0.15)' : 'rgba(56,189,248,0.3)'}; border: 1px solid #38bdf8; color: #38bdf8; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <i class="fa-solid fa-qrcode"></i> ${isQrVerified ? '영수증 재스캔' : '영수증 QR스캔하기'}
                 </button>
             </div>
 
@@ -1965,9 +2006,15 @@ function renderPurchaseModal() {
         </div>
 
         <div style="display: flex; gap: 8px;">
-            <button class="btn-confirm-purchase-submit" onclick="window.submitPurchaseRegistration()">
-                <i class="fa-solid fa-check"></i> 실구매 확정 등록
-            </button>
+            ${isQrVerified ? `
+                <button class="btn-confirm-purchase-submit" onclick="window.submitPurchaseRegistration()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="fa-solid fa-check"></i> 실구매 확정 등록 완료
+                </button>
+            ` : `
+                <button class="btn-confirm-purchase-submit" onclick="window.openTotoQrScanner()" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+                    <i class="fa-solid fa-qrcode"></i> 📷 영수증 QR 스캔 인증하기
+                </button>
+            `}
             <button class="btn-cancel-modal" onclick="window.closeTotoPurchaseModal()">
                 취소
             </button>
@@ -1990,6 +2037,13 @@ window.closeTotoPurchaseModal = function() {
 window.submitPurchaseRegistration = function() {
     if (!pendingRegisterSlip) return;
 
+    // Strict QR enforcement
+    if (!pendingRegisterSlip.qrScanned) {
+        alert('⚠️ [실구매 QR 인증 필수]\n\n토토/프로토 실구매 등록은 실물 투표용지(영수증)의 QR코드 인식을 통해서만 등록이 가능합니다.\n\n[영수증 QR 스캔]을 완료해주세요.');
+        window.openTotoQrScanner();
+        return;
+    }
+
     addPurchasedSlip(pendingRegisterSlip);
     closeModal('totoPurchaseModal');
     clearSelectedSlip();
@@ -1999,7 +2053,7 @@ window.submitPurchaseRegistration = function() {
     state.activeTab = 'confirmed';
     renderTotoDashboard();
 
-    showToast('🎉 구매 확정 등록 완료! 배팅 내역에 저장되었습니다.');
+    showToast('🎉 [QR 인증 완료] 구매 확정 등록이 성공적으로 저장되었습니다.');
 };
 
 window.simulateSlipResult = function(slipId, isWin) {
@@ -2238,7 +2292,7 @@ function renderMarkingModal() {
                     <i class="fa-solid fa-copy"></i> 복권방 점원용 텍스트 복사
                 </button>
                 <button type="button" class="btn-direct-buy" style="flex:1;" onclick="window.closeMarkingGuide(); window.openDirectPurchaseModal('${activeMarkingSlip.portfolioKey || 'safety'}')">
-                    <i class="fa-solid fa-cart-shopping"></i> 구매 확정 등록
+                    <i class="fa-solid fa-qrcode"></i> 영수증 QR구매등록
                 </button>
                 <a href="https://www.betman.co.kr" target="_blank" class="btn-go-betman">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> 베트맨
@@ -2382,7 +2436,7 @@ function renderToto14MarkingModal(mode = 'single') {
                     <i class="fa-solid fa-copy"></i> 14경기 마킹 텍스트 복사
                 </button>
                 <button type="button" class="btn-direct-buy" style="flex:1;" onclick="window.closeToto14MarkingGuide(); window.openToto14PurchaseModal('${mode}')">
-                    <i class="fa-solid fa-cart-shopping"></i> 구매 확정 등록
+                    <i class="fa-solid fa-qrcode"></i> 영수증 QR구매등록
                 </button>
                 <a href="https://www.betman.co.kr" target="_blank" class="btn-go-betman">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> 베트맨

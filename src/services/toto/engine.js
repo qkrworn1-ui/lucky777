@@ -562,6 +562,9 @@ export function analyzeFixture(fixture) {
         homeWinProb: ensembleHomeWinProb,
         drawProb: ensembleDrawProb,
         awayWinProb: ensembleAwayWinProb,
+        ensembleHomeWinProb,
+        ensembleDrawProb,
+        ensembleAwayWinProb,
         rawHomeWinProb,
         rawDrawProb,
         rawAwayWinProb,
@@ -659,9 +662,9 @@ export function generateToto14Sheet(fixtures) {
 
     const rows = displayList.map((f, idx) => {
         const analysis = analyzeFixture(f);
-        const homeProb = Math.round(analysis.ensembleHomeWinProb * 100);
-        const drawProb = f.sport === 'soccer' ? Math.round(analysis.ensembleDrawProb * 100) : 0;
-        const awayProb = Math.round(analysis.ensembleAwayWinProb * 100);
+        const homeProb = Math.round((analysis.homeWinProb || analysis.ensembleHomeWinProb || 0) * 100);
+        const drawProb = f.sport === 'soccer' ? Math.round((analysis.drawProb || analysis.ensembleDrawProb || 0) * 100) : 0;
+        const awayProb = Math.round((analysis.awayWinProb || analysis.ensembleAwayWinProb || 0) * 100);
 
         let mainPick = '승';
         let subPick = null;

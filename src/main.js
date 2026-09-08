@@ -1,4 +1,4 @@
-import { checkAuthOnLoad, setupAuthEvents } from './shared/auth-mgmt.js';
+import { checkAuthOnLoad, setupAuthEvents, SafeAuth, getUserPermissions } from './shared/auth-mgmt.js';
 import { initLottoService } from './services/lotto/index.js';
 import { initTotoService } from './services/toto/index.js';
 import { renderLandingDashboard } from './shared/landing-dashboard.js';
@@ -38,16 +38,40 @@ window.showLanding = function() {
 };
 
 window.showToto = function() {
-    if (typeof showToast === 'function') {
-        showToast('🚀 [서비스 준비 중] 토토/프로토 AI 분석 서비스는 현재 고도화 작업 중이며 추후 오픈 예정입니다.');
-    } else if (typeof window.showToast === 'function') {
-        window.showToast('🚀 [서비스 준비 중] 토토/프로토 AI 분석 서비스는 현재 고도화 작업 중이며 추후 오픈 예정입니다.');
-    } else {
-        alert('🚀 [서비스 준비 중] 토토/프로토 AI 분석 서비스는 현재 고도화 작업 중이며 추후 오픈 예정입니다.');
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
+    if (authId) {
+        const getPerms = typeof getUserPermissions === 'function' ? getUserPermissions : (window.getUserPermissions || (() => ({ allowToto: true })));
+        const perms = getPerms(authId);
+        if (!perms.allowToto) {
+            alert('⛔ [이용 권한 제한]\n\n토토/프로토 AI 추천 프로그램 이용 권한이 부여되지 않은 계정입니다.\n관리자에게 이용 권한을 요청해주세요.');
+            return;
+        }
     }
+
+    _switchPage('totoPage');
+    try {
+        if (typeof renderTotoDashboard === 'function') {
+            renderTotoDashboard();
+        } else if (typeof window.renderTotoDashboard === 'function') {
+            window.renderTotoDashboard();
+        }
+    } catch(e) {
+        console.warn('[Toto Safe Load Exception]', e);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 window.showLotto = function() {
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
+    if (authId) {
+        const getPerms = typeof getUserPermissions === 'function' ? getUserPermissions : (window.getUserPermissions || (() => ({ allowLotto: true })));
+        const perms = getPerms(authId);
+        if (!perms.allowLotto) {
+            alert('⛔ [이용 권한 제한]\n\n로또 6/45 프로그램 이용 권한이 부여되지 않은 계정입니다.\n관리자에게 이용 권한을 요청해주세요.');
+            return;
+        }
+    }
+
     _switchPage('appContainer');
     try {
         if (typeof initLottoService === 'function' && !window.__lottoInitialized) {

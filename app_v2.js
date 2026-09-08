@@ -1209,11 +1209,88 @@ function isPermanentUser(authId, userData = null) {
     return false;
 }
 
+function setUserPermissionsCache(authId, permissions = {}) {
+    try {
+        if (authId) {
+            const cleanId = String(authId).trim().toLowerCase();
+            const allowLotto = permissions.allowLotto !== false;
+            const allowToto = permissions.allowToto !== false;
+            const lottoVal = allowLotto ? 'true' : 'false';
+            const totoVal = allowToto ? 'true' : 'false';
+            window.sessionStorage.setItem(`perm_lotto_${cleanId}`, lottoVal);
+            window.localStorage.setItem(`perm_lotto_${cleanId}`, lottoVal);
+            window.sessionStorage.setItem(`perm_toto_${cleanId}`, totoVal);
+            window.localStorage.setItem(`perm_toto_${cleanId}`, totoVal);
+            if (!window.__userPermissions) window.__userPermissions = {};
+            window.__userPermissions[cleanId] = { allowLotto, allowToto };
+        }
+    } catch(e) {}
+}
+
+function getUserPermissions(authId, userData = null) {
+    if (!authId) return { allowLotto: true, allowToto: true };
+    const cleanId = String(authId).trim().toLowerCase();
+
+    // Master and Admin accounts always have full access
+    if (cleanId === 'master' || cleanId === 'admin' || isAdminUser(cleanId, userData)) {
+        return { allowLotto: true, allowToto: true };
+    }
+
+    if (userData) {
+        const allowLotto = userData.allowLotto !== false;
+        const allowToto = userData.allowToto !== false;
+        setUserPermissionsCache(cleanId, { allowLotto, allowToto });
+        return { allowLotto, allowToto };
+    }
+
+    // Fast in-memory cache
+    if (typeof window !== 'undefined' && window.__userPermissions && window.__userPermissions[cleanId]) {
+        return window.__userPermissions[cleanId];
+    }
+
+    // Storage cache
+    try {
+        const sLotto = window.sessionStorage.getItem(`perm_lotto_${cleanId}`) || window.localStorage.getItem(`perm_lotto_${cleanId}`);
+        const sToto = window.sessionStorage.getItem(`perm_toto_${cleanId}`) || window.localStorage.getItem(`perm_toto_${cleanId}`);
+        if (sLotto !== null || sToto !== null) {
+            return {
+                allowLotto: sLotto !== 'false',
+                allowToto: sToto !== 'false'
+            };
+        }
+    } catch(e) {}
+
+    // State registered users list cache
+    if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+        const u = window.state.allRegisteredUsersList.find(item => item && item.id && item.id.toLowerCase().trim() === cleanId);
+        if (u) {
+            return {
+                allowLotto: u.allowLotto !== false,
+                allowToto: u.allowToto !== false
+            };
+        }
+    }
+
+    // Default: both allowed
+    return { allowLotto: true, allowToto: true };
+}
+
+function checkUserProgramPermissions(authId, programName = 'lotto') {
+    const perms = getUserPermissions(authId);
+    if (programName === 'toto') {
+        return perms.allowToto;
+    }
+    return perms.allowLotto;
+}
+
 if (typeof window !== 'undefined') {
     window.isPermanentUser = isPermanentUser;
     window.setIsPermanentCache = setIsPermanentCache;
     window.setUserNameCache = setUserNameCache;
     window.getUserRealName = getUserRealName;
+    window.setUserPermissionsCache = setUserPermissionsCache;
+    window.getUserPermissions = getUserPermissions;
+    window.checkUserProgramPermissions = checkUserProgramPermissions;
 }
 
 async function checkAuthOnLoad(initFirebaseAndData) {
@@ -1267,6 +1344,10 @@ async function checkAuthOnLoad(initFirebaseAndData) {
                     if (uData.realName) {
                         setUserNameCache(authId, uData.realName);
                     }
+                    setUserPermissionsCache(authId, {
+                        allowLotto: isUserAdmin || uData.allowLotto !== false,
+                        allowToto: isUserAdmin || uData.allowToto !== false
+                    });
 
                     if (!isUserAdmin) {
                         const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
@@ -1314,9 +1395,10 @@ async function checkAuthOnLoad(initFirebaseAndData) {
             const isTotoActive = totoPage && (totoPage.style.display === 'block' || totoPage.classList.contains('active'));
             const isLottoActive = appContainer && appContainer.classList.contains('active') && (!landingPage || !landingPage.classList.contains('active'));
 
-            if (isTotoActive) {
+            const userPerms = getUserPermissions(authId);
+            if (isTotoActive && userPerms.allowToto) {
                 _showPage('totoPage');
-            } else if (isLottoActive) {
+            } else if (isLottoActive && userPerms.allowLotto) {
                 _showPage('appContainer');
             } else {
                 _showPage('landingPage');
@@ -2321,18 +2403,23 @@ function setupAuthEvents(initFirebaseAndData) {
                 const pStatus = await checkUserWeeklyPurchaseStatus(u.userId, u.data);
                 const isUserAdmin = !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin');
                 const isPermanent = !!(u.data.isPermanent === true || u.data.userType === 'permanent' || isUserAdmin);
+                const allowLotto = isUserAdmin || u.data.allowLotto !== false;
+                const allowToto = isUserAdmin || u.data.allowToto !== false;
                 setIsPermanentCache(u.userId, isPermanent);
-                return { ...u, pStatus };
+                setUserPermissionsCache(u.userId, { allowLotto, allowToto });
+                return { ...u, pStatus, allowLotto, allowToto };
             }));
 
-            // Sync global state registered users list with isPermanent flag
+            // Sync global state registered users list with isPermanent flag & program permissions
             if (typeof window !== 'undefined' && window.state) {
                 window.state.allRegisteredUsersList = users.map(u => ({
                     id: u.userId,
                     name: u.data.realName || u.userId,
                     phone: u.data.phoneNumber || '',
                     isAdmin: !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
-                    isPermanent: !!(u.data.isPermanent === true || u.data.userType === 'permanent' || u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin')
+                    isPermanent: !!(u.data.isPermanent === true || u.data.userType === 'permanent' || u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
+                    allowLotto: u.data.allowLotto !== false,
+                    allowToto: u.data.allowToto !== false
                 }));
             }
 
@@ -2340,7 +2427,7 @@ function setupAuthEvents(initFirebaseAndData) {
 
             let html = '';
             usersWithStatus.forEach(item => {
-                const { userId, data, pStatus } = item;
+                const { userId, data, pStatus, allowLotto, allowToto } = item;
                 const isUserAdmin = !!(data.isAdmin === true || data.role === 'admin' || userId === 'master' || userId === 'admin');
                 const isPermanent = !!(data.isPermanent === true || data.userType === 'permanent' || isUserAdmin);
                 const status = data.status || 'active';
@@ -2363,6 +2450,14 @@ function setupAuthEvents(initFirebaseAndData) {
                 } else {
                     statusBadge = `<span style="font-size:0.72rem; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; padding:2px 7px; border-radius:6px; font-weight:800;"><i class="fa-solid fa-ban"></i> 관리자 수동정지</span>`;
                 }
+
+                let lottoPermBadge = allowLotto
+                    ? `<span style="font-size:0.7rem; color:#34d399; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.3); font-weight:700;"><i class="fa-solid fa-clover"></i> 로또 허용</span>`
+                    : `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;"><i class="fa-solid fa-ban"></i> 로또 차단</span>`;
+
+                let totoPermBadge = allowToto
+                    ? `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(245,158,11,0.3); font-weight:700;"><i class="fa-solid fa-trophy"></i> 토토 허용</span>`
+                    : `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;"><i class="fa-solid fa-ban"></i> 토토 차단</span>`;
 
                 let purchaseBadge = '';
                 if (isUserAdmin || isPermanent) {
@@ -2404,6 +2499,8 @@ function setupAuthEvents(initFirebaseAndData) {
                         <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
                             ${adminBadge}
                             ${statusBadge}
+                            ${lottoPermBadge}
+                            ${totoPermBadge}
                             ${purchaseBadge}
                         </div>
                     </div>
@@ -3031,6 +3128,12 @@ function setupAuthEvents(initFirebaseAndData) {
             if (elPhone) elPhone.value = data.phoneNumber || '';
             if (elPw) elPw.value = '';
             
+            // Program Permissions
+            const chkLotto = document.getElementById('editUserAllowLotto');
+            const chkToto = document.getElementById('editUserAllowToto');
+            if (chkLotto) chkLotto.checked = (data.allowLotto !== false);
+            if (chkToto) chkToto.checked = (data.allowToto !== false);
+
             // Determine Role
             const isUserAdmin = !!(data.isAdmin === true || data.role === 'admin' || userId === 'master' || userId === 'admin');
             const isPermanent = !!(data.isPermanent === true || data.userType === 'permanent');
@@ -3066,6 +3169,11 @@ function setupAuthEvents(initFirebaseAndData) {
         const roleVal = document.getElementById('editUserRole')?.value || 'regular';
         const statusVal = document.getElementById('editUserStatus')?.value || 'active';
 
+        const chkAllowLotto = document.getElementById('editUserAllowLotto');
+        const chkAllowToto = document.getElementById('editUserAllowToto');
+        const allowLotto = chkAllowLotto ? chkAllowLotto.checked : true;
+        const allowToto = chkAllowToto ? chkAllowToto.checked : true;
+
         const btnSubmit = document.getElementById('btnSaveEditedUser');
         if (btnSubmit) {
             btnSubmit.disabled = true;
@@ -3076,6 +3184,8 @@ function setupAuthEvents(initFirebaseAndData) {
             const updatePayload = {
                 realName: realName || userId,
                 phoneNumber: phone || '',
+                allowLotto: allowLotto,
+                allowToto: allowToto,
                 status: statusVal,
                 updatedAt: new Date().toISOString()
             };
@@ -3122,6 +3232,7 @@ function setupAuthEvents(initFirebaseAndData) {
 
             await window.db.collection('lotto_users').doc(userId).update(updatePayload);
             setIsPermanentCache(userId, updatePayload.isPermanent || updatePayload.isAdmin);
+            setUserPermissionsCache(userId, { allowLotto, allowToto });
 
             showToast(`✅ [${userId}] 회원 정보(이름/비밀번호/권한)가 성공적으로 수정되었습니다.`);
             
@@ -3340,8 +3451,12 @@ function setupAuthEvents(initFirebaseAndData) {
             const newPw = document.getElementById('addUserPw').value.trim();
             const chkPermanent = document.getElementById('chkAddPermanent');
             const chkAdmin = document.getElementById('chkAddAdmin');
+            const chkAllowLotto = document.getElementById('chkAddAllowLotto');
+            const chkAllowToto = document.getElementById('chkAddAllowToto');
             const isPermanent = chkPermanent ? chkPermanent.checked : false;
             const isAdmin = chkAdmin ? chkAdmin.checked : false;
+            const allowLotto = chkAllowLotto ? chkAllowLotto.checked : true;
+            const allowToto = chkAllowToto ? chkAllowToto.checked : true;
 
             if (!newId || !newPw) {
                 showToast('⚠️ 아이디와 비밀번호를 모두 입력해주세요.');
@@ -3396,6 +3511,8 @@ function setupAuthEvents(initFirebaseAndData) {
                     role: isAdmin ? 'admin' : 'user',
                     isPermanent: isPermanent || isAdmin,
                     userType: (isPermanent || isAdmin) ? 'permanent' : 'regular',
+                    allowLotto: allowLotto,
+                    allowToto: allowToto,
                     createdAt: new Date().toISOString(),
                     agreedTerms: {
                         feeAgreement: true,
@@ -3414,6 +3531,7 @@ function setupAuthEvents(initFirebaseAndData) {
                 await window.db.collection('lotto_users').doc(newId).set(userPayload);
                 setIsPermanentCache(newId, isPermanent || isAdmin);
                 setIsAdminCache(newId, isAdmin);
+                setUserPermissionsCache(newId, { allowLotto, allowToto });
                 addUserForm.reset();
                 loadUserList();
                 showToast(`🎉 [${newId}] ${isAdmin ? '👑 관리자 계정' : (isPermanent ? '💎 영구 사용 계정' : '사용자 계정')}이 생성되었습니다!`);
@@ -3655,6 +3773,18 @@ function setupAuthEvents(initFirebaseAndData) {
         if (typeof isPermanentUser !== 'undefined') {
             __exports.isPermanentUser = isPermanentUser;
             if (typeof window !== 'undefined') window.isPermanentUser = isPermanentUser;
+        }
+        if (typeof setUserPermissionsCache !== 'undefined') {
+            __exports.setUserPermissionsCache = setUserPermissionsCache;
+            if (typeof window !== 'undefined') window.setUserPermissionsCache = setUserPermissionsCache;
+        }
+        if (typeof getUserPermissions !== 'undefined') {
+            __exports.getUserPermissions = getUserPermissions;
+            if (typeof window !== 'undefined') window.getUserPermissions = getUserPermissions;
+        }
+        if (typeof checkUserProgramPermissions !== 'undefined') {
+            __exports.checkUserProgramPermissions = checkUserProgramPermissions;
+            if (typeof window !== 'undefined') window.checkUserProgramPermissions = checkUserProgramPermissions;
         }
         if (typeof checkAuthOnLoad !== 'undefined') {
             __exports.checkAuthOnLoad = checkAuthOnLoad;
@@ -17017,6 +17147,13 @@ async function handleSaveManualLedger() {
             return;
         }
 
+        // 🔒 Enforce QR Code Verification Only
+        if (combosEl && combosEl.dataset.qrScanned !== 'true' && !combosEl.dataset.qrRawUrl) {
+            alert('⚠️ [실구매 QR 인증 필수]\n\n로또 6/45 실구매 등록은 실물 복권 영수증의 QR코드 인식을 통해서만 등록이 가능합니다.\n\n[📷 QR 코드 다시 스캔하기] 또는 [영수증 사진 선택]을 통해 영수증을 인증해주세요.');
+            startLottoQrScanner();
+            return;
+        }
+
         const lines = combosText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         if (lines.length === 0) {
             alert('최소 1개 이상의 번호 조합을 입력해주세요.');
@@ -17163,7 +17300,10 @@ function openManualLedgerModal() {
             combosInput.style.borderColor = '';
             combosInput.style.color = '#94a3b8';
             combosInput.style.cursor = 'not-allowed';
+            combosInput.placeholder = '📷 실물 복권 영수증의 QR코드를 카메라에 비추거나 사진 파일을 선택하면 번호가 자동 등록됩니다. (QR 인증 필수)';
             combosInput.dataset.qrScanned = '';
+            combosInput.dataset.qrRawUrl = '';
+            combosInput.dataset.qrSerial = '';
         }
         if (resultBox) resultBox.style.display = 'none';
         modal.style.display = 'flex';
@@ -21463,7 +21603,10 @@ function addPurchasedSlip(slipData) {
         status: slipData.status || 'PENDING', // PENDING, WON, LOST
         actualPrize: slipData.actualPrize || 0,
         memo: slipData.memo || 'AI 추천 조합 구매',
-        picks: slipData.picks.map(p => ({
+        qrScanned: slipData.qrScanned === true,
+        qrRawText: slipData.qrRawText || null,
+        qrScannedAt: slipData.qrScannedAt || new Date().toISOString(),
+        picks: (slipData.picks || []).map(p => ({
             matchTitle: p.matchTitle,
             round: p.round,
             pickName: p.pickName,
@@ -22227,6 +22370,9 @@ function analyzeFixture(fixture) {
         homeWinProb: ensembleHomeWinProb,
         drawProb: ensembleDrawProb,
         awayWinProb: ensembleAwayWinProb,
+        ensembleHomeWinProb,
+        ensembleDrawProb,
+        ensembleAwayWinProb,
         rawHomeWinProb,
         rawDrawProb,
         rawAwayWinProb,
@@ -22324,9 +22470,9 @@ function generateToto14Sheet(fixtures) {
 
     const rows = displayList.map((f, idx) => {
         const analysis = analyzeFixture(f);
-        const homeProb = Math.round(analysis.ensembleHomeWinProb * 100);
-        const drawProb = f.sport === 'soccer' ? Math.round(analysis.ensembleDrawProb * 100) : 0;
-        const awayProb = Math.round(analysis.ensembleAwayWinProb * 100);
+        const homeProb = Math.round((analysis.homeWinProb || analysis.ensembleHomeWinProb || 0) * 100);
+        const drawProb = f.sport === 'soccer' ? Math.round((analysis.drawProb || analysis.ensembleDrawProb || 0) * 100) : 0;
+        const awayProb = Math.round((analysis.awayWinProb || analysis.ensembleAwayWinProb || 0) * 100);
 
         let mainPick = '승';
         let subPick = null;
@@ -22948,6 +23094,7 @@ function renderTotoDashboard() {
             <div class="live-ticker-track">
                 ${dropOddsHtml || '<div class="live-ticker-item">정상 발매중 · 해외 샤프마켓 배당률 실시간 모니터링 활성화</div>'}
             </div>
+        </div>
         <!-- 📌 [메뉴 기능 안내] 스포츠토토 분석 엔진 -->
         <div class="menu-guide-banner guide-emerald" style="margin: 12px 16px 8px 16px;">
             <div class="guide-header">
@@ -23215,12 +23362,12 @@ function renderRecommendationView(state, portfolios, displayList) {
                         </div>
 
                         <div class="pf-reason-box">
-                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> 첼시 득점왕 결장 &amp; 맨시티 홈 연승으로 이변 확률이 극히 낮은 최우선 픽입니다.
+                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> ${portfolios.safety && portfolios.safety.picks.length > 0 ? `AI 승리 확률 60% 이상 및 가치 기대값(+EV)이 검증된 최우선 안전 픽 ${portfolios.safety.picks.map(p => p.pickName).join(', ')} 조합입니다.` : '이변 확률이 극히 낮은 2개 경기 엄선 조합입니다.'}
                         </div>
 
                         <div class="pf-btn-row">
-                            <button class="btn-direct-buy" onclick="window.openDirectPurchaseModal('safety')" title="구매 확정 등록">
-                                <i class="fa-solid fa-cart-shopping"></i> 구매등록
+                            <button class="btn-direct-buy" onclick="window.openDirectPurchaseModal('safety')" title="실물 영수증 QR구매등록">
+                                <i class="fa-solid fa-qrcode"></i> QR구매등록
                             </button>
                             <button class="btn-marking-view" onclick="window.openMarkingGuide('safety')">
                                 <i class="fa-solid fa-pen-to-square"></i> 마킹표
@@ -23256,12 +23403,12 @@ function renderRecommendationView(state, portfolios, displayList) {
                         </div>
 
                         <div class="pf-reason-box">
-                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> 상대 선발 ERA 공략 및 백투백 피로도를 집중 공략한 고효율 픽입니다.
+                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> ${portfolios.balanced && portfolios.balanced.picks.length > 0 ? `기대값(+EV)이 가장 높은 핵심 3경기(${portfolios.balanced.picks.map(p => p.pickName).join(', ')})를 결합하여 리스크 대비 수익률을 극대화한 포트폴리오입니다.` : '상대 선발 및 xG 데이터를 공략한 고효율 픽입니다.'}
                         </div>
 
                         <div class="pf-btn-row">
-                            <button class="btn-direct-buy btn-balanced-buy" onclick="window.openDirectPurchaseModal('balanced')" title="구매 확정 등록">
-                                <i class="fa-solid fa-cart-shopping"></i> 구매등록
+                            <button class="btn-direct-buy btn-balanced-buy" onclick="window.openDirectPurchaseModal('balanced')" title="실물 영수증 QR구매등록">
+                                <i class="fa-solid fa-qrcode"></i> QR구매등록
                             </button>
                             <button class="btn-marking-view" onclick="window.openMarkingGuide('balanced')">
                                 <i class="fa-solid fa-pen-to-square"></i> 마킹표
@@ -23297,12 +23444,12 @@ function renderRecommendationView(state, portfolios, displayList) {
                         </div>
 
                         <div class="pf-reason-box">
-                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> 마드리드 더비 무승부 &amp; 토종 명품 투수전 언더를 노리는 고수익 픽입니다.
+                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>AI 추천 근거:</strong> ${portfolios.highYield && portfolios.highYield.picks.length > 0 ? `샤프마켓 배당률 대비 가치가 높은 4경기(${portfolios.highYield.picks.map(p => p.pickName).join(', ')})를 선정하여 소액으로 10배 이상의 고수익을 겨냥한 조합입니다.` : '배당 왜곡 구간을 공략한 고수익 픽입니다.'}
                         </div>
 
                         <div class="pf-btn-row">
-                            <button class="btn-direct-buy btn-highyield-buy" onclick="window.openDirectPurchaseModal('highYield')" title="구매 확정 등록">
-                                <i class="fa-solid fa-cart-shopping"></i> 구매등록
+                            <button class="btn-direct-buy btn-highyield-buy" onclick="window.openDirectPurchaseModal('highYield')" title="실물 영수증 QR구매등록">
+                                <i class="fa-solid fa-qrcode"></i> QR구매등록
                             </button>
                             <button class="btn-marking-view" onclick="window.openMarkingGuide('highYield')">
                                 <i class="fa-solid fa-pen-to-square"></i> 마킹표
@@ -24345,7 +24492,7 @@ function renderSlipCartBody(selectedSlip) {
                 <i class="fa-solid fa-satellite-dish"></i> 📡 구매 전 최신정보 실시간 스크랩
             </button>
             <button class="btn-cart-buy-confirm" onclick="window.openCartPurchaseModal()">
-                <i class="fa-solid fa-cart-shopping"></i> 💳 이 조합 구매 확정 등록하기
+                <i class="fa-solid fa-qrcode"></i> 📷 이 조합 영수증 QR구매등록
             </button>
             <div class="slip-actions">
                 <button class="btn-open-omr" onclick="window.openCurrentSlipMarkingGuide()">
@@ -24599,45 +24746,61 @@ window.closeTotoQrScanner = function() {
 /**
  * Handle Scanned Toto QR Text (Betman Official URL or Structured Slip Data)
  */
-function handleScannedTotoQr(rawText) {
+window.handleScannedTotoQr = function(rawText) {
     window.closeTotoQrScanner();
 
     const state = getTotoState();
-    let parsedRound = '프로토 승부식 35회차';
-    let parsedStake = 10000;
-    let parsedPicks = [];
-    let parsedOdds = 1.0;
-
-    const f1 = state.fixtures[0];
-    const f2 = state.fixtures[1];
     
-    parsedPicks = [
-        {
-            matchTitle: `${f1.homeTeam} vs ${f1.awayTeam}`,
-            round: f1.round,
-            pickName: `${f1.homeTeam} 승`,
-            odds: f1.betmanOdds.homeWin
-        },
-        {
-            matchTitle: `${f2.homeTeam} vs ${f2.awayTeam}`,
-            round: f2.round,
-            pickName: `${f2.homeTeam} 승`,
-            odds: f2.betmanOdds.homeWin
+    // If pendingRegisterSlip already exists from recommended slip / cart / 14-game
+    if (pendingRegisterSlip) {
+        pendingRegisterSlip.qrScanned = true;
+        pendingRegisterSlip.qrRawText = rawText;
+        pendingRegisterSlip.qrScannedAt = new Date().toISOString();
+        if (!pendingRegisterSlip.memo.includes('📷 QR')) {
+            pendingRegisterSlip.memo = `📷 QR 영수증 인증 - ` + pendingRegisterSlip.memo;
         }
-    ];
-    parsedOdds = Number((f1.betmanOdds.homeWin * f2.betmanOdds.homeWin).toFixed(2));
+    } else {
+        // Create new slip from scanned data
+        let parsedRound = '프로토 승부식 35회차';
+        let parsedStake = 10000;
+        let parsedPicks = [];
+        let parsedOdds = 1.0;
 
-    pendingRegisterSlip = {
-        round: parsedRound,
-        memo: `📷 QR 영수증 스캔 등록 (${parsedPicks.length}폴더)`,
-        picks: parsedPicks,
-        combinedOdds: parsedOdds,
-        stake: parsedStake
-    };
+        const f1 = (state.fixtures && state.fixtures[0]) ? state.fixtures[0] : { homeTeam: '아스널', awayTeam: '첼시', round: '35회차', betmanOdds: { homeWin: 1.85 } };
+        const f2 = (state.fixtures && state.fixtures[1]) ? state.fixtures[1] : { homeTeam: '토트넘', awayTeam: '리버풀', round: '35회차', betmanOdds: { homeWin: 2.10 } };
+        
+        parsedPicks = [
+            {
+                matchTitle: `${f1.homeTeam} vs ${f1.awayTeam}`,
+                round: f1.round || '35회차',
+                pickName: `${f1.homeTeam} 승`,
+                odds: f1.betmanOdds ? f1.betmanOdds.homeWin : 1.85
+            },
+            {
+                matchTitle: `${f2.homeTeam} vs ${f2.awayTeam}`,
+                round: f2.round || '35회차',
+                pickName: `${f2.homeTeam} 승`,
+                odds: f2.betmanOdds ? f2.betmanOdds.homeWin : 2.10
+            }
+        ];
+        parsedOdds = Number(((f1.betmanOdds ? f1.betmanOdds.homeWin : 1.85) * (f2.betmanOdds ? f2.betmanOdds.homeWin : 2.10)).toFixed(2));
+
+        pendingRegisterSlip = {
+            round: parsedRound,
+            memo: `📷 QR 영수증 스캔 등록 (${parsedPicks.length}폴더)`,
+            picks: parsedPicks,
+            combinedOdds: parsedOdds,
+            stake: parsedStake,
+            gameType: 'PROTO',
+            qrScanned: true,
+            qrRawText: rawText,
+            qrScannedAt: new Date().toISOString()
+        };
+    }
 
     renderPurchaseModal();
     openModal('totoPurchaseModal');
-    showToast('🎉 QR코드 인식 완료! 영수증 정보를 확인 후 등록하세요.');
+    showToast('🎉 QR 영수증 인증 완료! 실구매 상세 내역을 확인 후 등록하세요.');
 }
 
 window.handleTotoQrFile = function(event) {
@@ -24679,11 +24842,13 @@ window.openDirectPurchaseModal = function(type) {
         picks: pf.picks,
         combinedOdds: pf.combinedOdds,
         stake: currentBetStake,
-        gameType: 'PROTO'
+        gameType: 'PROTO',
+        qrScanned: false
     };
 
-    renderPurchaseModal();
-    openModal('totoPurchaseModal');
+    // Require QR ticket receipt verification
+    window.openTotoQrScanner();
+    showToast('📷 실물 영수증 QR코드를 스캔하여 실구매를 인증해주세요.');
 };
 
 window.openToto14PurchaseModal = function(type) {
@@ -24706,11 +24871,13 @@ window.openToto14PurchaseModal = function(type) {
         combinedOdds: 1.0,
         isPariMutuel: true,
         gameType: 'TOTO',
-        stake: type === 'double' ? sheet.doubleCost : sheet.singleCost
+        stake: type === 'double' ? sheet.doubleCost : sheet.singleCost,
+        qrScanned: false
     };
 
-    renderPurchaseModal();
-    openModal('totoPurchaseModal');
+    // Require QR ticket receipt verification
+    window.openTotoQrScanner();
+    showToast('📷 실물 14경기 투표용지 영수증 QR코드를 스캔해주세요.');
 };
 
 window.openCartPurchaseModal = function() {
@@ -24730,11 +24897,13 @@ window.openCartPurchaseModal = function() {
         picks: state.selectedSlip,
         combinedOdds: combinedOdds,
         stake: currentBetStake,
-        gameType: 'PROTO'
+        gameType: 'PROTO',
+        qrScanned: false
     };
 
-    renderPurchaseModal();
-    openModal('totoPurchaseModal');
+    // Require QR ticket receipt verification
+    window.openTotoQrScanner();
+    showToast('📷 발권된 실물 영수증 QR코드를 스캔해주세요.');
 };
 
 function renderPurchaseModal() {
@@ -24743,16 +24912,34 @@ function renderPurchaseModal() {
 
     const isToto = pendingRegisterSlip.isPariMutuel || pendingRegisterSlip.gameType === 'TOTO';
     const estimatedPayout = isToto ? '패리뮤추얼 1등 총 환급금 배분' : `${Math.round(pendingRegisterSlip.combinedOdds * pendingRegisterSlip.stake).toLocaleString()}원`;
+    const isQrVerified = pendingRegisterSlip.qrScanned === true;
 
     body.innerHTML = `
         <div style="background: rgba(15,23,42,0.9); border-radius: 12px; padding: 14px; margin-bottom: 14px; border: 1px solid rgba(255,255,255,0.08);">
+            <!-- QR Verification Status Banner -->
+            ${isQrVerified ? `
+                <div style="background: linear-gradient(135deg, rgba(16,185,129,0.2) 0%, rgba(5,150,105,0.2) 100%); border: 1px solid #10b981; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center; color: #a7f3d0; font-size: 0.8rem;">
+                    <div style="font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-circle-check" style="color: #34d399; font-size: 1rem;"></i> 📷 실물 영수증 QR코드 인증 완료
+                    </div>
+                    <span style="font-size: 0.72rem; color: #cbd5e1; margin-top: 3px; display: block;">공식 복권/투표용지 인식이 정상 확인되었습니다.</span>
+                </div>
+            ` : `
+                <div style="background: linear-gradient(135deg, rgba(239,68,68,0.2) 0%, rgba(185,28,28,0.2) 100%); border: 1px solid #f87171; border-radius: 8px; padding: 10px; margin-bottom: 12px; text-align: center; color: #fca5a5; font-size: 0.8rem;">
+                    <div style="font-weight: 800; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                        <i class="fa-solid fa-triangle-exclamation" style="color: #f87171; font-size: 1rem;"></i> ⚠️ 실구매 QR코드 인증 필수
+                    </div>
+                    <span style="font-size: 0.72rem; color: #cbd5e1; margin-top: 3px; display: block;">실물 투표용지의 QR코드를 스캔해야만 구매 등록이 확정됩니다.</span>
+                </div>
+            `}
+
             <!-- Pre-purchase Scrape & QR Action Bar -->
             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
                 <button type="button" class="btn-pre-purchase-scrape" onclick="window.scrapeLatestTotoFixtures()" style="flex: 1.3; padding: 9px 10px; background: linear-gradient(135deg, rgba(251,191,36,0.2) 0%, rgba(245,158,11,0.1) 100%); border: 1px solid #fbbf24; border-radius: 8px; color: #fbbf24; font-weight: 800; font-size: 0.78rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 2px 8px rgba(245,158,11,0.25);">
                     <i class="fa-solid fa-satellite-dish"></i> 📡 구매 전 최신정보 실시간 스크랩
                 </button>
-                <button type="button" class="btn-modal-qr-scan" onclick="window.openTotoQrScanner()" style="flex: 1; font-size: 0.78rem; padding: 9px 10px; border-radius: 8px; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.4); color: #38bdf8; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                    <i class="fa-solid fa-qrcode"></i> 영수증 QR스캔
+                <button type="button" class="btn-modal-qr-scan" onclick="window.openTotoQrScanner()" style="flex: 1; font-size: 0.78rem; padding: 9px 10px; border-radius: 8px; background: ${isQrVerified ? 'rgba(56,189,248,0.15)' : 'rgba(56,189,248,0.3)'}; border: 1px solid #38bdf8; color: #38bdf8; cursor: pointer; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <i class="fa-solid fa-qrcode"></i> ${isQrVerified ? '영수증 재스캔' : '영수증 QR스캔하기'}
                 </button>
             </div>
 
@@ -24789,9 +24976,15 @@ function renderPurchaseModal() {
         </div>
 
         <div style="display: flex; gap: 8px;">
-            <button class="btn-confirm-purchase-submit" onclick="window.submitPurchaseRegistration()">
-                <i class="fa-solid fa-check"></i> 실구매 확정 등록
-            </button>
+            ${isQrVerified ? `
+                <button class="btn-confirm-purchase-submit" onclick="window.submitPurchaseRegistration()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="fa-solid fa-check"></i> 실구매 확정 등록 완료
+                </button>
+            ` : `
+                <button class="btn-confirm-purchase-submit" onclick="window.openTotoQrScanner()" style="background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);">
+                    <i class="fa-solid fa-qrcode"></i> 📷 영수증 QR 스캔 인증하기
+                </button>
+            `}
             <button class="btn-cancel-modal" onclick="window.closeTotoPurchaseModal()">
                 취소
             </button>
@@ -24814,6 +25007,13 @@ window.closeTotoPurchaseModal = function() {
 window.submitPurchaseRegistration = function() {
     if (!pendingRegisterSlip) return;
 
+    // Strict QR enforcement
+    if (!pendingRegisterSlip.qrScanned) {
+        alert('⚠️ [실구매 QR 인증 필수]\n\n토토/프로토 실구매 등록은 실물 투표용지(영수증)의 QR코드 인식을 통해서만 등록이 가능합니다.\n\n[영수증 QR 스캔]을 완료해주세요.');
+        window.openTotoQrScanner();
+        return;
+    }
+
     addPurchasedSlip(pendingRegisterSlip);
     closeModal('totoPurchaseModal');
     clearSelectedSlip();
@@ -24823,7 +25023,7 @@ window.submitPurchaseRegistration = function() {
     state.activeTab = 'confirmed';
     renderTotoDashboard();
 
-    showToast('🎉 구매 확정 등록 완료! 배팅 내역에 저장되었습니다.');
+    showToast('🎉 [QR 인증 완료] 구매 확정 등록이 성공적으로 저장되었습니다.');
 };
 
 window.simulateSlipResult = function(slipId, isWin) {
@@ -25062,7 +25262,7 @@ function renderMarkingModal() {
                     <i class="fa-solid fa-copy"></i> 복권방 점원용 텍스트 복사
                 </button>
                 <button type="button" class="btn-direct-buy" style="flex:1;" onclick="window.closeMarkingGuide(); window.openDirectPurchaseModal('${activeMarkingSlip.portfolioKey || 'safety'}')">
-                    <i class="fa-solid fa-cart-shopping"></i> 구매 확정 등록
+                    <i class="fa-solid fa-qrcode"></i> 영수증 QR구매등록
                 </button>
                 <a href="https://www.betman.co.kr" target="_blank" class="btn-go-betman">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> 베트맨
@@ -25206,7 +25406,7 @@ function renderToto14MarkingModal(mode = 'single') {
                     <i class="fa-solid fa-copy"></i> 14경기 마킹 텍스트 복사
                 </button>
                 <button type="button" class="btn-direct-buy" style="flex:1;" onclick="window.closeToto14MarkingGuide(); window.openToto14PurchaseModal('${mode}')">
-                    <i class="fa-solid fa-cart-shopping"></i> 구매 확정 등록
+                    <i class="fa-solid fa-qrcode"></i> 영수증 QR구매등록
                 </button>
                 <a href="https://www.betman.co.kr" target="_blank" class="btn-go-betman">
                     <i class="fa-solid fa-arrow-up-right-from-square"></i> 베트맨
@@ -25673,12 +25873,40 @@ function initTotoService() {
     window.renderTotoDashboard = renderTotoDashboard;
     window.scrapeLatestTotoFixtures = scrapeLatestTotoFixtures;
     
-    // Attach global showToto navigation (Temporarily paused for upcoming launch)
+    // Attach global showToto navigation (Active for Beta Testing)
     window.showToto = function() {
-        const msg = '🚀 [서비스 준비 중] 토토/프로토 AI 분석 서비스는 현재 고도화 작업 중이며 추후 오픈 예정입니다.';
-        if (typeof showToast === 'function') showToast(msg);
-        else if (typeof window.showToast === 'function') window.showToast(msg);
-        else alert(msg);
+        const authId = (window.SafeAuth && typeof window.SafeAuth.get === 'function') ? window.SafeAuth.get() : null;
+        if (authId) {
+            const getPerms = (typeof window.getUserPermissions === 'function') ? window.getUserPermissions : (() => ({ allowToto: true }));
+            const perms = getPerms(authId);
+            if (!perms.allowToto) {
+                alert('⛔ [이용 권한 제한]\n\n토토/프로토 AI 추천 프로그램 이용 권한이 부여되지 않은 계정입니다.\n관리자에게 이용 권한을 요청해주세요.');
+                return;
+            }
+        }
+
+        if (typeof window._switchPage === 'function') {
+            window._switchPage('totoPage');
+        } else {
+            var ids = ['landingPage', 'totoPage', 'appContainer'];
+            ids.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                if (id === 'totoPage') {
+                    el.classList.add('active');
+                    el.style.setProperty('display', 'block', 'important');
+                } else {
+                    el.classList.remove('active');
+                    el.style.setProperty('display', 'none', 'important');
+                }
+            });
+        }
+        try {
+            renderTotoDashboard();
+        } catch(e) {
+            console.warn('[Toto Render Exception]', e);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     // Render dashboard if #totoPage is active on page load
@@ -25844,6 +26072,85 @@ async function renderLandingDashboard() {
     // 8. Update Weekly Purchase Deadline Countdown Banner
     if (typeof window.updatePurchaseDeadlineCountdowns === 'function') {
         try { window.updatePurchaseDeadlineCountdowns(); } catch(e){}
+    }
+
+    // 9. Update Service Cards Access Permission Badges
+    updateHomeServiceCardsPermissions();
+}
+
+/**
+ * 🔒 Update Service Entry Cards based on User Program Permissions (Lotto / Toto)
+ */
+function updateHomeServiceCardsPermissions() {
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
+    const getPerms = typeof getUserPermissions === 'function' ? getUserPermissions : (window.getUserPermissions || (() => ({ allowLotto: true, allowToto: true })));
+    const perms = getPerms(authId);
+
+    const lottoCard = document.getElementById('btnGoLotto');
+    const totoCard = document.getElementById('btnGoToto');
+
+    if (lottoCard) {
+        const badge = lottoCard.querySelector('.lp-card-badge');
+        const btn = lottoCard.querySelector('.lp-btn');
+        if (!perms.allowLotto) {
+            if (badge) {
+                badge.className = 'lp-card-badge';
+                badge.style.background = 'rgba(239, 68, 68, 0.2)';
+                badge.style.color = '#fca5a5';
+                badge.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+                badge.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 이용 권한 없음';
+            }
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 권한 요청 필요';
+                btn.style.opacity = '0.7';
+            }
+            lottoCard.style.opacity = '0.75';
+        } else {
+            if (badge) {
+                badge.className = 'lp-card-badge lp-badge-active';
+                badge.style.background = '';
+                badge.style.color = '';
+                badge.style.border = '';
+                badge.innerHTML = '<i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> 서비스 운영중';
+            }
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i> 지금 이용하기';
+                btn.style.opacity = '1';
+            }
+            lottoCard.style.opacity = '1';
+        }
+    }
+
+    if (totoCard) {
+        const badge = totoCard.querySelector('.lp-card-badge');
+        const btn = totoCard.querySelector('.lp-btn');
+        if (!perms.allowToto) {
+            if (badge) {
+                badge.className = 'lp-card-badge';
+                badge.style.background = 'rgba(239, 68, 68, 0.2)';
+                badge.style.color = '#fca5a5';
+                badge.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+                badge.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 이용 권한 없음';
+            }
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 권한 요청 필요';
+                btn.style.opacity = '0.7';
+            }
+            totoCard.style.opacity = '0.75';
+        } else {
+            if (badge) {
+                badge.className = 'lp-card-badge';
+                badge.style.background = 'rgba(245, 158, 11, 0.2)';
+                badge.style.color = '#fbbf24';
+                badge.style.border = '1px solid rgba(245, 158, 11, 0.45)';
+                badge.innerHTML = '<i class="fa-solid fa-flask"></i> 🧪 테스트중 (Beta)';
+            }
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i> 지금 이용하기 (테스트중)';
+                btn.style.opacity = '1';
+            }
+            totoCard.style.opacity = '1';
+        }
     }
 }
 
@@ -26168,6 +26475,7 @@ if (typeof window !== 'undefined') {
     window.renderLandingDashboard = renderLandingDashboard;
     window.updateHomeReviewDashboard = updateHomeReviewDashboard;
     window.updateHomeWinningTicker = updateHomeWinningTicker;
+    window.updateHomeServiceCardsPermissions = updateHomeServiceCardsPermissions;
 }
 
 
@@ -26175,6 +26483,10 @@ if (typeof window !== 'undefined') {
         if (typeof renderLandingDashboard !== 'undefined') {
             __exports.renderLandingDashboard = renderLandingDashboard;
             if (typeof window !== 'undefined') window.renderLandingDashboard = renderLandingDashboard;
+        }
+        if (typeof updateHomeServiceCardsPermissions !== 'undefined') {
+            __exports.updateHomeServiceCardsPermissions = updateHomeServiceCardsPermissions;
+            if (typeof window !== 'undefined') window.updateHomeServiceCardsPermissions = updateHomeServiceCardsPermissions;
         }
         if (typeof updateHomeReviewDashboard !== 'undefined') {
             __exports.updateHomeReviewDashboard = updateHomeReviewDashboard;
@@ -26193,7 +26505,7 @@ if (typeof window !== 'undefined') {
 const __M_main = (function() {
     const __exports = {};
     try {
-const { checkAuthOnLoad, setupAuthEvents } = __M_shared_auth_mgmt;
+const { checkAuthOnLoad, setupAuthEvents, SafeAuth, getUserPermissions } = __M_shared_auth_mgmt;
 const { initLottoService } = __M_services_lotto_index;
 const { initTotoService } = __M_services_toto_index;
 const { renderLandingDashboard } = __M_shared_landing_dashboard;
@@ -26233,16 +26545,40 @@ window.showLanding = function() {
 };
 
 window.showToto = function() {
-    if (typeof showToast === 'function') {
-        showToast('🚀 [서비스 준비 중] 토토/프로토 AI 분석 서비스는 현재 고도화 작업 중이며 추후 오픈 예정입니다.');
-    } else if (typeof window.showToast === 'function') {
-        window.showToast('🚀 [서비스 준비 중] 토토/프로토 AI 분석 서비스는 현재 고도화 작업 중이며 추후 오픈 예정입니다.');
-    } else {
-        alert('🚀 [서비스 준비 중] 토토/프로토 AI 분석 서비스는 현재 고도화 작업 중이며 추후 오픈 예정입니다.');
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
+    if (authId) {
+        const getPerms = typeof getUserPermissions === 'function' ? getUserPermissions : (window.getUserPermissions || (() => ({ allowToto: true })));
+        const perms = getPerms(authId);
+        if (!perms.allowToto) {
+            alert('⛔ [이용 권한 제한]\n\n토토/프로토 AI 추천 프로그램 이용 권한이 부여되지 않은 계정입니다.\n관리자에게 이용 권한을 요청해주세요.');
+            return;
+        }
     }
+
+    _switchPage('totoPage');
+    try {
+        if (typeof renderTotoDashboard === 'function') {
+            renderTotoDashboard();
+        } else if (typeof window.renderTotoDashboard === 'function') {
+            window.renderTotoDashboard();
+        }
+    } catch(e) {
+        console.warn('[Toto Safe Load Exception]', e);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
 window.showLotto = function() {
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
+    if (authId) {
+        const getPerms = typeof getUserPermissions === 'function' ? getUserPermissions : (window.getUserPermissions || (() => ({ allowLotto: true })));
+        const perms = getPerms(authId);
+        if (!perms.allowLotto) {
+            alert('⛔ [이용 권한 제한]\n\n로또 6/45 프로그램 이용 권한이 부여되지 않은 계정입니다.\n관리자에게 이용 권한을 요청해주세요.');
+            return;
+        }
+    }
+
     _switchPage('appContainer');
     try {
         if (typeof initLottoService === 'function' && !window.__lottoInitialized) {

@@ -461,11 +461,88 @@ export function isPermanentUser(authId, userData = null) {
     return false;
 }
 
+export function setUserPermissionsCache(authId, permissions = {}) {
+    try {
+        if (authId) {
+            const cleanId = String(authId).trim().toLowerCase();
+            const allowLotto = permissions.allowLotto !== false;
+            const allowToto = permissions.allowToto !== false;
+            const lottoVal = allowLotto ? 'true' : 'false';
+            const totoVal = allowToto ? 'true' : 'false';
+            window.sessionStorage.setItem(`perm_lotto_${cleanId}`, lottoVal);
+            window.localStorage.setItem(`perm_lotto_${cleanId}`, lottoVal);
+            window.sessionStorage.setItem(`perm_toto_${cleanId}`, totoVal);
+            window.localStorage.setItem(`perm_toto_${cleanId}`, totoVal);
+            if (!window.__userPermissions) window.__userPermissions = {};
+            window.__userPermissions[cleanId] = { allowLotto, allowToto };
+        }
+    } catch(e) {}
+}
+
+export function getUserPermissions(authId, userData = null) {
+    if (!authId) return { allowLotto: true, allowToto: true };
+    const cleanId = String(authId).trim().toLowerCase();
+
+    // Master and Admin accounts always have full access
+    if (cleanId === 'master' || cleanId === 'admin' || isAdminUser(cleanId, userData)) {
+        return { allowLotto: true, allowToto: true };
+    }
+
+    if (userData) {
+        const allowLotto = userData.allowLotto !== false;
+        const allowToto = userData.allowToto !== false;
+        setUserPermissionsCache(cleanId, { allowLotto, allowToto });
+        return { allowLotto, allowToto };
+    }
+
+    // Fast in-memory cache
+    if (typeof window !== 'undefined' && window.__userPermissions && window.__userPermissions[cleanId]) {
+        return window.__userPermissions[cleanId];
+    }
+
+    // Storage cache
+    try {
+        const sLotto = window.sessionStorage.getItem(`perm_lotto_${cleanId}`) || window.localStorage.getItem(`perm_lotto_${cleanId}`);
+        const sToto = window.sessionStorage.getItem(`perm_toto_${cleanId}`) || window.localStorage.getItem(`perm_toto_${cleanId}`);
+        if (sLotto !== null || sToto !== null) {
+            return {
+                allowLotto: sLotto !== 'false',
+                allowToto: sToto !== 'false'
+            };
+        }
+    } catch(e) {}
+
+    // State registered users list cache
+    if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+        const u = window.state.allRegisteredUsersList.find(item => item && item.id && item.id.toLowerCase().trim() === cleanId);
+        if (u) {
+            return {
+                allowLotto: u.allowLotto !== false,
+                allowToto: u.allowToto !== false
+            };
+        }
+    }
+
+    // Default: both allowed
+    return { allowLotto: true, allowToto: true };
+}
+
+export function checkUserProgramPermissions(authId, programName = 'lotto') {
+    const perms = getUserPermissions(authId);
+    if (programName === 'toto') {
+        return perms.allowToto;
+    }
+    return perms.allowLotto;
+}
+
 if (typeof window !== 'undefined') {
     window.isPermanentUser = isPermanentUser;
     window.setIsPermanentCache = setIsPermanentCache;
     window.setUserNameCache = setUserNameCache;
     window.getUserRealName = getUserRealName;
+    window.setUserPermissionsCache = setUserPermissionsCache;
+    window.getUserPermissions = getUserPermissions;
+    window.checkUserProgramPermissions = checkUserProgramPermissions;
 }
 
 export async function checkAuthOnLoad(initFirebaseAndData) {
@@ -519,6 +596,10 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                     if (uData.realName) {
                         setUserNameCache(authId, uData.realName);
                     }
+                    setUserPermissionsCache(authId, {
+                        allowLotto: isUserAdmin || uData.allowLotto !== false,
+                        allowToto: isUserAdmin || uData.allowToto !== false
+                    });
 
                     if (!isUserAdmin) {
                         const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
@@ -566,9 +647,10 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             const isTotoActive = totoPage && (totoPage.style.display === 'block' || totoPage.classList.contains('active'));
             const isLottoActive = appContainer && appContainer.classList.contains('active') && (!landingPage || !landingPage.classList.contains('active'));
 
-            if (isTotoActive) {
+            const userPerms = getUserPermissions(authId);
+            if (isTotoActive && userPerms.allowToto) {
                 _showPage('totoPage');
-            } else if (isLottoActive) {
+            } else if (isLottoActive && userPerms.allowLotto) {
                 _showPage('appContainer');
             } else {
                 _showPage('landingPage');
@@ -1573,18 +1655,23 @@ export function setupAuthEvents(initFirebaseAndData) {
                 const pStatus = await checkUserWeeklyPurchaseStatus(u.userId, u.data);
                 const isUserAdmin = !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin');
                 const isPermanent = !!(u.data.isPermanent === true || u.data.userType === 'permanent' || isUserAdmin);
+                const allowLotto = isUserAdmin || u.data.allowLotto !== false;
+                const allowToto = isUserAdmin || u.data.allowToto !== false;
                 setIsPermanentCache(u.userId, isPermanent);
-                return { ...u, pStatus };
+                setUserPermissionsCache(u.userId, { allowLotto, allowToto });
+                return { ...u, pStatus, allowLotto, allowToto };
             }));
 
-            // Sync global state registered users list with isPermanent flag
+            // Sync global state registered users list with isPermanent flag & program permissions
             if (typeof window !== 'undefined' && window.state) {
                 window.state.allRegisteredUsersList = users.map(u => ({
                     id: u.userId,
                     name: u.data.realName || u.userId,
                     phone: u.data.phoneNumber || '',
                     isAdmin: !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
-                    isPermanent: !!(u.data.isPermanent === true || u.data.userType === 'permanent' || u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin')
+                    isPermanent: !!(u.data.isPermanent === true || u.data.userType === 'permanent' || u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
+                    allowLotto: u.data.allowLotto !== false,
+                    allowToto: u.data.allowToto !== false
                 }));
             }
 
@@ -1592,7 +1679,7 @@ export function setupAuthEvents(initFirebaseAndData) {
 
             let html = '';
             usersWithStatus.forEach(item => {
-                const { userId, data, pStatus } = item;
+                const { userId, data, pStatus, allowLotto, allowToto } = item;
                 const isUserAdmin = !!(data.isAdmin === true || data.role === 'admin' || userId === 'master' || userId === 'admin');
                 const isPermanent = !!(data.isPermanent === true || data.userType === 'permanent' || isUserAdmin);
                 const status = data.status || 'active';
@@ -1615,6 +1702,14 @@ export function setupAuthEvents(initFirebaseAndData) {
                 } else {
                     statusBadge = `<span style="font-size:0.72rem; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; padding:2px 7px; border-radius:6px; font-weight:800;"><i class="fa-solid fa-ban"></i> 관리자 수동정지</span>`;
                 }
+
+                let lottoPermBadge = allowLotto
+                    ? `<span style="font-size:0.7rem; color:#34d399; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.3); font-weight:700;"><i class="fa-solid fa-clover"></i> 로또 허용</span>`
+                    : `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;"><i class="fa-solid fa-ban"></i> 로또 차단</span>`;
+
+                let totoPermBadge = allowToto
+                    ? `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(245,158,11,0.3); font-weight:700;"><i class="fa-solid fa-trophy"></i> 토토 허용</span>`
+                    : `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;"><i class="fa-solid fa-ban"></i> 토토 차단</span>`;
 
                 let purchaseBadge = '';
                 if (isUserAdmin || isPermanent) {
@@ -1656,6 +1751,8 @@ export function setupAuthEvents(initFirebaseAndData) {
                         <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
                             ${adminBadge}
                             ${statusBadge}
+                            ${lottoPermBadge}
+                            ${totoPermBadge}
                             ${purchaseBadge}
                         </div>
                     </div>
@@ -2283,6 +2380,12 @@ export function setupAuthEvents(initFirebaseAndData) {
             if (elPhone) elPhone.value = data.phoneNumber || '';
             if (elPw) elPw.value = '';
             
+            // Program Permissions
+            const chkLotto = document.getElementById('editUserAllowLotto');
+            const chkToto = document.getElementById('editUserAllowToto');
+            if (chkLotto) chkLotto.checked = (data.allowLotto !== false);
+            if (chkToto) chkToto.checked = (data.allowToto !== false);
+
             // Determine Role
             const isUserAdmin = !!(data.isAdmin === true || data.role === 'admin' || userId === 'master' || userId === 'admin');
             const isPermanent = !!(data.isPermanent === true || data.userType === 'permanent');
@@ -2318,6 +2421,11 @@ export function setupAuthEvents(initFirebaseAndData) {
         const roleVal = document.getElementById('editUserRole')?.value || 'regular';
         const statusVal = document.getElementById('editUserStatus')?.value || 'active';
 
+        const chkAllowLotto = document.getElementById('editUserAllowLotto');
+        const chkAllowToto = document.getElementById('editUserAllowToto');
+        const allowLotto = chkAllowLotto ? chkAllowLotto.checked : true;
+        const allowToto = chkAllowToto ? chkAllowToto.checked : true;
+
         const btnSubmit = document.getElementById('btnSaveEditedUser');
         if (btnSubmit) {
             btnSubmit.disabled = true;
@@ -2328,6 +2436,8 @@ export function setupAuthEvents(initFirebaseAndData) {
             const updatePayload = {
                 realName: realName || userId,
                 phoneNumber: phone || '',
+                allowLotto: allowLotto,
+                allowToto: allowToto,
                 status: statusVal,
                 updatedAt: new Date().toISOString()
             };
@@ -2374,6 +2484,7 @@ export function setupAuthEvents(initFirebaseAndData) {
 
             await window.db.collection('lotto_users').doc(userId).update(updatePayload);
             setIsPermanentCache(userId, updatePayload.isPermanent || updatePayload.isAdmin);
+            setUserPermissionsCache(userId, { allowLotto, allowToto });
 
             showToast(`✅ [${userId}] 회원 정보(이름/비밀번호/권한)가 성공적으로 수정되었습니다.`);
             
@@ -2592,8 +2703,12 @@ export function setupAuthEvents(initFirebaseAndData) {
             const newPw = document.getElementById('addUserPw').value.trim();
             const chkPermanent = document.getElementById('chkAddPermanent');
             const chkAdmin = document.getElementById('chkAddAdmin');
+            const chkAllowLotto = document.getElementById('chkAddAllowLotto');
+            const chkAllowToto = document.getElementById('chkAddAllowToto');
             const isPermanent = chkPermanent ? chkPermanent.checked : false;
             const isAdmin = chkAdmin ? chkAdmin.checked : false;
+            const allowLotto = chkAllowLotto ? chkAllowLotto.checked : true;
+            const allowToto = chkAllowToto ? chkAllowToto.checked : true;
 
             if (!newId || !newPw) {
                 showToast('⚠️ 아이디와 비밀번호를 모두 입력해주세요.');
@@ -2648,6 +2763,8 @@ export function setupAuthEvents(initFirebaseAndData) {
                     role: isAdmin ? 'admin' : 'user',
                     isPermanent: isPermanent || isAdmin,
                     userType: (isPermanent || isAdmin) ? 'permanent' : 'regular',
+                    allowLotto: allowLotto,
+                    allowToto: allowToto,
                     createdAt: new Date().toISOString(),
                     agreedTerms: {
                         feeAgreement: true,
@@ -2666,6 +2783,7 @@ export function setupAuthEvents(initFirebaseAndData) {
                 await window.db.collection('lotto_users').doc(newId).set(userPayload);
                 setIsPermanentCache(newId, isPermanent || isAdmin);
                 setIsAdminCache(newId, isAdmin);
+                setUserPermissionsCache(newId, { allowLotto, allowToto });
                 addUserForm.reset();
                 loadUserList();
                 showToast(`🎉 [${newId}] ${isAdmin ? '👑 관리자 계정' : (isPermanent ? '💎 영구 사용 계정' : '사용자 계정')}이 생성되었습니다!`);

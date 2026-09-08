@@ -8,12 +8,40 @@ export function initTotoService() {
     window.renderTotoDashboard = renderTotoDashboard;
     window.scrapeLatestTotoFixtures = scrapeLatestTotoFixtures;
     
-    // Attach global showToto navigation (Temporarily paused for upcoming launch)
+    // Attach global showToto navigation (Active for Beta Testing)
     window.showToto = function() {
-        const msg = '🚀 [서비스 준비 중] 토토/프로토 AI 분석 서비스는 현재 고도화 작업 중이며 추후 오픈 예정입니다.';
-        if (typeof showToast === 'function') showToast(msg);
-        else if (typeof window.showToast === 'function') window.showToast(msg);
-        else alert(msg);
+        const authId = (window.SafeAuth && typeof window.SafeAuth.get === 'function') ? window.SafeAuth.get() : null;
+        if (authId) {
+            const getPerms = (typeof window.getUserPermissions === 'function') ? window.getUserPermissions : (() => ({ allowToto: true }));
+            const perms = getPerms(authId);
+            if (!perms.allowToto) {
+                alert('⛔ [이용 권한 제한]\n\n토토/프로토 AI 추천 프로그램 이용 권한이 부여되지 않은 계정입니다.\n관리자에게 이용 권한을 요청해주세요.');
+                return;
+            }
+        }
+
+        if (typeof window._switchPage === 'function') {
+            window._switchPage('totoPage');
+        } else {
+            var ids = ['landingPage', 'totoPage', 'appContainer'];
+            ids.forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                if (id === 'totoPage') {
+                    el.classList.add('active');
+                    el.style.setProperty('display', 'block', 'important');
+                } else {
+                    el.classList.remove('active');
+                    el.style.setProperty('display', 'none', 'important');
+                }
+            });
+        }
+        try {
+            renderTotoDashboard();
+        } catch(e) {
+            console.warn('[Toto Render Exception]', e);
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     // Render dashboard if #totoPage is active on page load
