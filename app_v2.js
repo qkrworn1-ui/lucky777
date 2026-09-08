@@ -1499,7 +1499,7 @@ function setupAuthEvents(initFirebaseAndData) {
             if (window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
                 window.Kakao.Auth.login({
                     scope: 'profile_nickname,profile_image,talk_message',
-                    throughTalk: true,
+                    prompt: 'consent',
                     persistAccessToken: true,
                     success: function(authObj) {
                         window.Kakao.API.request({
@@ -1516,6 +1516,17 @@ function setupAuthEvents(initFirebaseAndData) {
                                     alert('데이터베이스에 연결되지 않았습니다.');
                                     return;
                                 }
+
+                                // 🔑 Kakao Token & Scope Data for FREE Server/Offline Messaging
+                                const kakaoAuthData = {
+                                    accessToken: authObj.access_token || '',
+                                    refreshToken: authObj.refresh_token || '',
+                                    expiresIn: authObj.expires_in || 0,
+                                    refreshTokenExpiresIn: authObj.refresh_token_expires_in || 0,
+                                    scopes: authObj.scope ? authObj.scope.split(' ') : [],
+                                    hasTalkMessageScope: authObj.scope ? authObj.scope.includes('talk_message') : false,
+                                    updatedAt: new Date().toISOString()
+                                };
 
                                 // Check if user already exists
                                 const userDoc = await firestore.collection('lotto_users').doc(customUserId).get();
@@ -1551,6 +1562,7 @@ function setupAuthEvents(initFirebaseAndData) {
                                         status: 'active',
                                         createdAt: now.toISOString(),
                                         agreementDoc: agreementDocument,
+                                        kakaoAuth: kakaoAuthData,
                                         agreedTerms: {
                                             feeAgreement: true,
                                             weeklyPurchaseAgreement: true,
@@ -1568,6 +1580,12 @@ function setupAuthEvents(initFirebaseAndData) {
 
                                     showToast(`🎉 [${nickname}]님 환영합니다! 카카오 간편 회원가입이 완료되었습니다.`);
                                 } else {
+                                    // Existing Kakao User -> Update tokens and auth info
+                                    await firestore.collection('lotto_users').doc(customUserId).set({
+                                        kakaoAuth: kakaoAuthData,
+                                        lastLoginAt: new Date().toISOString()
+                                    }, { merge: true });
+
                                     showToast(`👋 [${nickname}]님, 카카오 간편 로그인되었습니다!`);
                                 }
 
