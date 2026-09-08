@@ -196,6 +196,21 @@ export async function autoSyncMissingDraws(showModal = false) {
             }
         }
 
+        // 4. ⏰ [토요일 21:00 자동 발송] 신규 회차 당첨번호 수집 시 동의 회원 당첨 리포트 자동 일괄 발송
+        if (syncedCount > 0 && typeof window.sendBatchWinningKakaoMessages === 'function') {
+            const isAutoEnabled = (typeof window.loadAdminKakaoAutoSendConfig === 'function') ? window.loadAdminKakaoAutoSendConfig() : true;
+            if (isAutoEnabled) {
+                if (showModal) {
+                    appendScrapingLog(`💬 [카카오톡 자동 발송] 신규 제 ${currentMaxRound + syncedCount}회 당첨결과 동의 회원 자동 발송 파이프라인 가동...`, 'header');
+                }
+                try {
+                    window.sendBatchWinningKakaoMessages(currentMaxRound + syncedCount, { isAuto: true });
+                } catch(e) {
+                    console.error('[Auto Kakao Broadcast Error]', e);
+                }
+            }
+        }
+
         if (showModal) {
             appendScrapingLog(`🎉 신규 ${syncedCount}개 회차 등록 및 ${repairedCount}개 회차 당첨금 보충 완료! 화면이 갱신되었습니다.`, 'success');
             updateScrapingStatus(`동기화 완료 (신규 +${syncedCount}회, 보충 +${repairedCount}회)`, true);
@@ -245,3 +260,37 @@ export function setupSyncEvents() {
     }
 }
 
+
+
+/**
+ * ⏰ 매주 토요일 21:00:00 최신 로또 당첨번호 자동 스크랩 및 동기화 스케줄러
+ */
+let saturdayScrapeTimer = null;
+
+export function setupSaturdayAutoScrapeAndBroadcast() {
+    if (typeof window === 'undefined' || saturdayScrapeTimer) return;
+
+    // Check time every 60 seconds
+    saturdayScrapeTimer = setInterval(() => {
+        const now = new Date();
+        const day = now.getDay(); // 6 = Saturday
+        const hour = now.getHours();
+        const minute = now.getMinutes();
+
+        // Target: Saturday between 21:00 and 21:35 (every 3 minutes)
+        if (day === 6 && hour === 21 && minute >= 0 && minute <= 35) {
+            if (minute % 3 === 0 && now.getSeconds() < 10) {
+                console.log('[Saturday 21:00 Scheduler Triggered] Checking latest draw...');
+                if (typeof autoSyncMissingDraws === 'function') {
+                    autoSyncMissingDraws(false);
+                }
+            }
+        }
+    }, 60000);
+}
+
+if (typeof window !== 'undefined') {
+    window.setupSaturdayAutoScrapeAndBroadcast = setupSaturdayAutoScrapeAndBroadcast;
+    // Auto start scheduler on client launch
+    try { setupSaturdayAutoScrapeAndBroadcast(); } catch(e){}
+}

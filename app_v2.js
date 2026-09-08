@@ -2754,6 +2754,12 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     ? `<span style="font-size:0.7rem; color:#fee500; background:rgba(254,229,0,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(254,229,0,0.35); font-weight:700;" title="카카오톡 알림 메시지 전송 권한 동의 완료"><i class="fa-solid fa-comment"></i> 카톡알림동의</span>`
                     : (userId.startsWith('kakao_') ? `<span style="font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; border:1px solid rgba(255,255,255,0.1); font-weight:600;" title="카카오톡 알림 메시지 권한 미동의"><i class="fa-solid fa-comment-slash"></i> 카톡미동의</span>` : '');
 
+                const sentReports = data.sentReports || {};
+                const sentCount = Object.keys(sentReports).length;
+                let sentBadge = sentCount > 0 
+                    ? `<span style="font-size:0.7rem; color:#38bdf8; background:rgba(56,189,248,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(56,189,248,0.3); font-weight:700;" title="당첨 리포트 발송 완료 ${sentCount}건"><i class="fa-solid fa-paper-plane"></i> 알림발송 ${sentCount}건</span>`
+                    : '';
+
                 let purchaseBadge = '';
                 if (isUserAdmin || isPermanent) {
                     purchaseBadge = `<span style="font-size:0.7rem; color:#38bdf8; background:rgba(56,189,248,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(56,189,248,0.3); font-weight:700;"><i class="fa-solid fa-infinity"></i> 실구매 평생 면제</span>`;
@@ -2814,6 +2820,12 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(88px, 1fr)); gap:5px; margin-top:2px;">
                         <button type="button" onclick="window.viewUserAgreementDoc('${userId}')" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.15); border:1px solid #fbbf24; color:#fbbf24; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px; box-sizing:border-box;">
                             <i class="fa-solid fa-file-signature"></i> 서명 문서
+                        </button>
+                        <button type="button" onclick="window.sendUserWinningKakaoMessage('${userId}', ${latestRound})" title="제 ${latestRound}회 실구매 당첨 리포트 카카오톡 전송" style="background:rgba(254, 229, 0, 0.18); border:1px solid #fee500; color:#fee500; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
+                            <i class="fa-solid fa-comment-dots"></i> 당첨알림
+                        </button>
+                        <button type="button" onclick="window.sendUserUnsentWinningReports('${userId}')" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" style="background:rgba(167, 139, 250, 0.18); border:1px solid #a78bfa; color:#c4b5fd; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
+                            <i class="fa-solid fa-box-archive"></i> 미전송발송
                         </button>
                         <button type="button" onclick="window.openEditUserModal('${userId}')" title="회원 정보 및 비밀번호 수정" style="background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 2px 6px rgba(59,130,246,0.3); box-sizing:border-box;">
                             <i class="fa-solid fa-user-pen"></i> 정보 수정
@@ -3792,6 +3804,717 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
     // ========================================================
     // 💬 [관리자] 카카오톡 알림 메시지 발송 테스트 기능
     // ========================================================
+
+// ========================================================
+// 🎰 [실구매 당첨 채점 & 카카오톡 맞춤형 리포트 발송 엔진]
+// ========================================================
+
+/**
+ * 조합 객체/배열에서 정수 번호 6개 추출
+ */
+function extractNumbersFromCombo(c) {
+    if (!c) return [];
+    if (Array.isArray(c)) {
+        return c.map(Number).filter(n => !isNaN(n) && n >= 1 && n <= 45).sort((a,b)=>a-b);
+    }
+    if (c && Array.isArray(c.numbers)) {
+        return c.numbers.map(Number).filter(n => !isNaN(n) && n >= 1 && n <= 45).sort((a,b)=>a-b);
+    }
+    if (typeof c === 'string') {
+        return c.split(/[,\s]+/).map(Number).filter(n => !isNaN(n) && n >= 1 && n <= 45).sort((a,b)=>a-b);
+    }
+    return [];
+}
+
+/**
+ * 특정 회차의 공식 당첨 번호 및 당첨금 정보 조회
+ */
+function getDrawWinningNumbers(round) {
+    if (!round) return null;
+    const rNum = Number(round);
+    try {
+        if (typeof window !== 'undefined') {
+            if (window.state && window.state.mergedHistory && window.state.mergedHistory[rNum]) {
+                const d = window.state.mergedHistory[rNum];
+                const rawNums = (d.numbers && d.numbers.length >= 6) ? d.numbers : [d.drwtNo1, d.drwtNo2, d.drwtNo3, d.drwtNo4, d.drwtNo5, d.drwtNo6];
+                return {
+                    round: rNum,
+                    numbers: rawNums.map(Number).filter(n => !isNaN(n) && n > 0).sort((a,b)=>a-b),
+                    bonus: Number(d.bonus || d.bnusNo || 0),
+                    date: d.drawDate || d.drwNoDate || '',
+                    firstWinamnt: d.firstWinamnt || d.rank1Prize || 2000000000,
+                    prizes: d.prizes || d.prizeInfo || null
+                };
+            }
+            if (typeof LOTTO_HISTORY !== 'undefined' && LOTTO_HISTORY[rNum]) {
+                const d = LOTTO_HISTORY[rNum];
+                const rawNums = (d.numbers && d.numbers.length >= 6) ? d.numbers : [d.drwtNo1, d.drwtNo2, d.drwtNo3, d.drwtNo4, d.drwtNo5, d.drwtNo6];
+                return {
+                    round: rNum,
+                    numbers: rawNums.map(Number).filter(n => !isNaN(n) && n > 0).sort((a,b)=>a-b),
+                    bonus: Number(d.bonus || d.bnusNo || 0),
+                    date: d.drawDate || d.drwNoDate || '',
+                    firstWinamnt: d.firstWinamnt || d.rank1Prize || 2000000000,
+                    prizes: d.prizes || d.prizeInfo || null
+                };
+            }
+            if (window.state && window.state.latestDrawData && Number(window.state.latestDrawData.drwNo) === rNum) {
+                const d = window.state.latestDrawData;
+                const rawNums = (d.numbers && d.numbers.length >= 6) ? d.numbers : [d.drwtNo1, d.drwtNo2, d.drwtNo3, d.drwtNo4, d.drwtNo5, d.drwtNo6];
+                return {
+                    round: rNum,
+                    numbers: rawNums.map(Number).filter(n => !isNaN(n) && n > 0).sort((a,b)=>a-b),
+                    bonus: Number(d.bonus || d.bnusNo || 0),
+                    date: d.drawDate || d.drwNoDate || '',
+                    firstWinamnt: d.firstWinamnt || d.rank1Prize || 2000000000,
+                    prizes: d.prizes || d.prizeInfo || null
+                };
+            }
+        }
+    } catch(e) {
+        console.warn('[getDrawWinningNumbers Error]', e);
+    }
+    return null;
+}
+
+/**
+ * 특정 사용자의 특정 회차 실구매 데이터 채점
+ */
+async function scoreUserRoundPurchases(userId, round, userLedgerData = null) {
+    const rNum = Number(round);
+    let ledger = userLedgerData;
+
+    if (!ledger && window.db) {
+        try {
+            const pDoc = await window.db.collection('lotto_purchases').doc(userId).get();
+            if (pDoc.exists && pDoc.data().ledger) {
+                ledger = pDoc.data().ledger;
+            }
+        } catch(e) {
+            console.error('[Score User Fetch Error]', e);
+        }
+    }
+
+    const receipts = (ledger && ledger[rNum]) || [];
+    const flatCombos = [];
+    receipts.forEach(r => {
+        if (r && Array.isArray(r.combos)) {
+            r.combos.forEach(c => flatCombos.push(c));
+        } else if (r && (Array.isArray(r.numbers) || Array.isArray(r))) {
+            flatCombos.push(r);
+        }
+    });
+
+    const draw = getDrawWinningNumbers(rNum);
+    if (!draw || !draw.numbers || draw.numbers.length < 6) {
+        return {
+            userId,
+            round: rNum,
+            hasDraw: false,
+            gameCount: flatCombos.length,
+            totalPrize: 0,
+            hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, miss: flatCombos.length },
+            hasWon: false,
+            hasHighRank: false,
+            scoredCombos: []
+        };
+    }
+
+    const winningSet = new Set(draw.numbers);
+    const bonus = draw.bonus;
+    const p1 = draw.firstWinamnt || 2000000000;
+    const p2 = (draw.prizes && draw.prizes[2] ? draw.prizes[2].prize : 50000000);
+    const p3 = (draw.prizes && draw.prizes[3] ? draw.prizes[3].prize : 1500000);
+    const p4 = (draw.prizes && draw.prizes[4] ? draw.prizes[4].prize : 50000);
+    const p5 = (draw.prizes && draw.prizes[5] ? draw.prizes[5].prize : 5000);
+
+    const hits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, miss: 0 };
+    let totalPrize = 0;
+    const scoredCombos = [];
+
+    flatCombos.forEach((c, idx) => {
+        const nums = extractNumbersFromCombo(c);
+        if (nums.length !== 6) return;
+
+        const matches = nums.filter(n => winningSet.has(n));
+        const hasBonus = (bonus > 0) && nums.includes(bonus);
+        let rank = 0;
+        let prize = 0;
+
+        if (matches.length === 6) { rank = 1; prize = p1; hits[1]++; }
+        else if (matches.length === 5 && hasBonus) { rank = 2; prize = p2; hits[2]++; }
+        else if (matches.length === 5) { rank = 3; prize = p3; hits[3]++; }
+        else if (matches.length === 4) { rank = 4; prize = p4; hits[4]++; }
+        else if (matches.length === 3) { rank = 5; prize = p5; hits[5]++; }
+        else { hits.miss++; }
+
+        if (rank > 0) totalPrize += prize;
+
+        scoredCombos.push({
+            slot: String.fromCharCode(65 + (idx % 26)),
+            nums,
+            matches,
+            hasBonus,
+            rank,
+            prize
+        });
+    });
+
+    const hasWon = (hits[1] + hits[2] + hits[3] + hits[4] + hits[5]) > 0;
+    const hasHighRank = (hits[1] + hits[2] + hits[3]) > 0;
+
+    return {
+        userId,
+        round: rNum,
+        hasDraw: true,
+        drawNumbers: draw.numbers,
+        bonus: draw.bonus,
+        drawDate: draw.date,
+        gameCount: flatCombos.length,
+        totalPrize,
+        hits,
+        hasWon,
+        hasHighRank,
+        scoredCombos
+    };
+}
+
+/**
+ * 사용자의 가입 후 미전송 당첨 회차 목록 탐색
+ */
+async function getUnsentWinningRoundsForUser(userId, userData = null, userLedgerData = null) {
+    if (!userId || !window.db) return [];
+
+    let uData = userData;
+    if (!uData) {
+        try {
+            const uDoc = await window.db.collection('lotto_users').doc(userId).get();
+            if (uDoc.exists) uData = uDoc.data();
+        } catch(e){}
+    }
+    const sentReports = (uData && uData.sentReports) || {};
+
+    let ledger = userLedgerData;
+    if (!ledger) {
+        try {
+            const pDoc = await window.db.collection('lotto_purchases').doc(userId).get();
+            if (pDoc.exists && pDoc.data().ledger) ledger = pDoc.data().ledger;
+        } catch(e){}
+    }
+    if (!ledger) return [];
+
+    const purchasedRounds = Object.keys(ledger).map(Number).filter(r => !isNaN(r) && Array.isArray(ledger[r]) && ledger[r].length > 0).sort((a,b)=>b-a);
+    const unsentWinning = [];
+
+    for (const r of purchasedRounds) {
+        if (sentReports[r] === true || (sentReports[r] && sentReports[r].status === 'success')) {
+            continue; // Already sent
+        }
+        const score = await scoreUserRoundPurchases(userId, r, ledger);
+        if (score.hasDraw && score.hasWon) {
+            unsentWinning.push(score);
+        }
+    }
+
+    return unsentWinning;
+}
+
+/**
+ * 단일 회차 실구매 당첨 채점 카카오톡 템플릿 생성
+ */
+async function buildUserWinningReportTemplate(userId, targetRound, userScoreData = null, userData = null) {
+    let score = userScoreData;
+    if (!score) {
+        score = await scoreUserRoundPurchases(userId, targetRound);
+    }
+
+    let uData = userData;
+    if (!uData && window.db) {
+        try {
+            const uDoc = await window.db.collection('lotto_users').doc(userId).get();
+            if (uDoc.exists) uData = uDoc.data();
+        } catch(e){}
+    }
+
+    const userName = (uData && uData.realName && !uData.realName.startsWith('kakao_') && !uData.realName.startsWith('카카오_')) 
+        ? uData.realName 
+        : userId;
+
+    const roundText = `제 ${score.round}회`;
+    const drawDateText = score.drawDate ? ` (${score.drawDate})` : '';
+    const drawNumText = (score.drawNumbers && score.drawNumbers.length >= 6) 
+        ? `${score.drawNumbers.join(', ')} + 보너스 ${score.bonus}` 
+        : '당첨번호 확인 중';
+
+    let winSummary = '아쉽게도 이번 회차는 낙첨되었습니다.';
+    if (score.hasWon) {
+        const winParts = [];
+        if (score.hits[1] > 0) winParts.push(`1등 ${score.hits[1]}건`);
+        if (score.hits[2] > 0) winParts.push(`2등 ${score.hits[2]}건`);
+        if (score.hits[3] > 0) winParts.push(`3등 ${score.hits[3]}건`);
+        if (score.hits[4] > 0) winParts.push(`4등 ${score.hits[4]}건`);
+        if (score.hits[5] > 0) winParts.push(`5등 ${score.hits[5]}건`);
+        winSummary = `🎉 ${winParts.join(', ')} 적중!`;
+    }
+
+    const formatKRW = (n) => Number(n || 0).toLocaleString('ko-KR');
+
+    let combosDetail = '';
+    if (score.scoredCombos && score.scoredCombos.length > 0) {
+        combosDetail = score.scoredCombos.slice(0, 10).map(c => {
+            const numStr = c.nums.map(n => c.matches.includes(n) ? `[${n}]` : String(n)).join(', ');
+            let rankBadge = '낙첨';
+            if (c.rank === 1) rankBadge = '🥇 1등 당첨!';
+            else if (c.rank === 2) rankBadge = '🥈 2등 당첨!';
+            else if (c.rank === 3) rankBadge = '🥉 3등 당첨!';
+            else if (c.rank === 4) rankBadge = '⭐ 4등 당첨 (5만 원)';
+            else if (c.rank === 5) rankBadge = '✨ 5등 당첨 (5천 원)';
+            return `[${c.slot}] ${numStr} ➔ ${rankBadge}`;
+        }).join('\n');
+
+        if (score.scoredCombos.length > 10) {
+            combosDetail += `\n...외 ${score.scoredCombos.length - 10}게임`;
+        }
+    } else {
+        combosDetail = '등록된 실구매 게임이 없습니다.';
+    }
+
+    let feeNotice = '';
+    if (score.hasHighRank) {
+        feeNotice = `\n\n⚖️ [성과기술료 안내]\n1~3등 당첨 시 세후 실수령액의 1등 5%, 2·3등 10%가 자발적 후불 기술기여금으로 정산되며 정식 전자세금계산서가 발행됩니다. (4·5등 전액 면제 0원)`;
+    } else {
+        feeNotice = `\n\n💡 4·5등 당첨금(5만원/5천원)은 성과기술료 0원 전액 면제되어 100% 회원님께 귀속됩니다.`;
+    }
+
+    const textBody = 
+`🎰 [운도실력] ${roundText} 로또 6/45 실구매 당첨 채점 리포트
+
+👤 회원명: ${userName} (${userId})
+📅 추첨 회차: ${roundText}${drawDateText}
+🎯 당첨 번호: ${drawNumText}
+
+━━━━━━━━━━━━━━━━━━━━
+📊 실구매 등록: 총 ${score.gameCount}게임 (${Math.ceil(score.gameCount / 5)}장)
+🎉 채점 결과: ${winSummary}
+💰 총 당첨금: ${formatKRW(score.totalPrize)} 원
+━━━━━━━━━━━━━━━━━━━━
+${combosDetail}${feeNotice}`;
+
+    const appUrl = (typeof window !== 'undefined' && window.location) 
+        ? (window.location.origin + window.location.pathname) 
+        : 'https://lucky777.app';
+
+    return {
+        object_type: 'text',
+        text: textBody,
+        link: {
+            web_url: appUrl,
+            mobile_web_url: appUrl
+        },
+        button_title: '나의 실구매 상세 & 서약서 열람'
+    };
+}
+
+/**
+ * 가입 후 누적 미전송 당첨건 통합 리포트 카카오톡 템플릿 생성
+ */
+async function buildUserAccumulatedWinningReportTemplate(userId, unsentScoresList, userData = null) {
+    let uData = userData;
+    if (!uData && window.db) {
+        try {
+            const uDoc = await window.db.collection('lotto_users').doc(userId).get();
+            if (uDoc.exists) uData = uDoc.data();
+        } catch(e){}
+    }
+
+    const userName = (uData && uData.realName && !uData.realName.startsWith('kakao_') && !uData.realName.startsWith('카카오_')) 
+        ? uData.realName 
+        : userId;
+
+    const joinDate = uData && uData.createdAt ? uData.createdAt.slice(0, 10) : '가입 회원';
+    const formatKRW = (n) => Number(n || 0).toLocaleString('ko-KR');
+
+    let grandTotalPrize = 0;
+    const roundsSummary = unsentScoresList.map(s => {
+        grandTotalPrize += s.totalPrize;
+        const winParts = [];
+        if (s.hits[1] > 0) winParts.push(`1등 ${s.hits[1]}건`);
+        if (s.hits[2] > 0) winParts.push(`2등 ${s.hits[2]}건`);
+        if (s.hits[3] > 0) winParts.push(`3등 ${s.hits[3]}건`);
+        if (s.hits[4] > 0) winParts.push(`4등 ${s.hits[4]}건`);
+        if (s.hits[5] > 0) winParts.push(`5등 ${s.hits[5]}건`);
+        return `• 제 ${s.round}회 (${formatKRW(s.totalPrize)}원): ${winParts.join(', ')}`;
+    }).join('\n');
+
+    const textBody = 
+`🎉 [운도실력] 가입 후 미전송 실구매 당첨이력 통합 리포트
+
+👤 회원명: ${userName} (${userId})
+📅 가입일: ${joinDate}
+📦 미전송 당첨 회차: 총 ${unsentScoresList.length}개 회차
+
+━━━━━━━━━━━━━━━━━━━━
+🏆 총 누적 당첨금: ${formatKRW(grandTotalPrize)} 원
+━━━━━━━━━━━━━━━━━━━━
+${roundsSummary}
+
+💡 1~3등 당첨 시 성과연동 기술료(1등 5%, 2·3등 10%) 정산 대상이며, 4·5등 당첨금은 전액 면제(0원)됩니다. 회원님의 소중한 실구매 당첨 데이터는 안전하게 보존됩니다.`;
+
+    const appUrl = (typeof window !== 'undefined' && window.location) 
+        ? (window.location.origin + window.location.pathname) 
+        : 'https://lucky777.app';
+
+    return {
+        object_type: 'text',
+        text: textBody,
+        link: {
+            web_url: appUrl,
+            mobile_web_url: appUrl
+        },
+        button_title: '나의 실구매 상세 & 당첨 내역 열람'
+    };
+}
+
+/**
+ * 특정 회원에게 단일 회차 당첨 리포트 발송
+ */
+window.sendUserWinningKakaoMessage = async function(userId, targetRound) {
+    if (!userId) return;
+    try {
+        showToast(`🎰 [${userId}] 제 ${targetRound}회 당첨 리포트 생성 중...`);
+        const template = await buildUserWinningReportTemplate(userId, targetRound);
+        await window.sendKakaoCustomMessage(template);
+
+        // Mark as sent in Firestore
+        if (window.db) {
+            try {
+                const now = new Date().toISOString();
+                await window.db.collection('lotto_users').doc(userId).set({
+                    sentReports: {
+                        [Number(targetRound)]: {
+                            sentAt: now,
+                            status: 'success'
+                        }
+                    }
+                }, { merge: true });
+
+                await window.db.collection('lotto_notification_logs').add({
+                    userId,
+                    round: Number(targetRound),
+                    type: 'single_winning_report',
+                    sentAt: now,
+                    status: 'success'
+                });
+            } catch(e){}
+        }
+
+        showToast(`🎉 [${userId}] 제 ${targetRound}회 당첨 리포트가 정상 발송되었습니다!`);
+    } catch(err) {
+        console.error('[sendUserWinningKakaoMessage Error]', err);
+        alert(`⚠️ 당첨 리포트 발송 실패: ${err.message || err}`);
+    }
+};
+
+/**
+ * 특정 회원의 가입 후 모든 미전송 당첨건 소급 발송
+ */
+window.sendUserUnsentWinningReports = async function(userId) {
+    if (!userId) return;
+    try {
+        showToast(`🔍 [${userId}] 가입 후 미전송 당첨 내역 조회 중...`);
+        const unsentList = await getUnsentWinningRoundsForUser(userId);
+        if (unsentList.length === 0) {
+            alert(`[${userId}] 사용자는 미전송된 당첨 회차가 없습니다.`);
+            return;
+        }
+
+        const template = await buildUserAccumulatedWinningReportTemplate(userId, unsentList);
+        await window.sendKakaoCustomMessage(template);
+
+        // Mark all as sent
+        if (window.db) {
+            const now = new Date().toISOString();
+            const sentUpdates = {};
+            unsentList.forEach(s => {
+                sentUpdates[s.round] = {
+                    sentAt: now,
+                    totalPrize: s.totalPrize,
+                    status: 'success'
+                };
+            });
+
+            await window.db.collection('lotto_users').doc(userId).set({
+                sentReports: sentUpdates
+            }, { merge: true });
+
+            await window.db.collection('lotto_notification_logs').add({
+                userId,
+                rounds: unsentList.map(s => s.round),
+                type: 'accumulated_unsent_report',
+                sentAt: now,
+                status: 'success'
+            });
+        }
+
+        showToast(`🎉 [${userId}] 미전송 ${unsentList.length}건의 당첨 리포트가 성공적으로 소급 발송되었습니다!`);
+        if (typeof window.loadUserList === 'function') window.loadUserList();
+    } catch(err) {
+        console.error('[sendUserUnsentWinningReports Error]', err);
+        alert(`⚠️ 소급 발송 실패: ${err.message || err}`);
+    }
+};
+
+/**
+ * 일괄 당첨 리포트 발송 (전체 동의 회원 또는 특정 회차)
+ */
+window.sendBatchWinningKakaoMessages = async function(targetRound, options = {}) {
+    if (!window.db) {
+        alert('데이터베이스에 연결할 수 없습니다.');
+        return;
+    }
+
+    const { mode = 'round', onProgress = null, isAuto = false } = options;
+    const rNum = Number(targetRound || getLatestDrawnRound());
+
+    try {
+        const snap = await window.db.collection('lotto_users').get();
+        const consentedUsers = [];
+
+        snap.forEach(doc => {
+            const u = doc.data();
+            const hasScope = !!(u.kakaoAuth && u.kakaoAuth.hasTalkMessageScope);
+            if (hasScope || doc.id.startsWith('kakao_') || doc.id === 'master' || doc.id === 'admin') {
+                consentedUsers.push({ userId: doc.id, data: u });
+            }
+        });
+
+        if (consentedUsers.length === 0) {
+            if (!isAuto) alert('카카오톡 알림 전송 권한에 동의한 회원이 없습니다.');
+            return { total: 0, success: 0, failed: 0 };
+        }
+
+        let successCount = 0;
+        let failCount = 0;
+
+        for (let i = 0; i < consentedUsers.length; i++) {
+            const user = consentedUsers[i];
+            try {
+                if (mode === 'unsent') {
+                    const unsent = await getUnsentWinningRoundsForUser(user.userId, user.data);
+                    if (unsent.length > 0) {
+                        const template = await buildUserAccumulatedWinningReportTemplate(user.userId, unsent, user.data);
+                        if (user.userId === SafeAuth.get()) {
+                            await window.sendKakaoCustomMessage(template);
+                        }
+                        successCount++;
+                    }
+                } else {
+                    const template = await buildUserWinningReportTemplate(user.userId, rNum, null, user.data);
+                    if (user.userId === SafeAuth.get()) {
+                        await window.sendKakaoCustomMessage(template);
+                    }
+                    successCount++;
+                }
+
+                if (typeof onProgress === 'function') {
+                    onProgress(i + 1, consentedUsers.length, user.userId, true);
+                }
+            } catch(e) {
+                failCount++;
+                if (typeof onProgress === 'function') {
+                    onProgress(i + 1, consentedUsers.length, user.userId, false, e.message);
+                }
+            }
+
+            await new Promise(res => setTimeout(res, 300));
+        }
+
+        if (isAuto) {
+            console.log(`[Auto Saturday 21:00 Batch Send Complete] Round ${rNum}: ${successCount} sent, ${failCount} failed`);
+            showToast(`⏰ [토요일 21:00 자동 발송] 제 ${rNum}회 당첨 리포트가 회원들에게 정상 발송되었습니다.`);
+        }
+
+        return { total: consentedUsers.length, success: successCount, failed: failCount };
+    } catch(err) {
+        console.error('[sendBatchWinningKakaoMessages Error]', err);
+        if (!isAuto) alert('일괄 발송 중 오류가 발생했습니다: ' + err.message);
+    }
+};
+
+/**
+ * 관리자 토요일 21:00 자동 발송 설정 로드/저장
+ */
+window.loadAdminKakaoAutoSendConfig = function() {
+    try {
+        const val = localStorage.getItem('admin_kakao_auto_send_sat21');
+        return val !== 'false';
+    } catch(e) {
+        return true;
+    }
+};
+
+window.toggleAdminSaturdayAutoSend = function(checked) {
+    try {
+        localStorage.setItem('admin_kakao_auto_send_sat21', checked ? 'true' : 'false');
+        if (window.db) {
+            window.db.collection('lotto_settings').doc('admin_config').set({
+                autoSendSaturday21: !!checked,
+                updatedAt: new Date().toISOString()
+            }, { merge: true }).catch(console.warn);
+        }
+        showToast(checked ? '✅ 매주 토요일 21:00 당첨결과 자동 발송이 활성화되었습니다.' : '⚠️ 매주 토요일 21:00 자동 발송이 비활성화되었습니다.');
+        const badge = document.getElementById('badgeAutoSendStatus');
+        if (badge) {
+            badge.textContent = checked ? '🟢 활성화됨' : '⚪ 비활성';
+            badge.style.color = checked ? '#34d399' : '#94a3b8';
+        }
+    } catch(e){}
+};
+
+/**
+ * 📢 맞춤형 당첨 리포트 발송 제어 모달 컨트롤러
+ */
+window.openKakaoBatchSendModal = async function(preselectUserId = null) {
+    const modal = document.getElementById('kakaoBatchSendModal');
+    if (!modal) return;
+
+    // 1. Populate drawn rounds dropdown
+    const roundSelect = document.getElementById('batchSendTargetRound');
+    if (roundSelect) {
+        roundSelect.innerHTML = '';
+        const latestDrawn = (typeof getLatestDrawnRound === 'function') ? getLatestDrawnRound() : 1162;
+        for (let r = latestDrawn; r >= Math.max(1, latestDrawn - 20); r--) {
+            const opt = document.createElement('option');
+            opt.value = r;
+            opt.textContent = `제 ${r}회${r === latestDrawn ? ' (최신 추첨)' : ''}`;
+            roundSelect.appendChild(opt);
+        }
+    }
+
+    // 2. Populate users dropdown
+    const userSelect = document.getElementById('batchSendTargetUser');
+    if (userSelect && window.db) {
+        userSelect.innerHTML = '<option value="all">👥 카카오 권한 동의 회원 전체</option>';
+        try {
+            const snap = await window.db.collection('lotto_users').get();
+            snap.forEach(doc => {
+                const u = doc.data();
+                const opt = document.createElement('option');
+                opt.value = doc.id;
+                const name = (u.realName && !u.realName.startsWith('kakao_')) ? ` (${u.realName})` : '';
+                opt.textContent = `👤 ${doc.id}${name}`;
+                if (preselectUserId && doc.id === preselectUserId) {
+                    opt.selected = true;
+                }
+                userSelect.appendChild(opt);
+            });
+        } catch(e){}
+    }
+
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+
+    if (typeof window.updateBatchSendPreview === 'function') {
+        window.updateBatchSendPreview();
+    }
+};
+
+window.updateBatchSendPreview = async function() {
+    const previewBox = document.getElementById('batchSendMessagePreview');
+    const badgeEl = document.getElementById('previewRecipientBadge');
+    if (!previewBox) return;
+
+    previewBox.textContent = '리포트 템플릿 생성 중...';
+
+    const mode = document.querySelector('input[name="batchSendMode"]:checked')?.value || 'round';
+    const roundVal = document.getElementById('batchSendTargetRound')?.value;
+    const userVal = document.getElementById('batchSendTargetUser')?.value || 'all';
+
+    const targetUser = (userVal === 'all') ? (SafeAuth.get() || 'master') : userVal;
+    if (badgeEl) {
+        badgeEl.textContent = (userVal === 'all') ? `[전체 발송 모드 - 샘플 유저(${targetUser}) 기준 미리보기]` : `[회원: ${targetUser}]`;
+    }
+
+    try {
+        let template = null;
+        if (mode === 'unsent') {
+            const unsent = await getUnsentWinningRoundsForUser(targetUser);
+            if (unsent.length > 0) {
+                template = await buildUserAccumulatedWinningReportTemplate(targetUser, unsent);
+            } else {
+                previewBox.textContent = `⚠️ [${targetUser}] 사용자는 가입 후 미전송된 실구매 당첨 회차가 없습니다.\n\n(실구매를 등록하고 1~5등에 당첨된 미발송 회차가 있을 때 소급 리포트가 생성됩니다.)`;
+                return;
+            }
+        } else {
+            template = await buildUserWinningReportTemplate(targetUser, roundVal);
+        }
+
+        if (template && template.text) {
+            previewBox.textContent = template.text;
+        } else {
+            previewBox.textContent = '템플릿을 생성할 수 없습니다.';
+        }
+    } catch(err) {
+        previewBox.textContent = '미리보기 로드 오류: ' + err.message;
+    }
+};
+
+window.startBatchWinningSend = async function() {
+    const mode = document.querySelector('input[name="batchSendMode"]:checked')?.value || 'round';
+    const roundVal = document.getElementById('batchSendTargetRound')?.value;
+    const userVal = document.getElementById('batchSendTargetUser')?.value || 'all';
+
+    const progressBox = document.getElementById('batchSendProgressBox');
+    const progressTitle = document.getElementById('batchProgressTitle');
+    const progressCount = document.getElementById('batchProgressCount');
+    const progressBar = document.getElementById('batchProgressBar');
+    const progressLog = document.getElementById('batchSendLog');
+    const startBtn = document.getElementById('btnStartBatchSend');
+
+    if (userVal !== 'all') {
+        if (!confirm(`[${userVal}] 회원에게 ${mode === 'unsent' ? '가입 후 미전송 당첨건 소급' : `제 ${roundVal}회 당첨`} 리포트를 카카오톡으로 전송하시겠습니까?`)) return;
+
+        if (mode === 'unsent') {
+            await window.sendUserUnsentWinningReports(userVal);
+        } else {
+            await window.sendUserWinningKakaoMessage(userVal, roundVal);
+        }
+        return;
+    }
+
+    if (!confirm(`카카오톡 알림 권한에 동의한 모든 회원에게 ${mode === 'unsent' ? '가입 후 미전송 당첨건 소급' : `제 ${roundVal}회 당첨`} 리포트를 일괄 전송하시겠습니까?`)) return;
+
+    if (progressBox) progressBox.style.display = 'block';
+    if (progressLog) progressLog.innerHTML = '';
+    if (startBtn) startBtn.disabled = true;
+
+    try {
+        await window.sendBatchWinningKakaoMessages(roundVal, {
+            mode,
+            onProgress: (current, total, userId, isSuccess, errorMsg) => {
+                const pct = Math.round((current / total) * 100);
+                if (progressBar) progressBar.style.width = `${pct}%`;
+                if (progressCount) progressCount.textContent = `${current} / ${total}명 (${pct}%)`;
+                if (progressTitle) progressTitle.textContent = `전송 중: ${userId}...`;
+
+                if (progressLog) {
+                    const logLine = document.createElement('div');
+                    logLine.style.color = isSuccess ? '#34d399' : '#f87171';
+                    logLine.textContent = isSuccess ? `[${current}/${total}] ✅ ${userId} 발송 성공` : `[${current}/${total}] ❌ ${userId} 실패: ${errorMsg || '권한 없음'}`;
+                    progressLog.prepend(logLine);
+                }
+            }
+        });
+
+        showToast('🎉 카카오톡 당첨 채점 리포트 일괄 발송이 완료되었습니다!');
+        if (progressTitle) progressTitle.textContent = '✅ 일괄 전송 완료!';
+    } catch(err) {
+        alert('전송 중 오류: ' + err.message);
+    } finally {
+        if (startBtn) startBtn.disabled = false;
+    }
+};
+
     window.sendAdminKakaoTestMessage = async function(type = 'general') {
         const now = new Date();
         const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
@@ -4213,6 +4936,30 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
         if (typeof setupAuthEvents !== 'undefined') {
             __exports.setupAuthEvents = setupAuthEvents;
             if (typeof window !== 'undefined') window.setupAuthEvents = setupAuthEvents;
+        }
+        if (typeof extractNumbersFromCombo !== 'undefined') {
+            __exports.extractNumbersFromCombo = extractNumbersFromCombo;
+            if (typeof window !== 'undefined') window.extractNumbersFromCombo = extractNumbersFromCombo;
+        }
+        if (typeof getDrawWinningNumbers !== 'undefined') {
+            __exports.getDrawWinningNumbers = getDrawWinningNumbers;
+            if (typeof window !== 'undefined') window.getDrawWinningNumbers = getDrawWinningNumbers;
+        }
+        if (typeof scoreUserRoundPurchases !== 'undefined') {
+            __exports.scoreUserRoundPurchases = scoreUserRoundPurchases;
+            if (typeof window !== 'undefined') window.scoreUserRoundPurchases = scoreUserRoundPurchases;
+        }
+        if (typeof getUnsentWinningRoundsForUser !== 'undefined') {
+            __exports.getUnsentWinningRoundsForUser = getUnsentWinningRoundsForUser;
+            if (typeof window !== 'undefined') window.getUnsentWinningRoundsForUser = getUnsentWinningRoundsForUser;
+        }
+        if (typeof buildUserWinningReportTemplate !== 'undefined') {
+            __exports.buildUserWinningReportTemplate = buildUserWinningReportTemplate;
+            if (typeof window !== 'undefined') window.buildUserWinningReportTemplate = buildUserWinningReportTemplate;
+        }
+        if (typeof buildUserAccumulatedWinningReportTemplate !== 'undefined') {
+            __exports.buildUserAccumulatedWinningReportTemplate = buildUserAccumulatedWinningReportTemplate;
+            if (typeof window !== 'undefined') window.buildUserAccumulatedWinningReportTemplate = buildUserAccumulatedWinningReportTemplate;
         }
         if (typeof setupInactivityAutoLogout !== 'undefined') {
             __exports.setupInactivityAutoLogout = setupInactivityAutoLogout;
@@ -18766,6 +19513,21 @@ async function autoSyncMissingDraws(showModal = false) {
             }
         }
 
+        // 4. ⏰ [토요일 21:00 자동 발송] 신규 회차 당첨번호 수집 시 동의 회원 당첨 리포트 자동 일괄 발송
+        if (syncedCount > 0 && typeof window.sendBatchWinningKakaoMessages === 'function') {
+            const isAutoEnabled = (typeof window.loadAdminKakaoAutoSendConfig === 'function') ? window.loadAdminKakaoAutoSendConfig() : true;
+            if (isAutoEnabled) {
+                if (showModal) {
+                    appendScrapingLog(`💬 [카카오톡 자동 발송] 신규 제 ${currentMaxRound + syncedCount}회 당첨결과 동의 회원 자동 발송 파이프라인 가동...`, 'header');
+                }
+                try {
+                    window.sendBatchWinningKakaoMessages(currentMaxRound + syncedCount, { isAuto: true });
+                } catch(e) {
+                    console.error('[Auto Kakao Broadcast Error]', e);
+                }
+            }
+        }
+
         if (showModal) {
             appendScrapingLog(`🎉 신규 ${syncedCount}개 회차 등록 및 ${repairedCount}개 회차 당첨금 보충 완료! 화면이 갱신되었습니다.`, 'success');
             updateScrapingStatus(`동기화 완료 (신규 +${syncedCount}회, 보충 +${repairedCount}회)`, true);
@@ -18816,6 +19578,40 @@ function setupSyncEvents() {
 }
 
 
+
+/**
+ * ⏰ 매주 토요일 21:00:00 최신 로또 당첨번호 자동 스크랩 및 동기화 스케줄러
+ */
+let saturdayScrapeTimer = null;
+
+function setupSaturdayAutoScrapeAndBroadcast() {
+    if (typeof window === 'undefined' || saturdayScrapeTimer) return;
+
+    // Check time every 60 seconds
+    saturdayScrapeTimer = setInterval(() => {
+        const now = new Date();
+        const day = now.getDay(); // 6 = Saturday
+        const hour = now.getHours();
+        const minute = now.getMinutes();
+
+        // Target: Saturday between 21:00 and 21:35 (every 3 minutes)
+        if (day === 6 && hour === 21 && minute >= 0 && minute <= 35) {
+            if (minute % 3 === 0 && now.getSeconds() < 10) {
+                console.log('[Saturday 21:00 Scheduler Triggered] Checking latest draw...');
+                if (typeof autoSyncMissingDraws === 'function') {
+                    autoSyncMissingDraws(false);
+                }
+            }
+        }
+    }, 60000);
+}
+
+if (typeof window !== 'undefined') {
+    window.setupSaturdayAutoScrapeAndBroadcast = setupSaturdayAutoScrapeAndBroadcast;
+    // Auto start scheduler on client launch
+    try { setupSaturdayAutoScrapeAndBroadcast(); } catch(e){}
+}
+
         if (typeof repairMissingPrizeHistory !== 'undefined') {
             __exports.repairMissingPrizeHistory = repairMissingPrizeHistory;
             if (typeof window !== 'undefined') window.repairMissingPrizeHistory = repairMissingPrizeHistory;
@@ -18831,6 +19627,10 @@ function setupSyncEvents() {
         if (typeof setupSyncEvents !== 'undefined') {
             __exports.setupSyncEvents = setupSyncEvents;
             if (typeof window !== 'undefined') window.setupSyncEvents = setupSyncEvents;
+        }
+        if (typeof setupSaturdayAutoScrapeAndBroadcast !== 'undefined') {
+            __exports.setupSaturdayAutoScrapeAndBroadcast = setupSaturdayAutoScrapeAndBroadcast;
+            if (typeof window !== 'undefined') window.setupSaturdayAutoScrapeAndBroadcast = setupSaturdayAutoScrapeAndBroadcast;
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/services/lotto/views/sync.js]:', modErr);

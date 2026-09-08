@@ -44,14 +44,14 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="운도실력 777">
-    <link rel="icon" type="image/png" href="icons/favicon.png?v=676">
-    <link rel="shortcut icon" href="favicon.ico?v=676">
-    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=676">
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=676">
-    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=676">
-    <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=676">
+    <link rel="icon" type="image/png" href="icons/favicon.png?v=685">
+    <link rel="shortcut icon" href="favicon.ico?v=685">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=685">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=685">
+    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=685">
+    <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=685">
 
-    <link rel="stylesheet" href="styles.css?v=676">
+    <link rel="stylesheet" href="styles.css?v=685">
 </head>
 
 <body>
@@ -81,8 +81,11 @@
         <div class="lp-particles" id="lpParticles"></div>
 
         <div class="lp-header">
-            <div class="lp-brand-badge">
-                <i class="fa-solid fa-star"></i> Smart Life Finance Platform
+            <div class="lp-brand-badge" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                <span><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
+                <span id="appVersionBadgeLanding" onclick="window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
+                    <i class="fa-solid fa-code-branch"></i> v685 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                </span>
             </div>
             <h1 style="margin: 0 0 8px 0;">운도<br><span class="lp-accent">실력</span></h1>
             <p class="lp-tagline">당신의 경제적 자유를 위한 스마트 서비스 플랫폼</p>
@@ -389,7 +392,12 @@
                         <span class="logo-num-badge">6/45</span>
                     </div>
                     <div class="logo-text">
-                        <h1><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></h1>
+                        <h1 style="display: flex; align-items: center; gap: 8px;">
+                            <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
+                            <span class="app-version-badge" onclick="event.stopPropagation(); window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
+                                v685
+                            </span>
+                        </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
                     </div>
                 </div>
@@ -1774,7 +1782,12 @@
                 <div style="display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 16px; background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.35); margin-bottom: 10px; color: #fbbf24; font-size: 1.55rem; box-shadow: 0 0 20px rgba(251, 191, 36, 0.15), inset 0 1px 1px rgba(255, 255, 255, 0.3);">
                     <i class="fa-solid fa-shield-halved"></i>
                 </div>
-                <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px;">운도실력 (Lucky 777)</h2>
+                <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span>운도실력 (Lucky 777)</span>
+                    <span class="app-version-badge" onclick="window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
+                        <i class="fa-solid fa-code-branch"></i> v685
+                    </span>
+                </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
             </div>
 
@@ -2070,9 +2083,20 @@
                     <button type="button" onclick="window.sendAdminKakaoTestMessage && window.sendAdminKakaoTestMessage('lotto')" style="padding: 8px 10px; background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5); border-radius: 7px; font-size: 0.8rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
                         <i class="fa-solid fa-clover"></i> 로또 번호 템플릿
                     </button>
-                    <button type="button" onclick="window.sendAdminKakaoTestMessage && window.sendAdminKakaoTestMessage('custom')" style="padding: 8px 10px; background: rgba(255, 255, 255, 0.08); color: #f8fafc; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 7px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
-                        <i class="fa-solid fa-pen-to-square"></i> 직접 입력 전송
+                    <button type="button" onclick="window.openKakaoBatchSendModal && window.openKakaoBatchSendModal()" style="padding: 8px 10px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #0f172a; border: none; border-radius: 7px; font-size: 0.8rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);">
+                        <i class="fa-solid fa-paper-plane"></i> 📢 당첨 리포트 발송 콘솔
                     </button>
+                </div>
+
+                <!-- Saturday 21:00 Auto-Send Switch -->
+                <div style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" id="chkAutoSendSaturday21" checked onchange="window.toggleAdminSaturdayAutoSend && window.toggleAdminSaturdayAutoSend(this.checked)" style="accent-color: #fee500; width: 17px; height: 17px; cursor: pointer;">
+                        <span style="font-size: 0.78rem; font-weight: 800; color: #fee500;">
+                            ⏰ 매주 토요일 21:00 당첨 스크랩 후 동의 회원 당첨결과 자동 발송
+                        </span>
+                    </label>
+                    <span id="badgeAutoSendStatus" style="font-size: 0.72rem; color: #34d399; font-weight: 700;">🟢 활성화됨</span>
                 </div>
             </div>
 
@@ -2938,11 +2962,38 @@
         window.handleFetchLatestDrawClick = handleFetchLatestDrawClick;
 
         // ========================================================
+        // 📱 App Version & Cache Busting Controller
+        // ========================================================
+        window.APP_VERSION = 'v685';
+        window.forceReloadCache = async function() {
+            var vStr = window.APP_VERSION || 'v685';
+            if (confirm('🔄 최신 버전(' + vStr + ')으로 캐시를 비우고 새로고침하시겠습니까?')) {
+                try {
+                    if ('caches' in window) {
+                        var cacheNames = await caches.keys();
+                        await Promise.all(cacheNames.map(function(name) { return caches.delete(name); }));
+                    }
+                    if ('serviceWorker' in navigator) {
+                        var registrations = await navigator.serviceWorker.getRegistrations();
+                        for (var i = 0; i < registrations.length; i++) {
+                            await registrations[i].unregister();
+                        }
+                    }
+                } catch(e) {
+                    console.warn('[Cache Clear Error]', e);
+                }
+                var url = new URL(window.location.href);
+                url.searchParams.set('_v', Date.now());
+                window.location.href = url.toString();
+            }
+        };
+
+        // ========================================================
         // 📱 PWA Service Worker & Install Prompt Controller
         // ========================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=683')
+                navigator.serviceWorker.register('./sw.js?v=685')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -3008,6 +3059,96 @@
     </script>
 
     <script src="data.js?v=680"></script>
-    <script src="app_v2.js?v=683"></script>
+    <script src="app_v2.js?v=685"></script>
+
+    <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
+    <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">
+        <div class="modal-card" style="background:#0f172a; border:2px solid #fee500; padding:22px; border-radius:16px; max-width:620px; width:100%; color:#fff; box-shadow:0 20px 60px rgba(0,0,0,0.9); max-height:92vh; display:flex; flex-direction:column;">
+            
+            <!-- Modal Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-paper-plane" style="color:#fee500; font-size:1.3rem;"></i>
+                    <h3 style="margin:0; color:#fee500; font-size:1.15rem; font-weight:900;">
+                        실구매 당첨 채점 리포트 카카오톡 발송 콘솔
+                    </h3>
+                </div>
+                <button type="button" onclick="document.getElementById('kakaoBatchSendModal').style.display='none'" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:1.4rem; cursor:pointer; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;">&times;</button>
+            </div>
+
+            <div style="flex-grow:1; overflow-y:auto; display:flex; flex-direction:column; gap:12px; padding-right:2px;">
+                
+                <!-- 1. Mode Selection -->
+                <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); padding:10px 12px; border-radius:10px;">
+                    <label style="display:block; font-size:0.8rem; color:#93c5fd; font-weight:700; margin-bottom:6px;">
+                        <i class="fa-solid fa-list-check"></i> 발송 모드 선택
+                    </label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; background:rgba(15, 23, 42, 0.7); padding:8px 10px; border-radius:6px; border:1px solid rgba(59, 130, 246, 0.4); font-size:0.78rem; font-weight:700; color:#fff;">
+                            <input type="radio" name="batchSendMode" value="round" checked onchange="window.updateBatchSendPreview && window.updateBatchSendPreview()" style="accent-color:#3b82f6;">
+                            <span>🎯 특정/최신 회차 리포트</span>
+                        </label>
+                        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; background:rgba(15, 23, 42, 0.7); padding:8px 10px; border-radius:6px; border:1px solid rgba(167, 139, 250, 0.4); font-size:0.78rem; font-weight:700; color:#c4b5fd;">
+                            <input type="radio" name="batchSendMode" value="unsent" onchange="window.updateBatchSendPreview && window.updateBatchSendPreview()" style="accent-color:#a78bfa;">
+                            <span>📦 가입 후 미전송 당첨건 소급</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 2. Target Selection & Round Selection Grid -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label for="batchSendTargetRound" style="font-size:0.8rem; color:#94a3b8; font-weight:700;">대상 추첨 회차</label>
+                        <select id="batchSendTargetRound" onchange="window.updateBatchSendPreview && window.updateBatchSendPreview()" style="width:100%; height:38px; padding:0 8px; background:#1e293b; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.85rem; outline:none;">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <label for="batchSendTargetUser" style="font-size:0.8rem; color:#94a3b8; font-weight:700;">발송 대상 회원</label>
+                        <select id="batchSendTargetUser" onchange="window.updateBatchSendPreview && window.updateBatchSendPreview()" style="width:100%; height:38px; padding:0 8px; background:#1e293b; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.85rem; outline:none;">
+                            <option value="all">👥 카카오 권한 동의 회원 전체</option>
+                            <!-- Populated dynamically with users -->
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 3. Real-Time Message Preview Window -->
+                <div style="display:flex; flex-direction:column; gap:4px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size:0.8rem; color:#fee500; font-weight:800;">
+                            <i class="fa-solid fa-eye"></i> 카카오톡 메시지 실시간 미리보기 (Preview)
+                        </span>
+                        <span id="previewRecipientBadge" style="font-size:0.72rem; color:#94a3b8;"></span>
+                    </div>
+                    <div id="batchSendMessagePreview" style="background:#1e293b; border:1px solid rgba(254, 229, 0, 0.3); border-radius:8px; padding:12px; font-size:0.8rem; color:#f8fafc; line-height:1.6; white-space:pre-wrap; max-height:180px; overflow-y:auto; font-family:monospace;">
+                        미리보기를 불러오는 중...
+                    </div>
+                </div>
+
+                <!-- 4. Progress and Log Box -->
+                <div id="batchSendProgressBox" style="display:none; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <span id="batchProgressTitle" style="font-size:0.8rem; color:#38bdf8; font-weight:700;">전송 진행 중...</span>
+                        <span id="batchProgressCount" style="font-size:0.75rem; color:#cbd5e1;">0 / 0</span>
+                    </div>
+                    <div style="width:100%; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden; margin-bottom:8px;">
+                        <div id="batchProgressBar" style="width:0%; height:100%; background:linear-gradient(90deg, #fee500, #10b981); transition:width 0.2s;"></div>
+                    </div>
+                    <div id="batchSendLog" style="max-height:80px; overflow-y:auto; font-size:0.72rem; color:#94a3b8; line-height:1.4;"></div>
+                </div>
+
+                <!-- 5. Action Buttons -->
+                <div style="display:flex; gap:8px; margin-top:4px;">
+                    <button type="button" id="btnStartBatchSend" onclick="window.startBatchWinningSend && window.startBatchWinningSend()" style="flex:1; height:42px; background:linear-gradient(135deg, #fee500 0%, #f59e0b 100%); color:#191919; border:none; border-radius:8px; font-size:0.92rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(254, 229, 0, 0.35);">
+                        <i class="fa-solid fa-paper-plane"></i> 카카오톡 리포트 전송 시작하기
+                    </button>
+                    <button type="button" onclick="document.getElementById('kakaoBatchSendModal').style.display='none'" style="width:80px; height:42px; background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; font-size:0.88rem; font-weight:700; cursor:pointer;">
+                        닫기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
