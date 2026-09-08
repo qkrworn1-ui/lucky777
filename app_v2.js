@@ -1498,6 +1498,7 @@ function setupAuthEvents(initFirebaseAndData) {
         try {
             if (window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
                 window.Kakao.Auth.login({
+                    scope: 'profile_nickname,profile_image,talk_message',
                     throughTalk: true,
                     persistAccessToken: true,
                     success: function(authObj) {
@@ -1567,22 +1568,26 @@ function setupAuthEvents(initFirebaseAndData) {
 
                                     showToast(`🎉 [${nickname}]님 환영합니다! 카카오 간편 회원가입이 완료되었습니다.`);
                                 } else {
-                                    const existingData = userDoc.data();
-                                    if (existingData.status === 'suspended' || existingData.status === 'suspended_nopurchase') {
-                                        alert('해당 계정은 이용이 정지된 상태입니다. 관리자에게 문의하세요.');
-                                        return;
-                                    }
-                                    showToast(`🎉 [${existingData.realName || customUserId}]님, 카카오 계정으로 로그인되었습니다!`);
+                                    showToast(`👋 [${nickname}]님, 카카오 간편 로그인되었습니다!`);
                                 }
 
+                                // Update local session
                                 SafeAuth.set(customUserId);
+                                window.__currentUser = {
+                                    userId: customUserId,
+                                    realName: nickname,
+                                    role: 'user',
+                                    authProvider: 'kakao'
+                                };
 
-                                // ✅ Immediately hide modal & show landing page
+                                // Hide Login Modal
                                 const modal = document.getElementById('loginModalOverlay');
                                 if (modal) {
-                                    modal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
-                                    modal.classList.add('hidden');
+                                    modal.style.setProperty('display', 'none', 'important');
+                                    modal.classList.remove('active');
                                 }
+
+                                // Show Landing Page by default
                                 const kakaoLpEl = document.getElementById('landingPage');
                                 const kakaoAcEl = document.getElementById('appContainer');
                                 const kakaoTpEl = document.getElementById('totoPage');
@@ -1622,7 +1627,8 @@ function setupAuthEvents(initFirebaseAndData) {
         } else if (window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function') {
             const redirectUri = window.location.origin + window.location.pathname;
             window.Kakao.Auth.authorize({
-                redirectUri: redirectUri
+                redirectUri: redirectUri,
+                scope: 'profile_nickname,profile_image,talk_message'
             });
         } else {
             alert('⚠️ 카카오 SDK 로딩 실패: 잠시 후 다시 시도해 주세요.');
@@ -1631,6 +1637,156 @@ function setupAuthEvents(initFirebaseAndData) {
         console.error('[Kakao Exec Error]', execErr);
         alert('카카오 로그인 실행 오류: ' + execErr.message);
     }
+};
+
+/**
+ * 💬 [동적 권한 재동의 핸들러]
+ * 기존 사용자(기존에 talk_message 권한 미동의 상태)가 메시지 발송을 시도할 때
+ * 자동으로 카카오 동의 팝업창을 띄워 권한을 추가 승인받는 함수
+ */
+window.ensureKakaoScope = function(scopeName) {
+    scopeName = scopeName || 'talk_message';
+    return new Promise((resolve, reject) => {
+        initKakaoSdk();
+        if (!window.Kakao || !window.Kakao.Auth) {
+            return reject(new Error('카카오 SDK가 준비되지 않았습니다.'));
+        }
+
+        // 1. 현재 사용자의 동의 내역 조회
+        window.Kakao.API.request({
+            url: '/v2/user/scopes',
+            data: { scopes: [scopeName] },
+            success: function(res) {
+                const targetScope = res.scopes && res.scopes.find(s => s.id === scopeName);
+                if (targetScope && targetScope.agreed) {
+                    console.log(`[Kakao] 이미 [${scopeName}] 권한이 동의되어 있습니다.`);
+                    return resolve(true);
+                }
+
+                // 2. 동의되지 않은 경우 -> 카카오 동의 팝업 자동 실행 (증분 동의)
+                console.log(`[Kakao] [${scopeName}] 권한 미동의 상태 -> 동의 팝업 실행`);
+                showToast('💬 카카오톡 메시지 전송 권한 동의창을 엽니다...');
+                
+                window.Kakao.Auth.login({
+                    scope: scopeName,
+                    throughTalk: true,
+                    success: function(authObj) {
+                        console.log(`[Kakao] [${scopeName}] 추가 권한 승인 완료!`);
+                        resolve(true);
+                    },
+                    fail: function(err) {
+                        console.warn(`[Kakao] 권한 동의 거부 또는 닫힘`, err);
+                        reject(new Error('카카오톡 메시지 전송을 위해 권한 동의가 필요합니다.'));
+                    }
+                });
+            },
+            fail: function(err) {
+                // 토큰이 없거나 만료된 경우 로그인과 함께 동의 요청
+                console.warn('[Kakao] Scope 조회 실패, 로그인 연동 시도', err);
+                window.Kakao.Auth.login({
+                    scope: scopeName,
+                    throughTalk: true,
+                    success: function() { resolve(true); },
+                    fail: function(e) { reject(e); }
+                });
+            }
+        });
+    });
+};
+
+/**
+ * 💬 [카카오톡 나에게 메시지 전송 공통 함수]
+ */
+window.sendKakaoCustomMessage = async function(templateData) {
+    try {
+        // 1. 기존/신규 사용자 권한 동의 여부 검사 (미동의 시 팝업 띄움)
+        await window.ensureKakaoScope('talk_message');
+
+        showToast('🚀 카카오톡으로 전송 중입니다...');
+
+        // 2. 나에게 보내기 API 호출
+        window.Kakao.API.request({
+            url: '/v2/api/talk/memo/default/send',
+            data: {
+                template_object: templateData
+            },
+            success: function(res) {
+                console.log('[Kakao Send Success]', res);
+                showToast('✅ 카카오톡 [나와의 채팅방]으로 성공적으로 전송되었습니다!');
+            },
+            fail: function(err) {
+                console.error('[Kakao Send Failed]', err);
+                if (err && err.code === -402) {
+                    // 권한 부족 에러 시 즉시 재동의 팝업 호출
+                    window.Kakao.Auth.login({
+                        scope: 'talk_message',
+                        success: function() {
+                            window.sendKakaoCustomMessage(templateData);
+                        }
+                    });
+                } else {
+                    alert('⚠️ 카카오톡 전송 실패: ' + (err.msg || JSON.stringify(err)));
+                }
+            }
+        });
+    } catch (err) {
+        console.warn('[Kakao Message Action Aborted]', err);
+        if (err && err.message) {
+            alert('⚠️ ' + err.message);
+        }
+    }
+};
+
+/**
+ * 💬 [로또 AI 추천 번호 카카오톡 전송]
+ */
+window.sendLottoKakaoMessage = function(round, combinations, memo) {
+    const roundText = round ? `${round}회차` : '이번 주';
+    let comboText = '';
+    if (Array.isArray(combinations)) {
+        comboText = combinations.map((c, i) => {
+            const nums = Array.isArray(c) ? c.join(', ') : (c.numbers ? c.numbers.join(', ') : String(c));
+            return `[${String.fromCharCode(65 + i)}] ${nums}`;
+        }).join('\n');
+    } else {
+        comboText = String(combinations || '');
+    }
+
+    const template = {
+        object_type: 'text',
+        text: `🎰 [운도실력] ${roundText} 로또 AI 맞춤 추천 번호\n\n${comboText}\n\n💡 ${memo || '빅데이터 퀀트 알고리즘 엄선 조합입니다.'}`,
+        link: {
+            web_url: window.location.origin + window.location.pathname,
+            mobile_web_url: window.location.origin + window.location.pathname
+        },
+        button_title: '나의 번호 채점 & 분석 보기'
+    };
+
+    window.sendKakaoCustomMessage(template);
+};
+
+/**
+ * 💬 [토토/프로토 AI 추천픽 카카오톡 전송]
+ */
+window.sendTotoKakaoMessage = function(title, picks, odds) {
+    let pickText = '';
+    if (Array.isArray(picks)) {
+        pickText = picks.map(p => `• ${p.matchTitle || p.match || ''} : ${p.pickName || p.pick || ''} (@${p.odds || ''})`).join('\n');
+    } else {
+        pickText = String(picks || '');
+    }
+
+    const template = {
+        object_type: 'text',
+        text: `⚽ [운도실력] ${title || '토토/프로토 AI 추천픽'}\n\n${pickText}\n\n💰 조합 배당률: ${odds || '2.45'}배\n🎯 기대값(+EV) & 실시간 배당 분석 완료`,
+        link: {
+            web_url: window.location.origin + window.location.pathname,
+            mobile_web_url: window.location.origin + window.location.pathname
+        },
+        button_title: '토토/프로토 분석표 보기'
+    };
+
+    window.sendKakaoCustomMessage(template);
 };
 
     // ========================================================
