@@ -3863,9 +3863,9 @@ html, body {
             border: 1px solid rgba(255, 255, 255, 0.09);
             border-radius: 16px;
             padding: 16px 24px;
-            width: 90%;
-            max-width: 860px;
-            margin-bottom: 24px;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto 20px auto;
             display: flex;
             flex-direction: column;
             gap: 14px;
@@ -11013,6 +11013,20 @@ html, body {
         border-radius: 14px !important;
         gap: 10px !important;
         margin-bottom: 12px !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: auto !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+    }
+
+    .lp-fin-main-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .lp-fin-title-area {
@@ -11020,19 +11034,18 @@ html, body {
         width: 100% !important;
         text-align: center !important;
         align-items: center !important;
+        box-sizing: border-box !important;
     }
 
     .lp-fin-title {
-        font-size: 0.95rem !important;
-        line-height: 1.35 !important;
+        font-size: 0.92rem !important;
+        line-height: 1.4 !important;
         text-align: center !important;
-        word-break: keep-all !important;
-    }
-
-    .lp-fin-main-row {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 10px !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .lp-fin-stats {
@@ -11040,6 +11053,7 @@ html, body {
         grid-template-columns: repeat(2, 1fr) !important;
         gap: 8px !important;
         width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .lp-stat-item {
@@ -11048,6 +11062,9 @@ html, body {
         background: rgba(0, 0, 0, 0.25) !important;
         text-align: center !important;
         box-sizing: border-box !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
     }
 
     .lp-stat-label {
@@ -11056,8 +11073,10 @@ html, body {
     }
 
     .lp-stat-val {
-        font-size: 0.96rem !important;
+        font-size: clamp(0.85rem, 3.2vw, 1.02rem) !important;
         white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }
 
     /* 4. 미니 당첨 카드 (.lp-mini-win-card) */
@@ -11074,15 +11093,32 @@ html, body {
         padding: 10px 12px !important;
         border-radius: 10px !important;
         width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+    }
+
+    .mini-win-top-row,
+    .mini-win-bottom-row {
+        width: 100% !important;
         box-sizing: border-box !important;
     }
 
     .mini-win-title {
-        font-size: 0.82rem !important;
+        font-size: 0.8rem !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
     }
 
     .mini-win-sub {
         font-size: 0.72rem !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }
 
     .mini-win-prize {
@@ -11091,7 +11127,7 @@ html, body {
 
     .mini-win-hits {
         font-size: 0.72rem !important;
-        max-width: 180px !important;
+        max-width: 160px !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
