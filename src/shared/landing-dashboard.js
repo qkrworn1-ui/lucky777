@@ -11,7 +11,15 @@ import { computeUser70RecommendationsReview } from '../services/lotto/views/revi
 export async function renderLandingDashboard() {
     console.log('[Landing Dashboard] Updating individual and global winning summary...');
 
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '비로그인';
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '비로그인';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
+        } catch (e) {}
+    }
+    const realName = (typeof getUserRealName === 'function' ? getUserRealName(authId) : '') || '';
+    const displayName = (realName && realName !== authId) ? `${authId} (${realName})` : authId;
 
     // 1. Calculate Individual User's Actual Lotto Financials
     //    관리자(master/admin)도 홈 화면 '나의 실구매 당첨' 카드는 본인 장부만 계산해야 함
@@ -38,7 +46,7 @@ export async function renderLandingDashboard() {
     const elFinTitle = document.querySelector('.lp-fin-title');
 
     if (elFinTitle) {
-        elFinTitle.innerHTML = `<span style="color:#fbbf24;">[${authId}]</span> 님의 실구매 누적 자산 &amp; 당첨 요약`;
+        elFinTitle.innerHTML = `<span style="color:#fbbf24;">[${displayName}]</span> 님의 실구매 누적 자산 &amp; 당첨 요약`;
     }
 
     if (elInvest) elInvest.textContent = `${(myFin.totalInvest || 0).toLocaleString()} 원`;
@@ -64,7 +72,7 @@ export async function renderLandingDashboard() {
     const elMyHits = document.getElementById('lp-lotto-mini-hits');
 
     if (elMyTitle) {
-        elMyTitle.textContent = `👤 [${authId}] 님의 실구매 당첨`;
+        elMyTitle.textContent = `👤 [${displayName}] 님의 실구매 당첨`;
     }
 
     if (elMySub) {

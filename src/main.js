@@ -26,6 +26,9 @@ window._switchPage = _switchPage;
 window.showLanding = function() {
     _switchPage('landingPage');
     try {
+        if (typeof window.updateAppVersionBadges === 'function') {
+            window.updateAppVersionBadges();
+        }
         if (typeof renderLandingDashboard === 'function') {
             renderLandingDashboard();
         } else if (typeof window.renderLandingDashboard === 'function') {
@@ -87,6 +90,11 @@ window.showLotto = function() {
 
 function runInit() {
     console.log('[System] Initializing decoupled independent services...');
+    try {
+        if (typeof window.updateAppVersionBadges === 'function') {
+            window.updateAppVersionBadges();
+        }
+    } catch(e) {}
 
     // 1. Initialize Toto Service (Independent Sandbox)
     setTimeout(() => {
