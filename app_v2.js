@@ -5998,7 +5998,7 @@ async function fetchAllUsersPurchases() {
             state.allRegisteredUsersList = [];
             uSnapshot.forEach(doc => {
                 const uId = doc.id.trim().toLowerCase();
-                if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'pjg' || uId === 'sample' || uId === 'hms' || uId === 'wdy') return;
+                if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'pjg' || uId === 'sample' || uId === 'hms') return;
                 const d = doc.data() || {};
                 if (d.isDeleted === true || d.status === 'trash' || d.status === 'deleted') return;
                 const rName = d.realName || doc.id;
@@ -6050,7 +6050,7 @@ async function fetchAllUsersPurchases() {
         pSnapshot.forEach(doc => {
             const rawUserId = doc.id;
             const userId = rawUserId.trim().toLowerCase();
-            if (userId.startsWith('{') || userId.startsWith('test_') || userId === 'user_alpha' || userId === 'user_beta' || userId === 'pjg' || userId === 'sample' || userId === 'hms' || userId === 'wdy') {
+            if (userId.startsWith('{') || userId.startsWith('test_') || userId === 'user_alpha' || userId === 'user_beta' || userId === 'pjg' || userId === 'sample' || userId === 'hms') {
                 return; // 🔒 Exclude test accounts from aggregation!
             }
             const data = doc.data();
@@ -9430,7 +9430,7 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (cleanUser.startsWith('{') || cleanUser.startsWith('test_') || cleanUser === 'user_alpha' || cleanUser === 'user_beta' || cleanUser === 'pjg' || cleanUser === 'sample' || cleanUser === 'hms' || cleanUser === 'wdy') {
+    if (cleanUser.startsWith('{') || cleanUser.startsWith('test_') || cleanUser === 'user_alpha' || cleanUser === 'user_beta' || cleanUser === 'pjg' || cleanUser === 'sample' || cleanUser === 'hms') {
         return null;
     }
     const roundNum = parseInt(round, 10);
@@ -10508,7 +10508,7 @@ async function renderTop5Combinations(isRollingAnimation = false) {
                 state.allRegisteredUsersList = [];
                 uSnap.forEach(d => {
                     const uId = d.id.trim().toLowerCase();
-                    if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'pjg' || uId === 'sample' || uId === 'hms' || uId === 'wdy') return;
+                    if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'pjg' || uId === 'sample' || uId === 'hms') return;
                     const uData = d.data() || {};
                     if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') return;
                     const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
@@ -12639,7 +12639,7 @@ async function renderReviewTab() {
             const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
             const registeredUsers = rawUsers.filter(u => {
                 const uId = (u.id || '').trim().toLowerCase();
-                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && uId !== 'wdy' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
             });
             let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 복기</option>`;
             userOptionsHtml += `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
@@ -12779,7 +12779,7 @@ function renderReviewDetail(r) {
         const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
         const rawRegisteredUsers = rawUsers.filter(u => {
             const uId = (u.id || '').trim().toLowerCase();
-            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && uId !== 'wdy' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
         });
         const baseList = (rawRegisteredUsers && rawRegisteredUsers.length > 0 ? rawRegisteredUsers : [{ id: authId, name: '관리자' }]);
         
@@ -13687,7 +13687,7 @@ function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all')
                 }
                 baseList = baseList.filter(u => {
                     const uId = (u.id || '').trim().toLowerCase();
-                    return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && uId !== 'wdy' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+                    return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
                 });
                 if (baseList.length === 0) {
                     baseList = [{ id: 'master', name: '관리자' }];
@@ -15756,7 +15756,7 @@ async function renderConfirmedPurchasesList() {
         const currentTarget = state.adminViewingTarget || 'all';
         const userList = Object.keys(state.allUsersPurchasesMap || {}).filter(uId => {
             const clean = (uId || '').trim().toLowerCase();
-            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms' && clean !== 'wdy';
+            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms';
         });
         
         let optionsHtml = `<option value="all" ${currentTarget === 'all' ? 'selected' : ''}>👥 [전체 회원 통합 보기 (${userList.length}명)]</option>`;
@@ -15790,7 +15790,7 @@ async function renderConfirmedPurchasesList() {
         const currentTarget = state.adminViewingTarget || 'all';
         const userList = Object.keys(state.allUsersPurchasesMap || {}).filter(uId => {
             const clean = (uId || '').trim().toLowerCase();
-            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms' && clean !== 'wdy';
+            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms';
         });
         const history = state.mergedHistory || {};
 
@@ -28281,7 +28281,7 @@ async function updateHomeReviewDashboard() {
 
             const registeredUsers = rawRegisteredUsers.filter(u => {
                 const uId = (u.id || '').trim().toLowerCase();
-                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && uId !== 'wdy' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
             });
 
             const userList = registeredUsers.length > 0 ? [...registeredUsers] : [

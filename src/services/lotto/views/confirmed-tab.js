@@ -155,7 +155,7 @@ export async function renderConfirmedPurchasesList() {
         const currentTarget = state.adminViewingTarget || 'all';
         const userList = Object.keys(state.allUsersPurchasesMap || {}).filter(uId => {
             const clean = (uId || '').trim().toLowerCase();
-            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms' && clean !== 'wdy';
+            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms';
         });
         
         let optionsHtml = `<option value="all" ${currentTarget === 'all' ? 'selected' : ''}>👥 [전체 회원 통합 보기 (${userList.length}명)]</option>`;
@@ -189,7 +189,7 @@ export async function renderConfirmedPurchasesList() {
         const currentTarget = state.adminViewingTarget || 'all';
         const userList = Object.keys(state.allUsersPurchasesMap || {}).filter(uId => {
             const clean = (uId || '').trim().toLowerCase();
-            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms' && clean !== 'wdy';
+            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms';
         });
         const history = state.mergedHistory || {};
 
