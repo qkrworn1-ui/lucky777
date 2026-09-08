@@ -36,8 +36,22 @@ function _clearRaw(key) {
 }
 
 export const SafeAuth = {
-    get: function() { return _getRaw('lotto_auth'); },
-    set: function(id) { if (id) _setRaw('lotto_auth', id); },
+    get: function() {
+        var raw = _getRaw('lotto_auth');
+        if (!raw) return null;
+        if (typeof raw === 'string' && raw.startsWith('{')) {
+            try {
+                var obj = JSON.parse(raw);
+                if (obj && obj.userId) return obj.userId;
+            } catch(e) {}
+        }
+        return raw;
+    },
+    set: function(id) {
+        if (!id) return;
+        var cleanId = (typeof id === 'object' && id.userId) ? id.userId : String(id).trim();
+        _setRaw('lotto_auth', cleanId);
+    },
     clear: function() { _clearRaw('lotto_auth'); }
 };
 
@@ -612,8 +626,12 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                             location.reload();
                             return;
                         }
+                    }
 
-                        // 🔒 Check if Mandatory Profile & E-Signature Pledge is Complete
+                    // 🔒 Check if Mandatory Profile & E-Signature Pledge is Complete
+                    // (Exempt only root built-in master/admin ID, but enforce for all members including admin-promoted accounts)
+                    const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
+                    if (!isRootMaster) {
                         const isPhoneValid = uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.length >= 10;
                         const isSigValid = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl);
                         const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2);
@@ -628,6 +646,16 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                                 }
                             }, 100);
                             return; // Halt service access until pledge is submitted
+                        }
+                    }
+
+                    // 💬 Check Kakao Talk Message Scope Consent (for Kakao users)
+                    if (authId.startsWith('kakao_') || (uData.kakaoAuth && typeof uData.kakaoAuth === 'object')) {
+                        const hasKakaoScope = !!(uData.kakaoAuth && uData.kakaoAuth.hasTalkMessageScope);
+                        if (!hasKakaoScope && typeof window.checkAndPromptKakaoScope === 'function') {
+                            setTimeout(() => {
+                                window.checkAndPromptKakaoScope('talk_message');
+                            }, 350);
                         }
                     }
                 }
@@ -1024,7 +1052,15 @@ window.checkAndPromptKakaoScope = function(scopeName) {
         return;
     }
 
+    if (typeof initKakaoSdk === 'function') initKakaoSdk();
+
     if (!window.Kakao || !window.Kakao.Auth) return;
+
+    if (!window.Kakao.Auth.getAccessToken()) {
+        console.log(`[Kakao] [${scopeName}] SDK 토큰 미확인 -> 동의 안내 모달 표시`);
+        window.showKakaoMessageConsentModal();
+        return;
+    }
 
     window.Kakao.API.request({
         url: '/v2/user/scopes',
@@ -1039,7 +1075,8 @@ window.checkAndPromptKakaoScope = function(scopeName) {
             }
         },
         fail: function(e) {
-            console.warn('[Kakao Scopes Check Fail]', e);
+            console.warn('[Kakao Scopes Check Fail -> 동의 모달 표시]', e);
+            window.showKakaoMessageConsentModal();
         }
     });
 };
@@ -1794,6 +1831,15 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
                 const data = userDoc.data();
 
+                // 0. Check Deletion / Trash Status
+                if (data.isDeleted === true || data.status === 'trash') {
+                    if (loginError) { 
+                        loginError.textContent = `🚫 삭제(휴지통) 처리된 계정입니다.\n관리자에게 문의하여 계정 복구를 요청하세요.`; 
+                        loginError.style.display = 'block'; 
+                    }
+                    return false;
+                }
+
                 // 1. Check Account Suspension Status
                 if (data.status === 'suspended') {
                     if (loginError) { 
@@ -2007,7 +2053,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
         const tab = __currentUserFilterTab || 'all';
 
         const filtered = __cachedUsersWithStatus.filter(item => {
-            const { userId, data, pStatus, isPermanent, isUserAdmin, isSuspended } = item;
+            const { userId, data, pStatus, isPermanent, isUserAdmin, isSuspended, isDeleted } = item;
             
             // Search query filter
             if (query) {
@@ -2018,6 +2064,16 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 if (!uId.includes(query) && !rName.includes(query) && !nick.includes(query) && !phone.includes(query)) {
                     return false;
                 }
+            }
+
+            // Trash Tab: Only show deleted users
+            if (tab === 'trash') {
+                return isDeleted === true;
+            }
+
+            // Non-trash tabs: Exclude deleted users
+            if (isDeleted === true) {
+                return false;
             }
 
             // Category Tab filter
@@ -2036,25 +2092,102 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             return true;
         });
 
-        renderUserListCards(filtered, query.length > 0 || tab !== 'all');
+        renderUserListCards(filtered, query.length > 0 || tab !== 'all', tab === 'trash');
     };
 
-    function renderUserListCards(usersList, isFiltered = false) {
+    function renderUserListCards(usersList, isFiltered = false, isTrashMode = false) {
         const userListContainer = document.getElementById('userListContainer');
         if (!userListContainer) return;
 
         if (!usersList || usersList.length === 0) {
-            userListContainer.innerHTML = `
-            <div style="text-align:center; padding: 40px 20px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:12px; border:1px dashed rgba(255,255,255,0.1);">
-                <i class="fa-solid fa-user-slash" style="font-size:2rem; color:#64748b; margin-bottom:10px; display:block;"></i>
-                <div style="font-size:0.92rem; font-weight:700; color:#cbd5e1;">조건에 맞는 회원이 없습니다.</div>
-                ${isFiltered ? '<button type="button" onclick="document.getElementById(\'inputSearchUserList\').value=\'\'; window.setUserFilterTab(\'all\');" style="margin-top:10px; background:rgba(59,130,246,0.2); border:1px solid #3b82f6; color:#93c5fd; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">필터 초기화</button>' : ''}
-            </div>`;
+            if (isTrashMode) {
+                userListContainer.innerHTML = `
+                <div style="text-align:center; padding: 40px 20px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:12px; border:1px dashed rgba(255,255,255,0.1);">
+                    <i class="fa-solid fa-trash-can-arrow-up" style="font-size:2rem; color:#64748b; margin-bottom:10px; display:block;"></i>
+                    <div style="font-size:0.92rem; font-weight:700; color:#cbd5e1;">휴지통이 비어 있습니다.</div>
+                    <div style="font-size:0.76rem; color:#64748b; margin-top:4px;">현재 삭제된 회원 계정이 없습니다.</div>
+                </div>`;
+            } else {
+                userListContainer.innerHTML = `
+                <div style="text-align:center; padding: 40px 20px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:12px; border:1px dashed rgba(255,255,255,0.1);">
+                    <i class="fa-solid fa-user-slash" style="font-size:2rem; color:#64748b; margin-bottom:10px; display:block;"></i>
+                    <div style="font-size:0.92rem; font-weight:700; color:#cbd5e1;">조건에 맞는 회원이 없습니다.</div>
+                    ${isFiltered ? '<button type="button" onclick="document.getElementById(\'inputSearchUserList\').value=\'\'; window.setUserFilterTab(\'all\');" style="margin-top:10px; background:rgba(59,130,246,0.2); border:1px solid #3b82f6; color:#93c5fd; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">필터 초기화</button>' : ''}
+                </div>`;
+            }
             return;
         }
 
         const latestRound = getLatestDrawnRound();
         let html = '';
+
+        if (isTrashMode) {
+            html += `
+            <div style="background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.35); padding:10px 14px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:4px;">
+                <div style="font-size:0.82rem; color:#fca5a5; font-weight:800; display:flex; align-items:center; gap:6px;">
+                    <i class="fa-solid fa-trash-can"></i> 휴지통에 보관된 회원 (${usersList.length}명)
+                    <span style="font-size:0.72rem; color:#94a3b8; font-weight:normal;">(언제든 복구하거나 완전 영구 삭제할 수 있습니다)</span>
+                </div>
+                <button type="button" onclick="window.emptyUserTrash && window.emptyUserTrash()" style="background:rgba(239,68,68,0.25); border:1px solid #ef4444; color:#fff; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.2s;">
+                    <i class="fa-solid fa-fire"></i> 휴지통 전체 비우기
+                </button>
+            </div>`;
+
+            usersList.forEach(item => {
+                const { userId, data } = item;
+                const realName = data.realName && data.realName !== userId ? `(${data.realName})` : '';
+                const joinDate = data.createdAt ? data.createdAt.slice(0, 10) : '-';
+                const deletedDate = data.deletedAt ? data.deletedAt.slice(0, 16).replace('T', ' ') : '삭제일시 미기록';
+                
+                let deletedByText = '';
+                if (data.deletedBy) {
+                    let dBy = data.deletedBy;
+                    if (typeof dBy === 'string' && dBy.startsWith('{')) {
+                        try { dBy = JSON.parse(dBy).userId || dBy; } catch(e){}
+                    }
+                    deletedByText = ` (by ${dBy})`;
+                }
+
+                html += `
+                <div style="background:rgba(20, 15, 20, 0.9); padding:10px 12px; border-radius:10px; border:1px solid rgba(239, 68, 68, 0.3); display:flex; flex-direction:column; gap:6px; box-shadow:0 3px 10px rgba(0,0,0,0.3);">
+                    <!-- Header -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                            <span style="font-weight:900; color:#fca5a5; font-size:0.95rem; text-decoration:line-through;">${userId}</span>
+                            ${realName ? `<span style="font-size:0.82rem; color:#cbd5e1; font-weight:700;">${realName}</span>` : ''}
+                        </div>
+                        <div style="display:flex; align-items:center; gap:4px;">
+                            <span style="font-size:0.7rem; color:#f87171; background:rgba(239,68,68,0.2); border:1px solid #ef4444; padding:2px 7px; border-radius:5px; font-weight:800;">
+                                <i class="fa-solid fa-trash-can"></i> 휴지통 보관중
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Info Bar -->
+                    <div style="background:rgba(0,0,0,0.35); padding:5px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:0.73rem; color:#94a3b8;">
+                        <div><i class="fa-solid fa-phone" style="color:#64748b; font-size:0.68rem;"></i> <span style="color:#94a3b8;">${data.phoneNumber || '연락처 미등록'}</span></div>
+                        <div><i class="fa-regular fa-calendar" style="color:#64748b; font-size:0.68rem;"></i> 가입: <span style="color:#94a3b8;">${joinDate}</span></div>
+                        <div><i class="fa-solid fa-clock-rotate-left" style="color:#f87171; font-size:0.68rem;"></i> 삭제: <strong style="color:#fca5a5;">${deletedDate}${deletedByText}</strong></div>
+                    </div>
+
+                    <!-- Trash Action Buttons -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-top:2px;">
+                        <button type="button" onclick="window.restoreUserFromTrash('${userId}')" title="계정을 다시 정상 활성 상태로 복구" style="flex:1; min-width:130px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 6px rgba(16,185,129,0.35);">
+                            <i class="fa-solid fa-rotate-left"></i> ♻️ 계정 복구하기
+                        </button>
+                        <button type="button" onclick="window.viewUserAgreementDoc('${userId}')" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="fa-solid fa-file-signature"></i> 서약문서
+                        </button>
+                        <button type="button" onclick="window.permanentlyDeleteUser('${userId}')" title="DB에서 완전히 영구 삭제" style="background:rgba(239,68,68,0.25); border:1px solid rgba(239,68,68,0.6); color:#fca5a5; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 2px 6px rgba(239,68,68,0.25);">
+                            <i class="fa-solid fa-fire"></i> 💥 영구 삭제
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            userListContainer.innerHTML = html;
+            return;
+        }
 
         usersList.forEach(item => {
             const { userId, data, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, status } = item;
@@ -2151,7 +2284,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                         <button type="button" onclick="window.sendUserUnsentWinningReports('${userId}')" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" style="background:rgba(167, 139, 250, 0.15); border:1px solid rgba(167, 139, 250, 0.45); color:#c4b5fd; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
                             <i class="fa-solid fa-box-archive"></i> 미전송발송
                         </button>
-                        <button type="button" onclick="window.deleteUser('${userId}')" title="계정 삭제" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                        <button type="button" onclick="window.deleteUser('${userId}')" title="계정을 휴지통으로 이동" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
                             <i class="fa-solid fa-trash-can"></i> 삭제
                         </button>
                     </div>
@@ -2166,6 +2299,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
     async function loadUserList() {
         const userListContainer = document.getElementById('userListContainer');
         const summaryBadge = document.getElementById('userCountSummaryBadge');
+        const trashBadge = document.getElementById('userTrashCountBadge');
         if (!window.db || !userListContainer) return;
         
         userListContainer.innerHTML = `<div style="text-align:center; padding: 24px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> 사용자 및 실구매 데이터 동기화 중...</div>`;
@@ -2176,6 +2310,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 __cachedUsersWithStatus = [];
                 userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b;">등록된 사용자가 없습니다.</div>`;
                 if (summaryBadge) summaryBadge.textContent = '총 0명';
+                if (trashBadge) trashBadge.textContent = '0';
                 return;
             }
             
@@ -2186,7 +2321,9 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
             // Concurrently fetch purchase status for each user
             const usersWithStatus = await Promise.all(users.map(async (u) => {
-                const pStatus = await checkUserWeeklyPurchaseStatus(u.userId, u.data);
+                const isDeleted = !!(u.data.isDeleted === true || u.data.status === 'trash');
+                const deletedAt = u.data.deletedAt || null;
+                const pStatus = isDeleted ? { hasPurchased: false } : await checkUserWeeklyPurchaseStatus(u.userId, u.data);
                 const isUserAdmin = !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin');
                 const isPermanent = !!(u.data.isPermanent === true || u.data.userType === 'permanent' || isUserAdmin);
                 const allowLotto = isUserAdmin || u.data.allowLotto !== false;
@@ -2194,23 +2331,33 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 const status = u.data.status || 'active';
                 const isSuspended = (status === 'suspended' || status === 'suspended_nopurchase');
                 const isNoPurchaseSuspended = (status === 'suspended_nopurchase');
-                setIsPermanentCache(u.userId, isPermanent);
-                setUserPermissionsCache(u.userId, { allowLotto, allowToto });
-                return { ...u, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, status };
+                if (!isDeleted) {
+                    setIsPermanentCache(u.userId, isPermanent);
+                    setUserPermissionsCache(u.userId, { allowLotto, allowToto });
+                }
+                return { ...u, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, isDeleted, deletedAt, status };
             }));
 
             __cachedUsersWithStatus = usersWithStatus;
 
+            const activeUsers = usersWithStatus.filter(u => !u.isDeleted);
+            const trashUsers = usersWithStatus.filter(u => u.isDeleted);
+
             // Update stats badge
             if (summaryBadge) {
-                const purchasedCount = usersWithStatus.filter(u => u.pStatus && u.pStatus.hasPurchased).length;
-                const kakaoCount = usersWithStatus.filter(u => u.userId.startsWith('kakao_') || (u.data.kakaoAuth && u.data.kakaoAuth.hasTalkMessageScope)).length;
-                summaryBadge.innerHTML = `총 <strong style="color:#fff;">${usersWithStatus.length}</strong>명 (실구매 ${purchasedCount} · 카카오 ${kakaoCount})`;
+                const purchasedCount = activeUsers.filter(u => u.pStatus && u.pStatus.hasPurchased).length;
+                const kakaoCount = activeUsers.filter(u => u.userId.startsWith('kakao_') || (u.data.kakaoAuth && u.data.kakaoAuth.hasTalkMessageScope)).length;
+                const trashText = trashUsers.length > 0 ? ` · <span style="color:#fca5a5; font-weight:700;"><i class="fa-solid fa-trash-can"></i> 휴지통 ${trashUsers.length}</span>` : '';
+                summaryBadge.innerHTML = `총 <strong style="color:#fff;">${activeUsers.length}</strong>명 (실구매 ${purchasedCount} · 카카오 ${kakaoCount}${trashText})`;
             }
 
-            // Sync global state registered users list
+            if (trashBadge) {
+                trashBadge.textContent = trashUsers.length;
+            }
+
+            // Sync global state registered users list (only active users)
             if (typeof window !== 'undefined' && window.state) {
-                window.state.allRegisteredUsersList = users.map(u => ({
+                window.state.allRegisteredUsersList = activeUsers.map(u => ({
                     id: u.userId,
                     name: u.data.realName || u.userId,
                     phone: u.data.phoneNumber || '',
@@ -4266,14 +4413,126 @@ window.startBatchWinningSend = async function() {
         }
     };
 
+    // ========================================================
+    // 🗑️ 회원 휴지통 (Recycle Bin) 라이프사이클 관리 함수군
+    // ========================================================
+
+    // 1. [1단계] 회원을 휴지통으로 이동 (Soft Delete)
     window.deleteUser = async function(userId) {
-        if (!confirm(`경고: 정말로 [${userId}] 계정을 영구 삭제하시겠습니까?`)) return;
+        if (userId === 'master' || userId === 'admin') {
+            alert('최상위 마스터/관리자 계정은 삭제할 수 없습니다.');
+            return;
+        }
+        const confirmMsg = `🗑️ [${userId}] 회원을 휴지통으로 이동하시겠습니까?\n\n` +
+            `• 즉시 일반 회원 목록 및 통계에서 제외되며 로그인이 차단됩니다.\n` +
+            `• 데이터와 서약서는 안전하게 보존되며, 상단 [휴지통] 탭에서 언제든 복구하거나 완전 영구 삭제할 수 있습니다.`;
+        
+        if (!confirm(confirmMsg)) return;
+
         try {
-            await window.db.collection('lotto_users').doc(userId).delete();
-            loadUserList();
+            showToast(`🗑️ [${userId}] 회원을 휴지통으로 이동 중...`);
+            const adminId = (typeof SafeAuth !== 'undefined' && SafeAuth.get()) ? SafeAuth.get() : 'admin';
+            
+            await window.db.collection('lotto_users').doc(userId).set({
+                isDeleted: true,
+                status: 'trash',
+                deletedAt: new Date().toISOString(),
+                deletedBy: adminId
+            }, { merge: true });
+
+            showToast(`🗑️ [${userId}] 회원이 휴지통으로 안전하게 이동되었습니다.`);
+            if (typeof window.loadUserList === 'function') window.loadUserList();
         } catch (err) {
-            alert('계정 삭제 실패');
-            console.error(err);
+            console.error('[Move User to Trash Error]', err);
+            alert('휴지통 이동 중 오류가 발생했습니다: ' + (err.message || err));
+        }
+    };
+    window.moveUserToTrash = window.deleteUser;
+
+    // 2. [복구] 휴지통에 보관된 회원을 정상 활성 계정으로 복구 (Restore)
+    window.restoreUserFromTrash = async function(userId) {
+        if (!userId || !window.db) return;
+        const confirmMsg = `♻️ [${userId}] 회원을 다시 활성 계정으로 복구하시겠습니까?\n\n` +
+            `• 기존 권한, 비밀번호, 실구매 내역, 전자 서약 문서가 모두 그대로 유지되어 정상 로그인 및 이용이 가능해집니다.`;
+        
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            showToast(`♻️ [${userId}] 회원 복구 중...`);
+            
+            await window.db.collection('lotto_users').doc(userId).set({
+                isDeleted: false,
+                status: 'active',
+                deletedAt: null,
+                deletedBy: null,
+                restoredAt: new Date().toISOString()
+            }, { merge: true });
+
+            showToast(`🎉 [${userId}] 회원이 성공적으로 정상 복구되었습니다.`);
+            if (typeof window.loadUserList === 'function') window.loadUserList();
+        } catch (err) {
+            console.error('[Restore User Error]', err);
+            alert('회원 복구 중 오류가 발생했습니다: ' + (err.message || err));
+        }
+    };
+
+    // 3. [2단계] 휴지통 내 회원을 DB에서 완전히 영구 삭제 (Permanent Delete)
+    window.permanentlyDeleteUser = async function(userId) {
+        if (userId === 'master' || userId === 'admin') {
+            alert('최상위 마스터/관리자 계정은 영구 삭제할 수 없습니다.');
+            return;
+        }
+        const confirmMsg = `💥 [경고: 완전 영구 삭제]\n\n` +
+            `정말로 [${userId}] 계정을 DB에서 완전히 영구 삭제하시겠습니까?\n\n` +
+            `• 회원 계정 정보 및 가입 전자 서약 문서가 완전히 삭제됩니다.\n` +
+            `• 이 작업은 절대 되돌릴 수 없습니다.`;
+        
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            showToast(`💥 [${userId}] 계정 영구 삭제 중...`);
+            await window.db.collection('lotto_users').doc(userId).delete();
+            try {
+                await window.db.collection('lotto_agreements').doc(userId).delete();
+            } catch(e) {}
+            
+            showToast(`💥 [${userId}] 계정이 완전히 영구 삭제되었습니다.`);
+            if (typeof window.loadUserList === 'function') window.loadUserList();
+        } catch (err) {
+            console.error('[Permanent Delete Error]', err);
+            alert('영구 삭제 중 오류가 발생했습니다: ' + (err.message || err));
+        }
+    };
+
+    // 4. [일괄] 휴지통 전체 비우기 (Empty Trash)
+    window.emptyUserTrash = async function() {
+        if (!__cachedUsersWithStatus || !window.db) return;
+        const trashUsers = __cachedUsersWithStatus.filter(u => u.isDeleted);
+        if (trashUsers.length === 0) {
+            alert('휴지통이 이미 비어 있습니다.');
+            return;
+        }
+
+        const confirmMsg = `🚨 [경고: 휴지통 전체 영구 삭제]\n\n` +
+            `휴지통에 보관된 회원 총 ${trashUsers.length}명을 모두 영구 삭제하시겠습니까?\n\n` +
+            `• 모든 회원 계정 정보 및 전자 서약서가 완전히 영구 삭제되며 절대 복구할 수 없습니다.`;
+        
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            showToast(`💥 휴지통 비우기 진행 중 (${trashUsers.length}명)...`);
+            for (const u of trashUsers) {
+                if (u.userId === 'master' || u.userId === 'admin') continue;
+                try {
+                    await window.db.collection('lotto_users').doc(u.userId).delete();
+                    await window.db.collection('lotto_agreements').doc(u.userId).delete();
+                } catch(e) {}
+            }
+            showToast(`🎉 휴지통이 완전히 비워졌습니다.`);
+            if (typeof window.loadUserList === 'function') window.loadUserList();
+        } catch (err) {
+            console.error('[Empty Trash Error]', err);
+            alert('휴지통 비우기 중 오류가 발생했습니다: ' + (err.message || err));
         }
     };
 
