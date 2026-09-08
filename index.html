@@ -62,6 +62,9 @@
 
         <!-- Floating buttons for Auth & User Management on Landing Page -->
         <div class="lp-top-bar" style="display:flex; align-items:center; gap:8px;">
+            <a href="lotto_user_manual.pdf" download="로또_추천프로그램_사용자_설명서.pdf" target="_blank" onclick="window.downloadUserManual && window.downloadUserManual(event)" id="btnDownloadManualTop" class="btn-lp-manual" title="사용자 설명서 다운로드 (PDF)" aria-label="설명서 다운로드" style="display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 800; cursor: pointer; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);">
+                <i class="fa-solid fa-file-pdf"></i> 📖 설명서 다운로드
+            </a>
             <button id="btnPwaInstall" onclick="window.installPwaApp && window.installPwaApp()" class="btn-lp-pwa" title="홈 화면에 앱 설치" aria-label="앱 설치" style="display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #0f172a; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 800; cursor: pointer; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);">
                 <i class="fa-solid fa-mobile-screen-button"></i> 📲 앱 설치
             </button>
@@ -83,6 +86,27 @@
             </div>
             <h1 style="margin: 0 0 8px 0;">운도<br><span class="lp-accent">실력</span></h1>
             <p class="lp-tagline">당신의 경제적 자유를 위한 스마트 서비스 플랫폼</p>
+        </div>
+
+        <!-- 📖 사용자 설명서 (PDF) 다운로드 배너 -->
+        <div class="lp-manual-banner" style="width: 100%; max-width: 900px; margin: 0 auto 14px auto; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.12)); border: 1.5px solid rgba(16, 185, 129, 0.45); border-radius: 14px; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; box-sizing: border-box; box-shadow: 0 4px 16px rgba(0,0,0,0.25);">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 250px;">
+                <div style="background: rgba(16, 185, 129, 0.25); color: #34d399; font-size: 1.35rem; width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(16, 185, 129, 0.4);">
+                    <i class="fa-solid fa-book-open"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.9rem; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <span>운도실력 로또 6/45 초간편 그림 사용자 설명서</span>
+                        <span style="font-size: 0.7rem; background: #10b981; color: #fff; padding: 1px 7px; border-radius: 4px; font-weight: 800;">PDF 가이드</span>
+                    </div>
+                    <div style="font-size: 0.77rem; color: #94a3b8; margin-top: 3px; line-height: 1.4;">
+                        카카오 1초 로그인부터 실구매 QR 1초 인증, 7대 알고리즘, 토요일 자동 당첨 확인까지 알기 쉽게 정리!
+                    </div>
+                </div>
+            </div>
+            <a href="lotto_user_manual.pdf" download="로또_추천프로그램_사용자_설명서.pdf" target="_blank" onclick="window.downloadUserManual && window.downloadUserManual(event)" style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 9px 18px; border-radius: 9px; font-size: 0.84rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); white-space: nowrap; transition: transform 0.15s;">
+                <i class="fa-solid fa-download"></i> 설명서 PDF 다운로드
+            </a>
         </div>
 
         <!-- 🚨 일반회원 주간 실구매 등록 마감 실시간 카운트다운 배너 -->
@@ -389,6 +413,9 @@
 
             <div class="header-right-group">
                 <div class="header-btn-row">
+                    <a href="lotto_user_manual.pdf" download="로또_추천프로그램_사용자_설명서.pdf" target="_blank" onclick="window.downloadUserManual && window.downloadUserManual(event)" class="btn-sync" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #34d399; cursor: pointer;" title="사용자 설명서 다운로드 (PDF)">
+                        <i class="fa-solid fa-file-pdf"></i> 설명서
+                    </a>
                     <button id="btnFetchLatestDraw" class="btn-sync" style="display: inline-flex;" onclick="handleFetchLatestDrawClick()" title="동행복권 최신 당첨번호 자동 스크랩 & 동기화">
                         <i class="fa-solid fa-rotate"></i> 최신 당첨번호 수집
                     </button>
@@ -1795,9 +1822,14 @@
                     </form>
                     <div id="loginError" style="color: #f87171; font-size: 0.82rem; margin-top: 12px; padding: 8px 12px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px; display: none; line-height: 1.4;"></div>
                     
-                    <div style="margin-top: 18px; text-align: center; font-size: 0.82rem; color: #94a3b8;">
+                    <div style="margin-top: 16px; text-align: center; font-size: 0.82rem; color: #94a3b8;">
                         아직 회원이 아니신가요? 
                         <a href="javascript:void(0)" onclick="window.switchAuthTab('signup')" style="color: #38bdf8; font-weight: 700; text-decoration: underline; margin-left: 4px;">무료 회원가입</a>
+                    </div>
+                    <div style="margin-top: 12px; text-align: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                        <a href="lotto_user_manual.pdf" download="로또_추천프로그램_사용자_설명서.pdf" target="_blank" onclick="window.downloadUserManual && window.downloadUserManual(event)" style="color: #34d399; font-size: 0.78rem; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; cursor: pointer;">
+                            <i class="fa-solid fa-file-pdf"></i> 📖 서비스 이용 설명서 (PDF 다운로드)
+                        </a>
                     </div>
                 </div>
 
@@ -2869,13 +2901,41 @@
             }
         };
 
-        window.addEventListener('appinstalled', function() {
-            console.log('[PWA] App installed successfully');
-            deferredInstallPrompt = null;
-            if (typeof window.showToast === 'function') {
-                window.showToast('🎉 운도실력 777 앱이 홈 화면에 성공적으로 추가되었습니다!');
+        window.downloadUserManual = async function(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            var pdfUrl = 'lotto_user_manual.pdf';
+            var downloadName = '로또_추천프로그램_사용자_설명서.pdf';
+            try {
+                var resp = await fetch(pdfUrl);
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                var blob = await resp.blob();
+                var blobUrl = window.URL.createObjectURL(blob);
+                var a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobUrl;
+                a.download = downloadName;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() {
+                    if (a.parentNode) a.parentNode.removeChild(a);
+                    window.URL.revokeObjectURL(blobUrl);
+                }, 1500);
+                if (typeof window.showToast === 'function') {
+                    window.showToast('📄 사용자 설명서 PDF 다운로드가 시작되었습니다.');
+                }
+            } catch (err) {
+                console.warn('[Manual Download] Direct download fallback triggered:', err);
+                var fallbackAnchor = document.createElement('a');
+                fallbackAnchor.href = pdfUrl;
+                fallbackAnchor.target = '_blank';
+                fallbackAnchor.download = downloadName;
+                document.body.appendChild(fallbackAnchor);
+                fallbackAnchor.click();
+                setTimeout(function() {
+                    if (fallbackAnchor.parentNode) fallbackAnchor.parentNode.removeChild(fallbackAnchor);
+                }, 800);
             }
-        });
+        };
     </script>
 
     <script src="data.js?v=671"></script>

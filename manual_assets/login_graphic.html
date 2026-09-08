@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; }
+body { background: #0f172a; width: 700px; height: 360px; padding: 16px; display: flex; gap: 14px; color: #fff; }
+.card { flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; }
+.title { font-size: 14.5px; font-weight: 800; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.badge { font-size: 10.5px; padding: 2px 8px; border-radius: 12px; font-weight: 700; }
+.badge-kakao { background: #fee500; color: #191919; }
+.badge-id { background: #3b82f6; color: #fff; }
+.btn-kakao { background: #fee500; color: #191919; font-weight: 800; font-size: 13.5px; border: none; border-radius: 8px; padding: 11px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px; cursor: pointer; }
+.input-group { margin-bottom: 8px; }
+.label { font-size: 10.5px; color: #cbd5e1; font-weight: 600; margin-bottom: 3px; display: block; }
+.input-box { width: 100%; background: #0f172a; border: 1px solid #475569; border-radius: 6px; padding: 6px 10px; color: #fff; font-size: 11.5px; }
+.btn-submit { background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-weight: 800; border: none; border-radius: 6px; padding: 8px; font-size: 12.5px; text-align: center; margin-top: 4px; }
+.feature-list { font-size: 11px; color: #cbd5e1; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+.feature-list li::before { content: "✔ "; color: #10b981; font-weight: 800; }
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="title"><span class="badge badge-kakao">방법 1</span> 카카오 1초 간편 로그인</div>
+    <div class="btn-kakao">💬 카카오로 1초 간편 시작하기</div>
+    <ul class="feature-list">
+        <li>아이디·비밀번호 없이 카카오톡 터치로 즉시 가입</li>
+        <li>카카오 계정과 자동 연동으로 분실 걱정 제로</li>
+        <li>가입 즉시 이번 주 무료 20게임 즉시 확인 가능</li>
+    </ul>
+</div>
+<div class="card">
+    <div class="title"><span class="badge badge-id">방법 2</span> 일반 아이디/비밀번호 가입</div>
+    <div class="input-group">
+        <span class="label">아이디 (중복확인)</span>
+        <input class="input-box" value="lucky_winner" readonly>
+    </div>
+    <div class="input-group">
+        <span class="label">비밀번호 & 휴대폰 번호</span>
+        <input class="input-box" value="●●●●●●●●  /  010-1234-5678" readonly>
+    </div>
+    <div class="btn-submit">무료 회원가입 완료</div>
+</div>
+</body>
+</html>

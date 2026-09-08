@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans KR', sans-serif; }
+body { background: #f8fafc; width: 750px; height: 145px; padding: 10px; display: flex; gap: 8px; align-items: center; justify-content: space-between; }
+.step-card { flex: 1; background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 10px 6px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.04); height: 125px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+.step-num { position: absolute; top: -7px; left: 50%; transform: translateX(-50%); background: #10b981; color: #fff; font-size: 10px; font-weight: 900; padding: 2px 8px; border-radius: 10px; }
+.step-icon { font-size: 22px; margin: 2px 0; }
+.step-title { font-size: 11.5px; font-weight: 800; color: #0f172a; margin-bottom: 2px; }
+.step-sub { font-size: 9.5px; color: #64748b; line-height: 1.35; }
+.arrow { font-size: 14px; color: #94a3b8; font-weight: 900; }
+</style>
+</head>
+<body>
+<div class="step-card">
+    <div class="step-num">STEP 1</div>
+    <div class="step-icon">🎯</div>
+    <div class="step-title">추천번호 확인</div>
+    <div class="step-sub">일~금요일<br>20~70게임 조회</div>
+</div>
+<div class="arrow">▶</div>
+<div class="step-card">
+    <div class="step-num">STEP 2</div>
+    <div class="step-icon">🏪</div>
+    <div class="step-title">로또방 실구매</div>
+    <div class="step-sub">추천번호 마킹<br>복권 1장(5천원) 구매</div>
+</div>
+<div class="arrow">▶</div>
+<div class="step-card" style="border-color: #3b82f6; background: #eff6ff;">
+    <div class="step-num" style="background: #2563eb;">STEP 3</div>
+    <div class="step-icon">📷</div>
+    <div class="step-title" style="color: #1d4ed8;">QR 1초 인증</div>
+    <div class="step-sub">영수증 카메라 촬영<br><strong>+50게임 무료 해제</strong></div>
+</div>
+<div class="arrow">▶</div>
+<div class="step-card">
+    <div class="step-num">STEP 4</div>
+    <div class="step-icon">🏆</div>
+    <div class="step-title">토요일 당첨확인</div>
+    <div class="step-sub">밤 9시 자동 채점<br>당첨금 즉시 정산</div>
+</div>
+</body>
+</html>
