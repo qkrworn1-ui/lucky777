@@ -10354,8 +10354,22 @@ html, body {
    iPhone 13~16 (390px), iPhone Pro Max / Plus (430px)
    ========================================================================== */
 
-@media (max-width: 600px) {
-    /* 1. 랜딩 페이지 컨테이너 좌우 여백 및 폭 통일 (12px 칼각 정렬) */
+html, body {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+#landingPage {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+    /* 1. 랜딩 페이지 컨테이너 좌우 여백 및 폭 통일 */
     #landingPage {
         padding: 12px 10px 40px 10px !important;
         box-sizing: border-box !important;
@@ -10363,55 +10377,109 @@ html, body {
         width: 100% !important;
     }
 
+    .lp-header,
+    #lpPurchaseDeadlineBanner,
+    #lpWinningTickerContainer,
+    .lp-singleline-ticker-bar,
+    .lp-winning-ticker-bar,
     .lp-financial-summary,
-    .lp-service-grid,
+    #lpAllMembersReviewSection,
     .lp-integrity-guarantee-box,
+    .lp-service-grid,
     #landingPage .business-info-box,
     .lp-deadline-alert-banner {
         width: 100% !important;
         max-width: 100% !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
         box-sizing: border-box !important;
     }
 
+    .lp-header {
+        margin-top: 44px !important;
+        margin-bottom: 16px !important;
+        width: 100% !important;
+    }
+
+    .lp-header h1 {
+        font-size: 2.1rem !important;
+        line-height: 1.15 !important;
+    }
+
+    .lp-tagline {
+        font-size: 0.86rem !important;
+        word-break: keep-all !important;
+        line-height: 1.4 !important;
+        padding: 0 8px !important;
+    }
+
+    /* 2. 티커 바 모바일 최적화 */
+    .lp-singleline-ticker-bar,
+    .lp-winning-ticker-bar {
+        height: 38px !important;
+        padding: 0 10px !important;
+        margin-bottom: 12px !important;
+    }
+
+    /* 3. 자산 요약 보드 모바일 */
     .lp-financial-summary {
         padding: 14px 12px !important;
         border-radius: 14px !important;
         gap: 10px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .lp-fin-title-area {
+        min-width: 0 !important;
+        width: 100% !important;
+        text-align: center !important;
+        align-items: center !important;
     }
 
     .lp-fin-title {
-        font-size: 0.92rem !important;
-        line-height: 1.4 !important;
+        font-size: 0.95rem !important;
+        line-height: 1.35 !important;
         text-align: center !important;
+        word-break: keep-all !important;
     }
 
-    /* 2. 4대 KPI 자산 요약 그리드 모바일 최적화 */
-    .lp-stats-grid {
+    .lp-fin-main-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    .lp-fin-stats {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
         gap: 8px !important;
+        width: 100% !important;
     }
 
     .lp-stat-item {
         padding: 8px 10px !important;
         border-radius: 10px !important;
+        background: rgba(0, 0, 0, 0.25) !important;
+        text-align: center !important;
+        box-sizing: border-box !important;
     }
 
     .lp-stat-label {
-        font-size: 0.7rem !important;
+        font-size: 0.72rem !important;
+        margin-bottom: 2px !important;
     }
 
     .lp-stat-val {
-        font-size: 0.98rem !important;
+        font-size: 0.96rem !important;
         white-space: nowrap !important;
     }
 
-    /* 3. 미니 당첨 카드 (.lp-mini-win-card) 텍스트 겹침 & 줄바꿈 완벽 개선 */
+    /* 4. 미니 당첨 카드 (.lp-mini-win-card) */
     .lp-compact-win-row {
         display: flex !important;
         flex-direction: column !important;
         gap: 8px !important;
-        padding-top: 8px !important;
+        padding-top: 6px !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
@@ -10424,43 +10492,42 @@ html, body {
     }
 
     .mini-win-title {
-        font-size: 0.8rem !important;
+        font-size: 0.82rem !important;
     }
 
     .mini-win-sub {
-        font-size: 0.7rem !important;
+        font-size: 0.72rem !important;
     }
 
     .mini-win-prize {
-        font-size: 0.9rem !important;
+        font-size: 0.92rem !important;
     }
 
     .mini-win-hits {
-        font-size: 0.7rem !important;
-        max-width: 160px !important;
+        font-size: 0.72rem !important;
+        max-width: 180px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }
 
-    .mini-win-arrow {
-        display: none !important;
-    }
-
-    /* 4. 전체 회원 AI 추천 복기 요약 섹션 모바일 완벽 최적화 */
+    /* 5. 전체 회원 AI 추천 복기 요약 섹션 */
     #lpAllMembersReviewSection {
         padding: 12px 10px !important;
-        margin-top: 10px !important;
+        margin-bottom: 12px !important;
         border-radius: 12px !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
 
     #lpReviewSectionTitle {
-        font-size: 0.84rem !important;
+        font-size: 0.86rem !important;
         line-height: 1.35 !important;
         word-break: keep-all !important;
     }
 
     #lpReviewSectionSub {
-        font-size: 0.68rem !important;
+        font-size: 0.7rem !important;
         line-height: 1.4 !important;
         word-break: keep-all !important;
     }
@@ -10477,32 +10544,32 @@ html, body {
     }
 
     #lpReviewKpiGames {
-        font-size: 0.72rem !important;
+        font-size: 0.74rem !important;
         color: #94a3b8 !important;
         white-space: nowrap !important;
     }
 
     #lpReviewKpiHits {
-        font-size: 0.72rem !important;
-        padding: 5px 6px !important;
-        background: rgba(167, 139, 250, 0.08) !important;
+        font-size: 0.74rem !important;
+        padding: 6px 8px !important;
+        background: rgba(167, 139, 250, 0.1) !important;
         border-radius: 6px !important;
-        border: 1px solid rgba(167, 139, 250, 0.2) !important;
+        border: 1px solid rgba(167, 139, 250, 0.25) !important;
         word-break: keep-all !important;
         line-height: 1.45 !important;
     }
 
     #lpReviewKpiPrize {
-        font-size: 0.92rem !important;
+        font-size: 0.94rem !important;
         font-weight: 800 !important;
         color: #34d399 !important;
         white-space: nowrap !important;
     }
 
-    /* 5. 데이터 무결성 보증 배너 모바일 */
+    /* 6. 데이터 무결성 보증 배너 모바일 */
     .lp-integrity-guarantee-box {
-        padding: 10px 12px !important;
-        margin: 10px 0 !important;
+        padding: 12px 14px !important;
+        margin-bottom: 14px !important;
         width: 100% !important;
         box-sizing: border-box !important;
         flex-direction: column !important;
@@ -10520,11 +10587,12 @@ html, body {
         overflow-wrap: break-word !important;
     }
 
-    /* 6. 서비스 카드 그리드 (로또 / 토토) */
+    /* 7. 서비스 카드 그리드 */
     .lp-service-grid {
         grid-template-columns: 1fr !important;
         gap: 14px !important;
         width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .lp-card {
@@ -10535,50 +10603,34 @@ html, body {
     }
 
     .lp-card-desc {
-        font-size: 0.8rem !important;
+        font-size: 0.82rem !important;
         word-break: keep-all !important;
         overflow-wrap: break-word !important;
         line-height: 1.55 !important;
     }
 
     .lp-card-features li {
-        font-size: 0.75rem !important;
+        font-size: 0.76rem !important;
         word-break: keep-all !important;
         overflow-wrap: break-word !important;
         line-height: 1.45 !important;
     }
-
-    /* 6. 로또 메인 화면 모바일 최적화 (#appContainer) */
-    .app-container {
-        padding: 8px 10px 30px 10px !important;
-        box-sizing: border-box !important;
-        width: 100% !important;
-    }
-
-    .app-header {
-        padding: 8px 10px !important;
-        gap: 8px !important;
-    }
-
-    .header-actions {
-        gap: 4px !important;
-    }
-
-    /* 관리자 회원 선택 박스 모바일 */
-    #generatorAdminBar {
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 8px !important;
-    }
 }
 
 @media (max-width: 360px) {
-    /* 초소형 폰(360px 이하) 추가 압축 */
+    /* 초소형 폰(360px 이하) 추가 최적화 */
+    #landingPage {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
     .lp-stat-val {
         font-size: 0.88rem !important;
     }
     .mini-win-title {
         font-size: 0.76rem !important;
+    }
+    .lp-fin-title {
+        font-size: 0.88rem !important;
     }
 }
 
