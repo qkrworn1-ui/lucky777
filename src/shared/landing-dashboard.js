@@ -19,7 +19,12 @@ export async function renderLandingDashboard() {
         } catch (e) {}
     }
     const realName = (typeof getUserRealName === 'function' ? getUserRealName(authId) : '') || '';
-    const displayName = (realName && realName !== authId) ? `${authId} (${realName})` : authId;
+    let displayName = realName;
+    if (!displayName) {
+        if (authId === 'master') displayName = '최고관리자';
+        else if (authId.startsWith('kakao_')) displayName = `카카오회원 (${authId.slice(-4)})`;
+        else displayName = authId;
+    }
 
     // 1. Calculate Individual User's Actual Lotto Financials
     //    관리자(master/admin)도 홈 화면 '나의 실구매 당첨' 카드는 본인 장부만 계산해야 함

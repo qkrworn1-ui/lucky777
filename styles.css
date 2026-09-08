@@ -3907,7 +3907,8 @@ html, body {
             font-size: 1.05rem;
             font-weight: 800;
             color: #f8fafc;
-            white-space: nowrap;
+            word-break: keep-all;
+            overflow-wrap: break-word;
         }
 
         .lp-fin-stats {
