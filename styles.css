@@ -12310,3 +12310,117 @@ body.is-admin .btn-user-mgmt-compact {
     box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4) !important;
 }
 
+/* 🏆 Home Live Real-Purchase Winning Ticker Bar (Single-line Horizontal Flowing) */
+.lp-winning-ticker-bar {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(90deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 20px;
+    height: 40px;
+    padding: 0 12px;
+    margin-bottom: 14px;
+    gap: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+    width: 100%;
+    max-width: 900px;
+    box-sizing: border-box;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.lp-winning-ticker-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    color: #34d399;
+    white-space: nowrap;
+    background: rgba(16, 185, 129, 0.18);
+    padding: 3px 9px;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    flex-shrink: 0;
+    z-index: 2;
+    height: 24px;
+    line-height: 1;
+}
+
+.lp-winning-ticker-track-wrapper {
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+    white-space: nowrap;
+    mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent);
+}
+
+.lp-winning-ticker-track {
+    display: inline-flex;
+    align-items: center;
+    gap: 24px;
+    white-space: nowrap;
+    will-change: transform;
+    animation: lpTickerScroll 30s linear infinite;
+}
+
+.lp-winning-ticker-bar:hover .lp-winning-ticker-track {
+    animation-play-state: paused;
+}
+
+@keyframes lpTickerScroll {
+    0% { transform: translateX(0%); }
+    100% { transform: translateX(-50%); }
+}
+
+.lp-winning-ticker-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: #f1f5f9;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.lp-winning-rank-tag {
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+.lp-winning-rank-tag.rank-1 {
+    background: rgba(251, 191, 36, 0.25);
+    border: 1px solid #fbbf24;
+    color: #fbbf24;
+}
+.lp-winning-rank-tag.rank-2 {
+    background: rgba(248, 113, 113, 0.25);
+    border: 1px solid #f87171;
+    color: #f87171;
+}
+.lp-winning-rank-tag.rank-3 {
+    background: rgba(96, 165, 250, 0.25);
+    border: 1px solid #60a5fa;
+    color: #60a5fa;
+}
+.lp-winning-rank-tag.rank-4 {
+    background: rgba(52, 211, 153, 0.25);
+    border: 1px solid #34d399;
+    color: #34d399;
+}
+.lp-winning-rank-tag.rank-5 {
+    background: rgba(167, 139, 250, 0.25);
+    border: 1px solid #a78bfa;
+    color: #c4b5fd;
+}
+
+
+

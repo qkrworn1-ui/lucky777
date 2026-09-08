@@ -135,7 +135,10 @@ export async function renderLandingDashboard() {
     // 6. Update All Members AI Recommendation Review Dashboard (🔮 전체 회원 추천 복기 당첨 실적)
     await updateHomeReviewDashboard();
 
-    // 7. Update Weekly Purchase Deadline Countdown Banner
+    // 7. Update Real-Purchase Winning Ticker Bar (🏆 실구매 영수증 기반 당첨 속보)
+    await updateHomeWinningTicker();
+
+    // 8. Update Weekly Purchase Deadline Countdown Banner
     if (typeof window.updatePurchaseDeadlineCountdowns === 'function') {
         try { window.updatePurchaseDeadlineCountdowns(); } catch(e){}
     }
@@ -280,9 +283,188 @@ export async function updateHomeReviewDashboard() {
     }
 }
 
+/**
+ * 🏆 Update Real-Purchase Winning Ticker Bar on Home Screen
+ * Displays last round's real-purchase receipt winners (e.g. "김**님 5등 당첨", "박**님 4등 당첨")
+ */
+export async function updateHomeWinningTicker() {
+    const container = document.getElementById('lpWinningTickerContainer');
+    if (!container) return;
+
+    try {
+        if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+            if (typeof fetchAllUsersPurchases === 'function') {
+                await fetchAllUsersPurchases();
+            }
+        }
+
+        const history = state.mergedHistory || {};
+        const drawnRounds = Object.keys(history)
+            .map(Number)
+            .filter(n => !isNaN(n) && Array.isArray(history[n]?.numbers) && history[n].numbers.length === 6)
+            .sort((a, b) => b - a);
+
+        const latestDrawnRound = drawnRounds[0] || (state.latestDrawData?.drwNo || 1239);
+        const candidateRounds = [latestDrawnRound]; // 🔒 오직 직전회차(최신 추첨 회차 1개)만 엄격히 한정!
+
+        const winningItems = [];
+
+        // 마스킹 헬퍼 함수 (김**님, 이*님 등)
+        function maskName(name, userId) {
+            const raw = (name || userId || '').trim();
+            if (!raw) return '회원**님';
+            if (raw.length === 1) return `${raw}*님`;
+            if (raw.length === 2) return `${raw[0]}*님`;
+            return `${raw[0]}**님`;
+        }
+
+        candidateRounds.forEach(roundNum => {
+            const actualDraw = history[roundNum];
+            if (!actualDraw || !Array.isArray(actualDraw.numbers)) return;
+
+            const winningSet = new Set(actualDraw.numbers);
+            const bonus = actualDraw.bonus;
+
+            // 전체 회원의 실구매 영수증 수집
+            const allReceipts = [];
+            if (state.allUsersPurchasesMap) {
+                for (const uid in state.allUsersPurchasesMap) {
+                    const uData = state.allUsersPurchasesMap[uid];
+                    const roundReceipts = uData?.ledger?.[roundNum] || [];
+                    roundReceipts.forEach(rcpt => {
+                        allReceipts.push({
+                            ...rcpt,
+                            user: rcpt.user || uid,
+                            userName: rcpt.userName || uData.realName || uid
+                        });
+                    });
+                }
+            } else if (state.allUsersMergedLedger && state.allUsersMergedLedger[roundNum]) {
+                state.allUsersMergedLedger[roundNum].forEach(rcpt => allReceipts.push(rcpt));
+            }
+
+            allReceipts.forEach(receipt => {
+                if (!receipt || !Array.isArray(receipt.combos)) return;
+                const pUser = (receipt.user || receipt.userId || '').trim();
+                const pName = receipt.userName || (typeof getUserRealName === 'function' ? getUserRealName(pUser) : '') || pUser;
+                const displayName = maskName(pName, pUser);
+
+                receipt.combos.forEach(combo => {
+                    const nums = Array.isArray(combo) ? combo : (combo.numbers || []);
+                    if (!Array.isArray(nums) || nums.length < 6) return;
+
+                    const matchCount = nums.filter(n => winningSet.has(n)).length;
+                    const hasBonus = bonus ? nums.includes(bonus) : false;
+
+                    let rank = 0;
+                    let rankText = '';
+                    let rankClass = '';
+                    let prizeText = '';
+
+                    if (matchCount === 6) {
+                        rank = 1;
+                        rankText = '1등 당첨 🎉';
+                        rankClass = 'rank-1';
+                    } else if (matchCount === 5 && hasBonus) {
+                        rank = 2;
+                        rankText = '2등 당첨 🥈';
+                        rankClass = 'rank-2';
+                    } else if (matchCount === 5) {
+                        rank = 3;
+                        rankText = '3등 당첨 🥉';
+                        rankClass = 'rank-3';
+                    } else if (matchCount === 4) {
+                        rank = 4;
+                        rankText = '4등 당첨';
+                        rankClass = 'rank-4';
+                        prizeText = '(50,000원)';
+                    } else if (matchCount === 3) {
+                        rank = 5;
+                        rankText = '5등 당첨';
+                        rankClass = 'rank-5';
+                        prizeText = '(5,000원)';
+                    }
+
+                    if (rank >= 1 && rank <= 5) {
+                        winningItems.push({
+                            round: roundNum,
+                            displayName,
+                            rank,
+                            rankText,
+                            rankClass,
+                            prizeText
+                        });
+                    }
+                });
+            });
+        });
+
+        // HTML 아이템 생성 (한 줄로 옆으로 자연스럽게 흐르는 텍스트)
+        let itemsHtml = '';
+        if (winningItems.length > 0) {
+            // 등수 높은 순(1등 -> 5등) 정렬
+            winningItems.sort((a, b) => a.rank - b.rank);
+
+            const renderedList = winningItems.map(item => `
+                <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 0.82rem !important; color: #f1f5f9 !important; font-weight: 600 !important; white-space: nowrap !important; flex-shrink: 0 !important;">
+                    <i class="fa-solid fa-trophy" style="color: ${item.rank <= 3 ? '#fbbf24' : '#34d399'}; font-size: 0.82rem;"></i>
+                    <strong style="color: #f8fafc; font-size: 0.85rem; letter-spacing: -0.2px;">${item.displayName}</strong>
+                    <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; font-size: 0.72rem; font-weight: 800; padding: 1px 6px; border-radius: 4px; white-space: nowrap;">${item.rankText}</span>
+                    ${item.prizeText ? `<span style="color: #94a3b8; font-size: 0.74rem;">${item.prizeText}</span>` : ''}
+                    <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">•</span>
+                </span>
+            `).join('');
+
+            // 끊김 없는 무한 롤링을 위해 4벌 복제
+            itemsHtml = renderedList + renderedList + renderedList + renderedList;
+        } else {
+            const fallbackItem = `
+                <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 0.82rem !important; color: #cbd5e1 !important; white-space: nowrap !important; flex-shrink: 0 !important;">
+                    <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i>
+                    <strong style="color: #f8fafc;">제 ${latestDrawnRound}회차 동행복권 실구매 영수증 인증 기반 당첨 집계 완료</strong>
+                    <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">•</span>
+                </span>
+                <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 0.82rem !important; color: #cbd5e1 !important; white-space: nowrap !important; flex-shrink: 0 !important;">
+                    <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i>
+                    <span>매주 5게임 실구매 영수증(QR) 등록 시 7대 퀀트 알고리즘 무료 잠금 해제</span>
+                    <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">•</span>
+                </span>
+            `;
+            itemsHtml = fallbackItem + fallbackItem + fallbackItem + fallbackItem;
+        }
+
+        container.innerHTML = `
+            <style>
+                @keyframes lpSingleLineScroll {
+                    0% { transform: translateX(0%); }
+                    100% { transform: translateX(-50%); }
+                }
+                .lp-singleline-ticker-bar:hover .lp-singleline-track {
+                    animation-play-state: paused !important;
+                }
+            </style>
+            <div class="lp-singleline-ticker-bar" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-confirmed-list'), 80);" title="제 ${latestDrawnRound}회 실구매 장부 당첨 내역 자세히 보기" style="display: flex !important; flex-direction: row !important; align-items: center !important; background: linear-gradient(90deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92)) !important; border: 1.5px solid rgba(16, 185, 129, 0.45) !important; border-radius: 20px !important; height: 38px !important; min-height: 38px !important; max-height: 38px !important; padding: 0 12px !important; margin: 0 0 14px 0 !important; gap: 10px !important; overflow: hidden !important; width: 100% !important; max-width: 900px !important; box-sizing: border-box !important; cursor: pointer !important; white-space: nowrap !important; box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;">
+                <div style="display: inline-flex !important; align-items: center !important; gap: 5px !important; font-size: 0.76rem !important; font-weight: 800 !important; color: #34d399 !important; white-space: nowrap !important; background: rgba(16, 185, 129, 0.2) !important; padding: 3px 9px !important; border-radius: 10px !important; border: 1px solid rgba(16, 185, 129, 0.5) !important; flex-shrink: 0 !important; z-index: 2 !important; height: 22px !important; line-height: 1 !important;">
+                    <i class="fa-solid fa-bullhorn" style="color: #34d399;"></i>
+                    <span>제 ${latestDrawnRound}회 실구매 당첨</span>
+                </div>
+                <div style="flex: 1 !important; height: 100% !important; display: flex !important; align-items: center !important; overflow: hidden !important; position: relative !important; white-space: nowrap !important; mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important; -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important;">
+                    <div class="lp-singleline-track" style="display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: 24px !important; white-space: nowrap !important; will-change: transform !important; animation: lpSingleLineScroll 30s linear infinite !important;">
+                        ${itemsHtml}
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-right" style="color: #64748b; font-size: 0.72rem; flex-shrink: 0;"></i>
+            </div>
+        `;
+    } catch(e) {
+        console.error('[updateHomeWinningTicker Error]', e);
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.renderLandingDashboard = renderLandingDashboard;
     window.updateHomeReviewDashboard = updateHomeReviewDashboard;
+    window.updateHomeWinningTicker = updateHomeWinningTicker;
 }
 
 
