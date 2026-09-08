@@ -1431,6 +1431,13 @@ async function checkAuthOnLoad(initFirebaseAndData) {
         if (typeof window.renderLandingDashboard === 'function') {
             try { window.renderLandingDashboard(); } catch(e) {}
         }
+
+        // 💬 [Pending Kakao Auto-Dispatch] Check & deliver any pending notifications for this user upon login
+        if (typeof window.processPendingUserKakaoMessages === 'function') {
+            setTimeout(() => {
+                window.processPendingUserKakaoMessages(authId);
+            }, 1200);
+        }
     } else {
         if (!window.__appUnlocked && loginModal) {
             loginModal.removeAttribute('style');
@@ -4176,24 +4183,161 @@ ${roundsSummary}
 }
 
 /**
+ * 회원의 카카오 알림 대기열(pendingKakaoNotifications)에 메시지 등록
+ */
+window.queueKakaoNotificationForUser = async function(userId, notificationData) {
+    if (!userId || !window.db) return false;
+    const notifId = notificationData.id || `pending_${notificationData.round || 'all'}_${Date.now()}`;
+    const item = {
+        id: notifId,
+        type: notificationData.type || 'single_winning_report',
+        round: Number(notificationData.round || 0),
+        rounds: notificationData.rounds || (notificationData.round ? [Number(notificationData.round)] : []),
+        template: notificationData.template,
+        status: 'pending', // 'pending' | 'delivered'
+        createdAt: new Date().toISOString()
+    };
+
+    try {
+        await window.db.collection('lotto_users').doc(userId).set({
+            pendingKakaoNotifications: {
+                [notifId]: item
+            },
+            hasPendingKakao: true
+        }, { merge: true });
+
+        return true;
+    } catch(err) {
+        console.warn(`[queueKakaoNotificationForUser Error] (${userId}):`, err);
+        return false;
+    }
+};
+
+/**
+ * 회원이 스마트폰/PC로 로그인했을 때 대기 중인 카카오톡 알림을 본인 카카오톡으로 자동 발송
+ */
+window.processPendingUserKakaoMessages = async function(authId) {
+    if (!authId || !window.db) return;
+    if (window.__processingPendingKakao) return;
+    window.__processingPendingKakao = true;
+
+    try {
+        const userDoc = await window.db.collection('lotto_users').doc(authId).get();
+        if (!userDoc.exists) return;
+        const uData = userDoc.data();
+        const pendingMap = uData.pendingKakaoNotifications || {};
+        const pendingIds = Object.keys(pendingMap).filter(k => pendingMap[k] && pendingMap[k].status === 'pending');
+
+        if (pendingIds.length === 0) return;
+
+        console.log(`[Pending Kakao Dispatch] Found ${pendingIds.length} pending notification(s) for ${authId}`);
+
+        // Sort by round or creation time
+        pendingIds.sort((a, b) => (pendingMap[a].round || 0) - (pendingMap[b].round || 0));
+
+        let deliveredCount = 0;
+        for (const notifId of pendingIds) {
+            const item = pendingMap[notifId];
+            if (!item || !item.template) continue;
+
+            try {
+                // Ensure Kakao talk_message scope if kakao login user
+                if (window.Kakao && window.Kakao.Auth) {
+                    await new Promise((resolve) => {
+                        window.Kakao.API.request({
+                            url: '/v2/api/talk/memo/default/send',
+                            data: {
+                                template_object: item.template
+                            },
+                            success: function(res) {
+                                console.log('[Pending Kakao Auto-Delivered]', notifId, res);
+                                resolve(true);
+                            },
+                            fail: function(err) {
+                                console.warn('[Pending Kakao Send Failed]', notifId, err);
+                                resolve(false);
+                            }
+                        });
+                    });
+
+                    // Mark as delivered in Firestore
+                    const now = new Date().toISOString();
+                    const roundKey = Number(item.round || 0);
+                    const sentUpdates = {};
+                    if (roundKey > 0) {
+                        sentUpdates[roundKey] = {
+                            sentAt: now,
+                            status: 'delivered'
+                        };
+                    } else if (Array.isArray(item.rounds)) {
+                        item.rounds.forEach(r => {
+                            sentUpdates[r] = {
+                                sentAt: now,
+                                status: 'delivered'
+                            };
+                        });
+                    }
+
+                    await window.db.collection('lotto_users').doc(authId).set({
+                        pendingKakaoNotifications: {
+                            [notifId]: {
+                                status: 'delivered',
+                                deliveredAt: now
+                            }
+                        },
+                        sentReports: sentUpdates
+                    }, { merge: true });
+
+                    deliveredCount++;
+                    await new Promise(r => setTimeout(r, 600));
+                }
+            } catch(e) {
+                console.warn('[processPendingUserKakaoMessages Item Error]', e);
+            }
+        }
+
+        if (deliveredCount > 0) {
+            showToast(`🎁 관리자님이 보낸 실구매 당첨 리포트(${deliveredCount}건)가 회원님의 카카오톡으로 자동 발송되었습니다!`);
+        }
+    } catch(err) {
+        console.warn('[processPendingUserKakaoMessages Error]', err);
+    } finally {
+        window.__processingPendingKakao = false;
+    }
+};
+
+/**
  * 특정 회원에게 단일 회차 당첨 리포트 발송
  */
 window.sendUserWinningKakaoMessage = async function(userId, targetRound) {
     if (!userId) return;
+    const currentAuthId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
+    const isSendingToSelf = (currentAuthId === userId);
+
     try {
         showToast(`🎰 [${userId}] 제 ${targetRound}회 당첨 리포트 생성 중...`);
         const template = await buildUserWinningReportTemplate(userId, targetRound);
-        await window.sendKakaoCustomMessage(template);
 
-        // Mark as sent in Firestore
-        if (window.db) {
-            try {
+        if (isSendingToSelf) {
+            // 본인이 본인에게 보낼 때는 즉시 카카오톡 발송
+            await window.sendKakaoCustomMessage(template);
+            showToast(`🎉 제 ${targetRound}회 당첨 리포트가 나의 카카오톡으로 정상 발송되었습니다!`);
+        } else {
+            // 관리자가 다른 회원에게 발송할 때는 회원의 대기열(Queue)에 등록하여 회원이 스마트폰 로그인 시 자동 발송
+            await window.queueKakaoNotificationForUser(userId, {
+                type: 'single_winning_report',
+                round: Number(targetRound),
+                template: template
+            });
+
+            // Mark sentReports in Firestore as queued
+            if (window.db) {
                 const now = new Date().toISOString();
                 await window.db.collection('lotto_users').doc(userId).set({
                     sentReports: {
                         [Number(targetRound)]: {
-                            sentAt: now,
-                            status: 'success'
+                            queuedAt: now,
+                            status: 'queued'
                         }
                     }
                 }, { merge: true });
@@ -4201,17 +4345,35 @@ window.sendUserWinningKakaoMessage = async function(userId, targetRound) {
                 await window.db.collection('lotto_notification_logs').add({
                     userId,
                     round: Number(targetRound),
-                    type: 'single_winning_report',
-                    sentAt: now,
-                    status: 'success'
+                    type: 'single_winning_report_queued',
+                    queuedAt: now,
+                    status: 'queued'
                 });
-            } catch(e){}
-        }
+            }
 
-        showToast(`🎉 [${userId}] 제 ${targetRound}회 당첨 리포트가 정상 발송되었습니다!`);
+            const userName = (typeof getUserRealName === 'function') ? getUserRealName(userId) : userId;
+            showToast(`📬 [${userName}] 회원님의 카카오톡 발송 대기열에 등록되었습니다! 회원이 스마트폰으로 로그인 시 자동 전송됩니다.`);
+            
+            // 관리자가 지금 즉시 카톡 공유창으로도 전달할 수 있도록 친절한 안내 제공
+            setTimeout(() => {
+                if (confirm(`📬 [${userName}] 회원님의 로그인 시 자동 발송 대기열에 등록되었습니다!\n\n(회원이 스마트폰으로 로그인 시 자신의 카카오톡으로 자동 수신됩니다)\n\n지금 카카오톡 공유창을 열어 [${userName}] 회원님에게 즉시 전달하시겠습니까?`)) {
+                    if (window.Kakao && window.Kakao.Share && typeof window.Kakao.Share.sendDefault === 'function') {
+                        window.Kakao.Share.sendDefault({
+                            objectType: 'text',
+                            text: template.text,
+                            link: template.link,
+                            buttonTitle: template.button_title || '나의 실구매 상세 보기'
+                        });
+                    } else {
+                        navigator.clipboard.writeText(template.text);
+                        alert('📋 당첨 리포트 내용이 클립보드에 복사되었습니다! 카카오톡 채팅방에 바로 붙여넣기(Ctrl+V)하여 전달하실 수 있습니다.');
+                    }
+                }
+            }, 300);
+        }
     } catch(err) {
         console.error('[sendUserWinningKakaoMessage Error]', err);
-        alert(`⚠️ 당첨 리포트 발송 실패: ${err.message || err}`);
+        alert(`⚠️ 당첨 리포트 처리 실패: ${err.message || err}`);
     }
 };
 
@@ -4220,6 +4382,9 @@ window.sendUserWinningKakaoMessage = async function(userId, targetRound) {
  */
 window.sendUserUnsentWinningReports = async function(userId) {
     if (!userId) return;
+    const currentAuthId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
+    const isSendingToSelf = (currentAuthId === userId);
+
     try {
         showToast(`🔍 [${userId}] 가입 후 미전송 당첨 내역 조회 중...`);
         const unsentList = await getUnsentWinningRoundsForUser(userId);
@@ -4229,38 +4394,66 @@ window.sendUserUnsentWinningReports = async function(userId) {
         }
 
         const template = await buildUserAccumulatedWinningReportTemplate(userId, unsentList);
-        await window.sendKakaoCustomMessage(template);
 
-        // Mark all as sent
-        if (window.db) {
-            const now = new Date().toISOString();
-            const sentUpdates = {};
-            unsentList.forEach(s => {
-                sentUpdates[s.round] = {
-                    sentAt: now,
-                    totalPrize: s.totalPrize,
-                    status: 'success'
-                };
-            });
-
-            await window.db.collection('lotto_users').doc(userId).set({
-                sentReports: sentUpdates
-            }, { merge: true });
-
-            await window.db.collection('lotto_notification_logs').add({
-                userId,
-                rounds: unsentList.map(s => s.round),
+        if (isSendingToSelf) {
+            await window.sendKakaoCustomMessage(template);
+            showToast(`🎉 미전송 ${unsentList.length}건의 당첨 리포트가 나의 카카오톡으로 발송되었습니다!`);
+        } else {
+            // 관리자가 타 회원 미전송 건 발송 시 대기열에 등록
+            await window.queueKakaoNotificationForUser(userId, {
                 type: 'accumulated_unsent_report',
-                sentAt: now,
-                status: 'success'
+                rounds: unsentList.map(s => s.round),
+                template: template
             });
+
+            if (window.db) {
+                const now = new Date().toISOString();
+                const sentUpdates = {};
+                unsentList.forEach(s => {
+                    sentUpdates[s.round] = {
+                        queuedAt: now,
+                        totalPrize: s.totalPrize,
+                        status: 'queued'
+                    };
+                });
+
+                await window.db.collection('lotto_users').doc(userId).set({
+                    sentReports: sentUpdates
+                }, { merge: true });
+
+                await window.db.collection('lotto_notification_logs').add({
+                    userId,
+                    rounds: unsentList.map(s => s.round),
+                    type: 'accumulated_unsent_report_queued',
+                    queuedAt: now,
+                    status: 'queued'
+                });
+            }
+
+            const userName = (typeof getUserRealName === 'function') ? getUserRealName(userId) : userId;
+            showToast(`📬 [${userName}] 회원님의 미전송 ${unsentList.length}건 당첨 알림이 대기열에 등록되었습니다. 회원이 로그인 시 자동 전송됩니다.`);
+            
+            setTimeout(() => {
+                if (confirm(`📬 [${userName}] 회원님의 미전송 ${unsentList.length}건 당첨 리포트가 대기열에 등록되었습니다!\n\n(회원이 스마트폰으로 로그인 시 자신의 카카오톡으로 자동 발송됩니다)\n\n지금 카카오톡 공유창을 열어 바로 전송하시겠습니까?`)) {
+                    if (window.Kakao && window.Kakao.Share && typeof window.Kakao.Share.sendDefault === 'function') {
+                        window.Kakao.Share.sendDefault({
+                            objectType: 'text',
+                            text: template.text,
+                            link: template.link,
+                            buttonTitle: template.button_title || '나의 실구매 상세 보기'
+                        });
+                    } else {
+                        navigator.clipboard.writeText(template.text);
+                        alert('📋 당첨 리포트 내용이 클립보드에 복사되었습니다! 카카오톡 채팅방에 바로 붙여넣기(Ctrl+V)하여 전달하실 수 있습니다.');
+                    }
+                }
+            }, 300);
         }
 
-        showToast(`🎉 [${userId}] 미전송 ${unsentList.length}건의 당첨 리포트가 성공적으로 소급 발송되었습니다!`);
         if (typeof window.loadUserList === 'function') window.loadUserList();
     } catch(err) {
         console.error('[sendUserUnsentWinningReports Error]', err);
-        alert(`⚠️ 소급 발송 실패: ${err.message || err}`);
+        alert(`⚠️ 소급 처리 실패: ${err.message || err}`);
     }
 };
 
@@ -4275,6 +4468,7 @@ window.sendBatchWinningKakaoMessages = async function(targetRound, options = {})
 
     const { mode = 'round', onProgress = null, isAuto = false } = options;
     const rNum = Number(targetRound || getLatestDrawnRound());
+    const currentAuthId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
 
     try {
         const snap = await window.db.collection('lotto_users').get();
@@ -4303,15 +4497,27 @@ window.sendBatchWinningKakaoMessages = async function(targetRound, options = {})
                     const unsent = await getUnsentWinningRoundsForUser(user.userId, user.data);
                     if (unsent.length > 0) {
                         const template = await buildUserAccumulatedWinningReportTemplate(user.userId, unsent, user.data);
-                        if (user.userId === SafeAuth.get()) {
+                        if (user.userId === currentAuthId) {
                             await window.sendKakaoCustomMessage(template);
+                        } else {
+                            await window.queueKakaoNotificationForUser(user.userId, {
+                                type: 'accumulated_unsent_report',
+                                rounds: unsent.map(s => s.round),
+                                template: template
+                            });
                         }
                         successCount++;
                     }
                 } else {
                     const template = await buildUserWinningReportTemplate(user.userId, rNum, null, user.data);
-                    if (user.userId === SafeAuth.get()) {
+                    if (user.userId === currentAuthId) {
                         await window.sendKakaoCustomMessage(template);
+                    } else {
+                        await window.queueKakaoNotificationForUser(user.userId, {
+                            type: 'single_winning_report',
+                            round: rNum,
+                            template: template
+                        });
                     }
                     successCount++;
                 }
@@ -4326,12 +4532,12 @@ window.sendBatchWinningKakaoMessages = async function(targetRound, options = {})
                 }
             }
 
-            await new Promise(res => setTimeout(res, 300));
+            await new Promise(res => setTimeout(res, 200));
         }
 
         if (isAuto) {
-            console.log(`[Auto Saturday 21:00 Batch Send Complete] Round ${rNum}: ${successCount} sent, ${failCount} failed`);
-            showToast(`⏰ [토요일 21:00 자동 발송] 제 ${rNum}회 당첨 리포트가 회원들에게 정상 발송되었습니다.`);
+            console.log(`[Auto Saturday 21:00 Batch Send Complete] Round ${rNum}: ${successCount} queued/sent, ${failCount} failed`);
+            showToast(`⏰ [토요일 21:00 자동 발송] 제 ${rNum}회 당첨 리포트가 회원들의 카카오톡 발송 대기열에 등록되었습니다.`);
         }
 
         return { total: consentedUsers.length, success: successCount, failed: failCount };
