@@ -751,7 +751,7 @@ export function setupAuthEvents(initFirebaseAndData) {
             if (window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
                 window.Kakao.Auth.login({
                     scope: 'profile_nickname,profile_image,talk_message',
-                    prompt: 'consent',
+                    throughTalk: true,
                     persistAccessToken: true,
                     success: function(authObj) {
                         window.Kakao.API.request({
