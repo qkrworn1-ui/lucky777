@@ -1243,6 +1243,17 @@ function getUserPermissions(authId, userData = null) {
         return { allowLotto, allowToto };
     }
 
+    // State registered users list (Firestore synchronized)
+    if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+        const u = window.state.allRegisteredUsersList.find(item => item && item.id && item.id.toLowerCase().trim() === cleanId);
+        if (u) {
+            const allowLotto = u.allowLotto !== false;
+            const allowToto = u.allowToto !== false;
+            setUserPermissionsCache(cleanId, { allowLotto, allowToto });
+            return { allowLotto, allowToto };
+        }
+    }
+
     // Fast in-memory cache
     if (typeof window !== 'undefined' && window.__userPermissions && window.__userPermissions[cleanId]) {
         return window.__userPermissions[cleanId];
@@ -1259,17 +1270,6 @@ function getUserPermissions(authId, userData = null) {
             };
         }
     } catch(e) {}
-
-    // State registered users list cache
-    if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
-        const u = window.state.allRegisteredUsersList.find(item => item && item.id && item.id.toLowerCase().trim() === cleanId);
-        if (u) {
-            return {
-                allowLotto: u.allowLotto !== false,
-                allowToto: u.allowToto !== false
-            };
-        }
-    }
 
     // Default: both allowed
     return { allowLotto: true, allowToto: true };
