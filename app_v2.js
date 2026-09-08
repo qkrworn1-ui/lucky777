@@ -2883,6 +2883,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
             usersList.forEach(item => {
                 const { userId, data } = item;
+                const safeUserId = encodeURIComponent(userId);
                 const realName = data.realName && data.realName !== userId ? `(${data.realName})` : '';
                 const joinDate = data.createdAt ? data.createdAt.slice(0, 10) : '-';
                 const deletedDate = data.deletedAt ? data.deletedAt.slice(0, 16).replace('T', ' ') : '삭제일시 미기록';
@@ -2920,13 +2921,13 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
                     <!-- Trash Action Buttons -->
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-top:2px;">
-                        <button type="button" onclick="window.restoreUserFromTrash('${userId}')" title="계정을 다시 정상 활성 상태로 복구" style="flex:1; min-width:130px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 6px rgba(16,185,129,0.35);">
+                        <button type="button" onclick="window.restoreUserFromTrash(decodeURIComponent('${safeUserId}'))" title="계정을 다시 정상 활성 상태로 복구" style="flex:1; min-width:130px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 6px rgba(16,185,129,0.35);">
                             <i class="fa-solid fa-rotate-left"></i> ♻️ 계정 복구하기
                         </button>
-                        <button type="button" onclick="window.viewUserAgreementDoc('${userId}')" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                        <button type="button" onclick="window.viewUserAgreementDoc(decodeURIComponent('${safeUserId}'))" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
                             <i class="fa-solid fa-file-signature"></i> 서약문서
                         </button>
-                        <button type="button" onclick="window.permanentlyDeleteUser('${userId}')" title="DB에서 완전히 영구 삭제" style="background:rgba(239,68,68,0.25); border:1px solid rgba(239,68,68,0.6); color:#fca5a5; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 2px 6px rgba(239,68,68,0.25);">
+                        <button type="button" onclick="window.permanentlyDeleteUser(decodeURIComponent('${safeUserId}'))" title="DB에서 완전히 영구 삭제" style="background:rgba(239,68,68,0.25); border:1px solid rgba(239,68,68,0.6); color:#fca5a5; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 2px 6px rgba(239,68,68,0.25);">
                             <i class="fa-solid fa-fire"></i> 💥 영구 삭제
                         </button>
                     </div>
@@ -2939,6 +2940,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
         usersList.forEach(item => {
             const { userId, data, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, status } = item;
+            const safeUserId = encodeURIComponent(userId);
 
             let adminBadge = isUserAdmin 
                 ? `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-crown"></i> 관리자</span>` 
@@ -3019,20 +3021,20 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
                 <!-- 3. Streamlined Action Buttons (Options are managed inside [정보 및 옵션 설정]) -->
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:5px; margin-top:2px;">
-                    <button type="button" onclick="window.openEditUserModal('${userId}')" title="회원 정보 수정 및 권한/상태/옵션 종합 설정" style="flex:1; min-width:140px; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; padding:7px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 6px rgba(59,130,246,0.35);">
+                    <button type="button" onclick="window.openEditUserModal(decodeURIComponent('${safeUserId}'))" title="회원 정보 수정 및 권한/상태/옵션 종합 설정" style="flex:1; min-width:140px; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; padding:7px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 6px rgba(59,130,246,0.35);">
                         <i class="fa-solid fa-sliders"></i> 회원 정보 &amp; 옵션 설정
                     </button>
                     <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                        <button type="button" onclick="window.viewUserAgreementDoc('${userId}')" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                        <button type="button" onclick="window.viewUserAgreementDoc(decodeURIComponent('${safeUserId}'))" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
                             <i class="fa-solid fa-file-signature"></i> 서약문서
                         </button>
-                        <button type="button" onclick="window.sendUserWinningKakaoMessage('${userId}', ${latestRound})" title="제 ${latestRound}회 실구매 당첨 리포트 카카오톡 전송" style="background:rgba(254, 229, 0, 0.15); border:1px solid rgba(254, 229, 0, 0.45); color:#fee500; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                        <button type="button" onclick="window.sendUserWinningKakaoMessage(decodeURIComponent('${safeUserId}'), ${latestRound})" title="제 ${latestRound}회 실구매 당첨 리포트 카카오톡 전송" style="background:rgba(254, 229, 0, 0.15); border:1px solid rgba(254, 229, 0, 0.45); color:#fee500; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
                             <i class="fa-solid fa-comment-dots"></i> 당첨알림
                         </button>
-                        <button type="button" onclick="window.sendUserUnsentWinningReports('${userId}')" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" style="background:rgba(167, 139, 250, 0.15); border:1px solid rgba(167, 139, 250, 0.45); color:#c4b5fd; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                        <button type="button" onclick="window.sendUserUnsentWinningReports(decodeURIComponent('${safeUserId}'))" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" style="background:rgba(167, 139, 250, 0.15); border:1px solid rgba(167, 139, 250, 0.45); color:#c4b5fd; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
                             <i class="fa-solid fa-box-archive"></i> 미전송발송
                         </button>
-                        <button type="button" onclick="window.deleteUser('${userId}')" title="계정을 휴지통으로 이동" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                        <button type="button" onclick="window.deleteUser(decodeURIComponent('${safeUserId}'))" title="계정을 휴지통으로 이동" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
                             <i class="fa-solid fa-trash-can"></i> 삭제
                         </button>
                     </div>
@@ -3064,6 +3066,12 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             
             const users = [];
             snapshot.forEach(doc => {
+                // Ignore corrupt/garbage JSON string IDs if any
+                if (doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) {
+                    // asynchronously clean up in background
+                    window.db.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
+                    return;
+                }
                 users.push({ userId: doc.id, data: doc.data() });
             });
 
