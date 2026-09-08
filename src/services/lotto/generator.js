@@ -1231,7 +1231,17 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
  */
 export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
     if (!userId || !round) return null;
-    const cleanUser = String(userId).toLowerCase().trim();
+    let cleanUser = String(userId).trim();
+    if (cleanUser.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanUser);
+            cleanUser = p.userid || p.userId || cleanUser;
+        } catch(e) {}
+    }
+    cleanUser = cleanUser.toLowerCase().trim();
+    if (cleanUser.startsWith('{') || cleanUser.startsWith('test_') || cleanUser === 'user_alpha' || cleanUser === 'user_beta' || cleanUser === 'pjg' || cleanUser === 'sample' || cleanUser === 'hms' || cleanUser === 'wdy') {
+        return null;
+    }
     const roundNum = parseInt(round, 10);
     if (isNaN(roundNum)) return null;
 
@@ -1378,7 +1388,14 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
  */
 export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     if (!userId || !round) return null;
-    const cleanUser = String(userId).toLowerCase().trim();
+    let cleanUser = String(userId).trim();
+    if (cleanUser.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanUser);
+            cleanUser = p.userid || p.userId || cleanUser;
+        } catch(e) {}
+    }
+    cleanUser = cleanUser.toLowerCase().trim();
     const roundNum = parseInt(round, 10);
     const docKey = `${cleanUser}_${roundNum}`;
 

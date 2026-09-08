@@ -113,7 +113,14 @@ export function evaluateRecommendationSet(combos, actualDraw) {
  */
 export function getUserJoinRound(userId) {
     if (!userId) return 1235;
-    const cleanUser = String(userId).toLowerCase().trim();
+    let cleanUser = String(userId).trim();
+    if (cleanUser.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanUser);
+            cleanUser = p.userid || p.userId || cleanUser;
+        } catch(e) {}
+    }
+    cleanUser = cleanUser.toLowerCase().trim();
     if (cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'all') return 1235;
     if (typeof isAdminUser === 'function' && isAdminUser(cleanUser)) return 1235;
 
@@ -186,7 +193,14 @@ const _user70ReviewCache = {};
  * Memoized for 100x ultra-fast execution when switching users and rounds.
  */
 export function computeUser70RecommendationsReview(userId, roundNum) {
-    const cleanUser = (userId || 'guest').trim().toLowerCase();
+    let cleanUser = (userId || 'guest').trim();
+    if (cleanUser.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanUser);
+            cleanUser = p.userid || p.userId || cleanUser;
+        } catch(e) {}
+    }
+    cleanUser = cleanUser.toLowerCase().trim();
     const cacheKey = `${cleanUser}_${roundNum}`;
     if (_user70ReviewCache[cacheKey]) {
         return _user70ReviewCache[cacheKey];
@@ -423,7 +437,13 @@ export async function renderReviewTab() {
         
         if (!reviewMatchingContainer) return;
 
-        const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        let rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        if (typeof rawAuth === 'string' && rawAuth.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(rawAuth);
+                rawAuth = parsed.userid || parsed.userId || rawAuth;
+            } catch(e) {}
+        }
         const authId = (rawAuth || '').trim();
         const cleanAuth = authId.toLowerCase();
         const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
@@ -469,7 +489,11 @@ export async function renderReviewTab() {
                 currentSelectorEl.parentElement.appendChild(adminSelectorContainer);
             }
 
-            const registeredUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
+            const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
+            const registeredUsers = rawUsers.filter(u => {
+                const uId = (u.id || '').trim().toLowerCase();
+                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && uId !== 'wdy' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+            });
             let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 복기</option>`;
             userOptionsHtml += `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
 
@@ -579,7 +603,13 @@ export function renderReviewDetail(r) {
     const roundNum = parseInt(r);
     if (isNaN(roundNum)) return;
 
-    const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    let rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    if (typeof rawAuth === 'string' && rawAuth.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(rawAuth);
+            rawAuth = parsed.userid || parsed.userId || rawAuth;
+        } catch(e) {}
+    }
     const authId = (rawAuth || '').trim();
     const cleanAuth = authId.toLowerCase();
     const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
@@ -599,7 +629,11 @@ export function renderReviewDetail(r) {
     let grandTotalPrize = 0, grandTotalGames = 0, grandTotalInvest = 0, grandTotalRoi = 0;
 
     if (isAdmin && isAllUsers) {
-        const rawRegisteredUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
+        const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
+        const rawRegisteredUsers = rawUsers.filter(u => {
+            const uId = (u.id || '').trim().toLowerCase();
+            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && uId !== 'wdy' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+        });
         const baseList = (rawRegisteredUsers && rawRegisteredUsers.length > 0 ? rawRegisteredUsers : [{ id: authId, name: '관리자' }]);
         
         // 🔒 회원 가입일 이전 회차 필터링: 해당 회차(roundNum) 시점에 이미 가입되어 있던 회원만 종합 집계 및 표에 포함
@@ -934,7 +968,7 @@ export function renderReviewDetail(r) {
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; font-weight: 800; color: #f8fafc;">
                 <i class="fa-solid fa-cubes-stacked" style="color: #60a5fa;"></i> 
-                ${isAllUsers ? `전체 통합 7대 알고리즘 추천 70게임 복기` : `[${effectiveUserId}] 회원 배정 7대 알고리즘 70게임 복기`}
+                ${isAllUsers ? `전체 통합 7대 알고리즘 추천 70게임 복기` : `[${(typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || (effectiveUserId === 'master' ? '최고관리자' : effectiveUserId)}] 회원 배정 7대 알고리즘 70게임 복기`}
             </div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                 <button type="button" class="btn-filter-review ${activeReviewFilter === 'all' ? 'active' : ''}" onclick="window.setReviewViewFilter('all')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'all' ? '#fbbf24' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'all' ? 'linear-gradient(135deg, rgba(245,158,11,0.35), rgba(217,119,6,0.35))' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'all' ? '#fbbf24' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">

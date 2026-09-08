@@ -286,9 +286,14 @@ export async function updateHomeReviewDashboard() {
             grandTotalWins = perf.grandTotalWins || (grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5);
         } else {
             // Fallback direct calculation across rounds 1235..maxRound and registered users
-            const registeredUsers = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0)
+            const rawRegisteredUsers = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0)
                 ? state.allRegisteredUsersList
                 : Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id, realName: id }));
+
+            const registeredUsers = rawRegisteredUsers.filter(u => {
+                const uId = (u.id || '').trim().toLowerCase();
+                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && uId !== 'wdy' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+            });
 
             const userList = registeredUsers.length > 0 ? [...registeredUsers] : [
                 { id: 'master', name: '관리자 (마스터)', realName: '관리자 (마스터)' }
