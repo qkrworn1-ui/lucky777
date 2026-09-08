@@ -2368,9 +2368,12 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 window.state.allRegisteredUsersList = activeUsers.map(u => ({
                     id: u.userId,
                     name: u.data.realName || u.userId,
+                    realName: u.data.realName || u.userId,
                     phone: u.data.phoneNumber || '',
                     isAdmin: !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
                     isPermanent: !!(u.data.isPermanent === true || u.data.userType === 'permanent' || u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
+                    userType: u.data.userType || (u.isPermanent ? 'permanent' : 'regular'),
+                    createdAt: u.data.createdAt || null,
                     allowLotto: u.data.allowLotto !== false,
                     allowToto: u.data.allowToto !== false
                 }));

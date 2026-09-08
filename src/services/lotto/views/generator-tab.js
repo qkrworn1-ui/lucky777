@@ -674,7 +674,10 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                 const uSnap = await window.db.collection('lotto_users').get();
                 state.allRegisteredUsersList = [];
                 uSnap.forEach(d => {
-                    const uData = d.data();
+                    const uId = d.id.trim().toLowerCase();
+                    if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'pjg' || uId === 'sample' || uId === 'hms' || uId === 'wdy') return;
+                    const uData = d.data() || {};
+                    if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') return;
                     const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
                     if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
                         window.setIsPermanentCache(d.id, isPerm);
@@ -682,10 +685,12 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                     state.allRegisteredUsersList.push({
                         id: d.id,
                         name: uData.realName || d.id,
+                        realName: uData.realName || d.id,
                         phone: uData.phoneNumber || '',
                         isAdmin: !!(uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin'),
                         isPermanent: isPerm,
-                        userType: uData.userType || (isPerm ? 'permanent' : 'regular')
+                        userType: uData.userType || (isPerm ? 'permanent' : 'regular'),
+                        createdAt: uData.createdAt || null
                     });
                 });
             } catch(e) {}

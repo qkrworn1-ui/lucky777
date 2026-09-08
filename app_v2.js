@@ -3116,9 +3116,12 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 window.state.allRegisteredUsersList = activeUsers.map(u => ({
                     id: u.userId,
                     name: u.data.realName || u.userId,
+                    realName: u.data.realName || u.userId,
                     phone: u.data.phoneNumber || '',
                     isAdmin: !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
                     isPermanent: !!(u.data.isPermanent === true || u.data.userType === 'permanent' || u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
+                    userType: u.data.userType || (u.isPermanent ? 'permanent' : 'regular'),
+                    createdAt: u.data.createdAt || null,
                     allowLotto: u.data.allowLotto !== false,
                     allowToto: u.data.allowToto !== false
                 }));
@@ -5994,6 +5997,7 @@ async function fetchAllUsersPurchases() {
         if (uSnapshot && !uSnapshot.empty) {
             state.allRegisteredUsersList = [];
             uSnapshot.forEach(doc => {
+                const uId = doc.id.trim().toLowerCase();
                 if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'pjg' || uId === 'sample' || uId === 'hms' || uId === 'wdy') return;
                 const d = doc.data() || {};
                 if (d.isDeleted === true || d.status === 'trash' || d.status === 'deleted') return;
@@ -10503,7 +10507,10 @@ async function renderTop5Combinations(isRollingAnimation = false) {
                 const uSnap = await window.db.collection('lotto_users').get();
                 state.allRegisteredUsersList = [];
                 uSnap.forEach(d => {
-                    const uData = d.data();
+                    const uId = d.id.trim().toLowerCase();
+                    if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'pjg' || uId === 'sample' || uId === 'hms' || uId === 'wdy') return;
+                    const uData = d.data() || {};
+                    if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') return;
                     const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
                     if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
                         window.setIsPermanentCache(d.id, isPerm);
@@ -10511,10 +10518,12 @@ async function renderTop5Combinations(isRollingAnimation = false) {
                     state.allRegisteredUsersList.push({
                         id: d.id,
                         name: uData.realName || d.id,
+                        realName: uData.realName || d.id,
                         phone: uData.phoneNumber || '',
                         isAdmin: !!(uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin'),
                         isPermanent: isPerm,
-                        userType: uData.userType || (isPerm ? 'permanent' : 'regular')
+                        userType: uData.userType || (isPerm ? 'permanent' : 'regular'),
+                        createdAt: uData.createdAt || null
                     });
                 });
             } catch(e) {}
@@ -15745,7 +15754,10 @@ async function renderConfirmedPurchasesList() {
     let adminUserSelectHtml = '';
     if (isAdmin) {
         const currentTarget = state.adminViewingTarget || 'all';
-        const userList = Object.keys(state.allUsersPurchasesMap || {});
+        const userList = Object.keys(state.allUsersPurchasesMap || {}).filter(uId => {
+            const clean = (uId || '').trim().toLowerCase();
+            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms' && clean !== 'wdy';
+        });
         
         let optionsHtml = `<option value="all" ${currentTarget === 'all' ? 'selected' : ''}>👥 [전체 회원 통합 보기 (${userList.length}명)]</option>`;
         optionsHtml += `<option value="my" ${currentTarget === 'my' ? 'selected' : ''}>👤 [내 계정 구매내역 (${authId})]</option>`;
@@ -15776,7 +15788,10 @@ async function renderConfirmedPurchasesList() {
     let adminOverviewTableHtml = '';
     if (isAdmin && state.allUsersPurchasesMap) {
         const currentTarget = state.adminViewingTarget || 'all';
-        const userList = Object.keys(state.allUsersPurchasesMap || {});
+        const userList = Object.keys(state.allUsersPurchasesMap || {}).filter(uId => {
+            const clean = (uId || '').trim().toLowerCase();
+            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms' && clean !== 'wdy';
+        });
         const history = state.mergedHistory || {};
 
         // Compute actual purchase winning stats with algorithm breakdown for each user

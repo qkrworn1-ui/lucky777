@@ -124,6 +124,7 @@ export async function fetchAllUsersPurchases() {
         if (uSnapshot && !uSnapshot.empty) {
             state.allRegisteredUsersList = [];
             uSnapshot.forEach(doc => {
+                const uId = doc.id.trim().toLowerCase();
                 if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'pjg' || uId === 'sample' || uId === 'hms' || uId === 'wdy') return;
                 const d = doc.data() || {};
                 if (d.isDeleted === true || d.status === 'trash' || d.status === 'deleted') return;
