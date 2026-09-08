@@ -963,8 +963,8 @@ function getStandardAgreementTerms(now = new Date()) {
         },
         {
             termId: 'term_privacy',
-            title: '[필수 3] 개인정보 수집·이용 및 전자계약 문서 안전 보존 동의',
-            fullContent: '1. 수집 항목: 아이디, 성명(실명), 휴대폰번호, 자필 전자서명 이미지, 접속 기기 식별정보\n2. 수집 목적: 1인 1계정 본인확인, 중복가입 방지, 성과연동 기술료 세무 정산 및 전자계약 체결·보존\n3. 제3자 제공 금지: 수집된 개인정보 및 전자서명 데이터는 상업적 마케팅 목적으로 제3자에게 일체 제공되거나 판매되지 않습니다.\n4. 보유 및 보존 기간: 회원 탈퇴 시까지 (단, 전자서약서 및 정산 증빙 문서는 전자문서법 및 전자서명법에 따라 5년간 법적 아카이브로 안전 암호화 보존 후 영구 파기)',
+            title: '[필수 3] 개인정보 수집·이용, 카카오톡 알림 발송 및 전자계약 문서 안전 보존 동의',
+            fullContent: '1. 수집 항목: 아이디, 성명(실명), 휴대폰번호, 자필 전자서명 이미지, 접속 기기 식별정보, 카카오 계정 고유 식별자 및 카카오톡 메시지 전송 권한 토큰\n2. 수집 및 이용 목적:\n  - 1인 1계정 본인확인 및 중복가입 방지\n  - 성과연동 기술료 세무 정산 및 전자계약 체결·법적 보존\n  - 회원의 주간 실구매 복권 당첨 채점 리포트, AI 퀀트 분석 추천 정보 및 서비스 중요 공지사항의 스마트폰 카카오톡(나와의 채팅) 자동 발송 알림 제공\n3. 카카오톡 알림 수신 및 철회: 본 서비스는 회원이 등록한 복권의 당첨 채점 결과 및 맞춤형 분석 정보를 회원의 스마트폰 카카오톡 [나와의 채팅]으로 자동 발송하며, 회원은 언제든지 카카오계정 설정 또는 서비스 내 동의 설정을 통해 알림 수신 동의를 철회할 수 있습니다.\n4. 제3자 제공 금지: 수집된 개인정보 및 전자서명 데이터는 상업적 마케팅 목적으로 제3자에게 일체 제공되거나 판매되지 않습니다.\n5. 보유 및 보존 기간: 회원 탈퇴 시까지 (단, 전자서약서 및 정산 증빙 문서는 전자문서법 및 전자서명법에 따라 5년간 법적 아카이브로 안전 암호화 보존 후 영구 파기)',
             isAgreed: true,
             agreedAt: agreedAt
         },
@@ -1432,12 +1432,15 @@ async function checkAuthOnLoad(initFirebaseAndData) {
             try { window.renderLandingDashboard(); } catch(e) {}
         }
 
-        // 💬 [Pending Kakao Auto-Dispatch] Check & deliver any pending notifications for this user upon login
-        if (typeof window.processPendingUserKakaoMessages === 'function') {
-            setTimeout(() => {
-                window.processPendingUserKakaoMessages(authId);
-            }, 1200);
-        }
+        // 💬 [Kakao Auto-Dispatch] Check pending queue & auto-dispatch unsent real winning reports upon login
+        setTimeout(async () => {
+            if (typeof window.processPendingUserKakaoMessages === 'function') {
+                await window.processPendingUserKakaoMessages(authId);
+            }
+            if (typeof window.autoCheckAndDispatchUserWinningReports === 'function') {
+                await window.autoCheckAndDispatchUserWinningReports(authId);
+            }
+        }, 1200);
     } else {
         if (!window.__appUnlocked && loginModal) {
             loginModal.removeAttribute('style');
@@ -3987,7 +3990,7 @@ async function scoreUserRoundPurchases(userId, round, userLedgerData = null) {
 }
 
 /**
- * 사용자의 가입 후 미전송 당첨 회차 목록 탐색
+ * 사용자의 가입 후 미전송 당첨 회차 목록 탐색 (오직 본인의 실구매 당첨 회차만)
  */
 async function getUnsentWinningRoundsForUser(userId, userData = null, userLedgerData = null) {
     if (!userId || !window.db) return [];
@@ -4014,8 +4017,9 @@ async function getUnsentWinningRoundsForUser(userId, userData = null, userLedger
     const unsentWinning = [];
 
     for (const r of purchasedRounds) {
-        if (sentReports[r] === true || (sentReports[r] && sentReports[r].status === 'success')) {
-            continue; // Already sent
+        const report = sentReports[r];
+        if (report === true || (report && (report.status === 'success' || report.status === 'delivered'))) {
+            continue; // Already sent/delivered
         }
         const score = await scoreUserRoundPurchases(userId, r, ledger);
         if (score.hasDraw && score.hasWon) {
@@ -4303,6 +4307,115 @@ window.processPendingUserKakaoMessages = async function(authId) {
         console.warn('[processPendingUserKakaoMessages Error]', err);
     } finally {
         window.__processingPendingKakao = false;
+    }
+};
+
+/**
+ * 🎯 [약관 동의 회원 전용] 로그인 시 본인의 실구매 당첨 결과만 검사하여,
+ * 과거 가입일 이후 미전송된 당첨 회차가 있을 경우 카카오톡 [나와의 채팅]으로 자동 전송
+ */
+window.autoCheckAndDispatchUserWinningReports = async function(authId) {
+    if (!authId || !window.db) return;
+    if (window.__checkingUnsentWinning) return;
+    window.__checkingUnsentWinning = true;
+
+    try {
+        // 1. 회원 정보 및 약관/카카오 동의 상태 확인
+        const userDoc = await window.db.collection('lotto_users').doc(authId).get();
+        if (!userDoc.exists) return;
+        const uData = userDoc.data();
+
+        // 🔒 [약관 및 카카오 권한 동의 여부 엄격 검사]
+        const hasScope = !!(uData.kakaoAuth && uData.kakaoAuth.hasTalkMessageScope);
+        const isKakaoUser = authId.startsWith('kakao_') || !!uData.kakaoAuth;
+        if (!hasScope && !isKakaoUser) {
+            console.log(`[Auto Winning Dispatch] ${authId} 회원은 카카오 권한 미동의 상태로 발송 생략`);
+            return;
+        }
+
+        // 2. 가입일 이후 미전송된 본인의 실구매 "당첨" 회차만 조회
+        const unsentWinningList = await getUnsentWinningRoundsForUser(authId, uData);
+        if (!unsentWinningList || unsentWinningList.length === 0) {
+            console.log(`[Auto Winning Dispatch] ${authId} 회원은 미전송된 실구매 당첨 회차가 없습니다.`);
+            return;
+        }
+
+        console.log(`[Auto Winning Dispatch] ${authId} 회원에게 미전송된 당첨 회차 ${unsentWinningList.length}건 감지됨:`, unsentWinningList.map(s => s.round));
+
+        // 3. 카카오 SDK 준비 확인
+        if (!window.Kakao || !window.Kakao.Auth) {
+            console.warn('[Auto Winning Dispatch] Kakao SDK not initialized');
+            return;
+        }
+
+        // 4. 단일 건 또는 복수 건 템플릿 생성 후 카카오톡 [나와의 채팅]으로 자동 발송
+        let template = null;
+        if (unsentWinningList.length === 1) {
+            const s = unsentWinningList[0];
+            template = await buildUserWinningReportTemplate(authId, s.round, s, uData);
+        } else {
+            template = await buildUserAccumulatedWinningReportTemplate(authId, unsentWinningList, uData);
+        }
+
+        if (!template) return;
+
+        // 5. 회원 본인의 카카오톡 [나와의 채팅]으로 전송
+        const sendSuccess = await new Promise((resolve) => {
+            window.Kakao.API.request({
+                url: '/v2/api/talk/memo/default/send',
+                data: {
+                    template_object: template
+                },
+                success: function(res) {
+                    console.log('[Auto Winning Dispatch Success]', res);
+                    resolve(true);
+                },
+                fail: function(err) {
+                    console.warn('[Auto Winning Dispatch Failed]', err);
+                    resolve(false);
+                }
+            });
+        });
+
+        // 6. 발송 완료 시 Firestore의 sentReports 상태를 'delivered'로 업데이트 (중복 발송 방지)
+        if (sendSuccess) {
+            const now = new Date().toISOString();
+            const sentUpdates = {};
+            unsentWinningList.forEach(s => {
+                sentUpdates[s.round] = {
+                    sentAt: now,
+                    totalPrize: s.totalPrize,
+                    status: 'delivered',
+                    autoDispatched: true
+                };
+            });
+
+            await window.db.set('lotto_users', authId, {
+                sentReports: sentUpdates
+            });
+
+            try {
+                if (window.db.collection) {
+                    await window.db.collection('lotto_notification_logs').add({
+                        userId: authId,
+                        rounds: unsentWinningList.map(s => s.round),
+                        type: unsentWinningList.length === 1 ? 'single_winning_auto_dispatch' : 'accumulated_winning_auto_dispatch',
+                        sentAt: now,
+                        status: 'delivered'
+                    });
+                }
+            } catch(logErr) {}
+
+            const roundNames = unsentWinningList.map(s => `제 ${s.round}회`).join(', ');
+            showToast(`🎁 [실구매 당첨 알림] ${roundNames} 당첨 채점 결과가 회원님의 카카오톡으로 발송되었습니다!`);
+            return { success: true, count: unsentWinningList.length, rounds: unsentWinningList.map(s => s.round) };
+        }
+        return { success: false, reason: 'send_failed' };
+    } catch(err) {
+        console.warn('[autoCheckAndDispatchUserWinningReports Error]', err);
+        return { success: false, error: err.message };
+    } finally {
+        window.__checkingUnsentWinning = false;
     }
 };
 
@@ -5061,6 +5174,12 @@ window.startBatchWinningSend = async function() {
     }
     window.updatePurchaseDeadlineCountdowns = updatePurchaseDeadlineCountdowns;
 
+    // 카카오톡 실구매 당첨 리포트 발송 전역 노출
+    window.getUnsentWinningRoundsForUser = getUnsentWinningRoundsForUser;
+    window.scoreUserRoundPurchases = scoreUserRoundPurchases;
+    window.buildUserWinningReportTemplate = buildUserWinningReportTemplate;
+    window.autoCheckAndDispatchUserWinningReports = autoCheckAndDispatchUserWinningReports;
+    window.processPendingUserKakaoMessages = processPendingUserKakaoMessages;
 }
 
         if (typeof SafeAuth !== 'undefined') {
