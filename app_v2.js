@@ -2675,8 +2675,245 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
         });
     }
 
+    // ==========================================
+    // 👥 User Management UI Enhancements & Filtering
+    // ==========================================
+    let __cachedUsersWithStatus = [];
+    let __currentUserFilterTab = 'all';
+
+    window.toggleAddUserSection = function(forceState) {
+        const sec = document.getElementById('addUserSection');
+        const btn = document.getElementById('btnToggleAddUserForm');
+        const icon = document.getElementById('iconToggleAddUser');
+        const text = document.getElementById('textToggleAddUser');
+        if (!sec) return;
+
+        const isCurrentlyOpen = sec.style.display !== 'none';
+        const willOpen = typeof forceState === 'boolean' ? forceState : !isCurrentlyOpen;
+
+        if (willOpen) {
+            sec.style.display = 'block';
+            if (window.toggleKakaoDiagSection) window.toggleKakaoDiagSection(false);
+            if (btn) btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+            if (icon) icon.className = 'fa-solid fa-chevron-up';
+            if (text) text.textContent = '계정 생성 닫기';
+            setTimeout(() => {
+                const idInput = document.getElementById('addUserId');
+                if (idInput) idInput.focus();
+            }, 100);
+        } else {
+            sec.style.display = 'none';
+            if (btn) btn.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+            if (icon) icon.className = 'fa-solid fa-user-plus';
+            if (text) text.textContent = '새 계정 생성';
+        }
+    };
+
+    window.toggleKakaoDiagSection = function(forceState) {
+        const sec = document.getElementById('kakaoDiagSection');
+        const btn = document.getElementById('btnToggleKakaoDiag');
+        if (!sec) return;
+
+        const isCurrentlyOpen = sec.style.display !== 'none';
+        const willOpen = typeof forceState === 'boolean' ? forceState : !isCurrentlyOpen;
+
+        if (willOpen) {
+            sec.style.display = 'block';
+            if (window.toggleAddUserSection) window.toggleAddUserSection(false);
+            if (btn) {
+                btn.style.background = '#fee500';
+                btn.style.color = '#191919';
+            }
+        } else {
+            sec.style.display = 'none';
+            if (btn) {
+                btn.style.background = 'rgba(254, 229, 0, 0.15)';
+                btn.style.color = '#fee500';
+            }
+        }
+    };
+
+    window.setUserFilterTab = function(tab) {
+        __currentUserFilterTab = tab || 'all';
+        const pills = document.querySelectorAll('#userFilterPills .user-filter-pill');
+        pills.forEach(p => {
+            if (p.getAttribute('data-filter') === __currentUserFilterTab) {
+                p.classList.add('active');
+            } else {
+                p.classList.remove('active');
+            }
+        });
+        window.filterUserList();
+    };
+
+    window.filterUserList = function() {
+        const userListContainer = document.getElementById('userListContainer');
+        if (!userListContainer || !__cachedUsersWithStatus) return;
+
+        const searchInput = document.getElementById('inputSearchUserList');
+        const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+        const tab = __currentUserFilterTab || 'all';
+
+        const filtered = __cachedUsersWithStatus.filter(item => {
+            const { userId, data, pStatus, isPermanent, isUserAdmin, isSuspended } = item;
+            
+            // Search query filter
+            if (query) {
+                const uId = (userId || '').toLowerCase();
+                const rName = (data.realName || '').toLowerCase();
+                const nick = (data.nickname || '').toLowerCase();
+                const phone = (data.phoneNumber || '').toLowerCase();
+                if (!uId.includes(query) && !rName.includes(query) && !nick.includes(query) && !phone.includes(query)) {
+                    return false;
+                }
+            }
+
+            // Category Tab filter
+            if (tab === 'kakao') {
+                return userId.startsWith('kakao_') || !!(data.kakaoAuth && data.kakaoAuth.hasTalkMessageScope);
+            }
+            if (tab === 'permanent') {
+                return isPermanent || isUserAdmin;
+            }
+            if (tab === 'purchased') {
+                return !!(pStatus && pStatus.hasPurchased);
+            }
+            if (tab === 'suspended') {
+                return isSuspended;
+            }
+            return true;
+        });
+
+        renderUserListCards(filtered, query.length > 0 || tab !== 'all');
+    };
+
+    function renderUserListCards(usersList, isFiltered = false) {
+        const userListContainer = document.getElementById('userListContainer');
+        if (!userListContainer) return;
+
+        if (!usersList || usersList.length === 0) {
+            userListContainer.innerHTML = `
+            <div style="text-align:center; padding: 40px 20px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:12px; border:1px dashed rgba(255,255,255,0.1);">
+                <i class="fa-solid fa-user-slash" style="font-size:2rem; color:#64748b; margin-bottom:10px; display:block;"></i>
+                <div style="font-size:0.92rem; font-weight:700; color:#cbd5e1;">조건에 맞는 회원이 없습니다.</div>
+                ${isFiltered ? '<button type="button" onclick="document.getElementById(\'inputSearchUserList\').value=\'\'; window.setUserFilterTab(\'all\');" style="margin-top:10px; background:rgba(59,130,246,0.2); border:1px solid #3b82f6; color:#93c5fd; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">필터 초기화</button>' : ''}
+            </div>`;
+            return;
+        }
+
+        const latestRound = getLatestDrawnRound();
+        let html = '';
+
+        usersList.forEach(item => {
+            const { userId, data, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, status } = item;
+
+            let adminBadge = isUserAdmin 
+                ? `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-crown"></i> 관리자</span>` 
+                : `<span style="font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:1px 6px; border-radius:5px; font-weight:600;"><i class="fa-solid fa-user"></i> 일반</span>`;
+
+            let statusBadge = '';
+            if (isUserAdmin || isPermanent) {
+                statusBadge = `<span style="font-size:0.7rem; color:#38bdf8; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-gem"></i> 영구활성</span>`;
+            } else if (status === 'active') {
+                statusBadge = `<span style="font-size:0.7rem; color:#10b981; background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-circle-check"></i> 정상</span>`;
+            } else if (isNoPurchaseSuspended) {
+                statusBadge = `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> 미구매정지</span>`;
+            } else {
+                statusBadge = `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-ban"></i> 수동정지</span>`;
+            }
+
+            let lottoPermBadge = allowLotto
+                ? `<span style="font-size:0.68rem; color:#34d399; background:rgba(16,185,129,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(16,185,129,0.25); font-weight:700;">로또ON</span>`
+                : `<span style="font-size:0.68rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;">로또OFF</span>`;
+
+            let totoPermBadge = allowToto
+                ? `<span style="font-size:0.68rem; color:#fbbf24; background:rgba(245,158,11,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(245,158,11,0.25); font-weight:700;">토토ON</span>`
+                : `<span style="font-size:0.68rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;">토토OFF</span>`;
+
+            const hasPledgeSigned = !!(data.agreementDoc && data.agreementDoc.signatureDataUrl);
+            let pledgeBadge = hasPledgeSigned
+                ? `<span style="font-size:0.68rem; color:#34d399; background:rgba(16,185,129,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(16,185,129,0.25); font-weight:700;" title="필수 약관 및 전자서약 완료"><i class="fa-solid fa-file-signature"></i> 서약완료</span>`
+                : `<span style="font-size:0.68rem; color:#f87171; background:rgba(239,68,68,0.12); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); font-weight:800;" title="필수 약관 및 전자서약 미완료"><i class="fa-solid fa-file-excel"></i> 서약미동의</span>`;
+
+            const hasKakaoMsgScope = !!(data.kakaoAuth && data.kakaoAuth.hasTalkMessageScope);
+            let kakaoBadge = hasKakaoMsgScope
+                ? `<span style="font-size:0.68rem; color:#fee500; background:rgba(254,229,0,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(254,229,0,0.3); font-weight:700;" title="카카오톡 알림 메시지 동의 완료"><i class="fa-solid fa-comment"></i> 카톡동의</span>`
+                : (userId.startsWith('kakao_') ? `<span style="font-size:0.68rem; color:#94a3b8; background:rgba(255,255,255,0.05); padding:1px 5px; border-radius:4px; border:1px solid rgba(255,255,255,0.1); font-weight:600;" title="카카오톡 알림 메시지 권한 미동의"><i class="fa-solid fa-comment-slash"></i> 카톡미동의</span>` : '');
+
+            let purchaseBadge = '';
+            if (isUserAdmin || isPermanent) {
+                purchaseBadge = `<span style="font-size:0.68rem; color:#38bdf8; background:rgba(56,189,248,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(56,189,248,0.25); font-weight:700;"><i class="fa-solid fa-infinity"></i> 평생면제</span>`;
+            } else if (pStatus.hasPurchased) {
+                purchaseBadge = `<span style="font-size:0.68rem; color:#10b981; background:rgba(16,185,129,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(16,185,129,0.25); font-weight:700;">✅ ${latestRound}회 구매(${pStatus.targetRoundGameCount}G)</span>`;
+            } else if (pStatus.isGracePeriod) {
+                purchaseBadge = `<span style="font-size:0.68rem; color:#38bdf8; background:rgba(56,189,248,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(56,189,248,0.25);">첫주 유예</span>`;
+            } else {
+                purchaseBadge = `<span style="font-size:0.68rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.25); font-weight:800;">❌ ${latestRound}회 미구매</span>`;
+            }
+
+            const realName = data.realName && data.realName !== userId ? `(${data.realName})` : '';
+            const joinDate = data.createdAt ? data.createdAt.slice(0, 10) : '-';
+            const lastRoundText = pStatus.lastPurchasedRound > 0 ? `제 ${pStatus.lastPurchasedRound}회` : (isPermanent ? '무제한' : '없음');
+            const reasonText = data.suspensionReason ? `<div style="font-size:0.7rem; color:#f87171; background:rgba(239,68,68,0.08); padding:2px 6px; border-radius:4px; margin-top:2px;"><i class="fa-solid fa-circle-info"></i> 정지사유: ${data.suspensionReason}</div>` : '';
+
+            html += `
+            <div style="background:rgba(15, 23, 42, 0.85); padding:10px 12px; border-radius:10px; border:1px solid ${isUserAdmin ? 'rgba(245,158,11,0.45)' : (isPermanent ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)')}; display:flex; flex-direction:column; gap:6px; box-shadow:0 3px 10px rgba(0,0,0,0.25);">
+                
+                <!-- 1. Header: User ID & Applied Option Badges -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span style="font-weight:900; color:#f8fafc; font-size:0.95rem; letter-spacing:0.2px;">${userId}</span>
+                        ${realName ? `<span style="font-size:0.82rem; color:#93c5fd; font-weight:700;">${realName}</span>` : ''}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+                        ${adminBadge}
+                        ${statusBadge}
+                        ${lottoPermBadge}
+                        ${totoPermBadge}
+                        ${pledgeBadge}
+                        ${kakaoBadge}
+                        ${purchaseBadge}
+                    </div>
+                </div>
+
+                <!-- 2. Compact Info Bar -->
+                <div style="background:rgba(0,0,0,0.25); padding:5px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:0.73rem; color:#94a3b8;">
+                    <div><i class="fa-solid fa-phone" style="color:#60a5fa; font-size:0.68rem;"></i> <span style="color:#cbd5e1;">${data.phoneNumber || '연락처 미등록'}</span></div>
+                    <div><i class="fa-regular fa-calendar" style="color:#a78bfa; font-size:0.68rem;"></i> 가입: <span style="color:#cbd5e1;">${joinDate}</span></div>
+                    <div><i class="fa-solid fa-receipt" style="color:#34d399; font-size:0.68rem;"></i> 최근구매: <strong style="color:#e2e8f0;">${lastRoundText}</strong></div>
+                </div>
+                ${reasonText}
+
+                <!-- 3. Streamlined Action Buttons (Options are managed inside [정보 및 옵션 설정]) -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:5px; margin-top:2px;">
+                    <button type="button" onclick="window.openEditUserModal('${userId}')" title="회원 정보 수정 및 권한/상태/옵션 종합 설정" style="flex:1; min-width:140px; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; padding:7px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 6px rgba(59,130,246,0.35);">
+                        <i class="fa-solid fa-sliders"></i> 회원 정보 &amp; 옵션 설정
+                    </button>
+                    <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                        <button type="button" onclick="window.viewUserAgreementDoc('${userId}')" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="fa-solid fa-file-signature"></i> 서약문서
+                        </button>
+                        <button type="button" onclick="window.sendUserWinningKakaoMessage('${userId}', ${latestRound})" title="제 ${latestRound}회 실구매 당첨 리포트 카카오톡 전송" style="background:rgba(254, 229, 0, 0.15); border:1px solid rgba(254, 229, 0, 0.45); color:#fee500; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="fa-solid fa-comment-dots"></i> 당첨알림
+                        </button>
+                        <button type="button" onclick="window.sendUserUnsentWinningReports('${userId}')" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" style="background:rgba(167, 139, 250, 0.15); border:1px solid rgba(167, 139, 250, 0.45); color:#c4b5fd; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="fa-solid fa-box-archive"></i> 미전송발송
+                        </button>
+                        <button type="button" onclick="window.deleteUser('${userId}')" title="계정 삭제" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="fa-solid fa-trash-can"></i> 삭제
+                        </button>
+                    </div>
+                </div>
+            </div>
+            `;
+        });
+
+        userListContainer.innerHTML = html;
+    }
+
     async function loadUserList() {
         const userListContainer = document.getElementById('userListContainer');
+        const summaryBadge = document.getElementById('userCountSummaryBadge');
         if (!window.db || !userListContainer) return;
         
         userListContainer.innerHTML = `<div style="text-align:center; padding: 24px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> 사용자 및 실구매 데이터 동기화 중...</div>`;
@@ -2684,7 +2921,9 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
         try {
             const snapshot = await window.db.collection('lotto_users').get();
             if (snapshot.empty) {
+                __cachedUsersWithStatus = [];
                 userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b;">등록된 사용자가 없습니다.</div>`;
+                if (summaryBadge) summaryBadge.textContent = '총 0명';
                 return;
             }
             
@@ -2700,12 +2939,24 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 const isPermanent = !!(u.data.isPermanent === true || u.data.userType === 'permanent' || isUserAdmin);
                 const allowLotto = isUserAdmin || u.data.allowLotto !== false;
                 const allowToto = isUserAdmin || u.data.allowToto !== false;
+                const status = u.data.status || 'active';
+                const isSuspended = (status === 'suspended' || status === 'suspended_nopurchase');
+                const isNoPurchaseSuspended = (status === 'suspended_nopurchase');
                 setIsPermanentCache(u.userId, isPermanent);
                 setUserPermissionsCache(u.userId, { allowLotto, allowToto });
-                return { ...u, pStatus, allowLotto, allowToto };
+                return { ...u, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, status };
             }));
 
-            // Sync global state registered users list with isPermanent flag & program permissions
+            __cachedUsersWithStatus = usersWithStatus;
+
+            // Update stats badge
+            if (summaryBadge) {
+                const purchasedCount = usersWithStatus.filter(u => u.pStatus && u.pStatus.hasPurchased).length;
+                const kakaoCount = usersWithStatus.filter(u => u.userId.startsWith('kakao_') || (u.data.kakaoAuth && u.data.kakaoAuth.hasTalkMessageScope)).length;
+                summaryBadge.innerHTML = `총 <strong style="color:#fff;">${usersWithStatus.length}</strong>명 (실구매 ${purchasedCount} · 카카오 ${kakaoCount})`;
+            }
+
+            // Sync global state registered users list
             if (typeof window !== 'undefined' && window.state) {
                 window.state.allRegisteredUsersList = users.map(u => ({
                     id: u.userId,
@@ -2718,153 +2969,14 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 }));
             }
 
-            const latestRound = getLatestDrawnRound();
-
-            let html = '';
-            usersWithStatus.forEach(item => {
-                const { userId, data, pStatus, allowLotto, allowToto } = item;
-                const isUserAdmin = !!(data.isAdmin === true || data.role === 'admin' || userId === 'master' || userId === 'admin');
-                const isPermanent = !!(data.isPermanent === true || data.userType === 'permanent' || isUserAdmin);
-                const status = data.status || 'active';
-                const isSuspended = (status === 'suspended' || status === 'suspended_nopurchase');
-                const isNoPurchaseSuspended = (status === 'suspended_nopurchase');
-
-                let adminBadge = isUserAdmin 
-                    ? `<span style="font-size:0.72rem; color:#fbbf24; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; padding:2px 7px; border-radius:6px; font-weight:800;"><i class="fa-solid fa-crown"></i> 관리자</span>` 
-                    : '';
-
-                let statusBadge = '';
-                if (isUserAdmin) {
-                    statusBadge = `<span style="font-size:0.72rem; color:#38bdf8; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; padding:2px 7px; border-radius:6px; font-weight:800;"><i class="fa-solid fa-gem"></i> 영구 활성</span>`;
-                } else if (isPermanent) {
-                    statusBadge = `<span style="font-size:0.72rem; color:#38bdf8; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; padding:2px 7px; border-radius:6px; font-weight:800;"><i class="fa-solid fa-gem"></i> 영구 사용</span>`;
-                } else if (status === 'active') {
-                    statusBadge = `<span style="font-size:0.72rem; color:#10b981; background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:2px 7px; border-radius:6px; font-weight:800;"><i class="fa-solid fa-circle-check"></i> 정상 활성</span>`;
-                } else if (isNoPurchaseSuspended) {
-                    statusBadge = `<span style="font-size:0.72rem; color:#fbbf24; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; padding:2px 7px; border-radius:6px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> 미구매 자동정지</span>`;
-                } else {
-                    statusBadge = `<span style="font-size:0.72rem; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; padding:2px 7px; border-radius:6px; font-weight:800;"><i class="fa-solid fa-ban"></i> 관리자 수동정지</span>`;
-                }
-
-                let lottoPermBadge = allowLotto
-                    ? `<span style="font-size:0.7rem; color:#34d399; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.3); font-weight:700;"><i class="fa-solid fa-clover"></i> 로또 허용</span>`
-                    : `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;"><i class="fa-solid fa-ban"></i> 로또 차단</span>`;
-
-                let totoPermBadge = allowToto
-                    ? `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(245,158,11,0.3); font-weight:700;"><i class="fa-solid fa-trophy"></i> 토토 허용</span>`
-                    : `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;"><i class="fa-solid fa-ban"></i> 토토 차단</span>`;
-
-                const hasPledgeSigned = !!(data.agreementDoc && data.agreementDoc.signatureDataUrl);
-                let pledgeBadge = hasPledgeSigned
-                    ? `<span style="font-size:0.7rem; color:#34d399; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.3); font-weight:700;" title="필수 약관 및 전자서약 완료"><i class="fa-solid fa-file-signature"></i> 서약완료</span>`
-                    : `<span style="font-size:0.7rem; color:#f87171; background:rgba(239,68,68,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;" title="필수 약관 및 전자서약 미완료 (접속 시 서약 팝업)"><i class="fa-solid fa-file-excel"></i> 서약미동의</span>`;
-
-                const hasKakaoMsgScope = !!(data.kakaoAuth && data.kakaoAuth.hasTalkMessageScope);
-                let kakaoBadge = hasKakaoMsgScope
-                    ? `<span style="font-size:0.7rem; color:#fee500; background:rgba(254,229,0,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(254,229,0,0.35); font-weight:700;" title="카카오톡 알림 메시지 전송 권한 동의 완료"><i class="fa-solid fa-comment"></i> 카톡알림동의</span>`
-                    : (userId.startsWith('kakao_') ? `<span style="font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:2px 6px; border-radius:4px; border:1px solid rgba(255,255,255,0.1); font-weight:600;" title="카카오톡 알림 메시지 권한 미동의"><i class="fa-solid fa-comment-slash"></i> 카톡미동의</span>` : '');
-
-                const sentReports = data.sentReports || {};
-                const sentCount = Object.keys(sentReports).length;
-                let sentBadge = sentCount > 0 
-                    ? `<span style="font-size:0.7rem; color:#38bdf8; background:rgba(56,189,248,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(56,189,248,0.3); font-weight:700;" title="당첨 리포트 발송 완료 ${sentCount}건"><i class="fa-solid fa-paper-plane"></i> 알림발송 ${sentCount}건</span>`
-                    : '';
-
-                let purchaseBadge = '';
-                if (isUserAdmin || isPermanent) {
-                    purchaseBadge = `<span style="font-size:0.7rem; color:#38bdf8; background:rgba(56,189,248,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(56,189,248,0.3); font-weight:700;"><i class="fa-solid fa-infinity"></i> 실구매 평생 면제</span>`;
-                } else if (pStatus.hasPurchased) {
-                    purchaseBadge = `<span style="font-size:0.7rem; color:#10b981; background:rgba(16,185,129,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(16,185,129,0.3);">✅ ${latestRound}회 구매등록 (${pStatus.targetRoundGameCount}G)</span>`;
-                } else if (pStatus.isGracePeriod) {
-                    purchaseBadge = `<span style="font-size:0.7rem; color:#38bdf8; background:rgba(56,189,248,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(56,189,248,0.3);">신규가입 첫주 (유예)</span>`;
-                } else {
-                    purchaseBadge = `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.12); padding:2px 6px; border-radius:4px; border:1px solid rgba(239,68,68,0.3);">❌ ${latestRound}회 미구매 (정지대상)</span>`;
-                }
-
-                const realName = data.realName && data.realName !== userId ? `(${data.realName})` : '';
-                const joinDate = data.createdAt ? data.createdAt.slice(0, 10) : '-';
-                const lastRoundText = pStatus.lastPurchasedRound > 0 ? `제 ${pStatus.lastPurchasedRound}회` : (isPermanent ? '무제한 이용' : '없음');
-                const reasonText = data.suspensionReason ? `<div style="font-size:0.72rem; color:#f87171; background:rgba(239,68,68,0.08); padding:3px 6px; border-radius:4px; margin-top:2px;"><i class="fa-solid fa-circle-info"></i> ${data.suspensionReason}</div>` : '';
-
-                const toggleBtnText = isSuspended ? '정지 해제' : '이용 정지';
-                const toggleBtnColor = isSuspended ? '#10b981' : '#f59e0b';
-                const toggleIcon = isSuspended ? 'fa-lock-open' : 'fa-lock';
-
-                const permBtnText = isPermanent ? '영구 해제' : '영구 설정';
-                const permBtnColor = isPermanent ? 'rgba(56, 189, 248, 0.2)' : 'rgba(56, 189, 248, 0.8)';
-                const permBtnBorder = isPermanent ? '1px solid rgba(56, 189, 248, 0.4)' : 'none';
-
-                const adminBtnText = isUserAdmin ? '관리자 해제' : '관리자 지정';
-                const adminBtnColor = isUserAdmin ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.8)';
-                const adminBtnBorder = isUserAdmin ? '1px solid rgba(245, 158, 11, 0.4)' : 'none';
-
-                html += `
-                <div style="background:rgba(15, 23, 42, 0.85); padding:12px; border-radius:12px; border:1px solid ${isUserAdmin ? 'rgba(245,158,11,0.45)' : (isPermanent ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)')}; margin-bottom: 10px; display:flex; flex-direction:column; gap:8px; box-shadow:0 4px 12px rgba(0,0,0,0.3);">
-                    
-                    <!-- 1. Header: User ID & Badges -->
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:6px;">
-                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                            <span style="font-weight:900; color:#f8fafc; font-size:1rem; letter-spacing:0.3px;">${userId}</span>
-                            ${realName ? `<span style="font-size:0.84rem; color:#93c5fd; font-weight:700;">${realName}</span>` : ''}
-                        </div>
-                        <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
-                            ${adminBadge}
-                            ${statusBadge}
-                            ${lottoPermBadge}
-                            ${totoPermBadge}
-                            ${pledgeBadge}
-                            ${kakaoBadge}
-                            ${purchaseBadge}
-                        </div>
-                    </div>
-
-                    <!-- 2. Details Info Grid -->
-                    <div style="background:rgba(0,0,0,0.25); padding:8px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.04); display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:6px; font-size:0.75rem; color:#94a3b8;">
-                        <div><i class="fa-solid fa-phone" style="color:#60a5fa; font-size:0.7rem;"></i> 연락처: <strong style="color:#e2e8f0;">${data.phoneNumber || '미등록'}</strong></div>
-                        <div><i class="fa-regular fa-calendar" style="color:#a78bfa; font-size:0.7rem;"></i> 가입일: <span style="color:#cbd5e1;">${joinDate}</span></div>
-                        <div style="grid-column: 1 / -1;"><i class="fa-solid fa-receipt" style="color:#34d399; font-size:0.7rem;"></i> 최근 구매: <strong style="color:#e2e8f0;">${lastRoundText}</strong></div>
-                    </div>
-                    ${reasonText}
-
-                    <!-- 3. Mobile-First Responsive Action Button Grid -->
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(88px, 1fr)); gap:5px; margin-top:2px;">
-                        <button type="button" onclick="window.viewUserAgreementDoc('${userId}')" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.15); border:1px solid #fbbf24; color:#fbbf24; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px; box-sizing:border-box;">
-                            <i class="fa-solid fa-file-signature"></i> 서명 문서
-                        </button>
-                        <button type="button" onclick="window.sendUserWinningKakaoMessage('${userId}', ${latestRound})" title="제 ${latestRound}회 실구매 당첨 리포트 카카오톡 전송" style="background:rgba(254, 229, 0, 0.18); border:1px solid #fee500; color:#fee500; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-comment-dots"></i> 당첨알림
-                        </button>
-                        <button type="button" onclick="window.sendUserUnsentWinningReports('${userId}')" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" style="background:rgba(167, 139, 250, 0.18); border:1px solid #a78bfa; color:#c4b5fd; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-box-archive"></i> 미전송발송
-                        </button>
-                        <button type="button" onclick="window.openEditUserModal('${userId}')" title="회원 정보 및 비밀번호 수정" style="background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 2px 6px rgba(59,130,246,0.3); box-sizing:border-box;">
-                            <i class="fa-solid fa-user-pen"></i> 정보 수정
-                        </button>
-                        <button type="button" onclick="window.resetUserConsent('${userId}')" title="약관 동의 및 카카오 권한 초기화 (다음 접속 시 동의 팝업)" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-rotate-left"></i> 동의 초기화
-                        </button>
-                        <button type="button" onclick="window.toggleAdminRole('${userId}', ${isUserAdmin})" title="${adminBtnText}" style="background:${adminBtnColor}; border:${adminBtnBorder}; color:#fff; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-crown" style="color:#fbbf24;"></i> ${adminBtnText}
-                        </button>
-                        <button type="button" onclick="window.togglePermanentStatus('${userId}', ${isPermanent})" title="${permBtnText}" style="background:${permBtnColor}; border:${permBtnBorder}; color:#fff; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-gem" style="color:#38bdf8;"></i> ${permBtnText}
-                        </button>
-                        <button type="button" onclick="window.toggleUserStatus('${userId}', '${status}')" title="${toggleBtnText}" style="background:${toggleBtnColor}; color:#fff; border:none; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid ${toggleIcon}"></i> ${toggleBtnText}
-                        </button>
-                        <button type="button" onclick="window.deleteUser('${userId}')" title="계정 삭제" style="background:#ef4444; color:#fff; border:none; padding:6px 4px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:bold; display:flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-trash-can"></i> 삭제
-                        </button>
-                    </div>
-                </div>
-                `;
-            });
-            userListContainer.innerHTML = html;
+            // Render with current search query & filter
+            window.filterUserList();
         } catch (error) {
             console.error(error);
             userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#ef4444;">데이터를 불러오는 중 오류가 발생했습니다.</div>`;
         }
     }
+    window.loadUserList = loadUserList;
 
     window.viewUserAgreementDoc = async function(userId) {
         if (!window.db) return;
@@ -3468,9 +3580,13 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             }
 
             const elStatus = document.getElementById('editUserStatus');
-            if (elStatus) {
-                elStatus.value = (data.status === 'suspended' || data.status === 'suspended_nopurchase') ? 'suspended' : 'active';
-            }
+            const elSuspReason = document.getElementById('editUserSuspensionReason');
+            const elSuspReasonDiv = document.getElementById('divEditSuspensionReason');
+            
+            const currentStatus = (data.status === 'suspended' || data.status === 'suspended_nopurchase') ? data.status : 'active';
+            if (elStatus) elStatus.value = currentStatus;
+            if (elSuspReason) elSuspReason.value = data.suspensionReason || '';
+            if (elSuspReasonDiv) elSuspReasonDiv.style.display = (currentStatus !== 'active') ? 'flex' : 'none';
 
             const modal = document.getElementById('editUserModal');
             if (modal) modal.style.display = 'flex';
@@ -3490,6 +3606,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
         const newPw = (document.getElementById('editUserNewPassword')?.value || '').trim();
         const roleVal = document.getElementById('editUserRole')?.value || 'regular';
         const statusVal = document.getElementById('editUserStatus')?.value || 'active';
+        const suspReasonVal = (document.getElementById('editUserSuspensionReason')?.value || '').trim();
 
         const chkAllowLotto = document.getElementById('editUserAllowLotto');
         const chkAllowToto = document.getElementById('editUserAllowToto');
@@ -3515,6 +3632,9 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             if (statusVal === 'active') {
                 updatePayload.suspensionReason = null;
                 updatePayload.suspendedAt = null;
+            } else {
+                updatePayload.suspensionReason = suspReasonVal || (statusVal === 'suspended_nopurchase' ? '주간 실구매 미등록으로 인한 자동 정지' : '관리자에 의한 계정 정지');
+                updatePayload.suspendedAt = new Date().toISOString();
             }
 
             if (roleVal === 'admin') {
@@ -5180,6 +5300,12 @@ window.startBatchWinningSend = async function() {
     window.buildUserWinningReportTemplate = buildUserWinningReportTemplate;
     window.autoCheckAndDispatchUserWinningReports = autoCheckAndDispatchUserWinningReports;
     window.processPendingUserKakaoMessages = processPendingUserKakaoMessages;
+
+    // 사용자 관리 UI 제어 및 필터 전역 노출
+    window.toggleAddUserSection = toggleAddUserSection;
+    window.toggleKakaoDiagSection = toggleKakaoDiagSection;
+    window.setUserFilterTab = setUserFilterTab;
+    window.filterUserList = filterUserList;
 }
 
         if (typeof SafeAuth !== 'undefined') {

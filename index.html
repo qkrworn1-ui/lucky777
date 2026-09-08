@@ -44,12 +44,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="운도실력 777">
-    <link rel="icon" type="image/png" href="icons/favicon.png?v=688">
-    <link rel="shortcut icon" href="favicon.ico?v=688">
-    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=688">
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=688">
-    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=688">
-    <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=688">
+    <link rel="icon" type="image/png" href="icons/favicon.png?v=689">
+    <link rel="shortcut icon" href="favicon.ico?v=689">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=689">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png?v=689">
+    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
+    <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
     <link rel="stylesheet" href="styles.css?v=688">
 </head>
@@ -395,7 +395,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v688
+                                v690
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1785,7 +1785,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v688
+                        <i class="fa-solid fa-code-branch"></i> v690
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -2054,119 +2054,139 @@
     </div>
 
         <!-- User Management Modal -->
-    <div id="userMgmtModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:99999; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">
-        <div class="modal-card user-mgmt-card" style="background:#1e293b; border:1px solid rgba(59, 130, 246, 0.4); padding:20px; border-radius:16px; max-width:620px; width:100%; color:#fff; box-shadow:0 15px 40px rgba(0,0,0,0.7); max-height:92vh; display:flex; flex-direction:column;">
+    <div id="userMgmtModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.88); z-index:99999; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px; box-sizing:border-box;">
+        <div class="modal-card user-mgmt-card" style="background:#1e293b; border:1px solid rgba(59, 130, 246, 0.4); padding:20px; border-radius:16px; max-width:780px; width:100%; color:#fff; box-shadow:0 20px 50px rgba(0,0,0,0.8); height:90vh; max-height:92vh; display:flex; flex-direction:column; box-sizing:border-box;">
             <!-- Header -->
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                <h3 style="margin:0; color:#93c5fd; font-size:1.15rem; display:flex; align-items:center; gap:8px; font-weight:800;">
-                    <i class="fa-solid fa-users-gear" style="color: #60a5fa;"></i> 통합 사용자 & 이용정지 관리
-                </h3>
-                <button id="btnCloseUserMgmtModal" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:1.4rem; cursor:pointer; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:background 0.2s;">&times;</button>
-            </div>
-
-            <!-- 💬 KakaoTalk Message Test Toolbar (Admin Diagnostic Panel) -->
-            <div style="background: linear-gradient(135deg, rgba(254, 229, 0, 0.12) 0%, rgba(245, 158, 11, 0.06) 100%); border: 1.5px solid rgba(254, 229, 0, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                    <span style="font-size: 0.88rem; font-weight: 900; color: #fee500; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-comment-dots"></i> 스마트폰 카카오톡 알림 전송 테스트
-                    </span>
-                    <span style="font-size: 0.72rem; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.06);">
-                        관리자 나와의 채팅방 실시간 전송
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:10px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink:0;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <h3 style="margin:0; color:#93c5fd; font-size:1.15rem; display:flex; align-items:center; gap:8px; font-weight:800;">
+                        <i class="fa-solid fa-users-gear" style="color: #60a5fa;"></i> 통합 사용자 & 실구매 관리
+                    </h3>
+                    <span id="userCountSummaryBadge" style="font-size:0.75rem; background:rgba(59, 130, 246, 0.2); border:1px solid rgba(96, 165, 250, 0.4); color:#93c5fd; padding:2px 8px; border-radius:10px; font-weight:800;">
+                        회원 로딩 중...
                     </span>
                 </div>
-                <p style="margin: 0; font-size: 0.76rem; color: #cbd5e1; line-height: 1.45;">
-                    카카오 메시지 발송 권한 및 API 연동 상태를 실시간 점검합니다. 아래 버튼을 누르면 관리자 스마트폰 카카오톡으로 즉시 알림이 발송됩니다.
-                </p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px;">
-                    <button type="button" onclick="window.sendAdminKakaoTestMessage && window.sendAdminKakaoTestMessage('general')" style="padding: 8px 10px; background: #fee500; color: #191919; border: none; border-radius: 7px; font-size: 0.8rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 2px 8px rgba(254, 229, 0, 0.3);">
+                <button id="btnCloseUserMgmtModal" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:1.4rem; cursor:pointer; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:background 0.2s;">&times;</button>
+            </div>
+
+            <!-- Compact Action Bar (Folding triggers for New Account & Kakao Diag) -->
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; background:rgba(15, 23, 42, 0.6); padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); flex-shrink:0;">
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" id="btnToggleAddUserForm" onclick="window.toggleAddUserSection && window.toggleAddUserSection()" style="background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; padding:6px 12px; border-radius:7px; font-size:0.8rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(37,99,235,0.35);">
+                        <i class="fa-solid fa-user-plus" id="iconToggleAddUser"></i> <span id="textToggleAddUser">새 계정 생성</span>
+                    </button>
+                    <button type="button" id="btnToggleKakaoDiag" onclick="window.toggleKakaoDiagSection && window.toggleKakaoDiagSection()" style="background:rgba(254, 229, 0, 0.15); border:1px solid rgba(254, 229, 0, 0.4); color:#fee500; padding:6px 10px; border-radius:7px; font-size:0.8rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+                        <i class="fa-solid fa-comment-dots"></i> 카카오 발송·설정
+                    </button>
+                </div>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <button type="button" onclick="window.autoSuspendAllNonPurchasers && window.autoSuspendAllNonPurchasers()" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#0f172a; border:none; padding:6px 10px; border-radius:7px; font-size:0.76rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(245,158,11,0.3);">
+                        <i class="fa-solid fa-bolt"></i> 미구매 자동정지
+                    </button>
+                    <button type="button" onclick="window.loadUserList && window.loadUserList()" style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); padding:6px 10px; border-radius:7px; font-size:0.76rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                        <i class="fa-solid fa-rotate-right"></i> 새로고침
+                    </button>
+                </div>
+            </div>
+
+            <!-- Collapsible New User Creation Drawer (Folded by default) -->
+            <div id="addUserSection" style="display:none; flex-shrink:0; margin-bottom:12px; background:rgba(15, 23, 42, 0.95); padding:14px; border-radius:12px; border:1.5px solid rgba(59, 130, 246, 0.45); box-shadow:0 8px 24px rgba(0,0,0,0.45);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <h4 style="margin: 0; color: #93c5fd; font-size: 0.92rem; font-weight: 800; display:flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-user-plus" style="color: #38bdf8;"></i> 관리자 수동 새 계정 발급
+                    </h4>
+                    <button type="button" onclick="window.toggleAddUserSection && window.toggleAddUserSection(false)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:26px; height:26px; border-radius:50%; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+                </div>
+                <form id="addUserForm" class="add-user-form" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
+                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                            <label for="addUserId" style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">아이디 <span style="color:#ef4444;">*</span></label>
+                            <input type="text" id="addUserId" placeholder="사용자 ID" autocomplete="off" style="width:100%; height:36px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.88rem; outline:none; box-sizing:border-box;" required>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                            <label for="addUserPhone" style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">휴대폰 번호</label>
+                            <input type="tel" id="addUserPhone" placeholder="010-0000-0000" autocomplete="off" maxlength="13" style="width:100%; height:36px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.88rem; outline:none; box-sizing:border-box;">
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 3px;">
+                            <label for="addUserPw" style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">비밀번호 <span style="color:#ef4444;">*</span></label>
+                            <input type="password" id="addUserPw" placeholder="비밀번호" autocomplete="off" style="width:100%; height:36px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.88rem; outline:none; box-sizing:border-box;" required>
+                        </div>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                            <label style="font-size: 0.76rem; color: #34d399; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(16, 185, 129, 0.12); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.35);">
+                                <input type="checkbox" id="chkAddAllowLotto" checked style="accent-color: #10b981; width: 15px; height: 15px; cursor: pointer;">
+                                <span>🍀 로또 이용 허용</span>
+                            </label>
+                            <label style="font-size: 0.76rem; color: #fbbf24; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(245, 158, 11, 0.12); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.35);">
+                                <input type="checkbox" id="chkAddAllowToto" checked style="accent-color: #f59e0b; width: 15px; height: 15px; cursor: pointer;">
+                                <span>🏆 토토 이용 허용</span>
+                            </label>
+                        </div>
+                        <label style="font-size: 0.76rem; color: #fbbf24; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(245, 158, 11, 0.1); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                            <input type="checkbox" id="chkAddAdmin" style="accent-color: #f59e0b; width: 15px; height: 15px; cursor: pointer;">
+                            <span>👑 관리자(Admin) 권한 부여</span>
+                        </label>
+                        <label style="font-size: 0.76rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(56, 189, 248, 0.1); padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.25);">
+                            <input type="checkbox" id="chkAddPermanent" style="accent-color: #38bdf8; width: 15px; height: 15px; cursor: pointer;">
+                            <span>💎 영구 사용 회원 (주간 실구매 등록 평생 면제)</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn-primary" style="width:100%; height:36px; font-size:0.88rem; font-weight:800; cursor:pointer; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius:6px; display:flex; align-items:center; justify-content:center; gap:6px; border:none; color:#fff;">
+                        <i class="fa-solid fa-user-plus"></i> 새 사용자 계정 추가하기
+                    </button>
+                </form>
+            </div>
+
+            <!-- Collapsible Kakao Diagnostics & Schedule Drawer (Folded by default) -->
+            <div id="kakaoDiagSection" style="display:none; flex-shrink:0; margin-bottom:12px; background: linear-gradient(135deg, rgba(254, 229, 0, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%); border: 1.5px solid rgba(254, 229, 0, 0.4); border-radius: 12px; padding: 12px; box-shadow:0 8px 24px rgba(0,0,0,0.45);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <span style="font-size: 0.88rem; font-weight: 900; color: #fee500; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-comment-dots"></i> 카카오톡 알림 발송 및 자동 스케줄 설정
+                    </span>
+                    <button type="button" onclick="window.toggleKakaoDiagSection && window.toggleKakaoDiagSection(false)" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:26px; height:26px; border-radius:50%; font-size:1.1rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px; margin-bottom: 8px;">
+                    <button type="button" onclick="window.sendAdminKakaoTestMessage && window.sendAdminKakaoTestMessage('general')" style="padding: 7px 10px; background: #fee500; color: #191919; border: none; border-radius: 7px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 2px 8px rgba(254, 229, 0, 0.3);">
                         <i class="fa-solid fa-bell"></i> 기본 알림 테스트
                     </button>
-                    <button type="button" onclick="window.sendAdminKakaoTestMessage && window.sendAdminKakaoTestMessage('lotto')" style="padding: 8px 10px; background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5); border-radius: 7px; font-size: 0.8rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                    <button type="button" onclick="window.sendAdminKakaoTestMessage && window.sendAdminKakaoTestMessage('lotto')" style="padding: 7px 10px; background: rgba(59, 130, 246, 0.25); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.5); border-radius: 7px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px;">
                         <i class="fa-solid fa-clover"></i> 로또 번호 템플릿
                     </button>
-                    <button type="button" onclick="window.openKakaoBatchSendModal && window.openKakaoBatchSendModal()" style="padding: 8px 10px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #0f172a; border: none; border-radius: 7px; font-size: 0.8rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);">
+                    <button type="button" onclick="window.openKakaoBatchSendModal && window.openKakaoBatchSendModal()" style="padding: 7px 10px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #0f172a; border: none; border-radius: 7px; font-size: 0.78rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);">
                         <i class="fa-solid fa-paper-plane"></i> 📢 당첨 리포트 발송 콘솔
                     </button>
                 </div>
-
-                <!-- Saturday 21:00 Auto-Send Switch -->
-                <div style="margin-top: 4px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                <div style="padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                        <input type="checkbox" id="chkAutoSendSaturday21" checked onchange="window.toggleAdminSaturdayAutoSend && window.toggleAdminSaturdayAutoSend(this.checked)" style="accent-color: #fee500; width: 17px; height: 17px; cursor: pointer;">
+                        <input type="checkbox" id="chkAutoSendSaturday21" checked onchange="window.toggleAdminSaturdayAutoSend && window.toggleAdminSaturdayAutoSend(this.checked)" style="accent-color: #fee500; width: 16px; height: 16px; cursor: pointer;">
                         <span style="font-size: 0.78rem; font-weight: 800; color: #fee500;">
-                            ⏰ 매주 토요일 21:00 당첨 스크랩 후 동의 회원 당첨결과 자동 발송
+                            ⏰ 매주 토요일 21:00 당첨 스크랩 후 동의 회원 자동 발송
                         </span>
                     </label>
                     <span id="badgeAutoSendStatus" style="font-size: 0.72rem; color: #34d399; font-weight: 700;">🟢 활성화됨</span>
                 </div>
             </div>
 
-            <!-- New User Creation Form -->
-            <div style="flex-shrink: 0; margin-bottom: 14px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-                    <h4 style="margin: 0; color: #f8fafc; font-size: 0.9rem; font-weight: 700; display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-user-plus" style="color: #38bdf8;"></i> 새 계정 생성
-                    </h4>
-                    <span style="font-size: 0.72rem; color: #94a3b8;">관리자 수동 계정 발급</span>
+            <!-- Real-Time Search & Category Filter Toolbar -->
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px; flex-wrap:wrap; flex-shrink:0;">
+                <div style="position:relative; flex:1; min-width:180px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#64748b; font-size:0.8rem;"></i>
+                    <input type="text" id="inputSearchUserList" oninput="window.filterUserList && window.filterUserList()" placeholder="회원 아이디, 이름, 연락처 검색..." style="width:100%; height:34px; padding:0 10px 0 30px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:7px; font-size:0.82rem; outline:none; box-sizing:border-box;">
                 </div>
-                <form id="addUserForm" class="add-user-form" style="display: flex; flex-direction: column; gap: 8px; background: rgba(15, 23, 42, 0.7); padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px;">
-                        <div style="display: flex; flex-direction: column; gap: 3px;">
-                            <label for="addUserId" style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">아이디 <span style="color:#ef4444;">*</span></label>
-                            <input type="text" id="addUserId" placeholder="사용자 ID" autocomplete="off" style="width:100%; height:38px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.9rem; outline:none; box-sizing:border-box;" required>
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 3px;">
-                            <label for="addUserPhone" style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">휴대폰 번호</label>
-                            <input type="tel" id="addUserPhone" placeholder="010-0000-0000" autocomplete="off" maxlength="13" style="width:100%; height:38px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.9rem; outline:none; box-sizing:border-box;">
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 3px;">
-                            <label for="addUserPw" style="font-size: 0.75rem; color: #94a3b8; font-weight: 600;">비밀번호 <span style="color:#ef4444;">*</span></label>
-                            <input type="password" id="addUserPw" placeholder="비밀번호" autocomplete="off" style="width:100%; height:38px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.9rem; outline:none; box-sizing:border-box;" required>
-                        </div>
-                    </div>
-                    <div style="display: flex; flex-direction: column; gap: 6px;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                            <label style="font-size: 0.76rem; color: #34d399; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(16, 185, 129, 0.12); padding: 7px 10px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.35);">
-                                <input type="checkbox" id="chkAddAllowLotto" checked style="accent-color: #10b981; width: 16px; height: 16px; cursor: pointer;">
-                                <span>🍀 로또 6/45 이용 허용 (기본)</span>
-                            </label>
-                            <label style="font-size: 0.76rem; color: #fbbf24; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(245, 158, 11, 0.12); padding: 7px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.35);">
-                                <input type="checkbox" id="chkAddAllowToto" checked style="accent-color: #f59e0b; width: 16px; height: 16px; cursor: pointer;">
-                                <span>🏆 토토/프로토 이용 허용</span>
-                            </label>
-                        </div>
-                        <label style="font-size: 0.76rem; color: #fbbf24; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(245, 158, 11, 0.1); padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">
-                            <input type="checkbox" id="chkAddAdmin" style="accent-color: #f59e0b; width: 15px; height: 15px; cursor: pointer;">
-                            <span>👑 관리자(Admin) 권한 부여 (모든 회원 구매내역 조회 및 계정 관리 가능)</span>
-                        </label>
-                        <label style="font-size: 0.76rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(56, 189, 248, 0.1); padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.25);">
-                            <input type="checkbox" id="chkAddPermanent" style="accent-color: #38bdf8; width: 15px; height: 15px; cursor: pointer;">
-                            <span>💎 영구 사용 회원으로 발급 (주간 실구매 등록 의무 평생 면제)</span>
-                        </label>
-                    </div>
-                    <button type="submit" class="btn-primary" style="width:100%; height:38px; font-size:0.88rem; font-weight:700; cursor:pointer; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border-radius:6px; display:flex; align-items:center; justify-content:center; gap:6px; border:none; color:#fff;">
-                        <i class="fa-solid fa-user-plus"></i> 새 사용자 계정 추가하기
-                    </button>
-                </form>
+                <div id="userFilterPills" style="display:flex; gap:4px; overflow-x:auto; padding-bottom:2px;">
+                    <button type="button" class="user-filter-pill active" onclick="window.setUserFilterTab && window.setUserFilterTab('all')" data-filter="all">전체</button>
+                    <button type="button" class="user-filter-pill" onclick="window.setUserFilterTab && window.setUserFilterTab('kakao')" data-filter="kakao">카카오</button>
+                    <button type="button" class="user-filter-pill" onclick="window.setUserFilterTab && window.setUserFilterTab('permanent')" data-filter="permanent">영구/관리자</button>
+                    <button type="button" class="user-filter-pill" onclick="window.setUserFilterTab && window.setUserFilterTab('purchased')" data-filter="purchased">실구매인증</button>
+                    <button type="button" class="user-filter-pill" onclick="window.setUserFilterTab && window.setUserFilterTab('suspended')" data-filter="suspended">정지회원</button>
+                </div>
             </div>
 
-            <!-- Registered Users List Toolbar & List -->
-            <div style="flex-grow: 1; overflow-y: auto; padding-right: 2px; display:flex; flex-direction:column; min-height: 250px;">
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap:wrap; gap:6px;">
-                    <h4 style="margin: 0; color: #f8fafc; font-size: 0.92rem; font-weight: 700; display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-list-ul" style="color: #a78bfa;"></i> 회원 목록 및 실구매 정지 관리
-                    </h4>
-                    <div style="display:flex; gap:6px;">
-                        <button type="button" onclick="window.autoSuspendAllNonPurchasers && window.autoSuspendAllNonPurchasers()" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#0f172a; border:none; padding:4px 9px; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(245,158,11,0.3);">
-                            <i class="fa-solid fa-bolt"></i> ⚡ 미구매자 일괄 자동정지
-                        </button>
-                        <button type="button" onclick="window.loadUserList && window.loadUserList()" style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); padding:4px 8px; border-radius:6px; font-size:0.72rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
-                            <i class="fa-solid fa-rotate-right"></i> 새로고침
-                        </button>
-                    </div>
-                </div>
+            <!-- Maximized Registered Users List (Dominates screen space) -->
+            <div style="flex-grow: 1; overflow-y: auto; padding-right: 4px; display:flex; flex-direction:column; min-height: 250px;">
                 <div id="userListContainer" style="display: flex; flex-direction: column; gap: 8px; flex-grow:1;">
-                    <div style="text-align:center; padding: 20px; color:#64748b; font-size: 0.9rem;">
+                    <div style="text-align:center; padding: 30px; color:#64748b; font-size: 0.9rem;">
                         <i class="fa-solid fa-spinner fa-spin"></i> 데이터를 불러오는 중...
                     </div>
                 </div>
@@ -2174,79 +2194,99 @@
         </div>
     </div>
 
-    <!-- 회원 정보 종합 수정 모달 (Edit User Modal) -->
-    <div id="editUserModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100000; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">
-        <div class="modal-card" style="background:#1e293b; border:1px solid #3b82f6; padding:22px; border-radius:16px; max-width:480px; width:100%; color:#fff; box-shadow:0 15px 40px rgba(0,0,0,0.7); position:relative;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+    <!-- 회원 정보 및 종합 옵션 설정 모달 (Edit User & Options Modal) -->
+    <div id="editUserModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.88); z-index:100000; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px; box-sizing:border-box;">
+        <div class="modal-card" style="background:#1e293b; border:1.5px solid #3b82f6; padding:22px; border-radius:16px; max-width:560px; width:100%; color:#fff; box-shadow:0 20px 50px rgba(0,0,0,0.85); max-height:92vh; display:flex; flex-direction:column; box-sizing:border-box;">
+            
+            <!-- Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; padding-bottom:10px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink:0;">
                 <h3 style="margin:0; color:#93c5fd; font-size:1.15rem; display:flex; align-items:center; gap:8px; font-weight:800;">
-                    <i class="fa-solid fa-user-pen" style="color: #38bdf8;"></i> 회원 정보 및 권한 수정
+                    <i class="fa-solid fa-sliders" style="color: #38bdf8;"></i> 회원 정보 및 옵션 설정
                 </h3>
                 <button type="button" onclick="document.getElementById('editUserModal').style.display='none'" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:1.4rem; cursor:pointer; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center;">&times;</button>
             </div>
             
-            <form id="editUserForm" onsubmit="window.saveEditedUser && window.saveEditedUser(event); return false;" style="display:flex; flex-direction:column; gap:12px;">
+            <form id="editUserForm" onsubmit="window.saveEditedUser && window.saveEditedUser(event); return false;" style="display:flex; flex-direction:column; gap:12px; overflow-y:auto; padding-right:2px; flex-grow:1;">
                 <input type="hidden" id="editUserIdHidden">
                 
-                <div style="display:flex; flex-direction:column; gap:4px;">
-                    <label style="font-size:0.8rem; color:#94a3b8; font-weight:700;">아이디</label>
-                    <input type="text" id="editUserId" disabled style="width:100%; height:38px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#94a3b8; border-radius:6px; font-size:0.92rem; font-weight:800; box-sizing:border-box;">
+                <!-- 1. 기본 계정 정보 -->
+                <div style="background:rgba(15,23,42,0.7); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:8px;">
+                    <div style="font-size:0.8rem; color:#93c5fd; font-weight:800; display:flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-id-card"></i> 기본 계정 정보
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <div style="display:flex; flex-direction:column; gap:3px;">
+                            <label style="font-size:0.75rem; color:#94a3b8; font-weight:700;">아이디</label>
+                            <input type="text" id="editUserId" disabled style="width:100%; height:36px; padding:0 10px; background:#0b1120; border:1px solid #334155; color:#94a3b8; border-radius:6px; font-size:0.9rem; font-weight:800; box-sizing:border-box;">
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:3px;">
+                            <label for="editUserRealName" style="font-size:0.75rem; color:#94a3b8; font-weight:700;">회원 이름 (실명 / 닉네임)</label>
+                            <input type="text" id="editUserRealName" placeholder="예: 홍길동" style="width:100%; height:36px; padding:0 10px; background:#0f172a; border:1px solid #3b82f6; color:#fff; border-radius:6px; font-size:0.9rem; outline:none; box-sizing:border-box;">
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <div style="display:flex; flex-direction:column; gap:3px;">
+                            <label for="editUserPhone" style="font-size:0.75rem; color:#94a3b8; font-weight:700;">휴대폰 번호</label>
+                            <input type="tel" id="editUserPhone" placeholder="010-0000-0000" maxlength="13" style="width:100%; height:36px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.9rem; outline:none; box-sizing:border-box;">
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:3px;">
+                            <label for="editUserNewPassword" style="font-size:0.75rem; color:#f59e0b; font-weight:700;">새 비밀번호 (선택)</label>
+                            <input type="password" id="editUserNewPassword" placeholder="변경 시에만 입력" autocomplete="new-password" style="width:100%; height:36px; padding:0 10px; background:#0f172a; border:1px solid #f59e0b; color:#fff; border-radius:6px; font-size:0.9rem; outline:none; box-sizing:border-box;">
+                        </div>
+                    </div>
                 </div>
 
-                <div style="display:flex; flex-direction:column; gap:4px;">
-                    <label for="editUserRealName" style="font-size:0.8rem; color:#94a3b8; font-weight:700;">회원 이름 (실명 / 닉네임)</label>
-                    <input type="text" id="editUserRealName" placeholder="예: 홍길동" style="width:100%; height:38px; padding:0 10px; background:#0f172a; border:1px solid #3b82f6; color:#fff; border-radius:6px; font-size:0.92rem; outline:none; box-sizing:border-box;">
-                </div>
-
-                <div style="display:flex; flex-direction:column; gap:4px;">
-                    <label for="editUserPhone" style="font-size:0.8rem; color:#94a3b8; font-weight:700;">휴대폰 번호</label>
-                    <input type="tel" id="editUserPhone" placeholder="010-0000-0000" maxlength="13" style="width:100%; height:38px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.92rem; outline:none; box-sizing:border-box;">
-                </div>
-
-                <div style="display:flex; flex-direction:column; gap:4px;">
-                    <label for="editUserNewPassword" style="font-size:0.8rem; color:#f59e0b; font-weight:700;">새 비밀번호 <span style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">(변경 시에만 입력, 미입력 시 기존 비밀번호 유지)</span></label>
-                    <input type="password" id="editUserNewPassword" placeholder="변경할 새 비밀번호 입력 (4자 이상)" autocomplete="new-password" style="width:100%; height:38px; padding:0 10px; background:#0f172a; border:1px solid #f59e0b; color:#fff; border-radius:6px; font-size:0.92rem; outline:none; box-sizing:border-box;">
-                </div>
-
-                <!-- 🍀 / 🏆 프로그램별 사용 권한 체크박스 (관리자 제어) -->
-                <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(0,0,0,0.3); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-                    <div style="font-size: 0.78rem; color: #cbd5e1; font-weight: 700; margin-bottom: 2px;">
-                        <i class="fa-solid fa-sliders" style="color: #38bdf8;"></i> 프로그램별 사용 권한 제어
+                <!-- 2. 프로그램 접근 및 사용 권한 옵션 -->
+                <div style="background:rgba(15,23,42,0.7); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:8px;">
+                    <div style="font-size:0.8rem; color:#34d399; font-weight:800; display:flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-gamepad"></i> 프로그램 이용 권한 옵션
                     </div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <label style="font-size: 0.76rem; color: #34d399; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(16, 185, 129, 0.12); padding: 7px 10px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.35);">
+                        <label style="font-size: 0.78rem; color: #34d399; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(16, 185, 129, 0.12); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.35);">
                             <input type="checkbox" id="editUserAllowLotto" checked style="accent-color: #10b981; width: 16px; height: 16px; cursor: pointer;">
-                            <span>🍀 로또 프로그램 허용</span>
+                            <span>🍀 로또 6/45 허용</span>
                         </label>
-                        <label style="font-size: 0.76rem; color: #fbbf24; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(245, 158, 11, 0.12); padding: 7px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.35);">
+                        <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer; background: rgba(245, 158, 11, 0.12); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.35);">
                             <input type="checkbox" id="editUserAllowToto" checked style="accent-color: #f59e0b; width: 16px; height: 16px; cursor: pointer;">
-                            <span>🏆 토토 프로그램 허용</span>
+                            <span>🏆 토토/프로토 허용</span>
                         </label>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:2px;">
-                    <div style="display:flex; flex-direction:column; gap:4px;">
-                        <label for="editUserRole" style="font-size:0.8rem; color:#94a3b8; font-weight:700;">회원 권한 / 유형</label>
-                        <select id="editUserRole" style="width:100%; height:38px; padding:0 8px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.85rem; outline:none; box-sizing:border-box;">
-                            <option value="regular">일반 회원 (실구매 인증 필요)</option>
-                            <option value="permanent">💎 영구 회원 (실구매 면제)</option>
-                            <option value="admin">👑 관리자 (모든 권한)</option>
-                        </select>
+                <!-- 3. 회원 등급 및 실구매 면제 옵션 -->
+                <div style="background:rgba(15,23,42,0.7); padding:12px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); display:flex; flex-direction:column; gap:8px;">
+                    <div style="font-size:0.8rem; color:#fbbf24; font-weight:800; display:flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-crown"></i> 회원 등급 &amp; 실구매 면제 옵션
                     </div>
-                    <div style="display:flex; flex-direction:column; gap:4px;">
-                        <label for="editUserStatus" style="font-size:0.8rem; color:#94a3b8; font-weight:700;">계정 상태</label>
-                        <select id="editUserStatus" style="width:100%; height:38px; padding:0 8px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.85rem; outline:none; box-sizing:border-box;">
-                            <option value="active">🟢 정상 활성</option>
-                            <option value="suspended">🔴 이용 정지 (수동)</option>
-                        </select>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <div style="display:flex; flex-direction:column; gap:3px;">
+                            <label for="editUserRole" style="font-size:0.75rem; color:#94a3b8; font-weight:700;">회원 등급</label>
+                            <select id="editUserRole" style="width:100%; height:36px; padding:0 8px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.85rem; outline:none; box-sizing:border-box;">
+                                <option value="regular">👤 일반 회원 (주간 5게임 실구매 필수)</option>
+                                <option value="permanent">💎 영구 회원 (실구매 의무 평생 면제)</option>
+                                <option value="admin">👑 관리자 (모든 관리 및 열람 권한)</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:3px;">
+                            <label for="editUserStatus" style="font-size:0.75rem; color:#94a3b8; font-weight:700;">계정 상태</label>
+                            <select id="editUserStatus" onchange="document.getElementById('divEditSuspensionReason').style.display = (this.value !== 'active' ? 'flex' : 'none')" style="width:100%; height:36px; padding:0 8px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.85rem; outline:none; box-sizing:border-box;">
+                                <option value="active">🟢 정상 활성 (Active)</option>
+                                <option value="suspended">🔴 관리자 수동 정지</option>
+                                <option value="suspended_nopurchase">🟡 미구매 자동 정지</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="divEditSuspensionReason" style="display:none; flex-direction:column; gap:3px;">
+                        <label for="editUserSuspensionReason" style="font-size:0.75rem; color:#f87171; font-weight:700;">정지 사유</label>
+                        <input type="text" id="editUserSuspensionReason" placeholder="예: 주간 실구매 미등록으로 인한 자동 정지" style="width:100%; height:34px; padding:0 10px; background:#0f172a; border:1px solid #ef4444; color:#fca5a5; border-radius:6px; font-size:0.85rem; outline:none; box-sizing:border-box;">
                     </div>
                 </div>
 
-                <!-- 🔄 약관 동의 및 카카오 권한 동의 초기화 버튼 -->
-                <div style="background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.35); padding: 10px 12px; border-radius: 8px; margin-top: 4px; display: flex; flex-direction: column; gap: 6px;">
+                <!-- 4. 약관 서약 및 카카오톡 동의 초기화 옵션 -->
+                <div style="background: rgba(239, 68, 68, 0.08); border: 1px dashed rgba(239, 68, 68, 0.35); padding: 10px 12px; border-radius: 10px; display: flex; flex-direction: column; gap: 6px;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-size: 0.78rem; color: #fca5a5; font-weight: 700;">
-                            <i class="fa-solid fa-rotate-left"></i> 필수 약관 서약 &amp; 카카오 권한 초기화
+                            <i class="fa-solid fa-rotate-left"></i> 필수 약관 서약 &amp; 카카오톡 수신 동의 초기화
                         </span>
                         <span style="font-size: 0.7rem; color: #94a3b8;">계정 유지 / 팝업 재출력</span>
                     </div>
@@ -2255,11 +2295,12 @@
                     </button>
                 </div>
 
-                <div style="display:flex; gap:8px; margin-top:8px;">
-                    <button type="submit" id="btnSaveEditedUser" style="flex:1; height:40px; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; border-radius:8px; font-size:0.92rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;">
-                        <i class="fa-solid fa-check"></i> 변경사항 저장하기
+                <!-- Footer Buttons -->
+                <div style="display:flex; gap:8px; margin-top:4px; flex-shrink:0;">
+                    <button type="submit" id="btnSaveEditedUser" style="flex:1; height:42px; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; border-radius:8px; font-size:0.92rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 10px rgba(37,99,235,0.35);">
+                        <i class="fa-solid fa-check"></i> 변경사항 및 옵션 저장하기
                     </button>
-                    <button type="button" onclick="document.getElementById('editUserModal').style.display='none'" style="width:80px; height:40px; background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; font-size:0.88rem; font-weight:700; cursor:pointer;">
+                    <button type="button" onclick="document.getElementById('editUserModal').style.display='none'" style="width:80px; height:42px; background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); border-radius:8px; font-size:0.88rem; font-weight:700; cursor:pointer;">
                         취소
                     </button>
                 </div>
@@ -2966,9 +3007,9 @@
         // ========================================================
         // 📱 App Version & Cache Busting Controller
         // ========================================================
-        window.APP_VERSION = 'v688';
+        window.APP_VERSION = 'v690';
         window.forceReloadCache = async function() {
-            var vStr = window.APP_VERSION || 'v688';
+            var vStr = window.APP_VERSION || 'v690';
             if (confirm('🔄 최신 버전(' + vStr + ')으로 캐시를 비우고 새로고침하시겠습니까?')) {
                 try {
                     if ('caches' in window) {
@@ -3021,7 +3062,7 @@
         // ========================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=687')
+                navigator.serviceWorker.register('./sw.js?v=689')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -3087,7 +3128,7 @@
     </script>
 
     <script src="data.js?v=680"></script>
-    <script src="app_v2.js?v=687"></script>
+    <script src="app_v2.js?v=689"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">
