@@ -961,7 +961,7 @@ export function renderAllRoundsReviewDetail() {
         reviewTotalCombosLabel.textContent = isAllUsers ? `전체 누적 조합 수 (${validRounds.length}개 회차)` : `누적 추천 조합 (${validRounds.length}개 회차)`;
     }
     if (reviewTotalInvestLabel) {
-        reviewTotalInvestLabel.textContent = isAllUsers ? '전체 추천 누적 투자금' : '추천 누적 투자금';
+        reviewTotalInvestLabel.textContent = isAllUsers ? '전체 추천 누적 구매금액' : '추천 누적 구매금액';
     }
 
     if (reviewTotalCombos) reviewTotalCombos.textContent = `${dispCombos.toLocaleString()} 조합`;
@@ -1774,7 +1774,7 @@ export function renderReviewDetail(r) {
         reviewTotalCombosLabel.textContent = isAllUsers ? `전체 추천 조합 수 (${membersEvalList.length}명)` : '추천 조합 수';
     }
     if (reviewTotalInvestLabel) {
-        reviewTotalInvestLabel.textContent = isAllUsers ? '전체 추천 투자금' : '추천 투자금';
+        reviewTotalInvestLabel.textContent = isAllUsers ? '전체 추천 구매금액' : '추천 구매금액';
     }
 
     if (reviewTotalCombos) reviewTotalCombos.textContent = `${dispCombos.toLocaleString()} 조합`;
@@ -2585,7 +2585,7 @@ export function renderAdmin1235ReviewModalContent() {
                         <div style="font-size: 0.95rem; font-weight: 900; color: #34d399;">+${totalPrize.toLocaleString()}원</div>
                     </div>
                     <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px; text-align: center;">
-                        <div style="font-size: 0.7rem; color: #94a3b8;">총 투자금 대비 수익률 (ROI)</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8;">총 구매금 대비 환급률 (ROI)</div>
                         <div style="font-size: 0.95rem; font-weight: 900; color: #f59e0b;">${totalRoi.toFixed(1)}%</div>
                     </div>
                     <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px; text-align: center;">
@@ -2879,11 +2879,11 @@ export function renderAdmin1235ReviewModalContent() {
                     <!-- KPI Grid -->
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px;">
                         <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 6px 8px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: #94a3b8;">추천 조합 / 투자금</div>
+                            <div style="font-size: 0.7rem; color: #94a3b8;">추천 조합 / 구매비용</div>
                             <div style="font-size: 0.88rem; font-weight: 800; color: #fff;">${reviewData.totalGames}게임 (${(reviewData.totalGames*1000).toLocaleString()}원)</div>
                         </div>
                         <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 6px 8px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: #94a3b8;">총 당첨금 / 수익률</div>
+                            <div style="font-size: 0.7rem; color: #94a3b8;">총 당첨금 / 환급률</div>
                             <div style="font-size: 0.88rem; font-weight: 900; color: #34d399;">+${reviewData.totalPrize.toLocaleString()}원 (${reviewData.roi.toFixed(1)}%)</div>
                         </div>
                     </div>

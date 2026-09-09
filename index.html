@@ -126,12 +126,12 @@
             <!-- 상단: 통합 투자 및 자산 KPI 요약 -->
             <div class="lp-fin-main-row">
                 <div class="lp-fin-title-area">
-                    <span class="lp-fin-label"><i class="fa-solid fa-chart-pie"></i> 통합 투자 현황</span>
+                    <span class="lp-fin-label"><i class="fa-solid fa-chart-pie"></i> 통합 구매 현황</span>
                     <span class="lp-fin-title">나의 누적 자산 &amp; 당첨 요약</span>
                 </div>
                 <div class="lp-fin-stats">
                     <div class="lp-stat-item">
-                        <span class="lp-stat-label">누적 투자금</span>
+                        <span class="lp-stat-label">누적 구매금액</span>
                         <span class="lp-stat-val" id="lp-total-invest">0 원</span>
                     </div>
                     <div class="lp-stat-item">
@@ -841,7 +841,7 @@
                     </p>
                     <div class="guide-features">
                         <span class="feature-pill"><i class="fa-solid fa-clock-rotate-left" style="color:#38bdf8;"></i> <strong>역대 전 회차 백테스팅</strong> (과거 회차 가상 매수 시뮬레이션)</span>
-                        <span class="feature-pill"><i class="fa-solid fa-chart-pie" style="color:#fbbf24;"></i> <strong>수익률(ROI) 분석</strong> (투자금 대비 등위별 환급 기대값)</span>
+                        <span class="feature-pill"><i class="fa-solid fa-chart-pie" style="color:#fbbf24;"></i> <strong>환급률(ROI) 분석</strong> (구매금액 대비 등위별 환급 기대값)</span>
                         <span class="feature-pill"><i class="fa-solid fa-unlock-keyhole" style="color:#34d399;"></i> <strong>주간 실구매 혜택</strong> (매주 5게임 QR 인증 시 무료 활성화)</span>
                     </div>
                 </div>
@@ -1130,7 +1130,7 @@
 
                         <div>
 
-                            <span style="color: #aaa;">총 투자금:</span>
+                            <span style="color: #aaa;">총 구매금액:</span>
 
                             <strong id="simTotalInvestment" style="color: #ff6b6b; font-size: 1.2rem; margin-left: 10px;">0 원</strong>
 
@@ -1280,7 +1280,7 @@
 
                         <div style="background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(255,255,255,0.14); padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
 
-                            <div id="reviewTotalInvestLabel" style="color: #cbd5e1; font-size: 0.85rem; font-weight: 700;">추천 투자금</div>
+                            <div id="reviewTotalInvestLabel" style="color: #cbd5e1; font-size: 0.85rem; font-weight: 700;">추천 구매금액</div>
 
                             <div id="reviewTotalInvest" style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-top: 5px;">0 원</div>
 
@@ -1312,7 +1312,7 @@
 
                     <div style="text-align: center;">
 
-                        <span style="color: #cbd5e1; font-size: 1.1rem;">추천 조합 운용 수익률(ROI): </span>
+                        <span style="color: #cbd5e1; font-size: 1.1rem;">추천 조합 환급률(ROI): </span>
 
                         <strong id="reviewTotalRoi" style="color: #f59e0b; font-size: 1.3rem;">0%</strong>
 
@@ -1386,7 +1386,7 @@
 
                     <div style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255,255,255,0.14); padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
 
-                        <div style="color: #cbd5e1; font-size: 0.85rem; font-weight: 700;">누적 투자금</div>
+                        <div style="color: #cbd5e1; font-size: 0.85rem; font-weight: 700;">누적 구매금액</div>
 
                         <div id="confirmedTotalInvest" style="font-size: 1.3rem; font-weight: 800; color: #fff; margin-top: 5px;">0 원</div>
 
@@ -1410,7 +1410,7 @@
 
                     <div style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255,255,255,0.14); padding: 15px; border-radius: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.35);">
 
-                        <div style="color: #cbd5e1; font-size: 0.85rem; font-weight: 700;">투자 회수율 (ROI)</div>
+                        <div style="color: #cbd5e1; font-size: 0.85rem; font-weight: 700;">당첨금 환급률 (ROI)</div>
 
                         <div id="confirmedTotalRoi" style="font-size: 1.3rem; font-weight: 800; color: #fbc400; margin-top: 5px;">0%</div>
 
@@ -1436,7 +1436,7 @@
 
                     <div class="chart-card" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px;">
 
-                        <h4 style="margin: 0 0 10px 0; color: #cbd5e1; font-size: 0.85rem;"><i class="fa-solid fa-chart-line"></i> 누적 투자금 대비 당첨금 회수 추이</h4>
+                        <h4 style="margin: 0 0 10px 0; color: #cbd5e1; font-size: 0.85rem;"><i class="fa-solid fa-chart-line"></i> 누적 구매금 대비 당첨금 회수 추이</h4>
 
                         <div style="width: 100%; height: 180px; position: relative;">
 
@@ -2673,7 +2673,7 @@
                 <!-- 2. Additional Budget Input Section -->
                 <div style="background: rgba(30, 41, 59, 0.6); padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); box-sizing: border-box;">
                     <label style="display: block; font-size: 0.82rem; font-weight: 700; color: #f8fafc; margin-bottom: 6px;">
-                        <i class="fa-solid fa-won-sign" style="color: #fbbf24;"></i> 2. 이번에 추가로 투자할 금액 (신규 예산):
+                        <i class="fa-solid fa-won-sign" style="color: #fbbf24;"></i> 2. 이번에 추가로 배정할 구매 예산:
                     </label>
                     <div style="display: flex; gap: 6px; margin-bottom: 8px;">
                         <input type="number" id="txtBudgetAmount" step="1000" min="5000" max="70000" value="10000" class="modern-input" style="flex: 1; padding: 8px 12px; font-size: 0.98rem; font-weight: 800; color: #fbbf24; background: rgba(15,23,42,0.9); border: 1px solid rgba(251,191,36,0.5); border-radius: 8px; box-sizing: border-box;" placeholder="예: 10000">

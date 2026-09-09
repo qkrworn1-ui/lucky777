@@ -60,7 +60,7 @@ export function calculateWheelingCombinations(pool) {
         const stats = calculateStats(nums);
         return {
             id: `W-${idx + 1}`,
-            name: `휠링 보장 세트 #${idx + 1}`,
+            name: `휠링 커버링 세트 #${idx + 1}`,
             numbers: nums,
             stats: stats
         };
@@ -78,8 +78,8 @@ export function renderWheelingResults() {
                 <div class="combo-title-group">
                     <span class="rank-badge top-2-badge">${item.id}</span>
                     <div>
-                        <div class="combo-name">${item.name} <span class="chart-tag">4등 100% 보장</span></div>
-                        <div class="combo-desc">후보 10개 번호 중 4개 이상 당첨 시 4등 보장</div>
+                        <div class="combo-name">${item.name} <span class="chart-tag">수학적 4등 커버링</span></div>
+                        <div class="combo-desc">후보 10개 번호 중 4개 적중 시 4등 당첨 조합 성립</div>
                     </div>
                 </div>
             </div>
@@ -113,7 +113,7 @@ export function setupWheelingTab() {
     if (_el_btnCalculateWheeling) {
         _el_btnCalculateWheeling.addEventListener('click', () => {
             renderWheelingResults();
-            showToast('수학적 휠링 커버링 14세트 보장 조합 계산 완료!');
+            showToast('수학적 휠링 커버링 14세트 조합 계산 완료!');
         });
     }
 }

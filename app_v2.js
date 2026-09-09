@@ -13728,7 +13728,7 @@ function renderAllRoundsReviewDetail() {
         reviewTotalCombosLabel.textContent = isAllUsers ? `전체 누적 조합 수 (${validRounds.length}개 회차)` : `누적 추천 조합 (${validRounds.length}개 회차)`;
     }
     if (reviewTotalInvestLabel) {
-        reviewTotalInvestLabel.textContent = isAllUsers ? '전체 추천 누적 투자금' : '추천 누적 투자금';
+        reviewTotalInvestLabel.textContent = isAllUsers ? '전체 추천 누적 구매금액' : '추천 누적 구매금액';
     }
 
     if (reviewTotalCombos) reviewTotalCombos.textContent = `${dispCombos.toLocaleString()} 조합`;
@@ -14541,7 +14541,7 @@ function renderReviewDetail(r) {
         reviewTotalCombosLabel.textContent = isAllUsers ? `전체 추천 조합 수 (${membersEvalList.length}명)` : '추천 조합 수';
     }
     if (reviewTotalInvestLabel) {
-        reviewTotalInvestLabel.textContent = isAllUsers ? '전체 추천 투자금' : '추천 투자금';
+        reviewTotalInvestLabel.textContent = isAllUsers ? '전체 추천 구매금액' : '추천 구매금액';
     }
 
     if (reviewTotalCombos) reviewTotalCombos.textContent = `${dispCombos.toLocaleString()} 조합`;
@@ -15352,7 +15352,7 @@ function renderAdmin1235ReviewModalContent() {
                         <div style="font-size: 0.95rem; font-weight: 900; color: #34d399;">+${totalPrize.toLocaleString()}원</div>
                     </div>
                     <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px; text-align: center;">
-                        <div style="font-size: 0.7rem; color: #94a3b8;">총 투자금 대비 수익률 (ROI)</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8;">총 구매금 대비 환급률 (ROI)</div>
                         <div style="font-size: 0.95rem; font-weight: 900; color: #f59e0b;">${totalRoi.toFixed(1)}%</div>
                     </div>
                     <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px; text-align: center;">
@@ -15646,11 +15646,11 @@ function renderAdmin1235ReviewModalContent() {
                     <!-- KPI Grid -->
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px;">
                         <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 6px 8px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: #94a3b8;">추천 조합 / 투자금</div>
+                            <div style="font-size: 0.7rem; color: #94a3b8;">추천 조합 / 구매비용</div>
                             <div style="font-size: 0.88rem; font-weight: 800; color: #fff;">${reviewData.totalGames}게임 (${(reviewData.totalGames*1000).toLocaleString()}원)</div>
                         </div>
                         <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 6px 8px; text-align: center;">
-                            <div style="font-size: 0.7rem; color: #94a3b8;">총 당첨금 / 수익률</div>
+                            <div style="font-size: 0.7rem; color: #94a3b8;">총 당첨금 / 환급률</div>
                             <div style="font-size: 0.88rem; font-weight: 900; color: #34d399;">+${reviewData.totalPrize.toLocaleString()}원 (${reviewData.roi.toFixed(1)}%)</div>
                         </div>
                     </div>
@@ -17470,7 +17470,7 @@ async function runBudgetOptimizationSimulation() {
     const additionalBudget = input ? parseInt(input.value) : 10000;
     
     if (isNaN(additionalBudget) || additionalBudget < 5000) {
-        alert('추가 투자 금액은 최소 5,000원(5게임) 이상이어야 합니다.');
+        alert('추가 구매 예산은 최소 5,000원(5게임) 이상이어야 합니다.');
         return;
     }
 
@@ -18843,7 +18843,7 @@ async function renderConfirmedPurchasesList() {
                 labels: trendLabels.length > 0 ? trendLabels : ['대기'],
                 datasets: [
                     {
-                        label: '누적 투자금',
+                        label: '누적 구매금',
                         data: trendInvest.length > 0 ? trendInvest : [0],
                         borderColor: '#cbd5e1',
                         borderDash: [5, 5],
@@ -20119,7 +20119,7 @@ function renderWinningHistoryModal() {
                 <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-top: 4px;">${rounds.length}회 <span style="font-size:0.8rem; color:#cbd5e1; font-weight:normal;">(${totalCombos}조합)</span></div>
             </div>
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
-                <div style="color: #94a3b8; font-size: 0.75rem;">총 투자금액</div>
+                <div style="color: #94a3b8; font-size: 0.75rem;">총 구매금액</div>
                 <div style="font-size: 1.1rem; font-weight: 800; color: #cbd5e1; margin-top: 4px;">${totalInvest.toLocaleString()}원</div>
             </div>
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
@@ -20895,7 +20895,7 @@ function calculateWheelingCombinations(pool) {
         const stats = calculateStats(nums);
         return {
             id: `W-${idx + 1}`,
-            name: `휠링 보장 세트 #${idx + 1}`,
+            name: `휠링 커버링 세트 #${idx + 1}`,
             numbers: nums,
             stats: stats
         };
@@ -20913,8 +20913,8 @@ function renderWheelingResults() {
                 <div class="combo-title-group">
                     <span class="rank-badge top-2-badge">${item.id}</span>
                     <div>
-                        <div class="combo-name">${item.name} <span class="chart-tag">4등 100% 보장</span></div>
-                        <div class="combo-desc">후보 10개 번호 중 4개 이상 당첨 시 4등 보장</div>
+                        <div class="combo-name">${item.name} <span class="chart-tag">수학적 4등 커버링</span></div>
+                        <div class="combo-desc">후보 10개 번호 중 4개 적중 시 4등 당첨 조합 성립</div>
                     </div>
                 </div>
             </div>
@@ -20948,7 +20948,7 @@ function setupWheelingTab() {
     if (_el_btnCalculateWheeling) {
         _el_btnCalculateWheeling.addEventListener('click', () => {
             renderWheelingResults();
-            showToast('수학적 휠링 커버링 14세트 보장 조합 계산 완료!');
+            showToast('수학적 휠링 커버링 14세트 조합 계산 완료!');
         });
     }
 }

@@ -112,7 +112,7 @@ export async function runBudgetOptimizationSimulation() {
     const additionalBudget = input ? parseInt(input.value) : 10000;
     
     if (isNaN(additionalBudget) || additionalBudget < 5000) {
-        alert('추가 투자 금액은 최소 5,000원(5게임) 이상이어야 합니다.');
+        alert('추가 구매 예산은 최소 5,000원(5게임) 이상이어야 합니다.');
         return;
     }
 

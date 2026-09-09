@@ -106,7 +106,7 @@ export async function renderConfirmedPurchasesList() {
                 labels: trendLabels.length > 0 ? trendLabels : ['대기'],
                 datasets: [
                     {
-                        label: '누적 투자금',
+                        label: '누적 구매금',
                         data: trendInvest.length > 0 ? trendInvest : [0],
                         borderColor: '#cbd5e1',
                         borderDash: [5, 5],
@@ -1382,7 +1382,7 @@ export function renderWinningHistoryModal() {
                 <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-top: 4px;">${rounds.length}회 <span style="font-size:0.8rem; color:#cbd5e1; font-weight:normal;">(${totalCombos}조합)</span></div>
             </div>
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
-                <div style="color: #94a3b8; font-size: 0.75rem;">총 투자금액</div>
+                <div style="color: #94a3b8; font-size: 0.75rem;">총 구매금액</div>
                 <div style="font-size: 1.1rem; font-weight: 800; color: #cbd5e1; margin-top: 4px;">${totalInvest.toLocaleString()}원</div>
             </div>
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
