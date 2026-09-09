@@ -12727,8 +12727,18 @@ body.is-admin .btn-user-mgmt-compact {
         font-size: 0.92rem !important;
     }
 
-    .confirmed-round-summary-row {
+    .confirmed-round-sub-row {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        width: 100% !important;
         margin-top: 2px !important;
+    }
+
+    .confirmed-round-summary-row {
+        margin: 0 !important;
         font-size: 0.78rem !important;
         gap: 4px !important;
         line-height: 1.2 !important;
@@ -12749,14 +12759,15 @@ body.is-admin .btn-user-mgmt-compact {
     }
 
     .confirmed-round-actions {
-        width: 100% !important;
+        display: inline-flex !important;
+        align-items: center !important;
         justify-content: flex-end !important;
-        gap: 5px !important;
-        margin-top: 2px !important;
+        gap: 4px !important;
+        margin: 0 0 0 auto !important;
     }
 
     .confirmed-round-actions button {
-        padding: 2px 8px !important;
+        padding: 2px 7px !important;
         font-size: 0.72rem !important;
     }
 

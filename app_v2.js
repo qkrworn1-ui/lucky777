@@ -16154,8 +16154,8 @@ async function renderConfirmedPurchasesList() {
             };
 
             summaryHTML = `
-                <div class="confirmed-round-summary-row" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; display:flex; align-items:center; gap: 6px; flex-wrap: wrap;">
-                    <span style="white-space: nowrap;">당첨번호:</span>
+                <div class="confirmed-round-summary-row" style="font-size: 0.82rem; color: var(--text-secondary); margin: 0; display:inline-flex; align-items:center; gap: 6px; flex-wrap: wrap;">
+                    <span style="white-space: nowrap; font-weight: 700;">당첨번호:</span>
                     <div style="display:inline-flex; align-items:center; gap: 3px; flex-wrap: wrap;">
                         ${actualDraw.numbers.map(n => `<span style="background:${getColor(n)}; width:18px; height:18px; line-height:18px; font-size:0.7rem; border-radius:50%; text-align:center; color:#fff; font-weight:bold; display:inline-block;">${n}</span>`).join('')}
                         <span style="font-weight:bold; font-size:0.75rem; margin:0 2px;">+</span>
@@ -16193,40 +16193,42 @@ async function renderConfirmedPurchasesList() {
         }
 
         html += `
-            <div class="confirmed-round-card" style="background: rgba(30, 41, 59, 0.5); border: 1px solid ${allPurchasesLocked ? 'rgba(245, 158, 11, 0.3)' : 'rgba(255,255,255,0.05)'}; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); box-sizing: border-box; max-width: 100%; overflow: hidden;">
-                <div class="confirmed-round-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; cursor:pointer;" onclick="const content = this.nextElementSibling; const icon = this.querySelector('.chevron-icon'); if (content.style.display === 'none') { content.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; } else { content.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; }">
-                    <div style="flex: 1 1 260px; min-width: 0; max-width: 100%;">
-                        <div class="confirmed-round-title-row" style="display:flex; align-items:center; flex-wrap: wrap; gap: 6px; width: 100%;">
-                            <strong style="font-size: 1.02rem; color: #fff; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                                <i class="fa-solid fa-chevron-down chevron-icon" style="transition: transform 0.3s; font-size:0.9rem; color: var(--text-secondary); transform: rotate(180deg);"></i>
-                                제 ${round}회차 구매 확정 내역
-                            </strong>
-                            ${usersBadge}
-                            ${winCountSummary}
-                            ${allPurchasesLocked ? '<span style="color: #fbbf24; font-size: 0.74rem; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-lock"></i> 전체 잠금됨</span>' : ''}
-                        </div>
-                        ${summaryHTML}
+            <div class="confirmed-round-card" style="background: rgba(30, 41, 59, 0.5); border: 1px solid ${allPurchasesLocked ? 'rgba(245, 158, 11, 0.3)' : 'rgba(255,255,255,0.05)'}; border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); box-sizing: border-box; max-width: 100%; overflow: hidden;">
+                <div class="confirmed-round-header" style="display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; cursor:pointer;" onclick="const content = this.nextElementSibling; const icon = this.querySelector('.chevron-icon'); if (content.style.display === 'none') { content.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; } else { content.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; }">
+                    <div class="confirmed-round-title-row" style="display:flex; align-items:center; flex-wrap: wrap; gap: 6px; width: 100%;">
+                        <strong style="font-size: 1.02rem; color: #fff; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                            <i class="fa-solid fa-chevron-down chevron-icon" style="transition: transform 0.3s; font-size:0.9rem; color: var(--text-secondary); transform: rotate(180deg);"></i>
+                            제 ${round}회차 구매 확정 내역
+                        </strong>
+                        ${usersBadge}
+                        ${winCountSummary}
+                        ${allPurchasesLocked ? '<span style="color: #fbbf24; font-size: 0.74rem; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-lock"></i> 전체 잠금됨</span>' : ''}
                     </div>
-                    <div class="confirmed-round-actions" style="display:flex; align-items:center; flex-wrap: wrap; gap: 6px; flex-shrink: 0;" onclick="event.stopPropagation();">
-                        ${isAdmin ? `
-                            ${round === 1238 && purchases.length > 3 ? `
-                                <button class="btn-clean-1238-ghosts" data-round="1238" title="1238회 실제 구매(#1~#3) 외 가상 영수증 일괄 정리" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;">
-                                    <i class="fa-solid fa-broom"></i> #4~#${purchases.length} 정리
+                    <div class="confirmed-round-sub-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 2px;">
+                        <div style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                            ${summaryHTML}
+                        </div>
+                        <div class="confirmed-round-actions" style="display:inline-flex; align-items:center; flex-wrap: wrap; gap: 6px; flex-shrink: 0; margin-left: auto;" onclick="event.stopPropagation();">
+                            ${isAdmin ? `
+                                ${round === 1238 && purchases.length > 3 ? `
+                                    <button class="btn-clean-1238-ghosts" data-round="1238" title="1238회 실제 구매(#1~#3) 외 가상 영수증 일괄 정리" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;">
+                                        <i class="fa-solid fa-broom"></i> #4~#${purchases.length} 정리
+                                    </button>
+                                ` : ''}
+                                <button class="btn-delete-unlocked-round" data-round="${round}" title="잠금되지 않은 영수증 일괄 삭제" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+                                    <i class="fa-solid fa-trash-can"></i> 미잠금 삭제
+                                </button>
+                                <button class="btn-toggle-lock-round" data-round="${round}" style="padding: 3px 10px; font-size: 0.75rem; background: ${roundLockBtnBg}; border: 1px solid ${roundLockBtnBorder}; color: ${roundLockBtnColor}; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: bold;">
+                                    <i class="fa-solid ${roundLockIcon}"></i> ${roundLockText}
                                 </button>
                             ` : ''}
-                            <button class="btn-delete-unlocked-round" data-round="${round}" title="잠금되지 않은 영수증 일괄 삭제" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600;">
-                                <i class="fa-solid fa-trash-can"></i> 미잠금 삭제
-                            </button>
-                            <button class="btn-toggle-lock-round" data-round="${round}" style="padding: 3px 10px; font-size: 0.75rem; background: ${roundLockBtnBg}; border: 1px solid ${roundLockBtnBorder}; color: ${roundLockBtnColor}; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: bold;">
-                                <i class="fa-solid ${roundLockIcon}"></i> ${roundLockText}
-                            </button>
-                        ` : ''}
-                        <span style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap;">총 ${purchases.reduce((acc, p) => acc + p.combos.length, 0)}조합</span>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap;">총 ${purchases.reduce((acc, p) => acc + p.combos.length, 0)}조합</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Combinations detailed list -->
-                <div class="confirmed-round-body" style="margin-top: 14px; display: block;">
+                <div class="confirmed-round-body" style="margin-top: 10px; display: block;">
         `;
 
         // Precompute V3 and V4 maps for this round for fast cross-checking
