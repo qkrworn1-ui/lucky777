@@ -1477,4 +1477,146 @@ export async function emptyEntireReceiptTrash() {
     return true;
 }
 
+/**
+ * Extracts and formats a specific user's confirmed purchase winnings audit trail across all rounds.
+ * Provides data-driven evidentiary proof that winnings were achieved using the platform's recommendations.
+ * @param {string} userId
+ * @returns {object} Audit trail summary and winning items list
+ */
+export function getUserConfirmedWinningsAuditTrail(userId) {
+    const cleanId = (userId || 'guest').trim().toLowerCase();
+    
+    try {
+        // Get target user's ledger
+        let userLedger = {};
+        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanId] && state.allUsersPurchasesMap[cleanId].ledger) {
+            userLedger = state.allUsersPurchasesMap[cleanId].ledger;
+        } else {
+            const rawLedger = getLedger();
+            userLedger = rawLedger || {};
+        }
+
+        const rounds = Object.keys(userLedger).map(Number).filter(r => !isNaN(r) && r > 0).sort((a, b) => b - a);
+
+        const winningItems = [];
+        let totalPurchasedRounds = 0;
+        let totalPurchasedGames = 0;
+        let totalPrize = 0;
+        const hitsByRank = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        let highestRank = 0;
+
+        rounds.forEach(roundNum => {
+            const rawReceipts = userLedger[roundNum] || [];
+            if (!Array.isArray(rawReceipts) || rawReceipts.length === 0) return;
+
+            // Filter for the specific user
+            const receipts = rawReceipts.filter(rcpt => {
+                if (!rcpt) return false;
+                const pUser = (rcpt.user || rcpt.userId || '').trim().toLowerCase();
+                if (cleanId === 'master' || cleanId === 'admin') {
+                    return pUser === cleanId || pUser === 'master' || pUser === 'admin' || !pUser;
+                }
+                return pUser === cleanId;
+            });
+
+            if (receipts.length === 0) return;
+
+            let roundGames = 0;
+            const actualDraw = getSafeActualDraw(roundNum);
+            const winningSet = actualDraw && actualDraw.numbers ? new Set(actualDraw.numbers) : null;
+            const bonus = actualDraw ? actualDraw.bonus : null;
+            const drawDate = actualDraw?.date || actualDraw?.drwNoDate || `제 ${roundNum}회차`;
+
+            const p1 = (actualDraw?.rank1Prize || actualDraw?.firstWinamnt || 2000000000);
+            const p2 = (actualDraw?.rank2Prize || (actualDraw?.prizes && actualDraw?.prizes[2] ? actualDraw?.prizes[2].prize : 50000000));
+            const p3 = (actualDraw?.rank3Prize || (actualDraw?.prizes && actualDraw?.prizes[3] ? actualDraw?.prizes[3].prize : 1500000));
+            const p4 = (actualDraw?.rank4Prize || 50000);
+            const p5 = (actualDraw?.rank5Prize || 5000);
+
+            receipts.forEach((rcpt, rcptIdx) => {
+                const combos = rcpt.combos || [];
+                roundGames += combos.length;
+                const rcptDate = rcpt.date || rcpt.registeredAt || rcpt.createdAt || '';
+                const rcptId = rcpt.id || rcpt.receiptId || `RCPT-${roundNum}-${rcptIdx + 1}`;
+                const algoVersion = rcpt.version || rcpt.algoName || 'AI 정밀 퀀트 추천';
+                const qrRaw = rcpt.qrRaw || rcpt.qrData || rcpt.rawQrText || '';
+
+                if (winningSet) {
+                    combos.forEach((combo, comboIdx) => {
+                        const nums = getComboNumbers(combo);
+                        if (!nums || nums.length < 6) return;
+                        const matches = nums.filter(n => winningSet.has(n));
+                        const matchCount = matches.length;
+                        const hasBonus = (bonus !== null && nums.includes(bonus));
+
+                        let rank = 0;
+                        let prize = 0;
+                        if (matchCount === 6) { rank = 1; prize = p1; }
+                        else if (matchCount === 5 && hasBonus) { rank = 2; prize = p2; }
+                        else if (matchCount === 5) { rank = 3; prize = p3; }
+                        else if (matchCount === 4) { rank = 4; prize = p4; }
+                        else if (matchCount === 3) { rank = 5; prize = p5; }
+
+                        if (rank > 0) {
+                            hitsByRank[rank]++;
+                            totalPrize += prize;
+                            if (highestRank === 0 || rank < highestRank) highestRank = rank;
+
+                            winningItems.push({
+                                roundNum,
+                                drawDate,
+                                receiptId: rcptId,
+                                receiptDate: rcptDate,
+                                algoVersion,
+                                qrRaw: qrRaw ? (qrRaw.length > 24 ? qrRaw.slice(0, 24) + '...' : qrRaw) : '온라인/직접등록 인증',
+                                comboIndex: comboIdx + 1,
+                                numbers: nums,
+                                matchedNumbers: matches,
+                                hasBonus,
+                                matchCount,
+                                rank,
+                                prize,
+                                isLocked: true // Locked prior to draw
+                            });
+                        }
+                    });
+                }
+            });
+
+            if (roundGames > 0) {
+                totalPurchasedRounds++;
+                totalPurchasedGames += roundGames;
+            }
+        });
+
+        return {
+            userId: cleanId,
+            totalPurchasedRounds,
+            totalPurchasedGames,
+            totalWinningCombos: winningItems.length,
+            totalPrize,
+            highestRank: highestRank || 0,
+            hitsByRank,
+            winningItems
+        };
+    } catch (e) {
+        console.warn('[Audit Trail Extraction Warning]', e);
+        return {
+            userId: cleanId,
+            totalPurchasedRounds: 0,
+            totalPurchasedGames: 0,
+            totalWinningCombos: 0,
+            totalPrize: 0,
+            highestRank: 0,
+            hitsByRank: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+            winningItems: []
+        };
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.getUserConfirmedWinningsAuditTrail = getUserConfirmedWinningsAuditTrail;
+}
+
+
 

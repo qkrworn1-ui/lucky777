@@ -100,19 +100,26 @@ export function generateOtpCode() {
 }
 
 /**
- * Standalone pure JS SHA-256 fallback
+ * Standalone pure JS SHA-256 fallback (Non-blocking, zero external dependencies)
  */
-function fallbackSha256(ascii) {
+function fallbackSha256(str) {
+    if (!str) return '';
+    var s = '';
+    try {
+        s = unescape(encodeURIComponent(String(str)));
+    } catch(e) {
+        s = String(str);
+    }
+
     function rightRotate(value, amount) {
         return (value >>> amount) | (value << (32 - amount));
     }
-    var mathPow = Math.pow;
-    var maxWord = mathPow(2, 32);
-    var lengthProperty = 'length';
+
+    var maxWord = Math.pow(2, 32);
     var i, j;
     var result = '';
     var words = [];
-    var asciiBitLength = ascii[lengthProperty] * 8;
+    var asciiBitLength = s.length * 8;
     var hash = [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
@@ -128,41 +135,27 @@ function fallbackSha256(ascii) {
         0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
     ];
 
-    var isCompound = {};
-    for (var candidate = 2; result[lengthProperty] < 64; candidate++) {
-        if (!isCompound[candidate]) {
-            for (i = 0; i < 313; i += candidate) {
-                isCompound[i] = candidate;
-            }
-            hash[result[lengthProperty]] = (mathPow(candidate, .5) * maxWord) | 0;
-            k[result[lengthProperty]++] = (mathPow(candidate, 1/3) * maxWord) | 0;
-        }
+    s += '\x80';
+    while (s.length % 64 !== 56) s += '\x00';
+    for (i = 0; i < s.length; i++) {
+        j = s.charCodeAt(i);
+        words[i >> 2] |= (j & 255) << ((3 - i % 4) * 8);
     }
+    words[words.length] = ((asciiBitLength / maxWord) | 0);
+    words[words.length] = (asciiBitLength | 0);
 
-    ascii += '\x80';
-    while (ascii[lengthProperty] % 64 - 56) ascii += '\x00';
-    for (i = 0; i < ascii[lengthProperty]; i++) {
-        j = ascii.charCodeAt(i);
-        if (j >> 8) return;
-        words[i >> 2] |= j << ((3 - i) % 4) * 8;
-    }
-    words[words[lengthProperty]] = ((asciiBitLength / maxWord) | 0);
-    words[words[lengthProperty]] = (asciiBitLength);
-
-    for (j = 0; j < words[lengthProperty];) {
+    for (j = 0; j < words.length;) {
         var w = words.slice(j, j += 16);
-        var oldHash = hash;
-        hash = hash.slice(0, 8);
+        var oldHash = hash.slice(0);
 
         for (i = 0; i < 64; i++) {
-            var i2 = i + j;
             var w15 = w[i - 15], w2 = w[i - 2];
             var a = hash[0], e = hash[4];
             var temp1 = hash[7]
                 + (rightRotate(e, 6) ^ rightRotate(e, 11) ^ rightRotate(e, 25))
                 + ((e & hash[5]) ^ ((~e) & hash[6]))
                 + k[i]
-                + (w[i] = (i < 16) ? w[i] : (
+                + (w[i] = (i < 16) ? (w[i] || 0) : (
                     w[i - 16]
                     + (rightRotate(w15, 7) ^ rightRotate(w15, 18) ^ (w15 >>> 3))
                     + w[i - 7]
@@ -173,6 +166,7 @@ function fallbackSha256(ascii) {
 
             hash = [(temp1 + temp2) | 0].concat(hash);
             hash[4] = (hash[4] + temp1) | 0;
+            hash.pop();
         }
 
         for (i = 0; i < 8; i++) {
@@ -187,4 +181,44 @@ function fallbackSha256(ascii) {
         }
     }
     return result;
+}
+
+/**
+ * Synchronous SHA-256 hash
+ * @param {string} text 
+ * @returns {string} Hex SHA-256 string
+ */
+export function sha256Sync(text) {
+    if (!text) return '';
+    try {
+        return fallbackSha256(String(text));
+    } catch(e) {
+        return '0000000000000000000000000000000000000000000000000000000000000000';
+    }
+}
+
+/**
+ * Generate Unified Legal Cryptographic Proof Certificate for Agreement & Real Purchases
+ * @param {object} docData 
+ * @param {object} winningAuditData 
+ * @returns {{ auditId: string, sealHash: string, timestamp: string }}
+ */
+export function generateAgreementProofCertificate(docData, winningAuditData) {
+    const uId = (docData?.userId || 'guest').trim().toLowerCase();
+    const agreedDate = docData?.agreedDateFormatted || docData?.createdAt || new Date().toISOString();
+    const sigLen = (docData?.signatureDataUrl || '').length;
+    const winsCount = winningAuditData?.totalWinningCombos || 0;
+    const totalPrize = winningAuditData?.totalPrize || 0;
+    const winningRoundsStr = (winningAuditData?.winningItems || []).map(item => `${item.roundNum}-${item.rank}-${item.prize}`).join('|');
+
+    const rawPayload = `AGREEMENT_PROOF::USER=${uId}::AGREED=${agreedDate}::SIG_LEN=${sigLen}::WINS=${winsCount}::PRIZE=${totalPrize}::ROUNDS=${winningRoundsStr}::SALT=undo_skill_legal_audit_2026`;
+    const sealHash = sha256Sync(rawPayload);
+    const auditId = `AUDIT-LOTTO-${uId.toUpperCase()}-${sealHash.slice(0, 8).toUpperCase()}`;
+
+    return {
+        auditId,
+        sealHash,
+        timestamp: new Date().toISOString(),
+        rawPayload
+    };
 }

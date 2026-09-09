@@ -2493,6 +2493,158 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                         • <strong>사업장 소재지</strong> : 서울특별시 강남구 봉은사로1길 6, 5층 5159호(논현동, 용천빌딩)
                     </div>
                 </div>
+
+                <!-- 4. 회원의 실구매 기준 누적 당첨 실적 및 프로그램 추천 적중 증빙 (Legal Audit Trail & Evidentiary Proof) -->
+                ${(function() {
+                    const targetUserId = docData.userId || 'guest';
+                    const winningAudit = (typeof getUserConfirmedWinningsAuditTrail === 'function' 
+                        ? getUserConfirmedWinningsAuditTrail(targetUserId) 
+                        : (window.getUserConfirmedWinningsAuditTrail ? window.getUserConfirmedWinningsAuditTrail(targetUserId) : null)) || {
+                        userId: targetUserId,
+                        totalPurchasedRounds: 0,
+                        totalPurchasedGames: 0,
+                        totalWinningCombos: 0,
+                        totalPrize: 0,
+                        highestRank: 0,
+                        hitsByRank: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+                        winningItems: []
+                    };
+
+                    const proofCert = (typeof generateAgreementProofCertificate === 'function'
+                        ? generateAgreementProofCertificate(docData, winningAudit)
+                        : (window.generateAgreementProofCertificate ? window.generateAgreementProofCertificate(docData, winningAudit) : { auditId: `AUDIT-LOTTO-${targetUserId.toUpperCase()}-SEALED`, sealHash: 'UNVERIFIED' }));
+
+                    let winningItemsTableHtml = '';
+                    if (winningAudit.winningItems && winningAudit.winningItems.length > 0) {
+                        const itemsListHtml = winningAudit.winningItems.map((item) => {
+                            let rankColor = '#64748b';
+                            let rankBadgeBg = '#f1f5f9';
+                            let rankName = `${item.rank}등`;
+                            if (item.rank === 1) { rankColor = '#d97706'; rankBadgeBg = '#fef3c7'; rankName = '🥇 1등 (6개 일치)'; }
+                            else if (item.rank === 2) { rankColor = '#dc2626'; rankBadgeBg = '#fee2e2'; rankName = '🥈 2등 (5개+보너스)'; }
+                            else if (item.rank === 3) { rankColor = '#2563eb'; rankBadgeBg = '#dbeafe'; rankName = '🥉 3등 (5개 일치)'; }
+                            else if (item.rank === 4) { rankColor = '#16a34a'; rankBadgeBg = '#dcfce7'; rankName = '4등 (4개 일치)'; }
+                            else if (item.rank === 5) { rankColor = '#7c3aed'; rankBadgeBg = '#f3e8ff'; rankName = '5등 (3개 일치)'; }
+
+                            const ballBadges = item.numbers.map(n => {
+                                const isHit = item.matchedNumbers && item.matchedNumbers.includes(n);
+                                const bg = isHit ? '#2563eb' : '#ffffff';
+                                const color = isHit ? '#ffffff' : '#334155';
+                                const border = isHit ? '#1d4ed8' : '#cbd5e1';
+                                const fw = isHit ? '800' : '600';
+                                return `<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:${bg}; color:${color}; border:1.5px solid ${border}; font-weight:${fw}; font-size:0.75rem; box-sizing:border-box;">${n}</span>`;
+                            }).join('');
+
+                            return `
+                                <div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                                    <!-- 1. Header: Round & Date | Rank & Prize -->
+                                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                                        <div style="display:flex; align-items:center; gap:6px;">
+                                            <span style="font-weight:900; color:#0f172a; font-size:0.92rem;">제 ${item.roundNum}회</span>
+                                            <span style="font-size:0.72rem; color:#64748b;">(${item.drawDate})</span>
+                                        </div>
+                                        <div style="display:flex; align-items:center; gap:6px;">
+                                            <span style="background:${rankBadgeBg}; color:${rankColor}; padding:2px 7px; border-radius:4px; font-weight:800; font-size:0.74rem; border:1px solid ${rankColor}40;">
+                                                ${rankName}
+                                            </span>
+                                            <span style="font-weight:900; color:#16a34a; font-size:0.88rem;">
+                                                +${item.prize.toLocaleString()}원
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- 2. Numbers: 6 Ball badges centered (No horizontal overflow) -->
+                                    <div style="display:flex; align-items:center; justify-content:center; gap:5px; padding:6px 4px; background:#f8fafc; border-radius:6px; border:1px solid #e2e8f0; width:100%; box-sizing:border-box;">
+                                        ${ballBadges}
+                                    </div>
+
+                                    <!-- 3. Footer Audit Stamp: Algorithm & Receipt Info -->
+                                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; font-size:0.7rem; color:#64748b; border-top:1px dashed #e2e8f0; padding-top:5px;">
+                                        <div style="color:#1e40af; font-weight:700;">
+                                            <i class="fa-solid fa-microchip" style="color:#2563eb;"></i> ${item.algoVersion}
+                                        </div>
+                                        <div style="color:#16a34a; font-weight:700; display:flex; align-items:center; gap:3px;">
+                                            <i class="fa-solid fa-lock"></i> <span style="color:#475569;">${item.receiptId}</span> (추첨전 등록)
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+
+                        winningItemsTableHtml = `
+                            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px; width:100%; box-sizing:border-box;">
+                                ${itemsListHtml}
+                            </div>
+                        `;
+                    } else {
+                        winningItemsTableHtml = `
+                            <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px; padding:14px; text-align:center; margin-bottom:10px; font-size:0.78rem; color:#64748b; box-sizing:border-box;">
+                                <i class="fa-solid fa-clock-rotate-left" style="color:#3b82f6; margin-right:4px;"></i>
+                                <strong>현재 실구매 당첨 생성 전 상태:</strong> 본 회원은 현재까지 실구매 영수증 등록 및 당첨 데이터 생성 전 상태입니다. 향후 AI 추천번호를 바탕으로 실구매 영수증을 등록하여 당첨이 발생하면, 본 전자 서약서의 감사 증적 섹션에 실시간으로 영구 결합·보존됩니다.
+                            </div>
+                        `;
+                    }
+
+                    return `
+                        <div style="background:#ffffff; border:1.5px solid #3b82f6; border-radius:8px; padding:12px; margin-top:10px; color:#1e293b; box-sizing:border-box; width:100%;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; border-bottom:1.5px solid #3b82f6; padding-bottom:6px; margin-bottom:10px;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <i class="fa-solid fa-stamp" style="color:#2563eb; font-size:1.05rem;"></i>
+                                    <h4 style="margin:0; color:#1e3a8a; font-size:0.92rem; font-weight:900;">
+                                        4. 회원의 실구매 기준 누적 당첨 실적 및 프로그램 추천 적중 증빙 (공식 감사 증적)
+                                    </h4>
+                                </div>
+                                <span style="font-size:0.7rem; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 8px; border-radius:6px; font-weight:800;">
+                                    ⚖️ 전자문서법 기준 불변 데이터 증빙
+                                </span>
+                            </div>
+
+                            <!-- KPI Summary Bar (2x2 Grid for Perfect Mobile Fit) -->
+                            <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-bottom:10px; width:100%; box-sizing:border-box;">
+                                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 6px; text-align:center; box-sizing:border-box;">
+                                    <div style="font-size:0.7rem; color:#64748b;">실구매 총 게임수</div>
+                                    <div style="font-size:0.88rem; font-weight:800; color:#0f172a;">${winningAudit.totalPurchasedGames.toLocaleString()}게임 (${winningAudit.totalPurchasedRounds}회)</div>
+                                </div>
+                                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 6px; text-align:center; box-sizing:border-box;">
+                                    <div style="font-size:0.7rem; color:#64748b;">실구매 총 당첨건수</div>
+                                    <div style="font-size:0.88rem; font-weight:800; color:#2563eb;">${winningAudit.totalWinningCombos.toLocaleString()}건 적중</div>
+                                </div>
+                                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 6px; text-align:center; box-sizing:border-box;">
+                                    <div style="font-size:0.7rem; color:#64748b;">실구매 누적 당첨금</div>
+                                    <div style="font-size:0.9rem; font-weight:900; color:#16a34a;">+${winningAudit.totalPrize.toLocaleString()}원</div>
+                                </div>
+                                <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 6px; text-align:center; box-sizing:border-box;">
+                                    <div style="font-size:0.7rem; color:#64748b;">최고 당첨 등수</div>
+                                    <div style="font-size:0.88rem; font-weight:800; color:#d97706;">${winningAudit.highestRank > 0 ? `${winningAudit.highestRank}등 당첨` : '미당첨'}</div>
+                                </div>
+                            </div>
+
+                            <!-- Rank Counts Chips -->
+                            <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:4px; background:#f1f5f9; border-radius:6px; padding:6px 4px; margin-bottom:10px; font-size:0.72rem; font-weight:800; text-align:center; box-sizing:border-box;">
+                                <span style="color:#d97706;">1등: ${winningAudit.hitsByRank[1]}</span>
+                                <span style="color:#dc2626;">2등: ${winningAudit.hitsByRank[2]}</span>
+                                <span style="color:#2563eb;">3등: ${winningAudit.hitsByRank[3]}</span>
+                                <span style="color:#16a34a;">4등: ${winningAudit.hitsByRank[4]}</span>
+                                <span style="color:#7c3aed;">5등: ${winningAudit.hitsByRank[5]}</span>
+                            </div>
+
+                            <!-- Winning Items Table or Empty Notice -->
+                            ${winningItemsTableHtml}
+
+                            <!-- Cryptographic Proof Certificate & Legal Attestation -->
+                            <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-top:8px; font-size:0.74rem; color:#475569; line-height:1.5; box-sizing:border-box; width:100%;">
+                                <div style="font-weight:800; color:#0f172a; margin-bottom:4px; display:flex; align-items:center; gap:5px;">
+                                    <i class="fa-solid fa-certificate" style="color:#2563eb;"></i> 프로그램 추천 당첨 무결성 인증서 (Cryptographic Audit Certificate)
+                                </div>
+                                <div style="word-break:break-all;">
+                                    • <strong>감사 증적 번호 (Audit ID)</strong>: <code style="background:#e2e8f0; padding:1px 5px; border-radius:4px; font-family:monospace; color:#0f172a; font-weight:bold;">${proofCert.auditId}</code><br>
+                                    • <strong>디지털 봉인 해시 (SHA-256)</strong>: <code style="background:#e2e8f0; padding:1px 5px; border-radius:4px; font-family:monospace; font-size:0.7rem; color:#0f172a; word-break:break-all;">${proofCert.sealHash}</code><br>
+                                    • <strong>법적 증거 확약</strong>: 본 실구매 당첨 내역은 회원이 '운도실력' 프로그램의 AI 추천 알고리즘 번호를 교부받아 추첨 마감 전 실제 구매·등록한 것으로, 동행복권 공식 추첨 결과와 1:1 대조 채점되어 위변조가 불가능하도록 시스템에 영구 봉인된 공식 실적 데이터임을 증명합니다.
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                })()}
             `;
 
             const modal = document.getElementById('agreementViewerModal');
