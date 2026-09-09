@@ -14693,9 +14693,15 @@ async function openAdmin1235ReviewModal(initialRound = null, initialUser = null)
                             <span style="font-size: 0.72rem; color: #94a3b8;">빅데이터 퀀트 알고리즘 실시간 복기 &amp; 대외 공유 콘솔</span>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 6px; align-items: center;">
-                        <button type="button" onclick="window.shareAdmin1235ReviewToKakao && window.shareAdmin1235ReviewToKakao()" title="카카오톡으로 리포트 전송" style="background: #fee500; color: #191919; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(254, 229, 0, 0.35);">
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" onclick="window.shareAdmin1235ReviewAsImage && window.shareAdmin1235ReviewAsImage()" title="카카오톡/SNS로 이미지 전송 (친구/단톡방 선택)" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);">
+                            <i class="fa-solid fa-image"></i> 이미지 공유
+                        </button>
+                        <button type="button" onclick="window.shareAdmin1235ReviewToKakao && window.shareAdmin1235ReviewToKakao()" title="카카오톡 친구 및 채팅방 선택 공유" style="background: #fee500; color: #191919; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(254, 229, 0, 0.35);">
                             <i class="fa-solid fa-comment"></i> 카톡 공유
+                        </button>
+                        <button type="button" onclick="window.downloadAdmin1235ReviewImage && window.downloadAdmin1235ReviewImage()" title="리포트 이미지 파일로 저장" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-download"></i> 저장
                         </button>
                         <button type="button" onclick="window.copyAdmin1235ReviewText && window.copyAdmin1235ReviewText()" title="텍스트 클립보드 복사" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-copy"></i> 복사
@@ -14748,9 +14754,15 @@ async function openAdmin1235ReviewModal(initialRound = null, initialUser = null)
                     <div style="font-size: 0.72rem; color: #94a3b8;">
                         <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> 1235회~ 실구매 영수증 및 스냅샷 불변 무결성 검증 완료
                     </div>
-                    <div style="display: flex; gap: 6px;">
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" onclick="window.shareAdmin1235ReviewAsImage && window.shareAdmin1235ReviewAsImage()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4);">
+                            <i class="fa-solid fa-image"></i> 이미지 카톡/SNS 공유
+                        </button>
                         <button type="button" onclick="window.shareAdmin1235ReviewToKakao && window.shareAdmin1235ReviewToKakao()" style="background: #fee500; color: #191919; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 3px 10px rgba(254, 229, 0, 0.35);">
-                            <i class="fa-solid fa-paper-plane"></i> 카카오톡 리포트 전송
+                            <i class="fa-solid fa-comment"></i> 카톡 친구/방 공유
+                        </button>
+                        <button type="button" onclick="window.downloadAdmin1235ReviewImage && window.downloadAdmin1235ReviewImage()" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0; padding: 8px 12px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-download"></i> 저장
                         </button>
                         <button type="button" onclick="document.getElementById('admin1235ReviewModal').style.display='none'" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; cursor: pointer;">
                             닫기
@@ -15574,21 +15586,188 @@ ${roundLines.slice(0, 6).join('\n')}
         }
     } catch(e) {}
 
-    // 2. Dispatch Kakao Message
-    const templateData = {
-        object_type: 'text',
-        text: fullMessage,
-        link: {
-            web_url: window.location.origin + window.location.pathname,
-            mobile_web_url: window.location.origin + window.location.pathname
+    const shareUrl = window.location.origin + window.location.pathname;
+
+    // Ensure Kakao SDK initialized
+    if (typeof window !== 'undefined' && window.Kakao) {
+        if (!window.Kakao.isInitialized()) {
+            try {
+                window.Kakao.init('c40e8adc700a6f1c1e62b6aa3fa0c60a');
+            } catch(e) {}
+        }
+    }
+
+    // Kakao Talk Friend & Chatroom Picker Share (sendDefault)
+    const kakaoShareData = {
+        objectType: 'feed',
+        content: {
+            title: titleText,
+            description: `💰 당첨금: +${rPrize.toLocaleString()}원 (${rRoi.toFixed(1)}%)\n🏆 적중: 총 ${wins}건 (1등:${rHits[1]}, 2등:${rHits[2]}, 3등:${rHits[3]}, 4등:${rHits[4]}, 5등:${rHits[5]})\n🎯 대상: ${userVal === 'all' ? `전체 회원 (${baseList.length}명)` : userVal}`,
+            imageUrl: 'https://wook2100.github.io/lucky777/icons/icon-512.png',
+            link: {
+                mobileWebUrl: shareUrl,
+                webUrl: shareUrl
+            }
         },
-        button_title: '복기 리포트 상세보기'
+        buttons: [
+            {
+                title: '📊 복기 리포트 확인하기',
+                link: {
+                    mobileWebUrl: shareUrl,
+                    webUrl: shareUrl
+                }
+            }
+        ]
     };
 
-    if (typeof window.sendKakaoCustomMessage === 'function') {
-        window.sendKakaoCustomMessage(templateData);
+    if (window.Kakao && window.Kakao.Share && typeof window.Kakao.Share.sendDefault === 'function') {
+        window.Kakao.Share.sendDefault(kakaoShareData);
+        showToast('💬 카카오톡 공유 창이 열렸습니다. 원하는 친구/대화방을 선택하세요!');
+    } else if (window.Kakao && window.Kakao.Link && typeof window.Kakao.Link.sendDefault === 'function') {
+        window.Kakao.Link.sendDefault(kakaoShareData);
+        showToast('💬 카카오톡 공유 창이 열렸습니다. 원하는 친구/대화방을 선택하세요!');
+    } else if (navigator.share) {
+        try {
+            await navigator.share({
+                title: titleText,
+                text: `${titleText}\n\n${fullMessage}`,
+                url: shareUrl
+            });
+        } catch(e) {}
     } else {
-        alert('📋 리포트가 클립보드에 복사되었습니다!\n카카오톡 또는 원하는 곳에 붙여넣기(Ctrl+V)하세요.');
+        await copyAdmin1235ReviewText();
+        alert('📋 리포트가 클립보드에 복사되었습니다!\n카카오톡 대화방에 붙여넣기(Ctrl+V)하여 다른 분들과 공유하세요.');
+    }
+}
+
+/**
+ * 🖼️ [리포트 이미지로 카카오톡/SNS 공유]
+ * 모달 리포트를 고화질 PNG 이미지로 변환 후, 모바일에서는 카카오톡/SNS 대화방으로 이미지 직접 전송,
+ * PC에서는 클립보드 복사(Ctrl+V 붙여넣기 지원) 및 이미지 자동 저장을 실행
+ */
+async function shareAdmin1235ReviewAsImage() {
+    showToast('🎨 리포트 이미지를 생성하는 중입니다...');
+    const targetElement = document.getElementById('admin1235ModalBody') || document.querySelector('#admin1235ReviewModal .modal-card');
+    if (!targetElement) return;
+
+    try {
+        if (typeof html2canvas !== 'function') {
+            alert('⚠️ 이미지 생성 도구를 불러오는 중입니다. 1~2초 후 다시 눌러주세요.');
+            return;
+        }
+
+        const canvas = await html2canvas(targetElement, {
+            backgroundColor: '#0f172a',
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            windowWidth: 720
+        });
+
+        if (!canvas) {
+            alert('⚠️ 이미지 생성에 실패했습니다.');
+            return;
+        }
+
+        const roundVal = _currentAdmin1235ModalRound;
+        const fileName = `운도실력_1235회차_복기리포트_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
+
+        canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            const file = new File([blob], fileName, { type: 'image/png' });
+
+            // 1. Mobile Native Share: allows sending image file directly into KakaoTalk chatroom
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                try {
+                    await navigator.share({
+                        files: [file],
+                        title: '🎰 운도실력 1235회~ 추천·당첨 복기 리포트',
+                        text: `🎰 [운도실력] 1235회~ 로또 AI 추천·당첨 성과 리포트 카드입니다.`
+                    });
+                    showToast('✅ 카카오톡 등 원하는 대화방에 이미지가 공유되었습니다!');
+                    return;
+                } catch(shareErr) {
+                    if (shareErr.name === 'AbortError') return;
+                    console.warn('[Native Share Error]', shareErr);
+                }
+            }
+
+            // 2. Desktop Clipboard Copy: allows pasting (Ctrl+V) directly in KakaoTalk PC
+            let clipSuccess = false;
+            try {
+                if (navigator.clipboard && window.ClipboardItem) {
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    await navigator.clipboard.write([item]);
+                    clipSuccess = true;
+                    showToast('🖼️ 이미지가 클립보드에 복사되었습니다! 카카오톡 채팅방에 Ctrl+V로 붙여넣으세요.');
+                }
+            } catch(clipErr) {
+                console.warn('[Clipboard Image Copy Error]', clipErr);
+            }
+
+            // 3. Save / Download
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                if (a.parentNode) a.parentNode.removeChild(a);
+                URL.revokeObjectURL(a.href);
+            }, 1000);
+
+            if (!clipSuccess) {
+                showToast('💾 리포트 이미지가 다운로드되었습니다! 카카오톡에 첨부해 보세요.');
+            }
+        }, 'image/png');
+
+    } catch(err) {
+        console.error('[shareAdmin1235ReviewAsImage Error]', err);
+        alert('⚠️ 이미지 생성 중 오류가 발생했습니다: ' + err.message);
+    }
+}
+
+/**
+ * 💾 [리포트 이미지 파일 다운로드]
+ */
+async function downloadAdmin1235ReviewImage() {
+    showToast('💾 이미지를 저장하는 중입니다...');
+    const targetElement = document.getElementById('admin1235ModalBody') || document.querySelector('#admin1235ReviewModal .modal-card');
+    if (!targetElement) return;
+
+    try {
+        if (typeof html2canvas !== 'function') {
+            alert('⚠️ 이미지 생성 도구를 불러오는 중입니다. 1~2초 후 다시 눌러주세요.');
+            return;
+        }
+
+        const canvas = await html2canvas(targetElement, {
+            backgroundColor: '#0f172a',
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            windowWidth: 720
+        });
+
+        if (!canvas) return;
+        const roundVal = _currentAdmin1235ModalRound;
+        const fileName = `운도실력_1235회차_복기리포트_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
+
+        canvas.toBlob((blob) => {
+            if (!blob) return;
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                if (a.parentNode) a.parentNode.removeChild(a);
+                URL.revokeObjectURL(a.href);
+            }, 1000);
+            showToast('💾 리포트 이미지가 기기에 저장되었습니다!');
+        }, 'image/png');
+    } catch(err) {
+        alert('⚠️ 이미지 다운로드 실패: ' + err.message);
     }
 }
 
@@ -15736,6 +15915,8 @@ if (typeof window !== 'undefined') {
     window.renderAdmin1235ReviewModalContent = renderAdmin1235ReviewModalContent;
     window.selectAdmin1235ModalSpecificUser = selectAdmin1235ModalSpecificUser;
     window.shareAdmin1235ReviewToKakao = shareAdmin1235ReviewToKakao;
+    window.shareAdmin1235ReviewAsImage = shareAdmin1235ReviewAsImage;
+    window.downloadAdmin1235ReviewImage = downloadAdmin1235ReviewImage;
     window.copyAdmin1235ReviewText = copyAdmin1235ReviewText;
 }
 
@@ -15786,6 +15967,14 @@ if (typeof window !== 'undefined') {
         if (typeof shareAdmin1235ReviewToKakao !== 'undefined') {
             __exports.shareAdmin1235ReviewToKakao = shareAdmin1235ReviewToKakao;
             if (typeof window !== 'undefined') window.shareAdmin1235ReviewToKakao = shareAdmin1235ReviewToKakao;
+        }
+        if (typeof shareAdmin1235ReviewAsImage !== 'undefined') {
+            __exports.shareAdmin1235ReviewAsImage = shareAdmin1235ReviewAsImage;
+            if (typeof window !== 'undefined') window.shareAdmin1235ReviewAsImage = shareAdmin1235ReviewAsImage;
+        }
+        if (typeof downloadAdmin1235ReviewImage !== 'undefined') {
+            __exports.downloadAdmin1235ReviewImage = downloadAdmin1235ReviewImage;
+            if (typeof window !== 'undefined') window.downloadAdmin1235ReviewImage = downloadAdmin1235ReviewImage;
         }
         if (typeof copyAdmin1235ReviewText !== 'undefined') {
             __exports.copyAdmin1235ReviewText = copyAdmin1235ReviewText;
