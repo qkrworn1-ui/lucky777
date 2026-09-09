@@ -12656,6 +12656,14 @@ function getUserJoinRound(userId) {
         } catch(e) {}
     }
 
+    // Also check window.currentUser if matching
+    if (!createdAt && typeof window !== 'undefined' && window.currentUser) {
+        const cId = (window.currentUser.userId || window.currentUser.id || '').toLowerCase().trim();
+        if (cId === cleanUser && window.currentUser.createdAt) {
+            createdAt = window.currentUser.createdAt;
+        }
+    }
+
     if (createdAt) {
         try {
             const dt = new Date(createdAt);
@@ -12665,7 +12673,7 @@ function getUserJoinRound(userId) {
                 if (diff >= 0) {
                     const weeks = Math.floor(diff / (7 * 24 * 60 * 60 * 1000));
                     const calcedRound = 2 + weeks;
-                    return Math.min(calcedRound, 1235);
+                    return Math.max(calcedRound, 1235);
                 }
             }
         } catch(e) {}
@@ -14948,7 +14956,7 @@ function renderAdmin1235ReviewModalContent() {
 
             if (userVal === 'all') {
                 const activeUsers = baseList.filter(u => rnd >= getUserJoinRound(u.id));
-                const targetUsers = activeUsers.length > 0 ? activeUsers : baseList;
+                const targetUsers = activeUsers;
                 targetUsers.forEach(u => {
                     const uRev = computeUser70RecommendationsReview(u.id, rnd);
                     rGames += uRev.totalGames;
@@ -15501,7 +15509,7 @@ async function shareAdmin1235ReviewToKakao() {
 
             if (userVal === 'all') {
                 const activeUsers = baseList.filter(u => rnd >= getUserJoinRound(u.id));
-                const targetUsers = activeUsers.length > 0 ? activeUsers : baseList;
+                const targetUsers = activeUsers;
                 targetUsers.forEach(u => {
                     const uRev = computeUser70RecommendationsReview(u.id, rnd);
                     rGames += uRev.totalGames;
@@ -15547,7 +15555,7 @@ ${roundLines.slice(0, 6).join('\n')}
 
         if (userVal === 'all') {
             const activeUsers = baseList.filter(u => targetRound >= getUserJoinRound(u.id));
-            const targetUsers = activeUsers.length > 0 ? activeUsers : baseList;
+            const targetUsers = activeUsers;
             targetUsers.forEach(u => {
                 const uRev = computeUser70RecommendationsReview(u.id, targetRound);
                 rGames += uRev.totalGames;
@@ -15883,7 +15891,7 @@ async function copyAdmin1235ReviewText() {
 
             if (userVal === 'all') {
                 const activeUsers = baseList.filter(u => rnd >= getUserJoinRound(u.id));
-                const targetUsers = activeUsers.length > 0 ? activeUsers : baseList;
+                const targetUsers = activeUsers;
                 targetUsers.forEach(u => {
                     const uRev = computeUser70RecommendationsReview(u.id, rnd);
                     rGames += uRev.totalGames;
@@ -15928,7 +15936,7 @@ ${roundLines.join('\n')}
 
         if (userVal === 'all') {
             const activeUsers = baseList.filter(u => targetRound >= getUserJoinRound(u.id));
-            const targetUsers = activeUsers.length > 0 ? activeUsers : baseList;
+            const targetUsers = activeUsers;
             targetUsers.forEach(u => {
                 const uRev = computeUser70RecommendationsReview(u.id, targetRound);
                 rGames += uRev.totalGames;
