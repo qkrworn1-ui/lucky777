@@ -126,22 +126,30 @@ export function getUserJoinRound(userId) {
 
     let createdAt = null;
 
+    // 0. Check in global memory cache
+    if (typeof window !== 'undefined' && window.__userCreatedMap && window.__userCreatedMap[cleanUser]) {
+        createdAt = window.__userCreatedMap[cleanUser];
+    }
+
     // 1. Check in state.allRegisteredUsersList
-    if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+    if (!createdAt && state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
         const uObj = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase().trim() === cleanUser);
-        if (uObj && uObj.createdAt) createdAt = uObj.createdAt;
+        if (uObj) createdAt = uObj.createdAt || uObj.created_at || uObj.registeredAt || uObj.joinDate;
     }
 
     // 2. Check in state.allUsersPurchasesMap
     if (!createdAt && state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
-        createdAt = state.allUsersPurchasesMap[cleanUser].createdAt;
+        const pObj = state.allUsersPurchasesMap[cleanUser];
+        createdAt = pObj.createdAt || pObj.created_at || pObj.registeredAt;
     }
 
-    // 3. Check in LocalStorage cache
+    // 3. Check in SessionStorage & LocalStorage caches
     if (!createdAt) {
         try {
-            const cached = localStorage.getItem(`lotto_user_created_${cleanUser}`);
-            if (cached) createdAt = cached;
+            createdAt = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`created_${cleanUser}`)) ||
+                        (typeof localStorage !== 'undefined' && localStorage.getItem(`created_${cleanUser}`)) ||
+                        (typeof localStorage !== 'undefined' && localStorage.getItem(`lotto_user_created_${cleanUser}`)) ||
+                        (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`lotto_user_created_${cleanUser}`));
         } catch(e) {}
     }
     if (!createdAt) {
@@ -151,35 +159,50 @@ export function getUserJoinRound(userId) {
                 const parsedList = JSON.parse(rawList);
                 if (Array.isArray(parsedList)) {
                     const found = parsedList.find(u => (u.id || '').toLowerCase().trim() === cleanUser);
-                    if (found && found.createdAt) createdAt = found.createdAt;
+                    if (found) createdAt = found.createdAt || found.created_at || found.registeredAt;
                 }
             }
         } catch(e) {}
     }
     if (!createdAt) {
         try {
-            const raw = localStorage.getItem('lotto_user_data');
+            const raw = localStorage.getItem('lotto_user_data') || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('lotto_user_data'));
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (parsed && (parsed.id || '').toLowerCase() === cleanUser && parsed.createdAt) {
-                    createdAt = parsed.createdAt;
+                if (parsed && (parsed.id || parsed.userId || '').toLowerCase().trim() === cleanUser) {
+                    createdAt = parsed.createdAt || parsed.created_at || (parsed.agreementDoc && parsed.agreementDoc.createdAt);
                 }
             }
         } catch(e) {}
     }
 
-    // Also check window.currentUser if matching
+    // 4. Check window.currentUser if matching
     if (!createdAt && typeof window !== 'undefined' && window.currentUser) {
         const cId = (window.currentUser.userId || window.currentUser.id || '').toLowerCase().trim();
-        if (cId === cleanUser && window.currentUser.createdAt) {
-            createdAt = window.currentUser.createdAt;
+        if (cId === cleanUser) {
+            createdAt = window.currentUser.createdAt || window.currentUser.created_at || (window.currentUser.agreementDoc && window.currentUser.agreementDoc.createdAt);
         }
     }
 
     if (createdAt) {
         try {
-            const dt = new Date(createdAt);
-            if (!isNaN(dt.getTime())) {
+            let dt = null;
+            if (typeof createdAt === 'object' && createdAt !== null) {
+                if (createdAt.seconds) {
+                    dt = new Date(createdAt.seconds * 1000);
+                } else if (typeof createdAt.toDate === 'function') {
+                    dt = createdAt.toDate();
+                } else if (createdAt._seconds) {
+                    dt = new Date(createdAt._seconds * 1000);
+                }
+            } else if (typeof createdAt === 'number') {
+                dt = new Date(createdAt < 1e11 ? createdAt * 1000 : createdAt);
+            } else if (typeof createdAt === 'string') {
+                const s = createdAt.trim();
+                dt = new Date(s);
+            }
+
+            if (dt && !isNaN(dt.getTime())) {
                 const firstCutoff = new Date('2002-12-07T20:00:00+09:00');
                 const diff = dt.getTime() - firstCutoff.getTime();
                 if (diff >= 0) {
@@ -461,7 +484,7 @@ export async function renderReviewTab() {
             reviewAdminViewingUser = authId;
             const existingAdminContainer = document.getElementById('reviewAdminUserFilterContainer');
             if (existingAdminContainer) existingAdminContainer.remove();
-            if ((typeof window !== 'undefined' && window.db || db) && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
+            if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
                 await fetchAllUsersPurchases();
             }
         } else {
@@ -541,7 +564,7 @@ export async function renderReviewTab() {
 
 /**
  * 🔄 복기 리포트 회차 드롭다운 옵션 동적 갱신
- * - 최상단에 1235회~최신회차 [전체 회차 조회] 옵션 기본 제공
+ * - 최상단에 가입회차~최신회차 [전체 회차 조회] 옵션 기본 제공
  * - 관리자(master/admin)가 'all'(전체 종합) 또는 본인 계정을 조회할 때는 1235회차부터 전체 노출
  * - 특정 회원을 조회하거나 일반 회원인 경우 가입 회차(joinRound)부터 노출
  */
@@ -588,7 +611,7 @@ export function updateReviewRoundSelector(selectedRound = null) {
         validSelected = (!isNaN(numVal) && numVal >= minReviewRound && numVal <= effectiveMax) ? numVal : effectiveMax;
     }
 
-    let optionsHtml = `<option value="all_rounds" ${validSelected === 'all_rounds' ? 'selected' : ''} style="font-weight:800; color:#fbbf24; background:#1e293b;">📊 [전체 회차 조회] 1235회 ~ ${effectiveMax}회 누적 종합 성과</option>`;
+    let optionsHtml = `<option value="all_rounds" ${validSelected === 'all_rounds' ? 'selected' : ''} style="font-weight:800; color:#fbbf24; background:#1e293b;">📊 [전체 회차 조회] ${minReviewRound}회 ~ ${effectiveMax}회 누적 종합 성과</option>`;
     for (let r = effectiveMax; r >= minReviewRound; r--) {
         const drawInfo = state.mergedHistory && state.mergedHistory[r] ? state.mergedHistory[r] : null;
         const dateStr = drawInfo && drawInfo.date ? ` (${drawInfo.date})` : '';
@@ -663,14 +686,17 @@ export function renderAllRoundsReviewDetail() {
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
 
-    // List of drawn rounds from latest down to 1235
+    const userJoinRound = (!isAdmin || !isAllUsers) ? getUserJoinRound(effectiveUserId) : 1235;
+    const minTargetRound = Math.max(1235, userJoinRound);
+
+    // List of drawn rounds from latest down to minTargetRound
     const validRounds = [];
-    for (let rnd = latestDrawnRound; rnd >= 1235; rnd--) {
+    for (let rnd = latestDrawnRound; rnd >= minTargetRound; rnd--) {
         if (state.mergedHistory && state.mergedHistory[rnd] && state.mergedHistory[rnd].numbers?.length === 6) {
             validRounds.push(rnd);
         }
     }
-    if (validRounds.length === 0) validRounds.push(1235);
+    if (validRounds.length === 0) validRounds.push(minTargetRound);
 
     let dispCombos = 0;
     let dispInvest = 0;
@@ -734,6 +760,8 @@ export function renderAllRoundsReviewDetail() {
 
             activeUsersForRound.forEach(u => {
                 const uRev = computeUser70RecommendationsReview(u.id, rnd);
+                if (uRev.isPreJoin) return;
+
                 rGames += uRev.totalGames;
                 rPrize += uRev.totalPrize;
                 rHits[1] += uRev.grandHits[1];
@@ -743,12 +771,14 @@ export function renderAllRoundsReviewDetail() {
                 rHits[5] += uRev.grandHits[5];
 
                 // Algo cumulative
-                algoSummaryMap['v4'].games += 10;
+                const v4Count = (uRev.v4Combos && uRev.v4Combos.length > 0) ? uRev.v4Combos.length : (uRev.totalGames > 0 ? 10 : 0);
+                algoSummaryMap['v4'].games += v4Count;
                 algoSummaryMap['v4'].prize += uRev.v4Eval.totalPrize;
                 algoSummaryMap['v4'].wins += uRev.v4Eval.totalWins;
                 for (let k = 1; k <= 5; k++) algoSummaryMap['v4'].hits[k] += uRev.v4Eval.hits[k];
 
-                algoSummaryMap['v3'].games += 10;
+                const v3Count = (uRev.v3Combos && uRev.v3Combos.length > 0) ? uRev.v3Combos.length : (uRev.totalGames > 0 ? 10 : 0);
+                algoSummaryMap['v3'].games += v3Count;
                 algoSummaryMap['v3'].prize += uRev.v3Eval.totalPrize;
                 algoSummaryMap['v3'].wins += uRev.v3Eval.totalWins;
                 for (let k = 1; k <= 5; k++) algoSummaryMap['v3'].hits[k] += uRev.v3Eval.hits[k];
@@ -756,7 +786,8 @@ export function renderAllRoundsReviewDetail() {
                 uRev.extraPackEvals.forEach(ep => {
                     const eKey = `extra_${ep.packId}`;
                     if (algoSummaryMap[eKey]) {
-                        algoSummaryMap[eKey].games += 10;
+                        const epCount = (ep.combos && ep.combos.length > 0) ? ep.combos.length : (uRev.totalGames > 0 ? 10 : 0);
+                        algoSummaryMap[eKey].games += epCount;
                         algoSummaryMap[eKey].prize += ep.evalData.totalPrize;
                         algoSummaryMap[eKey].wins += ep.evalData.totalWins;
                         for (let k = 1; k <= 5; k++) algoSummaryMap[eKey].hits[k] += ep.evalData.hits[k];
@@ -833,6 +864,8 @@ export function renderAllRoundsReviewDetail() {
             const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
             const uRev = computeUser70RecommendationsReview(effectiveUserId, rnd);
 
+            if (uRev.isPreJoin) return;
+
             // Accumulate
             dispHits[1] += uRev.grandHits[1];
             dispHits[2] += uRev.grandHits[2];
@@ -843,12 +876,14 @@ export function renderAllRoundsReviewDetail() {
             dispCombos += uRev.totalGames;
 
             // Algo cumulative
-            algoSummaryMap['v4'].games += 10;
+            const v4Count = (uRev.v4Combos && uRev.v4Combos.length > 0) ? uRev.v4Combos.length : (uRev.totalGames > 0 ? 10 : 0);
+            algoSummaryMap['v4'].games += v4Count;
             algoSummaryMap['v4'].prize += uRev.v4Eval.totalPrize;
             algoSummaryMap['v4'].wins += uRev.v4Eval.totalWins;
             for (let k = 1; k <= 5; k++) algoSummaryMap['v4'].hits[k] += uRev.v4Eval.hits[k];
 
-            algoSummaryMap['v3'].games += 10;
+            const v3Count = (uRev.v3Combos && uRev.v3Combos.length > 0) ? uRev.v3Combos.length : (uRev.totalGames > 0 ? 10 : 0);
+            algoSummaryMap['v3'].games += v3Count;
             algoSummaryMap['v3'].prize += uRev.v3Eval.totalPrize;
             algoSummaryMap['v3'].wins += uRev.v3Eval.totalWins;
             for (let k = 1; k <= 5; k++) algoSummaryMap['v3'].hits[k] += uRev.v3Eval.hits[k];
@@ -856,7 +891,8 @@ export function renderAllRoundsReviewDetail() {
             uRev.extraPackEvals.forEach(ep => {
                 const eKey = `extra_${ep.packId}`;
                 if (algoSummaryMap[eKey]) {
-                    algoSummaryMap[eKey].games += 10;
+                    const epCount = (ep.combos && ep.combos.length > 0) ? ep.combos.length : (uRev.totalGames > 0 ? 10 : 0);
+                    algoSummaryMap[eKey].games += epCount;
                     algoSummaryMap[eKey].prize += ep.evalData.totalPrize;
                     algoSummaryMap[eKey].wins += ep.evalData.totalWins;
                     for (let k = 1; k <= 5; k++) algoSummaryMap[eKey].hits[k] += ep.evalData.hits[k];
@@ -911,7 +947,7 @@ export function renderAllRoundsReviewDetail() {
         } else {
             const userRealName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || effectiveUserId;
             const userBadge = isAdmin ? `👤 [${effectiveUserId}] (${userRealName}) 회원` : `<i class="fa-solid fa-user-check"></i> 나의 맞춤 (${userRealName})`;
-            reviewStatsHeaderTitle.innerHTML = `<i class="fa-solid fa-chart-line"></i> 📊 ${userBadge} 제 1235회 ~ 제 ${latestDrawnRound}회 (${validRounds.length}개 회차) 누적 추천 성과 <span style="font-size: 0.8rem; color: #34d399; font-weight: normal; margin-left: 8px;">(총 ${dispCombos.toLocaleString()}게임 기준)</span>`;
+            reviewStatsHeaderTitle.innerHTML = `<i class="fa-solid fa-chart-line"></i> 📊 ${userBadge} 제 ${minTargetRound}회 ~ 제 ${latestDrawnRound}회 (${validRounds.length}개 회차) 누적 추천 성과 <span style="font-size: 0.8rem; color: #34d399; font-weight: normal; margin-left: 8px;">(총 ${dispCombos.toLocaleString()}게임 기준)</span>`;
         }
     }
 
@@ -991,7 +1027,7 @@ export function renderAllRoundsReviewDetail() {
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; white-space: nowrap;">
-                        <i class="fa-solid fa-chart-pie"></i> 1235회 ~ ${latestDrawnRound}회 전회차 누적 복기 리포트
+                        <i class="fa-solid fa-chart-pie"></i> ${minTargetRound}회 ~ ${latestDrawnRound}회 전회차 누적 복기 리포트
                     </span>
                     <span style="font-size: 0.78rem; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px; border-radius: 12px; font-weight: 700;">
                         총 ${validRounds.length}개 회차 전수 집계
@@ -1004,7 +1040,7 @@ export function renderAllRoundsReviewDetail() {
             </div>
             <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
                 <i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 4px;"></i>
-                <strong>안내:</strong> 1235회부터 최근 회차(${latestDrawnRound}회)까지 각 회차별 확정 추천번호(70게임)와 동행복권 공식 추첨번호를 1:1 전수 대조하여 누적 적중 및 당첨 성과를 종합 분석한 리포트입니다. 특정 회차를 상세 복기하시려면 표의 <strong>[상세 복기]</strong> 버튼이나 상단 회차 선택기를 이용하세요.
+                <strong>안내:</strong> ${minTargetRound}회부터 최근 회차(${latestDrawnRound}회)까지 각 회차별 확정 추천번호(70게임)와 동행복권 공식 추첨번호를 1:1 전수 대조하여 누적 적중 및 당첨 성과를 종합 분석한 리포트입니다. 특정 회차를 상세 복기하시려면 표의 <strong>[상세 복기]</strong> 버튼이나 상단 회차 선택기를 이용하세요.
             </div>
         </div>
     `;

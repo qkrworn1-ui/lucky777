@@ -418,6 +418,37 @@ export function setUserNameCache(authId, realName) {
     } catch(e) {}
 }
 
+export function setUserCreatedCache(authId, createdAt) {
+    try {
+        if (authId && createdAt) {
+            const cleanId = authId.toLowerCase().trim();
+            let dateStr = '';
+            if (typeof createdAt === 'object' && createdAt !== null) {
+                if (createdAt.seconds) {
+                    dateStr = new Date(createdAt.seconds * 1000).toISOString();
+                } else if (typeof createdAt.toDate === 'function') {
+                    dateStr = createdAt.toDate().toISOString();
+                } else if (createdAt._seconds) {
+                    dateStr = new Date(createdAt._seconds * 1000).toISOString();
+                } else {
+                    dateStr = JSON.stringify(createdAt);
+                }
+            } else if (typeof createdAt === 'number') {
+                dateStr = new Date(createdAt < 1e11 ? createdAt * 1000 : createdAt).toISOString();
+            } else {
+                dateStr = String(createdAt).trim();
+            }
+            if (dateStr) {
+                window.sessionStorage.setItem(`created_${cleanId}`, dateStr);
+                window.localStorage.setItem(`created_${cleanId}`, dateStr);
+                window.localStorage.setItem(`lotto_user_created_${cleanId}`, dateStr);
+                if (!window.__userCreatedMap) window.__userCreatedMap = {};
+                window.__userCreatedMap[cleanId] = dateStr;
+            }
+        }
+    } catch(e) {}
+}
+
 export function getUserRealName(authId, userData = null) {
     if (!authId) return '';
     const cleanId = authId.toLowerCase().trim();
@@ -426,6 +457,7 @@ export function getUserRealName(authId, userData = null) {
     }
     if (userData && userData.realName) {
         setUserNameCache(cleanId, userData.realName);
+        if (userData.createdAt) setUserCreatedCache(cleanId, userData.createdAt);
         return userData.realName;
     }
     if (typeof window !== 'undefined' && window.__userNames && window.__userNames[cleanId]) {
@@ -553,6 +585,7 @@ if (typeof window !== 'undefined') {
     window.isPermanentUser = isPermanentUser;
     window.setIsPermanentCache = setIsPermanentCache;
     window.setUserNameCache = setUserNameCache;
+    window.setUserCreatedCache = setUserCreatedCache;
     window.getUserRealName = getUserRealName;
     window.setUserPermissionsCache = setUserPermissionsCache;
     window.getUserPermissions = getUserPermissions;
@@ -609,6 +642,9 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                     setIsPermanentCache(authId, isPerm);
                     if (uData.realName) {
                         setUserNameCache(authId, uData.realName);
+                    }
+                    if (uData.createdAt || (uData.agreementDoc && uData.agreementDoc.createdAt)) {
+                        setUserCreatedCache(authId, uData.createdAt || uData.agreementDoc.createdAt);
                     }
                     setUserPermissionsCache(authId, {
                         allowLotto: isUserAdmin || uData.allowLotto !== false,
