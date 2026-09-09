@@ -971,7 +971,7 @@ function getStandardAgreementTerms(now = new Date()) {
         {
             termId: 'term_weekly',
             title: '[필수 2] 주간 5게임 실구매 인증 혜택(통계 분산 팩 무료) 및 복권 100% 개별 소유권 정책',
-            fullContent: '제1조 (실구매 인증 혜택) 회원은 매주 추천받은 번호 중 최소 5게임 이상을 본인 명의와 비용으로 동행복권 공식 판매처에서 직접 구매하고 영수증 QR코드를 시스템에 등록할 수 있습니다. 당해 회차 실구매를 인증한 회원에게는 통계 분산 커버리지 모델, 기댓값(EV) 가중 모델 등 추가 5개 퀀트 팩(50게임) 및 시뮬레이션 연구소 무료 이용 혜택이 즉시 활성화됩니다.\n제2조 (구매대행 부인 및 개별 단독 소유) 본 서비스는 복권 구매대행이나 공동구매 펀드가 아니며, 회원이 직접 구매하여 등록한 실물 복권의 당첨금 소유권은 해당 회원 본인에게 100% 단독 귀속됩니다.\n제3조 (영구회원 혜택) 영구 사용 회원은 실구매 등록 여부와 무관하게 모든 분석 메뉴가 평생 무제한 무료 제공됩니다.',
+            fullContent: '제1조 (실구매 인증 혜택) 회원은 매주 추천받은 번호 중 최소 5게임 이상을 본인 명의와 비용으로 동행복권 공식 판매처에서 직접 구매하고 영수증 QR코드를 시스템에 등록할 수 있습니다. 당해 회차 실구매를 인증한 회원에게는 통계 분산 커버리지 모델, 기댓값(EV) 가중 모델 등 추가 5개 퀀트 팩(50게임) 및 시뮬레이션 연구소 무료 이용 혜택이 즉시 활성화됩니다.\n제2조 (구매대행 부인 및 개별 단독 소유) 본 서비스는 복권 구매대행이나 공동구매 펀드가 아니며, 회원이 직접 구매하여 등록한 실물 복권의 당첨금 소유권은 해당 회원 본인에게 100% 단독 귀속됩니다.',
             isAgreed: true,
             agreedAt: agreedAt
         },
@@ -5739,6 +5739,7 @@ const state = {
     simPieChartInstance: null,
     simLineChartInstance: null,
     reviewPrizeChartInstance: null,
+    reviewAlgoBarChartInstance: null,
     confirmedPrizeChartInstance: null,
     confirmedTrendChartInstance: null,
 };
@@ -12618,9 +12619,14 @@ async function renderReviewTab() {
             reviewRoundSelector.parentNode.replaceChild(newSelector, reviewRoundSelector);
 
             newSelector.addEventListener('change', (e) => {
-                const sel = parseInt(e.target.value);
-                if (!isNaN(sel)) {
-                    renderReviewDetail(sel);
+                const sel = e.target.value;
+                if (sel === 'all_rounds') {
+                    renderReviewDetail('all_rounds');
+                } else {
+                    const parsedNum = parseInt(sel);
+                    if (!isNaN(parsedNum)) {
+                        renderReviewDetail(parsedNum);
+                    }
                 }
             });
         }
@@ -12661,7 +12667,7 @@ async function renderReviewTab() {
         }
 
         const actualRoundSel = document.getElementById('reviewRoundSelector');
-        const selectedR = actualRoundSel && actualRoundSel.value ? parseInt(actualRoundSel.value) : validSelectedRound;
+        const selectedR = actualRoundSel && actualRoundSel.value ? (actualRoundSel.value === 'all_rounds' ? 'all_rounds' : parseInt(actualRoundSel.value)) : validSelectedRound;
         renderReviewDetail(selectedR);
 
     } catch(e) {
@@ -12671,6 +12677,7 @@ async function renderReviewTab() {
 
 /**
  * 🔄 복기 리포트 회차 드롭다운 옵션 동적 갱신
+ * - 최상단에 1235회~최신회차 [전체 회차 조회] 옵션 기본 제공
  * - 관리자(master/admin)가 'all'(전체 종합) 또는 본인 계정을 조회할 때는 1235회차부터 전체 노출
  * - 특정 회원을 조회하거나 일반 회원인 경우 가입 회차(joinRound)부터 노출
  */
@@ -12693,8 +12700,6 @@ function updateReviewRoundSelector(selectedRound = null) {
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
 
-    // 🔒 일반 회원이 로그인했거나 관리자가 특정 회원을 조회 중일 때, 회원 가입 이전 회차는 선택 드롭다운에서 제외
-    // 단, 관리자가 전체('all') 또는 관리자 본인(master/admin)을 조회할 때는 1235회차부터 전체 노출!
     let minReviewRound = 1235;
     if (!isAdmin) {
         minReviewRound = Math.max(1235, getUserJoinRound(cleanAuth));
@@ -12710,10 +12715,16 @@ function updateReviewRoundSelector(selectedRound = null) {
 
     const effectiveMax = Math.max(minReviewRound, latestDrawnRound);
 
-    const currentVal = selectedRound || (reviewRoundSelector.value ? parseInt(reviewRoundSelector.value) : null);
-    const validSelected = (currentVal && currentVal >= minReviewRound && currentVal <= effectiveMax) ? currentVal : effectiveMax;
+    const currentVal = selectedRound !== null ? selectedRound : (reviewRoundSelector.value || null);
+    let validSelected;
+    if (currentVal === 'all_rounds' || String(currentVal) === 'all_rounds') {
+        validSelected = 'all_rounds';
+    } else {
+        const numVal = parseInt(currentVal);
+        validSelected = (!isNaN(numVal) && numVal >= minReviewRound && numVal <= effectiveMax) ? numVal : effectiveMax;
+    }
 
-    let optionsHtml = '';
+    let optionsHtml = `<option value="all_rounds" ${validSelected === 'all_rounds' ? 'selected' : ''} style="font-weight:800; color:#fbbf24; background:#1e293b;">📊 [전체 회차 조회] 1235회 ~ ${effectiveMax}회 누적 종합 성과</option>`;
     for (let r = effectiveMax; r >= minReviewRound; r--) {
         const drawInfo = state.mergedHistory && state.mergedHistory[r] ? state.mergedHistory[r] : null;
         const dateStr = drawInfo && drawInfo.date ? ` (${drawInfo.date})` : '';
@@ -12738,14 +12749,1024 @@ if (typeof window !== 'undefined') {
         const latestDrawn = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
             : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
-        const r = sel && sel.value ? parseInt(sel.value) : latestDrawn;
+        const r = sel && sel.value ? (sel.value === 'all_rounds' ? 'all_rounds' : parseInt(sel.value)) : latestDrawn;
         renderReviewDetail(r);
     };
 }
 
-function renderReviewDetail(r) {
+function selectSpecificReviewRound(roundNum) {
+    const sel = document.getElementById('reviewRoundSelector');
+    if (sel) {
+        sel.value = String(roundNum);
+    }
+    renderReviewDetail(roundNum);
+    setTimeout(() => {
+        const c = document.getElementById('reviewMatchingContainer');
+        if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+}
+
+/**
+ * 📊 1235회차부터 최신회차까지 전회차 누적 복기 리포트 렌더링
+ */
+function renderAllRoundsReviewDetail() {
     const reviewMatchingContainer = document.getElementById('reviewMatchingContainer');
     if (!reviewMatchingContainer) return;
+
+    let rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    if (typeof rawAuth === 'string' && rawAuth.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(rawAuth);
+            rawAuth = parsed.userid || parsed.userId || rawAuth;
+        } catch(e) {}
+    }
+    const authId = (rawAuth || '').trim();
+    const cleanAuth = authId.toLowerCase();
+    const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
+    if (!isAdmin) {
+        reviewAdminViewingUser = authId;
+    }
+    const isAllUsers = (isAdmin && (!reviewAdminViewingUser || reviewAdminViewingUser === 'all'));
+    const effectiveUserId = (isAdmin && reviewAdminViewingUser && reviewAdminViewingUser !== 'all') ? reviewAdminViewingUser : authId;
+
+    const historyRounds = Object.keys(state.mergedHistory || {})
+        .map(Number)
+        .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
+        .sort((a, b) => b - a);
+
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
+    const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
+        ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
+        : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
+
+    // List of drawn rounds from latest down to 1235
+    const validRounds = [];
+    for (let rnd = latestDrawnRound; rnd >= 1235; rnd--) {
+        if (state.mergedHistory && state.mergedHistory[rnd] && state.mergedHistory[rnd].numbers?.length === 6) {
+            validRounds.push(rnd);
+        }
+    }
+    if (validRounds.length === 0) validRounds.push(1235);
+
+    let dispCombos = 0;
+    let dispInvest = 0;
+    let dispPrize = 0;
+    let dispHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let dispRoi = 0;
+
+    let adminRoundSummaryList = [];
+    let adminMemberSummaryList = [];
+    let userRoundSummaryList = [];
+
+    // 7대 알고리즘 메타데이터 및 누적 통계 객체
+    const algoPacks = [
+        { id: 'v4', name: 'V4.0 행동경제학 포트폴리오', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6' },
+        { id: 'v3', name: 'V3.0 하이브리드 정통 수학', badge: 'HYBRID MATH', color: '#3b82f6' },
+        { id: 'extra_1', name: '추가1팩: 고주기 빈도 앙상블', badge: 'EXTRA 1', color: '#10b981' },
+        { id: 'extra_2', name: '추가2팩: 저주기 미출 회귀', badge: 'EXTRA 2', color: '#f59e0b' },
+        { id: 'extra_3', name: '추가3팩: AC 밸런스 퀀트', badge: 'EXTRA 3', color: '#8b5cf6' },
+        { id: 'extra_4', name: '추가4팩: 구간 연속 대칭', badge: 'EXTRA 4', color: '#06b6d4' },
+        { id: 'extra_5', name: '추가5팩: 극한 홀짝 가중치', badge: 'EXTRA 5', color: '#ec4899' }
+    ];
+    const algoSummaryMap = {};
+    algoPacks.forEach(p => {
+        algoSummaryMap[p.id] = { ...p, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, prize: 0, games: 0, wins: 0 };
+    });
+
+    if (isAdmin && isAllUsers) {
+        // --- 1. ADMIN + ALL USERS AGGREGATION ---
+        const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
+        const registeredUsers = rawUsers.filter(u => {
+            const uId = (u.id || '').trim().toLowerCase();
+            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+        });
+        const baseList = (registeredUsers.length > 0 ? registeredUsers : [{ id: authId, name: '관리자' }]);
+
+        const memberAggMap = {};
+        baseList.forEach(u => {
+            memberAggMap[u.id] = {
+                userId: u.id,
+                realName: u.name || (typeof getUserRealName === 'function' ? getUserRealName(u.id) : '') || u.id,
+                participatedRounds: 0,
+                totalGames: 0,
+                hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+                totalPrize: 0,
+                totalWins: 0,
+                totalInvest: 0,
+                roi: 0,
+                realPurchasedRounds: 0,
+                realPurchasedGames: 0
+            };
+        });
+
+        validRounds.forEach(rnd => {
+            const actualDraw = state.mergedHistory ? state.mergedHistory[rnd] : null;
+            const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
+            
+            // Active users joined on or before rnd
+            const activeUsersForRound = baseList.filter(u => rnd >= getUserJoinRound(u.id));
+            let rGames = 0, rPrize = 0;
+            let rHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+            activeUsersForRound.forEach(u => {
+                const uRev = computeUser70RecommendationsReview(u.id, rnd);
+                rGames += uRev.totalGames;
+                rPrize += uRev.totalPrize;
+                rHits[1] += uRev.grandHits[1];
+                rHits[2] += uRev.grandHits[2];
+                rHits[3] += uRev.grandHits[3];
+                rHits[4] += uRev.grandHits[4];
+                rHits[5] += uRev.grandHits[5];
+
+                // Algo cumulative
+                algoSummaryMap['v4'].games += 10;
+                algoSummaryMap['v4'].prize += uRev.v4Eval.totalPrize;
+                algoSummaryMap['v4'].wins += uRev.v4Eval.totalWins;
+                for (let k = 1; k <= 5; k++) algoSummaryMap['v4'].hits[k] += uRev.v4Eval.hits[k];
+
+                algoSummaryMap['v3'].games += 10;
+                algoSummaryMap['v3'].prize += uRev.v3Eval.totalPrize;
+                algoSummaryMap['v3'].wins += uRev.v3Eval.totalWins;
+                for (let k = 1; k <= 5; k++) algoSummaryMap['v3'].hits[k] += uRev.v3Eval.hits[k];
+
+                uRev.extraPackEvals.forEach(ep => {
+                    const eKey = `extra_${ep.packId}`;
+                    if (algoSummaryMap[eKey]) {
+                        algoSummaryMap[eKey].games += 10;
+                        algoSummaryMap[eKey].prize += ep.evalData.totalPrize;
+                        algoSummaryMap[eKey].wins += ep.evalData.totalWins;
+                        for (let k = 1; k <= 5; k++) algoSummaryMap[eKey].hits[k] += ep.evalData.hits[k];
+                    }
+                });
+
+                // Member aggregate
+                const mAgg = memberAggMap[u.id];
+                if (mAgg) {
+                    mAgg.participatedRounds++;
+                    mAgg.totalGames += uRev.totalGames;
+                    mAgg.totalPrize += uRev.totalPrize;
+                    mAgg.totalWins += uRev.totalWins;
+                    for (let k = 1; k <= 5; k++) mAgg.hits[k] += uRev.grandHits[k];
+                }
+            });
+
+            const rInvest = rGames * 1000;
+            const rRoi = rInvest > 0 ? (rPrize / rInvest) * 100 : 0;
+            const rWins = rHits[1] + rHits[2] + rHits[3] + rHits[4] + rHits[5];
+
+            adminRoundSummaryList.push({
+                roundNum: rnd,
+                date: drawDate,
+                memberCount: activeUsersForRound.length,
+                totalGames: rGames,
+                totalInvest: rInvest,
+                totalPrize: rPrize,
+                totalWins: rWins,
+                hits: rHits,
+                roi: rRoi
+            });
+
+            dispHits[1] += rHits[1];
+            dispHits[2] += rHits[2];
+            dispHits[3] += rHits[3];
+            dispHits[4] += rHits[4];
+            dispHits[5] += rHits[5];
+            dispPrize += rPrize;
+            dispCombos += rGames;
+        });
+
+        // Calculate member totals and real purchases
+        baseList.forEach(u => {
+            const mAgg = memberAggMap[u.id];
+            if (mAgg) {
+                mAgg.totalInvest = mAgg.totalGames * 1000;
+                mAgg.roi = mAgg.totalInvest > 0 ? (mAgg.totalPrize / mAgg.totalInvest) * 100 : 0;
+
+                const userLedger = (state.allUsersPurchasesMap && state.allUsersPurchasesMap[u.id] && state.allUsersPurchasesMap[u.id].ledger) ? state.allUsersPurchasesMap[u.id].ledger : {};
+                let realPurchasedRnds = 0, realPurchasedGms = 0;
+                validRounds.forEach(r => {
+                    const rReceipts = userLedger[r] || [];
+                    if (rReceipts.length > 0) {
+                        realPurchasedRnds++;
+                        realPurchasedGms += rReceipts.reduce((acc, cur) => acc + (cur && Array.isArray(cur.combos) ? cur.combos.length : 0), 0);
+                    }
+                });
+                mAgg.realPurchasedRounds = realPurchasedRnds;
+                mAgg.realPurchasedGames = realPurchasedGms;
+                adminMemberSummaryList.push(mAgg);
+            }
+        });
+
+        adminMemberSummaryList.sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins || b.totalGames - a.totalGames);
+
+        dispInvest = dispCombos * 1000;
+        dispRoi = dispInvest > 0 ? (dispPrize / dispInvest) * 100 : 0;
+
+    } else {
+        // --- 2. SINGLE USER AGGREGATION (Regular User or Admin viewing specific user) ---
+        validRounds.forEach(rnd => {
+            const actualDraw = state.mergedHistory ? state.mergedHistory[rnd] : null;
+            const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
+            const uRev = computeUser70RecommendationsReview(effectiveUserId, rnd);
+
+            // Accumulate
+            dispHits[1] += uRev.grandHits[1];
+            dispHits[2] += uRev.grandHits[2];
+            dispHits[3] += uRev.grandHits[3];
+            dispHits[4] += uRev.grandHits[4];
+            dispHits[5] += uRev.grandHits[5];
+            dispPrize += uRev.totalPrize;
+            dispCombos += uRev.totalGames;
+
+            // Algo cumulative
+            algoSummaryMap['v4'].games += 10;
+            algoSummaryMap['v4'].prize += uRev.v4Eval.totalPrize;
+            algoSummaryMap['v4'].wins += uRev.v4Eval.totalWins;
+            for (let k = 1; k <= 5; k++) algoSummaryMap['v4'].hits[k] += uRev.v4Eval.hits[k];
+
+            algoSummaryMap['v3'].games += 10;
+            algoSummaryMap['v3'].prize += uRev.v3Eval.totalPrize;
+            algoSummaryMap['v3'].wins += uRev.v3Eval.totalWins;
+            for (let k = 1; k <= 5; k++) algoSummaryMap['v3'].hits[k] += uRev.v3Eval.hits[k];
+
+            uRev.extraPackEvals.forEach(ep => {
+                const eKey = `extra_${ep.packId}`;
+                if (algoSummaryMap[eKey]) {
+                    algoSummaryMap[eKey].games += 10;
+                    algoSummaryMap[eKey].prize += ep.evalData.totalPrize;
+                    algoSummaryMap[eKey].wins += ep.evalData.totalWins;
+                    for (let k = 1; k <= 5; k++) algoSummaryMap[eKey].hits[k] += ep.evalData.hits[k];
+                }
+            });
+
+            // Check real purchases for this user in this round
+            const myPurchases = (getHistoricalTop10Combinations(rnd) || []).filter(p => {
+                const pUser = (p.user || p.userId || '').trim().toLowerCase();
+                return pUser === effectiveUserId.trim().toLowerCase();
+            });
+            const realGames = myPurchases.reduce((acc, cur) => acc + (cur && Array.isArray(cur.combos) ? cur.combos.length : 0), 0);
+
+            userRoundSummaryList.push({
+                roundNum: rnd,
+                date: drawDate,
+                isPreJoin: uRev.isPreJoin,
+                joinRound: uRev.joinRound,
+                totalGames: uRev.totalGames,
+                totalInvest: uRev.totalInvest,
+                totalPrize: uRev.totalPrize,
+                totalWins: uRev.totalWins,
+                hits: uRev.grandHits,
+                roi: uRev.roi,
+                v4Wins: uRev.v4Eval.totalWins,
+                v3Wins: uRev.v3Eval.totalWins,
+                realPurchasedGames: realGames
+            });
+        });
+
+        dispInvest = dispCombos * 1000;
+        dispRoi = dispInvest > 0 ? (dispPrize / dispInvest) * 100 : 0;
+    }
+
+    // --- Update Top Header Metrics ---
+    const reviewStatsHeaderTitle = document.getElementById('reviewStatsHeaderTitle');
+    const reviewTotalCombosLabel = document.getElementById('reviewTotalCombosLabel');
+    const reviewTotalInvestLabel = document.getElementById('reviewTotalInvestLabel');
+    const reviewTotalCombos = document.getElementById('reviewTotalCombos');
+    const reviewTotalInvest = document.getElementById('reviewTotalInvest');
+    const reviewTotalPrize = document.getElementById('reviewTotalPrize');
+    const reviewHit1 = document.getElementById('reviewHit1');
+    const reviewHit2 = document.getElementById('reviewHit2');
+    const reviewHit3 = document.getElementById('reviewHit3');
+    const reviewHit4 = document.getElementById('reviewHit4');
+    const reviewHit5 = document.getElementById('reviewHit5');
+    const reviewTotalRoi = document.getElementById('reviewTotalRoi');
+
+    if (reviewStatsHeaderTitle) {
+        if (isAllUsers) {
+            reviewStatsHeaderTitle.innerHTML = `<i class="fa-solid fa-chart-line"></i> 📊 제 1235회 ~ 제 ${latestDrawnRound}회 (${validRounds.length}개 회차) 전체 회원 추천 누적 성과 <span style="font-size: 0.8rem; color: #fbbf24; font-weight: normal; margin-left: 8px;">(총 ${adminMemberSummaryList.length}명 / ${dispCombos.toLocaleString()}게임 전수 종합)</span>`;
+        } else {
+            const userRealName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || effectiveUserId;
+            const userBadge = isAdmin ? `👤 [${effectiveUserId}] (${userRealName}) 회원` : `<i class="fa-solid fa-user-check"></i> 나의 맞춤 (${userRealName})`;
+            reviewStatsHeaderTitle.innerHTML = `<i class="fa-solid fa-chart-line"></i> 📊 ${userBadge} 제 1235회 ~ 제 ${latestDrawnRound}회 (${validRounds.length}개 회차) 누적 추천 성과 <span style="font-size: 0.8rem; color: #34d399; font-weight: normal; margin-left: 8px;">(총 ${dispCombos.toLocaleString()}게임 기준)</span>`;
+        }
+    }
+
+    if (reviewTotalCombosLabel) {
+        reviewTotalCombosLabel.textContent = isAllUsers ? `전체 누적 조합 수 (${validRounds.length}개 회차)` : `누적 추천 조합 (${validRounds.length}개 회차)`;
+    }
+    if (reviewTotalInvestLabel) {
+        reviewTotalInvestLabel.textContent = isAllUsers ? '전체 추천 누적 투자금' : '추천 누적 투자금';
+    }
+
+    if (reviewTotalCombos) reviewTotalCombos.textContent = `${dispCombos.toLocaleString()} 조합`;
+    if (reviewTotalInvest) reviewTotalInvest.textContent = `${dispInvest.toLocaleString()} 원`;
+    if (reviewTotalPrize) reviewTotalPrize.textContent = `${dispPrize.toLocaleString()} 원`;
+
+    if (reviewHit1) reviewHit1.textContent = `${dispHits[1]} 회`;
+    if (reviewHit2) reviewHit2.textContent = `${dispHits[2]} 회`;
+    if (reviewHit3) reviewHit3.textContent = `${dispHits[3]} 회`;
+    if (reviewHit4) reviewHit4.textContent = `${dispHits[4]} 회`;
+    if (reviewHit5) reviewHit5.textContent = `${dispHits[5]} 회`;
+
+    if (reviewTotalRoi) {
+        reviewTotalRoi.textContent = `${dispRoi.toFixed(1)}%`;
+        reviewTotalRoi.style.color = dispRoi >= 100 ? '#10b981' : (dispRoi > 0 ? '#fbbf24' : '#cbd5e1');
+    }
+
+    // Update Doughnut Chart
+    if (state.reviewPrizeChartInstance) {
+        state.reviewPrizeChartInstance.destroy();
+    }
+    const canvas = document.getElementById('reviewPrizeChart');
+    if (canvas && typeof canvas.getContext === 'function' && typeof window.Chart === 'function') {
+        const ctx = canvas.getContext('2d');
+        const hitArr = [dispHits[1], dispHits[2], dispHits[3], dispHits[4], dispHits[5]];
+        const totalWins = hitArr.reduce((a, b) => a + b, 0);
+
+        state.reviewPrizeChartInstance = new window.Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['1등', '2등', '3등', '4등', '5등'],
+                datasets: [{
+                    data: totalWins > 0 ? hitArr : [0, 0, 0, 0, 1],
+                    backgroundColor: ['#fbc400', '#69c8f2', '#ff7272', '#a0aec0', '#b0d840'],
+                    borderWidth: 1,
+                    borderColor: 'rgba(15,23,42,0.8)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { color: '#cbd5e1', font: { size: 9 }, boxWidth: 10 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                if (totalWins === 0) return '당첨 내역 없음';
+                                const val = context.raw || 0;
+                                const pct = ((val / totalWins) * 100).toFixed(1);
+                                return `${context.label}: ${val}회 (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+
+    // --- Build Matching Container HTML ---
+    let html = `<div style="margin-bottom: 24px; padding: 16px; background: rgba(15, 23, 42, 0.7); border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 8px 24px rgba(0,0,0,0.3);">`;
+
+    // 1. All-Rounds Banner
+    html += `
+        <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1.5px solid rgba(251, 191, 36, 0.45); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; white-space: nowrap;">
+                        <i class="fa-solid fa-chart-pie"></i> 1235회 ~ ${latestDrawnRound}회 전회차 누적 복기 리포트
+                    </span>
+                    <span style="font-size: 0.78rem; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px; border-radius: 12px; font-weight: 700;">
+                        총 ${validRounds.length}개 회차 전수 집계
+                    </span>
+                    ${isAdmin ? (isAllUsers ? `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">🌐 전체 회원 누적 성과 종합 모드</span>` : `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">👤 [${effectiveUserId}] 회원 전회차 누적</span>`) : `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;"><i class="fa-solid fa-user-check"></i> 나의 전회차 맞춤 추천 누적 성과</span>`}
+                </div>
+                <div style="font-size: 0.85rem; color: #cbd5e1;">
+                    누적 당첨 총액: <strong style="color: #34d399; font-size: 1.05rem;">+${dispPrize.toLocaleString()}원</strong> <span style="font-size: 0.8rem; color: ${dispRoi >= 100 ? '#10b981' : '#fbbf24'}; font-weight: 800;">(수익률 ${dispRoi.toFixed(1)}%)</span>
+                </div>
+            </div>
+            <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+                <i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 4px;"></i>
+                <strong>안내:</strong> 1235회부터 최근 회차(${latestDrawnRound}회)까지 각 회차별 확정 추천번호(70게임)와 동행복권 공식 추첨번호를 1:1 전수 대조하여 누적 적중 및 당첨 성과를 종합 분석한 리포트입니다. 특정 회차를 상세 복기하시려면 표의 <strong>[상세 복기]</strong> 버튼이나 상단 회차 선택기를 이용하세요.
+            </div>
+        </div>
+    `;
+
+    // Admin Back Button if viewing specific user in all_rounds mode
+    if (isAdmin && !isAllUsers) {
+        html += `
+            <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 10px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.82rem; padding: 3px 8px; border-radius: 6px; font-weight: 800;">
+                        <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 전회차 누적 복기 중
+                    </span>
+                    <span style="font-size: 0.78rem; color: #cbd5e1;">
+                        (총 <strong>${dispHits[1] + dispHits[2] + dispHits[3] + dispHits[4] + dispHits[5]}게임</strong> 적중 · 누적 당첨금 <strong style="color: #34d399;">+${dispPrize.toLocaleString()}원</strong>)
+                    </span>
+                </div>
+                <button type="button" onclick="window.changeReviewAdminUser && window.changeReviewAdminUser('all')" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.25)); border: 1.5px solid #f59e0b; color: #fbbf24; padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                    <i class="fa-solid fa-arrow-left"></i> 전체 회원 종합 목록으로 돌아가기
+                </button>
+            </div>
+        `;
+    }
+
+    // 2. 7대 알고리즘 랭킹 산정 (1순위: 당첨금, 2순위: 1등>2등>3등>4등>5등 건수, 3순위: 총 당첨건수)
+    const rankedAlgos = [...algoPacks].map(pack => {
+        const aData = algoSummaryMap[pack.id];
+        const aRoi = (aData.games * 1000) > 0 ? (aData.prize / (aData.games * 1000)) * 100 : 0;
+        return {
+            ...pack,
+            ...aData,
+            roi: aRoi
+        };
+    }).sort((a, b) => {
+        if (b.prize !== a.prize) return b.prize - a.prize;
+        if (b.hits[1] !== a.hits[1]) return b.hits[1] - a.hits[1];
+        if (b.hits[2] !== a.hits[2]) return b.hits[2] - a.hits[2];
+        if (b.hits[3] !== a.hits[3]) return b.hits[3] - a.hits[3];
+        if (b.hits[4] !== a.hits[4]) return b.hits[4] - a.hits[4];
+        if (b.wins !== a.wins) return b.wins - a.wins;
+        return b.hits[5] - a.hits[5];
+    });
+
+    const algoRankMap = {};
+    rankedAlgos.forEach((item, idx) => {
+        algoRankMap[item.id] = idx + 1;
+    });
+
+    // 7대 알고리즘별 전회차 누적 성과 카드 그리드
+    let algoCardsHtml = '';
+    algoPacks.forEach(pack => {
+        const aData = algoSummaryMap[pack.id];
+        const aRoi = (aData.games * 1000) > 0 ? (aData.prize / (aData.games * 1000)) * 100 : 0;
+        const isFilterMatched = (activeReviewFilter === 'all' || activeReviewFilter === pack.id);
+        const cardOpacity = isFilterMatched ? '1' : '0.45';
+        const rank = algoRankMap[pack.id] || 1;
+
+        let rankBadgeBg = 'rgba(255,255,255,0.06)';
+        let rankBadgeColor = '#94a3b8';
+        let rankBadgeBorder = 'rgba(255,255,255,0.15)';
+        let rankIcon = '';
+        if (rank === 1) {
+            rankBadgeBg = 'linear-gradient(135deg, rgba(251,191,36,0.25), rgba(217,119,6,0.25))';
+            rankBadgeColor = '#fbbf24';
+            rankBadgeBorder = '#fbbf24';
+            rankIcon = '🥇 ';
+        } else if (rank === 2) {
+            rankBadgeBg = 'linear-gradient(135deg, rgba(203,213,225,0.2), rgba(148,163,184,0.2))';
+            rankBadgeColor = '#f1f5f9';
+            rankBadgeBorder = '#cbd5e1';
+            rankIcon = '🥈 ';
+        } else if (rank === 3) {
+            rankBadgeBg = 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(180,83,9,0.2))';
+            rankBadgeColor = '#f59e0b';
+            rankBadgeBorder = '#f59e0b';
+            rankIcon = '🥉 ';
+        }
+
+        algoCardsHtml += `
+            <div style="background: rgba(0,0,0,0.3); border: 1.5px solid ${pack.color}50; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; opacity: ${cardOpacity}; transition: all 0.2s; box-sizing: border-box; width: 100%; max-width: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
+                    <div style="font-size: 0.82rem; font-weight: 800; color: ${pack.color}; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-cubes"></i> ${pack.name}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <span style="font-size: 0.7rem; background: ${rankBadgeBg}; color: ${rankBadgeColor}; border: 1px solid ${rankBadgeBorder}; padding: 1px 7px; border-radius: 6px; font-weight: 800; white-space: nowrap;">
+                            ${rankIcon}${rank}위
+                        </span>
+                        <span style="font-size: 0.68rem; background: ${pack.color}25; color: ${pack.color}; border: 1px solid ${pack.color}40; padding: 1px 6px; border-radius: 6px; font-weight: 700;">
+                            ${pack.badge}
+                        </span>
+                    </div>
+                </div>
+                <div style="font-size: 0.74rem; color: #cbd5e1; margin-bottom: 6px; display: flex; justify-content: space-between;">
+                    <span>누적 추천: <strong>${aData.games.toLocaleString()}게임</strong></span>
+                    <span style="color: #38bdf8;">총 적중: <strong>${aData.wins}회</strong></span>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; text-align: center; margin-bottom: 8px; font-size: 0.68rem; box-sizing: border-box;">
+                    <div style="background: rgba(251,191,36,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700; white-space: nowrap;">1등: ${aData.hits[1]}</div>
+                    <div style="background: rgba(248,113,113,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700; white-space: nowrap;">2등: ${aData.hits[2]}</div>
+                    <div style="background: rgba(96,165,250,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700; white-space: nowrap;">3등: ${aData.hits[3]}</div>
+                    <div style="background: rgba(52,211,153,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700; white-space: nowrap;">4등: ${aData.hits[4]}</div>
+                    <div style="background: rgba(167,139,250,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700; white-space: nowrap;">5등: ${aData.hits[5]}</div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; font-size: 0.74rem;">
+                    <span style="color: #94a3b8;">당첨금: <strong style="color: #34d399;">+${aData.prize.toLocaleString()}원</strong></span>
+                    <span style="font-weight: 700; color: ${aRoi >= 100 ? '#10b981' : (aRoi > 0 ? '#fbbf24' : '#94a3b8')};">수익률 ${aRoi.toFixed(1)}%</span>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+        <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 12px; margin-bottom: 20px; box-sizing: border-box; width: 100%; max-width: 100%; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-layer-group" style="color: #38bdf8; font-size: 1rem;"></i>
+                    <h4 style="margin: 0; color: #f8fafc; font-size: 0.92rem; font-weight: 800;">
+                        7대 알고리즘별 전회차 (1235회 ~ ${latestDrawnRound}회) 누적 성과 요약 & 등수별 당첨 순위
+                    </h4>
+                </div>
+                <span style="font-size: 0.74rem; color: #94a3b8;">
+                    ${isAllUsers ? '전체 회원 합산 통계' : `[${effectiveUserId}] 회원 배정 통계`}
+                </span>
+            </div>
+
+            <!-- 🏆 알고리즘별 종합 순위 빠른 요약 바 -->
+            <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; -webkit-overflow-scrolling: touch; width: 100%; max-width: 100%; box-sizing: border-box;">
+                ${rankedAlgos.map((item, idx) => {
+                    const rankNum = idx + 1;
+                    let rankBg = 'rgba(255,255,255,0.05)';
+                    let rankBorder = 'rgba(255,255,255,0.1)';
+                    let rankTitle = `${rankNum}위`;
+                    let rankColor = '#cbd5e1';
+                    if (rankNum === 1) {
+                        rankBg = 'rgba(251,191,36,0.15)';
+                        rankBorder = '#fbbf24';
+                        rankTitle = '🥇 1위';
+                        rankColor = '#fbbf24';
+                    } else if (rankNum === 2) {
+                        rankBg = 'rgba(203,213,225,0.12)';
+                        rankBorder = '#cbd5e1';
+                        rankTitle = '🥈 2위';
+                        rankColor = '#f1f5f9';
+                    } else if (rankNum === 3) {
+                        rankBg = 'rgba(245,158,11,0.12)';
+                        rankBorder = '#f59e0b';
+                        rankTitle = '🥉 3위';
+                        rankColor = '#fbbf24';
+                    }
+                    const cleanName = item.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/ 포트폴리오| 알고리즘/g, '');
+                    return `
+                        <div style="flex: 0 0 auto; background: ${rankBg}; border: 1px solid ${rankBorder}; padding: 5px 10px; border-radius: 8px; font-size: 0.74rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
+                            <strong style="color: ${rankColor};">${rankTitle}</strong>
+                            <span style="color: #e2e8f0; font-weight: 700;">${cleanName}</span>
+                            <span style="color: #34d399; font-weight: 800;">+${item.prize.toLocaleString()}원</span>
+                            <span style="color: #60a5fa; font-size: 0.7rem;">(${item.wins}회)</span>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+
+            <!-- 📊 알고리즘별 등수별(1~5등) 누적 당첨 횟수 및 순위 비교 막대 그래프 -->
+            <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 8px; margin-bottom: 16px; box-sizing: border-box; width: 100%; max-width: 100%; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; padding: 0 4px;">
+                    <div style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-chart-column" style="color: #38bdf8;"></i> 알고리즘별 등수별(1~5등) 누적 당첨 실적 막대 그래프
+                    </div>
+                    <div style="font-size: 0.7rem; color: #94a3b8;">
+                        * 1235회~${latestDrawnRound}회 7대 알고리즘별 1등~5등 누적 적중 횟수 비교
+                    </div>
+                </div>
+                <div style="height: 240px; position: relative; width: 100%; max-width: 100%; box-sizing: border-box;">
+                    <canvas id="reviewAlgoBarChart"></canvas>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; box-sizing: border-box; width: 100%; max-width: 100%;">
+                ${algoCardsHtml}
+            </div>
+        </div>
+    `;
+
+    // 3. MAIN TABLES
+    if (isAdmin && isAllUsers) {
+        // --- 3-A. ADMIN: 1) Round-by-Round Breakdown Table ---
+        let roundRowsHtml = '';
+        adminRoundSummaryList.forEach(rItem => {
+            roundRowsHtml += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem;">
+                    <td style="padding: 8px 10px; font-weight: 800; color: #fbbf24; white-space: nowrap;">
+                        제 ${rItem.roundNum}회
+                    </td>
+                    <td style="padding: 8px 10px; color: #94a3b8; font-size: 0.72rem; white-space: nowrap;">
+                        ${rItem.date || '-'}
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; color: #cbd5e1; font-weight: 700; white-space: nowrap;">
+                        ${rItem.memberCount}명
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; color: #f8fafc; white-space: nowrap;">
+                        ${rItem.totalGames.toLocaleString()}게임
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(251,191,36,0.15); color: ${rItem.hits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">${rItem.hits[1]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(248,113,113,0.15); color: ${rItem.hits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700;">${rItem.hits[2]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(96,165,250,0.15); color: ${rItem.hits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700;">${rItem.hits[3]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(52,211,153,0.15); color: ${rItem.hits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700;">${rItem.hits[4]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${rItem.hits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${rItem.hits[5]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${rItem.totalPrize > 0 ? '#34d399' : '#94a3b8'}; white-space: nowrap;">
+                        +${rItem.totalPrize.toLocaleString()}원
+                    </td>
+                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: ${rItem.roi >= 100 ? '#10b981' : (rItem.roi > 0 ? '#fbbf24' : '#64748b')}; white-space: nowrap;">
+                        ${rItem.roi.toFixed(1)}%
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <button type="button" onclick="window.selectSpecificReviewRound && window.selectSpecificReviewRound(${rItem.roundNum})" style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
+                            <i class="fa-solid fa-magnifying-glass"></i> ${rItem.roundNum}회 복기
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+            <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(59, 130, 246, 0.45); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-list-ol" style="color: #60a5fa; font-size: 1.1rem;"></i>
+                        <h4 style="margin: 0; color: #60a5fa; font-size: 0.95rem; font-weight: 800;">
+                            [회차별 성과 현황] 1235회 ~ ${latestDrawnRound}회 회차별 추천 당첨 성과표
+                        </h4>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #cbd5e1;">
+                        총 <strong>${validRounds.length}개 회차</strong> 전수 집계
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 720px;">
+                        <thead>
+                            <tr style="background: rgba(0,0,0,0.35); border-bottom: 1.5px solid rgba(255,255,255,0.12); font-size: 0.74rem; color: #94a3b8;">
+                                <th style="padding: 8px 10px;">회차</th>
+                                <th style="padding: 8px 10px;">추첨일자</th>
+                                <th style="padding: 8px 10px; text-align: center;">참여회원</th>
+                                <th style="padding: 8px 10px; text-align: center;">전체 추천수</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #fbbf24;">1등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #f87171;">2등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #60a5fa;">3등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #34d399;">4등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
+                                <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
+                                <th style="padding: 8px 10px; text-align: right;">수익률</th>
+                                <th style="padding: 8px 10px; text-align: center;">상세 복기</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${roundRowsHtml}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: rgba(0,0,0,0.5); font-weight: 800; font-size: 0.8rem; border-top: 2px solid rgba(59, 130, 246, 0.5);">
+                                <td colspan="3" style="padding: 10px; color: #60a5fa;">합계 (${validRounds.length}개 회차 누적)</td>
+                                <td style="padding: 10px; text-align: center; color: #f8fafc;">${dispCombos.toLocaleString()}게임</td>
+                                <td style="padding: 10px; text-align: center; color: #fbbf24;">${dispHits[1]}</td>
+                                <td style="padding: 10px; text-align: center; color: #f87171;">${dispHits[2]}</td>
+                                <td style="padding: 10px; text-align: center; color: #60a5fa;">${dispHits[3]}</td>
+                                <td style="padding: 10px; text-align: center; color: #34d399;">${dispHits[4]}</td>
+                                <td style="padding: 10px; text-align: center; color: #a78bfa;">${dispHits[5]}</td>
+                                <td style="padding: 10px; text-align: right; color: #34d399;">+${dispPrize.toLocaleString()}원</td>
+                                <td style="padding: 10px; text-align: right; color: #fbbf24;">${dispRoi.toFixed(1)}%</td>
+                                <td style="padding: 10px; text-align: center; color: #64748b;">-</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        // --- 3-B. ADMIN: 2) Member-by-Member Cumulative Table ---
+        let memberRowsHtml = '';
+        adminMemberSummaryList.forEach((m, mIdx) => {
+            memberRowsHtml += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem;">
+                    <td style="padding: 8px 10px; text-align: center; font-weight: 700; color: ${mIdx < 3 ? '#fbbf24' : '#94a3b8'}; white-space: nowrap;">
+                        ${mIdx + 1}
+                    </td>
+                    <td style="padding: 8px 10px; font-weight: 700; color: #f8fafc; white-space: nowrap;">
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span style="color: #fbbf24;"><i class="fa-solid fa-user"></i> ${m.userId}</span>
+                            ${m.realPurchasedGames > 0 ? `<span style="font-size: 0.68rem; color: #34d399; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); padding: 1px 5px; border-radius: 4px; font-weight: normal;">실구매 ${m.realPurchasedGames}게임 (${m.realPurchasedRounds}회차)</span>` : `<span style="font-size: 0.68rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; font-weight: normal;">실구매 미등록</span>`}
+                        </div>
+                        <div style="font-size: 0.7rem; color: #94a3b8; font-weight: normal;">${m.realName}</div>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; color: #cbd5e1; white-space: nowrap;">
+                        ${m.participatedRounds}개 회차
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; color: #cbd5e1; white-space: nowrap;">
+                        ${m.totalGames.toLocaleString()}게임
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(251,191,36,0.15); color: ${m.hits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">${m.hits[1]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(248,113,113,0.15); color: ${m.hits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700;">${m.hits[2]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(96,165,250,0.15); color: ${m.hits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700;">${m.hits[3]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(52,211,153,0.15); color: ${m.hits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700;">${m.hits[4]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${m.hits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${m.hits[5]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${m.totalPrize > 0 ? '#34d399' : '#94a3b8'}; white-space: nowrap;">
+                        +${m.totalPrize.toLocaleString()}원
+                    </td>
+                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: ${m.roi >= 100 ? '#10b981' : (m.roi > 0 ? '#fbbf24' : '#64748b')}; white-space: nowrap;">
+                        ${m.roi.toFixed(1)}%
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <button type="button" onclick="window.changeReviewAdminUser && window.changeReviewAdminUser('${m.userId}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
+                            <i class="fa-solid fa-magnifying-glass"></i> 회원 전회차 복기
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+            <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem;"></i>
+                        <h4 style="margin: 0; color: #fbbf24; font-size: 0.95rem; font-weight: 800;">
+                            [회원별 누적 성과 종합 순위] 1235회 ~ ${latestDrawnRound}회 회원별 AI 추천 적중 성과표
+                        </h4>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #cbd5e1;">
+                        총 회원 <strong>${adminMemberSummaryList.length}명</strong>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 720px;">
+                        <thead>
+                            <tr style="background: rgba(0,0,0,0.35); border-bottom: 1.5px solid rgba(255,255,255,0.12); font-size: 0.74rem; color: #94a3b8;">
+                                <th style="padding: 8px 10px; text-align: center;">순위</th>
+                                <th style="padding: 8px 10px;">회원명 (ID) / 실구매</th>
+                                <th style="padding: 8px 10px; text-align: center;">참여회차</th>
+                                <th style="padding: 8px 10px; text-align: center;">누적 추천게임</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #fbbf24;">1등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #f87171;">2등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #60a5fa;">3등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #34d399;">4등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
+                                <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
+                                <th style="padding: 8px 10px; text-align: right;">수익률</th>
+                                <th style="padding: 8px 10px; text-align: center;">개별 복기</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${memberRowsHtml}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: rgba(0,0,0,0.5); font-weight: 800; font-size: 0.8rem; border-top: 2px solid rgba(245,158,11,0.5);">
+                                <td colspan="3" style="padding: 10px; color: #fbbf24;">전체 합계 (${adminMemberSummaryList.length}명)</td>
+                                <td style="padding: 10px; text-align: center; color: #f8fafc;">${dispCombos.toLocaleString()}게임</td>
+                                <td style="padding: 10px; text-align: center; color: #fbbf24;">${dispHits[1]}</td>
+                                <td style="padding: 10px; text-align: center; color: #f87171;">${dispHits[2]}</td>
+                                <td style="padding: 10px; text-align: center; color: #60a5fa;">${dispHits[3]}</td>
+                                <td style="padding: 10px; text-align: center; color: #34d399;">${dispHits[4]}</td>
+                                <td style="padding: 10px; text-align: center; color: #a78bfa;">${dispHits[5]}</td>
+                                <td style="padding: 10px; text-align: right; color: #34d399;">+${dispPrize.toLocaleString()}원</td>
+                                <td style="padding: 10px; text-align: right; color: #fbbf24;">${dispRoi.toFixed(1)}%</td>
+                                <td style="padding: 10px; text-align: center; color: #64748b;">-</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        `;
+
+    } else {
+        // --- 3-C. SINGLE USER: Round-by-Round Breakdown Table ---
+        let singleUserRoundRowsHtml = '';
+        userRoundSummaryList.forEach(uItem => {
+            singleUserRoundRowsHtml += `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem;">
+                    <td style="padding: 8px 10px; font-weight: 800; color: #fbbf24; white-space: nowrap;">
+                        제 ${uItem.roundNum}회
+                    </td>
+                    <td style="padding: 8px 10px; color: #94a3b8; font-size: 0.72rem; white-space: nowrap;">
+                        ${uItem.date || '-'}
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; color: #cbd5e1; white-space: nowrap;">
+                        ${uItem.totalGames}게임
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(251,191,36,0.15); color: ${uItem.hits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">${uItem.hits[1]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(248,113,113,0.15); color: ${uItem.hits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700;">${uItem.hits[2]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(96,165,250,0.15); color: ${uItem.hits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700;">${uItem.hits[3]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(52,211,153,0.15); color: ${uItem.hits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700;">${uItem.hits[4]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <span style="padding: 1px 6px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${uItem.hits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${uItem.hits[5]}</span>
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; color: #38bdf8; font-weight: 700; white-space: nowrap;">
+                        ${uItem.totalWins}건
+                    </td>
+                    <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${uItem.totalPrize > 0 ? '#34d399' : '#94a3b8'}; white-space: nowrap;">
+                        +${uItem.totalPrize.toLocaleString()}원
+                    </td>
+                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: ${uItem.roi >= 100 ? '#10b981' : (uItem.roi > 0 ? '#fbbf24' : '#64748b')}; white-space: nowrap;">
+                        ${uItem.roi.toFixed(1)}%
+                    </td>
+                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                        <button type="button" onclick="window.selectSpecificReviewRound && window.selectSpecificReviewRound(${uItem.roundNum})" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
+                            <i class="fa-solid fa-magnifying-glass"></i> ${uItem.roundNum}회 70게임 복기
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        html += `
+            <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(16, 185, 129, 0.45); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-calendar-check" style="color: #34d399; font-size: 1.1rem;"></i>
+                        <h4 style="margin: 0; color: #34d399; font-size: 0.95rem; font-weight: 800;">
+                            [회차별 추천 당첨 상세] 1235회 ~ ${latestDrawnRound}회 성과표
+                        </h4>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #cbd5e1;">
+                        총 <strong>${validRounds.length}개 회차</strong> 누적
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 720px;">
+                        <thead>
+                            <tr style="background: rgba(0,0,0,0.35); border-bottom: 1.5px solid rgba(255,255,255,0.12); font-size: 0.74rem; color: #94a3b8;">
+                                <th style="padding: 8px 10px;">회차</th>
+                                <th style="padding: 8px 10px;">추첨일자</th>
+                                <th style="padding: 8px 10px; text-align: center;">추천게임</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #fbbf24;">1등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #f87171;">2등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #60a5fa;">3등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #34d399;">4등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
+                                <th style="padding: 8px 10px; text-align: center; color: #38bdf8;">총적중</th>
+                                <th style="padding: 8px 10px; text-align: right; color: #34d399;">당첨금</th>
+                                <th style="padding: 8px 10px; text-align: right;">수익률</th>
+                                <th style="padding: 8px 10px; text-align: center;">상세 복기</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${singleUserRoundRowsHtml}
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: rgba(0,0,0,0.5); font-weight: 800; font-size: 0.8rem; border-top: 2px solid rgba(16, 185, 129, 0.5);">
+                                <td colspan="2" style="padding: 10px; color: #34d399;">누적 합계 (${validRounds.length}개 회차)</td>
+                                <td style="padding: 10px; text-align: center; color: #f8fafc;">${dispCombos.toLocaleString()}게임</td>
+                                <td style="padding: 10px; text-align: center; color: #fbbf24;">${dispHits[1]}</td>
+                                <td style="padding: 10px; text-align: center; color: #f87171;">${dispHits[2]}</td>
+                                <td style="padding: 10px; text-align: center; color: #60a5fa;">${dispHits[3]}</td>
+                                <td style="padding: 10px; text-align: center; color: #34d399;">${dispHits[4]}</td>
+                                <td style="padding: 10px; text-align: center; color: #a78bfa;">${dispHits[5]}</td>
+                                <td style="padding: 10px; text-align: center; color: #38bdf8;">${dispHits[1] + dispHits[2] + dispHits[3] + dispHits[4] + dispHits[5]}건</td>
+                                <td style="padding: 10px; text-align: right; color: #34d399;">+${dispPrize.toLocaleString()}원</td>
+                                <td style="padding: 10px; text-align: right; color: #fbbf24;">${dispRoi.toFixed(1)}%</td>
+                                <td style="padding: 10px; text-align: center; color: #64748b;">-</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    html += `</div>`;
+    reviewMatchingContainer.innerHTML = html;
+
+    // Render Chart.js Bar Chart for 7 Algorithms Cumulative Winning Performance
+    if (state.reviewAlgoBarChartInstance) {
+        state.reviewAlgoBarChartInstance.destroy();
+        state.reviewAlgoBarChartInstance = null;
+    }
+    const canvasAlgo = document.getElementById('reviewAlgoBarChart');
+    if (canvasAlgo && typeof canvasAlgo.getContext === 'function' && typeof window.Chart === 'function') {
+        const ctxAlgo = canvasAlgo.getContext('2d');
+        const algoLabels = [
+            ['V4.0', '행동경제'],
+            ['V3.0', '하이브리드'],
+            ['추가1', '고주기'],
+            ['추가2', '저주기'],
+            ['추가3', 'AC퀀트'],
+            ['추가4', '구간대칭'],
+            ['추가5', '극한홀짝']
+        ];
+
+        state.reviewAlgoBarChartInstance = new window.Chart(ctxAlgo, {
+            type: 'bar',
+            data: {
+                labels: algoLabels,
+                datasets: [
+                    {
+                        label: '1등',
+                        data: algoPacks.map(p => algoSummaryMap[p.id].hits[1]),
+                        backgroundColor: '#fbbf24',
+                        stack: 'hits',
+                        borderRadius: 2
+                    },
+                    {
+                        label: '2등',
+                        data: algoPacks.map(p => algoSummaryMap[p.id].hits[2]),
+                        backgroundColor: '#f87171',
+                        stack: 'hits',
+                        borderRadius: 2
+                    },
+                    {
+                        label: '3등',
+                        data: algoPacks.map(p => algoSummaryMap[p.id].hits[3]),
+                        backgroundColor: '#60a5fa',
+                        stack: 'hits',
+                        borderRadius: 2
+                    },
+                    {
+                        label: '4등',
+                        data: algoPacks.map(p => algoSummaryMap[p.id].hits[4]),
+                        backgroundColor: '#34d399',
+                        stack: 'hits',
+                        borderRadius: 2
+                    },
+                    {
+                        label: '5등',
+                        data: algoPacks.map(p => algoSummaryMap[p.id].hits[5]),
+                        backgroundColor: '#a78bfa',
+                        stack: 'hits',
+                        borderRadius: 2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            color: '#cbd5e1',
+                            font: { size: 9, weight: 'bold' },
+                            boxWidth: 8,
+                            padding: 6
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(items) {
+                                if (!items.length) return '';
+                                const idx = items[0].dataIndex;
+                                const pack = algoPacks[idx];
+                                const rank = algoRankMap[pack.id] || (idx + 1);
+                                return `[${rank}위] ${pack.name}`;
+                            },
+                            label: function(ctx) {
+                                const val = ctx.raw || 0;
+                                return `${ctx.dataset.label}: ${val}회`;
+                            },
+                            footer: function(items) {
+                                if (!items.length) return '';
+                                const idx = items[0].dataIndex;
+                                const pack = algoPacks[idx];
+                                const aData = algoSummaryMap[pack.id];
+                                return `총 적중: ${aData.wins}회 | 누적 당첨금: +${aData.prize.toLocaleString()}원`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: true,
+                        ticks: { color: '#cbd5e1', font: { size: 9, weight: 'bold' }, maxRotation: 0, autoSkip: false },
+                        grid: { display: false }
+                    },
+                    y: {
+                        stacked: true,
+                        beginAtZero: true,
+                        ticks: { color: '#94a3b8', precision: 0, font: { size: 9 } },
+                        grid: { color: 'rgba(255,255,255,0.06)' }
+                    }
+                }
+            }
+        });
+    }
+}
+
+function renderReviewDetail(r) {
+    if (r === 'all_rounds' || String(r) === 'all_rounds') {
+        return renderAllRoundsReviewDetail();
+    }
+    const reviewMatchingContainer = document.getElementById('reviewMatchingContainer');
+    if (!reviewMatchingContainer) return;
+
+    if (state.reviewAlgoBarChartInstance) {
+        state.reviewAlgoBarChartInstance.destroy();
+        state.reviewAlgoBarChartInstance = null;
+    }
 
     const roundNum = parseInt(r);
     if (isNaN(roundNum)) return;
@@ -13291,6 +14312,8 @@ function changeReviewAdminUser(userId) {
 if (typeof window !== 'undefined') {
     window.renderReviewTab = renderReviewTab;
     window.renderReviewDetail = renderReviewDetail;
+    window.renderAllRoundsReviewDetail = renderAllRoundsReviewDetail;
+    window.selectSpecificReviewRound = selectSpecificReviewRound;
     window.changeReviewAdminUser = changeReviewAdminUser;
     window.computeUser70RecommendationsReview = computeUser70RecommendationsReview;
     window.updateReviewRoundSelector = updateReviewRoundSelector;
@@ -13317,6 +14340,14 @@ if (typeof window !== 'undefined') {
         if (typeof updateReviewRoundSelector !== 'undefined') {
             __exports.updateReviewRoundSelector = updateReviewRoundSelector;
             if (typeof window !== 'undefined') window.updateReviewRoundSelector = updateReviewRoundSelector;
+        }
+        if (typeof selectSpecificReviewRound !== 'undefined') {
+            __exports.selectSpecificReviewRound = selectSpecificReviewRound;
+            if (typeof window !== 'undefined') window.selectSpecificReviewRound = selectSpecificReviewRound;
+        }
+        if (typeof renderAllRoundsReviewDetail !== 'undefined') {
+            __exports.renderAllRoundsReviewDetail = renderAllRoundsReviewDetail;
+            if (typeof window !== 'undefined') window.renderAllRoundsReviewDetail = renderAllRoundsReviewDetail;
         }
         if (typeof renderReviewDetail !== 'undefined') {
             __exports.renderReviewDetail = renderReviewDetail;
@@ -14800,14 +15831,20 @@ const { calculateStats, getNeighborMatches } = __M_services_lotto_scoring;
 const { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations } = __M_services_lotto_ledger;
 const { db } = __M_shared_db;
 const { getSelectedComboCountOption } = __M_services_lotto_views_generator_tab;
-const { SafeAuth } = __M_shared_auth_mgmt;
+const { SafeAuth, isAdminUser } = __M_shared_auth_mgmt;
 
 let realSimCache = null;
 const liveSimCacheMap = {};
 
 function getEffectiveTargetUser() {
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || 'guest';
-    const isAdmin = authId === 'master' || (typeof window.isMasterAdmin === 'function' && window.isMasterAdmin()) || (typeof window.isAdminUser === 'function' && window.isAdminUser());
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || 'guest';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
+        } catch(e) {}
+    }
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin' || (typeof window !== 'undefined' && window.isAdminUser && window.isAdminUser(authId))));
     if (isAdmin && state.simAdminTargetUserId) {
         return state.simAdminTargetUserId;
     }
@@ -14910,11 +15947,29 @@ function getCombosForSimulationRound(round, config = null, customUserId = null) 
     const effectiveTarget = customUserId || getEffectiveTargetUser();
     
     if (effectiveTarget === '__ALL__') {
-        const userList = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0)
-            ? state.allRegisteredUsersList
-            : [{ id: 'master', name: '관리자 본인' }];
+        let userList = state.allRegisteredUsersList;
+        if (!userList || userList.length === 0) {
+            try {
+                const cached = SafeLocalStorage.getItem('lotto_all_users_list_cache');
+                if (cached) userList = JSON.parse(cached);
+            } catch(e) {}
+        }
+        if (!userList || userList.length === 0) {
+            if (state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0) {
+                userList = Object.keys(state.allUsersPurchasesMap).map(id => ({ id, name: id }));
+            }
+        }
+        if (!userList || userList.length === 0) {
+            userList = [{ id: 'master', name: '관리자 본인' }];
+        }
+        const filteredUsers = userList.filter(u => {
+            const uId = (u.id || '').trim().toLowerCase();
+            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+        });
+        const finalUsers = filteredUsers.length > 0 ? filteredUsers : [{ id: 'master', name: '관리자 본인' }];
+        
         const allCombos = [];
-        userList.forEach(u => {
+        finalUsers.forEach(u => {
             const uCombos = getSingleUserCombosForRound(round, cfg, u.id, u.name || u.id);
             allCombos.push(...uCombos);
         });
@@ -14950,8 +16005,14 @@ function populateSimRoundSelector() {
 function renderSimulationTab(targetRound = null) {
     const lockEl = document.getElementById('simLockOverlay');
     const normalEl = document.getElementById('simNormalContent');
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
-    const isAdmin = authId === 'master' || (typeof window.isMasterAdmin === 'function' && window.isMasterAdmin()) || (typeof window.isAdminUser === 'function' && window.isAdminUser());
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
+        } catch(e) {}
+    }
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin' || (typeof window !== 'undefined' && window.isAdminUser && window.isAdminUser(authId))));
     const effectiveTarget = getEffectiveTargetUser();
 
     // 🔒 실구매 인증 자격 확인 (관리자 계정은 모든 회원 시뮬레이션 상시 100% 프리패스 허용)
@@ -14979,27 +16040,45 @@ function renderSimulationTab(targetRound = null) {
     const adminBarContainer = document.getElementById('simAdminBarContainer');
     if (adminBarContainer) {
         if (isAdmin) {
-            // 사용자 목록 비동기 로딩 (캐시가 비어있을 경우)
-            if (!state.allRegisteredUsersList && window.db) {
-                window.db.collection('lotto_users').get().then(uSnap => {
-                    state.allRegisteredUsersList = [];
-                    uSnap.forEach(d => {
-                        const uData = d.data();
-                        const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
-                        if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
-                            window.setIsPermanentCache(d.id, isPerm);
+            // 사용자 목록 로컬 캐시 확인
+            if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) {
+                try {
+                    const cached = SafeLocalStorage.getItem('lotto_all_users_list_cache');
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            state.allRegisteredUsersList = parsed;
                         }
-                        state.allRegisteredUsersList.push({
-                            id: d.id,
-                            name: uData.realName || d.id,
+                    }
+                } catch(e) {}
+            }
+
+            // 사용자 목록 비동기 로딩 (Firestore)
+            const firestoreDb = window.db || db;
+            if (firestoreDb && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
+                firestoreDb.collection('lotto_users').get().then(uSnap => {
+                    const loadedList = [];
+                    uSnap.forEach(d => {
+                        const cleanId = (d.id || '').trim();
+                        if (!cleanId || cleanId.startsWith('{') || cleanId.startsWith('test_')) return;
+                        const uData = d.data() || {};
+                        const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || cleanId === 'master' || cleanId === 'admin');
+                        if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
+                            window.setIsPermanentCache(cleanId, isPerm);
+                        }
+                        loadedList.push({
+                            id: cleanId,
+                            name: uData.realName || cleanId,
                             phone: uData.phoneNumber || '',
-                            isAdmin: !!(uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin'),
+                            isAdmin: !!(uData.isAdmin === true || uData.role === 'admin' || cleanId === 'master' || cleanId === 'admin'),
                             isPermanent: isPerm,
                             userType: uData.userType || (isPerm ? 'permanent' : 'regular')
                         });
                     });
+                    state.allRegisteredUsersList = loadedList;
+                    try { SafeLocalStorage.setItem('lotto_all_users_list_cache', JSON.stringify(loadedList)); } catch(e) {}
                     renderSimulationTab(targetRound);
-                }).catch(() => {});
+                }).catch(err => console.warn('[Sim Tab Users Load Error]:', err));
             }
 
             const userList = state.allRegisteredUsersList || [];
@@ -15235,12 +16314,27 @@ function renderSimulationTab(targetRound = null) {
             let finalBonusMatch = isBonusMatch;
 
             let prizeText = '낙첨';
-            let prizeClass = 'prize-badge-miss';
-            if (matchCount === 6) { prizeText = '★★ 1등 당첨!! ★★'; prizeClass = 'prize-badge-3rd'; }
-            else if (matchCount === 5 && finalBonusMatch) { prizeText = '★ 2등 당첨!! ★'; prizeClass = 'prize-badge-3rd'; }
-            else if (matchCount === 5) { prizeText = '3등 당첨'; prizeClass = 'prize-badge-3rd'; }
-            else if (matchCount === 4) { prizeText = '4등 당첨'; prizeClass = 'prize-badge-4th'; }
-            else if (matchCount === 3) { prizeText = '5등 당첨'; prizeClass = 'prize-badge-5th'; }
+            let prizeStyle = 'background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); font-weight: normal; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem;';
+            if (matchCount === 6) { 
+                prizeText = '🎉 1등 당첨!! (6개 일치)'; 
+                prizeStyle = 'background: rgba(251,191,36,0.25); color: #fbbf24; border: 1.5px solid #fbbf24; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; box-shadow: 0 0 10px rgba(251,191,36,0.5);';
+            }
+            else if (matchCount === 5 && finalBonusMatch) { 
+                prizeText = '🥈 2등 당첨!! (5개+보너스)'; 
+                prizeStyle = 'background: rgba(96,165,250,0.25); color: #60a5fa; border: 1.5px solid #60a5fa; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; box-shadow: 0 0 10px rgba(96,165,250,0.5);';
+            }
+            else if (matchCount === 5) { 
+                prizeText = '🥉 3등 당첨! (5개 일치)'; 
+                prizeStyle = 'background: rgba(52,211,153,0.25); color: #34d399; border: 1.5px solid #34d399; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; box-shadow: 0 0 10px rgba(52,211,153,0.5);';
+            }
+            else if (matchCount === 4) { 
+                prizeText = '✨ 4등 (50,000원)'; 
+                prizeStyle = 'background: rgba(167,139,250,0.2); color: #c4b5fd; border: 1px solid #a78bfa; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem;';
+            }
+            else if (matchCount === 3) { 
+                prizeText = '⭐ 5등 (5,000원)'; 
+                prizeStyle = 'background: rgba(244,114,182,0.2); color: #f472b6; border: 1px solid #f472b6; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem;';
+            }
 
             const badgeColor = (combo.meta && combo.meta.badgeColor) ? combo.meta.badgeColor : '#38bdf8';
             const comboTitle = (combo.meta && combo.meta.name) ? combo.meta.name : (combo.name || '추천 조합');
@@ -15257,7 +16351,7 @@ function renderSimulationTab(targetRound = null) {
                             </span>
                             <span class="combo-name" style="font-weight: bold; color: #fff; font-size: 0.92rem;">${comboTitle}</span>
                         </div>
-                        <span class="verify-match-badge ${prizeClass}">${prizeText}</span>
+                        <span style="${prizeStyle}">${prizeText}</span>
                     </div>
                     <div class="balls-row" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                         ${(combo.numbers || []).map(n => {
@@ -15305,11 +16399,12 @@ function renderAccumulatedWins(rankFilter) {
         }
     });
 
-    const filtered = (rankFilter === 0) 
-        ? allWins 
-        : allWins.filter(w => w.prizeRank === rankFilter);
+    const cfg = getSelectedSimulationConfig();
+    const effectiveTarget = getEffectiveTargetUser();
+    const cfgKey = `${effectiveTarget}_${JSON.stringify(cfg)}`;
+    const hasExecutedSim = !!(liveSimCacheMap[cfgKey] && liveSimCacheMap[cfgKey].length > 0);
 
-    if (filtered.length === 0) {
+    if (!hasExecutedSim) {
         const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1239);
         accumulatedWinsContainer.innerHTML = `
             <div style="text-align:center; padding:32px 16px; color:#94a3b8; font-size:0.88rem; background:rgba(15,23,42,0.4); border-radius:10px; border:1px dashed rgba(255,255,255,0.12);">
@@ -15318,6 +16413,25 @@ function renderAccumulatedWins(rankFilter) {
                 <span style="font-size:0.82rem; color:#cbd5e1; display:inline-block; margin-top:6px; line-height:1.5;">
                     아직 백테스팅이 실행되지 않았습니다.<br>
                     상단의 <strong style="color: #fbbf24;">[1~${maxR}회 리얼 백테스팅 시작]</strong> 버튼을 누르시면 과거 전 회차 실제 당첨번호와 7대 알고리즘의 진짜 적중 실적이 1:1로 집계됩니다.
+                </span>
+            </div>
+        `;
+        return;
+    }
+
+    const filtered = (rankFilter === 0) 
+        ? allWins 
+        : allWins.filter(w => w.prizeRank === rankFilter);
+
+    if (filtered.length === 0) {
+        const rankName = rankFilter === 1 ? '1등 (6개 일치)' : (rankFilter === 2 ? '2등 (5개+보너스 일치)' : (rankFilter === 3 ? '3등 (5개 일치)' : (rankFilter === 4 ? '4등 (4개 일치)' : '5등 (3개 일치)')));
+        accumulatedWinsContainer.innerHTML = `
+            <div style="text-align:center; padding:28px 16px; color:#94a3b8; font-size:0.85rem; background:rgba(15,23,42,0.4); border-radius:10px; border:1px dashed rgba(255,255,255,0.12);">
+                <i class="fa-solid fa-circle-info" style="font-size:1.6rem; color:#38bdf8; margin-bottom:8px; display:block;"></i>
+                <strong style="color:#f8fafc; font-size:0.92rem;">${rankName} 당첨 기록 없음</strong><br>
+                <span style="font-size:0.8rem; color:#cbd5e1; display:inline-block; margin-top:4px; line-height:1.5;">
+                    시뮬레이션 기간 동안 ${rankName} 당첨이 발생하지 않았습니다.<br>
+                    상단 필터에서 <strong>[전체]</strong> 또는 <strong>[역대 4등 / 5등]</strong> 버튼을 눌러 적중 내역을 확인해보세요.
                 </span>
             </div>
         `;

@@ -38,6 +38,7 @@ export const state = {
     simPieChartInstance: null,
     simLineChartInstance: null,
     reviewPrizeChartInstance: null,
+    reviewAlgoBarChartInstance: null,
     confirmedPrizeChartInstance: null,
     confirmedTrendChartInstance: null,
 };

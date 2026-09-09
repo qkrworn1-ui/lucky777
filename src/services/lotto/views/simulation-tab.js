@@ -6,14 +6,20 @@ import { calculateStats, getNeighborMatches } from '../scoring.js';
 import { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations } from '../ledger.js';
 import { db } from '../../../shared/db.js';
 import { getSelectedComboCountOption } from './generator-tab.js';
-import { SafeAuth } from '../../../shared/auth-mgmt.js';
+import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 
 let realSimCache = null;
 const liveSimCacheMap = {};
 
 export function getEffectiveTargetUser() {
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || 'guest';
-    const isAdmin = authId === 'master' || (typeof window.isMasterAdmin === 'function' && window.isMasterAdmin()) || (typeof window.isAdminUser === 'function' && window.isAdminUser());
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || 'guest';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
+        } catch(e) {}
+    }
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin' || (typeof window !== 'undefined' && window.isAdminUser && window.isAdminUser(authId))));
     if (isAdmin && state.simAdminTargetUserId) {
         return state.simAdminTargetUserId;
     }
@@ -116,11 +122,29 @@ export function getCombosForSimulationRound(round, config = null, customUserId =
     const effectiveTarget = customUserId || getEffectiveTargetUser();
     
     if (effectiveTarget === '__ALL__') {
-        const userList = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0)
-            ? state.allRegisteredUsersList
-            : [{ id: 'master', name: '관리자 본인' }];
+        let userList = state.allRegisteredUsersList;
+        if (!userList || userList.length === 0) {
+            try {
+                const cached = localStorage.getItem('lotto_all_users_list_cache');
+                if (cached) userList = JSON.parse(cached);
+            } catch(e) {}
+        }
+        if (!userList || userList.length === 0) {
+            if (state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0) {
+                userList = Object.keys(state.allUsersPurchasesMap).map(id => ({ id, name: id }));
+            }
+        }
+        if (!userList || userList.length === 0) {
+            userList = [{ id: 'master', name: '관리자 본인' }];
+        }
+        const filteredUsers = userList.filter(u => {
+            const uId = (u.id || '').trim().toLowerCase();
+            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+        });
+        const finalUsers = filteredUsers.length > 0 ? filteredUsers : [{ id: 'master', name: '관리자 본인' }];
+        
         const allCombos = [];
-        userList.forEach(u => {
+        finalUsers.forEach(u => {
             const uCombos = getSingleUserCombosForRound(round, cfg, u.id, u.name || u.id);
             allCombos.push(...uCombos);
         });
@@ -156,8 +180,14 @@ export function populateSimRoundSelector() {
 export function renderSimulationTab(targetRound = null) {
     const lockEl = document.getElementById('simLockOverlay');
     const normalEl = document.getElementById('simNormalContent');
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
-    const isAdmin = authId === 'master' || (typeof window.isMasterAdmin === 'function' && window.isMasterAdmin()) || (typeof window.isAdminUser === 'function' && window.isAdminUser());
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
+        } catch(e) {}
+    }
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin' || (typeof window !== 'undefined' && window.isAdminUser && window.isAdminUser(authId))));
     const effectiveTarget = getEffectiveTargetUser();
 
     // 🔒 실구매 인증 자격 확인 (관리자 계정은 모든 회원 시뮬레이션 상시 100% 프리패스 허용)
@@ -185,27 +215,45 @@ export function renderSimulationTab(targetRound = null) {
     const adminBarContainer = document.getElementById('simAdminBarContainer');
     if (adminBarContainer) {
         if (isAdmin) {
-            // 사용자 목록 비동기 로딩 (캐시가 비어있을 경우)
-            if (!state.allRegisteredUsersList && window.db) {
-                window.db.collection('lotto_users').get().then(uSnap => {
-                    state.allRegisteredUsersList = [];
-                    uSnap.forEach(d => {
-                        const uData = d.data();
-                        const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
-                        if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
-                            window.setIsPermanentCache(d.id, isPerm);
+            // 사용자 목록 로컬 캐시 확인
+            if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) {
+                try {
+                    const cached = localStorage.getItem('lotto_all_users_list_cache');
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            state.allRegisteredUsersList = parsed;
                         }
-                        state.allRegisteredUsersList.push({
-                            id: d.id,
-                            name: uData.realName || d.id,
+                    }
+                } catch(e) {}
+            }
+
+            // 사용자 목록 비동기 로딩 (Firestore)
+            const firestoreDb = window.db || db;
+            if (firestoreDb && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
+                firestoreDb.collection('lotto_users').get().then(uSnap => {
+                    const loadedList = [];
+                    uSnap.forEach(d => {
+                        const cleanId = (d.id || '').trim();
+                        if (!cleanId || cleanId.startsWith('{') || cleanId.startsWith('test_')) return;
+                        const uData = d.data() || {};
+                        const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || cleanId === 'master' || cleanId === 'admin');
+                        if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
+                            window.setIsPermanentCache(cleanId, isPerm);
+                        }
+                        loadedList.push({
+                            id: cleanId,
+                            name: uData.realName || cleanId,
                             phone: uData.phoneNumber || '',
-                            isAdmin: !!(uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin'),
+                            isAdmin: !!(uData.isAdmin === true || uData.role === 'admin' || cleanId === 'master' || cleanId === 'admin'),
                             isPermanent: isPerm,
                             userType: uData.userType || (isPerm ? 'permanent' : 'regular')
                         });
                     });
+                    state.allRegisteredUsersList = loadedList;
+                    try { localStorage.setItem('lotto_all_users_list_cache', JSON.stringify(loadedList)); } catch(e) {}
                     renderSimulationTab(targetRound);
-                }).catch(() => {});
+                }).catch(err => console.warn('[Sim Tab Users Load Error]:', err));
             }
 
             const userList = state.allRegisteredUsersList || [];
@@ -441,12 +489,27 @@ export function renderSimulationTab(targetRound = null) {
             let finalBonusMatch = isBonusMatch;
 
             let prizeText = '낙첨';
-            let prizeClass = 'prize-badge-miss';
-            if (matchCount === 6) { prizeText = '★★ 1등 당첨!! ★★'; prizeClass = 'prize-badge-3rd'; }
-            else if (matchCount === 5 && finalBonusMatch) { prizeText = '★ 2등 당첨!! ★'; prizeClass = 'prize-badge-3rd'; }
-            else if (matchCount === 5) { prizeText = '3등 당첨'; prizeClass = 'prize-badge-3rd'; }
-            else if (matchCount === 4) { prizeText = '4등 당첨'; prizeClass = 'prize-badge-4th'; }
-            else if (matchCount === 3) { prizeText = '5등 당첨'; prizeClass = 'prize-badge-5th'; }
+            let prizeStyle = 'background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); font-weight: normal; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem;';
+            if (matchCount === 6) { 
+                prizeText = '🎉 1등 당첨!! (6개 일치)'; 
+                prizeStyle = 'background: rgba(251,191,36,0.25); color: #fbbf24; border: 1.5px solid #fbbf24; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; box-shadow: 0 0 10px rgba(251,191,36,0.5);';
+            }
+            else if (matchCount === 5 && finalBonusMatch) { 
+                prizeText = '🥈 2등 당첨!! (5개+보너스)'; 
+                prizeStyle = 'background: rgba(96,165,250,0.25); color: #60a5fa; border: 1.5px solid #60a5fa; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; box-shadow: 0 0 10px rgba(96,165,250,0.5);';
+            }
+            else if (matchCount === 5) { 
+                prizeText = '🥉 3등 당첨! (5개 일치)'; 
+                prizeStyle = 'background: rgba(52,211,153,0.25); color: #34d399; border: 1.5px solid #34d399; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; box-shadow: 0 0 10px rgba(52,211,153,0.5);';
+            }
+            else if (matchCount === 4) { 
+                prizeText = '✨ 4등 (50,000원)'; 
+                prizeStyle = 'background: rgba(167,139,250,0.2); color: #c4b5fd; border: 1px solid #a78bfa; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem;';
+            }
+            else if (matchCount === 3) { 
+                prizeText = '⭐ 5등 (5,000원)'; 
+                prizeStyle = 'background: rgba(244,114,182,0.2); color: #f472b6; border: 1px solid #f472b6; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem;';
+            }
 
             const badgeColor = (combo.meta && combo.meta.badgeColor) ? combo.meta.badgeColor : '#38bdf8';
             const comboTitle = (combo.meta && combo.meta.name) ? combo.meta.name : (combo.name || '추천 조합');
@@ -463,7 +526,7 @@ export function renderSimulationTab(targetRound = null) {
                             </span>
                             <span class="combo-name" style="font-weight: bold; color: #fff; font-size: 0.92rem;">${comboTitle}</span>
                         </div>
-                        <span class="verify-match-badge ${prizeClass}">${prizeText}</span>
+                        <span style="${prizeStyle}">${prizeText}</span>
                     </div>
                     <div class="balls-row" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                         ${(combo.numbers || []).map(n => {
@@ -511,11 +574,12 @@ export function renderAccumulatedWins(rankFilter) {
         }
     });
 
-    const filtered = (rankFilter === 0) 
-        ? allWins 
-        : allWins.filter(w => w.prizeRank === rankFilter);
+    const cfg = getSelectedSimulationConfig();
+    const effectiveTarget = getEffectiveTargetUser();
+    const cfgKey = `${effectiveTarget}_${JSON.stringify(cfg)}`;
+    const hasExecutedSim = !!(liveSimCacheMap[cfgKey] && liveSimCacheMap[cfgKey].length > 0);
 
-    if (filtered.length === 0) {
+    if (!hasExecutedSim) {
         const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1239);
         accumulatedWinsContainer.innerHTML = `
             <div style="text-align:center; padding:32px 16px; color:#94a3b8; font-size:0.88rem; background:rgba(15,23,42,0.4); border-radius:10px; border:1px dashed rgba(255,255,255,0.12);">
@@ -524,6 +588,25 @@ export function renderAccumulatedWins(rankFilter) {
                 <span style="font-size:0.82rem; color:#cbd5e1; display:inline-block; margin-top:6px; line-height:1.5;">
                     아직 백테스팅이 실행되지 않았습니다.<br>
                     상단의 <strong style="color: #fbbf24;">[1~${maxR}회 리얼 백테스팅 시작]</strong> 버튼을 누르시면 과거 전 회차 실제 당첨번호와 7대 알고리즘의 진짜 적중 실적이 1:1로 집계됩니다.
+                </span>
+            </div>
+        `;
+        return;
+    }
+
+    const filtered = (rankFilter === 0) 
+        ? allWins 
+        : allWins.filter(w => w.prizeRank === rankFilter);
+
+    if (filtered.length === 0) {
+        const rankName = rankFilter === 1 ? '1등 (6개 일치)' : (rankFilter === 2 ? '2등 (5개+보너스 일치)' : (rankFilter === 3 ? '3등 (5개 일치)' : (rankFilter === 4 ? '4등 (4개 일치)' : '5등 (3개 일치)')));
+        accumulatedWinsContainer.innerHTML = `
+            <div style="text-align:center; padding:28px 16px; color:#94a3b8; font-size:0.85rem; background:rgba(15,23,42,0.4); border-radius:10px; border:1px dashed rgba(255,255,255,0.12);">
+                <i class="fa-solid fa-circle-info" style="font-size:1.6rem; color:#38bdf8; margin-bottom:8px; display:block;"></i>
+                <strong style="color:#f8fafc; font-size:0.92rem;">${rankName} 당첨 기록 없음</strong><br>
+                <span style="font-size:0.8rem; color:#cbd5e1; display:inline-block; margin-top:4px; line-height:1.5;">
+                    시뮬레이션 기간 동안 ${rankName} 당첨이 발생하지 않았습니다.<br>
+                    상단 필터에서 <strong>[전체]</strong> 또는 <strong>[역대 4등 / 5등]</strong> 버튼을 눌러 적중 내역을 확인해보세요.
                 </span>
             </div>
         `;
