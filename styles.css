@@ -12696,8 +12696,8 @@ body.is-admin .btn-user-mgmt-compact {
 
     /* 영수증 카드 및 회차 카드 스마트폰 최적화 */
     .confirmed-round-card {
-        padding: 12px 10px !important;
-        margin-bottom: 12px !important;
+        padding: 10px 10px !important;
+        margin-bottom: 10px !important;
         border-radius: 10px !important;
         box-sizing: border-box !important;
         max-width: 100% !important;
@@ -12709,8 +12709,8 @@ body.is-admin .btn-user-mgmt-compact {
         flex-direction: column !important;
         align-items: flex-start !important;
         justify-content: flex-start !important;
-        padding-bottom: 8px !important;
-        gap: 8px !important;
+        padding-bottom: 6px !important;
+        gap: 3px !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
@@ -12719,12 +12719,19 @@ body.is-admin .btn-user-mgmt-compact {
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
-        gap: 5px !important;
+        gap: 4px !important;
         width: 100% !important;
     }
 
     .confirmed-round-title-row strong {
-        font-size: 0.95rem !important;
+        font-size: 0.92rem !important;
+    }
+
+    .confirmed-round-summary-row {
+        margin-top: 2px !important;
+        font-size: 0.78rem !important;
+        gap: 4px !important;
+        line-height: 1.2 !important;
     }
 
     .confirmed-round-users-badge {
@@ -12745,7 +12752,12 @@ body.is-admin .btn-user-mgmt-compact {
         width: 100% !important;
         justify-content: flex-end !important;
         gap: 5px !important;
-        margin-top: 4px !important;
+        margin-top: 2px !important;
+    }
+
+    .confirmed-round-actions button {
+        padding: 2px 8px !important;
+        font-size: 0.72rem !important;
     }
 
     .confirmed-receipt-card,

@@ -16154,7 +16154,7 @@ async function renderConfirmedPurchasesList() {
             };
 
             summaryHTML = `
-                <div class="confirmed-round-summary-row" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 6px; display:flex; align-items:center; gap: 6px; flex-wrap: wrap;">
+                <div class="confirmed-round-summary-row" style="font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; display:flex; align-items:center; gap: 6px; flex-wrap: wrap;">
                     <span style="white-space: nowrap;">당첨번호:</span>
                     <div style="display:inline-flex; align-items:center; gap: 3px; flex-wrap: wrap;">
                         ${actualDraw.numbers.map(n => `<span style="background:${getColor(n)}; width:18px; height:18px; line-height:18px; font-size:0.7rem; border-radius:50%; text-align:center; color:#fff; font-weight:bold; display:inline-block;">${n}</span>`).join('')}
@@ -16194,7 +16194,7 @@ async function renderConfirmedPurchasesList() {
 
         html += `
             <div class="confirmed-round-card" style="background: rgba(30, 41, 59, 0.5); border: 1px solid ${allPurchasesLocked ? 'rgba(245, 158, 11, 0.3)' : 'rgba(255,255,255,0.05)'}; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.15); box-sizing: border-box; max-width: 100%; overflow: hidden;">
-                <div class="confirmed-round-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; cursor:pointer;" onclick="const content = this.nextElementSibling; const icon = this.querySelector('.chevron-icon'); if (content.style.display === 'none') { content.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; } else { content.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; }">
+                <div class="confirmed-round-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; cursor:pointer;" onclick="const content = this.nextElementSibling; const icon = this.querySelector('.chevron-icon'); if (content.style.display === 'none') { content.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; } else { content.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; }">
                     <div style="flex: 1 1 260px; min-width: 0; max-width: 100%;">
                         <div class="confirmed-round-title-row" style="display:flex; align-items:center; flex-wrap: wrap; gap: 6px; width: 100%;">
                             <strong style="font-size: 1.02rem; color: #fff; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;">
