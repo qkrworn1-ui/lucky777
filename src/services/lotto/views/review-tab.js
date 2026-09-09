@@ -112,6 +112,12 @@ export function evaluateRecommendationSet(combos, actualDraw) {
  * (로또 매주 토요일 20:00 KST 마감 기준)
  */
 export function getUserJoinRound(userId) {
+    if (typeof UserContextManager !== 'undefined' && UserContextManager.getUserJoinRound) {
+        return UserContextManager.getUserJoinRound(userId);
+    }
+    if (typeof window !== 'undefined' && window.UserContextManager && window.UserContextManager.getUserJoinRound) {
+        return window.UserContextManager.getUserJoinRound(userId);
+    }
     if (!userId) return 1235;
     let cleanUser = String(userId).trim();
     if (cleanUser.startsWith('{')) {

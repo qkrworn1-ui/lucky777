@@ -13710,3 +13710,149 @@ body.is-admin .btn-user-mgmt-compact {
         font-size: 0.82rem !important;
     }
 }
+
+/* ========================================================
+ * 📱 [구매확정리스트] 스마트폰 모바일 영수증 접기/펼치기 반응형 스타일
+ * ======================================================== */
+.confirmed-receipt-card {
+    transition: all 0.2s ease-in-out;
+}
+
+.confirmed-receipt-card:hover {
+    background: rgba(255, 255, 255, 0.035) !important;
+}
+
+.btn-toggle-receipt-combos:hover {
+    background: rgba(59, 130, 246, 0.25) !important;
+    border-color: #3b82f6 !important;
+}
+
+.btn-toggle-receipt-combos:active {
+    transform: scale(0.96);
+}
+
+.btn-toggle-all-round-combos:hover {
+    background: rgba(59, 130, 246, 0.25) !important;
+    border-color: #3b82f6 !important;
+}
+
+.btn-toggle-all-round-combos:active {
+    transform: scale(0.96);
+}
+
+@media (max-width: 640px) {
+    /* 📱 [구매확정리스트] 모바일 최적화 */
+    .confirmed-round-header {
+        padding-bottom: 6px !important;
+    }
+
+    .confirmed-round-actions {
+        width: 100% !important;
+        justify-content: space-between !important;
+        margin-left: 0 !important;
+        margin-top: 4px !important;
+    }
+
+    .confirmed-admin-bar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 6px !important;
+    }
+
+    .confirmed-admin-bar select {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    .confirmed-receipt-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+    }
+
+    .confirmed-receipt-actions {
+        width: 100% !important;
+        justify-content: space-between !important;
+        margin-top: 4px !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.05) !important;
+        padding-top: 6px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .btn-toggle-receipt-combos {
+        flex: 1 1 auto !important;
+        justify-content: center !important;
+        padding: 5px 12px !important;
+        font-size: 0.78rem !important;
+    }
+
+    .btn-toggle-all-round-combos {
+        font-size: 0.72rem !important;
+        padding: 3px 7px !important;
+    }
+
+    .confirmed-admin-qr-box {
+        font-size: 0.7rem !important;
+        padding: 8px !important;
+    }
+
+    .confirmed-game-row {
+        padding: 6px 8px !important;
+        gap: 6px !important;
+    }
+
+    .confirmed-balls-row {
+        gap: 3px !important;
+        min-width: 150px !important;
+    }
+
+    .confirmed-balls-row .lotto-ball-mini {
+        width: 23px !important;
+        height: 23px !important;
+        line-height: 23px !important;
+        font-size: 0.68rem !important;
+    }
+
+    /* 📱 [복기리포트] 모바일 최적화 */
+    #reviewAdminUserFilterContainer {
+        margin-left: 0 !important;
+        width: 100% !important;
+        margin-top: 8px !important;
+        justify-content: flex-start !important;
+    }
+
+    #btnOpenAdmin1235ReviewModal {
+        width: 100% !important;
+        justify-content: center !important;
+        margin-left: 0 !important;
+        margin-top: 4px !important;
+    }
+
+    /* 📱 [1235회~ 추천·당첨 상세 모달] 모바일 최적화 */
+    #admin1235ReviewModal .modal-card {
+        max-height: 96vh !important;
+        border-radius: 12px !important;
+    }
+
+    #admin1235ModalBody {
+        padding: 10px !important;
+        gap: 10px !important;
+    }
+
+    #admin1235ModalFilterPills {
+        gap: 3px !important;
+    }
+
+    .admin1235-filter-btn {
+        font-size: 0.68rem !important;
+        padding: 3px 6px !important;
+    }
+
+    /* 📱 [카카오톡 발송 콘솔 모달] 모바일 최적화 */
+    #kakaoBatchSendModal .modal-card {
+        max-height: 96vh !important;
+        padding: 14px !important;
+        border-radius: 12px !important;
+    }
+}
+

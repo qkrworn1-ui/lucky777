@@ -608,6 +608,9 @@ export async function renderConfirmedPurchasesList() {
                             ${summaryHTML}
                         </div>
                         <div class="confirmed-round-actions" style="display:inline-flex; align-items:center; flex-wrap: wrap; gap: 6px; flex-shrink: 0; margin-left: auto;" onclick="event.stopPropagation();">
+                            <button type="button" class="btn-toggle-all-round-combos" data-round="${round}" onclick="window.toggleRoundAllReceipts && window.toggleRoundAllReceipts(this, ${round})" style="padding: 3px 9px; font-size: 0.74rem; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
+                                <i class="fa-solid fa-layer-group"></i> <span class="toggle-all-text">전체 번호 펼치기</span>
+                            </button>
                             ${isAdmin ? `
                                 ${round === 1238 && purchases.length > 3 ? `
                                     <button class="btn-clean-1238-ghosts" data-round="1238" title="1238회 실제 구매(#1~#3) 외 가상 영수증 일괄 정리" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;">
@@ -682,38 +685,52 @@ export async function renderConfirmedPurchasesList() {
                 purchaserLabel = `구매자: <strong style="color: #fff; font-weight: 700;">${purchaseUser}</strong>`;
             }
 
-            html += `
-                <div class="confirmed-receipt-card" style="border-left: 3px solid ${isLocked ? '#f59e0b' : (pVer.includes('V4.0') ? '#8b5cf6' : (pVer.includes('V3.0') ? '#f59e0b' : '#64748b'))}; padding-left: 12px; margin-bottom: 14px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px;">
-                    <div class="confirmed-receipt-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 9px; flex-wrap: wrap; gap: 7px;">
-                        <div class="confirmed-receipt-title-group" style="font-size: 0.82rem; color: var(--text-secondary); font-weight: bold; display:flex; align-items:center; gap: 6px; flex-wrap: wrap;">
-                            <span class="confirmed-receipt-title" style="color: #fff; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-receipt" style="color: #f59e0b;"></i> 영수증 #${pIdx+1}</span>
-                            ${versionBadgeHtml}
-                            <span class="confirmed-user-badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-                                <i class="fa-solid fa-user-check" style="color: #60a5fa; font-size: 0.68rem;"></i> ${purchaserLabel}
-                            </span>
-                            ${isLocked ? '<span class="confirmed-lock-badge" style="color: #fbbf24; font-size: 0.72rem; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 1px 6px; border-radius: 4px;"><i class="fa-solid fa-lock"></i> 잠금됨</span>' : ''}
-                        </div>
-                        <div class="confirmed-receipt-actions" style="display:flex; gap: 5px;">
-                            ${isAdmin ? `
-                                <button class="btn-toggle-lock-purchase" data-round="${round}" data-pidx="${pIdx}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${lockBtnBg}; border: 1px solid ${lockBtnBorder}; color: ${lockBtnColor}; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fa-solid ${lockIcon}"></i> ${lockBtnText}
-                                </button>
-                                <button class="btn-edit-purchase" data-round="${round}" data-pidx="${pIdx}" ${isLocked ? 'disabled' : ''} style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(59, 130, 246, 0.4)'}; color: ${isLocked ? '#64748b' : '#93c5fd'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fa-solid fa-edit"></i> 수정
-                                </button>
-                                <button class="btn-delete-purchase" data-round="${round}" data-pidx="${pIdx}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'}; color: ${isLocked ? '#64748b' : '#fca5a5'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fa-solid fa-trash-can"></i> 삭제(휴지통)
-                                </button>
-                            ` : `
-                                <span style="color: #34d399; font-size: 0.72rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); padding: 2px 7px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                                    <i class="fa-solid fa-shield-halved"></i> 영구 보관됨
-                                </span>
-                            `}
-                        </div>
-                    </div>
-                    <div class="confirmed-games-list" style="display:flex; flex-direction:column; gap: 6px;">
-            `;
+            // Brief Outcome calculation for this single receipt
+            let receiptHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, miss: 0 };
+            let receiptPrize = 0;
+            if (actualDraw) {
+                const winningSet = new Set(actualDraw.numbers);
+                const bonus = actualDraw.bonus;
+                const p1 = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
+                const p2 = actualDraw.rank2Prize || 50000000;
+                const p3 = actualDraw.rank3Prize || 1500000;
+                const p4 = 50000;
+                const p5 = 5000;
 
+                purchase.combos.forEach(c => {
+                    const nums = getComboNumbers(c);
+                    const matches = nums.filter(n => winningSet.has(n));
+                    const matchCount = matches.length;
+                    const hasBonus = bonus ? nums.includes(bonus) : false;
+
+                    if (matchCount === 6) { receiptHits[1]++; receiptPrize += p1; }
+                    else if (matchCount === 5 && hasBonus) { receiptHits[2]++; receiptPrize += p2; }
+                    else if (matchCount === 5) { receiptHits[3]++; receiptPrize += p3; }
+                    else if (matchCount === 4) { receiptHits[4]++; receiptPrize += p4; }
+                    else if (matchCount === 3) { receiptHits[5]++; receiptPrize += p5; }
+                    else { receiptHits.miss++; }
+                });
+            }
+
+            let receiptResultBadge = '';
+            if (actualDraw) {
+                const parts = [];
+                if (receiptHits[1] > 0) parts.push(`1등 ${receiptHits[1]}개`);
+                if (receiptHits[2] > 0) parts.push(`2등 ${receiptHits[2]}개`);
+                if (receiptHits[3] > 0) parts.push(`3등 ${receiptHits[3]}개`);
+                if (receiptHits[4] > 0) parts.push(`4등 ${receiptHits[4]}개`);
+                if (receiptHits[5] > 0) parts.push(`5등 ${receiptHits[5]}개`);
+
+                if (parts.length > 0) {
+                    receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); color: #34d399; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-award"></i> ${parts.join(', ')} (+${receiptPrize.toLocaleString()}원)</span>`;
+                } else {
+                    receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">낙첨</span>`;
+                }
+            } else {
+                receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-clock"></i> 추첨 대기 (${purchase.combos.length}게임)</span>`;
+            }
+
+            let gamesHtml = '';
             purchase.combos.forEach((combo, cIdx) => {
                 const nums = getComboNumbers(combo);
                 
@@ -782,7 +799,7 @@ export async function renderConfirmedPurchasesList() {
                 }
 
                 const gameLetter = ['A', 'B', 'C', 'D', 'E'][cIdx] || `${cIdx + 1}`;
-                html += `
+                gamesHtml += `
                     <div class="confirmed-game-row" style="display: flex; justify-content: space-between; align-items: center; background: ${rowBg}; border: ${border}; padding: 6px 10px; border-radius: 6px; flex-wrap: wrap; gap: 6px 10px;">
                         <div class="confirmed-game-main" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap;">
                             <span class="confirmed-game-letter" style="font-size: 0.76rem; font-weight: 800; color: var(--text-secondary); background: rgba(0,0,0,0.3); min-width: 24px; text-align: center; padding: 2px 5px; border-radius: 4px; font-family: monospace;">${gameLetter}</span>
@@ -833,8 +850,44 @@ export async function renderConfirmedPurchasesList() {
             }
 
             html += `
+                <div class="confirmed-receipt-card" style="border-left: 3px solid ${isLocked ? '#f59e0b' : (pVer.includes('V4.0') ? '#8b5cf6' : (pVer.includes('V3.0') ? '#f59e0b' : '#64748b'))}; padding-left: 12px; margin-bottom: 14px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px;">
+                    <div class="confirmed-receipt-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; flex-wrap: wrap; gap: 7px;">
+                        <div class="confirmed-receipt-title-group" style="font-size: 0.82rem; color: var(--text-secondary); font-weight: bold; display:flex; align-items:center; gap: 6px; flex-wrap: wrap;">
+                            <span class="confirmed-receipt-title" style="color: #fff; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-receipt" style="color: #f59e0b;"></i> 영수증 #${pIdx+1}</span>
+                            ${versionBadgeHtml}
+                            <span class="confirmed-user-badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                                <i class="fa-solid fa-user-check" style="color: #60a5fa; font-size: 0.68rem;"></i> ${purchaserLabel}
+                            </span>
+                            ${receiptResultBadge}
+                            ${isLocked ? '<span class="confirmed-lock-badge" style="color: #fbbf24; font-size: 0.72rem; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 1px 6px; border-radius: 4px;"><i class="fa-solid fa-lock"></i> 잠금됨</span>' : ''}
+                        </div>
+                        <div class="confirmed-receipt-actions" style="display:flex; align-items:center; gap: 5px; flex-wrap: wrap;">
+                            <button type="button" class="btn-toggle-receipt-combos" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this)" style="padding: 3px 9px; font-size: 0.74rem; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700; transition: all 0.2s;">
+                                <i class="fa-solid fa-list-ol"></i>
+                                <span class="toggle-combos-text">번호 펼치기</span>
+                                <i class="fa-solid fa-chevron-down toggle-combos-icon" style="transition: transform 0.2s; font-size: 0.65rem;"></i>
+                            </button>
+                            ${isAdmin ? `
+                                <button class="btn-toggle-lock-purchase" data-round="${round}" data-pidx="${pIdx}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${lockBtnBg}; border: 1px solid ${lockBtnBorder}; color: ${lockBtnColor}; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid ${lockIcon}"></i> ${lockBtnText}
+                                </button>
+                                <button class="btn-edit-purchase" data-round="${round}" data-pidx="${pIdx}" ${isLocked ? 'disabled' : ''} style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(59, 130, 246, 0.4)'}; color: ${isLocked ? '#64748b' : '#93c5fd'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-edit"></i> 수정
+                                </button>
+                                <button class="btn-delete-purchase" data-round="${round}" data-pidx="${pIdx}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'}; color: ${isLocked ? '#64748b' : '#fca5a5'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-trash-can"></i> 삭제(휴지통)
+                                </button>
+                            ` : `
+                                <span style="color: #34d399; font-size: 0.72rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); padding: 2px 7px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-shield-halved"></i> 영구 보관됨
+                                </span>
+                            `}
+                        </div>
                     </div>
                     ${adminQrInfoHtml}
+                    <div class="confirmed-games-list" style="display:none; flex-direction:column; gap: 6px; margin-top: 8px;">
+                        ${gamesHtml}
+                    </div>
                 </div>
             `;
         });
@@ -1719,6 +1772,67 @@ export function renderReceiptTrashModalContent() {
     }
 }
 
+/**
+ * 📱 단일 구매영수증의 5게임 번호 조합 목록 펼치기/접기 토글
+ */
+export function toggleReceiptCombos(btn) {
+    if (!btn) return;
+    const card = btn.closest('.confirmed-receipt-card');
+    if (!card) return;
+    const gamesList = card.querySelector('.confirmed-games-list');
+    const textEl = btn.querySelector('.toggle-combos-text');
+    const iconEl = btn.querySelector('.toggle-combos-icon');
+    if (!gamesList) return;
+
+    const isHidden = (gamesList.style.display === 'none' || !gamesList.style.display);
+    if (isHidden) {
+        gamesList.style.display = 'flex';
+        if (textEl) textEl.textContent = '번호 접기';
+        if (iconEl) iconEl.style.transform = 'rotate(180deg)';
+        btn.style.background = 'rgba(59, 130, 246, 0.28)';
+        btn.style.borderColor = '#3b82f6';
+        btn.style.color = '#bfdbfe';
+    } else {
+        gamesList.style.display = 'none';
+        if (textEl) textEl.textContent = '번호 펼치기';
+        if (iconEl) iconEl.style.transform = 'rotate(0deg)';
+        btn.style.background = 'rgba(59, 130, 246, 0.15)';
+        btn.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+        btn.style.color = '#93c5fd';
+    }
+}
+
+/**
+ * 📱 해당 회차 내 모든 구매영수증 번호 일괄 펼치기/접기 토글
+ */
+export function toggleRoundAllReceipts(btn, round) {
+    if (!btn) return;
+    const roundCard = btn.closest('.confirmed-round-card');
+    if (!roundCard) return;
+    const allGamesLists = roundCard.querySelectorAll('.confirmed-games-list');
+    const allToggleBtns = roundCard.querySelectorAll('.btn-toggle-receipt-combos');
+    const isCurrentlyCollapsed = Array.from(allGamesLists).some(el => el.style.display === 'none' || !el.style.display);
+
+    allGamesLists.forEach(el => {
+        el.style.display = isCurrentlyCollapsed ? 'flex' : 'none';
+    });
+
+    allToggleBtns.forEach(b => {
+        const textEl = b.querySelector('.toggle-combos-text');
+        const iconEl = b.querySelector('.toggle-combos-icon');
+        if (textEl) textEl.textContent = isCurrentlyCollapsed ? '번호 접기' : '번호 펼치기';
+        if (iconEl) iconEl.style.transform = isCurrentlyCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+        b.style.background = isCurrentlyCollapsed ? 'rgba(59, 130, 246, 0.28)' : 'rgba(59, 130, 246, 0.15)';
+        b.style.borderColor = isCurrentlyCollapsed ? '#3b82f6' : 'rgba(59, 130, 246, 0.4)';
+        b.style.color = isCurrentlyCollapsed ? '#bfdbfe' : '#93c5fd';
+    });
+
+    const roundToggleText = btn.querySelector('.toggle-all-text');
+    if (roundToggleText) {
+        roundToggleText.textContent = isCurrentlyCollapsed ? '전체 번호 접기' : '전체 번호 펼치기';
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.renderConfirmedPurchasesList = renderConfirmedPurchasesList;
     window.openWinningHistoryModal = openWinningHistoryModal;
@@ -1727,4 +1841,6 @@ if (typeof window !== 'undefined') {
     window.openReceiptTrashModal = openReceiptTrashModal;
     window.closeReceiptTrashModal = closeReceiptTrashModal;
     window.renderReceiptTrashModalContent = renderReceiptTrashModalContent;
+    window.toggleReceiptCombos = toggleReceiptCombos;
+    window.toggleRoundAllReceipts = toggleRoundAllReceipts;
 }

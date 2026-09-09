@@ -1,7 +1,7 @@
 try {
 
 /**
- * Lucky777 Smart Bundle
+ * Lucky777 Smart Bundle (v718)
  */
 
 
@@ -5484,6 +5484,9 @@ window.startBatchWinningSend = async function() {
             try {
                 await window.db.collection('lotto_agreements').doc(userId).delete();
             } catch(e) {}
+            try {
+                await window.db.collection('lotto_purchases').doc(userId).delete();
+            } catch(e) {}
             
             showToast(`💥 [${userId}] 계정이 완전히 영구 삭제되었습니다.`);
             if (typeof window.loadUserList === 'function') window.loadUserList();
@@ -5515,6 +5518,7 @@ window.startBatchWinningSend = async function() {
                 try {
                     await window.db.collection('lotto_users').doc(u.userId).delete();
                     await window.db.collection('lotto_agreements').doc(u.userId).delete();
+                    await window.db.collection('lotto_purchases').doc(u.userId).delete();
                 } catch(e) {}
             }
             showToast(`🎉 휴지통이 완전히 비워졌습니다.`);
@@ -5522,6 +5526,101 @@ window.startBatchWinningSend = async function() {
         } catch (err) {
             console.error('[Empty Trash Error]', err);
             alert('휴지통 비우기 중 오류가 발생했습니다: ' + (err.message || err));
+        }
+    };
+
+    // 5. [테스트 데이터 & 테스트 계정 일괄 정리]
+    window.cleanupAllTestData = async function(silent = false) {
+        if (!window.db) {
+            if (!silent) alert('데이터베이스에 연결되지 않았습니다.');
+            return { success: false, reason: 'No DB' };
+        }
+
+        if (!silent && !confirm('🧹 [테스트 데이터 일괄 삭제]\n\n시스템에 등록된 모든 테스트용 계정(test_*, user_alpha, user_beta, user_gamma, user_1235, user_1238, user_1240, sample, pjg, hms 등)과 테스트 구매영수증/캐시 데이터를 완전히 삭제하시겠습니까?')) {
+            return { success: false, cancelled: true };
+        }
+
+        try {
+            if (!silent) showToast('🧹 테스트 계정 및 데이터 정리 중...');
+            
+            const isTestUserId = (rawId) => {
+                const id = (rawId || '').trim().toLowerCase();
+                return id.startsWith('test_') || id.startsWith('{') || 
+                       id === 'user_alpha' || id === 'user_beta' || id === 'user_gamma' || 
+                       id === 'user_1235' || id === 'user_1238' || id === 'user_1240' || id === 'user_1241' ||
+                       id === 'sample' || id === 'pjg' || id === 'hms';
+            };
+
+            let deletedUserCount = 0;
+
+            // 1) lotto_users 내 테스트 계정 전수 검색 및 삭제
+            try {
+                const userSnap = await window.db.collection('lotto_users').get();
+                if (userSnap && !userSnap.empty) {
+                    for (const doc of userSnap.docs) {
+                        const uId = doc.id;
+                        const data = doc.data() || {};
+                        if (isTestUserId(uId) || data.isTest === true) {
+                            try { await window.db.collection('lotto_users').doc(uId).delete(); } catch(e){}
+                            try { await window.db.collection('lotto_agreements').doc(uId).delete(); } catch(e){}
+                            try { await window.db.collection('lotto_purchases').doc(uId).delete(); } catch(e){}
+                            deletedUserCount++;
+                        }
+                    }
+                }
+            } catch(e) {
+                console.warn('[Cleanup lotto_users warn]', e);
+            }
+
+            // 2) lotto_purchases 내 테스트 영수증 문서 정리
+            try {
+                const purchSnap = await window.db.collection('lotto_purchases').get();
+                if (purchSnap && !purchSnap.empty) {
+                    for (const pDoc of purchSnap.docs) {
+                        const pId = pDoc.id;
+                        if (isTestUserId(pId)) {
+                            await window.db.collection('lotto_purchases').doc(pId).delete().catch(()=>{});
+                        }
+                    }
+                }
+            } catch(e) {
+                console.warn('[Cleanup lotto_purchases warn]', e);
+            }
+
+            // 3) LocalStorage & SessionStorage 내 테스트 키 정리
+            try {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && (k.startsWith('test_') || k.startsWith('mock_') || k.includes('user_alpha') || k.includes('user_beta'))) {
+                        keysToRemove.push(k);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+            } catch(e){}
+
+            // 4) In-memory lottoState 정리
+            if (typeof window !== 'undefined' && window.lottoState) {
+                if (window.lottoState.allUsersPurchasesMap) {
+                    Object.keys(window.lottoState.allUsersPurchasesMap).forEach(k => {
+                        if (isTestUserId(k)) delete window.lottoState.allUsersPurchasesMap[k];
+                    });
+                }
+                if (window.lottoState.allRegisteredUsersList) {
+                    window.lottoState.allRegisteredUsersList = window.lottoState.allRegisteredUsersList.filter(u => !isTestUserId(u.id));
+                }
+            }
+
+            if (!silent) {
+                showToast(`🎉 테스트 계정 ${deletedUserCount}개 및 관련 데이터가 완전히 삭제되었습니다.`);
+                if (typeof window.loadUserList === 'function') window.loadUserList();
+            }
+            console.log(`[TestDataCleanup] Cleaned up ${deletedUserCount} test accounts & test data successfully.`);
+            return { success: true, deletedUserCount };
+        } catch(err) {
+            console.error('[TestDataCleanup Error]', err);
+            if (!silent) alert('테스트 데이터 삭제 중 오류: ' + (err.message || err));
+            return { success: false, error: err };
         }
     };
 
@@ -5926,6 +6025,172 @@ window.startBatchWinningSend = async function() {
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/shared/auth-mgmt.js]:', modErr);
+    }
+    return __exports;
+})();
+
+const __M_shared_user_context = (function() {
+    const __exports = {};
+    try {
+const { SafeAuth, isAdminUser } = __M_shared_auth_mgmt;
+
+/**
+ * 🕒 LottoTimeService: Single Source of Truth for Lotto Dates & Rounds
+ */
+const LottoTimeService = {
+    FIRST_CUTOFF: new Date('2002-12-07T20:00:00+09:00'),
+
+    parseDate(input) {
+        if (!input) return null;
+        try {
+            if (typeof input === 'object' && input !== null) {
+                if (input.seconds) return new Date(input.seconds * 1000);
+                if (typeof input.toDate === 'function') return input.toDate();
+                if (input._seconds) return new Date(input._seconds * 1000);
+                if (input instanceof Date) return input;
+            } else if (typeof input === 'number') {
+                return new Date(input < 1e11 ? input * 1000 : input);
+            } else if (typeof input === 'string') {
+                const s = input.trim().replace('Z', '+00:00');
+                const d = new Date(s);
+                if (!isNaN(d.getTime())) return d;
+            }
+        } catch(e) {}
+        return null;
+    },
+
+    calcRoundFromDate(dateInput) {
+        const dt = this.parseDate(dateInput);
+        if (!dt || isNaN(dt.getTime())) return 1235;
+        const diff = dt.getTime() - this.FIRST_CUTOFF.getTime();
+        if (diff < 0) return 1;
+        const weeks = Math.floor(diff / (7 * 24 * 60 * 60 * 1000));
+        return 2 + weeks;
+    },
+
+    getRoundCutoffDate(roundNum) {
+        const weeks = Math.max(0, roundNum - 2);
+        return new Date(this.FIRST_CUTOFF.getTime() + (weeks * 7 * 24 * 60 * 60 * 1000));
+    },
+
+    isPreJoinRound(roundNum, userJoinRound) {
+        return Number(roundNum) < Number(userJoinRound);
+    }
+};
+
+/**
+ * 👤 UserContextManager: Single Source of Truth for User Metadata & Permissions
+ */
+const UserContextManager = {
+    _userCreatedMap: {},
+
+    setUserCreated(userId, createdAt) {
+        if (!userId || !createdAt) return;
+        const cleanId = String(userId).trim().toLowerCase();
+        const dt = LottoTimeService.parseDate(createdAt);
+        const dateStr = dt ? dt.toISOString() : String(createdAt).trim();
+        this._userCreatedMap[cleanId] = dateStr;
+        try {
+            if (typeof SafeStorage !== 'undefined') SafeStorage.setItem(created_, dateStr);
+            if (typeof SafeLocalStorage !== 'undefined') {
+                SafeLocalStorage.setItem(created_, dateStr);
+                SafeLocalStorage.setItem(lotto_user_created_, dateStr);
+            }
+        } catch(e) {}
+    },
+
+    getUserCreatedAt(userId) {
+        if (!userId) return null;
+        const cleanId = String(userId).trim().toLowerCase();
+
+        // 1. Memory cache
+        if (this._userCreatedMap[cleanId]) return this._userCreatedMap[cleanId];
+        if (typeof window !== 'undefined' && window.__userCreatedMap && window.__userCreatedMap[cleanId]) {
+            return window.__userCreatedMap[cleanId];
+        }
+
+        // 2. State registered users list
+        if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+            const found = window.state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase().trim() === cleanId);
+            if (found && (found.createdAt || found.created_at || found.registeredAt)) {
+                return found.createdAt || found.created_at || found.registeredAt;
+            }
+        }
+
+        // 3. State purchases map
+        if (typeof window !== 'undefined' && window.state && window.state.allUsersPurchasesMap && window.state.allUsersPurchasesMap[cleanId]) {
+            const pObj = window.state.allUsersPurchasesMap[cleanId];
+            if (pObj.createdAt || pObj.created_at) return pObj.createdAt || pObj.created_at;
+        }
+
+        // 4. Session & Local Storage
+        try {
+            const cached = (typeof SafeStorage !== 'undefined' && SafeStorage.getItem(created_)) ||
+                           (typeof SafeLocalStorage !== 'undefined' && SafeLocalStorage.getItem(created_)) ||
+                           (typeof SafeLocalStorage !== 'undefined' && SafeLocalStorage.getItem(lotto_user_created_));
+            if (cached) return cached;
+        } catch(e) {}
+
+        // 5. Current logged in user object
+        if (typeof window !== 'undefined' && window.currentUser) {
+            const cId = (window.currentUser.userId || window.currentUser.id || '').toLowerCase().trim();
+            if (cId === cleanId && (window.currentUser.createdAt || window.currentUser.created_at)) {
+                return window.currentUser.createdAt || window.currentUser.created_at;
+            }
+        }
+
+        return null;
+    },
+
+    getUserJoinRound(userId) {
+        if (!userId) return 1235;
+        let cleanId = String(userId).trim();
+        if (cleanId.startsWith('{')) {
+            try {
+                const p = JSON.parse(cleanId);
+                cleanId = p.userid || p.userId || cleanId;
+            } catch(e) {}
+        }
+        cleanId = cleanId.toLowerCase().trim();
+
+        if (cleanId === 'master' || cleanId === 'admin' || cleanId === 'all') return 1235;
+        if (typeof isAdminUser === 'function' && isAdminUser(cleanId)) return 1235;
+
+        const createdAt = this.getUserCreatedAt(cleanId);
+        if (createdAt) {
+            const calced = LottoTimeService.calcRoundFromDate(createdAt);
+            return Math.max(calced, 1235);
+        }
+
+        return 1235;
+    },
+
+    getValidRoundsForUser(userId, latestRound) {
+        const joinRound = this.getUserJoinRound(userId);
+        const minRound = Math.max(1235, joinRound);
+        const rounds = [];
+        for (let r = latestRound; r >= minRound; r--) {
+            rounds.push(r);
+        }
+        return rounds.length > 0 ? rounds : [minRound];
+    }
+};
+
+if (typeof window !== 'undefined') {
+    window.LottoTimeService = LottoTimeService;
+    window.UserContextManager = UserContextManager;
+}
+
+        if (typeof LottoTimeService !== 'undefined') {
+            __exports.LottoTimeService = LottoTimeService;
+            if (typeof window !== 'undefined') window.LottoTimeService = LottoTimeService;
+        }
+        if (typeof UserContextManager !== 'undefined') {
+            __exports.UserContextManager = UserContextManager;
+            if (typeof window !== 'undefined') window.UserContextManager = UserContextManager;
+        }
+    } catch (modErr) {
+        console.error('[Module Isolation Error in src/shared/user-context.js]:', modErr);
     }
     return __exports;
 })();
@@ -12640,6 +12905,12 @@ function evaluateRecommendationSet(combos, actualDraw) {
  * (로또 매주 토요일 20:00 KST 마감 기준)
  */
 function getUserJoinRound(userId) {
+    if (typeof UserContextManager !== 'undefined' && UserContextManager.getUserJoinRound) {
+        return UserContextManager.getUserJoinRound(userId);
+    }
+    if (typeof window !== 'undefined' && window.UserContextManager && window.UserContextManager.getUserJoinRound) {
+        return window.UserContextManager.getUserJoinRound(userId);
+    }
     if (!userId) return 1235;
     let cleanUser = String(userId).trim();
     if (cleanUser.startsWith('{')) {
@@ -19100,6 +19371,9 @@ async function renderConfirmedPurchasesList() {
                             ${summaryHTML}
                         </div>
                         <div class="confirmed-round-actions" style="display:inline-flex; align-items:center; flex-wrap: wrap; gap: 6px; flex-shrink: 0; margin-left: auto;" onclick="event.stopPropagation();">
+                            <button type="button" class="btn-toggle-all-round-combos" data-round="${round}" onclick="window.toggleRoundAllReceipts && window.toggleRoundAllReceipts(this, ${round})" style="padding: 3px 9px; font-size: 0.74rem; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
+                                <i class="fa-solid fa-layer-group"></i> <span class="toggle-all-text">전체 번호 펼치기</span>
+                            </button>
                             ${isAdmin ? `
                                 ${round === 1238 && purchases.length > 3 ? `
                                     <button class="btn-clean-1238-ghosts" data-round="1238" title="1238회 실제 구매(#1~#3) 외 가상 영수증 일괄 정리" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;">
@@ -19174,38 +19448,52 @@ async function renderConfirmedPurchasesList() {
                 purchaserLabel = `구매자: <strong style="color: #fff; font-weight: 700;">${purchaseUser}</strong>`;
             }
 
-            html += `
-                <div class="confirmed-receipt-card" style="border-left: 3px solid ${isLocked ? '#f59e0b' : (pVer.includes('V4.0') ? '#8b5cf6' : (pVer.includes('V3.0') ? '#f59e0b' : '#64748b'))}; padding-left: 12px; margin-bottom: 14px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px;">
-                    <div class="confirmed-receipt-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 9px; flex-wrap: wrap; gap: 7px;">
-                        <div class="confirmed-receipt-title-group" style="font-size: 0.82rem; color: var(--text-secondary); font-weight: bold; display:flex; align-items:center; gap: 6px; flex-wrap: wrap;">
-                            <span class="confirmed-receipt-title" style="color: #fff; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-receipt" style="color: #f59e0b;"></i> 영수증 #${pIdx+1}</span>
-                            ${versionBadgeHtml}
-                            <span class="confirmed-user-badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
-                                <i class="fa-solid fa-user-check" style="color: #60a5fa; font-size: 0.68rem;"></i> ${purchaserLabel}
-                            </span>
-                            ${isLocked ? '<span class="confirmed-lock-badge" style="color: #fbbf24; font-size: 0.72rem; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 1px 6px; border-radius: 4px;"><i class="fa-solid fa-lock"></i> 잠금됨</span>' : ''}
-                        </div>
-                        <div class="confirmed-receipt-actions" style="display:flex; gap: 5px;">
-                            ${isAdmin ? `
-                                <button class="btn-toggle-lock-purchase" data-round="${round}" data-pidx="${pIdx}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${lockBtnBg}; border: 1px solid ${lockBtnBorder}; color: ${lockBtnColor}; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fa-solid ${lockIcon}"></i> ${lockBtnText}
-                                </button>
-                                <button class="btn-edit-purchase" data-round="${round}" data-pidx="${pIdx}" ${isLocked ? 'disabled' : ''} style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(59, 130, 246, 0.4)'}; color: ${isLocked ? '#64748b' : '#93c5fd'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fa-solid fa-edit"></i> 수정
-                                </button>
-                                <button class="btn-delete-purchase" data-round="${round}" data-pidx="${pIdx}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'}; color: ${isLocked ? '#64748b' : '#fca5a5'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
-                                    <i class="fa-solid fa-trash-can"></i> 삭제(휴지통)
-                                </button>
-                            ` : `
-                                <span style="color: #34d399; font-size: 0.72rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); padding: 2px 7px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
-                                    <i class="fa-solid fa-shield-halved"></i> 영구 보관됨
-                                </span>
-                            `}
-                        </div>
-                    </div>
-                    <div class="confirmed-games-list" style="display:flex; flex-direction:column; gap: 6px;">
-            `;
+            // Brief Outcome calculation for this single receipt
+            let receiptHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, miss: 0 };
+            let receiptPrize = 0;
+            if (actualDraw) {
+                const winningSet = new Set(actualDraw.numbers);
+                const bonus = actualDraw.bonus;
+                const p1 = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
+                const p2 = actualDraw.rank2Prize || 50000000;
+                const p3 = actualDraw.rank3Prize || 1500000;
+                const p4 = 50000;
+                const p5 = 5000;
 
+                purchase.combos.forEach(c => {
+                    const nums = getComboNumbers(c);
+                    const matches = nums.filter(n => winningSet.has(n));
+                    const matchCount = matches.length;
+                    const hasBonus = bonus ? nums.includes(bonus) : false;
+
+                    if (matchCount === 6) { receiptHits[1]++; receiptPrize += p1; }
+                    else if (matchCount === 5 && hasBonus) { receiptHits[2]++; receiptPrize += p2; }
+                    else if (matchCount === 5) { receiptHits[3]++; receiptPrize += p3; }
+                    else if (matchCount === 4) { receiptHits[4]++; receiptPrize += p4; }
+                    else if (matchCount === 3) { receiptHits[5]++; receiptPrize += p5; }
+                    else { receiptHits.miss++; }
+                });
+            }
+
+            let receiptResultBadge = '';
+            if (actualDraw) {
+                const parts = [];
+                if (receiptHits[1] > 0) parts.push(`1등 ${receiptHits[1]}개`);
+                if (receiptHits[2] > 0) parts.push(`2등 ${receiptHits[2]}개`);
+                if (receiptHits[3] > 0) parts.push(`3등 ${receiptHits[3]}개`);
+                if (receiptHits[4] > 0) parts.push(`4등 ${receiptHits[4]}개`);
+                if (receiptHits[5] > 0) parts.push(`5등 ${receiptHits[5]}개`);
+
+                if (parts.length > 0) {
+                    receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); color: #34d399; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-award"></i> ${parts.join(', ')} (+${receiptPrize.toLocaleString()}원)</span>`;
+                } else {
+                    receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">낙첨</span>`;
+                }
+            } else {
+                receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-clock"></i> 추첨 대기 (${purchase.combos.length}게임)</span>`;
+            }
+
+            let gamesHtml = '';
             purchase.combos.forEach((combo, cIdx) => {
                 const nums = getComboNumbers(combo);
                 
@@ -19274,7 +19562,7 @@ async function renderConfirmedPurchasesList() {
                 }
 
                 const gameLetter = ['A', 'B', 'C', 'D', 'E'][cIdx] || `${cIdx + 1}`;
-                html += `
+                gamesHtml += `
                     <div class="confirmed-game-row" style="display: flex; justify-content: space-between; align-items: center; background: ${rowBg}; border: ${border}; padding: 6px 10px; border-radius: 6px; flex-wrap: wrap; gap: 6px 10px;">
                         <div class="confirmed-game-main" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap;">
                             <span class="confirmed-game-letter" style="font-size: 0.76rem; font-weight: 800; color: var(--text-secondary); background: rgba(0,0,0,0.3); min-width: 24px; text-align: center; padding: 2px 5px; border-radius: 4px; font-family: monospace;">${gameLetter}</span>
@@ -19325,8 +19613,44 @@ async function renderConfirmedPurchasesList() {
             }
 
             html += `
+                <div class="confirmed-receipt-card" style="border-left: 3px solid ${isLocked ? '#f59e0b' : (pVer.includes('V4.0') ? '#8b5cf6' : (pVer.includes('V3.0') ? '#f59e0b' : '#64748b'))}; padding-left: 12px; margin-bottom: 14px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px;">
+                    <div class="confirmed-receipt-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; flex-wrap: wrap; gap: 7px;">
+                        <div class="confirmed-receipt-title-group" style="font-size: 0.82rem; color: var(--text-secondary); font-weight: bold; display:flex; align-items:center; gap: 6px; flex-wrap: wrap;">
+                            <span class="confirmed-receipt-title" style="color: #fff; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-receipt" style="color: #f59e0b;"></i> 영수증 #${pIdx+1}</span>
+                            ${versionBadgeHtml}
+                            <span class="confirmed-user-badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                                <i class="fa-solid fa-user-check" style="color: #60a5fa; font-size: 0.68rem;"></i> ${purchaserLabel}
+                            </span>
+                            ${receiptResultBadge}
+                            ${isLocked ? '<span class="confirmed-lock-badge" style="color: #fbbf24; font-size: 0.72rem; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 1px 6px; border-radius: 4px;"><i class="fa-solid fa-lock"></i> 잠금됨</span>' : ''}
+                        </div>
+                        <div class="confirmed-receipt-actions" style="display:flex; align-items:center; gap: 5px; flex-wrap: wrap;">
+                            <button type="button" class="btn-toggle-receipt-combos" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this)" style="padding: 3px 9px; font-size: 0.74rem; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700; transition: all 0.2s;">
+                                <i class="fa-solid fa-list-ol"></i>
+                                <span class="toggle-combos-text">번호 펼치기</span>
+                                <i class="fa-solid fa-chevron-down toggle-combos-icon" style="transition: transform 0.2s; font-size: 0.65rem;"></i>
+                            </button>
+                            ${isAdmin ? `
+                                <button class="btn-toggle-lock-purchase" data-round="${round}" data-pidx="${pIdx}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${lockBtnBg}; border: 1px solid ${lockBtnBorder}; color: ${lockBtnColor}; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid ${lockIcon}"></i> ${lockBtnText}
+                                </button>
+                                <button class="btn-edit-purchase" data-round="${round}" data-pidx="${pIdx}" ${isLocked ? 'disabled' : ''} style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(59, 130, 246, 0.4)'}; color: ${isLocked ? '#64748b' : '#93c5fd'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-edit"></i> 수정
+                                </button>
+                                <button class="btn-delete-purchase" data-round="${round}" data-pidx="${pIdx}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'}; color: ${isLocked ? '#64748b' : '#fca5a5'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-trash-can"></i> 삭제(휴지통)
+                                </button>
+                            ` : `
+                                <span style="color: #34d399; font-size: 0.72rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); padding: 2px 7px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                                    <i class="fa-solid fa-shield-halved"></i> 영구 보관됨
+                                </span>
+                            `}
+                        </div>
                     </div>
                     ${adminQrInfoHtml}
+                    <div class="confirmed-games-list" style="display:none; flex-direction:column; gap: 6px; margin-top: 8px;">
+                        ${gamesHtml}
+                    </div>
                 </div>
             `;
         });
@@ -20211,6 +20535,67 @@ function renderReceiptTrashModalContent() {
     }
 }
 
+/**
+ * 📱 단일 구매영수증의 5게임 번호 조합 목록 펼치기/접기 토글
+ */
+function toggleReceiptCombos(btn) {
+    if (!btn) return;
+    const card = btn.closest('.confirmed-receipt-card');
+    if (!card) return;
+    const gamesList = card.querySelector('.confirmed-games-list');
+    const textEl = btn.querySelector('.toggle-combos-text');
+    const iconEl = btn.querySelector('.toggle-combos-icon');
+    if (!gamesList) return;
+
+    const isHidden = (gamesList.style.display === 'none' || !gamesList.style.display);
+    if (isHidden) {
+        gamesList.style.display = 'flex';
+        if (textEl) textEl.textContent = '번호 접기';
+        if (iconEl) iconEl.style.transform = 'rotate(180deg)';
+        btn.style.background = 'rgba(59, 130, 246, 0.28)';
+        btn.style.borderColor = '#3b82f6';
+        btn.style.color = '#bfdbfe';
+    } else {
+        gamesList.style.display = 'none';
+        if (textEl) textEl.textContent = '번호 펼치기';
+        if (iconEl) iconEl.style.transform = 'rotate(0deg)';
+        btn.style.background = 'rgba(59, 130, 246, 0.15)';
+        btn.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+        btn.style.color = '#93c5fd';
+    }
+}
+
+/**
+ * 📱 해당 회차 내 모든 구매영수증 번호 일괄 펼치기/접기 토글
+ */
+function toggleRoundAllReceipts(btn, round) {
+    if (!btn) return;
+    const roundCard = btn.closest('.confirmed-round-card');
+    if (!roundCard) return;
+    const allGamesLists = roundCard.querySelectorAll('.confirmed-games-list');
+    const allToggleBtns = roundCard.querySelectorAll('.btn-toggle-receipt-combos');
+    const isCurrentlyCollapsed = Array.from(allGamesLists).some(el => el.style.display === 'none' || !el.style.display);
+
+    allGamesLists.forEach(el => {
+        el.style.display = isCurrentlyCollapsed ? 'flex' : 'none';
+    });
+
+    allToggleBtns.forEach(b => {
+        const textEl = b.querySelector('.toggle-combos-text');
+        const iconEl = b.querySelector('.toggle-combos-icon');
+        if (textEl) textEl.textContent = isCurrentlyCollapsed ? '번호 접기' : '번호 펼치기';
+        if (iconEl) iconEl.style.transform = isCurrentlyCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+        b.style.background = isCurrentlyCollapsed ? 'rgba(59, 130, 246, 0.28)' : 'rgba(59, 130, 246, 0.15)';
+        b.style.borderColor = isCurrentlyCollapsed ? '#3b82f6' : 'rgba(59, 130, 246, 0.4)';
+        b.style.color = isCurrentlyCollapsed ? '#bfdbfe' : '#93c5fd';
+    });
+
+    const roundToggleText = btn.querySelector('.toggle-all-text');
+    if (roundToggleText) {
+        roundToggleText.textContent = isCurrentlyCollapsed ? '전체 번호 접기' : '전체 번호 펼치기';
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.renderConfirmedPurchasesList = renderConfirmedPurchasesList;
     window.openWinningHistoryModal = openWinningHistoryModal;
@@ -20219,6 +20604,8 @@ if (typeof window !== 'undefined') {
     window.openReceiptTrashModal = openReceiptTrashModal;
     window.closeReceiptTrashModal = closeReceiptTrashModal;
     window.renderReceiptTrashModalContent = renderReceiptTrashModalContent;
+    window.toggleReceiptCombos = toggleReceiptCombos;
+    window.toggleRoundAllReceipts = toggleRoundAllReceipts;
 }
 
         if (typeof renderConfirmedPurchasesList !== 'undefined') {
@@ -20256,6 +20643,14 @@ if (typeof window !== 'undefined') {
         if (typeof renderReceiptTrashModalContent !== 'undefined') {
             __exports.renderReceiptTrashModalContent = renderReceiptTrashModalContent;
             if (typeof window !== 'undefined') window.renderReceiptTrashModalContent = renderReceiptTrashModalContent;
+        }
+        if (typeof toggleReceiptCombos !== 'undefined') {
+            __exports.toggleReceiptCombos = toggleReceiptCombos;
+            if (typeof window !== 'undefined') window.toggleReceiptCombos = toggleReceiptCombos;
+        }
+        if (typeof toggleRoundAllReceipts !== 'undefined') {
+            __exports.toggleRoundAllReceipts = toggleRoundAllReceipts;
+            if (typeof window !== 'undefined') window.toggleRoundAllReceipts = toggleRoundAllReceipts;
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/services/lotto/views/confirmed-tab.js]:', modErr);

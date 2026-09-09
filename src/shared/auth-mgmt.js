@@ -4694,6 +4694,9 @@ window.startBatchWinningSend = async function() {
             try {
                 await window.db.collection('lotto_agreements').doc(userId).delete();
             } catch(e) {}
+            try {
+                await window.db.collection('lotto_purchases').doc(userId).delete();
+            } catch(e) {}
             
             showToast(`💥 [${userId}] 계정이 완전히 영구 삭제되었습니다.`);
             if (typeof window.loadUserList === 'function') window.loadUserList();
@@ -4725,6 +4728,7 @@ window.startBatchWinningSend = async function() {
                 try {
                     await window.db.collection('lotto_users').doc(u.userId).delete();
                     await window.db.collection('lotto_agreements').doc(u.userId).delete();
+                    await window.db.collection('lotto_purchases').doc(u.userId).delete();
                 } catch(e) {}
             }
             showToast(`🎉 휴지통이 완전히 비워졌습니다.`);
@@ -4732,6 +4736,101 @@ window.startBatchWinningSend = async function() {
         } catch (err) {
             console.error('[Empty Trash Error]', err);
             alert('휴지통 비우기 중 오류가 발생했습니다: ' + (err.message || err));
+        }
+    };
+
+    // 5. [테스트 데이터 & 테스트 계정 일괄 정리]
+    window.cleanupAllTestData = async function(silent = false) {
+        if (!window.db) {
+            if (!silent) alert('데이터베이스에 연결되지 않았습니다.');
+            return { success: false, reason: 'No DB' };
+        }
+
+        if (!silent && !confirm('🧹 [테스트 데이터 일괄 삭제]\n\n시스템에 등록된 모든 테스트용 계정(test_*, user_alpha, user_beta, user_gamma, user_1235, user_1238, user_1240, sample, pjg, hms 등)과 테스트 구매영수증/캐시 데이터를 완전히 삭제하시겠습니까?')) {
+            return { success: false, cancelled: true };
+        }
+
+        try {
+            if (!silent) showToast('🧹 테스트 계정 및 데이터 정리 중...');
+            
+            const isTestUserId = (rawId) => {
+                const id = (rawId || '').trim().toLowerCase();
+                return id.startsWith('test_') || id.startsWith('{') || 
+                       id === 'user_alpha' || id === 'user_beta' || id === 'user_gamma' || 
+                       id === 'user_1235' || id === 'user_1238' || id === 'user_1240' || id === 'user_1241' ||
+                       id === 'sample' || id === 'pjg' || id === 'hms';
+            };
+
+            let deletedUserCount = 0;
+
+            // 1) lotto_users 내 테스트 계정 전수 검색 및 삭제
+            try {
+                const userSnap = await window.db.collection('lotto_users').get();
+                if (userSnap && !userSnap.empty) {
+                    for (const doc of userSnap.docs) {
+                        const uId = doc.id;
+                        const data = doc.data() || {};
+                        if (isTestUserId(uId) || data.isTest === true) {
+                            try { await window.db.collection('lotto_users').doc(uId).delete(); } catch(e){}
+                            try { await window.db.collection('lotto_agreements').doc(uId).delete(); } catch(e){}
+                            try { await window.db.collection('lotto_purchases').doc(uId).delete(); } catch(e){}
+                            deletedUserCount++;
+                        }
+                    }
+                }
+            } catch(e) {
+                console.warn('[Cleanup lotto_users warn]', e);
+            }
+
+            // 2) lotto_purchases 내 테스트 영수증 문서 정리
+            try {
+                const purchSnap = await window.db.collection('lotto_purchases').get();
+                if (purchSnap && !purchSnap.empty) {
+                    for (const pDoc of purchSnap.docs) {
+                        const pId = pDoc.id;
+                        if (isTestUserId(pId)) {
+                            await window.db.collection('lotto_purchases').doc(pId).delete().catch(()=>{});
+                        }
+                    }
+                }
+            } catch(e) {
+                console.warn('[Cleanup lotto_purchases warn]', e);
+            }
+
+            // 3) LocalStorage & SessionStorage 내 테스트 키 정리
+            try {
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const k = localStorage.key(i);
+                    if (k && (k.startsWith('test_') || k.startsWith('mock_') || k.includes('user_alpha') || k.includes('user_beta'))) {
+                        keysToRemove.push(k);
+                    }
+                }
+                keysToRemove.forEach(k => localStorage.removeItem(k));
+            } catch(e){}
+
+            // 4) In-memory lottoState 정리
+            if (typeof window !== 'undefined' && window.lottoState) {
+                if (window.lottoState.allUsersPurchasesMap) {
+                    Object.keys(window.lottoState.allUsersPurchasesMap).forEach(k => {
+                        if (isTestUserId(k)) delete window.lottoState.allUsersPurchasesMap[k];
+                    });
+                }
+                if (window.lottoState.allRegisteredUsersList) {
+                    window.lottoState.allRegisteredUsersList = window.lottoState.allRegisteredUsersList.filter(u => !isTestUserId(u.id));
+                }
+            }
+
+            if (!silent) {
+                showToast(`🎉 테스트 계정 ${deletedUserCount}개 및 관련 데이터가 완전히 삭제되었습니다.`);
+                if (typeof window.loadUserList === 'function') window.loadUserList();
+            }
+            console.log(`[TestDataCleanup] Cleaned up ${deletedUserCount} test accounts & test data successfully.`);
+            return { success: true, deletedUserCount };
+        } catch(err) {
+            console.error('[TestDataCleanup Error]', err);
+            if (!silent) alert('테스트 데이터 삭제 중 오류: ' + (err.message || err));
+            return { success: false, error: err };
         }
     };
 

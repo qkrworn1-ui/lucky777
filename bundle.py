@@ -1,5 +1,64 @@
 import os
 import re
+import json
+import sys
+import unittest
+
+def run_preflight_tests():
+    print("[*] [TEST] Running Pre-flight Integrity Tests...")
+    loader = unittest.TestLoader()
+    suite = loader.discover('tests', pattern='test_*.py')
+    runner = unittest.TextTestRunner(verbosity=1)
+    result = runner.run(suite)
+    if not result.wasSuccessful():
+        print("[!] [FAIL] Pre-flight tests FAILED! Bundling aborted.")
+        sys.exit(1)
+    print("[+] [PASS] All pre-flight integrity tests PASSED!")
+
+def sync_version_assets():
+    if not os.path.exists('version.json'):
+        return 'v716'
+    with open('version.json', 'r', encoding='utf-8') as f:
+        vdata = json.load(f)
+    version = vdata.get('version', 'v716').strip()
+    v_num = version.lstrip('v')
+    print(f"[*] [SYNC] Synchronizing Version: {version} (v_num: {v_num})...")
+
+    if os.path.exists('index.html'):
+        with open('index.html', 'r', encoding='utf-8') as f:
+            html = f.read()
+        html = re.sub(r'styles\.css\?v=[a-zA-Z0-9_-]+', f'styles.css?v={v_num}', html)
+        html = re.sub(
+            r'(<span id="appVersionBadgeLanding"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)(v[0-9]+)(\s*<i class="fa-solid fa-rotate"[^>]*></i>\s*</span>)',
+            rf'\g<1>{version}\g<3>',
+            html
+        )
+        html = re.sub(
+            r'(<span class="app-version-badge"[^>]*>\s*)(v[0-9]+)(\s*</span>)',
+            rf'\g<1>{version}\g<3>',
+            html
+        )
+        html = re.sub(
+            r'(<span class="app-version-badge"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)(v[0-9]+)(\s*</span>)',
+            rf'\g<1>{version}\g<3>',
+            html
+        )
+        html = re.sub(r'window\.APP_VERSION\s*=\s*[\'"][^\'"]+[\'"];', f"window.APP_VERSION = '{version}';", html)
+        html = re.sub(r'var\s+vStr\s*=\s*window\.APP_VERSION\s*\|\|\s*[\'"][^\'"]+[\'"];', f"var vStr = window.APP_VERSION || '{version}';", html)
+        html = re.sub(r'var\s+v\s*=\s*ver\s*\|\|\s*window\.APP_VERSION\s*\|\|\s*[\'"][^\'"]+[\'"];', f"var v = ver || window.APP_VERSION || '{version}';", html)
+        with open('index.html', 'w', encoding='utf-8') as f:
+            f.write(html)
+        print("  [+] index.html version synced.")
+
+    if os.path.exists('sw.js'):
+        with open('sw.js', 'r', encoding='utf-8') as f:
+            sw = f.read()
+        sw = re.sub(r'const CACHE_NAME = [\'"]lucky777-pwa-[^\'"]+[\'"];', f"const CACHE_NAME = 'lucky777-pwa-{version}';", sw)
+        with open('sw.js', 'w', encoding='utf-8') as f:
+            f.write(sw)
+        print("  [+] sw.js CACHE_NAME synced.")
+
+    return version
 
 # File order based on dependency graph
 FILES_TO_BUNDLE = [
@@ -9,6 +68,7 @@ FILES_TO_BUNDLE = [
     "src/shared/db.js",
     "src/shared/event-bus.js",
     "src/shared/auth-mgmt.js",
+    "src/shared/user-context.js",
     "src/services/lotto/state.js",
     "src/services/lotto/ledger.js",
     "src/services/lotto/statistics.js",
@@ -65,9 +125,11 @@ def get_mod_slug(path):
     return f"__M_{slug}"
 
 def clean_and_bundle():
-    print("[*] Starting smart bundling process...")
+    version = sync_version_assets()
+    run_preflight_tests()
+    print(f"[*] Starting smart bundling process for [{version}]...")
     bundled_content = [
-        "/**\n * Lucky777 Smart Bundle\n */\n",
+        f"/**\n * Lucky777 Smart Bundle ({version})\n */\n",
         SAFE_STORAGE_DEFINITION
     ]
     
