@@ -3153,31 +3153,112 @@ ${roundLines.slice(0, 6).join('\n')}
 }
 
 /**
+ * 🎨 1235회차 복기 리포트 전용 무손실 고화질 캔버스 생성기
+ * - 스크롤 제한(max-height / overflow: hidden) 및 스크롤 위치(scrollY)로 인한 상하단 잘림 현상을 100% 원천 해결
+ * - 독립된 오프스크린 컨테이너에서 100% 전장(Full Height) 고해상도 렌더링
+ */
+async function createAdmin1235ReportCanvas() {
+    const modalBody = document.getElementById('admin1235ModalBody');
+    if (!modalBody) return null;
+
+    if (typeof html2canvas !== 'function') {
+        throw new Error('html2canvas 라이브러리가 로드되지 않았습니다.');
+    }
+
+    const roundVal = _currentAdmin1235ModalRound;
+    const userVal = _currentAdmin1235ModalUser || 'all';
+    const roundTitle = (roundVal === 'all_rounds') ? '1235회 ~ 최신 누적 종합' : `제 ${roundVal}회`;
+    const userTitle = (userVal === 'all') ? '전체 회원' : userVal;
+
+    // Create a standalone off-screen card container with unconstrained height
+    const offscreenWrapper = document.createElement('div');
+    offscreenWrapper.style.cssText = `
+        position: fixed;
+        left: -9999px;
+        top: 0;
+        width: 680px;
+        max-width: 680px;
+        background: linear-gradient(145deg, #0b1329 0%, #1e293b 100%);
+        border: 2px solid #f59e0b;
+        border-radius: 16px;
+        padding: 20px;
+        color: #ffffff;
+        font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', 'Noto Sans KR', sans-serif;
+        box-sizing: border-box;
+        overflow: visible;
+        height: auto;
+        z-index: -9999;
+    `;
+
+    // Header Card
+    const headerHtml = `
+        <div style="background: rgba(15, 23, 42, 0.95); border-bottom: 1.5px solid rgba(245, 158, 11, 0.4); padding: 12px 14px; border-radius: 12px 12px 0 0; margin: -20px -20px 16px -20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 1.2rem; border: 1.5px solid rgba(245, 158, 11, 0.5);">
+                    👑
+                </span>
+                <div>
+                    <h2 style="margin: 0; color: #fbbf24; font-size: 1.15rem; font-weight: 900; letter-spacing: -0.3px;">
+                        운도실력 로또 AI 퀀트 복기 리포트
+                    </h2>
+                    <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 2px;">
+                        ${roundTitle} 추천·당첨 성과 분석 [대상: ${userTitle}]
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <span style="display: inline-block; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.7rem; font-weight: 800; padding: 2px 8px; border-radius: 4px;">
+                    공식 검증 완료
+                </span>
+            </div>
+        </div>
+    `;
+
+    // Footer Card
+    const footerHtml = `
+        <div style="margin: 16px -20px -20px -20px; padding: 12px 16px; background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0 0 12px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #94a3b8;">
+            <div>
+                🛡️ 1235회~ 실구매 영수증 및 스냅샷 불변 무결성 검증
+            </div>
+            <div style="color: #fbbf24; font-weight: 700;">
+                운도실력 777 (wook2100.github.io/lucky777)
+            </div>
+        </div>
+    `;
+
+    offscreenWrapper.innerHTML = headerHtml + modalBody.innerHTML + footerHtml;
+    document.body.appendChild(offscreenWrapper);
+
+    try {
+        const canvas = await html2canvas(offscreenWrapper, {
+            backgroundColor: '#0b1329',
+            scale: 2, // 2x Retina ultra-crisp resolution
+            useCORS: true,
+            logging: false,
+            scrollY: 0,
+            scrollX: 0,
+            windowWidth: 700
+        });
+        return canvas;
+    } finally {
+        if (offscreenWrapper.parentNode) {
+            offscreenWrapper.parentNode.removeChild(offscreenWrapper);
+        }
+    }
+}
+
+/**
  * 🖼️ [리포트 이미지로 카카오톡/SNS 공유]
- * 모달 리포트를 고화질 PNG 이미지로 변환 후, 모바일에서는 카카오톡/SNS 대화방으로 이미지 직접 전송,
+ * 모달 리포트를 전장(Full Height) 고화질 PNG 이미지로 변환 후, 모바일에서는 카카오톡/SNS 대화방으로 이미지 직접 전송,
  * PC에서는 클립보드 복사(Ctrl+V 붙여넣기 지원) 및 이미지 자동 저장을 실행
  */
 export async function shareAdmin1235ReviewAsImage() {
-    showToast('🎨 리포트 이미지를 생성하는 중입니다...');
-    const targetElement = document.getElementById('admin1235ModalBody') || document.querySelector('#admin1235ReviewModal .modal-card');
-    if (!targetElement) return;
+    showToast('🎨 고화질 리포트 이미지를 생성하는 중입니다...');
 
     try {
-        if (typeof html2canvas !== 'function') {
-            alert('⚠️ 이미지 생성 도구를 불러오는 중입니다. 1~2초 후 다시 눌러주세요.');
-            return;
-        }
-
-        const canvas = await html2canvas(targetElement, {
-            backgroundColor: '#0f172a',
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            windowWidth: 720
-        });
-
+        const canvas = await createAdmin1235ReportCanvas();
         if (!canvas) {
-            alert('⚠️ 이미지 생성에 실패했습니다.');
+            alert('⚠️ 이미지 생성 도구를 불러오는 중입니다. 1~2초 후 다시 눌러주세요.');
             return;
         }
 
@@ -3211,7 +3292,7 @@ export async function shareAdmin1235ReviewAsImage() {
                     const item = new ClipboardItem({ 'image/png': blob });
                     await navigator.clipboard.write([item]);
                     clipSuccess = true;
-                    showToast('🖼️ 이미지가 클립보드에 복사되었습니다! 카카오톡 채팅방에 Ctrl+V로 붙여넣으세요.');
+                    showToast('🖼️ 리포트 이미지가 클립보드에 복사되었습니다! 카카오톡 채팅방에 Ctrl+V로 붙여넣으세요.');
                 }
             } catch(clipErr) {
                 console.warn('[Clipboard Image Copy Error]', clipErr);
@@ -3244,24 +3325,13 @@ export async function shareAdmin1235ReviewAsImage() {
  */
 export async function downloadAdmin1235ReviewImage() {
     showToast('💾 이미지를 저장하는 중입니다...');
-    const targetElement = document.getElementById('admin1235ModalBody') || document.querySelector('#admin1235ReviewModal .modal-card');
-    if (!targetElement) return;
-
     try {
-        if (typeof html2canvas !== 'function') {
+        const canvas = await createAdmin1235ReportCanvas();
+        if (!canvas) {
             alert('⚠️ 이미지 생성 도구를 불러오는 중입니다. 1~2초 후 다시 눌러주세요.');
             return;
         }
 
-        const canvas = await html2canvas(targetElement, {
-            backgroundColor: '#0f172a',
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            windowWidth: 720
-        });
-
-        if (!canvas) return;
         const roundVal = _currentAdmin1235ModalRound;
         const fileName = `운도실력_1235회차_복기리포트_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
 
