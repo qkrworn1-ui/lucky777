@@ -51,7 +51,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=712">
+    <link rel="stylesheet" href="styles.css?v=713">
 </head>
 
 <body>
@@ -3084,10 +3084,21 @@
         // ========================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=703')
+                navigator.serviceWorker.register('./sw.js?v=713')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
+                        reg.onupdatefound = function() {
+                            var installingWorker = reg.installing;
+                            if (installingWorker) {
+                                installingWorker.onstatechange = function() {
+                                    if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                        console.log('[PWA] New version (v713) installed! Refreshing cache...');
+                                        window.location.reload();
+                                    }
+                                };
+                            }
+                        };
                     })
                     .catch(function(err) { console.warn('[PWA] Service Worker registration failed:', err); });
             });
@@ -3150,7 +3161,7 @@
     </script>
 
     <script src="data.js?v=680"></script>
-    <script src="app_v2.js?v=712"></script>
+    <script src="app_v2.js?v=713"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">
