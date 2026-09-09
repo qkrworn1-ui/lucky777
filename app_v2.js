@@ -8430,20 +8430,7 @@ async function fetchWithProxyFailover(targetUrl, expectedType = 'json', logDescr
     };
 
     const proxies = [
-        // 1. Netlify Internal Serverless Function (100% success on hosted environment)
-        {
-            name: 'Netlify Cloud Gateway',
-            fn: async (url) => {
-                const roundMatch = url.match(/(?:drwNo|srchLtEpsd|round)=(\d+)/);
-                const round = roundMatch ? roundMatch[1] : '';
-                if (!round) throw new Error('No round param');
-                const pUrl = `/.netlify/functions/lotto?round=${round}&_=${Date.now()}`;
-                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 2500);
-                if (!res.ok) throw new Error(`Status ${res.status}`);
-                return expectedType === 'json' ? await res.json() : await res.text();
-            }
-        },
-        // 2. Direct Browser Gateway
+        // 1. Direct Browser Gateway
         {
             name: 'Direct Gateway',
             fn: async (url) => {
@@ -8664,21 +8651,8 @@ async function scrapeCompleteRoundResult(roundNum) {
         };
     }
 
-    // 2. Try Netlify serverless internal proxy first if hosted
-    const netlifyUrl = `/.netlify/functions/lotto?round=${roundNum}&_=${Date.now()}`;
+    // 2. Try Multi-tiered CORS proxies with new 2026 official API
     let jsonData = null;
-    try {
-        const nRes = await fetch(netlifyUrl);
-        if (nRes.ok) {
-            const nJson = await nRes.json();
-            if (nJson) {
-                jsonData = nJson;
-                appendScrapingLog(`서버리스 게이트웨이 통신 성공!`, 'success');
-            }
-        }
-    } catch(e) {}
-
-    // 3. Try Multi-tiered CORS proxies with new 2026 official API
     if (!jsonData) {
         const jsonUrl = `https://www.dhlottery.co.kr/lt645/selectPstLt645Info.do?srchLtEpsd=${roundNum}&_=${Date.now()}`;
         jsonData = await fetchWithProxyFailover(jsonUrl, 'json', `제 ${roundNum}회 동행복권 공식 JSON 요청`);
