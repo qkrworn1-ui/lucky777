@@ -1,6 +1,6 @@
 {
-  "version": "v727",
-  "v_num": 727,
+  "version": "v728",
+  "v_num": 728,
   "buildDate": "2026-09-10",
-  "description": "무결성 보안 패치: 스냅샷 Firestore 오류 시 localStorage 재확인 + isLocked 영수증 핵심 필드 변경 방지"
+  "description": "카카오 1초 간편 로그인 복구: Kakao SDK 초기화 및 loginWithKakao / Scope 핸들러 번들 복원"
 }
