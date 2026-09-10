@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="landingPage" class="active" style="display:flex;"></div>
+<div id="totoPage" style="display:none;"></div>
+<div id="appContainer" style="display:none;">
+    <div id="reviewMatchingContainer"></div>
+    <select id="reviewRoundSelector"></select>
+</div>
+
+<script src="../data.js"></script>
+<script src="../app_v2.js?v=723"></script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    sessionStorage.setItem('lotto_auth', 'master');
+    localStorage.setItem('lotto_auth', 'master');
+    if (window.SafeAuth) window.SafeAuth.set('master');
+
+    setTimeout(() => {
+        try {
+            console.log('=== PRIZE INSPECTION START ===');
+            
+            // 1. Check history in state
+            const h = window.state ? window.state.mergedHistory : null;
+            const rounds = h ? Object.keys(h).map(Number).filter(n => n >= 1235 && h[n].numbers).sort((a,b)=>a-b) : [];
+            console.log('Available drawn rounds >= 1235:', JSON.stringify(rounds));
+            for (const r of rounds) {
+                console.log(`Draw ${r}:`, JSON.stringify(h[r].numbers), 'bonus:', h[r].bonus, 'rank1Prize:', h[r].rank1Prize, 'prizes:', JSON.stringify(h[r].prizes));
+            }
+
+            // 2. Check each round in review-tab for master
+            for (const r of rounds) {
+                if (window.computeUser70RecommendationsReview) {
+                    const res = window.computeUser70RecommendationsReview('master', r);
+                    if (res) {
+                        console.log(`Review round ${r}: prize=${res.totalPrize}, games=${res.totalGames}, hits=${JSON.stringify(res.grandHits)}`);
+                        if (res.v4Eval) console.log(`  v4: prize=${res.v4Eval.totalPrize}, hits=${JSON.stringify(res.v4Eval.hits)}`);
+                        if (res.v3Eval) console.log(`  v3: prize=${res.v3Eval.totalPrize}, hits=${JSON.stringify(res.v3Eval.hits)}`);
+                    }
+                }
+            }
+
+            // 3. Check generator-tab stats
+            if (window.compute7AlgorithmsRealStats) {
+                const g = window.compute7AlgorithmsRealStats(1235, 'master');
+                console.log('generator-tab totalPrize:', g.grandTotalPrize, 'games:', g.grandTotalGames, 'hits:', JSON.stringify(g.grandRankCounts));
+                g.results.forEach(res => {
+                    console.log(`  algo ${res.id} (${res.name}): prize=${res.totalPrize}, wins=${res.totalWins}, hits=${JSON.stringify(res.rankCounts)}`);
+                });
+            }
+
+            console.log('=== PRIZE INSPECTION END ===');
+        } catch (e) {
+            console.error('INSPECT_ERROR:', e);
+        }
+    }, 1500);
+});
+</script>
+</body>
+</html>

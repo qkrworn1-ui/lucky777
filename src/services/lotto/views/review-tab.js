@@ -244,7 +244,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         return _user70ReviewCache[cacheKey];
     }
 
-    // 🔒 0순위: 회원 가입일 기준 이전 회차는 추천번호 및 당첨금 원천 미발생 (가입 전 회차 보호)
+    // 🔒 0순위: 회원 가입일 기준 이전 회차는 추천번호 및 당첨금 없음 (가입 전 회차 보호)
     const joinRound = getUserJoinRound(cleanUser);
     if (roundNum < joinRound) {
         const emptyResult = {
@@ -271,7 +271,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
 
     const actualDraw = state.mergedHistory ? state.mergedHistory[roundNum] : null;
 
-    // 🔒 1순위: 영구 박제된 불변 스냅샷(Immutable Snapshot)이 존재하는지 확인!
+    // 🔒 1순위: 영구 고정 저장 기록이 존재하는지 확인!
     let snapshot = null;
     if (typeof getUserWeeklyRecommendationSnapshotSync === 'function') {
         snapshot = getUserWeeklyRecommendationSnapshotSync(cleanUser, roundNum);
@@ -282,7 +282,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
     const extraPackEvals = [];
 
     if (snapshot && snapshot.v4Combos && snapshot.v3Combos && snapshot.extraPacks) {
-        // 🛡️ 스냅샷 원본 100% 그대로 로드 (재계산 절대 금지 - 완전 불변성 보장)
+        // 🛡️ 저장 기록 원본 100% 그대로 로드 (재계산 절대 금지 - 완전 변경 불가 원칙 보장)
         v4Combos = snapshot.v4Combos;
         v3Combos = snapshot.v3Combos;
         for (let pId = 1; pId <= 5; pId++) {
@@ -308,7 +308,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         const receipts = userLedger ? (userLedger[roundNum] || []) : [];
         receipts.forEach(rcpt => {
             const vStr = (rcpt.version || '');
-            if (vStr.includes('V4') || vStr.includes('행동경제학')) {
+            if (vStr.includes('V4') || vStr.includes('구매 심리 분석')) {
                 if (Array.isArray(rcpt.combos)) {
                     rcpt.combos.forEach(c => purchasedV4.push(c));
                 }
@@ -325,7 +325,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         const rawV3 = (typeof computeAbsoluteTop10Combinations === 'function') 
             ? (computeAbsoluteTop10Combinations(false, roundNum, 'v3', true, cleanUser) || []) : [];
 
-        // 실구매에 등록된 추천 조합이 있다면 해당 조합을 우선 매핑하여 불변성 100% 보존
+        // 실구매에 등록된 추천 조합이 있다면 해당 조합을 우선 매핑하여 변경 불가 원칙 100% 보존
         v4Combos = [...rawV4];
         if (purchasedV4.length > 0) {
             purchasedV4.forEach((pCombo, pIdx) => {
@@ -385,7 +385,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         }
 
         const algorithmsMetadata = [
-            { algoId: 'v4', algoName: 'V4.0 행동경제학 포트폴리오 (10게임)', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6', combos: v4Combos },
+            { algoId: 'v4', algoName: 'V4.0 심리 회피 추천 (10게임)', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6', combos: v4Combos },
             { algoId: 'v3', algoName: 'V3.0 하이브리드 정통 수학 알고리즘 (10게임)', badge: 'HYBRID MATH', color: '#3b82f6', combos: v3Combos }
         ];
         for (let p = 1; p <= 5; p++) {
@@ -400,7 +400,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
             }
         }
 
-        // 🔒 산출된 데이터를 스냅샷으로 메모리/로컬에 영구 잠금
+        // 🔒 산출된 데이터를 저장 기록으로 메모리/로컬에 영구 잠금
         const createdSnapshot = {
             userId: cleanUser,
             realName: rName,
@@ -537,7 +537,7 @@ export async function renderReviewTab() {
                 const uId = (u.id || '').trim().toLowerCase();
                 return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
             });
-            let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 복기</option>`;
+            let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 성과 분석</option>`;
             userOptionsHtml += `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
 
             registeredUsers.forEach(u => {
@@ -569,7 +569,7 @@ export async function renderReviewTab() {
 }
 
 /**
- * 🔄 복기 리포트 회차 드롭다운 옵션 동적 갱신
+ * 🔄 추천성과 분석 회차 드롭다운 옵션 동적 갱신
  * - 최상단에 가입회차~최신회차 [전체 회차 조회] 옵션 기본 제공
  * - 관리자(master/admin)가 'all'(전체 종합) 또는 본인 계정을 조회할 때는 1235회차부터 전체 노출
  * - 특정 회원을 조회하거나 일반 회원인 경우 가입 회차(joinRound)부터 노출
@@ -660,7 +660,7 @@ export function selectSpecificReviewRound(roundNum) {
 }
 
 /**
- * 📊 1235회차부터 최신회차까지 전회차 누적 복기 리포트 렌더링
+ * 📊 1235회차부터 최신회차까지 전회차 누적 추천성과 분석 렌더링
  */
 export function renderAllRoundsReviewDetail() {
     const reviewMatchingContainer = document.getElementById('reviewMatchingContainer');
@@ -716,11 +716,11 @@ export function renderAllRoundsReviewDetail() {
 
     // 7대 알고리즘 메타데이터 및 누적 통계 객체
     const algoPacks = [
-        { id: 'v4', name: 'V4.0 행동경제학 포트폴리오', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6' },
+        { id: 'v4', name: 'V4.0 심리 회피 추천', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6' },
         { id: 'v3', name: 'V3.0 하이브리드 정통 수학', badge: 'HYBRID MATH', color: '#3b82f6' },
-        { id: 'extra_1', name: '추가1팩: 고주기 빈도 앙상블', badge: 'EXTRA 1', color: '#10b981' },
+        { id: 'extra_1', name: '추가1팩: 자주 나온 번호 혼합', badge: 'EXTRA 1', color: '#10b981' },
         { id: 'extra_2', name: '추가2팩: 저주기 미출 회귀', badge: 'EXTRA 2', color: '#f59e0b' },
-        { id: 'extra_3', name: '추가3팩: AC 밸런스 퀀트', badge: 'EXTRA 3', color: '#8b5cf6' },
+        { id: 'extra_3', name: '추가3팩: AC 밸런스 AI 분석', badge: 'EXTRA 3', color: '#8b5cf6' },
         { id: 'extra_4', name: '추가4팩: 구간 연속 대칭', badge: 'EXTRA 4', color: '#06b6d4' },
         { id: 'extra_5', name: '추가5팩: 극한 홀짝 가중치', badge: 'EXTRA 5', color: '#ec4899' }
     ];
@@ -949,7 +949,7 @@ export function renderAllRoundsReviewDetail() {
 
     if (reviewStatsHeaderTitle) {
         if (isAllUsers) {
-            reviewStatsHeaderTitle.innerHTML = `<i class="fa-solid fa-chart-line"></i> 📊 제 1235회 ~ 제 ${latestDrawnRound}회 (${validRounds.length}개 회차) 전체 회원 추천 누적 성과 <span style="font-size: 0.8rem; color: #fbbf24; font-weight: normal; margin-left: 8px;">(총 ${adminMemberSummaryList.length}명 / ${dispCombos.toLocaleString()}게임 전수 종합)</span>`;
+            reviewStatsHeaderTitle.innerHTML = `<i class="fa-solid fa-chart-line"></i> 📊 제 1235회 ~ 제 ${latestDrawnRound}회 (${validRounds.length}개 회차) 전체 회원 추천 누적 성과 <span style="font-size: 0.8rem; color: #fbbf24; font-weight: normal; margin-left: 8px;">(총 ${adminMemberSummaryList.length}명 / ${dispCombos.toLocaleString()}게임 전체 종합)</span>`;
         } else {
             const userRealName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || effectiveUserId;
             const userBadge = isAdmin ? `👤 [${effectiveUserId}] (${userRealName}) 회원` : `<i class="fa-solid fa-user-check"></i> 나의 맞춤 (${userRealName})`;
@@ -982,12 +982,15 @@ export function renderAllRoundsReviewDetail() {
     // Update Doughnut Chart
     if (state.reviewPrizeChartInstance) {
         state.reviewPrizeChartInstance.destroy();
+        state.reviewPrizeChartInstance = null;
     }
-    const canvas = document.getElementById('reviewPrizeChart');
+    const canvas = document.getElementById('reviewPrizeRatioChart') || document.getElementById('reviewPrizeChart');
+    const chartWrapper = document.getElementById('reviewChartWrapper');
     if (canvas && typeof canvas.getContext === 'function' && typeof window.Chart === 'function') {
         const ctx = canvas.getContext('2d');
         const hitArr = [dispHits[1], dispHits[2], dispHits[3], dispHits[4], dispHits[5]];
         const totalWins = hitArr.reduce((a, b) => a + b, 0);
+        if (chartWrapper) chartWrapper.style.display = totalWins > 0 ? 'block' : 'none';
 
         state.reviewPrizeChartInstance = new window.Chart(ctx, {
             type: 'doughnut',
@@ -1033,10 +1036,10 @@ export function renderAllRoundsReviewDetail() {
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; white-space: nowrap;">
-                        <i class="fa-solid fa-chart-pie"></i> ${minTargetRound}회 ~ ${latestDrawnRound}회 전회차 누적 복기 리포트
+                        <i class="fa-solid fa-chart-pie"></i> ${minTargetRound}회 ~ ${latestDrawnRound}회 전회차 누적 추천성과 분석
                     </span>
                     <span style="font-size: 0.78rem; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px; border-radius: 12px; font-weight: 700;">
-                        총 ${validRounds.length}개 회차 전수 집계
+                        총 ${validRounds.length}개 회차 전체 집계
                     </span>
                     ${isAdmin ? (isAllUsers ? `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">🌐 전체 회원 누적 성과 종합 모드</span>` : `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">👤 [${effectiveUserId}] 회원 전회차 누적</span>`) : `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;"><i class="fa-solid fa-user-check"></i> 나의 전회차 맞춤 추천 누적 성과</span>`}
                 </div>
@@ -1046,7 +1049,7 @@ export function renderAllRoundsReviewDetail() {
             </div>
             <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
                 <i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 4px;"></i>
-                <strong>안내:</strong> ${minTargetRound}회부터 최근 회차(${latestDrawnRound}회)까지 각 회차별 확정 추천번호(70게임)와 동행복권 공식 추첨번호를 1:1 전수 대조하여 누적 적중 및 당첨 성과를 종합 분석한 리포트입니다. 특정 회차를 상세 복기하시려면 표의 <strong>[상세 복기]</strong> 버튼이나 상단 회차 선택기를 이용하세요.
+                <strong>안내:</strong> ${minTargetRound}회부터 최근 회차(${latestDrawnRound}회)까지 각 회차별 확정 추천번호(70게임)와 동행복권 공식 추첨번호를 1:1 전체 대조하여 누적 적중 및 당첨 성과를 종합 분석한 리포트입니다. 특정 회차를 상세 분석하시려면 표의 <strong>[상세 분석]</strong> 버튼이나 상단 회차 선택기를 이용하세요.
             </div>
         </div>
     `;
@@ -1057,7 +1060,7 @@ export function renderAllRoundsReviewDetail() {
             <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 10px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.82rem; padding: 3px 8px; border-radius: 6px; font-weight: 800;">
-                        <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 전회차 누적 복기 중
+                        <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 전회차 누적 성과 분석 중
                     </span>
                     <span style="font-size: 0.78rem; color: #cbd5e1;">
                         (총 <strong>${dispHits[1] + dispHits[2] + dispHits[3] + dispHits[4] + dispHits[5]}게임</strong> 적중 · 누적 당첨금 <strong style="color: #34d399;">+${dispPrize.toLocaleString()}원</strong>)
@@ -1168,7 +1171,7 @@ export function renderAllRoundsReviewDetail() {
                     </h4>
                 </div>
                 <span style="font-size: 0.74rem; color: #94a3b8;">
-                    ${isAllUsers ? '전체 회원 합산 통계' : `[${effectiveUserId}] 회원 배정 통계`}
+                    ${isAllUsers ? '전체 회원 합산 통계' : `[${effectiveUserId}] 회원 지정 통계`}
                 </span>
             </div>
 
@@ -1196,7 +1199,7 @@ export function renderAllRoundsReviewDetail() {
                         rankTitle = '🥉 3위';
                         rankColor = '#fbbf24';
                     }
-                    const cleanName = item.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/ 포트폴리오| 알고리즘/g, '');
+                    const cleanName = item.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/ 추천 조합 세트| 알고리즘/g, '');
                     return `
                         <div style="flex: 0 0 auto; background: ${rankBg}; border: 1px solid ${rankBorder}; padding: 5px 10px; border-radius: 8px; font-size: 0.74rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
                             <strong style="color: ${rankColor};">${rankTitle}</strong>
@@ -1288,7 +1291,7 @@ export function renderAllRoundsReviewDetail() {
                         </h4>
                     </div>
                     <div style="font-size: 0.75rem; color: #cbd5e1;">
-                        총 <strong>${validRounds.length}개 회차</strong> 전수 집계
+                        총 <strong>${validRounds.length}개 회차</strong> 전체 집계
                     </div>
                 </div>
 
@@ -1307,7 +1310,7 @@ export function renderAllRoundsReviewDetail() {
                                 <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
                                 <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
                                 <th style="padding: 8px 10px; text-align: right;">수익률</th>
-                                <th style="padding: 8px 10px; text-align: center;">상세 복기</th>
+                                <th style="padding: 8px 10px; text-align: center;">상세 분석</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1376,7 +1379,7 @@ export function renderAllRoundsReviewDetail() {
                     </td>
                     <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
                         <button type="button" onclick="window.changeReviewAdminUser && window.changeReviewAdminUser('${m.userId}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-magnifying-glass"></i> 회원 전회차 복기
+                            <i class="fa-solid fa-magnifying-glass"></i> 회원 전회차 성과 분석
                         </button>
                     </td>
                 </tr>
@@ -1412,7 +1415,7 @@ export function renderAllRoundsReviewDetail() {
                                 <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
                                 <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
                                 <th style="padding: 8px 10px; text-align: right;">수익률</th>
-                                <th style="padding: 8px 10px; text-align: center;">개별 복기</th>
+                                <th style="padding: 8px 10px; text-align: center;">개별 분석</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1478,7 +1481,7 @@ export function renderAllRoundsReviewDetail() {
                     </td>
                     <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
                         <button type="button" onclick="window.selectSpecificReviewRound && window.selectSpecificReviewRound(${uItem.roundNum})" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-magnifying-glass"></i> ${uItem.roundNum}회 70게임 복기
+                            <i class="fa-solid fa-magnifying-glass"></i> ${uItem.roundNum}회 70게임 성과 분석
                         </button>
                     </td>
                 </tr>
@@ -1514,7 +1517,7 @@ export function renderAllRoundsReviewDetail() {
                                 <th style="padding: 8px 10px; text-align: center; color: #38bdf8;">총적중</th>
                                 <th style="padding: 8px 10px; text-align: right; color: #34d399;">당첨금</th>
                                 <th style="padding: 8px 10px; text-align: right;">수익률</th>
-                                <th style="padding: 8px 10px; text-align: center;">상세 복기</th>
+                                <th style="padding: 8px 10px; text-align: center;">상세 분석</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1557,7 +1560,7 @@ export function renderAllRoundsReviewDetail() {
             ['V3.0', '하이브리드'],
             ['추가1', '고주기'],
             ['추가2', '저주기'],
-            ['추가3', 'AC퀀트'],
+            ['추가3', 'ACAI 분석'],
             ['추가4', '구간대칭'],
             ['추가5', '극한홀짝']
         ];
@@ -1763,7 +1766,7 @@ export function renderReviewDetail(r) {
 
     if (reviewStatsHeaderTitle) {
         if (isAllUsers) {
-            reviewStatsHeaderTitle.innerHTML = `<i class="fa-solid fa-trophy"></i> 제 ${roundNum}회 전체 회원 추천 종합 당첨 성과 <span style="font-size: 0.8rem; color: #fbbf24; font-weight: normal; margin-left: 8px;">(총 ${membersEvalList.length}명 / ${dispCombos.toLocaleString()}게임 전수 합산)</span>`;
+            reviewStatsHeaderTitle.innerHTML = `<i class="fa-solid fa-trophy"></i> 제 ${roundNum}회 전체 회원 추천 종합 당첨 성과 <span style="font-size: 0.8rem; color: #fbbf24; font-weight: normal; margin-left: 8px;">(총 ${membersEvalList.length}명 / ${dispCombos.toLocaleString()}게임 전체 합산)</span>`;
         } else {
             const userBadge = isAdmin ? `👤 [${effectiveUserId}] 회원` : `<i class="fa-solid fa-user-check"></i> 나의 맞춤`;
             reviewStatsHeaderTitle.innerHTML = `<i class="fa-solid fa-trophy"></i> ${userBadge} 제 ${roundNum}회 추천 당첨 성과 <span style="font-size: 0.8rem; color: #34d399; font-weight: normal; margin-left: 8px;">(70게임 기준)</span>`;
@@ -1795,12 +1798,15 @@ export function renderReviewDetail(r) {
     // Update Doughnut Chart
     if (state.reviewPrizeChartInstance) {
         state.reviewPrizeChartInstance.destroy();
+        state.reviewPrizeChartInstance = null;
     }
-    const canvas = document.getElementById('reviewPrizeChart');
+    const canvas = document.getElementById('reviewPrizeRatioChart') || document.getElementById('reviewPrizeChart');
+    const chartWrapper = document.getElementById('reviewChartWrapper');
     if (canvas && typeof canvas.getContext === 'function' && typeof window.Chart === 'function') {
         const ctx = canvas.getContext('2d');
         const hitArr = [dispHits[1], dispHits[2], dispHits[3], dispHits[4], dispHits[5]];
         const totalWins = hitArr.reduce((a, b) => a + b, 0);
+        if (chartWrapper) chartWrapper.style.display = totalWins > 0 ? 'block' : 'none';
         
         state.reviewPrizeChartInstance = new window.Chart(ctx, {
             type: 'doughnut',
@@ -1854,7 +1860,7 @@ export function renderReviewDetail(r) {
                         <span style="font-size: 0.78rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
                             ${actualDraw.date || actualDraw.drwNoDate || '추첨 완료'}
                         </span>
-                        ${isAdmin ? (isAllUsers ? `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">🌐 전체 회원 AI 추천번호 종합 복기 모드</span>` : `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">👤 [${effectiveUserId}] 회원 추천번호 복기</span>`) : `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;"><i class="fa-solid fa-user-check"></i> 나의 맞춤 추천번호 복기</span>`}
+                        ${isAdmin ? (isAllUsers ? `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">🌐 전체 회원 AI 추천번호 종합 성과 분석 모드</span>` : `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">👤 [${effectiveUserId}] 회원 추천번호 성과 분석</span>`) : `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;"><i class="fa-solid fa-user-check"></i> 나의 맞춤 추천번호 성과 분석</span>`}
                     </div>
                     ${prize1Str ? `
                         <div style="font-size: 0.85rem; color: #cbd5e1; white-space: nowrap;">
@@ -1876,7 +1882,7 @@ export function renderReviewDetail(r) {
                 <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 7px 12px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
                     <span style="font-size: 0.74rem; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-shield-check" style="color: #34d399;"></i>
-                        <strong>알고리즘 추천 복기 무결성 및 개인 맞춤 배정 원리:</strong> 본 복기 내역은 해당 회차 추첨 전 회원 고유 ID 시드로 확정된 7개 팩(70게임) 조합과 동행복권 공식 결과를 1:1 대조한 것입니다. 회원마다 고유한 맞춤 조합이 배정되므로 회원별 당첨 결과가 서로 다르게 산출되며, 사후 변경이나 조작이 불가능한 불변 데이터입니다.
+                        <strong>알고리즘 추천 성과 무결성 및 개인 맞춤 지정 원리:</strong> 본 성과 내역은 해당 회차 추첨 전 회원 고유 ID 기준으로 확정된 7개 팩(70게임) 조합과 동행복권 공식 결과를 1:1 대조한 것입니다. 회원마다 고유한 맞춤 조합이 지정되므로 회원별 당첨 결과가 서로 다르게 산출되며, 사후 변경이나 조작이 불가능한 불변 데이터입니다.
                     </span>
                     <span style="font-size: 0.68rem; color: #34d399; font-weight: bold; background: rgba(16,185,129,0.15); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.25); white-space: nowrap;">
                         <i class="fa-solid fa-lock"></i> 추첨 전 데이터 잠금 완료
@@ -1892,7 +1898,7 @@ export function renderReviewDetail(r) {
             <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 10px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.82rem; padding: 3px 8px; border-radius: 6px; font-weight: 800;">
-                        <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 배정 추천번호 복기 중
+                        <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 지정 추천번호 성과 분석 중
                     </span>
                     <span style="font-size: 0.78rem; color: #cbd5e1;">
                         (70게임 중 <strong>${grandHits[1] + grandHits[2] + grandHits[3] + grandHits[4] + grandHits[5]}게임</strong> 적중 · 당첨금 <strong style="color: #34d399;">+${totalPrize.toLocaleString()}원</strong>)
@@ -1948,7 +1954,7 @@ export function renderReviewDetail(r) {
                     </td>
                     <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
                         <button type="button" onclick="window.changeReviewAdminUser && window.changeReviewAdminUser('${m.userId}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-magnifying-glass"></i> 70게임 복기
+                            <i class="fa-solid fa-magnifying-glass"></i> 70게임 성과 분석
                         </button>
                     </td>
                 </tr>
@@ -1969,7 +1975,7 @@ export function renderReviewDetail(r) {
                     </div>
                 </div>
                 <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 12px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
-                    <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> <strong>안내:</strong> 본 성과표는 회원이 실제로 로또방에서 구매한 영수증 내역이 아니며, 각 회원에게 배정된 <strong>AI 추천 70게임 조합이 공식 추첨 결과와 대조되어 몇 게임이나 적중했는지를 측정한 시뮬레이션 복기 데이터</strong>입니다.
+                    <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> <strong>안내:</strong> 본 성과표는 회원이 실제로 로또방에서 구매한 영수증 내역이 아니며, 각 회원에게 지정된 <strong>AI 추천 70게임 조합이 공식 추첨 결과와 대조되어 몇 게임이나 적중했는지를 측정한 시뮬레이션 복기 데이터</strong>입니다.
                 </div>
 
                 <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
@@ -1985,7 +1991,7 @@ export function renderReviewDetail(r) {
                                 <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
                                 <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
                                 <th style="padding: 8px 10px; text-align: right;">수익률</th>
-                                <th style="padding: 8px 10px; text-align: center;">개별 추천 복기</th>
+                                <th style="padding: 8px 10px; text-align: center;">개별 추천 분석</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -2014,7 +2020,7 @@ export function renderReviewDetail(r) {
             <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
                 <span style="font-size: 0.78rem; color: #93c5fd; display: flex; align-items: center; gap: 6px;">
                     <i class="fa-solid fa-circle-info" style="color: #60a5fa;"></i>
-                    <strong>알림:</strong> 회원마다 고유한 70게임이 맞춤 배정되어 당첨 내역이 다릅니다. 아래 조합 카드는 관리자 계정(${effectiveUserId}) 기준 대표 예시이며, 각 회원의 개별 추천 70게임을 상세 복기하시려면 상단 표의 <strong>[70게임 복기]</strong> 버튼을 클릭하세요.
+                    <strong>알림:</strong> 회원마다 고유한 70게임이 맞춤 지정되어 당첨 내역이 다릅니다. 아래 조합 카드는 관리자 계정(${effectiveUserId}) 기준 대표 예시이며, 각 회원의 개별 추천 70게임을 상세 분석하시려면 상단 표의 <strong>[70게임 성과 분석]</strong> 버튼을 클릭하세요.
                 </span>
             </div>
         `;
@@ -2042,7 +2048,7 @@ export function renderReviewDetail(r) {
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; font-weight: 800; color: #f8fafc;">
                 <i class="fa-solid fa-cubes-stacked" style="color: #60a5fa;"></i> 
-                ${isAllUsers ? `전체 통합 7대 알고리즘 추천 70게임 복기` : `[${(typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || (effectiveUserId === 'master' ? '최고관리자' : effectiveUserId)}] 회원 배정 7대 알고리즘 70게임 복기`}
+                ${isAllUsers ? `전체 통합 7대 알고리즘 추천 70게임 성과 분석` : `[${(typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || (effectiveUserId === 'master' ? '최고관리자' : effectiveUserId)}] 회원 지정 7대 알고리즘 70게임 성과 분석`}
             </div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                 <button type="button" class="btn-filter-review ${activeReviewFilter === 'all' ? 'active' : ''}" onclick="window.setReviewViewFilter('all')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'all' ? '#fbbf24' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'all' ? 'linear-gradient(135deg, rgba(245,158,11,0.35), rgba(217,119,6,0.35))' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'all' ? '#fbbf24' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
@@ -2123,8 +2129,8 @@ export function renderReviewDetail(r) {
     // Render Sections based on active filter
     if (activeReviewFilter === 'all' || activeReviewFilter === 'v4') {
         html += renderComboCardSection(
-            '<i class="fa-solid fa-brain" style="color: #a78bfa;"></i> V4.0 행동경제학 포트폴리오 (추천 10게임 복기)',
-            `10게임 복기 완료 (적중 ${v4Eval.totalWins}회)`,
+            '<i class="fa-solid fa-brain" style="color: #a78bfa;"></i> V4.0 심리 회피 추천 (추천 10게임 성과 분석)',
+            `10게임 분석 완료 (적중 ${v4Eval.totalWins}회)`,
             'rgba(139, 92, 246, 0.2)',
             '#c4b5fd',
             'rgba(139, 92, 246, 0.35)',
@@ -2134,8 +2140,8 @@ export function renderReviewDetail(r) {
 
     if (activeReviewFilter === 'all' || activeReviewFilter === 'v3') {
         html += renderComboCardSection(
-            '<i class="fa-solid fa-gears" style="color: #60a5fa;"></i> V3.0 하이브리드 정통 수학 알고리즘 (추천 10게임 복기)',
-            `10게임 복기 완료 (적중 ${v3Eval.totalWins}회)`,
+            '<i class="fa-solid fa-gears" style="color: #60a5fa;"></i> V3.0 하이브리드 정통 수학 알고리즘 (추천 10게임 성과 분석)',
+            `10게임 분석 완료 (적중 ${v3Eval.totalWins}회)`,
             'rgba(59, 130, 246, 0.2)',
             '#93c5fd',
             'rgba(59, 130, 246, 0.35)',
@@ -2147,8 +2153,8 @@ export function renderReviewDetail(r) {
         const filterKey = `extra_${pack.packId}`;
         if (activeReviewFilter === 'all' || activeReviewFilter === filterKey) {
             html += renderComboCardSection(
-                `<i class="fa-solid fa-layer-group" style="color: ${pack.color};"></i> ${pack.name} (추가 ${pack.packId}팩 10게임 복기)`,
-                `10게임 복기 완료 (적중 ${pack.evalData.totalWins}회)`,
+                `<i class="fa-solid fa-layer-group" style="color: ${pack.color};"></i> ${pack.name} (추가 ${pack.packId}팩 10게임 성과 분석)`,
+                `10게임 분석 완료 (적중 ${pack.evalData.totalWins}회)`,
                 `${pack.color}25`,
                 pack.color,
                 `${pack.color}40`,
@@ -2212,7 +2218,7 @@ export function changeReviewAdminUser(userId) {
     const isAll = (userId === 'all');
     const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '';
     const isSelf = (userId.toLowerCase().trim() === rawAuth.toLowerCase().trim() || userId === 'master' || userId === 'admin');
-    showToast(isAll ? '🌐 전체 회원 추천번호 종합 복기 화면으로 전환되었습니다.' : (isSelf ? '👑 관리자 본인의 70게임 복기로 전환되었습니다.' : `👤 [${userId}] 회원의 추천번호 70게임 복기로 전환되었습니다.`));
+    showToast(isAll ? '🌐 전체 회원 추천번호 종합 성과 분석 화면으로 전환되었습니다.' : (isSelf ? '👑 관리자 본인의 70게임 성과 분석로 전환되었습니다.' : `👤 [${userId}] 회원의 추천번호 70게임 성과 분석로 전환되었습니다.`));
 }
 
 // ====================================================================
@@ -2252,7 +2258,7 @@ export async function openAdmin1235ReviewModal(initialRound = null, initialUser 
                             <h3 style="margin: 0; color: #fbbf24; font-size: 1.05rem; font-weight: 900; letter-spacing: -0.3px;">
                                 1235회~ 추천·당첨 상세 리포트
                             </h3>
-                            <span style="font-size: 0.72rem; color: #94a3b8;">빅데이터 퀀트 알고리즘 실시간 복기 &amp; 대외 공유 콘솔</span>
+                            <span style="font-size: 0.72rem; color: #94a3b8;">빅데이터 AI 추천 알고리즘 실시간 성과 분석 &amp; 대외 공유 콘솔</span>
                         </div>
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
@@ -2314,7 +2320,7 @@ export async function openAdmin1235ReviewModal(initialRound = null, initialUser 
                 <!-- Modal Footer -->
                 <div style="background: rgba(15, 23, 42, 0.95); padding: 10px 14px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <div style="font-size: 0.72rem; color: #94a3b8;">
-                        <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> 1235회~ 실구매 영수증 및 스냅샷 불변 무결성 검증 완료
+                        <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> 1235회~ 실구매 영수증 및 저장 기록 불변 무결성 검증 완료
                     </div>
                     <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                         <button type="button" onclick="window.shareAdmin1235ReviewAsImage && window.shareAdmin1235ReviewAsImage()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 8px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 5px; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.4);">
@@ -2611,7 +2617,7 @@ export function renderAdmin1235ReviewModalContent() {
                 <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-top: 4px;">
                     <div style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                         <span><i class="fa-solid fa-users"></i> 전체 회원별 1235회~ 누적 추천 성과 순위 (${memberAggList.length}명)</span>
-                        <span style="font-size: 0.7rem; color: #94a3b8;">회원을 클릭하면 상세 70게임 복기가 열립니다</span>
+                        <span style="font-size: 0.7rem; color: #94a3b8;">회원을 클릭하면 상세 70게임 성과 분석가 열립니다</span>
                     </div>
                     <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.76rem; text-align: center; white-space: nowrap;">
@@ -2903,7 +2909,7 @@ export function renderAdmin1235ReviewModalContent() {
             const packsToRender = [];
             if (filterKey === 'all' || filterKey === 'v4') {
                 packsToRender.push({
-                    name: 'V4.0 행동경제학 포트폴리오 (10게임)',
+                    name: 'V4.0 심리 회피 추천 (10게임)',
                     badge: 'BEHAVIORAL QUANT',
                     color: '#8b5cf6',
                     evalData: reviewData.v4Eval
@@ -3046,8 +3052,10 @@ export async function shareAdmin1235ReviewToKakao() {
     let bodyText = '';
 
     if (roundVal === 'all_rounds') {
+        const userJoinRound = (userVal !== 'all' && !isAdminUser(userVal)) ? getUserJoinRound(userVal) : 1235;
+        const minTargetRound = Math.max(1235, userJoinRound);
         const validRounds = [];
-        for (let rnd = latestDrawnRound; rnd >= 1235; rnd--) {
+        for (let rnd = latestDrawnRound; rnd >= minTargetRound; rnd--) {
             if (state.mergedHistory && state.mergedHistory[rnd] && state.mergedHistory[rnd].numbers?.length === 6) {
                 validRounds.push(rnd);
             }
@@ -3088,8 +3096,9 @@ export async function shareAdmin1235ReviewToKakao() {
         const totalInvest = totalCombos * 1000;
         const totalRoi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
 
-        titleText = `🎰 [운도실력] 제 1235회~${latestDrawnRound}회 로또 AI 추천·당첨 성과 종합 리포트`;
-        bodyText = `[1235회~${latestDrawnRound}회 (${validRounds.length}개 회차) 누적 성과]
+        const startRndLabel = (userVal === 'all' ? 1235 : minTargetRound);
+        titleText = `🎰 [운도실력] 제 ${startRndLabel}회~${latestDrawnRound}회 로또 AI 추천·당첨 성과 종합 리포트`;
+        bodyText = `[${startRndLabel}회~${latestDrawnRound}회 (${validRounds.length}개 회차) 누적 성과]
 🎯 대상: ${userVal === 'all' ? `전체 회원 종합 (${baseList.length}명)` : userVal}
 💰 총 당첨금: +${totalPrize.toLocaleString()}원 (ROI: ${totalRoi.toFixed(1)}%)
 🏆 등수별 적중: 1등 ${hits[1]}회, 2등 ${hits[2]}회, 3등 ${hits[3]}회, 4등 ${hits[4]}회, 5등 ${hits[5]}회
@@ -3097,7 +3106,7 @@ export async function shareAdmin1235ReviewToKakao() {
 [회차별 요약]
 ${roundLines.slice(0, 6).join('\n')}
 
-💡 빅데이터 퀀트 알고리즘 실시간 분석 시스템`;
+💡 빅데이터 AI 추천 알고리즘 실시간 분석 시스템`;
     } else {
         const targetRound = parseInt(roundVal);
         const actualDraw = state.mergedHistory ? state.mergedHistory[targetRound] : null;
@@ -3136,7 +3145,7 @@ ${roundLines.slice(0, 6).join('\n')}
 💰 당첨금: +${rPrize.toLocaleString()}원 (수익률: ${rRoi.toFixed(1)}%)
 🏆 적중: 총 ${wins}건 (1등:${rHits[1]}, 2등:${rHits[2]}, 3등:${rHits[3]}, 4등:${rHits[4]}, 5등:${rHits[5]})
 
-💡 7대 퀀트 알고리즘 전수 매칭 완료`;
+💡 7대 AI 추천 알고리즘 전체 매칭 완료`;
     }
 
     const fullMessage = `${titleText}\n\n${bodyText}`;
@@ -3173,7 +3182,7 @@ ${roundLines.slice(0, 6).join('\n')}
         },
         buttons: [
             {
-                title: '📊 복기 리포트 확인하기',
+                title: '📊 추천성과 분석 확인하기',
                 link: {
                     mobileWebUrl: shareUrl,
                     webUrl: shareUrl
@@ -3203,7 +3212,7 @@ ${roundLines.slice(0, 6).join('\n')}
 }
 
 /**
- * 🎨 1235회차 복기 리포트 전용 무손실 고화질 캔버스 생성기
+ * 🎨 1235회차 추천성과 분석 전용 무손실 고화질 캔버스 생성기
  * - 스크롤 제한(max-height / overflow: hidden) 및 스크롤 위치(scrollY)로 인한 상하단 잘림 현상을 100% 원천 해결
  * - 독립된 오프스크린 컨테이너에서 100% 전장(Full Height) 고해상도 렌더링
  */
@@ -3249,7 +3258,7 @@ async function createAdmin1235ReportCanvas() {
                 </span>
                 <div>
                     <h2 style="margin: 0; color: #fbbf24; font-size: 1.15rem; font-weight: 900; letter-spacing: -0.3px;">
-                        운도실력 로또 AI 퀀트 복기 리포트
+                        운도실력 로또 AI AI 분석 추천성과 분석
                     </h2>
                     <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 2px;">
                         ${roundTitle} 추천·당첨 성과 분석 [대상: ${userTitle}]
@@ -3268,7 +3277,7 @@ async function createAdmin1235ReportCanvas() {
     const footerHtml = `
         <div style="margin: 16px -20px -20px -20px; padding: 12px 16px; background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(255, 255, 255, 0.1); border-radius: 0 0 12px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #94a3b8;">
             <div>
-                🛡️ 1235회~ 실구매 영수증 및 스냅샷 불변 무결성 검증
+                🛡️ 1235회~ 실구매 영수증 및 저장 기록 불변 무결성 검증
             </div>
             <div style="color: #fbbf24; font-weight: 700;">
                 운도실력 777 (wook2100.github.io/lucky777)
@@ -3313,7 +3322,7 @@ export async function shareAdmin1235ReviewAsImage() {
         }
 
         const roundVal = _currentAdmin1235ModalRound;
-        const fileName = `운도실력_1235회차_복기리포트_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
+        const fileName = `운도실력_1235회차_추천성과분석_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
 
         canvas.toBlob(async (blob) => {
             if (!blob) return;
@@ -3324,7 +3333,7 @@ export async function shareAdmin1235ReviewAsImage() {
                 try {
                     await navigator.share({
                         files: [file],
-                        title: '🎰 운도실력 1235회~ 추천·당첨 복기 리포트',
+                        title: '🎰 운도실력 1235회~ 추천·당첨 성과 분석',
                         text: `🎰 [운도실력] 1235회~ 로또 AI 추천·당첨 성과 리포트 카드입니다.`
                     });
                     showToast('✅ 카카오톡 등 원하는 대화방에 이미지가 공유되었습니다!');
@@ -3383,7 +3392,7 @@ export async function downloadAdmin1235ReviewImage() {
         }
 
         const roundVal = _currentAdmin1235ModalRound;
-        const fileName = `운도실력_1235회차_복기리포트_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
+        const fileName = `운도실력_1235회차_추천성과분석_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
 
         canvas.toBlob((blob) => {
             if (!blob) return;
@@ -3429,8 +3438,10 @@ export async function copyAdmin1235ReviewText() {
 
     let fullText = '';
     if (roundVal === 'all_rounds') {
+        const userJoinRound = (userVal !== 'all' && !isAdminUser(userVal)) ? getUserJoinRound(userVal) : 1235;
+        const minTargetRound = Math.max(1235, userJoinRound);
         const validRounds = [];
-        for (let rnd = latestDrawnRound; rnd >= 1235; rnd--) {
+        for (let rnd = latestDrawnRound; rnd >= minTargetRound; rnd--) {
             if (state.mergedHistory && state.mergedHistory[rnd] && state.mergedHistory[rnd].numbers?.length === 6) {
                 validRounds.push(rnd);
             }
@@ -3469,7 +3480,8 @@ export async function copyAdmin1235ReviewText() {
         const totalInvest = totalCombos * 1000;
         const totalRoi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
 
-        fullText = `🎰 [운도실력] 제 1235회~${latestDrawnRound}회 로또 AI 추천·당첨 성과 종합 리포트
+        const startRndLabel = (userVal === 'all' ? 1235 : minTargetRound);
+        fullText = `🎰 [운도실력] 제 ${startRndLabel}회~${latestDrawnRound}회 로또 AI 추천·당첨 성과 종합 리포트
 =========================================
 🎯 대상: ${userVal === 'all' ? `전체 회원 종합 (${baseList.length}명)` : userVal}
 💰 총 당첨금: +${totalPrize.toLocaleString()}원 (ROI: ${totalRoi.toFixed(1)}%)
@@ -3478,7 +3490,7 @@ export async function copyAdmin1235ReviewText() {
 [회차별 요약]
 ${roundLines.join('\n')}
 =========================================
-운도실력 빅데이터 퀀트 분석 시스템 (https://wook2100.github.io/lucky777/)`;
+운도실력 빅데이터 AI 데이터 분석 시스템 (https://wook2100.github.io/lucky777/)`;
     } else {
         const targetRound = parseInt(roundVal);
         const actualDraw = state.mergedHistory ? state.mergedHistory[targetRound] : null;
@@ -3518,7 +3530,7 @@ ${roundLines.join('\n')}
 💰 당첨금: +${rPrize.toLocaleString()}원 (수익률: ${rRoi.toFixed(1)}%)
 🏆 적중: 총 ${wins}건 (1등:${rHits[1]}, 2등:${rHits[2]}, 3등:${rHits[3]}, 4등:${rHits[4]}, 5등:${rHits[5]})
 =========================================
-운도실력 빅데이터 퀀트 분석 시스템 (https://wook2100.github.io/lucky777/)`;
+운도실력 빅데이터 AI 데이터 분석 시스템 (https://wook2100.github.io/lucky777/)`;
     }
 
     try {

@@ -5,26 +5,33 @@ export const db = {
                 return firebase.firestore();
             } catch(e) {}
         }
-        if (window.db && window.db !== this && typeof window.db.collection === 'function' && !window.db.getFirestore) {
+        if (typeof window !== 'undefined' && window.rawFirestore && typeof window.rawFirestore.collection === 'function') {
+            return window.rawFirestore;
+        }
+        if (typeof window !== 'undefined' && window.db && window.db !== this && typeof window.db.collection === 'function') {
             return window.db;
         }
         return null;
     },
     collection(name) {
         const fs = this.getFirestore();
-        if (!fs) {
-            return {
-                doc: (id) => ({
-                    get: async () => ({ exists: false, data: () => null }),
-                    set: async () => {},
-                    update: async () => {},
-                    delete: async () => {},
-                    onSnapshot: () => () => {}
-                }),
-                get: async () => ({ docs: [] })
-            };
+        if (fs && typeof fs.collection === 'function') {
+            return fs.collection(name);
         }
-        return fs.collection(name);
+        return {
+            doc: (id) => ({
+                get: async () => ({ exists: false, data: () => null }),
+                set: async () => {},
+                update: async () => {},
+                delete: async () => {},
+                onSnapshot: () => () => {}
+            }),
+            get: async () => ({ docs: [], empty: true, forEach: () => {} }),
+            where: () => ({ get: async () => ({ docs: [], empty: true, forEach: () => {} }) }),
+            orderBy: () => ({ get: async () => ({ docs: [], empty: true, forEach: () => {} }) }),
+            limit: () => ({ get: async () => ({ docs: [], empty: true, forEach: () => {} }) }),
+            add: async () => ({ id: 'mock_' + Date.now() })
+        };
     },
     async get(collection, docId) {
         const fs = this.getFirestore();
@@ -51,3 +58,6 @@ export const db = {
         return fs.collection(collection).doc(docId).onSnapshot(callback);
     }
 };
+
+export const dbHelper = db;
+

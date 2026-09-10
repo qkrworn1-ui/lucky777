@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<script src="../data.js"></script>
+<script src="../app_v2.js?v=723"></script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    sessionStorage.setItem('lotto_auth', 'master');
+    localStorage.setItem('lotto_auth', 'master');
+    if (window.SafeAuth) window.SafeAuth.set('master');
+
+    setTimeout(() => {
+        try {
+            console.log('=== EXACT MATCH BREAKDOWN START ===');
+            const rounds = [1235, 1236, 1237, 1238, 1239, 1240];
+            let grandPrize = 0;
+            let grandHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+            rounds.forEach(r => {
+                const res = window.computeUser70RecommendationsReview('master', r);
+                console.log(`--- ROUND ${r} (Draw: ${JSON.stringify(res.actualDraw.numbers)}, Bonus: ${res.actualDraw.bonus}) ---`);
+                console.log(`Total games: ${res.totalGames}, Prize: ${res.totalPrize}, Wins: ${res.totalWins}`);
+                
+                // Inspect all winning items in 70 games
+                const allPacks = [
+                    { name: 'V4.0', items: res.v4Eval?.items },
+                    { name: 'V3.0', items: res.v3Eval?.items },
+                    ...(res.extraPackEvals || []).map(ep => ({ name: ep.name, items: ep.evalData?.items }))
+                ];
+
+                allPacks.forEach(pack => {
+                    (pack.items || []).filter(it => it.rank >= 1 && it.rank <= 5).forEach(it => {
+                        console.log(`  [${pack.name}] #${it.idx} ${it.name}: ${it.rank}등 (+${it.prize}원) nums: [${it.nums}] matches: [${it.nums.filter(n => res.actualDraw.numbers.includes(n))}] matchCount: ${it.matchCount} hasBonus: ${it.hasBonus}`);
+                        grandHits[it.rank]++;
+                        grandPrize += it.prize;
+                    });
+                });
+            });
+
+            console.log(`GRAND TOTAL: Prize=${grandPrize}원, Hits=${JSON.stringify(grandHits)}`);
+            console.log('=== EXACT MATCH BREAKDOWN END ===');
+        } catch (e) {
+            console.error('BREAKDOWN_ERROR:', e);
+        }
+    }, 1000);
+});
+</script>
+</body>
+</html>

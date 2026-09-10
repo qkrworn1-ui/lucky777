@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="testOutput"></div>
+
+<script>
+// Mock auth as master
+sessionStorage.setItem('lotto_auth', 'master');
+localStorage.setItem('lotto_auth', 'master');
+</script>
+
+<!-- Include main app files as in index.html -->
+<iframe id="appFrame" src="../index.html" style="width:1000px; height:800px;"></iframe>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    const frame = document.getElementById('appFrame');
+    frame.onload = () => {
+        setTimeout(() => {
+            try {
+                const doc = frame.contentDocument || frame.contentWindow.document;
+                const win = frame.contentWindow;
+
+                console.log('=== DOM PRIZE DUMP START ===');
+                
+                // 1. Landing Page financial summary
+                const lpInvest = doc.getElementById('lp-total-invest')?.textContent;
+                const lpPrize = doc.getElementById('lp-total-prize')?.textContent;
+                const lpProfit = doc.getElementById('lp-total-profit')?.textContent;
+                const lpRoi = doc.getElementById('lp-total-roi')?.textContent;
+                console.log('LP Fin Summary:', { invest: lpInvest, prize: lpPrize, profit: lpProfit, roi: lpRoi });
+
+                // 2. LP Mini Cards
+                const myPrize = doc.getElementById('lp-lotto-mini-prize')?.textContent;
+                const myHits = doc.getElementById('lp-lotto-mini-hits')?.textContent;
+                const mySub = doc.getElementById('lp-lotto-mini-sub')?.textContent;
+                console.log('LP Card 1 (My):', { prize: myPrize, hits: myHits, sub: mySub });
+
+                const totoPrize = doc.getElementById('lp-toto-mini-prize')?.textContent;
+                const totoHits = doc.getElementById('lp-toto-mini-hits')?.textContent;
+                const totoSub = doc.getElementById('lp-toto-mini-sub')?.textContent;
+                console.log('LP Card 2 (All real):', { prize: totoPrize, hits: totoHits, sub: totoSub });
+
+                const revPrize = doc.getElementById('lp-review-mini-prize')?.textContent;
+                const revHits = doc.getElementById('lp-review-mini-hits')?.textContent;
+                const revSub = doc.getElementById('lp-review-mini-sub')?.textContent;
+                console.log('LP Card 3 (AI review):', { prize: revPrize, hits: revHits, sub: revSub });
+
+                // 3. LP Review Section
+                const secPrize = doc.getElementById('lpReviewKpiPrize')?.textContent;
+                const secGames = doc.getElementById('lpReviewKpiGames')?.textContent;
+                console.log('LP Review Section:', { prize: secPrize, games: secGames });
+
+                // 4. Switch to Lotto App
+                if (win.showLotto) win.showLotto();
+
+                setTimeout(() => {
+                    // Check generator tab
+                    const genRealSec = doc.getElementById('algoRealReviewSection');
+                    console.log('Generator Real Review Section text:', genRealSec?.innerText?.slice(0, 300));
+
+                    // Switch to Review Tab
+                    if (win.switchTab) win.switchTab('tab-review');
+
+                    setTimeout(() => {
+                        const revTotalPrize = doc.getElementById('reviewTotalPrize')?.textContent;
+                        const revTotalInvest = doc.getElementById('reviewTotalInvest')?.textContent;
+                        const revTotalRoi = doc.getElementById('reviewTotalRoi')?.textContent;
+                        const revTitle = doc.getElementById('reviewStatsHeaderTitle')?.innerText;
+                        console.log('Review Tab Summary:', { title: revTitle, prize: revTotalPrize, invest: revTotalInvest, roi: revTotalRoi });
+
+                        // Switch to Algorithms Tab
+                        if (win.switchTab) win.switchTab('tab-algorithms');
+
+                        setTimeout(() => {
+                            const algoTab = doc.getElementById('tab-algorithms');
+                            console.log('Algorithms Tab text:', algoTab?.innerText?.slice(0, 400));
+                            console.log('=== DOM PRIZE DUMP END ===');
+                        }, 500);
+                    }, 500);
+                }, 500);
+
+            } catch (e) {
+                console.error('DUMP_ERROR:', e);
+            }
+        }, 2000);
+    };
+});
+</script>
+</body>
+</html>

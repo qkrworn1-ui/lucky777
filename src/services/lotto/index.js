@@ -20,7 +20,8 @@ import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
 import { computeAbsoluteTop10Combinations } from './generator.js';
 import { getLedger, getHistoricalTop10Combinations, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash } from './ledger.js';
 
-export async function initLottoService() {
+export async function initLottoService(forceInit = false) {
+    if (window.__lottoInitialized && !forceInit) return;
     window.initLottoService = initLottoService;
     window.__lottoInitialized = true;
     initHistory();
@@ -280,25 +281,28 @@ export async function initLottoService() {
         });
     }
 
-    // Tab buttons event listeners
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const target = btn.dataset.tab;
-            switchLottoTab(target);
+    // Tab buttons event listeners (bound once)
+    if (!window.__lottoEventsBound) {
+        window.__lottoEventsBound = true;
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.tab;
+                switchLottoTab(target);
+            });
         });
-    });
 
-    // Initialize all components event listeners
-    setupGeneratorTabEvents();
-    setupSimulationEvents();
-    setupWheelingTab();
-    setupEvolutionButton();
-    setupPredictionReport();
-    setupQuickView();
-    setupManualLedgerModal();
-    setupManualDrawModal();
-    setupSyncEvents();
+        // Initialize all components event listeners
+        setupGeneratorTabEvents();
+        setupSimulationEvents();
+        setupWheelingTab();
+        setupEvolutionButton();
+        setupPredictionReport();
+        setupQuickView();
+        setupManualLedgerModal();
+        setupManualDrawModal();
+        setupSyncEvents();
+    }
 
     autoSyncMissingDraws();
     if (typeof window.renderLandingDashboard === 'function') {

@@ -1,5 +1,5 @@
 import { checkAuthOnLoad, setupAuthEvents, SafeAuth, getUserPermissions } from './shared/auth-mgmt.js';
-import { initLottoService } from './services/lotto/index.js';
+import { initLottoService, switchLottoTab } from './services/lotto/index.js';
 import { initTotoService } from './services/toto/index.js';
 import { renderLandingDashboard } from './shared/landing-dashboard.js';
 
@@ -64,7 +64,7 @@ window.showToto = function() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.showLotto = function() {
+window.showLotto = function(targetTab = 'tab-generator') {
     const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
     if (authId) {
         const getPerms = typeof getUserPermissions === 'function' ? getUserPermissions : (window.getUserPermissions || (() => ({ allowLotto: true })));
@@ -77,14 +77,27 @@ window.showLotto = function() {
 
     _switchPage('appContainer');
     try {
-        if (typeof initLottoService === 'function' && !window.__lottoInitialized) {
+        if (typeof initLottoService === 'function') {
             initLottoService();
-        } else if (typeof window.initLottoService === 'function' && !window.__lottoInitialized) {
+        } else if (typeof window.initLottoService === 'function') {
             window.initLottoService();
         }
     } catch(e) {
         console.warn('[Lotto Safe Load Exception]', e);
     }
+
+    try {
+        const currentActive = document.querySelector('#appContainer .tab-content.active');
+        const activeId = (currentActive && currentActive.id) ? currentActive.id : targetTab;
+        if (typeof switchLottoTab === 'function') {
+            switchLottoTab(activeId || 'tab-generator');
+        } else if (typeof window.switchTab === 'function') {
+            window.switchTab(activeId || 'tab-generator');
+        }
+    } catch(e) {
+        console.warn('[Lotto Tab Switch Exception]', e);
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 

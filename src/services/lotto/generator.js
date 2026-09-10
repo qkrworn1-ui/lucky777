@@ -1278,6 +1278,18 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
             }
         } catch(e) {
             console.warn('[Snapshot Check from lotto_users Failed]', e);
+            // 🔒 [무결성 패치] Firestore 오류 시에도 localStorage 재확인 — 재계산 전 최후 방어선
+            try {
+                const localRaw = localStorage.getItem(`lotto_rec_snapshot_${docKey}`);
+                if (localRaw) {
+                    const parsed = JSON.parse(localRaw);
+                    if (parsed && parsed.v4Combos && parsed.v3Combos) {
+                        state.userRecommendationSnapshots[docKey] = parsed;
+                        console.log(`[Snapshot Integrity] Firestore 오류 → localStorage fallback 성공 (${docKey})`);
+                        return parsed; // 재계산 없이 기존 저장 기록 반환
+                    }
+                }
+            } catch(e2) {}
         }
     }
 

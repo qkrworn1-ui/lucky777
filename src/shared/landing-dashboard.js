@@ -2,6 +2,7 @@ import { state } from '../services/lotto/state.js';
 import { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUsersPurchases } from '../services/lotto/ledger.js';
 import { SafeAuth, getUserRealName } from './auth-mgmt.js';
 import { computeUser70RecommendationsReview } from '../services/lotto/views/review-tab.js';
+import { calculate7AlgorithmsPerformance } from '../services/lotto/views/algorithms-tab.js';
 
 /**
  * Update Compact Financial & Actual Winning History Summary on Landing Page
@@ -58,7 +59,7 @@ export async function renderLandingDashboard() {
     if (elPrize) elPrize.textContent = `${(myFin.totalPrize || 0).toLocaleString()} 원`;
     
     const myNetProfit = (myFin.totalPrize || 0) - (myFin.totalInvest || 0);
-    const myRoi = myFin.totalInvest > 0 ? (((myFin.totalPrize - myFin.totalInvest) / myFin.totalInvest) * 100).toFixed(1) : '0.0';
+    const myRoi = myFin.totalInvest > 0 ? ((myFin.totalPrize / myFin.totalInvest) * 100).toFixed(1) : '0.0';
 
     if (elProfit) {
         elProfit.textContent = `${myNetProfit >= 0 ? '+' : ''}${myNetProfit.toLocaleString()} 원`;
@@ -145,7 +146,7 @@ export async function renderLandingDashboard() {
         }
     }
 
-    // 6. Update All Members AI Recommendation Review Dashboard (🔮 전체 회원 추천 복기 당첨 실적)
+    // 6. Update All Members AI Recommendation Performance Dashboard (🔮 전체 회원 추천성과 당첨 실적)
     await updateHomeReviewDashboard();
 
     // 7. Update Real-Purchase Winning Ticker Bar (🏆 실구매 영수증 기반 당첨 속보)
@@ -324,7 +325,7 @@ export async function updateHomeReviewDashboard() {
 
         const roundRangeLabel = `제 ${fromRound}~${maxRound}회차 누적`;
 
-        // 1. Update Card 3: All Members AI Recommended Review (🔮 전체 회원 추천 복기 당첨)
+        // 1. Update Card 3: All Members AI Recommended Performance (🔮 전체 회원 추천 성과 당첨)
         const elRevSub = document.getElementById('lp-review-mini-sub');
         const elRevPrize = document.getElementById('lp-review-mini-prize');
         const elRevHits = document.getElementById('lp-review-mini-hits');
@@ -352,7 +353,7 @@ export async function updateHomeReviewDashboard() {
             }
         }
 
-        // 2. Update Table & Dashboard Section (🔮 전체 회원 AI 추천번호 복기 당첨 종합 요약)
+        // 2. Update Table & Dashboard Section (🔮 전체 회원 AI 추천번호 성과 분석 당첨 종합 요약)
         const elRoundBadge = document.getElementById('lpReviewRoundBadge');
         if (elRoundBadge) elRoundBadge.textContent = roundRangeLabel;
 
@@ -427,7 +428,7 @@ export async function updateHomeWinningTicker() {
             if (state.allUsersPurchasesMap) {
                 for (const uid in state.allUsersPurchasesMap) {
                     const uData = state.allUsersPurchasesMap[uid];
-                    const roundReceipts = uData?.ledger?.[roundNum] || [];
+                    const roundReceipts = (uData && uData.ledger && uData.ledger[roundNum]) || [];
                     roundReceipts.forEach(rcpt => {
                         allReceipts.push({
                             ...rcpt,
@@ -523,7 +524,7 @@ export async function updateHomeWinningTicker() {
                 </span>
                 <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 0.82rem !important; color: #cbd5e1 !important; white-space: nowrap !important; flex-shrink: 0 !important;">
                     <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i>
-                    <span>매주 5게임 실구매 영수증(QR) 등록 시 7대 퀀트 알고리즘 무료 잠금 해제</span>
+                    <span>매주 5게임 실구매 영수증(QR) 등록 시 7대 AI 추천 알고리즘 무료 잠금 해제</span>
                     <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">•</span>
                 </span>
             `;

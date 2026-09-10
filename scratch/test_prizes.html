@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="landingPage" class="active" style="display:flex;"></div>
+<div id="totoPage" style="display:none;"></div>
+<div id="appContainer" style="display:none;"></div>
+
+<script src="../data.js"></script>
+<script src="../app_v2.js?v=723"></script>
+<script>
+window.addEventListener('DOMContentLoaded', async () => {
+    // Set master login
+    sessionStorage.setItem('lotto_auth', 'master');
+    localStorage.setItem('lotto_auth', 'master');
+    if (window.SafeAuth) window.SafeAuth.set('master');
+
+    setTimeout(async () => {
+        try {
+            console.log('--- DIAGNOSTIC PRIZE CHECK (LOGGED IN AS MASTER) ---');
+            
+            const authId = window.SafeAuth ? window.SafeAuth.get() : null;
+            console.log('Current authId:', authId);
+
+            // 1. myFin
+            const myFin = window.calculateLedgerFinancials ? window.calculateLedgerFinancials(true) : null;
+            console.log('myFin:', JSON.stringify(myFin));
+
+            // 2. allFin
+            const allFin = window.calculateAllUsersTotalFinancials ? await window.calculateAllUsersTotalFinancials() : null;
+            console.log('allFin:', JSON.stringify(allFin));
+
+            // 3. 7 algos perf (1235)
+            const perf = window.calculate7AlgorithmsPerformance ? window.calculate7AlgorithmsPerformance(1235, 'all') : null;
+            if (perf) {
+                console.log('perf grandTotalPrize:', perf.grandTotalPrize, 'games:', perf.grandTotalGames, 'ranks:', JSON.stringify(perf.grandRankCounts));
+            }
+
+            // 4. Check getHistoricalTop10Combinations for rounds 1235..1239
+            for (let r = 1235; r <= 1239; r++) {
+                const c = window.getHistoricalTop10Combinations(r);
+                console.log(`round ${r} top10 count:`, c ? c.length : 0);
+            }
+
+        } catch (e) {
+            console.error('DIAG_ERROR:', e);
+        }
+    }, 1000);
+});
+</script>
+</body>
+</html>

@@ -430,7 +430,7 @@ export async function renderConfirmedPurchasesList() {
         <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 8px; font-size: 0.77rem; color: #cbd5e1; flex: 1; min-width: 250px;">
                 <i class="fa-solid fa-stamp" style="color: #34d399; font-size: 1.15rem; flex-shrink: 0;"></i>
-                <span><strong>실구매 장부 불변 잠금(Immutable Lock) 보증:</strong> 본 장부의 모든 구매 내역은 실물 영수증(동행복권 QR코드 일련번호) 인증 및 <strong>추첨 마감 전 전자 타임스탬프</strong>로 잠금 보호되어 사후 임의 수정·조작·삭제가 원천 차단된 100% 공인 데이터입니다.</span>
+                <span><strong>실구매 장부 불변 잠금(Immutable Lock) 보증:</strong> 본 장부의 모든 구매 내역은 실물 영수증(동행복권 QR코드 일련번호) 인증 및 <strong>추첨 마감 전 전자 타임스탬프</strong>로 잠금 보호되어 사후 임의 수정·조작·삭제가 완전 방지된 100% 공인 데이터입니다.</span>
             </div>
             <span style="font-size: 0.7rem; color: #34d399; font-weight: 800; background: rgba(16,185,129,0.18); border: 1px solid rgba(16,185,129,0.35); padding: 3px 9px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">
                 <i class="fa-solid fa-shield-check"></i> 위·변조 방지 잠금 가동 중
@@ -671,7 +671,7 @@ export async function renderConfirmedPurchasesList() {
             } else if (pVer.includes('QR') || pVer.includes('qr')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(5, 150, 105, 0.28)); border: 1px solid #34d399; color: #a7f3d0; padding: 2px 10px; border-radius: 12px; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-qrcode" style="color: #6ee7b7;"></i> QR 실구매 영수증 (5게임)</span>`;
             } else if (pVer.includes('V4.0') || pVer.includes('4.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.28), rgba(124, 58, 237, 0.28)); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 10px; border-radius: 12px; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-brain" style="color: #c4b5fd;"></i> V4.0 행동경제학</span>`;
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.28), rgba(124, 58, 237, 0.28)); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 10px; border-radius: 12px; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-brain" style="color: #c4b5fd;"></i> V4.0 구매 심리 분석</span>`;
             } else if (pVer.includes('V3.0') || pVer.includes('3.0')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(217, 119, 6, 0.28)); border: 1px solid #f59e0b; color: #fef08a; padding: 2px 10px; border-radius: 12px; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-bolt" style="color: #fbbf24;"></i> V3.0 하이브리드</span>`;
             } else {
@@ -1186,7 +1186,7 @@ export async function renderConfirmedPurchasesList() {
                 
                 // Change modal title
                 const titleEl = document.querySelector('#manualLedgerModal .modal-header h2');
-                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-edit"></i> 수동 복기 내역 수정`;
+                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-edit"></i> 수동 성과 내역 수정`;
                 
                 document.getElementById('manualLedgerRound').value = round;
                 document.getElementById('manualLedgerVersion').value = purchase.version || 'V3.0 하이브리드 알고리즘';

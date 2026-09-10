@@ -258,7 +258,7 @@ export function renderSimulationTab(targetRound = null) {
 
             const userList = state.allRegisteredUsersList || [];
             let userOptions = `<option value="${authId}" ${effectiveTarget === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
-            userOptions += `<option value="__ALL__" ${effectiveTarget === '__ALL__' ? 'selected' : ''}>👥 [전체] 등록 회원 종합 시뮬레이션 (${userList.length}명 전수)</option>`;
+            userOptions += `<option value="__ALL__" ${effectiveTarget === '__ALL__' ? 'selected' : ''}>👥 [전체] 등록 회원 종합 시뮬레이션 (${userList.length}명 전체)</option>`;
             
             userList.forEach(u => {
                 if (u.id !== authId) {
@@ -340,7 +340,7 @@ export function renderSimulationTab(targetRound = null) {
     const totalDraws = maxR;
     const totalCombosEvaluated = totalDraws * evaluatedGamesPerRound;
 
-    const packNames = { 1: '추가1(전수)', 2: '추가2(EV)', 3: '추가3(휠링)', 4: '추가4(마르코프)', 5: '추가5(골든)' };
+    const packNames = { 1: '추가1(전체)', 2: '추가2(EV)', 3: '추가3(균등 배분)', 4: '추가4(연속 패턴 분석)', 5: '추가5(골든)' };
     const engineParts = [];
     if (cfg.includeV4) engineParts.push('V4(10G)');
     if (cfg.includeV3) engineParts.push('V3(10G)');
@@ -522,7 +522,7 @@ export function renderSimulationTab(targetRound = null) {
                         <div class="combo-title-group" style="display: flex; align-items: center; gap: 8px;">
                             ${ownerBadge}
                             <span style="font-size: 0.72rem; font-weight: 800; color: ${badgeColor}; background: ${badgeColor}20; border: 1px solid ${badgeColor}50; padding: 2px 6px; border-radius: 4px;">
-                                ${(combo.meta && combo.meta.rankBadge) ? combo.meta.rankBadge : 'AI 퀀트'}
+                                ${(combo.meta && combo.meta.rankBadge) ? combo.meta.rankBadge : 'AI AI 분석'}
                             </span>
                             <span class="combo-name" style="font-weight: bold; color: #fff; font-size: 0.92rem;">${comboTitle}</span>
                         </div>

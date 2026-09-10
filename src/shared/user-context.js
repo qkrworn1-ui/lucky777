@@ -142,7 +142,12 @@ export const UserContextManager = {
     }
 };
 
+export function getUserJoinRound(userId) {
+    return UserContextManager.getUserJoinRound(userId);
+}
+
 if (typeof window !== 'undefined') {
     window.LottoTimeService = LottoTimeService;
     window.UserContextManager = UserContextManager;
+    window.getUserJoinRound = getUserJoinRound;
 }

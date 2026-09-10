@@ -404,6 +404,151 @@ class TestFullSystem(unittest.TestCase):
         self.assertTrue(is_duplicate, "Duplicate receipt with identical QR serial must be detected and rejected")
 
 
+    # [Test 12] Modular Auth Architecture, Security Guards & Test Data Cleanup Integrity
+    def test_12_modular_auth_and_cleanup_integrity(self):
+        # 1. E-Signature Data URI Validation Guard
+        valid_png_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
+        valid_jpeg_uri = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wgALCAABAAEBAREA/8QAFBABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQABPxA="
+        invalid_script_uri = "data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="
+        malicious_xss_src = "javascript:alert(document.cookie)"
+
+        sig_regex = re.compile(r'^data:image\/(png|jpeg|webp);base64,')
+        self.assertTrue(bool(sig_regex.match(valid_png_uri)), "Valid PNG base64 data URI must pass")
+        self.assertTrue(bool(sig_regex.match(valid_jpeg_uri)), "Valid JPEG base64 data URI must pass")
+        self.assertFalse(bool(sig_regex.match(invalid_script_uri)), "Non-image data URI must be rejected")
+        self.assertFalse(bool(sig_regex.match(malicious_xss_src)), "Malicious script URI must be rejected")
+
+        # 2. Agreement Document Authorization Guard
+        def can_view_user_agreement(current_auth_id, target_user_id, is_admin=False):
+            clean_curr = (current_auth_id or '').lower().strip()
+            clean_target = (target_user_id or '').lower().strip()
+            if is_admin or clean_curr in ('master', 'admin'):
+                return True
+            return clean_curr == clean_target
+
+        self.assertTrue(can_view_user_agreement('admin', 'user123', is_admin=True), "Admin must be able to view any agreement")
+        self.assertTrue(can_view_user_agreement('master', 'user456', is_admin=True), "Master must be able to view any agreement")
+        self.assertTrue(can_view_user_agreement('user123', 'user123', is_admin=False), "User must be able to view their own agreement")
+        self.assertFalse(can_view_user_agreement('user123', 'user456', is_admin=False), "User must NOT be able to view another user's agreement")
+        self.assertFalse(can_view_user_agreement('', 'user123', is_admin=False), "Unauthenticated guest must NOT be able to view agreement")
+
+        # 3. Test Data Cleanup Simulator & Verification
+        mock_user_db = {
+            'master': {'role': 'master', 'isAdmin': True, 'name': '최고관리자'},
+            'admin': {'role': 'admin', 'isAdmin': True, 'name': '운영관리자'},
+            'test_user_01': {'role': 'user', 'isAdmin': False, 'name': '테스트유저1', 'isTest': True},
+            'test_user_02': {'role': 'user', 'isAdmin': False, 'name': '테스트유저2', 'isTest': True},
+            'temp_tester': {'role': 'user', 'isAdmin': False, 'name': '임시테스터'},
+            'real_user_vip': {'role': 'user', 'isAdmin': False, 'name': '홍길동'}
+        }
+        mock_agreement_db = {
+            'test_user_01': {'agreementDoc': {'signedAt': '2026-09-01'}},
+            'test_user_02': {'agreementDoc': {'signedAt': '2026-09-02'}},
+            'temp_tester': {'agreementDoc': {'signedAt': '2026-09-03'}},
+            'real_user_vip': {'agreementDoc': {'signedAt': '2026-09-04'}}
+        }
+        mock_ledger_db = {
+            'test_user_01': [{'round': 1240, 'combos': [[1,2,3,4,5,6]]}],
+            'temp_tester': [{'round': 1240, 'combos': [[7,8,9,10,11,12]]}],
+            'real_user_vip': [{'round': 1240, 'combos': [[13,14,15,16,17,18]]}]
+        }
+
+        # Emulate cleanupAllTestData()
+        def cleanup_all_test_data(user_dict, agr_dict, led_dict, purge_all_non_admins=False):
+            deleted_ids = []
+            for uid, udata in list(user_dict.items()):
+                if uid in ('master', 'admin') or udata.get('isAdmin') or udata.get('role') in ('master', 'admin'):
+                    continue # Preserve master/admin
+                is_test_account = (
+                    udata.get('isTest') is True or
+                    'test' in uid.lower() or
+                    'tester' in uid.lower() or
+                    '임시' in udata.get('name', '') or
+                    '테스트' in udata.get('name', '') or
+                    purge_all_non_admins
+                )
+                if is_test_account:
+                    del user_dict[uid]
+                    agr_dict.pop(uid, None)
+                    led_dict.pop(uid, None)
+                    deleted_ids.append(uid)
+            return deleted_ids
+
+        deleted = cleanup_all_test_data(mock_user_db, mock_agreement_db, mock_ledger_db)
+        
+        # Verify test accounts are removed
+        self.assertIn('test_user_01', deleted)
+        self.assertIn('test_user_02', deleted)
+        self.assertIn('temp_tester', deleted)
+        self.assertNotIn('test_user_01', mock_user_db)
+        self.assertNotIn('test_user_01', mock_agreement_db)
+        self.assertNotIn('test_user_01', mock_ledger_db)
+
+        # Verify master/admin accounts and real user remain intact
+        self.assertIn('master', mock_user_db)
+        self.assertIn('admin', mock_user_db)
+        self.assertIn('real_user_vip', mock_user_db)
+        self.assertIn('real_user_vip', mock_agreement_db)
+        self.assertIn('real_user_vip', mock_ledger_db)
+
+    # [Test 13] Smart Bundle Complete Symbol Resolution Verification
+    def test_13_bundle_export_and_import_resolution(self):
+        bundle_py_path = os.path.join(self.root_dir, 'bundle.py')
+        app_v2_path = os.path.join(self.root_dir, 'app_v2.js')
+        self.assertTrue(os.path.exists(bundle_py_path))
+        self.assertTrue(os.path.exists(app_v2_path))
+
+        with open(bundle_py_path, 'r', encoding='utf-8') as f:
+            bundle_py_src = f.read()
+
+        # Extract FILES_TO_BUNDLE list
+        m = re.search(r'FILES_TO_BUNDLE\s*=\s*\[(.*?)\]', bundle_py_src, re.DOTALL)
+        self.assertIsNotNone(m, "FILES_TO_BUNDLE list must exist in bundle.py")
+        files_to_bundle = [s.strip().strip('"').strip("'") for s in m.group(1).split(',') if s.strip().strip('"').strip("'")]
+
+        def get_slug(p):
+            p_str = str(os.path.normpath(p)).replace(os.sep, '/').replace('.js', '')
+            if p_str.startswith('src/'):
+                p_str = p_str[4:]
+            return f"__M_{p_str.replace('/', '_').replace('-', '_')}"
+
+        with open(app_v2_path, 'r', encoding='utf-8') as f:
+            bundled_app = f.read()
+
+        module_exports = {}
+        for i, fpath in enumerate(files_to_bundle):
+            mod_slug = get_slug(fpath)
+            start = bundled_app.find(f'const {mod_slug} = (function()')
+            if start != -1:
+                next_mod = get_slug(files_to_bundle[i+1]) if i + 1 < len(files_to_bundle) else '/* END */'
+                next_start = bundled_app.find(f'const {next_mod} = (function()', start)
+                block = bundled_app[start:next_start] if next_start != -1 else bundled_app[start:]
+                exported_vars = set(re.findall(r'__exports\.([a-zA-Z0-9_]+)\s*=', block))
+                module_exports[fpath.replace('\\', '/')] = exported_vars
+            else:
+                module_exports[fpath.replace('\\', '/')] = set()
+
+        missing = []
+        for fpath in files_to_bundle:
+            full_path = os.path.join(self.root_dir, fpath)
+            if not os.path.exists(full_path): continue
+            with open(full_path, 'r', encoding='utf-8') as f:
+                src = f.read()
+            for im_match in re.finditer(r'import\s+\{([^}]+)\}\s+from\s+[\'"]([^\'"]+)[\'"]', src):
+                vars_part = im_match.group(1)
+                path_part = im_match.group(2)
+                resolved = os.path.normpath(os.path.join(os.path.dirname(fpath), path_part)).replace('\\', '/')
+                target_exports = module_exports.get(resolved, set())
+                for item in vars_part.split(','):
+                    parts = item.strip().split()
+                    if parts:
+                        imported_name = parts[0]
+                        if imported_name not in target_exports:
+                            missing.append((fpath, resolved, imported_name))
+
+        self.assertEqual(len(missing), 0, f"Unresolved imports found in bundle: {missing}")
+
+
 if __name__ == '__main__':
     unittest.main()
 

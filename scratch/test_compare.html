@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<div id="landingPage" class="active" style="display:flex;"></div>
+<div id="totoPage" style="display:none;"></div>
+<div id="appContainer" style="display:none;">
+    <div id="reviewMatchingContainer"></div>
+    <select id="reviewRoundSelector"></select>
+</div>
+
+<script src="../data.js"></script>
+<script src="../app_v2.js?v=723"></script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    sessionStorage.setItem('lotto_auth', 'master');
+    localStorage.setItem('lotto_auth', 'master');
+    if (window.SafeAuth) window.SafeAuth.set('master');
+
+    setTimeout(() => {
+        try {
+            console.log('=== PRIZE COMPARISON ACROSS MODULES ===');
+            
+            // 1. generator-tab: compute7AlgorithmsRealStats
+            if (window.compute7AlgorithmsRealStats) {
+                const gData = window.compute7AlgorithmsRealStats(1235, 'master');
+                console.log('generator-tab compute7AlgorithmsRealStats:');
+                console.log('  grandTotalPrize:', gData.grandTotalPrize, 'games:', gData.grandTotalGames, 'ranks:', JSON.stringify(gData.grandRankCounts));
+            }
+
+            // 2. algorithms-tab: calculate7AlgorithmsPerformance
+            if (window.calculate7AlgorithmsPerformance) {
+                const aData = window.calculate7AlgorithmsPerformance(1235, 'all');
+                console.log('algorithms-tab calculate7AlgorithmsPerformance (all):');
+                console.log('  grandTotalPrize:', aData.grandTotalPrize, 'games:', aData.grandTotalGames, 'ranks:', JSON.stringify(aData.grandRankCounts));
+
+                const aDataMaster = window.calculate7AlgorithmsPerformance(1235, 'master');
+                console.log('algorithms-tab calculate7AlgorithmsPerformance (master):');
+                console.log('  grandTotalPrize:', aDataMaster.grandTotalPrize, 'games:', aDataMaster.grandTotalGames, 'ranks:', JSON.stringify(aDataMaster.grandRankCounts));
+            }
+
+            // 3. review-tab: computeUser70RecommendationsReview for master rounds 1235..1240
+            let rTotPrize = 0;
+            let rTotGames = 0;
+            for (let r = 1235; r <= 1240; r++) {
+                if (window.computeUser70RecommendationsReview) {
+                    const rData = window.computeUser70RecommendationsReview('master', r);
+                    if (rData) {
+                        rTotPrize += (rData.totalPrize || 0);
+                        rTotGames += (rData.totalGames || 0);
+                        console.log(`review-tab round ${r}: prize=${rData.totalPrize}, games=${rData.totalGames}, hits=${JSON.stringify(rData.grandHits)}`);
+                    }
+                }
+            }
+            console.log(`review-tab 1235..1240 master cumulative prize: ${rTotPrize}, games: ${rTotGames}`);
+
+        } catch (e) {
+            console.error('COMPARE_ERROR:', e);
+        }
+    }, 1000);
+});
+</script>
+</body>
+</html>

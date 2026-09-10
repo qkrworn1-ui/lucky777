@@ -322,7 +322,37 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null)
     } catch(e) {}
 
     const protectedLedger = { ...incomingLedger };
-    
+
+    // 🔒 [무결성 패치] isLocked:true 영수증의 핵심 필드 변경 방지
+    // 기존 저장된 잠금 영수증(combos, numbers, receiptId, timestamp)은 덮어쓰기 불가
+    for (const roundKey in protectedLedger) {
+        const receipts = protectedLedger[roundKey];
+        if (!Array.isArray(receipts)) continue;
+        const existingRound = existingUserLedger[roundKey] || [];
+        protectedLedger[roundKey] = receipts.map(receipt => {
+            if (!receipt || !receipt.receiptId) return receipt;
+            // 기존 저장 목록에서 동일 receiptId의 잠긴 항목 찾기
+            const existingLocked = existingRound.find(
+                e => e && e.receiptId === receipt.receiptId && e.isLocked === true
+            );
+            if (existingLocked) {
+                // 잠긴 영수증: 핵심 불변 필드는 기존 값으로 강제 복원, isLocked 유지
+                return {
+                    ...receipt,
+                    isLocked: true,                           // 잠금 해제 방지
+                    combos: existingLocked.combos,            // 조합 번호 변경 방지
+                    receiptId: existingLocked.receiptId,      // ID 변경 방지
+                    timestamp: existingLocked.timestamp,      // 타임스탬프 변경 방지
+                    user: existingLocked.user,                // 소유자 변경 방지
+                    userId: existingLocked.userId,            // 소유자 변경 방지
+                    round: existingLocked.round,              // 회차 변경 방지
+                };
+            }
+            // 새 영수증은 항상 isLocked:true 부여
+            return { ...receipt, isLocked: receipt.isLocked !== false ? true : receipt.isLocked };
+        });
+    }
+
     // Update active memory ledger if currently viewing this user
     const currentLoggedUser = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest').toLowerCase();
     if (currentLoggedUser === authId || currentLoggedUser === 'master' || currentLoggedUser === 'admin') {
@@ -835,7 +865,9 @@ export function getSafeActualDraw(round) {
         1235: { numbers: [6, 14, 22, 29, 36, 41], bonus: 17 },
         1236: { numbers: [3, 11, 18, 25, 33, 42], bonus: 8 },
         1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21 },
-        1238: { numbers: [2, 13, 18, 32, 38, 42], bonus: 22 }
+        1238: { numbers: [2, 13, 18, 32, 38, 42], bonus: 22 },
+        1239: { numbers: [1, 3, 17, 26, 33, 42], bonus: 41 },
+        1240: { numbers: [11, 13, 19, 20, 31, 44], bonus: 27 }
     };
     return STATIC_DRAWS[r] || null;
 }
@@ -868,20 +900,8 @@ export function calculateLedgerFinancials(forceRefresh = false) {
 
     const ledgerRounds = Object.keys(ledger || {}).map(Number).filter(r => !isNaN(r) && r > 0 && Array.isArray(ledger[r]) && ledger[r].length > 0);
 
-    let chronoRounds = [];
-    if (isAdmin) {
-        const defaultPastRounds = [1235, 1236, 1237, 1238];
-        const defaultRounds = [];
-        defaultPastRounds.forEach(r => {
-            if (ledger[r] === undefined) {
-                defaultRounds.push(r);
-            }
-        });
-        chronoRounds = Array.from(new Set([...ledgerRounds, ...defaultRounds])).sort((a, b) => a - b);
-    } else {
-        // 🔒 Normal user: strictly only include their own confirmed purchase rounds
-        chronoRounds = Array.from(new Set(ledgerRounds)).sort((a, b) => a - b);
-    }
+    // 🔒 Strictly calculate based on actual confirmed rounds recorded in the ledger
+    const chronoRounds = Array.from(new Set(ledgerRounds)).sort((a, b) => a - b);
 
     chronoRounds.forEach(round => {
         const actualDraw = getSafeActualDraw(round);
