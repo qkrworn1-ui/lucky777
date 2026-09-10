@@ -1,6 +1,6 @@
 {
-  "version": "v731",
-  "v_num": 731,
+  "version": "v727",
+  "v_num": 727,
   "buildDate": "2026-09-10",
-  "description": "로그인 및 사용자 관리 완전 통합 복구: 카카오 1초 로그인, ID/PW 일반 로그인, 전자서약서 가입 및 관리자 사용자 관리 전체 복원"
+  "description": "무결성 보안 패치: 스냅샷 Firestore 오류 시 localStorage 재확인 + isLocked 영수증 핵심 필드 변경 방지"
 }
