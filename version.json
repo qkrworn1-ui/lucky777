@@ -1,6 +1,6 @@
 {
-  "version": "v728",
-  "v_num": 728,
+  "version": "v729",
+  "v_num": 729,
   "buildDate": "2026-09-10",
-  "description": "카카오 1초 간편 로그인 복구: Kakao SDK 초기화 및 loginWithKakao / Scope 핸들러 번들 복원"
+  "description": "모바일 실구매 QR 등록 화면 풀스크린 최적화: 대형 카메라 뷰파인더, 터치 친화형 UI, 전 기종 스마트폰 호환성 강화"
 }

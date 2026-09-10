@@ -1,7 +1,7 @@
 try {
 
 /**
- * Lucky777 Smart Bundle (v728)
+ * Lucky777 Smart Bundle (v729)
  */
 
 
@@ -18712,13 +18712,12 @@ async function startLottoQrScanner() {
     };
 
     const config = {
-        fps: 15,
+        fps: 20,
         qrbox: (viewfinderWidth, viewfinderHeight) => {
             const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-            const size = Math.max(100, Math.floor(minEdge * 0.85));
+            const size = Math.max(180, Math.floor(minEdge * 0.75));
             return { width: size, height: size };
         },
-        aspectRatio: 1.33,
         experimentalFeatures: {
             useBarCodeDetectorIfSupported: true
         }

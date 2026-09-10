@@ -9860,102 +9860,218 @@ html, body {
     }
 }
 
-/* Mobile Responsive Fit for Manual Ledger & QR Scanner Modal */
-@media (max-width: 640px) {
+/* ==========================================================
+   FULL-SCREEN MOBILE RESPONSIVE FIT FOR LOTTO QR SCANNER MODAL
+   ========================================================== */
+#manualLedgerModal {
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+#manualLedgerModal.active,
+#manualLedgerModal[style*="display: flex"] {
+    display: flex !important;
+}
+
+#manualLedgerModal .modal-content {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Base QR Viewfinder Styling */
+#qrScannerContainer {
+    position: relative;
+    border: 2px solid #10b981;
+    border-radius: 14px;
+    background: #060a12;
+    overflow: hidden;
+}
+
+#qrReader {
+    width: 100% !important;
+    min-height: 250px !important;
+    height: 280px !important;
+    max-height: 380px !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    background: #000 !important;
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+#qrReader video {
+    width: 100% !important;
+    height: 100% !important;
+    max-height: 380px !important;
+    object-fit: cover !important;
+    border-radius: 10px !important;
+}
+
+/* Mobile & Tablet Full-screen Sheet Optimization (iOS Safari, Android Chrome, Samsung Internet) */
+@media (max-width: 768px) {
     #manualLedgerModal {
-        padding: 6px !important;
+        padding: 0 !important;
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
     }
     
-    #manualLedgerModal .modal-content {
-        max-height: 98vh !important;
-        max-height: 98dvh !important;
-        border-radius: 12px !important;
-        width: 98% !important;
-        max-width: 440px !important;
+    #manualLedgerModal .modal-content,
+    #manualLedgerModal .modal-content.qr-modal-full {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        border: none !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-shadow: none !important;
     }
     
     #manualLedgerModal .modal-header {
-        padding: 8px 12px !important;
+        padding: 14px 16px !important;
+        padding-top: max(14px, env(safe-area-inset-top)) !important;
+        background: #0b1220 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+        flex-shrink: 0 !important;
     }
     
     #manualLedgerModal .modal-header h2 {
-        font-size: 0.98rem !important;
+        font-size: 1.15rem !important;
+        font-weight: 800 !important;
+    }
+
+    #manualLedgerModal .close-modal {
+        font-size: 1.5rem !important;
+        padding: 6px 10px !important;
     }
     
     #manualLedgerModal .modal-body {
-        padding: 6px 10px !important;
+        padding: 14px 16px !important;
         overflow-y: auto !important;
-    }
-    
-    #manualLedgerModal .modal-body p {
-        font-size: 0.72rem !important;
-        margin-bottom: 4px !important;
-        line-height: 1.25 !important;
+        -webkit-overflow-scrolling: touch !important;
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
     }
     
     #manualLedgerRound, #manualLedgerVersion {
-        padding: 4px 6px !important;
-        font-size: 0.8rem !important;
-        height: 32px !important;
+        padding: 10px 12px !important;
+        font-size: 1.0rem !important;
+        height: 46px !important;
+        border-radius: 10px !important;
     }
 
     #btnOpenQrScanner {
-        padding: 6px 8px !important;
-        font-size: 0.82rem !important;
-        height: 34px !important;
+        padding: 12px 14px !important;
+        font-size: 0.95rem !important;
+        height: 48px !important;
+        border-radius: 10px !important;
     }
 
     #qrScannerContainer {
-        margin-top: 5px !important;
-        margin-bottom: 5px !important;
-        padding: 5px 6px !important;
-        border-radius: 8px !important;
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
+        padding: 10px !important;
+        border-radius: 12px !important;
     }
 
     #qrReader {
         width: 100% !important;
-        max-width: 220px !important;
-        height: 135px !important;
-        min-height: 120px !important;
-        max-height: 145px !important;
-        margin: 0 auto !important;
-        border-radius: 6px !important;
-        overflow: hidden !important;
+        max-width: 100% !important;
+        height: 280px !important;
+        min-height: 250px !important;
+        max-height: 380px !important;
+        border-radius: 10px !important;
     }
 
     #qrReader video {
         width: 100% !important;
-        max-height: 135px !important;
+        height: 100% !important;
+        max-height: 380px !important;
         object-fit: cover !important;
-        border-radius: 6px !important;
+        border-radius: 10px !important;
     }
 
     #btnStopQrScanner {
-        margin-top: 4px !important;
-        padding: 3px 6px !important;
-        font-size: 0.74rem !important;
-        height: 26px !important;
-        border-radius: 4px !important;
+        margin-top: 8px !important;
+        padding: 8px 12px !important;
+        font-size: 0.9rem !important;
+        height: 40px !important;
+        border-radius: 8px !important;
     }
 
     #manualLedgerCombos {
-        height: 48px !important;
-        min-height: 42px !important;
-        max-height: 75px !important;
-        font-size: 0.78rem !important;
-        padding: 4px 6px !important;
-        line-height: 1.25 !important;
-        border-radius: 6px !important;
+        height: 90px !important;
+        min-height: 80px !important;
+        max-height: 150px !important;
+        font-size: 0.92rem !important;
+        line-height: 1.45 !important;
+        padding: 10px 12px !important;
+        border-radius: 10px !important;
     }
 
     #manualLedgerModal .modal-footer {
-        padding: 6px 12px !important;
+        padding: 12px 16px !important;
+        padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+        background: #090e1a !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+        flex-shrink: 0 !important;
     }
 
     #manualLedgerModal .modal-footer button {
-        padding: 7px 10px !important;
-        font-size: 0.86rem !important;
-        height: 36px !important;
+        padding: 12px 16px !important;
+        font-size: 1.02rem !important;
+        height: 50px !important;
+        border-radius: 12px !important;
+    }
+
+    /* Toto QR Modal Full-screen Mobile */
+    #totoQrScannerModal {
+        padding: 0 !important;
+        align-items: stretch !important;
+        justify-content: stretch !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+    }
+
+    #totoQrScannerModal .modal-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        border: none !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    #totoQrScannerModal .modal-header {
+        padding: 14px 16px !important;
+        padding-top: max(14px, env(safe-area-inset-top)) !important;
+        flex-shrink: 0 !important;
+    }
+
+    #totoQrScannerModal .modal-body {
+        padding: 14px 16px !important;
+        flex: 1 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    #totoQrReaderBox {
+        min-height: 260px !important;
+        height: 280px !important;
+        max-height: 380px !important;
     }
 }
 
