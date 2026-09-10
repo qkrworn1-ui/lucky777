@@ -1,7 +1,7 @@
 try {
 
 /**
- * Lucky777 Smart Bundle (v729)
+ * Lucky777 Smart Bundle (v730)
  */
 
 
@@ -2396,10 +2396,2336 @@ function setupAuthEvents(initFirebaseAndData) {
 
     if (btnLogout) {
         btnLogout.addEventListener('click', handleLogout);
+    
+    // Admin User Management modal triggers
+    if (btnUserManagement) {
+        btnUserManagement.onclick = () => { if (window.openUserManagement) window.openUserManagement(); };
     }
+    if (btnUserManagementApp) {
+        btnUserManagementApp.onclick = () => { if (window.openUserManagement) window.openUserManagement(); };
+    }
+    const btnUserManagementToto = document.getElementById('btnUserManagementToto');
+    if (btnUserManagementToto) {
+        btnUserManagementToto.onclick = () => { if (window.openUserManagement) window.openUserManagement(); };
+    }
+    if (btnCloseUserMgmtModal && userMgmtModal) {
+        btnCloseUserMgmtModal.onclick = () => { userMgmtModal.style.display = 'none'; };
+    }
+
+}
 }
 
 // ========================================================
+
+
+// ========================================================
+// ========================================================
+// 👥 [관리자 전용] 회원 관리, 권한 제어, 서약서 열람 및 휴지통 엔진
+// ========================================================
+
+window.openUserManagement = () => {
+
+if (userMgmtModal) userMgmtModal.style.display = 'flex';
+
+loadUserList();
+
+};
+
+if (btnUserManagement) btnUserManagement.addEventListener('click', window.openUserManagement);
+
+if (btnUserManagementApp) btnUserManagementApp.addEventListener('click', window.openUserManagement);
+
+const btnUserManagementToto = document.getElementById('btnUserManagementToto');
+
+if (btnUserManagementToto) btnUserManagementToto.addEventListener('click', window.openUserManagement);
+
+window.loadUserList = loadUserList;
+
+if (btnCloseUserMgmtModal) {
+
+btnCloseUserMgmtModal.addEventListener('click', () => {
+
+if (userMgmtModal) userMgmtModal.style.display = 'none';
+
+});
+
+}
+
+// ==========================================
+
+// 👥 User Management UI Enhancements & Filtering
+
+// ==========================================
+
+let __cachedUsersWithStatus = [];
+
+let __currentUserFilterTab = 'all';
+
+window.toggleAddUserSection = function(forceState) {
+
+const sec = document.getElementById('addUserSection');
+
+const btn = document.getElementById('btnToggleAddUserForm');
+
+const icon = document.getElementById('iconToggleAddUser');
+
+const text = document.getElementById('textToggleAddUser');
+
+if (!sec) return;
+
+const isCurrentlyOpen = sec.style.display !== 'none';
+
+const willOpen = typeof forceState === 'boolean' ? forceState : !isCurrentlyOpen;
+
+if (willOpen) {
+
+sec.style.display = 'block';
+
+if (window.toggleKakaoDiagSection) window.toggleKakaoDiagSection(false);
+
+if (btn) btn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+
+if (icon) icon.className = 'fa-solid fa-chevron-up';
+
+if (text) text.textContent = '계정 생성 닫기';
+
+setTimeout(() => {
+
+const idInput = document.getElementById('addUserId');
+
+if (idInput) idInput.focus();
+
+}, 100);
+
+} else {
+
+sec.style.display = 'none';
+
+if (btn) btn.style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+
+if (icon) icon.className = 'fa-solid fa-user-plus';
+
+if (text) text.textContent = '새 계정 생성';
+
+}
+
+};
+
+window.toggleKakaoDiagSection = function(forceState) {
+
+const sec = document.getElementById('kakaoDiagSection');
+
+const btn = document.getElementById('btnToggleKakaoDiag');
+
+if (!sec) return;
+
+const isCurrentlyOpen = sec.style.display !== 'none';
+
+const willOpen = typeof forceState === 'boolean' ? forceState : !isCurrentlyOpen;
+
+if (willOpen) {
+
+sec.style.display = 'block';
+
+if (window.toggleAddUserSection) window.toggleAddUserSection(false);
+
+if (btn) {
+
+btn.style.background = '#fee500';
+
+btn.style.color = '#191919';
+
+}
+
+} else {
+
+sec.style.display = 'none';
+
+if (btn) {
+
+btn.style.background = 'rgba(254, 229, 0, 0.15)';
+
+btn.style.color = '#fee500';
+
+}
+
+}
+
+};
+
+window.setUserFilterTab = function(tab) {
+
+__currentUserFilterTab = tab || 'all';
+
+const pills = document.querySelectorAll('#userFilterPills .user-filter-pill');
+
+pills.forEach(p => {
+
+if (p.getAttribute('data-filter') === __currentUserFilterTab) {
+
+p.classList.add('active');
+
+} else {
+
+p.classList.remove('active');
+
+}
+
+});
+
+window.filterUserList();
+
+};
+
+window.filterUserList = function() {
+
+const userListContainer = document.getElementById('userListContainer');
+
+if (!userListContainer || !__cachedUsersWithStatus) return;
+
+const searchInput = document.getElementById('inputSearchUserList');
+
+const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+
+const tab = __currentUserFilterTab || 'all';
+
+const filtered = __cachedUsersWithStatus.filter(item => {
+
+const { userId, data, pStatus, isPermanent, isUserAdmin, isSuspended, isDeleted } = item;
+
+// Search query filter
+
+if (query) {
+
+const uId = (userId || '').toLowerCase();
+
+const rName = (data.realName || '').toLowerCase();
+
+const nick = (data.nickname || '').toLowerCase();
+
+const phone = (data.phoneNumber || '').toLowerCase();
+
+if (!uId.includes(query) && !rName.includes(query) && !nick.includes(query) && !phone.includes(query)) {
+
+return false;
+
+}
+
+}
+
+// Trash Tab: Only show deleted users
+
+if (tab === 'trash') {
+
+return isDeleted === true;
+
+}
+
+// Non-trash tabs: Exclude deleted users
+
+if (isDeleted === true) {
+
+return false;
+
+}
+
+// Category Tab filter
+
+if (tab === 'kakao') {
+
+return userId.startsWith('kakao_') || !!(data.kakaoAuth && data.kakaoAuth.hasTalkMessageScope);
+
+}
+
+if (tab === 'permanent') {
+
+return isPermanent || isUserAdmin;
+
+}
+
+if (tab === 'purchased') {
+
+return !!(pStatus && pStatus.hasPurchased);
+
+}
+
+if (tab === 'suspended') {
+
+return isSuspended;
+
+}
+
+return true;
+
+});
+
+renderUserListCards(filtered, query.length > 0 || tab !== 'all', tab === 'trash');
+
+};
+
+function renderUserListCards(usersList, isFiltered = false, isTrashMode = false) {
+
+const userListContainer = document.getElementById('userListContainer');
+
+if (!userListContainer) return;
+
+if (!usersList || usersList.length === 0) {
+
+if (isTrashMode) {
+
+userListContainer.innerHTML = `
+
+<div style="text-align:center; padding: 40px 20px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:12px; border:1px dashed rgba(255,255,255,0.1);">
+
+<i class="fa-solid fa-trash-can-arrow-up" style="font-size:2rem; color:#64748b; margin-bottom:10px; display:block;"></i>
+
+<div style="font-size:0.92rem; font-weight:700; color:#cbd5e1;">휴지통이 비어 있습니다.</div>
+
+<div style="font-size:0.76rem; color:#64748b; margin-top:4px;">현재 삭제된 회원 계정이 없습니다.</div>
+
+</div>`;
+
+} else {
+
+userListContainer.innerHTML = `
+
+<div style="text-align:center; padding: 40px 20px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:12px; border:1px dashed rgba(255,255,255,0.1);">
+
+<i class="fa-solid fa-user-slash" style="font-size:2rem; color:#64748b; margin-bottom:10px; display:block;"></i>
+
+<div style="font-size:0.92rem; font-weight:700; color:#cbd5e1;">조건에 맞는 회원이 없습니다.</div>
+
+${isFiltered ? '<button type="button" onclick="document.getElementById(\'inputSearchUserList\').value=\'\'; window.setUserFilterTab(\'all\');" style="margin-top:10px; background:rgba(59,130,246,0.2); border:1px solid #3b82f6; color:#93c5fd; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">필터 초기화</button>' : ''}
+
+</div>`;
+
+}
+
+return;
+
+}
+
+const latestRound = getLatestDrawnRound();
+
+let html = '';
+
+if (isTrashMode) {
+
+html += `
+
+<div style="background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.35); padding:10px 14px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:4px;">
+
+<div style="font-size:0.82rem; color:#fca5a5; font-weight:800; display:flex; align-items:center; gap:6px;">
+
+<i class="fa-solid fa-trash-can"></i> 휴지통에 보관된 회원 (${usersList.length}명)
+
+<span style="font-size:0.72rem; color:#94a3b8; font-weight:normal;">(언제든 복구하거나 완전 영구 삭제할 수 있습니다)</span>
+
+</div>
+
+<button type="button" onclick="window.emptyUserTrash && window.emptyUserTrash()" style="background:rgba(239,68,68,0.25); border:1px solid #ef4444; color:#fff; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.2s;">
+
+<i class="fa-solid fa-fire"></i> 휴지통 전체 비우기
+
+</button>
+
+</div>`;
+
+usersList.forEach(item => {
+
+const { userId, data } = item;
+
+const safeUserId = encodeURIComponent(userId);
+
+const realName = data.realName && data.realName !== userId ? `(${data.realName})` : '';
+
+const joinDate = data.createdAt ? data.createdAt.slice(0, 10) : '-';
+
+const deletedDate = data.deletedAt ? data.deletedAt.slice(0, 16).replace('T', ' ') : '삭제일시 미기록';
+
+let deletedByText = '';
+
+if (data.deletedBy) {
+
+let dBy = data.deletedBy;
+
+if (typeof dBy === 'string' && dBy.startsWith('{')) {
+
+try { dBy = JSON.parse(dBy).userId || dBy; } catch(e){}
+
+}
+
+deletedByText = ` (by ${dBy})`;
+
+}
+
+html += `
+
+<div style="background:rgba(20, 15, 20, 0.9); padding:10px 12px; border-radius:10px; border:1px solid rgba(239, 68, 68, 0.3); display:flex; flex-direction:column; gap:6px; box-shadow:0 3px 10px rgba(0,0,0,0.3);">
+
+<!-- Header -->
+
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+
+<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+
+<span style="font-weight:900; color:#fca5a5; font-size:0.95rem; text-decoration:line-through;">${userId}</span>
+
+${realName ? `<span style="font-size:0.82rem; color:#cbd5e1; font-weight:700;">${realName}</span>` : ''}
+
+</div>
+
+<div style="display:flex; align-items:center; gap:4px;">
+
+<span style="font-size:0.7rem; color:#f87171; background:rgba(239,68,68,0.2); border:1px solid #ef4444; padding:2px 7px; border-radius:5px; font-weight:800;">
+
+<i class="fa-solid fa-trash-can"></i> 휴지통 보관중
+
+</span>
+
+</div>
+
+</div>
+
+<!-- Info Bar -->
+
+<div style="background:rgba(0,0,0,0.35); padding:5px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:0.73rem; color:#94a3b8;">
+
+<div><i class="fa-solid fa-phone" style="color:#64748b; font-size:0.68rem;"></i> <span style="color:#94a3b8;">${data.phoneNumber || '연락처 미등록'}</span></div>
+
+<div><i class="fa-regular fa-calendar" style="color:#64748b; font-size:0.68rem;"></i> 가입: <span style="color:#94a3b8;">${joinDate}</span></div>
+
+<div><i class="fa-solid fa-clock-rotate-left" style="color:#f87171; font-size:0.68rem;"></i> 삭제: <strong style="color:#fca5a5;">${deletedDate}${deletedByText}</strong></div>
+
+</div>
+
+<!-- Trash Action Buttons -->
+
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-top:2px;">
+
+<button type="button" onclick="window.restoreUserFromTrash(decodeURIComponent('${safeUserId}'))" title="계정을 다시 정상 활성 상태로 복구" style="flex:1; min-width:130px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 6px rgba(16,185,129,0.35);">
+
+<i class="fa-solid fa-rotate-left"></i> ♻️ 계정 복구하기
+
+</button>
+
+<button type="button" onclick="window.viewUserAgreementDoc(decodeURIComponent('${safeUserId}'))" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+
+<i class="fa-solid fa-file-signature"></i> 서약문서
+
+</button>
+
+<button type="button" onclick="window.permanentlyDeleteUser(decodeURIComponent('${safeUserId}'))" title="DB에서 완전히 영구 삭제" style="background:rgba(239,68,68,0.25); border:1px solid rgba(239,68,68,0.6); color:#fca5a5; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 2px 6px rgba(239,68,68,0.25);">
+
+<i class="fa-solid fa-fire"></i> 💥 영구 삭제
+
+</button>
+
+</div>
+
+</div>`;
+
+});
+
+userListContainer.innerHTML = html;
+
+return;
+
+}
+
+usersList.forEach(item => {
+
+const { userId, data, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, status } = item;
+
+const safeUserId = encodeURIComponent(userId);
+
+let adminBadge = isUserAdmin 
+
+? `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-crown"></i> 관리자</span>` 
+
+: `<span style="font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:1px 6px; border-radius:5px; font-weight:600;"><i class="fa-solid fa-user"></i> 일반</span>`;
+
+let statusBadge = '';
+
+if (isUserAdmin || isPermanent) {
+
+statusBadge = `<span style="font-size:0.7rem; color:#38bdf8; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-gem"></i> 영구활성</span>`;
+
+} else if (status === 'active') {
+
+statusBadge = `<span style="font-size:0.7rem; color:#10b981; background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-circle-check"></i> 정상</span>`;
+
+} else if (isNoPurchaseSuspended) {
+
+statusBadge = `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> 미구매정지</span>`;
+
+} else {
+
+statusBadge = `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-ban"></i> 수동정지</span>`;
+
+}
+
+let lottoPermBadge = allowLotto
+
+? `<span style="font-size:0.68rem; color:#34d399; background:rgba(16,185,129,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(16,185,129,0.25); font-weight:700;">로또ON</span>`
+
+: `<span style="font-size:0.68rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;">로또OFF</span>`;
+
+let totoPermBadge = allowToto
+
+? `<span style="font-size:0.68rem; color:#fbbf24; background:rgba(245,158,11,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(245,158,11,0.25); font-weight:700;">토토ON</span>`
+
+: `<span style="font-size:0.68rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;">토토OFF</span>`;
+
+const hasPledgeSigned = !!(data.agreementDoc && data.agreementDoc.signatureDataUrl);
+
+let pledgeBadge = hasPledgeSigned
+
+? `<span style="font-size:0.68rem; color:#34d399; background:rgba(16,185,129,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(16,185,129,0.25); font-weight:700;" title="필수 약관 및 전자서약 완료"><i class="fa-solid fa-file-signature"></i> 서약완료</span>`
+
+: `<span style="font-size:0.68rem; color:#f87171; background:rgba(239,68,68,0.12); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); font-weight:800;" title="필수 약관 및 전자서약 미완료"><i class="fa-solid fa-file-excel"></i> 서약미동의</span>`;
+
+const hasKakaoMsgScope = !!(data.kakaoAuth && data.kakaoAuth.hasTalkMessageScope);
+
+let kakaoBadge = hasKakaoMsgScope
+
+? `<span style="font-size:0.68rem; color:#fee500; background:rgba(254,229,0,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(254,229,0,0.3); font-weight:700;" title="카카오톡 알림 메시지 동의 완료"><i class="fa-solid fa-comment"></i> 카톡동의</span>`
+
+: (userId.startsWith('kakao_') ? `<span style="font-size:0.68rem; color:#94a3b8; background:rgba(255,255,255,0.05); padding:1px 5px; border-radius:4px; border:1px solid rgba(255,255,255,0.1); font-weight:600;" title="카카오톡 알림 메시지 권한 미동의"><i class="fa-solid fa-comment-slash"></i> 카톡미동의</span>` : '');
+
+let purchaseBadge = '';
+
+if (isUserAdmin || isPermanent) {
+
+purchaseBadge = `<span style="font-size:0.68rem; color:#38bdf8; background:rgba(56,189,248,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(56,189,248,0.25); font-weight:700;"><i class="fa-solid fa-infinity"></i> 평생면제</span>`;
+
+} else if (pStatus.hasPurchased) {
+
+purchaseBadge = `<span style="font-size:0.68rem; color:#10b981; background:rgba(16,185,129,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(16,185,129,0.25); font-weight:700;">✅ ${latestRound}회 구매(${pStatus.targetRoundGameCount}G)</span>`;
+
+} else if (pStatus.isGracePeriod) {
+
+purchaseBadge = `<span style="font-size:0.68rem; color:#38bdf8; background:rgba(56,189,248,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(56,189,248,0.25);">첫주 유예</span>`;
+
+} else {
+
+purchaseBadge = `<span style="font-size:0.68rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.25); font-weight:800;">❌ ${latestRound}회 미구매</span>`;
+
+}
+
+const realName = data.realName && data.realName !== userId ? `(${data.realName})` : '';
+
+const joinDate = data.createdAt ? data.createdAt.slice(0, 10) : '-';
+
+const lastRoundText = pStatus.lastPurchasedRound > 0 ? `제 ${pStatus.lastPurchasedRound}회` : (isPermanent ? '무제한' : '없음');
+
+const reasonText = data.suspensionReason ? `<div style="font-size:0.7rem; color:#f87171; background:rgba(239,68,68,0.08); padding:2px 6px; border-radius:4px; margin-top:2px;"><i class="fa-solid fa-circle-info"></i> 정지사유: ${data.suspensionReason}</div>` : '';
+
+html += `
+
+<div style="background:rgba(15, 23, 42, 0.85); padding:10px 12px; border-radius:10px; border:1px solid ${isUserAdmin ? 'rgba(245,158,11,0.45)' : (isPermanent ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)')}; display:flex; flex-direction:column; gap:6px; box-shadow:0 3px 10px rgba(0,0,0,0.25);">
+
+<!-- 1. Header: User ID & Applied Option Badges -->
+
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+
+<div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+
+<span style="font-weight:900; color:#f8fafc; font-size:0.95rem; letter-spacing:0.2px;">${userId}</span>
+
+${realName ? `<span style="font-size:0.82rem; color:#93c5fd; font-weight:700;">${realName}</span>` : ''}
+
+</div>
+
+<div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
+
+${adminBadge}
+
+${statusBadge}
+
+${lottoPermBadge}
+
+${totoPermBadge}
+
+${pledgeBadge}
+
+${kakaoBadge}
+
+${purchaseBadge}
+
+</div>
+
+</div>
+
+<!-- 2. Compact Info Bar -->
+
+<div style="background:rgba(0,0,0,0.25); padding:5px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:0.73rem; color:#94a3b8;">
+
+<div><i class="fa-solid fa-phone" style="color:#60a5fa; font-size:0.68rem;"></i> <span style="color:#cbd5e1;">${data.phoneNumber || '연락처 미등록'}</span></div>
+
+<div><i class="fa-regular fa-calendar" style="color:#a78bfa; font-size:0.68rem;"></i> 가입: <span style="color:#cbd5e1;">${joinDate}</span></div>
+
+<div><i class="fa-solid fa-receipt" style="color:#34d399; font-size:0.68rem;"></i> 최근구매: <strong style="color:#e2e8f0;">${lastRoundText}</strong></div>
+
+</div>
+
+${reasonText}
+
+<!-- 3. Streamlined Action Buttons (Options are managed inside [정보 및 옵션 설정]) -->
+
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:5px; margin-top:2px;">
+
+<button type="button" onclick="window.openEditUserModal(decodeURIComponent('${safeUserId}'))" title="회원 정보 수정 및 권한/상태/옵션 종합 설정" style="flex:1; min-width:140px; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; padding:7px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 6px rgba(59,130,246,0.35);">
+
+<i class="fa-solid fa-sliders"></i> 회원 정보 &amp; 옵션 설정
+
+</button>
+
+<div style="display:flex; gap:4px; flex-wrap:wrap;">
+
+<button type="button" onclick="window.viewUserAgreementDoc(decodeURIComponent('${safeUserId}'))" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+
+<i class="fa-solid fa-file-signature"></i> 서약문서
+
+</button>
+
+<button type="button" onclick="window.sendUserWinningKakaoMessage(decodeURIComponent('${safeUserId}'), ${latestRound})" title="제 ${latestRound}회 실구매 당첨 리포트 카카오톡 전송" style="background:rgba(254, 229, 0, 0.15); border:1px solid rgba(254, 229, 0, 0.45); color:#fee500; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+
+<i class="fa-solid fa-comment-dots"></i> 당첨알림
+
+</button>
+
+<button type="button" onclick="window.sendUserUnsentWinningReports(decodeURIComponent('${safeUserId}'))" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" style="background:rgba(167, 139, 250, 0.15); border:1px solid rgba(167, 139, 250, 0.45); color:#c4b5fd; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+
+<i class="fa-solid fa-box-archive"></i> 미전송발송
+
+</button>
+
+<button type="button" onclick="window.deleteUser(decodeURIComponent('${safeUserId}'))" title="계정을 휴지통으로 이동" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+
+<i class="fa-solid fa-trash-can"></i> 삭제
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+userListContainer.innerHTML = html;
+
+}
+
+async function loadUserList() {
+
+const userListContainer = document.getElementById('userListContainer');
+
+const summaryBadge = document.getElementById('userCountSummaryBadge');
+
+const trashBadge = document.getElementById('userTrashCountBadge');
+
+if (!window.db || !userListContainer) return;
+
+userListContainer.innerHTML = `<div style="text-align:center; padding: 24px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> 사용자 및 실구매 데이터 동기화 중...</div>`;
+
+try {
+
+const snapshot = await window.db.collection('lotto_users').get();
+
+if (snapshot.empty) {
+
+__cachedUsersWithStatus = [];
+
+userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b;">등록된 사용자가 없습니다.</div>`;
+
+if (summaryBadge) summaryBadge.textContent = '총 0명';
+
+if (trashBadge) trashBadge.textContent = '0';
+
+return;
+
+}
+
+const users = [];
+
+snapshot.forEach(doc => {
+
+// Ignore corrupt/garbage JSON string IDs if any
+
+if (doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) {
+
+// asynchronously clean up in background
+
+window.db.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
+
+return;
+
+}
+
+users.push({ userId: doc.id, data: doc.data() });
+
+});
+
+// Concurrently fetch purchase status for each user
+
+const usersWithStatus = await Promise.all(users.map(async (u) => {
+
+const isDeleted = !!(u.data.isDeleted === true || u.data.status === 'trash');
+
+const deletedAt = u.data.deletedAt || null;
+
+const pStatus = isDeleted ? { hasPurchased: false } : await checkUserWeeklyPurchaseStatus(u.userId, u.data);
+
+const isUserAdmin = !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin');
+
+const isPermanent = !!(u.data.isPermanent === true || u.data.userType === 'permanent' || isUserAdmin);
+
+const allowLotto = isUserAdmin || u.data.allowLotto !== false;
+
+const allowToto = isUserAdmin || u.data.allowToto !== false;
+
+const status = u.data.status || 'active';
+
+const isSuspended = (status === 'suspended' || status === 'suspended_nopurchase');
+
+const isNoPurchaseSuspended = (status === 'suspended_nopurchase');
+
+if (!isDeleted) {
+
+setIsPermanentCache(u.userId, isPermanent);
+
+setUserPermissionsCache(u.userId, { allowLotto, allowToto });
+
+}
+
+return { ...u, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, isDeleted, deletedAt, status };
+
+}));
+
+__cachedUsersWithStatus = usersWithStatus;
+
+const activeUsers = usersWithStatus.filter(u => !u.isDeleted);
+
+const trashUsers = usersWithStatus.filter(u => u.isDeleted);
+
+// Update stats badge
+
+if (summaryBadge) {
+
+const purchasedCount = activeUsers.filter(u => u.pStatus && u.pStatus.hasPurchased).length;
+
+const kakaoCount = activeUsers.filter(u => u.userId.startsWith('kakao_') || (u.data.kakaoAuth && u.data.kakaoAuth.hasTalkMessageScope)).length;
+
+const trashText = trashUsers.length > 0 ? ` · <span style="color:#fca5a5; font-weight:700;"><i class="fa-solid fa-trash-can"></i> 휴지통 ${trashUsers.length}</span>` : '';
+
+summaryBadge.innerHTML = `총 <strong style="color:#fff;">${activeUsers.length}</strong>명 (실구매 ${purchasedCount} · 카카오 ${kakaoCount}${trashText})`;
+
+}
+
+if (trashBadge) {
+
+trashBadge.textContent = trashUsers.length;
+
+}
+
+// Sync global state registered users list (only active users)
+
+if (typeof window !== 'undefined' && window.state) {
+
+window.state.allRegisteredUsersList = activeUsers.map(u => ({
+
+id: u.userId,
+
+name: u.data.realName || u.userId,
+
+realName: u.data.realName || u.userId,
+
+phone: u.data.phoneNumber || '',
+
+isAdmin: !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
+
+isPermanent: !!(u.data.isPermanent === true || u.data.userType === 'permanent' || u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
+
+userType: u.data.userType || (u.isPermanent ? 'permanent' : 'regular'),
+
+createdAt: u.data.createdAt || null,
+
+allowLotto: u.data.allowLotto !== false,
+
+allowToto: u.data.allowToto !== false
+
+}));
+
+}
+
+// Render with current search query & filter
+
+window.filterUserList();
+
+} catch (error) {
+
+console.error(error);
+
+userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#ef4444;">데이터를 불러오는 중 오류가 발생했습니다.</div>`;
+
+}
+
+}
+
+window.loadUserList = loadUserList;
+
+window.viewUserAgreementDoc = async function(userId) {
+
+if (!window.db) return;
+
+try {
+
+let docData = null;
+
+// 1. Try lotto_agreements collection first
+
+try {
+
+const agrDoc = await window.db.collection('lotto_agreements').doc(userId).get();
+
+if (agrDoc.exists) docData = agrDoc.data();
+
+} catch(e){}
+
+// 2. Fallback to lotto_users embedded agreementDoc
+
+if (!docData) {
+
+const userDoc = await window.db.collection('lotto_users').doc(userId).get();
+
+if (userDoc.exists) {
+
+const u = userDoc.data();
+
+docData = u.agreementDoc || {
+
+userId: userId,
+
+realName: u.realName || userId,
+
+phoneNumber: u.phoneNumber || '미등록',
+
+authProvider: u.authProvider || (userId.startsWith('kakao_') ? 'kakao' : 'local'),
+
+kakaoId: u.kakaoId || (userId.startsWith('kakao_') ? userId.replace('kakao_', '') : null),
+
+agreedDateFormatted: u.createdAt ? u.createdAt.slice(0, 10) : '가입일자 미상',
+
+signatureDataUrl: null
+
+};
+
+}
+
+}
+
+if (!docData) {
+
+alert('해당 회원의 전자 서약서 데이터를 찾을 수 없습니다.');
+
+return;
+
+}
+
+window.currentViewingAgreementData = docData;
+
+const container = document.getElementById('agreementDocContent');
+
+if (!container) return;
+
+const sigHtml = docData.signatureDataUrl 
+
+? `<div style="text-align:right; margin-top:8px;">
+
+<span style="font-size:0.8rem; color:#64748b; font-weight:700; margin-right:8px;">자필 전자 서명 날인:</span>
+
+<img src="${docData.signatureDataUrl}" style="max-height:60px; vertical-align:middle; border-bottom:1px solid #0f172a; padding:2px 10px; background:#fff; border-radius:4px;" alt="서명">
+
+</div>`
+
+: `<div style="text-align:right; margin-top:8px; color:#94a3b8; font-size:0.82rem;">(전자 인증 완료 / 자필 서명 이미지 없음)</div>`;
+
+let termsHtml = '';
+
+if (Array.isArray(docData.terms)) {
+
+termsHtml = docData.terms.map((t, idx) => `
+
+<div style="margin-bottom:10px; padding:10px; background:#f1f5f9; border-radius:6px; border:1px solid #e2e8f0;">
+
+<div style="font-weight:800; color:#0f172a; font-size:0.86rem;">✅ ${t.title || `[필수 ${idx+1}] 약관`}</div>
+
+<div style="color:#475569; font-size:0.78rem; margin-top:4px; line-height:1.5; white-space:pre-line;">
+
+${t.fullContent || '약관에 정상 동의하였습니다.'}
+
+</div>
+
+</div>
+
+`).join('');
+
+} else {
+
+const stdTerms = getStandardAgreementTerms();
+
+termsHtml = stdTerms.map((t, idx) => `
+
+<div style="margin-bottom:10px; padding:10px; background:#f1f5f9; border-radius:6px; border:1px solid #e2e8f0;">
+
+<div style="font-weight:800; color:#0f172a; font-size:0.86rem;">✅ ${t.title}</div>
+
+<div style="color:#475569; font-size:0.78rem; margin-top:4px; line-height:1.5; white-space:pre-line;">
+
+${t.fullContent}
+
+</div>
+
+</div>
+
+`).join('');
+
+}
+
+container.innerHTML = `
+
+<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; margin-bottom:10px;">
+
+<div style="font-size:0.75rem; color:#64748b; font-weight:700;">DOCUMENT ID: ${docData.docId || 'AGR-' + docData.userId}</div>
+
+<h4 style="margin:4px 0 6px 0; color:#0f172a; font-size:0.95rem; font-weight:800;">1. 서약자(회원) 인적 사항</h4>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.85rem; color:#475569;">
+
+<div>• <strong>아이디</strong> : <span style="color:#0f172a; font-weight:700;">${docData.userId}</span></div>
+
+<div>• <strong>성명/닉네임</strong> : <span style="color:#0f172a; font-weight:700;">${docData.realName || docData.userId}</span></div>
+
+<div>• <strong>휴대폰 번호</strong> : <span style="color:#0f172a; font-weight:700;">${docData.phoneNumber || '미등록'}</span></div>
+
+<div>• <strong>체결 일시</strong> : <span style="color:#2563eb; font-weight:700;">${docData.agreedDateFormatted || docData.createdAt || '-'}</span></div>
+
+</div>
+
+</div>
+
+<div style="border:1px solid #e2e8f0; border-radius:8px; padding:14px; background:#ffffff; font-size:0.82rem; line-height:1.6; color:#334155;">
+
+<h4 style="margin:0 0 8px 0; color:#0f172a; font-size:0.92rem; font-weight:800;">2. 전자 서약 및 동의 전문 내역 (하나의 단일 계약 문서)</h4>
+
+${termsHtml}
+
+</div>
+
+<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:14px; margin-top:4px;">
+
+<div style="font-size:0.82rem; color:#475569; text-align:center; margin-bottom:6px; font-weight:700;">
+
+${docData.legalPledgeStatement || '위 모든 약관의 전문 내용을 확인하였으며, 대한민국 전자문서 및 전자서명법에 따라 본인이 직접 서명하고 본 전자 계약을 체결합니다.'}
+
+</div>
+
+<div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #cbd5e1; padding-top:8px;">
+
+<span style="font-size:0.82rem; color:#0f172a;">서약자 성명: <strong>${docData.realName || docData.userId}</strong></span>
+
+${sigHtml}
+
+</div>
+
+</div>
+
+<div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; margin-top:8px; font-size:0.8rem; color:#334155; line-height:1.6;">
+
+<h4 style="margin:0 0 6px 0; color:#0f172a; font-size:0.88rem; font-weight:800;">3. 플랫폼 서비스 제공 및 계약 당사자 (운영사)</h4>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+
+<div>• <strong>상호(법인명)</strong> : <span style="color:#0f172a; font-weight:700;">해피크레딧 (일반과세자)</span></div>
+
+<div>• <strong>대표자</strong> : <span style="color:#0f172a; font-weight:700;">박재구</span></div>
+
+<div>• <strong>사업자등록번호</strong> : <span style="color:#0f172a; font-weight:700;">322-51-00561</span></div>
+
+<div>• <strong>업태 / 종목</strong> : <span>정보통신업 / 응용 소프트웨어 개발 및 공급업</span></div>
+
+</div>
+
+<div style="margin-top:4px; font-size:0.75rem; color:#64748b;">
+
+• <strong>사업장 소재지</strong> : 서울특별시 강남구 봉은사로1길 6, 5층 5159호(논현동, 용천빌딩)
+
+</div>
+
+</div>
+
+<!-- 4. 회원의 실구매 기준 누적 당첨 실적 및 프로그램 추천 적중 증빙 (Legal Audit Trail & Evidentiary Proof) -->
+
+${(function() {
+
+const targetUserId = docData.userId || 'guest';
+
+const winningAudit = (typeof getUserConfirmedWinningsAuditTrail === 'function' 
+
+? getUserConfirmedWinningsAuditTrail(targetUserId) 
+
+: (window.getUserConfirmedWinningsAuditTrail ? window.getUserConfirmedWinningsAuditTrail(targetUserId) : null)) || {
+
+userId: targetUserId,
+
+totalPurchasedRounds: 0,
+
+totalPurchasedGames: 0,
+
+totalWinningCombos: 0,
+
+totalPrize: 0,
+
+highestRank: 0,
+
+hitsByRank: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+
+winningItems: []
+
+};
+
+const proofCert = (typeof generateAgreementProofCertificate === 'function'
+
+? generateAgreementProofCertificate(docData, winningAudit)
+
+: (window.generateAgreementProofCertificate ? window.generateAgreementProofCertificate(docData, winningAudit) : { auditId: `AUDIT-LOTTO-${targetUserId.toUpperCase()}-SEALED`, sealHash: 'UNVERIFIED' }));
+
+let winningItemsTableHtml = '';
+
+if (winningAudit.winningItems && winningAudit.winningItems.length > 0) {
+
+const rowsHtml = winningAudit.winningItems.map((item) => {
+
+let rankColor = '#64748b';
+
+let rankBadgeBg = '#f1f5f9';
+
+let rankName = `${item.rank}등`;
+
+if (item.rank === 1) { rankColor = '#d97706'; rankBadgeBg = '#fef3c7'; rankName = '🥇 1등 (6개 일치)'; }
+
+else if (item.rank === 2) { rankColor = '#dc2626'; rankBadgeBg = '#fee2e2'; rankName = '🥈 2등 (5개+보너스)'; }
+
+else if (item.rank === 3) { rankColor = '#2563eb'; rankBadgeBg = '#dbeafe'; rankName = '🥉 3등 (5개 일치)'; }
+
+else if (item.rank === 4) { rankColor = '#16a34a'; rankBadgeBg = '#dcfce7'; rankName = '4등 (4개 일치)'; }
+
+else if (item.rank === 5) { rankColor = '#7c3aed'; rankBadgeBg = '#f3e8ff'; rankName = '5등 (3개 일치)'; }
+
+const ballBadges = item.numbers.map(n => {
+
+const isHit = item.matchedNumbers && item.matchedNumbers.includes(n);
+
+const bg = isHit ? '#2563eb' : '#f8fafc';
+
+const color = isHit ? '#ffffff' : '#475569';
+
+const border = isHit ? '#1d4ed8' : '#cbd5e1';
+
+const fw = isHit ? '800' : 'normal';
+
+return `<span 
+<truncated 1455 bytes>
+
+NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.
+
+// Render with current search query & filter
+
+window.filterUserList();
+
+} catch (error) {
+
+console.error(error);
+
+userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#ef4444;">데이터를 불러오는 중 오류가 발생했습니다.</div>`;
+
+}
+
+}
+
+window.loadUserList = loadUserList;
+
+window.viewUserAgreementDoc = async function(userId) {
+
+if (!window.db) return;
+
+// 🔒 1. Strict Role/Ownership Access Control Guard
+
+const currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : null)) || '';
+
+const isAdm = (typeof isAdminUser === 'function' ? isAdminUser(currentAuthId) : (currentAuthId === 'master' || currentAuthId === 'admin'));
+
+if (!isAdm && currentAuthId.toLowerCase() !== (userId || '').toLowerCase()) {
+
+alert('🔒 타 회원의 전자 서약서 및 개인정보는 조회할 권한이 없습니다.');
+
+return;
+
+}
+
+try {
+
+let docData = null;
+
+// 1. Try lotto_agreements collection first
+
+try {
+
+const agrDoc = await window.db.collection('lotto_agreements').doc(userId).get();
+
+if (agrDoc.exists) docData = agrDoc.data();
+
+} catch(e){}
+
+// 2. Fallback to lotto_users embedded agreementDoc
+
+if (!docData) {
+
+const userDoc = await window.db.collection('lotto_users').doc(userId).get();
+
+if (userDoc.exists) {
+
+const u = userDoc.data();
+
+docData = u.agreementDoc || {
+
+userId: userId,
+
+realName: u.realName || userId,
+
+phoneNumber: u.phoneNumber || '미등록',
+
+authProvider: u.authProvider || (userId.startsWith('kakao_') ? 'kakao' : 'local'),
+
+kakaoId: u.kakaoId || (userId.startsWith('kakao_') ? userId.replace('kakao_', '') : null),
+
+agreedDateFormatted: u.createdAt ? u.createdAt.slice(0, 10) : '가입일자 미상',
+
+signatureDataUrl: null
+
+};
+
+}
+
+}
+
+if (!docData) {
+
+alert('해당 회원의 전자 서약서 데이터를 찾을 수 없습니다.');
+
+return;
+
+}
+
+window.currentViewingAgreementData = docData;
+
+const container = document.getElementById('agreementDocContent');
+
+if (!container) return;
+
+// 🔒 2. Strict Signature Data URI Protocol Validation (XSS Prevention)
+
+const isValidSigUrl = docData.signatureDataUrl && (
+
+docData.signatureDataUrl.startsWith('data:image/png;base64,') ||
+
+docData.signatureDataUrl.startsWith('data:image/jpeg;base64,') ||
+
+docData.signatureDataUrl.startsWith('data:image/webp;base64,')
+
+);
+
+const sigHtml = isValidSigUrl 
+
+? `<div style="text-align:right; margin-top:8px;">
+
+<span style="font-size:0.8rem; color:#64748b; font-weight:700; margin-right:8px;">자필 전자 서명 날인:</span>
+
+<img src="${docData.signatureDataUrl}" style="max-height:60px; vertical-align:middle; border-bottom:1px solid #0f172a; padding:2px 10px; background:#fff; border-radius:4px;" alt="서명">
+
+</div>`
+
+: `<div style="text-align:right; margin-top:8px; color:#94a3b8; font-size:0.82rem;">(전자 인증 완료 / 자필 서명 이미지 없음)</div>`;
+
+// 🔒 3. Escape HTML for All User-Controllable PII Fields
+
+const safeUserId = escapeHtml(docData.userId);
+
+const safeRealName = escapeHtml(docData.realName || docData.userId);
+
+const safePhone = escapeHtml(docData.phoneNumber || '미등록');
+
+const safeDate = escapeHtml(docData.agreedDateFormatted || docData.createdAt || '-');
+
+const safeDocId = escapeHtml(docData.docId || 'AGR-' + docData.userId);
+
+const safePledge = escapeHtml(docData.legalPledgeStatement || '위 모든 약관의 전문 내용을 확인하였으며, 대한민국 전자문서 및 전자서명법에 따라 본인이 직접 서명하고 본 전자 계약을 체결합니다.');
+
+let termsHtml = '';
+
+if (Array.isArray(docData.terms)) {
+
+termsHtml = docData.terms.map((t, idx) => `
+
+<div style="margin-bottom:10px; padding:10px; background:#f1f5f9; border-radius:6px; border:1px solid #e2e8f0;">
+
+<div style="font-weight:800; color:#0f172a; font-size:0.86rem;">✅ ${escapeHtml(t.title || `[필수 ${idx+1}] 약관`)}</div>
+
+<div style="color:#475569; font-size:0.78rem; margin-top:4px; line-height:1.5; white-space:pre-line;">
+
+${escapeHtml(t.fullContent || '약관에 정상 동의하였습니다.')}
+
+</div>
+
+</div>
+
+`).join('');
+
+} else {
+
+const stdTerms = getStandardAgreementTerms();
+
+termsHtml = stdTerms.map((t, idx) => `
+
+<div style="margin-bottom:10px; padding:10px; background:#f1f5f9; border-radius:6px; border:1px solid #e2e8f0;">
+
+<div style="font-weight:800; color:#0f172a; font-size:0.86rem;">✅ ${escapeHtml(t.title)}</div>
+
+<div style="color:#475569; font-size:0.78rem; margin-top:4px; line-height:1.5; white-space:pre-line;">
+
+${escapeHtml(t.fullContent)}
+
+</div>
+
+</div>
+
+`).join('');
+
+}
+
+container.innerHTML = `
+
+<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 16px; margin-bottom:10px;">
+
+<div style="font-size:0.75rem; color:#64748b; font-weight:700;">DOCUMENT ID: ${safeDocId}</div>
+
+<h4 style="margin:4px 0 6px 0; color:#0f172a; font-size:0.95rem; font-weight:800;">1. 서약자(회원) 인적 사항</h4>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.85rem; color:#475569;">
+
+<div>• <strong>아이디</strong> : <span style="color:#0f172a; font-weight:700;">${safeUserId}</span></div>
+
+<div>• <strong>성명/닉네임</strong> : <span style="color:#0f172a; font-weight:700;">${safeRealName}</span></div>
+
+<div>• <strong>휴대폰 번호</strong> : <span style="color:#0f172a; font-weight:700;">${safePhone}</span></div>
+
+<div>• <strong>체결 일시</strong> : <span style="color:#2563eb; font-weight:700;">${safeDate}</span></div>
+
+</div>
+
+</div>
+
+<div style="border:1px solid #e2e8f0; border-radius:8px; padding:14px; background:#ffffff; font-size:0.82rem; line-height:1.6; color:#334155;">
+
+<h4 style="margin:0 0 8px 0; color:#0f172a; font-size:0.92rem; font-weight:800;">2. 전자 서약 및 동의 전문 내역 (하나의 단일 계약 문서)</h4>
+
+${termsHtml}
+
+</div>
+
+<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:14px; margin-top:4px;">
+
+<div style="font-size:0.82rem; color:#475569; text-align:center; margin-bottom:6px; font-weight:700;">
+
+${safePledge}
+
+</div>
+
+<div style="display:flex; justify-content:space-between; align-items:center; border-top:1px dashed #cbd5e1; padding-top:8px;">
+
+<span style="font-size:0.82rem; color:#0f172a;">서약자 성명: <strong>${safeRealName}</strong></span>
+
+${sigHtml}
+
+</div>
+
+</div>
+
+<div style="background:#f1f5f9; border:1px solid #cbd5e1; border-radius:8px; padding:12px 14px; margin-top:8px; font-size:0.8rem; color:#334155; line-height:1.6;">
+
+<h4 style="margin:0 0 6px 0; color:#0f172a; font-size:0.88rem; font-weight:800;">3. 플랫폼 서비스 제공 및 계약 당사자 (운영사)</h4>
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+
+<div>• <strong>상호(법인명)</strong> : <span style="color:#0f172a; font-weight:700;">해피크레딧 (일반과세자)</span></div>
+
+<div>• <strong>대표자</strong> : <span style="color:#0f172a; font-weight:700;">박재구</span></div>
+
+<div>• <strong>사업자등록번호</strong> : <span style="color:#0f172a; font-weight:700;">322-51-00561</span></div>
+
+<div>• <strong>업태 / 종목</strong> : <span>정보통신업 / 응용 소프트웨어 개발 및 공급업</span></div>
+
+</div>
+
+<div style="margin-top:4px; font-size:0.75rem; color:#64748b;">
+
+• <strong>사업장 소재지</strong> : 서울특별시 강남구 봉은사로1길 6, 5층 5159호(논현동, 용천빌딩)
+
+</div>
+
+</div>
+
+<!-- 4. 회원의 실구매 기준 누적 당첨 실적 및 프로그램 추천 적중 증빙 (Legal Audit Trail & Evidentiary Proof) -->
+
+${(function() {
+
+const targetUserId = docData.userId || 'guest';
+
+const winningAudit = (typeof getUserConfirmedWinningsAuditTrail === 'function' 
+
+? getUserConfirmedWinningsAuditTrail(targetUserId) 
+
+: (window.getUserConfirmedWinningsAuditTrail ? window.getUserConfirmedWinningsAuditTrail(targetUserId) : null)) || {
+
+userId: targetUserId,
+
+totalPurchasedRounds: 0,
+
+totalPurchasedGames: 0,
+
+totalWinningCombos: 0,
+
+totalPrize: 0,
+
+highestRank: 0,
+
+hitsByRank: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+
+winningItems: []
+
+};
+
+const proofCert = (typeof generateAgreementProofCertificate === 'function'
+
+? generateAgreementProofCertificate(docData, winningAudit)
+
+: (window.generateAgreementProofCertificate ? window.generateAgreementProofCertificate(docData, winningAudit) : { auditId: `AUDIT-LOTTO-${targetUserId.toUpperCase()}-SEALED`, sealHash: 'UNVERIFIED' }));
+
+let winningItemsTableHtml = '';
+
+if (winningAudit.winningItems && winningAudit.winningItems.length > 0) {
+
+const itemsListHtml = winningAudit.winningItems.map((item) => {
+
+let rankColor = '#64748b';
+
+let rankBadgeBg = '#f1f5f9';
+
+let rankName = `${item.rank}등`;
+
+if (item.rank === 1) { rankColor = '#d97706'; rankBadgeBg = '#fef3c7'; rankName = '🥇 1등 (6개 일치)'; }
+
+else if (item.rank === 2) { rankColor = '#dc2626'; rankBadgeBg = '#fee2e2'; rankName = '🥈 2등 (5개+보너스)'; }
+
+else if (item.rank === 3) { rankColor = '#2563eb'; rankBadgeBg = '#dbeafe'; rankName = '🥉 3등 (5개 일치)'; }
+
+else if (item.rank === 4) { rankColor = '#16a34a'; rankBadgeBg = '#dcfce7'; rankName = '4등 (4개 일치)'; }
+
+else if (item.rank === 5) { rankColor = '#7c3aed'; rankBadgeBg = '#f3e8ff'; rankName = '5등 (3개 일치)'; }
+
+const ballBadges = item.numbers.map(n => {
+
+const isHit = item.matchedNumbers && item.matchedNumbers.includes(n);
+
+const bg = isHit ? '#2563eb' : '#ffffff';
+
+const color = isHit ? '#ffffff' : '#334155';
+
+const border = isHit ? '#1d4ed8' : '#cbd5e1';
+
+const fw = isHit ? '800' : '600';
+
+return `<span style="display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:${bg}; color:${color}; border:1.5px solid ${border}; font-weight:${fw}; font-size:0.75rem; box-sizing:border-box;">${n}</span>`;
+
+}).join('');
+
+return `
+
+<div style="background:#ffffff; border:1px solid #cbd5e1; border-radius:8px; padding:10px 12px; box-sizing:border-box; display:flex; flex-direction:column; gap:6px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+
+<!-- 1. Header: Round & Date | Rank & Prize -->
+
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+
+<div style="display:flex; align-items:center; gap:6px;">
+
+<span style="font-weight:900; color:#0f172a; font-size:0.92rem;">제 ${item.roundNum}회</span>
+
+<span style="font-size:0.72rem; color:#64748b;">(${item.drawDate})</span>
+
+</div>
+
+<div style="display:flex; align-items:center; gap:6px;">
+
+<span style="background:${rankBadgeBg}; color:${rankColor}; padding:2px 7px; border-radius:4px; font-weight:800; font-size:0.74rem; border:1px solid ${rankColor}40;">
+
+${rankName}
+
+</span>
+
+<span style="font-weight:900; color:#16a34a; font-size:0.88rem;">
+
++${item.prize.toLocaleString()}원
+
+</span>
+
+</div>
+
+</div>
+
+<!-- 2. Numbers: 6 Ball badges centered (No horizontal overflow) -->
+
+<div style="display:flex; align-items:center; justify-content:center; gap:5px; padding:6px 4px; background:#f8fafc; border-radius:6px; border:1px solid #e2e8f0; width:100%; box-sizing:border-box;">
+
+${ballBadges}
+
+</div>
+
+<!-- 3. Footer Audit Stamp: Algorithm & Receipt Info -->
+
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; font-size:0.7rem; color:#64748b; border-top:1px dashed #e2e8f0; padding-top:5px;">
+
+<div style="color:#1e40af; font-weight:700;">
+
+<i class="fa-solid fa-microchip" style="color:#2563eb;"></i> ${item.algoVersion}
+
+</div>
+
+<div style="color:#16a34a; font-weight:700; display:flex; align-items:center; gap:3px;">
+
+<i class="fa-solid fa-lock"></i> <span style="color:#475569;">${item.receiptId}</span> (추첨전 등록)
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+}).join('');
+
+winningItemsTableHtml = `
+
+<div style="display:flex; flex-direction:column; gap:8px; margin-bottom:10px; width:100%; box-sizing:border-box;">
+
+${itemsListHtml}
+
+</div>
+
+`;
+
+} else {
+
+winningItemsTableHtml = `
+
+<div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:6px; padding:14px; text-align:center; margin-bottom:10px; font-size:0.78rem; color:#64748b; box-sizing:border-box;">
+
+<i class="fa-solid fa-clock-rotate-left" style="color:#3b82f6; margin-right:4px;"></i>
+
+<strong>현재 실구매 당첨 생성 전 상태:</strong> 본 회원은 현재까지 실구매 영수증 등록 및 당첨 데이터 생성 전 상태입니다. 향후 AI 추천번호를 바탕으로 실구매 영수증을 등록하여 당첨이 발생하면, 본 전자 서약서의 감사 증적 섹션에 실시간으로 영구 결합·보존됩니다.
+
+</div>
+
+`;
+
+}
+
+return `
+
+<div style="background:#ffffff; border:1.5px solid #3b82f6; border-radius:8px; padding:12px; margin-top:10px; color:#1e293b; box-sizing:border-box; width:100%;">
+
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; border-bottom:1.5px solid #3b82f6; padding-bottom:6px; margin-bottom:10px;">
+
+<div style="display:flex; align-items:center; gap:6px;">
+
+<i class="fa-solid fa-stamp" style="color:#2563eb; font-size:1.05rem;"></i>
+
+<h4 style="margin:0; color:#1e3a8a; font-size:0.92rem; font-weight:900;">
+
+4. 회원의 실구매 기준 누적 당첨 실적 및 프로그램 추천 적중 증빙 (공식 감사 증적)
+
+</h4>
+
+</div>
+
+<span style="font-size:0.7rem; background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; padding:2px 8px; border-radius:6px; font-weight:800;">
+
+⚖️ 전자문서법 기준 불변 데이터 증빙
+
+</span>
+
+</div>
+
+<!-- KPI Summary Bar (2x2 Grid for Perfect Mobile Fit) -->
+
+<div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-bottom:10px; width:100%; box-sizing:border-box;">
+
+<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 6px; text-align:center; box-sizing:border-box;">
+
+<div style="font-size:0.7rem; color:#64748b;">실구매 총 게임수</div>
+
+<div style="font-size:0.88rem; font-weight:800; color:#0f172a;">${winningAudit.totalPurchasedGames.toLocaleString()}게임 (${winningAudit.totalPurchasedRounds}회)</div>
+
+</div>
+
+<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 6px; text-align:center; box-sizing:border-box;">
+
+<div style="font-size:0.7rem; color:#64748b;">실구매 총 당첨건수</div>
+
+<div style="font-size:0.88rem; font-weight:800; color:#2563eb;">${winningAudit.totalWinningCombos.toLocaleString()}건 적중</div>
+
+</div>
+
+<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 6px; text-align:center; box-sizing:border-box;">
+
+<div style="font-size:0.7rem; color:#64748b;">실구매 누적 당첨금</div>
+
+<div style="font-size:0.9rem; font-weight:900; color:#16a34a;">+${winningAudit.totalPrize.toLocaleString()}원</div>
+
+</div>
+
+<div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:8px 6px; text-align:center; box-sizing:border-box;">
+
+<div style="font-size:0.7rem; color:#64748b;">최고 당첨 등수</div>
+
+<div style="font-size:0.88rem; font-weight:800; color:#d97706;">${winningAudit.highestRank > 0 ? `${winningAudit.highestRank}등 당첨` : '미당첨'}</div>
+
+</div>
+
+</div>
+
+<!-- Rank Counts Chips -->
+
+<div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:4px; background:#f1f5f9; border-radius:6px; padding:6px 4px; margin-bottom:10px; font-size:0.72rem; font-weight:800; text-align:center; box-sizing:border-box;">
+
+<span style="color:#d97706;">1등: ${winningAudit.hitsByRank[1]}</span>
+
+<span style="color:#dc2626;">2등: ${winningAudit.hitsByRank[2]}</span>
+
+<span style="color:#2563eb;">3등: ${winningAudit.hitsByRank[3]}</span>
+
+<span style="color:#16a34a;">4등: ${winningAudit.hitsByRank[4]}</span>
+
+<span style="color:#7c3aed;">5등: ${winningAudit.hitsByRank[5]}</span>
+
+</div>
+
+<!-- Winning Items Table or Empty Notice -->
+
+${winningItemsTableHtml}
+
+<!-- Cryptographic Proof Certificate & Legal Attestation -->
+
+<div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:6px; padding:10px; margin-top:8px; font-size:0.74rem; color:#475569; line-height:1.5; box-sizing:border-box; width:100%;">
+
+<div style="font-weight:800; color:#0f172a; margin-bottom:4px; display:flex; align-items:center; gap:5px;">
+
+<i class="fa-solid fa-certificate" style="color:#2563eb;"></i> 프로그램 추천 당첨 무결성 인증서 (Cryptographic Audit Certificate)
+
+</div>
+
+<div style="word-break:break-all;">
+
+• <strong>감사 증적 번호 (Audit ID)</strong>: <code style="background:#e2e8f0; padding:1px 5px; border-radius:4px; font-family:monospace; color:#0f172a; font-weight:bold;">${proofCert.auditId}</code><br>
+
+• <strong>디지털 봉인 해시 (SHA-256)</strong>: <code style="background:#e2e8f0; padding:1px 5px; border-radius:4px; font-family:monospace; font-size:0.7rem; color:#0f172a; word-break:break-all;">${proofCert.sealHash}</code><br>
+
+• <strong>법적 증거 확약</strong>: 본 실구매 당첨 내역은 회원이 '운도실력' 프로그램의 AI 추천 알고리즘 번호를 교부받아 추첨 마감 전 실제 구매·등록한 것으로, 동행복권 공식 추첨 결과와 1:1 대조 채점되어 위변조가 불가능하도록 시스템에 영구 봉인된 공식 실적 데이터임을 증명합니다.
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+})()}
+
+`;
+
+const modal = document.getElementById('agreementViewerModal');
+
+if (modal) modal.style.display = 'flex';
+
+} catch(err) {
+
+console.error('[viewUserAgreementDoc Error]', err);
+
+alert('전자 서약서 문서를 불러오는 중 오류가 발생했습니다.');
+
+}
+
+};
+
+// 1. 모바일 & PC 100% 안전 파일 다운로드 (스마트폰 파일 저장 / PC 다운로드 - 앱 절대 종료 안 됨)
+
+window.downloadAgreementDoc = async function() {
+
+try {
+
+const docArea = document.getElementById('agreementDocContent');
+
+if (!docArea) return;
+
+const uData = window.currentViewingAgreementData || {};
+
+const uId = uData.userId || 'user';
+
+const uName = uData.realName || uId;
+
+const dateStr = new Date().toISOString().slice(0, 10);
+
+const fileName = `로또AI_전자서약서_${uName}_${uId}_${dateStr}.html`;
+
+const fullHtml = `<!DOCTYPE html>
+
+<html lang="ko">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>로또 AI 서비스 이용 및 성공수수료 전자 서약서 - ${uName}</title>
+
+<style>
+
+body { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Pretendard", sans-serif; padding: 20px; color: #1e293b; background: #f8fafc; line-height: 1.6; max-width: 800px; margin: 0 auto; }
+
+.doc-card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+
+h2 { color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-top: 0; font-size: 1.35rem; }
+
+@media print {
+
+body { background: #ffffff; padding: 0; }
+
+.doc-card { border: none; box-shadow: none; padding: 0; }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="doc-card">
+
+<h2>📜 로또 AI 서비스 이용 및 성공수수료 전자 서약서</h2>
+
+${docArea.innerHTML}
+
+</div>
+
+</body>
+
+</html>`;
+
+function triggerDirectDownload() {
+
+const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+
+const url = URL.createObjectURL(blob);
+
+const a = document.createElement('a');
+
+a.href = url;
+
+a.download = fileName;
+
+document.body.appendChild(a);
+
+a.click();
+
+setTimeout(() => {
+
+try { document.body.removeChild(a); } catch(e){}
+
+URL.revokeObjectURL(url);
+
+}, 400);
+
+if (typeof showToast === 'function') {
+
+showToast(`📥 [${fileName}] 스마트폰 다운로드 폴더에 안전하게 저장되었습니다.`);
+
+}
+
+}
+
+// 모바일 Web Share API 지원 시 스마트폰 시스템 파일 저장/카카오톡 공유 지원
+
+if (navigator.share && navigator.canShare && typeof File !== 'undefined') {
+
+try {
+
+const file = new File([fullHtml], fileName, { type: 'text/html' });
+
+if (navigator.canShare({ files: [file] })) {
+
+await navigator.share({
+
+files: [file],
+
+title: '로또 AI 전자서약서',
+
+text: `[${uName}] 회원의 로또 AI 서비스 이용 및 성공수수료 전자 서약서 문서입니다.`
+
+});
+
+return;
+
+}
+
+} catch (shareErr) {
+
+// 사용자 취소가 아닐 때만 fallback 진행
+
+if (shareErr.name === 'AbortError') return;
+
+console.warn('[Web Share Fallback to Direct Download]', shareErr);
+
+}
+
+}
+
+triggerDirectDownload();
+
+} catch(ex) {
+
+console.error('[downloadAgreementDoc Error]', ex);
+
+alert('서약서 다운로드 중 오류가 발생했습니다: ' + ex.message);
+
+}
+
+};
+
+// 2. 모바일 친화적 안전 인쇄 (Safe Hidden iframe Print - 새 창을 띄우지 않아 앱이 종료되지 않음)
+
+window.printAgreementDoc = function() {
+
+try {
+
+const docArea = document.getElementById('agreementDocContent');
+
+if (!docArea) return;
+
+// Use hidden iframe to avoid opening separate window which crashes PWA on mobile
+
+let printFrame = document.getElementById('safePrintFrame');
+
+if (printFrame) {
+
+printFrame.remove();
+
+}
+
+printFrame = document.createElement('iframe');
+
+printFrame.id = 'safePrintFrame';
+
+printFrame.style.position = 'fixed';
+
+printFrame.style.right = '0';
+
+printFrame.style.bottom = '0';
+
+printFrame.style.width = '0';
+
+printFrame.style.height = '0';
+
+printFrame.style.border = '0';
+
+printFrame.style.opacity = '0';
+
+printFrame.style.pointerEvents = 'none';
+
+document.body.appendChild(printFrame);
+
+const frameDoc = printFrame.contentWindow.document;
+
+frameDoc.open();
+
+frameDoc.write(`<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<title>로또 AI 서비스 이용 및 성공수수료 전자 서약서</title>
+
+<style>
+
+body { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Pretendard", sans-serif; padding: 20px; color: #1e293b; }
+
+h2 { color: #0f172a; border-bottom: 2px solid #0f172a; padding-bottom: 10px; margin-top: 0; }
+
+@media print {
+
+button { display: none !important; }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>📜 로또 AI 서비스 이용 및 성공수수료 전자 서약서</h2>
+
+${docArea.innerHTML}
+
+</body>
+
+</html>`);
+
+frameDoc.close();
+
+setTimeout(() => {
+
+try {
+
+printFrame.contentWindow.focus();
+
+printFrame.contentWindow.print();
+
+} catch(pe) {
+
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+} catch(pe) {
+
+console.warn('[Safe Print Fallback to download]', pe);
+
+if (typeof window.downloadAgreementDoc === 'function') {
+
+window.downloadAgreementDoc();
+
+}
+
+}
+
+}, 300);
+
+} catch(e) {
+
+console.error('[printAgreementDoc Error]', e);
+
+if (typeof window.downloadAgreementDoc === 'function') {
+
+window.downloadAgreementDoc();
+
+}
+
+}
+
+};
+
+// ========================================================
+
+// 📋 Mandatory Profile Completion & E-Signature Pledge Gate
+
+// ========================================================
+
+let isPledgeDrawing = false;
+
+let pledgeStrokeCount = 0;
+
+function initPledgeSignaturePad() {
+
+const canvas = document.getElementById('pledgeSignatureCanvas');
+
+const placeholder = document.getElementById('pledgeSigPlaceholder');
+
+if (!canvas) return;
+
+const ctx = canvas.getContext('2d');
+
+function fillPledgeCanvasWhite() {
+
+ctx.save();
+
+ctx.fillStyle = '#ffffff';
+
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+ctx.restore();
+
+}
+
+function resizePledgeCanvas() {
+
+const rect = canvas.getBoundingClientRect();
+
+if (rect.width > 0 && rect.height > 0) {
+
+const ratio = window.devicePixelRatio || 2;
+
+canvas.width = rect.width * ratio;
+
+canvas.height = rect.height * ratio;
+
+ctx.scale(ratio, ratio);
+
+fillPledgeCanvasWhite();
+
+ctx.strokeStyle = '#000000';
+
+ctx.lineWidth = 3.2;
+
+ctx.lineCap = 'round';
+
+ctx.lineJoin = 'round';
+
+}
+
+}
+
+resizePledgeCanvas();
+
+function getPos(e) {
+
+const rect = canvas.getBoundingClientRect();
+
+let clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+
+let clientY = (e.touches && e.touches.length > 0) ? e.touches[0].clientY : e.clientY;
+
+return {
+
+x: clientX - rect.left,
+
+y: clientY - rect.top
+
+};
+
+}
+
+function startDraw(e) {
+
+isPledgeDrawing = true;
+
+pledgeStrokeCount++;
+
+if (placeholder) placeholder.style.display = 'none';
+
+const pos = getPos(e);
+
+ctx.strokeStyle = '#000000';
+
+ctx.lineWidth = 3.2;
+
+ctx.beginPath();
+
+ctx.moveTo(pos.x, pos.y);
+
+if (e.cancelable && (e.type === 'touchstart' || e.type === 'touchmove')) {
+
+e.preventDefault();
+
+}
+
+}
+
+function draw(e) {
+
+if (!isPledgeDrawing) return;
+
+pledgeStrokeCount++;
+
+const pos = getPos(e);
+
+ctx.lineTo(pos.x, pos.y);
+
+ctx.stroke();
+
+if (e.cancelable && (e.type === 'touchstart' || e.type === 'touchmove')) {
+
+e.preventDefault();
+
+}
+
+}
+
+function endDraw() {
+
+if (!isPledgeDrawing) return;
+
+isPledgeDrawing = false;
+
+ctx.closePath();
+
+}
+
+canvas.onmousedown = startDraw;
+
+canvas.onmousemove = draw;
+
+window.addEventListener('mouseup', endDraw);
+
+canvas.addEventListener('touchstart', startDraw, { passive: false });
+
+canvas.addEventListener('touchmove', draw, { passive: false });
+
+window.addEventListener('touchend', endDraw);
+
+window.clearPledgeSignature = function() {
+
+fillPledgeCanvasWhite();
+
+pledgeStrokeCount = 0;
+
+if (placeholder) placeholder.style.display = 'block';
+
+};
+
+window.isPledgeSigEmpty = function() {
+
+return pledgeStrokeCount < 5;
+
+};
+
+window.getPledgeSigDataUrl = function() {
+
+return canvas.toDataURL('image/png');
+
+};
+
+}
+
+window.initPledgeSignaturePad = initPledgeSignaturePad;
+
+window.openMandatoryPledgeModal = function(userId, userData = {}) {
+
+const modal = document.getElementById('mandatoryPledgeModal');
+
+if (!modal) return;
+
+const idHidden = document.getElementById('pledgeUserId');
+
+const realNameInput = document.getElementById('pledgeRealName');
+
+const phoneInput = document.getElementById('pledgePhone');
+
+const agreeCb = document.getElementById('pledgeAgreeAll');
+
+const errEl = document.getElementById('pledgeError');
+
+if (idHidden) idHidden.value = userId;
+
+if (realNameInput) realNameInput.value = (userData.realName && !userData.realName.startsWith('카카오_') && !userData.realName.startsWith('kakao_')) ? userData.realName : '';
+
+if (phoneInput) {
+
+const rawPhone = (userData.phoneNumber && !userData.phoneNumber.includes('카카오') && userData.phoneNumber !== '미등록') ? userData.phoneNumber : '';
+
+phoneInput.value = formatPhoneNumber(rawPhone);
+
+phoneInput.oninput = (e) => { e.target.value = formatPhoneNumber(e.target.value); };
+
+}
+
+if (agreeCb) agreeCb.checked = false;
+
+if (errEl) errEl.style.display = 'none';
+
+modal.style.display = 'flex';
+
+modal.classList.add('active');
+
+modal.classList.remove('hidden');
+
+setTimeout(initPledgeSignaturePad, 120);
+
+};
+
+window.saveMandatoryPledge = async function(e) {
+
+if (e && e.preventDefault) e.preventDefault();
+
+const idHidden = document.getElementById('pledgeUserId');
+
+const realNameInput = document.getElementById('pledgeRealName');
+
+const phoneInput = document.getElementById('pledgePhone');
+
+const agreeCb = document.getElementById('pledgeAgreeAll');
+
+const errEl = document.getElementById('pledgeError');
+
+const submitBtn = document.getElementById('btnSubmitPledge');
+
+let userId = idHidden ? idHidden.value.trim() : '';
+
+if (!userId) userId = SafeAuth.get() || '';
+
+const realName = realNameInput ? realNameInput.value.trim() : '';
+
+const rawPhone = phoneInput ? phoneInput.value.trim() : '';
+
+function showPledgeError(msg) {
+
+if (errEl) {
+
+errEl.textContent = msg;
+
+errEl.style.display = 'block';
+
+errEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+}
+
+alert(msg);
+
+}
+
+if (errEl) errEl.style.display = 'none';
+
+if (!userId) {
+
+showPledgeError('⚠️ 사용자 로그인 세션을 찾을 수 없습니다. 다시 로그인해 주세요.');
+
+return;
+
+}
+
+if (!realName || realName.length < 2) {
+
+showPledgeError('⚠️ 회원 실명(이름)을 2자 이상 정확히 입력해 주세요.');
+
+return;
+
+}
+
+if (!rawPhone || !validatePhoneNumber(rawPhone)) {
+
+showPledgeError('⚠️ 올바른 휴대폰 번호(010-0000-0000)를 입력해 주세요.');
+
+return;
+
+}
+
+const cleanPhone = formatPhoneNumber(rawPhone);
+
+if (!agreeCb || !agreeCb.checked) {
+
+showPledgeError('⚠️ 4대 필수 약정 전문 확인 및 서약 동의에 체크해 주세요.');
+
+return;
+
+}
+
+if (typeof window.isPledgeSigEmpty === 'function' && window.isPledgeSigEmpty()) {
+
+showPledgeError('⚠️ 하단 서명란에 스마트폰 터치 또는 마우스로 직접 자필 서명 날인해 주세요.');
+
+const sigBox = document.getElementById('pledgeSignatureCanvas');
+
+if (sigBox) sigBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+return;
+
+}
+
+const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+
+if (!firestore) {
+
+showPledgeError('데이터베이스에 연결되지 않았습니다. 잠시 후 다시 시도해 주세요.');
+
+return;
+
+}
+
+try {
+
+if (submitBtn) {
+
+submitBtn.disabled = true;
+
+submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 서약서 체결 및 등록 중...';
+
+}
+
+// Phone Duplicate Check (excluding self)
+
+try {
+
+const snap = await firestore.collection('lotto_users').where('phoneNumber', '==', cleanPhone).get();
+
+let isDuplicate = false;
+
+snap.forEach(doc => {
+
+if (doc.id !== userId) isDuplicate = true;
+
+});
+
+if (isDuplicate) {
+
+showPledgeError('⚠️ 이미 다른 계정에 등록된 휴대폰 번호입니다. 1인 1계정 원칙에 따라 중복 등록할 수 없습니다.');
+
+if (submitBtn) {
+
+submitBtn.disabled = false;
+
+submitBtn.innerHTML = '<i class="fa-solid fa-file-signature"></i> 전자 서약 완료 및 시스템 시작하기';
+
+}
+
+return;
+
+}
+
+} catch(phoneCheckErr) {
+
+console.warn('[Phone Duplicate Check Handled]', phoneCheckErr);
+
+}
+
+const sigDataUrl = (typeof window.getPledgeSigDataUrl === 'function') ? window.getPledgeSigDataUrl() : null;
+
+const now = new Date();
+
+const formattedDate = `${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, '0')}월 ${String(now.getDate()).padStart(2, '0')}일 ${String(now.getHours()).padStart(2, '0')}시 ${String(now.getMinutes()).padStart(2, '0')}분`;
+
+// Construct Single Unified Electronic Agreement & Pledge Document
+
+const agreementDocument = {
+
+docId: `AGR-${userId}-${Date.now()}`,
+
+documentTitle: '로또 AI 퀀트 서비스 이용 및 성공수수료 전자 서약서',
+
+userId: userId,
+
+realName: realName,
+
+phoneNumber: cleanPhone,
+
+createdAt: now.toISOString(),
+
+agreedDateFormatted: formattedDate,
+
+userAgent: navigator.userAgent,
+
+terms: getStandardAgreementTerms(now),
+
+signatureDataUrl: sigDataUrl,
+
+legalPledgeStatement: '위 모든 약관의 전문 내용을 확인하였으며 본인이 직접 자필 서명 날인하고 본 전자 계약을 체결합니다.',
+
+status: 'legally_binding'
+
+};
+
+// Use set with merge: true for absolute safety (works whether doc exists or not)
+
+await firestore.collection('lotto_users').doc(userId).set({
+
+userId: userId,
+
+realName: realName,
+
+phoneNumber: cleanPhone,
+
+status: 'active',
+
+agreementDoc: agreementDocument,
+
+agreedTerms: {
+
+feeAgreement: true,
+
+weeklyPurchaseAgreement: true,
+
+privacyAgreement: true,
+
+algoDisclaimer: true,
+
+agreedAt: now.toISOString(),
+
+hasSignature: true
+
+}
+
+}, { merge: true });
+
+try {
+
+await firestore.collection('lotto_agreements').doc(userId).set(agreementDocument);
+
+} catch(e) {}
+
+// Close all modals
+
+const modal = document.getElementById('mandatoryPledgeModal');
+
+if (modal) {
+
+modal.style.display = 'none';
+
+modal.classList.remove('active');
+
+modal.classList.add('hidden');
+
+}
+
+const loginModal = document.getElementById('loginModalOverlay');
+
+if (loginModal) {
+
+loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
+
+loginModal.classList.remove('active');
+
+loginModal.classList.add('hidden');
+
+}
+
+SafeAuth.set(userId);
+
+showToast(`🎉 [${realName}]님, 필수 정보 등록 및 전자 서약이 완료되었습니다!`);
+
+// Unlock and reveal landing page directly
+
+const landingPage = document.getElementById('landingPage');
+
+if (landingPage) {
+
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
 // 8. Auto Logout & Deadlines
 // ========================================================
 let inactivityTimer = null;
@@ -2455,6 +4781,16 @@ if (typeof window !== 'undefined') {
     window.calcLiveLatestDrawnRound = calcLiveLatestDrawnRound;
     window.calcLiveUpcomingRound = calcLiveUpcomingRound;
     window.checkUserWeeklyPurchaseStatus = checkUserWeeklyPurchaseStatus;
+}
+
+
+if (typeof window !== 'undefined') {
+    window.openUserManagement = window.openUserManagement || function() {
+        const userMgmtModal = document.getElementById('userMgmtModal');
+        if (userMgmtModal) userMgmtModal.style.display = 'flex';
+        if (typeof window.loadUserList === 'function') window.loadUserList();
+    };
+    window.loadUserList = window.loadUserList || function() {};
 }
 
         if (typeof SafeAuth !== 'undefined') {

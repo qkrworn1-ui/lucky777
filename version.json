@@ -1,6 +1,6 @@
 {
-  "version": "v729",
-  "v_num": 729,
+  "version": "v730",
+  "v_num": 730,
   "buildDate": "2026-09-10",
-  "description": "모바일 실구매 QR 등록 화면 풀스크린 최적화: 대형 카메라 뷰파인더, 터치 친화형 UI, 전 기종 스마트폰 호환성 강화"
+  "description": "관리자 계정 사용자 관리 모달 복구: openUserManagement 핸들러, loadUserList, 회원 권한/정보 관리 및 서약서 열람 엔진 완벽 복원"
 }
