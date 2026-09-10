@@ -4,7 +4,7 @@ import { db } from '../../shared/db.js';
 export const state = {
     allNumbers: Array.from({ length: 45 }, (_, i) => i + 1),
     lottoExtraHistory: {},
-    mergedHistory: (typeof LOTTO_HISTORY !== 'undefined' ? { ...LOTTO_HISTORY } : {}),
+    mergedHistory: {},
     HISTORICAL_FREQUENCY: {},
     MISSING_WEEKS: {},
     PAIR_FREQUENCIES: {},
@@ -53,7 +53,6 @@ export function initHistory() {
         state.mergedHistory = { ...state.lottoExtraHistory };
     }
 }
-try { initHistory(); } catch(e) {}
 
 /**
  * Save global state to database

@@ -169,21 +169,3 @@ export async function shareLottoApp(customData = {}) {
 }
 window.shareLottoApp = shareLottoApp;
 
-/**
- * Robust HTML escaping for XSS prevention in innerHTML templates
- * @param {string} str 
- * @returns {string} Sanitized string
- */
-export function escapeHtml(str) {
-    if (str === null || str === undefined) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-if (typeof window !== 'undefined') {
-    window.escapeHtml = escapeHtml;
-}
-

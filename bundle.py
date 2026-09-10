@@ -28,9 +28,6 @@ def sync_version_assets():
         with open('index.html', 'r', encoding='utf-8') as f:
             html = f.read()
         html = re.sub(r'styles\.css\?v=[a-zA-Z0-9_-]+', f'styles.css?v={v_num}', html)
-        html = re.sub(r'app_v2\.js\?v=[a-zA-Z0-9_-]+', f'app_v2.js?v={v_num}', html)
-        html = re.sub(r'sw\.js\?v=[a-zA-Z0-9_-]+', f'sw.js?v={v_num}', html)
-        html = re.sub(r'data\.js\?v=[a-zA-Z0-9_-]+', f'data.js?v={v_num}', html)
         html = re.sub(
             r'(<span id="appVersionBadgeLanding"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)(v[0-9]+)(\s*<i class="fa-solid fa-rotate"[^>]*></i>\s*</span>)',
             rf'\g<1>{version}\g<3>',
@@ -111,14 +108,12 @@ SAFE_STORAGE_DEFINITION = """
 const SafeStorage = {
     getItem(key) { try { return sessionStorage.getItem(key); } catch (e) { if (!window.__sMock) window.__sMock = {}; return window.__sMock[key] || null; } },
     setItem(key, val) { try { sessionStorage.setItem(key, val); } catch (e) { if (!window.__sMock) window.__sMock = {}; window.__sMock[key] = val; } },
-    removeItem(key) { try { sessionStorage.removeItem(key); } catch (e) { if (window.__sMock) delete window.__sMock[key]; } },
-    clear() { try { sessionStorage.clear(); } catch (e) { window.__sMock = {}; } }
+    removeItem(key) { try { sessionStorage.removeItem(key); } catch (e) { if (window.__sMock) delete window.__sMock[key]; } }
 };
 const SafeLocalStorage = {
-    getItem(key) { try { return localStorage.getItem(key); } catch (e) { if (!window.__lsMock) window.__lsMock = {}; return window.__lsMock[key] || null; } },
-    setItem(key, val) { try { localStorage.setItem(key, val); } catch (e) { if (!window.__lsMock) window.__lsMock = {}; window.__lsMock[key] = val; } },
-    removeItem(key) { try { localStorage.removeItem(key); } catch (e) { if (window.__lsMock) delete window.__lsMock[key]; } },
-    clear() { try { localStorage.clear(); } catch (e) { window.__lsMock = {}; } }
+    getItem(key) { try { return localStorage.getItem(key); } catch (e) { if (!window.__lMock) window.__lMock = {}; return window.__lMock[key] || null; } },
+    setItem(key, val) { try { localStorage.setItem(key, val); } catch (e) { if (!window.__lMock) window.__lMock = {}; window.__lMock[key] = val; } },
+    removeItem(key) { try { localStorage.removeItem(key); } catch (e) { if (window.__lMock) delete window.__lMock[key]; } }
 };
 """
 
@@ -131,10 +126,7 @@ def get_mod_slug(path):
 
 def clean_and_bundle():
     version = sync_version_assets()
-    bundle_files(version)
     run_preflight_tests()
-
-def bundle_files(version):
     print(f"[*] Starting smart bundling process for [{version}]...")
     bundled_content = [
         f"/**\n * Lucky777 Smart Bundle ({version})\n */\n",
@@ -152,31 +144,10 @@ def bundle_files(version):
             # Module name from canonical path
             mod_name = get_mod_slug(file_path)
             
-            # Find named declaration exports (export function/const/let/class)
+            # Find exports
             export_names = re.findall(r'\bexport\s+(?:async\s+)?(?:function|const|let|class)\s+([a-zA-Z0-9_]+)', content)
             
-            # Find list exports: export { a, b as c }
-            for block in re.findall(r'\bexport\s*\{([^}]+)\}', content, flags=re.DOTALL):
-                for item in block.split(','):
-                    parts = item.strip().split()
-                    if parts:
-                        export_name = parts[-1]  # target name
-                        if re.match(r'^[a-zA-Z0-9_]+$', export_name):
-                            export_names.append(export_name)
-            
-            # Strip export { ... };
-            content = re.sub(r'\bexport\s*\{[^}]+\};?', '', content, flags=re.DOTALL)
-            
-            # Replace export * from '...' with Object.assign(__exports, target_mod)
-            def repl_export_star(m):
-                path_part = m.group(1)
-                resolved_path = os.path.normpath(os.path.join(os.path.dirname(file_path), path_part))
-                target_mod = get_mod_slug(resolved_path)
-                return f"if (typeof {target_mod} !== 'undefined') Object.assign(__exports, {target_mod});"
-            
-            content = re.sub(r'export\s+\*\s+from\s+[\'"]([^\'"]+)[\'"];?', repl_export_star, content)
-            
-            # Strip export keywords from declarations
+            # Strip export keywords
             content = re.sub(r'\bexport\s+(async\s+function|function|const|let|class)\b', r'\1', content)
             
             # Replace imports: import { a, b as c } from './utils.js' -> const { a, b: c } = __M_shared_utils;
@@ -191,8 +162,8 @@ def bundle_files(version):
                 
             content = re.sub(r'import\s+\{([^}]+)\}\s+from\s+[\'"]([^\'"]+)[\'"];?', repl_import, content)
             
-            # Replace sessionStorage/localStorage (skip auth files which use window.* directly to avoid circular refs)
-            if 'auth-mgmt' not in file_path and 'src/shared/auth/' not in file_path.replace('\\', '/'):
+            # Replace sessionStorage/localStorage (skip auth-mgmt.js which uses window.* directly to avoid circular refs)
+            if 'auth-mgmt' not in file_path:
                 content = content.replace("sessionStorage", "SafeStorage")
                 content = content.replace("localStorage", "SafeLocalStorage")
             
@@ -207,10 +178,7 @@ def bundle_files(version):
             for name in export_names:
                 iife += f"        if (typeof {name} !== 'undefined') {{\n"
                 iife += f"            __exports.{name} = {name};\n"
-                if name == 'db':
-                    iife += f"            if (typeof window !== 'undefined' && !window.rawFirestore && (!window.db || typeof window.db.getFirestore === 'function')) window.db = {name};\n"
-                else:
-                    iife += f"            if (typeof window !== 'undefined') window.{name} = {name};\n"
+                iife += f"            if (typeof window !== 'undefined') window.{name} = {name};\n"
                 iife += f"        }}\n"
             iife += "    } catch (modErr) {\n"
             iife += f"        console.error('[Module Isolation Error in {file_path}]:', modErr);\n"

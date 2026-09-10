@@ -1,6 +1,5 @@
 {
-  "version": "v727",
-  "v_num": 727,
-  "buildDate": "2026-09-10",
-  "description": "무결성 보안 패치: 스냅샷 Firestore 오류 시 localStorage 재확인 + isLocked 영수증 핵심 필드 변경 방지"
+  "version": "v718",
+  "buildDate": "2026-09-09",
+  "description": "Comprehensive Mobile UI optimizations for Confirmed Receipts, Review Modals, and Admin Controls"
 }

@@ -4,7 +4,6 @@ import { createBallHtml } from '../../../shared/components.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot } from '../generator.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
-import { getUserJoinRound } from '../../../shared/user-context.js';
 import { getComboNumbers, getLedger, getHistoricalTop10Combinations, saveToLedger } from '../ledger.js';
 
 let currentAlgoReviewStartRound = 1235;
@@ -12,36 +11,30 @@ let algoAccordionStateMap = {};
 let generatorAdminViewingUser = null;
 
 /**
- * 1235회차부터 최신 회차까지 7개 알고리즘의 100% 무결점 실데이터 전체 성과 채점 집계
+ * 1235회차부터 최신 회차까지 7개 알고리즘의 100% 무결점 실데이터 전수 복기 채점 집계
  * (신규 당첨번호 업데이트 시 state.mergedHistory 기반으로 실시간 자동 반영)
  */
 export function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = null) {
     const history = state.mergedHistory || {};
-
-    const cleanUser = targetUserId ? String(targetUserId).toLowerCase().trim() : '';
-    const isAdmin = (cleanUser === 'master' || cleanUser === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanUser)));
-    const userJoinRound = (!isAdmin && cleanUser && cleanUser !== 'guest' && cleanUser !== 'all') ? (typeof getUserJoinRound === 'function' ? getUserJoinRound(cleanUser) : 1235) : 1235;
-    const effectiveFromRound = Math.max(fromRound, userJoinRound);
-
     const drawnRounds = Object.keys(history)
         .map(Number)
-        .filter(r => !isNaN(r) && r >= effectiveFromRound && history[r] && Array.isArray(history[r].numbers) && history[r].numbers.length === 6)
+        .filter(r => !isNaN(r) && r >= fromRound && history[r] && Array.isArray(history[r].numbers) && history[r].numbers.length === 6)
         .sort((a, b) => a - b);
 
-    const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : effectiveFromRound;
+    const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : fromRound;
 
     // 7개 알고리즘 명확한 정의 (각 10게임)
     const algoDefinitions = [
         {
             id: 'v4',
-            name: 'V4.0 심리 회피 추천',
-            shortName: 'V4.0 구매 심리 분석',
+            name: 'V4.0 행동경제학 포트폴리오',
+            shortName: 'V4.0 행동경제학',
             icon: 'fa-brain',
             badge: 'V4.0 BEHAVIORAL',
             color: '#a78bfa',
             bgGradient: 'linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
             borderColor: 'rgba(167, 139, 250, 0.4)',
-            desc: '통계적 밸런스 + 번호 묶음 복합 혼합 10게임',
+            desc: '통계적 밸런스 + 클러스터링 믹스 + 과적합 치트키 10게임 앙상블',
             getCombos: (r) => computeAbsoluteTop10Combinations(false, r, 'v4', true, targetUserId) || []
         },
         {
@@ -58,14 +51,14 @@ export function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = nul
         },
         {
             id: 'extra1',
-            name: '추가 1: 30게임 완성형 100% 전 구역 커버팩',
-            shortName: '추가 1: 전 구역 커버',
+            name: '추가 1: 30게임 완성형 100% 전수 커버리지팩',
+            shortName: '추가 1: 전수 커버리지',
             icon: 'fa-shield-halved',
             badge: '추가 1 KEYSTONE 100%',
             color: '#10b981',
             bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
             borderColor: 'rgba(16, 185, 129, 0.4)',
-            desc: '기본 20게임(V3+V4) 누락 번호 100% 포섭 + 핵심 번호 균등 결합 (10게임)',
+            desc: '기본 20게임(V3+V4) 누락 번호 100% 포섭 + 핫 앵커 직교 결합 (10게임)',
             getCombos: (r) => { const p = generateExtraAddonPack(1, r, targetUserId); return (p && p.combos) ? p.combos : []; }
         },
         {
@@ -82,32 +75,32 @@ export function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = nul
         },
         {
             id: 'extra3',
-            name: '추가 3: 기하학적 균등 배분팩',
-            shortName: '추가 3: 기하학 균등 배분',
+            name: '추가 3: 기하학적 휠링 하모닉팩',
+            shortName: '추가 3: 기하학 휠링',
             icon: 'fa-dharmachakra',
             badge: '추가 3 HARMONIC WHEELING',
             color: '#8b5cf6',
             bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
             borderColor: 'rgba(139, 92, 246, 0.4)',
-            desc: '45각형 5구간 대칭 분산형 균등 배분 매트릭스로 3~4등 다중 적중 방어망 (10게임)',
+            desc: '45각형 5구간 대칭 분산형 휠링 매트릭스로 3~4등 다중 적중 방어망 (10게임)',
             getCombos: (r) => { const p = generateExtraAddonPack(3, r, targetUserId); return (p && p.combos) ? p.combos : []; }
         },
         {
             id: 'extra4',
-            name: '추가 4: 연속 패턴 분석 2차 전이 & 페어 부스터팩',
-            shortName: '추가 4: 연속 패턴 분석&페어',
+            name: '추가 4: 마르코프 2차 전이 & 페어 부스터팩',
+            shortName: '추가 4: 마르코프&페어',
             icon: 'fa-bolt',
             badge: '추가 4 MARKOV & PAIR',
             color: '#06b6d4',
             bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
             borderColor: 'rgba(6, 182, 212, 0.4)',
-            desc: '직전 회차 연속 패턴 전환 확률 및 역대 최다 동반 출현 Pair 집중 타격 (10게임)',
+            desc: '직전 회차 마르코프 전이 확률 및 역대 최다 동반 출현 Pair 집중 타격 (10게임)',
             getCombos: (r) => { const p = generateExtraAddonPack(4, r, targetUserId); return (p && p.combos) ? p.combos : []; }
         },
         {
             id: 'extra5',
-            name: '추가 5: 황금 번호 묶음 올인팩',
-            shortName: '추가 5: 황금 번호 묶음',
+            name: '추가 5: 골든 클러스터 올인팩',
+            shortName: '추가 5: 골든 클러스터',
             icon: 'fa-crown',
             badge: '추가 5 GOLDEN CLIQUE',
             color: '#ec4899',
@@ -133,7 +126,6 @@ export function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = nul
         drawnRounds.forEach(round => {
             const draw = history[round];
             if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) return;
-            if (!isAdmin && cleanUser !== 'all' && round < userJoinRound) return;
 
             const winningSet = new Set(draw.numbers);
             const bonus = draw.bonus;
@@ -246,7 +238,7 @@ export function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = nul
     const grandRoi = grandTotalInvest > 0 ? (((grandTotalPrize - grandTotalInvest) / grandTotalInvest) * 100).toFixed(1) : '0.0';
 
     return {
-        fromRound: effectiveFromRound,
+        fromRound,
         maxRound,
         totalRoundsCount: drawnRounds.length,
         drawnRounds,
@@ -267,18 +259,17 @@ function formatPrizeCompact(prize) {
     if (!prize || isNaN(prize) || prize <= 0) return '0원';
     if (prize >= 100000000) {
         const eok = prize / 100000000;
-        return (prize % 100000000 === 0) ? `${eok.toLocaleString()}억원` : `${eok.toFixed(1)}억원`;
+        return eok >= 10 ? `${Math.round(eok).toLocaleString()}억원` : `${eok.toFixed(1)}억원`;
     }
     if (prize >= 10000) {
-        const man = prize / 10000;
-        return (prize % 10000 === 0) ? `${man.toLocaleString()}만원` : `${man.toFixed(1)}만원`;
+        return `${Math.round(prize / 10000).toLocaleString()}만원`;
     }
     return `${prize.toLocaleString()}원`;
 }
 
 /**
- * 추천번호생성기 화면에 역대 7개 알고리즘 실데이터 누적 추천성과 분석 렌더링
- * (스마트폰 최적화: 기본 초슬림 콤팩트 요약 뷰 + 펼치기/접기)
+ * 추천번호생성기 화면에 역대 7개 알고리즘 실데이터 누적 복기 리포트 렌더링
+ * (스마트폰 최적화: 기본 초슬림 콤팩트 요약 뷰 + 펼치기 토글)
  */
 export function render7AlgorithmsRealReviewSection() {
     const container = document.getElementById('algoRealReviewSection');
@@ -432,7 +423,7 @@ export function render7AlgorithmsRealReviewSection() {
 
                 <button type="button" onclick="window.toggleAlgoRealReviewAccordion && window.toggleAlgoRealReviewAccordion('${algo.id}')" style="width: 100%; padding: 6px 8px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12); background: rgba(30,41,59,0.8); color: ${algo.color}; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
-                    <span>${isExpanded ? '회차별 분석 닫기' : `회차별 성과 상세 (${algo.totalWins}회 적중)`}</span>
+                    <span>${isExpanded ? '회차별 복기 닫기' : `회차별 복기 상세 (${algo.totalWins}회 적중)`}</span>
                 </button>
 
                 <div id="algo-review-detail-${algo.id}" style="display: ${isExpanded ? 'block' : 'none'}; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 6px; max-height: 350px; overflow-y: auto;">
@@ -448,7 +439,7 @@ export function render7AlgorithmsRealReviewSection() {
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; cursor: pointer;" onclick="window.toggleAlgoReviewMainCollapse && window.toggleAlgoReviewMainCollapse()">
                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                     <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; padding: 2px 6px; border-radius: 6px; font-size: 0.7rem; font-weight: 900;">
-                        <i class="fa-solid fa-trophy"></i> 7대 알고리즘 실데이터 성과 분석
+                        <i class="fa-solid fa-trophy"></i> 7대 알고리즘 실데이터 복기
                     </span>
                     <span style="font-size: 0.78rem; font-weight: 700; color: #f8fafc;">
                         제 ${fromRound}~${maxRound}회 (${totalRoundsCount}회차 누적)
@@ -735,7 +726,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                         <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem; flex-shrink: 0;"></i>
                         <div style="min-width: 0;">
                             <strong style="color: #fbbf24; font-size: 0.84rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">[관리자 전용] 회원별 AI 추천번호 실시간 확인</strong>
-                            <div style="font-size: 0.72rem; color: #cbd5e1; word-break: break-all;">선택한 회원(<span style="color:#38bdf8; font-weight:700;">${effectiveUserId}</span>)에게 지정된 고유 AI 추천 조합 확인</div>
+                            <div style="font-size: 0.72rem; color: #cbd5e1; word-break: break-all;">선택한 회원(<span style="color:#38bdf8; font-weight:700;">${effectiveUserId}</span>)에게 배정된 고유 AI 추천 조합 확인</div>
                         </div>
                     </div>
                     <div class="generator-admin-select-wrapper" style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; max-width: 100%; box-sizing: border-box;">
@@ -775,13 +766,13 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
         const isV4 = chkReportLogic ? chkReportLogic.checked : (localStorage.getItem('lotto_pref_v4') !== 'false');
 
-        // 🛡️ 포렌식 다이내믹 워터마크 (화면 캡처 유출 시 지정자 즉시 추적)
+        // 🛡️ 포렌식 다이내믹 워터마크 (화면 캡처 유출 시 배정자 즉시 추적)
         const watermarkEl = document.createElement('div');
         watermarkEl.className = 'forensic-watermark-layer';
         watermarkEl.setAttribute('aria-hidden', 'true');
         watermarkEl.innerHTML = Array(16).fill(0).map(() => `
             <div class="forensic-watermark-item">
-                <span>LUCKY777 · ${effectiveUserId.toUpperCase()} · 제${curUpcomingRound}회 · 보안지정</span>
+                <span>LUCKY777 · ${effectiveUserId.toUpperCase()} · 제${curUpcomingRound}회 · 보안배정</span>
             </div>
         `).join('');
         container.appendChild(watermarkEl);
@@ -793,7 +784,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
             allCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
         }
 
-        // 🔒 차기 회차에 대해 사용자별 7대 알고리즘 영구 고정 저장 기록 자동 생성/보존 (Write-Once)
+        // 🔒 차기 회차에 대해 사용자별 7대 알고리즘 영구 불변 스냅샷 자동 생성/보존 (Write-Once)
         if (typeof saveUserWeeklyRecommendationSnapshot === 'function') {
             saveUserWeeklyRecommendationSnapshot(effectiveUserId, curUpcomingRound).catch(e => console.warn('[Auto Snapshot Error]', e));
         }
@@ -862,7 +853,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
             } else {
                 winHistoryHtml = `
                     <div style="background: rgba(0, 0, 0, 0.25); border: 1px dashed rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 6px 12px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #94a3b8;">
-                        <span><i class="fa-solid fa-chart-pie" style="color: #60a5fa;"></i> 실구매 분석 데이터: <strong>${winData.totalPurchasedRounds > 0 ? `누적 ${winData.totalPurchasedRounds}회차 추적` : '이번 회차 신규 추천 조합 세트'}</strong></span>
+                        <span><i class="fa-solid fa-chart-pie" style="color: #60a5fa;"></i> 실구매 분석 데이터: <strong>${winData.totalPurchasedRounds > 0 ? `누적 ${winData.totalPurchasedRounds}회차 추적` : '이번 회차 신규 포트폴리오'}</strong></span>
                         <span style="color: #cbd5e1;">🎯 1~3등 당첨 타겟</span>
                     </div>
                 `;
@@ -920,11 +911,11 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                     ${winHistoryHtml}
                 </div>
 
-                <!-- 📱 모바일 사용성 극대화: 상세 AI 분석 & 차트 토글 버튼 -->
+                <!-- 📱 모바일 사용성 극대화: 상세 퀀트 분석 & 차트 토글 버튼 -->
                 <button type="button" class="btn-toggle-combo-details" data-index="${index}" style="width: 100%; margin-top: 10px; padding: 8px 12px; background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.18); border-radius: 8px; color: #cbd5e1; font-size: 0.76rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s ease;">
                     <span style="display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-chart-pie" style="color: #fbbf24;"></i>
-                        <span>상세 AI 분석 &amp; 레이더 차트</span>
+                        <span>상세 퀀트 분석 &amp; 레이더 차트</span>
                     </span>
                     <span class="toggle-status" style="font-size: 0.72rem; color: #94a3b8; display: inline-flex; align-items: center; gap: 5px;">
                         <span class="lbl-toggle">상세 분석 보기</span>
@@ -932,7 +923,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                     </span>
                 </button>
 
-                <!-- 📂 접이식 상세 AI 분석 서랍 (기본 접힘: 스마트폰 스크롤 75% 압축) -->
+                <!-- 📂 접이식 상세 퀀트 분석 서랍 (기본 접힘: 스마트폰 스크롤 75% 압축) -->
                 <div class="combo-deep-details-drawer" id="comboDeepDetails-${index}" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.1);">
                     <!-- EV Metric Panel -->
                     <div class="ev-metric-panel">
@@ -963,7 +954,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                         <div class="chart-box-content" id="comboChartContent-${index}">
                             <div class="combo-charts-layout">
                                 <div class="combo-chart-item">
-                                    <span class="mini-chart-title">번호별 역대 출현 횟수 비교 (1100회+ 전체)</span>
+                                    <span class="mini-chart-title">번호별 역대 출현 횟수 비교 (1100회+ 전수)</span>
                                     <div class="mini-chart-wrapper">
                                         <canvas id="comboBarChart-${index}"></canvas>
                                     </div>
@@ -983,7 +974,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                         <div class="rationale-header" data-index="${index}">
                             <div class="rationale-title">
                                 <i class="fa-solid fa-square-root-variable"></i>
-                                <span>역대 1~1,234회 전체 분석 확률적 추천 이유 (상세)</span>
+                                <span>역대 1~1,234회 전수 분석 확률적 추천 이유 (상세)</span>
                                 <span class="law-tag">${strat.lawName}</span>
                             </div>
                             <button class="rationale-toggle-btn"><i class="fa-solid fa-chevron-down"></i></button>
@@ -1417,7 +1408,7 @@ export function setupGeneratorTabEvents() {
             renderTop5Combinations(false);
             updateSavedCount();
             renderSavedList();
-            showToast(isV4 ? '🧠 [V4.0 심리 회피 추천] 10게임이 적용되었습니다.' : '⚡ [V3.0 하이브리드 알고리즘] 10게임이 적용되었습니다.');
+            showToast(isV4 ? '🧠 [V4.0 행동경제학 포트폴리오] 10게임이 적용되었습니다.' : '⚡ [V3.0 하이브리드 알고리즘] 10게임이 적용되었습니다.');
         };
     }
 
@@ -1449,7 +1440,7 @@ export function setupGeneratorTabEvents() {
         btnConfirmPurchaseHero.addEventListener('click', async () => {
             const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
             const useV4 = chkReportLogic ? chkReportLogic.checked : false;
-            const versionStr = useV4 ? 'V4.0 구매 심리 분석 알고리즘' : 'V3.0 하이브리드 알고리즘';
+            const versionStr = useV4 ? 'V4.0 행동경제학 알고리즘' : 'V3.0 하이브리드 알고리즘';
             
             const currentCombos = state.fixedTop5Combinations || (useV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3) || [];
             if (!currentCombos || currentCombos.length === 0) {
@@ -1671,7 +1662,7 @@ export function renderExtraAddonPacksSection() {
                 </div>
                 <p style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.55; margin-bottom: 18px; max-width: 500px; margin-left: auto; margin-right: auto;">
                     기본 20게임(V4.0 + V3.0)은 상시 무료로 열람 가능하며,<br>
-                    <strong style="color: #fbbf24;">추가 1~5팩(전 구역 커버, 초고배당 EV 등 50게임)</strong>은<br>
+                    <strong style="color: #fbbf24;">추가 1~5팩(전수 커버리지, 초고배당 EV 등 50게임)</strong>은<br>
                     <strong>매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원</strong>님께 무료로 잠금 해제됩니다.
                 </p>
                 <button type="button" onclick="if(window.openManualLedgerModal) { window.openManualLedgerModal(); } else if(window.switchLottoTab) { window.switchLottoTab('tab-confirmed-list'); }" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000; font-weight: 800; font-size: 0.88rem; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(251,191,36,0.35);">
@@ -1694,7 +1685,7 @@ export function renderExtraAddonPacksSection() {
 
     // Update Header Pill Buttons State (추가 1 ~ 추가 5)
     const packColors = { 1: '#10b981', 2: '#f59e0b', 3: '#8b5cf6', 4: '#06b6d4', 5: '#ec4899' };
-    const packNames = { 1: '추가 1 (30게임 커버리지)', 2: '추가 2 (초고배당 EV)', 3: '추가 3 (기하학 균등 배분)', 4: '추가 4 (연속 패턴 분석&페어)', 5: '추가 5 (골든번호 묶음)' };
+    const packNames = { 1: '추가 1 (30게임 커버리지)', 2: '추가 2 (초고배당 EV)', 3: '추가 3 (기하학 휠링)', 4: '추가 4 (마르코프&페어)', 5: '추가 5 (골든클러스터)' };
 
     for (let p = 1; p <= 5; p++) {
         const btn = document.getElementById(`btnQuickPack_${p}`);
@@ -1759,7 +1750,7 @@ export function renderExtraAddonPacksSection() {
                         <span>합 <strong>${stats.sum}</strong></span>
                         <span>AC <strong>${ac}</strong></span>
                         <span>홀짝 <strong>${stats.oddEvenRatio}</strong></span>
-                        <span style="color: ${pack.color}; font-weight: 700; font-size: 0.72rem;">${(combo.meta && combo.meta.tag) ? combo.meta.tag.split('|')[0].trim() : 'AI 분석 7대 필터 통과'}</span>
+                        <span style="color: ${pack.color}; font-weight: 700; font-size: 0.72rem;">${(combo.meta && combo.meta.tag) ? combo.meta.tag.split('|')[0].trim() : '퀀트 7대 필터 통과'}</span>
                     </div>
                 </div>
             `;
@@ -1767,7 +1758,7 @@ export function renderExtraAddonPacksSection() {
 
         const packPurchasedBadge = purchasedGamesCount > 0 ? `
             <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);">
-                <i class="fa-solid fa-circle-check"></i> ${purchasedGamesCount === pack.combos.length ? '10게임 전체 구매완료' : `${purchasedGamesCount}게임 구매완료`}
+                <i class="fa-solid fa-circle-check"></i> ${purchasedGamesCount === pack.combos.length ? '10게임 전수 구매완료' : `${purchasedGamesCount}게임 구매완료`}
             </span>
         ` : '';
 
@@ -2012,7 +2003,7 @@ export function updateTop7AlgoUI() {
         if (statusBanner && txtStatus) {
             if (isEligible) {
                 statusBanner.className = 'purchase-status-banner verified';
-                txtStatus.innerHTML = `<strong><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> [제 ${curUpcomingRound}회차] 실구매 인증 완료!</strong> 7대 AI 추천 알고리즘 70게임 전체 무료 이용이 활성화되어 있습니다.`;
+                txtStatus.innerHTML = `<strong><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> [제 ${curUpcomingRound}회차] 실구매 인증 완료!</strong> 7대 퀀트 알고리즘 70게임 전수 무료 이용이 활성화되어 있습니다.`;
                 if (btnStatusBanner) {
                     btnStatusBanner.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
                     btnStatusBanner.style.color = '#ffffff';
@@ -2114,7 +2105,7 @@ export async function selectGeneratorAlgo(algoId) {
         state.fixedTop5Combinations = state.fixedTop5Combinations_v4 || computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
         renderTop5Combinations(true);
         updateTop7AlgoUI();
-        showToast('🧠 V4.0 심리 회피 추천 (10게임)가 선택되었습니다.');
+        showToast('🧠 V4.0 행동경제학 포트폴리오 (10게임)가 선택되었습니다.');
         return;
     }
 
@@ -2180,7 +2171,7 @@ export async function handleGenerateAll70Games() {
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
         updateTop7AlgoUI();
-        showToast(`🎉 7대 AI 추천 알고리즘 70게임(기본 20G + 추가 50G) 전체가 생성되었습니다!`);
+        showToast(`🎉 7대 퀀트 알고리즘 70게임(기본 20G + 추가 50G) 전수가 생성되었습니다!`);
     } else {
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
@@ -2195,14 +2186,3 @@ export async function handleGenerateAll70Games() {
         }
     }
 }
-
-export {
-    renderTop5Combinations,
-    renderExtraAddonPacksSection,
-    getUserActiveExtraPackIds,
-    saveUserActiveExtraPackIds,
-    getSelectedComboCountOption,
-    updateSavedCount,
-    renderSavedList,
-    setupGeneratorTabEvents
-};

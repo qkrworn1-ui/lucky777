@@ -16,15 +16,15 @@ let algoAdminViewingUser = 'all';
 export const SEVEN_ALGORITHMS_INFO = [
     {
         id: 'v4',
-        name: 'V4.0 심리 회피 추천',
-        shortName: 'V4.0 구매 심리 분석',
+        name: 'V4.0 행동경제학 포트폴리오',
+        shortName: 'V4.0 행동경제학',
         tag: '마킹 심리 회피 · 밸런스 방어 · 치트키 과적합 융합 (10게임)',
         icon: 'fa-brain',
         badge: 'V4.0 BEHAVIORAL',
         badgeColor: '#a78bfa',
         bgGradient: 'linear-gradient(135deg, rgba(167, 139, 250, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(167, 139, 250, 0.45)',
-        corePhilosophy: '대중의 번호 마킹 편향(생일·연속·기하학 패턴)을 역이용하여 당첨 시 독점 수령금을 극대화하고, 통계적 안정망으로 4·5등 당첨을 방어하는 추천 조합 세트 모델',
+        corePhilosophy: '대중의 번호 마킹 편향(생일·연속·기하학 패턴)을 역이용하여 당첨 시 독점 수령금을 극대화하고, 통계적 안정망으로 4·5등 당첨을 방어하는 포트폴리오 모델',
         comboMethod: [
             {
                 step: '그룹 1: 통계적 밸런스 추종 (게임 1~4)',
@@ -36,11 +36,11 @@ export const SEVEN_ALGORITHMS_INFO = [
             },
             {
                 step: '그룹 3: 역사적 과적합 극대화 (게임 8~10)',
-                desc: '역대 1,234회 전체 당첨 데이터와 가장 많이 교차 충돌하는 다중 교집합(Maximal Clique) 앵커 3개 조합을 기반으로 ±1 인접수 변형을 가미하여 기계적 적중 밀도를 극대화합니다.'
+                desc: '역대 1,234회 전수 당첨 데이터와 가장 많이 교차 충돌하는 다중 교집합(Maximal Clique) 앵커 3개 조합을 기반으로 ±1 인접수 변형을 가미하여 기계적 적중 밀도를 극대화합니다.'
             }
         ],
         keyFeatures: [
-            '10게임 상호보완형 추천 조합 세트 설계',
+            '10게임 상호보완형 포트폴리오 설계',
             '4·5등 고정 배당 방어 + 1등 독식 당첨금 타겟',
             '마킹 심리 역발상 군집 회피 로직'
         ],
@@ -50,17 +50,17 @@ export const SEVEN_ALGORITHMS_INFO = [
         id: 'v3',
         name: 'V3.0 하이브리드 정통 수학 알고리즘',
         shortName: 'V3.0 하이브리드',
-        tag: '연속 패턴 분석 전이행렬 · 누적 빈도 · Pair 궁합 · EV 극대화 (10게임)',
+        tag: '마르코프 전이행렬 · 누적 빈도 · Pair 궁합 · EV 극대화 (10게임)',
         icon: 'fa-gears',
         badge: 'V3.0 HYBRID MATH',
         badgeColor: '#60a5fa',
         bgGradient: 'linear-gradient(135deg, rgba(96, 165, 250, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(96, 165, 250, 0.45)',
-        corePhilosophy: '동행복권 1회부터의 역대 누적 빈도, 직전 회차 연속 패턴 전환 확률, 2수 동반출현 빈도, 기대가치(EV)를 종합 연산하여 개별 게임의 적중 확률을 극대화한 정통 수학 통계 모델',
+        corePhilosophy: '동행복권 1회부터의 역대 누적 빈도, 직전 회차 마르코프 전이 확률, 2수 동반출현 빈도, 기대가치(EV)를 종합 연산하여 개별 게임의 적중 확률을 극대화한 정통 수학 통계 모델',
         comboMethod: [
             {
-                step: '전반 5게임 (공격형 혼합 추천: 게임 1~5)',
-                desc: '① 고액 당첨 딥러닝 혼합 추천(역대 고액 당첨 핵심 5수 번호 묶음 융합), ② AI-AC 밸런스(AC 8~10 복잡도), ③ 최다 동반출현 Pair(역대 최고 콤비 쌍 강제 주입), ④ 보너스 파동 연동(최근 20회 보너스 순환), ⑤ 장기 결손 Cold 반등을 시드로 개별 기대치를 극대화합니다.'
+                step: '전반 5게임 (공격형 앙상블: 게임 1~5)',
+                desc: '① 고액 당첨 딥러닝 앙상블(역대 고액 당첨 핵심 5수 클러스터 융합), ② AI-AC 밸런스(AC 8~10 복잡도), ③ 최다 동반출현 Pair(역대 최고 콤비 쌍 강제 주입), ④ 보너스 파동 연동(최근 20회 보너스 순환), ⑤ 장기 결손 Cold 반등을 시드로 개별 기대치를 극대화합니다.'
             },
             {
                 step: '후반 5게임 (커버리지 방어형: 게임 6~10)',
@@ -69,16 +69,16 @@ export const SEVEN_ALGORITHMS_INFO = [
         ],
         keyFeatures: [
             '10가지 정통 통계 지표별 개별 특화 조합',
-            '연속 패턴 분석 1차 전이 행렬 가중치 반영',
+            '마르코프 1차 전이 행렬 가중치 반영',
             '기대가치(EV) 96.5pt 이상 정밀 필터링'
         ],
         getCombos: (r, uId) => computeAbsoluteTop10Combinations(false, r, 'v3', true, uId) || []
     },
     {
         id: 'extra1',
-        name: '추가 1: 30게임 완성형 100% 전 구역 커버팩',
-        shortName: '추가 1: 전 구역 커버',
-        tag: '기본 20게임 누락 번호 100% 포섭 + 핵심 번호 균등 결합 (10게임)',
+        name: '추가 1: 30게임 완성형 100% 전수 커버리지팩',
+        shortName: '추가 1: 전수 커버리지',
+        tag: '기본 20게임 누락 번호 100% 포섭 + 핫 앵커 직교 결합 (10게임)',
         icon: 'fa-shield-halved',
         badge: '추가 1 KEYSTONE 100%',
         badgeColor: '#10b981',
@@ -87,22 +87,22 @@ export const SEVEN_ALGORITHMS_INFO = [
         corePhilosophy: 'V3.0(10게임) + V4.0(10게임)의 20게임에서 한 번도 선택되지 않은 0회 출현 사각지대 번호를 100% 추출하여 결합함으로써, 30게임 구매 시 1~45번 모든 번호가 단 하나도 누락되지 않도록 완성하는 무결점 커버리지 모델',
         comboMethod: [
             {
-                step: '누락 번호 전체 분할 (Missing Partition)',
+                step: '누락 번호 전수 분할 (Missing Partition)',
                 desc: '기본 20게임 분석 결과 사용되지 않은 번호(약 12~18개)를 10게임에 1~2개씩 균등하게 강제 배치합니다.'
             },
             {
-                step: '상위 8대 핵심 번호 균등 결합',
-                desc: '역대 빈도 + 연속 패턴 분석 점수가 가장 높은 상위 8개 핫 번호를 앵커로 균등 분산 교차 결합하여 안정적인 당첨 축을 형성합니다.'
+                step: '상위 8대 핫 앵커 직교 결합',
+                desc: '역대 빈도 + 마르코프 점수가 가장 높은 상위 8개 핫 번호를 앵커로 직교 교차 결합하여 안정적인 당첨 축을 형성합니다.'
             },
             {
-                step: '7대 AI 분석 필터 통과',
+                step: '7대 퀀트 필터 통과',
                 desc: '합계(95~195), AC값 7이상, 홀짝(2:4~4:2), 저고(2:4~4:2), 3연번 배제, 끝수 중복 제한(최대 2개), 색상 3구간 이상을 만족하는 조합만 최종 채택합니다.'
             }
         ],
         keyFeatures: [
-            '1~45번 모든 번호 100% 전 구역 커버 달성',
-            '사각지대 0% 무결점 30게임 추천 조합 세트 완성',
-            '핵심 번호 균등 결합으로 적중 안정성 확보'
+            '1~45번 모든 번호 100% 전수 커버리지 달성',
+            '사각지대 0% 무결점 30게임 포트폴리오 완성',
+            '핫 앵커 직교 결합으로 적중 안정성 확보'
         ],
         getCombos: (r, uId) => { const p = generateExtraAddonPack(1, r, uId); return (p && p.combos) ? p.combos : []; }
     },
@@ -120,79 +120,79 @@ export const SEVEN_ALGORITHMS_INFO = [
         comboMethod: [
             {
                 step: '고번호(30~45) 대역 4개 이상 집중 배치',
-                desc: '조합당 30~45번 번호를 최소 4개 이상 강제 지정하여 일반 구매자들의 선택 구간과 완벽히 차별화합니다.'
+                desc: '조합당 30~45번 번호를 최소 4개 이상 강제 배정하여 일반 구매자들의 선택 구간과 완벽히 차별화합니다.'
             },
             {
                 step: '고번호 2연번(연속 2개 번호) 의도적 삽입',
                 desc: '대중이 무의식적으로 기피하는 30번대 연속 번호(예: 33-34, 38-39 등) 1쌍을 필수로 포함합니다.'
             },
             {
-                step: '합계 125~220 특화 AI 분석 필터링',
+                step: '합계 125~220 특화 퀀트 필터링',
                 desc: '고번호 중심 조합의 특성에 맞추어 총합 범위를 125~220으로 상향 보정하고 AC값 7 이상을 엄격히 검증합니다.'
             }
         ],
         keyFeatures: [
             '1등 당첨 시 1인 독점 수령금(Super Jackpot) 극대화',
-            '생일수(1~31) 배제로 대중과의 당첨금 셰어링 완전 방지',
+            '생일수(1~31) 배제로 대중과의 당첨금 셰어링 원천 차단',
             '고번호 2연번 집중 타격 전략'
         ],
         getCombos: (r, uId) => { const p = generateExtraAddonPack(2, r, uId); return (p && p.combos) ? p.combos : []; }
     },
     {
         id: 'extra3',
-        name: '추가 3: 기하학적 균등 배분팩',
-        shortName: '추가 3: 기하학 균등 배분',
-        tag: '45각형 5구간 대칭 분산 균등 배분 · 3~4등 다중 적중 방어망 (10게임)',
+        name: '추가 3: 기하학적 휠링 하모닉팩',
+        shortName: '추가 3: 기하학 휠링',
+        tag: '45각형 5구간 대칭 분산 휠링 · 3~4등 다중 적중 방어망 (10게임)',
         icon: 'fa-dharmachakra',
         badge: '추가 3 HARMONIC WHEELING',
         badgeColor: '#8b5cf6',
         bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(139, 92, 246, 0.45)',
-        corePhilosophy: '로또 번호 45개를 기하학적 5개 구역으로 균등 분할하고, 각 구역에서 번호를 대칭 추출하여 결합하는 균등 배분 매트릭스. 특정 구간 쏠림을 완전히 방지하여 3등(150만원), 4등(5만원) 복수 다중 적중 확률을 극대화한 구조적 모델',
+        corePhilosophy: '로또 번호 45개를 기하학적 5개 구역으로 균등 분할하고, 각 구역에서 번호를 대칭 추출하여 결합하는 휠링 시스템(Wheeling Matrix). 특정 구간 쏠림을 원천 차단하여 3등(150만원), 4등(5만원) 복수 다중 적중 확률을 극대화한 구조적 모델',
         comboMethod: [
             {
-                step: '45개 번호 5개 균형 구역 분할',
+                step: '45개 번호 5대 하모닉 구역 분할',
                 desc: '1구역(1~9), 2구역(10~18), 3구역(19~27), 4구역(28~36), 5구역(37~45)으로 9개씩 정밀 분할합니다.'
             },
             {
                 step: '5개 구역별 1개씩 필수 대칭 추출 (5수 기본틀)',
-                desc: '각 5개 구역에서 AI 분석 가중치가 가장 높은 번호를 정확히 1개씩 선별하여 5개 번호를 기본 대칭 축으로 구성합니다.'
+                desc: '각 5개 구역에서 퀀트 가중치가 가장 높은 번호를 정확히 1개씩 선별하여 5개 번호를 기본 대칭 축으로 구성합니다.'
             },
             {
-                step: '6번째 보충수 및 균등 배분 회전 결합',
-                desc: '남은 1개 번호를 전체 풀에서 AI 분석 가중치 기반으로 주입하여 10개 게임에 걸쳐 회전식(Wheeling) 매트릭스로 배치합니다.'
+                step: '6번째 보충수 및 휠링 회전 결합',
+                desc: '남은 1개 번호를 전체 풀에서 퀀트 가중치 기반으로 주입하여 10개 게임에 걸쳐 회전식(Wheeling) 매트릭스로 배치합니다.'
             }
         ],
         keyFeatures: [
             '5개 전 구역 균등 분산으로 특정 구간 편중 0%',
             '3~4등 복수 다중 당첨(Multi-Hit) 확률 최적화',
-            '기하학적 균등 배분 매트릭스 알고리즘 적용'
+            '기하학적 휠링 매트릭스 알고리즘 적용'
         ],
         getCombos: (r, uId) => { const p = generateExtraAddonPack(3, r, uId); return (p && p.combos) ? p.combos : []; }
     },
     {
         id: 'extra4',
-        name: '추가 4: 연속 패턴 분석 2차 전이 & 페어 부스터팩',
-        shortName: '추가 4: 연속 패턴 분석&페어',
+        name: '추가 4: 마르코프 2차 전이 & 페어 부스터팩',
+        shortName: '추가 4: 마르코프&페어',
         tag: '직전 회차 전이 확률 + 역대 최다 동반출현 Pair 집중 타격 (10게임)',
         icon: 'fa-bolt',
         badge: '추가 4 MARKOV & PAIR',
         badgeColor: '#06b6d4',
         bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(6, 182, 212, 0.45)',
-        corePhilosophy: '로또 추첨의 강력한 연속성을 포착하기 위해 직전 회차 당첨 번호로부터의 연속 패턴 분석 1/2차 전이 확률과 역대 1,200여 회차 중 가장 높은 빈도로 함께 출현한 2수 페어(Co-occurrence Pair)를 결합한 모멘텀 집중 타격 모델',
+        corePhilosophy: '로또 추첨의 강력한 연속성을 포착하기 위해 직전 회차 당첨 번호로부터의 마르코프 1/2차 전이 확률과 역대 1,200여 회차 중 가장 높은 빈도로 함께 출현한 2수 페어(Co-occurrence Pair)를 결합한 모멘텀 집중 타격 모델',
         comboMethod: [
             {
                 step: '직전 회차 번호 1수 순환 시드 주입',
-                desc: '직전 회차 6개 당첨번호 중 연속 패턴 분석 전이 계수가 가장 높은 번호를 게임별 앵커로 주입합니다.'
+                desc: '직전 회차 6개 당첨번호 중 마르코프 전이 계수가 가장 높은 번호를 게임별 앵커로 주입합니다.'
             },
             {
                 step: '역대 최고 궁합 동반출현(Pair) 파트너 결합',
                 desc: '주입된 앵커 번호와 역대 데이터상 가장 많이 동반 출현한 최강 파트너 번호를 자동으로 매칭하여 2수 세트를 완성합니다.'
             },
             {
-                step: '통계 가중치 기반 4수 보충 및 AI 분석 검증',
-                desc: '나머지 4개 번호를 누적 빈도 및 연속 패턴 분석 전이 가중치 풀에서 추출하고 7대 AI 분석 필터를 적용합니다.'
+                step: '통계 가중치 기반 4수 보충 및 퀀트 검증',
+                desc: '나머지 4개 번호를 누적 빈도 및 마르코프 전이 가중치 풀에서 추출하고 7대 퀀트 필터를 적용합니다.'
             }
         ],
         keyFeatures: [
@@ -204,26 +204,26 @@ export const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra5',
-        name: '추가 5: 황금 번호 묶음 올인팩',
-        shortName: '추가 5: 황금 번호 묶음',
+        name: '추가 5: 골든 클러스터 올인팩',
+        shortName: '추가 5: 골든 클러스터',
         tag: '역대 최다 동시 출현 3수 고정틀(Golden Trios) 마스터 조합 (10게임)',
         icon: 'fa-crown',
         badge: '추가 5 GOLDEN CLIQUE',
         badgeColor: '#ec4899',
         bgGradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(236, 72, 153, 0.45)',
-        corePhilosophy: '역대 1,200여 회의 전체 데이터 중 3개 번호가 동시에 출현한 빈도가 통계적으로 가장 높은 상위 10대 "황금 트리오(Golden Trios)"를 각 게임의 3수 고정틀로 채택하고, 나머지 3수를 AI 분석 최적화하여 3수가 적중되는 즉시 5등(3수)→4등(4수)→3등(5수)→1등으로 이어지는 연쇄 당첨 폭발력을 노리는 마스터 모델',
+        corePhilosophy: '역대 1,200여 회의 전수 데이터 중 3개 번호가 동시에 출현한 빈도가 통계적으로 가장 높은 상위 10대 "황금 트리오(Golden Trios)"를 각 게임의 3수 고정틀로 채택하고, 나머지 3수를 퀀트 최적화하여 3수가 적중되는 즉시 5등(3수)→4등(4수)→3등(5수)→1등으로 이어지는 연쇄 당첨 폭발력을 노리는 마스터 모델',
         comboMethod: [
             {
-                step: '10대 황금 3수 번호 묶음 고정틀 배치',
+                step: '10대 황금 3수 클러스터 고정틀 배치',
                 desc: '[1, 13, 38], [11, 29, 36], [4, 17, 43], [7, 16, 44], [10, 23, 37], [2, 18, 42], [5, 14, 31], [8, 20, 39], [3, 19, 35], [12, 26, 45] 등 역대 최다 동시 출현 3수를 게임별 고정 앵커로 주입합니다.'
             },
             {
-                step: '3수 고정틀 기반 AI 분석 가중치 3수 융합',
-                desc: '고정 3수와 궁합도가 높은 번호 3개를 전체 AI 분석 가중치 풀에서 추출하여 6수 완성.'
+                step: '3수 고정틀 기반 퀀트 가중치 3수 융합',
+                desc: '고정 3수와 궁합도가 높은 번호 3개를 전체 퀀트 가중치 풀에서 추출하여 6수 완성.'
             },
             {
-                step: '7대 AI 분석 필터 통과 조합 최종 확정',
+                step: '7대 퀀트 필터 통과 조합 최종 확정',
                 desc: '합계, AC값, 홀짝, 저고, 색상 분포 밸런스를 검증하여 최종 조합을 확정합니다.'
             }
         ],
@@ -237,14 +237,12 @@ export const SEVEN_ALGORITHMS_INFO = [
 ];
 
 function formatPrizeCompact(prize) {
-    if (!prize || isNaN(prize) || prize <= 0) return '0원';
     if (prize >= 100000000) {
         const eok = prize / 100000000;
-        return (prize % 100000000 === 0) ? `${eok.toLocaleString()}억원` : `${eok.toFixed(1)}억원`;
+        return eok >= 10 ? `${Math.round(eok).toLocaleString()}억원` : `${eok.toFixed(1)}억원`;
     }
     if (prize >= 10000) {
-        const man = prize / 10000;
-        return (prize % 10000 === 0) ? `${man.toLocaleString()}만원` : `${man.toFixed(1)}만원`;
+        return `${Math.round(prize / 10000).toLocaleString()}만원`;
     }
     return `${prize.toLocaleString()}원`;
 }
@@ -558,7 +556,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
     // Admin User Selector HTML
     let adminUserSelectHtml = '';
     if (isAdmin) {
-        let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 성과 분석</option>`;
+        let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 복기</option>`;
         userOptions += `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
         
         // Fetch or use cached user list
@@ -597,8 +595,8 @@ export async function renderAlgorithmsTab(fromRound = null) {
                 <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 220px;">
                     <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem; flex-shrink: 0;"></i>
                     <div style="min-width: 0;">
-                        <strong style="color: #fbbf24; font-size: 0.85rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">[관리자 전용] 회원별 7대 알고리즘 추천번호 성과 분석 조회기</strong>
-                        <div style="font-size: 0.73rem; color: #cbd5e1; word-break: break-all;">선택한 회원의 영구 고정 저장 저장 기록 및 7대 알고리즘 누적 적중 실적 동기화 확인</div>
+                        <strong style="color: #fbbf24; font-size: 0.85rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">[관리자 전용] 회원별 7대 알고리즘 추천번호 복기 조회기</strong>
+                        <div style="font-size: 0.73rem; color: #cbd5e1; word-break: break-all;">선택한 회원의 영구 박제 스냅샷 및 7대 알고리즘 누적 적중 실적 동기화 확인</div>
                     </div>
                 </div>
                 <div class="algo-admin-select-wrapper" style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; max-width: 100%; box-sizing: border-box;">
@@ -680,7 +678,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
         `;
     }).join('');
 
-    // 2. 실데이터 추천성과 분석 실적 카드 HTML 생성 (통합 통계 요약)
+    // 2. 실데이터 복기 리포트 실적 카드 HTML 생성 (통합 통계 요약)
     const algoPerfCardsHtml = results.map((algo, idx) => {
         let topRankBadge = '';
         if (algo.topRank === 1) topRankBadge = `<span style="background: rgba(251,191,36,0.25); border: 1px solid #fbbf24; color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800;">🥇 1등 적중 실적</span>`;
@@ -752,14 +750,14 @@ export async function renderAlgorithmsTab(fromRound = null) {
                         <i class="fa-solid fa-brain"></i> QUANT &amp; AI ENGINE
                     </span>
                     <span style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 700;">
-                        7대 알고리즘 분산 추천 &amp; 실데이터 누적 성과 실적
+                        7대 알고리즘 분산 추천 &amp; 실데이터 누적 복기 실적
                     </span>
                 </div>
                 <h2 style="margin: 0 0 8px 0; font-size: 1.45rem; font-weight: 900; color: #f8fafc; letter-spacing: -0.5px;">
                     로또 6/45 <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 AI 알고리즘</span> 정밀 해설 &amp; 실적
                 </h2>
                 <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; max-width: 800px;">
-                    단순한 무작위 번호 생성이 아닙니다. 심리 편향 마킹 회피, 연속 패턴 전환 확률, 전 구역 균등 커버, 균등 배분 균형 분산 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 복기 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
+                    단순한 무작위 번호 생성이 아닙니다. 행동경제학적 마킹 심리 회피, 마르코프 전이 확률, 직교 전수 커버리지, 휠링 하모닉 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 복기 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
                 </p>
             </div>
 
@@ -786,13 +784,13 @@ export async function renderAlgorithmsTab(fromRound = null) {
                 </div>
             </section>
 
-            <!-- SECTION 2: 추천성과 분석 기반 실데이터 누적 실적 대시보드 -->
+            <!-- SECTION 2: 복기 리포트 기반 실데이터 누적 실적 대시보드 -->
             <section class="algo-performance-section" style="margin-top: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="width: 4px; height: 18px; background: #fbbf24; border-radius: 2px; display: inline-block;"></span>
                         <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #f8fafc;">
-                            2. 추천성과 분석 기반 7대 알고리즘 전체 회원 누적 당첨 실적 (전체 회원 통합)
+                            2. 복기 리포트 기반 7대 알고리즘 전체 회원 누적 당첨 실적 (전체 회원 통합)
                         </h3>
                     </div>
                     
@@ -804,7 +802,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                             <option value="1230" ${currentAlgoStartRound === 1230 ? 'selected' : ''}>제 1230회부터 누적</option>
                             <option value="1220" ${currentAlgoStartRound === 1220 ? 'selected' : ''}>제 1220회부터 누적</option>
                             <option value="1200" ${currentAlgoStartRound === 1200 ? 'selected' : ''}>제 1200회부터 누적</option>
-                            <option value="1" ${currentAlgoStartRound === 1 ? 'selected' : ''}>제 1회부터 전체 전체 누적</option>
+                            <option value="1" ${currentAlgoStartRound === 1 ? 'selected' : ''}>제 1회부터 전체 전수 누적</option>
                         </select>
                     </div>
                 </div>
@@ -820,11 +818,11 @@ export async function renderAlgorithmsTab(fromRound = null) {
                                 100% 무결점 실데이터 검증
                             </span>
                             <span style="font-size: 0.85rem; font-weight: 800; color: #f8fafc;">
-                                제 1235회차부터 전체 회원 실제 추천번호 기반 7대 알고리즘별 당첨 내역 (${effectiveUserId === 'all' ? '전체 회원 통합 전체 집계' : `${maskUserDisplayName(effectiveUserId, effectiveUserId)} 회원`})
+                                제 1235회차부터 전체 회원 실제 추천번호 기반 7대 알고리즘별 당첨 내역 (${effectiveUserId === 'all' ? '전체 회원 통합 전수 집계' : `${maskUserDisplayName(effectiveUserId, effectiveUserId)} 회원`})
                             </span>
                         </div>
                         <p style="margin: 0; font-size: 0.77rem; color: #cbd5e1; line-height: 1.45;">
-                            본 누적 당첨 내역은 <strong style="color: #34d399;">제 1235회차부터 매주 등록된 전체 회원들에게 실제로 생성·발급된 7대 알고리즘 추천번호(각 10게임)의 영구 고정 저장 저장 기록</strong>을 동행복권 공식 추첨 결과와 1:1로 전체 대조하여 채점한 <strong style="color: #fbbf24;">100% 실제 전체 적중 실적 데이터</strong>입니다.
+                            본 누적 당첨 내역은 <strong style="color: #34d399;">제 1235회차부터 매주 등록된 전체 회원들에게 실제로 생성·발급된 7대 알고리즘 추천번호(각 10게임)의 영구 박제 스냅샷</strong>을 동행복권 공식 추첨 결과와 1:1로 전수 대조하여 채점한 <strong style="color: #fbbf24;">100% 실제 전수 적중 실적 데이터</strong>입니다.
                         </p>
                     </div>
                 </div>
@@ -837,7 +835,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                                 <i class="fa-solid fa-trophy"></i> 7대 알고리즘 통합 실적 요약
                             </span>
                             <span style="font-size: 0.8rem; font-weight: 800; color: #f8fafc;">
-                                제 ${startR}~${maxRound}회 (${totalRoundsCount}회차 실제 추천번호 전체 집계)
+                                제 ${startR}~${maxRound}회 (${totalRoundsCount}회차 실제 추천번호 전수 집계)
                             </span>
                         </div>
                     </div>
