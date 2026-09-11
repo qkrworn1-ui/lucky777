@@ -157,7 +157,7 @@ export async function fetchAllUsersPurchases() {
             state.allRegisteredUsersList = [];
             uSnapshot.forEach(doc => {
                 const uId = doc.id.trim().toLowerCase();
-                if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'sample' || uId === 'hms' || uId === 'admin') return;
+                if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'app_latest_version' || uId === 'user_alpha' || uId === 'user_beta' || uId === 'sample' || uId === 'hms' || uId === 'admin') return;
                 const d = doc.data() || {};
                 if (d.isDeleted === true || d.status === 'trash' || d.status === 'deleted') return;
                 const rName = d.realName || doc.id;
@@ -209,7 +209,7 @@ export async function fetchAllUsersPurchases() {
         pSnapshot.forEach(doc => {
             const rawUserId = doc.id;
             const userId = rawUserId.trim().toLowerCase();
-            if (userId.startsWith('{') || userId.startsWith('test_') || userId === 'user_alpha' || userId === 'user_beta' || userId === 'sample' || userId === 'hms' || userId === 'admin') {
+            if (userId.startsWith('{') || userId.startsWith('test_') || userId === 'app_latest_version' || userId === 'user_alpha' || userId === 'user_beta' || userId === 'sample' || userId === 'hms' || userId === 'admin') {
                 return; // 🔒 Exclude test accounts from aggregation!
             }
             const data = doc.data();
