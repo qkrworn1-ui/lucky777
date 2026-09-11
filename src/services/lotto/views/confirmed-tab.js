@@ -881,11 +881,15 @@ export async function renderConfirmedPurchasesList() {
 
             html += `
                 <!-- 🎟️ 디자인 C: 스마트 모바일 월렛 패스 스타일 실구매 영수증 카드 -->
-                <div class="confirmed-receipt-card" style="border: ${cardBorderStyle}; border-left: 5px solid ${cardBorderLeftColor}; border-radius: 14px; margin-bottom: 16px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); overflow: hidden; position: relative; ${cardShadowStyle}">
+                <div class="confirmed-receipt-card confirmed-receipt-pass" style="border: ${cardBorderStyle}; border-left: 5px solid ${cardBorderLeftColor}; border-radius: 14px; margin-bottom: 16px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); overflow: hidden; position: relative; ${cardShadowStyle}">
                     
-                    <!-- 1. Pass Top Header -->
+                    <!-- 1. Pass Top Header (With Pass Punch-Hole Accents) -->
                     <div class="confirmed-receipt-header" style="padding: 12px 14px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%); border-bottom: 1px dashed rgba(255,255,255,0.12); position: relative;">
                         
+                        <!-- Side Punch-hole Notches -->
+                        <div style="position: absolute; left: -8px; bottom: -8px; width: 16px; height: 16px; border-radius: 50%; background: #0b1120; border: 1px solid rgba(255,255,255,0.15); z-index: 2;"></div>
+                        <div style="position: absolute; right: -8px; bottom: -8px; width: 16px; height: 16px; border-radius: 50%; background: #0b1120; border: 1px solid rgba(255,255,255,0.15); z-index: 2;"></div>
+
                         <!-- Top Badges Row -->
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;">
                             <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">

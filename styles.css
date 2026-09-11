@@ -13867,3 +13867,34 @@ body.is-admin .btn-user-mgmt-compact {
     }
 }
 
+/* ==========================================================================
+   🎟️ 디자인 C: 스마트 모바일 월렛 패스 (Smart Mobile Pass) 영수증 스타일
+   ========================================================================== */
+.confirmed-receipt-card.confirmed-receipt-pass {
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.confirmed-receipt-pass:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.confirmed-receipt-pass .confirmed-receipt-header {
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.12);
+    position: relative;
+}
+
+.confirmed-receipt-pass .confirmed-receipt-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.88);
+}
+
+.confirmed-receipt-pass .toggle-combos-icon {
+    transition: transform 0.25s ease;
+}
+
+
