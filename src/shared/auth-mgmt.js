@@ -2396,12 +2396,14 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             const users = [];
             snapshot.forEach(doc => {
                 const uIdClean = (doc.id || '').toLowerCase().trim();
-                // Ignore corrupt/garbage JSON string IDs or admin test account if any
-                if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'admin') {
+                // Ignore corrupt/garbage JSON string IDs, system metadata, or admin test account if any
+                if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'admin' || uIdClean === 'app_latest_version') {
                     // asynchronously clean up in background
                     window.db.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
-                    window.db.collection('lotto_agreements').doc(doc.id).delete().catch(console.warn);
-                    window.db.collection('lotto_purchases').doc(doc.id).delete().catch(console.warn);
+                    if (uIdClean !== 'app_latest_version') {
+                        window.db.collection('lotto_agreements').doc(doc.id).delete().catch(console.warn);
+                        window.db.collection('lotto_purchases').doc(doc.id).delete().catch(console.warn);
+                    }
                     return;
                 }
                 users.push({ userId: doc.id, data: doc.data() });

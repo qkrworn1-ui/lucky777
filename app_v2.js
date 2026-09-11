@@ -3188,12 +3188,14 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             const users = [];
             snapshot.forEach(doc => {
                 const uIdClean = (doc.id || '').toLowerCase().trim();
-                // Ignore corrupt/garbage JSON string IDs or admin test account if any
-                if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'admin') {
+                // Ignore corrupt/garbage JSON string IDs, system metadata, or admin test account if any
+                if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'admin' || uIdClean === 'app_latest_version') {
                     // asynchronously clean up in background
                     window.db.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
-                    window.db.collection('lotto_agreements').doc(doc.id).delete().catch(console.warn);
-                    window.db.collection('lotto_purchases').doc(doc.id).delete().catch(console.warn);
+                    if (uIdClean !== 'app_latest_version') {
+                        window.db.collection('lotto_agreements').doc(doc.id).delete().catch(console.warn);
+                        window.db.collection('lotto_purchases').doc(doc.id).delete().catch(console.warn);
+                    }
                     return;
                 }
                 users.push({ userId: doc.id, data: doc.data() });
@@ -17127,7 +17129,7 @@ function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all')
                 }
                 baseList = baseList.filter(u => {
                     const uId = (u.id || '').trim().toLowerCase();
-                    return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+                    return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
                 });
                 if (baseList.length === 0) {
                     baseList = [{ id: 'master', name: '관리자' }];
@@ -17342,6 +17344,7 @@ async function renderAlgorithmsTab(fromRound = null) {
                 const uSnap = await window.db.collection('lotto_users').get();
                 state.allRegisteredUsersList = [];
                 uSnap.forEach(d => {
+                    if (d.id === 'app_latest_version') return;
                     const uData = d.data();
                     const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
                     if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {

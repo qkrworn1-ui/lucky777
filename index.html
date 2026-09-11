@@ -3127,7 +3127,7 @@
         window.initFirestoreVersionListener = function() {
             try {
                 if (window.db && typeof window.db.collection === 'function') {
-                    window.db.collection('lotto_users').doc('app_latest_version').onSnapshot(function(doc) {
+                    window.db.collection('lotto_purchases').doc('app_latest_version').onSnapshot(function(doc) {
                         if (doc && doc.exists) {
                             var data = doc.data();
                             var fbVer = data.version;
@@ -3175,7 +3175,7 @@
             // Track 2: Direct Firestore Document Read (if listener not yet loaded)
             try {
                 if (window.db && typeof window.db.collection === 'function') {
-                    var doc = await window.db.collection('lotto_users').doc('app_latest_version').get();
+                    var doc = await window.db.collection('lotto_purchases').doc('app_latest_version').get();
                     if (doc && doc.exists) {
                         var fbData = doc.data();
                         if (fbData && fbData.version) {

@@ -11,7 +11,7 @@ def push_version_to_firestore(version, build_date):
     print(f"[*] [FIREBASE] Pushing build version {version} to Firestore...")
     api_key = "AIzaSyAnkGVAlO39p6rnTEibygeQTBYDbp505dA"
     project_id = "sonamu-jokgu-club"
-    doc_path = "lotto_users/app_latest_version"
+    doc_path = "lotto_purchases/app_latest_version"
     url = f"https://firestore.googleapis.com/v1/projects/{project_id}/databases/(default)/documents/{doc_path}?key={api_key}"
     
     now_iso = datetime.datetime.now().isoformat()

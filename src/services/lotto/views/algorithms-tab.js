@@ -350,7 +350,7 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
                 }
                 baseList = baseList.filter(u => {
                     const uId = (u.id || '').trim().toLowerCase();
-                    return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+                    return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
                 });
                 if (baseList.length === 0) {
                     baseList = [{ id: 'master', name: '관리자' }];
@@ -565,6 +565,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                 const uSnap = await window.db.collection('lotto_users').get();
                 state.allRegisteredUsersList = [];
                 uSnap.forEach(d => {
+                    if (d.id === 'app_latest_version') return;
                     const uData = d.data();
                     const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
                     if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
