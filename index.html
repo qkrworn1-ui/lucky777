@@ -70,7 +70,7 @@
                 <button type="button" onclick="window.forceReloadCache && window.forceReloadCache()" class="btn-pwa-update-now">
                     <i class="fa-solid fa-rotate"></i> 1초 업데이트
                 </button>
-                <button type="button" onclick="document.getElementById('pwaUpdateFloatingBanner').style.display='none'" class="btn-pwa-update-close" title="닫기">
+                <button type="button" onclick="if (window.dismissUpdateBanner) { window.dismissUpdateBanner(); } else { document.getElementById('pwaUpdateFloatingBanner').style.display='none'; }" class="btn-pwa-update-close" title="닫기">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
@@ -3064,12 +3064,20 @@
 
         function getHighestKnownVersion() {
             var currentNum = parseVersionNum(window.APP_VERSION);
-            var fbNum = parseVersionNum(window.FIREBASE_LATEST_VERSION);
             var hostNum = parseVersionNum(window.HOSTING_LATEST_VERSION);
-            var highestNum = Math.max(currentNum, fbNum, hostNum);
+            var fbNum = parseVersionNum(window.FIREBASE_LATEST_VERSION);
             
-            if (fbNum === highestNum && window.FIREBASE_LATEST_VERSION) return window.FIREBASE_LATEST_VERSION;
-            if (hostNum === highestNum && window.HOSTING_LATEST_VERSION) return window.HOSTING_LATEST_VERSION;
+            // 1순위: 실제 웹 호스팅(GitHub Pages/서버)의 version.json 기준 (실제 배포 완료 여부 검증)
+            if (hostNum > 0) {
+                if (hostNum > currentNum && window.HOSTING_LATEST_VERSION) {
+                    return window.HOSTING_LATEST_VERSION;
+                }
+                return window.APP_VERSION;
+            }
+            // 2순위: 호스팅 version.json 응답 대기/오프라인 시 파이어베이스 참조
+            if (fbNum > currentNum && window.FIREBASE_LATEST_VERSION) {
+                return window.FIREBASE_LATEST_VERSION;
+            }
             return window.APP_VERSION;
         }
 
@@ -3117,10 +3125,25 @@
             var bannerVer = document.getElementById('pwaUpdateBannerVerText');
             if (banner) {
                 if (hasUpdate) {
+                    var dismissedVer = null;
+                    try { dismissedVer = sessionStorage.getItem('dismissed_update_ver'); } catch(e) {}
                     if (bannerVer) bannerVer.textContent = sVer;
-                    banner.style.display = 'block';
+                    if (dismissedVer !== sVer) {
+                        banner.style.display = 'block';
+                    }
+                } else {
+                    banner.style.display = 'none';
                 }
             }
+        };
+
+        window.dismissUpdateBanner = function() {
+            var banner = document.getElementById('pwaUpdateFloatingBanner');
+            if (banner) banner.style.display = 'none';
+            try {
+                var sVer = getHighestKnownVersion();
+                sessionStorage.setItem('dismissed_update_ver', sVer);
+            } catch(e) {}
         };
 
         // 1. Firebase Firestore Real-time Push Listener (0.1s Instant Detection)
@@ -3136,15 +3159,12 @@
                                 console.log('[Firebase Version Listener] Live Firestore Push received:', fbVer, fbDate);
                                 window.FIREBASE_LATEST_VERSION = fbVer;
                                 window.FIREBASE_BUILD_DATE = fbDate;
-                                window.LATEST_SERVER_VERSION = getHighestKnownVersion();
-                                window.updateAppVersionBadges(window.APP_VERSION, window.LATEST_SERVER_VERSION);
-                                
-                                var currentNum = parseVersionNum(window.APP_VERSION);
-                                var fbNum = parseVersionNum(fbVer);
-                                if (fbNum > currentNum && 'serviceWorker' in navigator) {
-                                    navigator.serviceWorker.getRegistrations().then(function(regs) {
-                                        regs.forEach(function(r) { if (typeof r.update === 'function') r.update(); });
-                                    });
+                                // Firebase 푸시 수신 시 즉시 호스팅 version.json 크로스체크하여 배포 완료 상태 검증
+                                if (typeof window.checkLatestBuildVersion === 'function') {
+                                    window.checkLatestBuildVersion(true);
+                                } else {
+                                    window.LATEST_SERVER_VERSION = getHighestKnownVersion();
+                                    window.updateAppVersionBadges(window.APP_VERSION, window.LATEST_SERVER_VERSION);
                                 }
                             }
                         }
