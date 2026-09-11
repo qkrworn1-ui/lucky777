@@ -3,7 +3,7 @@ import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACV
 import { createBallHtml, renderBallRow, getRankBadge, openModal, closeModal } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgmt.js';
-import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash } from '../ledger.js';
+import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 
@@ -20,8 +20,8 @@ export async function renderConfirmedPurchasesList() {
     }
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
 
-    // If Admin, prefetch all users' purchases if not yet loaded
-    if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
+    // If Admin, prefetch all users' purchases if not yet loaded OR if merged cache was invalidated (e.g. after save)
+    if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger)) {
         await fetchAllUsersPurchases();
     }
 
@@ -152,10 +152,10 @@ export async function renderConfirmedPurchasesList() {
     // Admin user selector dropdown HTML
     let adminUserSelectHtml = '';
     if (isAdmin) {
-        const currentTarget = state.adminViewingTarget || 'all';
+        const currentTarget = state.adminViewingTarget || 'my';
         const userList = Object.keys(state.allUsersPurchasesMap || {}).filter(uId => {
             const clean = (uId || '').trim().toLowerCase();
-            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms';
+            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms';
         });
         
         let optionsHtml = `<option value="all" ${currentTarget === 'all' ? 'selected' : ''}>👥 [전체 회원 통합 보기 (${userList.length}명)]</option>`;
@@ -186,10 +186,10 @@ export async function renderConfirmedPurchasesList() {
     // 1-1. [ADMIN ALL USERS SUMMARY TABLE] Real Purchase Winnings & Algorithm Distribution Overview (When Admin)
     let adminOverviewTableHtml = '';
     if (isAdmin && state.allUsersPurchasesMap) {
-        const currentTarget = state.adminViewingTarget || 'all';
+        const currentTarget = state.adminViewingTarget || 'my';
         const userList = Object.keys(state.allUsersPurchasesMap || {}).filter(uId => {
             const clean = (uId || '').trim().toLowerCase();
-            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'pjg' && clean !== 'sample' && clean !== 'hms';
+            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms';
         });
         const history = state.mergedHistory || {};
 
@@ -870,6 +870,9 @@ export async function renderConfirmedPurchasesList() {
             const cardBorderStyle = hasWonReceipt ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255,255,255,0.05)';
             const cardShadowStyle = hasWonReceipt ? 'box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);' : '';
 
+            const receiptId = purchase.receiptId || '';
+            const purchaseFingerprint = getReceiptCombosFingerprint(purchase);
+
             html += `
                 <div class="confirmed-receipt-card" style="border: ${cardBorderStyle}; border-left: 4px solid ${cardBorderLeftColor}; padding-left: 12px; margin-bottom: 14px; background: ${cardBgStyle}; padding: 12px; border-radius: 8px; ${cardShadowStyle}">
                     <div class="confirmed-receipt-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; flex-wrap: wrap; gap: 7px;">
@@ -890,13 +893,13 @@ export async function renderConfirmedPurchasesList() {
                                 <i class="fa-solid fa-chevron-down toggle-combos-icon" style="transition: transform 0.2s; font-size: 0.65rem;"></i>
                             </button>
                             ${isAdmin ? `
-                                <button class="btn-toggle-lock-purchase" data-round="${round}" data-pidx="${pIdx}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${lockBtnBg}; border: 1px solid ${lockBtnBorder}; color: ${lockBtnColor}; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                                <button class="btn-toggle-lock-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${lockBtnBg}; border: 1px solid ${lockBtnBorder}; color: ${lockBtnColor}; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
                                     <i class="fa-solid ${lockIcon}"></i> ${lockBtnText}
                                 </button>
-                                <button class="btn-edit-purchase" data-round="${round}" data-pidx="${pIdx}" ${isLocked ? 'disabled' : ''} style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(59, 130, 246, 0.4)'}; color: ${isLocked ? '#64748b' : '#93c5fd'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
+                                <button class="btn-edit-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" ${isLocked ? 'disabled' : ''} style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(59, 130, 246, 0.4)'}; color: ${isLocked ? '#64748b' : '#93c5fd'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
                                     <i class="fa-solid fa-edit"></i> 수정
                                 </button>
-                                <button class="btn-delete-purchase" data-round="${round}" data-pidx="${pIdx}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'}; color: ${isLocked ? '#64748b' : '#fca5a5'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
+                                <button class="btn-delete-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="padding: 2px 7px; font-size: 0.74rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'}; color: ${isLocked ? '#64748b' : '#fca5a5'}; border-radius: 4px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: flex; align-items: center; gap: 4px;">
                                     <i class="fa-solid fa-trash-can"></i> 삭제(휴지통)
                                 </button>
                             ` : `
@@ -1059,34 +1062,22 @@ export async function renderConfirmedPurchasesList() {
             e.stopPropagation();
             e.preventDefault();
 
-            const currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
-            if (currentAuthId !== 'master' && currentAuthId !== 'admin') {
+            const currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '').toLowerCase().trim();
+            const isAdmin = (currentAuthId === 'master' || currentAuthId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(currentAuthId)));
+            if (!isAdmin) {
                 showToast('🔒 회차 전체 잠금 관리는 관리자(Master) 전용 기능입니다.');
                 return;
             }
 
             const round = parseInt(btn.dataset.round);
-            
-            const ledger = getLedger();
-            let purchases = ledger[round];
-            if (!purchases || !Array.isArray(purchases) || purchases.length === 0) {
-                purchases = getHistoricalTop10Combinations(round);
-                ledger[round] = purchases;
-            }
-            
-            const currentList = ledger[round];
-            const isAllCurrentlyLocked = currentList.length > 0 && currentList.every(p => !!p.isLocked);
-            const targetState = !isAllCurrentlyLocked;
-            
-            currentList.forEach(p => {
-                p.isLocked = targetState;
-            });
-            
-            const msg = targetState 
-                ? `🔒 제 ${round}회차 모든 구매 내역이 잠겼습니다.` 
-                : `🔓 제 ${round}회차 모든 구매 내역 잠금이 해제되었습니다.`;
-            
-            await saveLedgerState(ledger, msg);
+            const targetUser = state.adminViewingTarget && state.adminViewingTarget !== 'all' && state.adminViewingTarget !== 'my'
+                ? state.adminViewingTarget
+                : currentAuthId;
+
+            await toggleRoundLock(round, null, targetUser);
+            await renderConfirmedPurchasesList();
+            if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
+            if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
         });
     });
 
@@ -1099,82 +1090,25 @@ export async function renderConfirmedPurchasesList() {
             const currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '').toLowerCase().trim();
             const round = parseInt(btn.dataset.round);
             const pIdx = parseInt(btn.dataset.pidx);
-            
-            const ledger = getLedger();
-            
-            if (ledger[round] && Array.isArray(ledger[round]) && ledger[round][pIdx]) {
-                const targetPurchase = ledger[round][pIdx];
-                const purchaseUser = (targetPurchase.user || targetPurchase.userId || currentAuthId).toLowerCase().trim();
-                const isAdmin = (currentAuthId === 'master' || currentAuthId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(currentAuthId)));
+            const receiptId = btn.dataset.receiptid || '';
+            const purchaseUser = (btn.dataset.user || currentAuthId).toLowerCase().trim();
+            const fingerprint = btn.dataset.fingerprint || '';
 
-                if (!isAdmin && purchaseUser !== currentAuthId) {
-                    showToast('🔒 타인의 영수증 잠금은 변경할 수 없습니다.');
-                    return;
-                }
+            const isAdmin = (currentAuthId === 'master' || currentAuthId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(currentAuthId)));
 
-                const isCurrentlyLocked = !!targetPurchase.isLocked;
-                targetPurchase.isLocked = !isCurrentlyLocked;
+            if (!isAdmin && purchaseUser !== currentAuthId) {
+                showToast('🔒 타인의 영수증 잠금은 변경할 수 없습니다.');
+                return;
+            }
 
-                // Sync lock state into all relevant accounts (purchaseUser, currentAuthId, master)
-                const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : localStorage;
-                const firestore = (db && typeof db.getFirestore === 'function') ? db.getFirestore() : window.db;
-                const targetUsers = Array.from(new Set([purchaseUser, currentAuthId, 'master'].filter(Boolean)));
-
-                const pFirst = targetPurchase.combos && targetPurchase.combos[0] && (targetPurchase.combos[0].numbers || targetPurchase.combos[0]);
-                const pTimestamp = targetPurchase.timestamp;
-
-                for (const uId of targetUsers) {
-                    let uLedger = {};
-                    try {
-                        const raw = storage.getItem(`lotto_actual_ledger_${uId}`);
-                        if (raw) uLedger = JSON.parse(raw);
-                    } catch(e) {}
-                    if (uLedger[round] && Array.isArray(uLedger[round])) {
-                        uLedger[round].forEach(p => {
-                            if (pTimestamp && p.timestamp === pTimestamp) {
-                                p.isLocked = targetPurchase.isLocked;
-                                return;
-                            }
-                            if (!p.combos || !pFirst) return;
-                            const f = p.combos[0] && (p.combos[0].numbers || p.combos[0]);
-                            if (JSON.stringify(f) === JSON.stringify(pFirst)) {
-                                p.isLocked = targetPurchase.isLocked;
-                            }
-                        });
-                        try { storage.setItem(`lotto_actual_ledger_${uId}`, JSON.stringify(uLedger)); } catch(e){}
-                    }
-
-                    if (firestore) {
-                        try {
-                            const cleanLedger = removeUndefined(uLedger);
-                            await Promise.race([
-                                firestore.collection('lotto_purchases').doc(uId).set({ ledger: cleanLedger }),
-                                new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000))
-                            ]);
-                        } catch(e) {}
-                    }
-
-                    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[uId]) {
-                        state.allUsersPurchasesMap[uId].ledger = uLedger;
-                    }
-                    if (uId === currentAuthId) {
-                        state.globalLedger = uLedger;
-                    }
-                }
-
-                state.allUsersMergedLedger = null;
-                state.ledgerFinancialsCache = null;
-
-                const msg = !isCurrentlyLocked 
-                    ? `🔒 제 ${round}회 내역 #${pIdx+1}이 잠겼습니다. (수정/삭제 방지)` 
-                    : `🔓 제 ${round}회 내역 #${pIdx+1} 잠금이 해제되었습니다.`;
-                
-                showToast(msg);
-                renderConfirmedPurchasesList();
+            // Safely toggle lock without touching or wiping other users' databases
+            const success = await toggleReceiptLock(round, receiptId || pIdx, purchaseUser, fingerprint);
+            if (success) {
+                await renderConfirmedPurchasesList();
                 if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
                 if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
             } else {
-                console.warn(`[Lock] Could not find purchase record for round ${round}, index ${pIdx}`);
+                console.warn(`[Lock] Could not find purchase record for round ${round}, receiptId ${receiptId}, index ${pIdx}`);
             }
         });
     });

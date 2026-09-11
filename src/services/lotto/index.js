@@ -18,7 +18,7 @@ import { setupManualLedgerModal, updateManualModalCrossCheck } from './views/man
 import { setupManualDrawModal } from './views/manual-draw-modal.js';
 import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
 import { computeAbsoluteTop10Combinations } from './generator.js';
-import { getLedger, getHistoricalTop10Combinations, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint } from './ledger.js';
+import { getLedger, getHistoricalTop10Combinations, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock } from './ledger.js';
 
 export async function initLottoService() {
     window.initLottoService = initLottoService;
@@ -389,4 +389,6 @@ if (typeof window !== 'undefined') {
     window.permanentDeleteFromReceiptTrash = permanentDeleteFromReceiptTrash;
     window.emptyEntireReceiptTrash = emptyEntireReceiptTrash;
     window.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
+    window.toggleReceiptLock = toggleReceiptLock;
+    window.toggleRoundLock = toggleRoundLock;
 }

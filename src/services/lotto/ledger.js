@@ -157,7 +157,7 @@ export async function fetchAllUsersPurchases() {
             state.allRegisteredUsersList = [];
             uSnapshot.forEach(doc => {
                 const uId = doc.id.trim().toLowerCase();
-                if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'pjg' || uId === 'sample' || uId === 'hms') return;
+                if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'sample' || uId === 'hms') return;
                 const d = doc.data() || {};
                 if (d.isDeleted === true || d.status === 'trash' || d.status === 'deleted') return;
                 const rName = d.realName || doc.id;
@@ -209,7 +209,7 @@ export async function fetchAllUsersPurchases() {
         pSnapshot.forEach(doc => {
             const rawUserId = doc.id;
             const userId = rawUserId.trim().toLowerCase();
-            if (userId.startsWith('{') || userId.startsWith('test_') || userId === 'user_alpha' || userId === 'user_beta' || userId === 'pjg' || userId === 'sample' || userId === 'hms') {
+            if (userId.startsWith('{') || userId.startsWith('test_') || userId === 'user_alpha' || userId === 'user_beta' || userId === 'sample' || userId === 'hms') {
                 return; // 🔒 Exclude test accounts from aggregation!
             }
             const data = doc.data();
@@ -295,7 +295,7 @@ export function getLedger() {
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
 
     if (isAdmin) {
-        const target = state.adminViewingTarget || 'all';
+        const target = state.adminViewingTarget || 'my';
         if (target === 'all' && state.allUsersMergedLedger && Object.keys(state.allUsersMergedLedger).length > 0) {
             return state.allUsersMergedLedger;
         }
@@ -1718,6 +1718,147 @@ export function getUserConfirmedWinningsAuditTrail(userId) {
     }
 }
 
+/**
+ * 🔒 Safely toggle lock state for a single receipt without wiping or cross-contaminating other users
+ * @param {number} round 
+ * @param {string|number} identifier (receiptId, fingerprint, timestamp, or pIdx)
+ * @param {string} user (receipt owner or target user)
+ * @param {string} targetFingerprint (optional combo fingerprint)
+ * @returns {Promise<boolean>}
+ */
+export async function toggleReceiptLock(round, identifier, user = null, targetFingerprint = null) {
+    const r = parseInt(round);
+    if (isNaN(r) || r <= 0) return false;
+
+    const currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(currentAuthId) : (currentAuthId === 'master' || currentAuthId === 'admin'));
+
+    const effectiveUser = (user || currentAuthId).toLowerCase().trim();
+    if (!isAdmin && effectiveUser !== currentAuthId) {
+        if (typeof showToast === 'function') showToast('🔒 타인의 영수증 잠금은 변경할 수 없습니다.');
+        return false;
+    }
+
+    const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : localStorage;
+
+    // 1. Get current full ledger for effectiveUser safely (priority: globalLedger if matches, allUsersPurchasesMap, then LocalStorage)
+    let userLedger = {};
+    if (currentAuthId === effectiveUser && state.globalLedger && Object.keys(state.globalLedger).length > 0) {
+        userLedger = JSON.parse(JSON.stringify(state.globalLedger));
+    } else if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[effectiveUser]?.ledger) {
+        userLedger = JSON.parse(JSON.stringify(state.allUsersPurchasesMap[effectiveUser].ledger));
+    } else {
+        try {
+            const raw = storage.getItem(`lotto_actual_ledger_${effectiveUser}`);
+            if (raw) userLedger = JSON.parse(raw);
+        } catch(e) {}
+    }
+
+    if (!userLedger[r] || !Array.isArray(userLedger[r]) || userLedger[r].length === 0) {
+        console.warn(`[toggleReceiptLock] No receipts found for user ${effectiveUser} round ${r}`);
+        return false;
+    }
+
+    // 2. Locate target receipt in userLedger[r]
+    let targetIdx = -1;
+    const receipts = userLedger[r];
+
+    // Priority 1: receiptId matching
+    if (identifier && typeof identifier === 'string' && identifier.startsWith('rcpt_')) {
+        targetIdx = receipts.findIndex(p => p && p.receiptId === identifier);
+    }
+
+    // Priority 2: fingerprint matching
+    if (targetIdx === -1 && targetFingerprint) {
+        targetIdx = receipts.findIndex(p => getReceiptCombosFingerprint(p) === targetFingerprint);
+    }
+
+    // Priority 3: timestamp matching
+    if (targetIdx === -1 && identifier && typeof identifier === 'string' && identifier.includes('T')) {
+        targetIdx = receipts.findIndex(p => p && p.timestamp === identifier);
+    }
+
+    // Priority 4: Index matching fallback
+    if (targetIdx === -1 && (typeof identifier === 'number' || !isNaN(parseInt(identifier)))) {
+        const numIdx = parseInt(identifier);
+        if (numIdx >= 0 && numIdx < receipts.length) {
+            targetIdx = numIdx;
+        }
+    }
+
+    if (targetIdx === -1 || !receipts[targetIdx]) {
+        console.warn(`[toggleReceiptLock] Target receipt not found for round ${r}, id ${identifier}`);
+        return false;
+    }
+
+    // 3. Toggle lock
+    const targetReceipt = receipts[targetIdx];
+    const newLockState = !targetReceipt.isLocked;
+    targetReceipt.isLocked = newLockState;
+
+    // 4. Save safely for effectiveUser only (never wipe other accounts!)
+    const msg = newLockState 
+        ? `🔒 제 ${r}회 영수증이 잠겼습니다. (수정/삭제 방지)` 
+        : `🔓 제 ${r}회 영수증 잠금이 해제되었습니다.`;
+
+    await saveLedgerDirectly(userLedger, effectiveUser, msg);
+    return true;
+}
+
+/**
+ * 🔒 Safely toggle lock state for all receipts in a round for a specific user
+ * @param {number} round 
+ * @param {boolean|null} forceState 
+ * @param {string} user 
+ * @returns {Promise<boolean>}
+ */
+export async function toggleRoundLock(round, forceState = null, user = null) {
+    const r = parseInt(round);
+    if (isNaN(r) || r <= 0) return false;
+
+    const currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(currentAuthId) : (currentAuthId === 'master' || currentAuthId === 'admin'));
+
+    if (!isAdmin) {
+        if (typeof showToast === 'function') showToast('🔒 회차 전체 잠금은 관리자 전용 기능입니다.');
+        return false;
+    }
+
+    const effectiveUser = (user || currentAuthId).toLowerCase().trim();
+    const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : localStorage;
+
+    let userLedger = {};
+    if (currentAuthId === effectiveUser && state.globalLedger && Object.keys(state.globalLedger).length > 0) {
+        userLedger = JSON.parse(JSON.stringify(state.globalLedger));
+    } else if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[effectiveUser]?.ledger) {
+        userLedger = JSON.parse(JSON.stringify(state.allUsersPurchasesMap[effectiveUser].ledger));
+    } else {
+        try {
+            const raw = storage.getItem(`lotto_actual_ledger_${effectiveUser}`);
+            if (raw) userLedger = JSON.parse(raw);
+        } catch(e) {}
+    }
+
+    if (!userLedger[r] || !Array.isArray(userLedger[r]) || userLedger[r].length === 0) {
+        return false;
+    }
+
+    const currentList = userLedger[r];
+    const isAllCurrentlyLocked = currentList.length > 0 && currentList.every(p => !!p.isLocked);
+    const targetState = forceState !== null ? forceState : !isAllCurrentlyLocked;
+
+    currentList.forEach(p => {
+        p.isLocked = targetState;
+    });
+
+    const msg = targetState 
+        ? `🔒 제 ${r}회차 모든 구매 내역이 잠겼습니다.` 
+        : `🔓 제 ${r}회차 모든 구매 내역 잠금이 해제되었습니다.`;
+
+    await saveLedgerDirectly(userLedger, effectiveUser, msg);
+    return true;
+}
+
 if (typeof window !== 'undefined') {
     window.getUserConfirmedWinningsAuditTrail = getUserConfirmedWinningsAuditTrail;
     window.getReceiptTrashList = getReceiptTrashList;
@@ -1727,7 +1868,10 @@ if (typeof window !== 'undefined') {
     window.restoreFromReceiptTrash = restoreFromReceiptTrash;
     window.permanentDeleteFromReceiptTrash = permanentDeleteFromReceiptTrash;
     window.emptyEntireReceiptTrash = emptyEntireReceiptTrash;
+    window.toggleReceiptLock = toggleReceiptLock;
+    window.toggleRoundLock = toggleRoundLock;
 }
+
 
 
 

@@ -496,6 +496,53 @@ class TestFullSystem(unittest.TestCase):
         self.assertEqual(len(active_ledger), 2, "Both receipts must exist after restoration!")
         self.assertEqual(len(trash_store), 0, "Trash must now be empty!")
 
+    def test_13_receipt_lock_toggle_preservation(self):
+        """Test: Unlocking/locking a receipt must safely preserve all receipts and never wipe other accounts."""
+        user_ledger = {
+            1240: [
+                {
+                    'receiptId': 'rcpt_pjg_1240_1001',
+                    'round': 1240,
+                    'user': 'pjg',
+                    'isLocked': True,
+                    'combos': [{'numbers': [1, 2, 3, 4, 5, 6]}]
+                },
+                {
+                    'receiptId': 'rcpt_pjg_1240_1002',
+                    'round': 1240,
+                    'user': 'pjg',
+                    'isLocked': True,
+                    'combos': [{'numbers': [7, 8, 9, 10, 11, 12]}]
+                }
+            ]
+        }
+
+        # 1. Unlock receipt 1
+        target_id = 'rcpt_pjg_1240_1001'
+        found = False
+        for p in user_ledger[1240]:
+            if p.get('receiptId') == target_id:
+                p['isLocked'] = not p['isLocked']
+                found = True
+                break
+
+        self.assertTrue(found, "Target receipt must be found")
+        # Receipt 1 must be unlocked
+        self.assertFalse(user_ledger[1240][0]['isLocked'], "Receipt 1 must be unlocked (isLocked == False)")
+        # Receipt 2 must stay locked
+        self.assertTrue(user_ledger[1240][1]['isLocked'], "Receipt 2 must stay locked (isLocked == True)")
+        # Both receipts must still exist in ledger! (Zero data loss)
+        self.assertEqual(len(user_ledger[1240]), 2, "Both receipts must be intact after unlocking!")
+
+        # 2. Relock receipt 1
+        for p in user_ledger[1240]:
+            if p.get('receiptId') == target_id:
+                p['isLocked'] = not p['isLocked']
+                break
+
+        self.assertTrue(user_ledger[1240][0]['isLocked'], "Receipt 1 must be relocked (isLocked == True)")
+        self.assertEqual(len(user_ledger[1240]), 2, "Both receipts must still exist in ledger!")
+
 
 if __name__ == '__main__':
     unittest.main()

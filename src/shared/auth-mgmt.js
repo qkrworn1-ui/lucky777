@@ -4746,7 +4746,7 @@ window.startBatchWinningSend = async function() {
             return { success: false, reason: 'No DB' };
         }
 
-        if (!silent && !confirm('🧹 [테스트 데이터 일괄 삭제]\n\n시스템에 등록된 모든 테스트용 계정(test_*, user_alpha, user_beta, user_gamma, user_1235, user_1238, user_1240, sample, pjg, hms 등)과 테스트 구매영수증/캐시 데이터를 완전히 삭제하시겠습니까?')) {
+        if (!silent && !confirm('🧹 [테스트 데이터 일괄 삭제]\n\n시스템에 등록된 모든 테스트용 계정(test_*, user_alpha, user_beta, user_gamma, user_1235, user_1238, user_1240, sample, hms 등)과 테스트 구매영수증/캐시 데이터를 완전히 삭제하시겠습니까?')) {
             return { success: false, cancelled: true };
         }
 
@@ -4758,7 +4758,7 @@ window.startBatchWinningSend = async function() {
                 return id.startsWith('test_') || id.startsWith('{') || 
                        id === 'user_alpha' || id === 'user_beta' || id === 'user_gamma' || 
                        id === 'user_1235' || id === 'user_1238' || id === 'user_1240' || id === 'user_1241' ||
-                       id === 'sample' || id === 'pjg' || id === 'hms';
+                       id === 'sample' || id === 'hms';
             };
 
             let deletedUserCount = 0;

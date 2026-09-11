@@ -35,7 +35,7 @@ export async function renderLandingDashboard() {
         const prevTarget = state.adminViewingTarget;
         state.adminViewingTarget = 'my';
         myFin = calculateLedgerFinancials(true);
-        state.adminViewingTarget = (prevTarget !== undefined ? prevTarget : 'all');
+        state.adminViewingTarget = (prevTarget !== undefined ? prevTarget : 'my');
     } else {
         myFin = calculateLedgerFinancials(true);
     }
@@ -292,7 +292,7 @@ export async function updateHomeReviewDashboard() {
 
             const registeredUsers = rawRegisteredUsers.filter(u => {
                 const uId = (u.id || '').trim().toLowerCase();
-                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
             });
 
             const userList = registeredUsers.length > 0 ? [...registeredUsers] : [
