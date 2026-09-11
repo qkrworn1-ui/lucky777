@@ -180,6 +180,9 @@ export async function autoSyncMissingDraws(showModal = false) {
         if (typeof renderConfirmedPurchasesList === 'function') {
             renderConfirmedPurchasesList();
         }
+        if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+            try { window.renderLandingDashboard(); } catch(e){}
+        }
 
         // 3. ⚡ Auto-Suspend Non-Purchasers upon New Draw Announcement
         if (syncedCount > 0 && typeof window.autoSuspendAllNonPurchasers === 'function') {

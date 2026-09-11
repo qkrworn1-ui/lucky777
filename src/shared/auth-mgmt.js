@@ -939,14 +939,18 @@ export function setupAuthEvents(initFirebaseAndData) {
                                 if (kakaoAcEl) { kakaoAcEl.classList.remove('active'); kakaoAcEl.style.setProperty('display', 'none', 'important'); }
                                 if (kakaoTpEl) { kakaoTpEl.classList.remove('active'); kakaoTpEl.style.setProperty('display', 'none', 'important'); }
 
-                                setTimeout(function() {
-                                    try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
-                                    try { if (typeof initFirebaseAndData === 'function') initFirebaseAndData(); } catch(ex) {}
-                                    checkAuthOnLoad(initFirebaseAndData).catch(function(err) { console.warn('[BG auth check]', err); });
+                                setTimeout(async function() {
+                                    try { if (typeof initFirebaseAndData === 'function') await initFirebaseAndData(); } catch(ex) {}
+                                    try { if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard(); } catch(ex) {}
+                                    checkAuthOnLoad(initFirebaseAndData).then(function() {
+                                        try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(e){}
+                                    }).catch(function(err) { console.warn('[BG auth check]', err); });
 
                                     // 🔔 Check if talk_message is agreed; if not, show dedicated in-app consent modal!
-                                    window.checkAndPromptKakaoScope('talk_message');
-                                }, 300);
+                                    if (typeof window.checkAndPromptKakaoScope === 'function') {
+                                        window.checkAndPromptKakaoScope('talk_message');
+                                    }
+                                }, 150);
 
                             } catch(dbErr) {
                                 console.error('[Kakao DB Sync Error]', dbErr);
@@ -1742,11 +1746,13 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 if (acEl) { acEl.classList.remove('active'); acEl.style.setProperty('display', 'none', 'important'); }
                 if (tpEl) { tpEl.classList.remove('active'); tpEl.style.setProperty('display', 'none', 'important'); }
 
-                setTimeout(function() {
-                    try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
-                    try { if (typeof initFirebaseAndData === 'function') initFirebaseAndData(); } catch(ex) {}
-                    checkAuthOnLoad(initFirebaseAndData).catch(function(err) { console.warn('[BG auth check]', err); });
-                }, 200);
+                setTimeout(async function() {
+                    try { if (typeof initFirebaseAndData === 'function') await initFirebaseAndData(); } catch(ex) {}
+                    try { if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard(); } catch(ex) {}
+                    checkAuthOnLoad(initFirebaseAndData).then(function() {
+                        try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(e){}
+                    }).catch(function(err) { console.warn('[BG auth check]', err); });
+                }, 100);
 
             } catch (err) {
                 console.error('[Sign-up Error]', err);
@@ -1814,18 +1820,22 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 }
 
                 // 4. Initialize services (non-blocking, background)
-                setTimeout(function() {
+                setTimeout(async function() {
                     try {
-                        if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
+                        if (typeof initFirebaseAndData === 'function') await initFirebaseAndData();
                     } catch(ex) {}
                     try {
-                        if (typeof initFirebaseAndData === 'function') initFirebaseAndData();
+                        if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
                     } catch(ex) {}
                     // Background auth verification (non-blocking)
-                    checkAuthOnLoad(initFirebaseAndData).catch(function(err) {
+                    checkAuthOnLoad(initFirebaseAndData).then(function() {
+                        try {
+                            if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
+                        } catch(e){}
+                    }).catch(function(err) {
                         console.warn('[Background auth check error]', err);
                     });
-                }, 150);
+                }, 100);
             }
 
             // 1. Instant Master/Admin bypass

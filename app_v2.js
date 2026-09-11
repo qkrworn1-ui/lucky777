@@ -1731,14 +1731,18 @@ function setupAuthEvents(initFirebaseAndData) {
                                 if (kakaoAcEl) { kakaoAcEl.classList.remove('active'); kakaoAcEl.style.setProperty('display', 'none', 'important'); }
                                 if (kakaoTpEl) { kakaoTpEl.classList.remove('active'); kakaoTpEl.style.setProperty('display', 'none', 'important'); }
 
-                                setTimeout(function() {
-                                    try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
-                                    try { if (typeof initFirebaseAndData === 'function') initFirebaseAndData(); } catch(ex) {}
-                                    checkAuthOnLoad(initFirebaseAndData).catch(function(err) { console.warn('[BG auth check]', err); });
+                                setTimeout(async function() {
+                                    try { if (typeof initFirebaseAndData === 'function') await initFirebaseAndData(); } catch(ex) {}
+                                    try { if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard(); } catch(ex) {}
+                                    checkAuthOnLoad(initFirebaseAndData).then(function() {
+                                        try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(e){}
+                                    }).catch(function(err) { console.warn('[BG auth check]', err); });
 
                                     // 🔔 Check if talk_message is agreed; if not, show dedicated in-app consent modal!
-                                    window.checkAndPromptKakaoScope('talk_message');
-                                }, 300);
+                                    if (typeof window.checkAndPromptKakaoScope === 'function') {
+                                        window.checkAndPromptKakaoScope('talk_message');
+                                    }
+                                }, 150);
 
                             } catch(dbErr) {
                                 console.error('[Kakao DB Sync Error]', dbErr);
@@ -2534,11 +2538,13 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 if (acEl) { acEl.classList.remove('active'); acEl.style.setProperty('display', 'none', 'important'); }
                 if (tpEl) { tpEl.classList.remove('active'); tpEl.style.setProperty('display', 'none', 'important'); }
 
-                setTimeout(function() {
-                    try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
-                    try { if (typeof initFirebaseAndData === 'function') initFirebaseAndData(); } catch(ex) {}
-                    checkAuthOnLoad(initFirebaseAndData).catch(function(err) { console.warn('[BG auth check]', err); });
-                }, 200);
+                setTimeout(async function() {
+                    try { if (typeof initFirebaseAndData === 'function') await initFirebaseAndData(); } catch(ex) {}
+                    try { if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard(); } catch(ex) {}
+                    checkAuthOnLoad(initFirebaseAndData).then(function() {
+                        try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(e){}
+                    }).catch(function(err) { console.warn('[BG auth check]', err); });
+                }, 100);
 
             } catch (err) {
                 console.error('[Sign-up Error]', err);
@@ -2606,18 +2612,22 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 }
 
                 // 4. Initialize services (non-blocking, background)
-                setTimeout(function() {
+                setTimeout(async function() {
                     try {
-                        if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
+                        if (typeof initFirebaseAndData === 'function') await initFirebaseAndData();
                     } catch(ex) {}
                     try {
-                        if (typeof initFirebaseAndData === 'function') initFirebaseAndData();
+                        if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
                     } catch(ex) {}
                     // Background auth verification (non-blocking)
-                    checkAuthOnLoad(initFirebaseAndData).catch(function(err) {
+                    checkAuthOnLoad(initFirebaseAndData).then(function() {
+                        try {
+                            if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
+                        } catch(e){}
+                    }).catch(function(err) {
                         console.warn('[Background auth check error]', err);
                     });
-                }, 150);
+                }, 100);
             }
 
             // 1. Instant Master/Admin bypass
@@ -6175,10 +6185,10 @@ const UserContextManager = {
         const dateStr = dt ? dt.toISOString() : String(createdAt).trim();
         this._userCreatedMap[cleanId] = dateStr;
         try {
-            if (typeof SafeStorage !== 'undefined') SafeStorage.setItem(created_, dateStr);
+            if (typeof SafeStorage !== 'undefined') SafeStorage.setItem(`created_${cleanId}`, dateStr);
             if (typeof SafeLocalStorage !== 'undefined') {
-                SafeLocalStorage.setItem(created_, dateStr);
-                SafeLocalStorage.setItem(lotto_user_created_, dateStr);
+                SafeLocalStorage.setItem(`created_${cleanId}`, dateStr);
+                SafeLocalStorage.setItem(`lotto_user_created_${cleanId}`, dateStr);
             }
         } catch(e) {}
     },
@@ -6209,17 +6219,18 @@ const UserContextManager = {
 
         // 4. Session & Local Storage
         try {
-            const cached = (typeof SafeStorage !== 'undefined' && SafeStorage.getItem(created_)) ||
-                           (typeof SafeLocalStorage !== 'undefined' && SafeLocalStorage.getItem(created_)) ||
-                           (typeof SafeLocalStorage !== 'undefined' && SafeLocalStorage.getItem(lotto_user_created_));
+            const cached = (typeof SafeStorage !== 'undefined' && SafeStorage.getItem(`created_${cleanId}`)) ||
+                           (typeof SafeLocalStorage !== 'undefined' && SafeLocalStorage.getItem(`created_${cleanId}`)) ||
+                           (typeof SafeLocalStorage !== 'undefined' && SafeLocalStorage.getItem(`lotto_user_created_${cleanId}`));
             if (cached) return cached;
         } catch(e) {}
 
         // 5. Current logged in user object
-        if (typeof window !== 'undefined' && window.currentUser) {
-            const cId = (window.currentUser.userId || window.currentUser.id || '').toLowerCase().trim();
-            if (cId === cleanId && (window.currentUser.createdAt || window.currentUser.created_at)) {
-                return window.currentUser.createdAt || window.currentUser.created_at;
+        const curUser = (typeof window !== 'undefined') ? (window.__currentUser || window.currentUser) : null;
+        if (curUser) {
+            const cId = (curUser.userId || curUser.id || '').toLowerCase().trim();
+            if (cId === cleanId && (curUser.createdAt || curUser.created_at)) {
+                return curUser.createdAt || curUser.created_at;
             }
         }
 
@@ -6735,6 +6746,12 @@ async function fetchAllUsersPurchases() {
 
         state.allUsersPurchasesMap = allUsersMap;
         state.allUsersMergedLedger = mergedLedger;
+
+        // Auto-refresh landing dashboard if loaded to ensure 100% synchronized live data
+        if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+            try { window.renderLandingDashboard(); } catch(dashErr) {}
+        }
+
         return { allUsersMap, mergedLedger };
     } catch(e) {
         console.error('[fetchAllUsersPurchases Error]', e);
@@ -17105,6 +17122,17 @@ function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all')
             if (isAll) {
                 // Aggregate across all active registered users for this round
                 let baseList = [];
+                if (!state.allRegisteredUsersList || !Array.isArray(state.allRegisteredUsersList) || state.allRegisteredUsersList.length === 0) {
+                    try {
+                        const raw = SafeLocalStorage.getItem('lotto_all_users_list_cache');
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                state.allRegisteredUsersList = parsed;
+                            }
+                        }
+                    } catch(e) {}
+                }
                 if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList) && state.allRegisteredUsersList.length > 0) {
                     baseList = [...state.allRegisteredUsersList];
                 }
@@ -24130,6 +24158,9 @@ async function autoSyncMissingDraws(showModal = false) {
         }
         if (typeof renderConfirmedPurchasesList === 'function') {
             renderConfirmedPurchasesList();
+        }
+        if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+            try { window.renderLandingDashboard(); } catch(e){}
         }
 
         // 3. ⚡ Auto-Suspend Non-Purchasers upon New Draw Announcement
@@ -32068,6 +32099,31 @@ function updateHomeServiceCardsPermissions() {
  */
 async function updateHomeReviewDashboard() {
     try {
+        if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
+            if (typeof initHistory === 'function') initHistory();
+            else if (typeof LOTTO_HISTORY !== 'undefined') state.mergedHistory = { ...LOTTO_HISTORY };
+        }
+
+        // 1. Synchronously pre-load cached users list if in-memory list is empty
+        if (!state.allRegisteredUsersList || !Array.isArray(state.allRegisteredUsersList) || state.allRegisteredUsersList.length === 0) {
+            try {
+                const raw = SafeLocalStorage.getItem('lotto_all_users_list_cache');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        state.allRegisteredUsersList = parsed;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // 2. Asynchronously fetch full users and purchases from Firestore if not yet loaded
+        if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0 || !state.allUsersPurchasesMap) {
+            if (typeof fetchAllUsersPurchases === 'function') {
+                await fetchAllUsersPurchases();
+            }
+        }
+
         const history = state.mergedHistory || {};
         const fromRound = 1235;
         const historyRounds = Object.keys(history)
@@ -32079,12 +32135,6 @@ async function updateHomeReviewDashboard() {
         const maxRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);
-
-        if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) {
-            if (typeof fetchAllUsersPurchases === 'function') {
-                await fetchAllUsersPurchases();
-            }
-        }
 
         let perf = null;
         if (typeof calculate7AlgorithmsPerformance === 'function') {

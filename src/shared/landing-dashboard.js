@@ -241,6 +241,31 @@ export function updateHomeServiceCardsPermissions() {
  */
 export async function updateHomeReviewDashboard() {
     try {
+        if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
+            if (typeof initHistory === 'function') initHistory();
+            else if (typeof LOTTO_HISTORY !== 'undefined') state.mergedHistory = { ...LOTTO_HISTORY };
+        }
+
+        // 1. Synchronously pre-load cached users list if in-memory list is empty
+        if (!state.allRegisteredUsersList || !Array.isArray(state.allRegisteredUsersList) || state.allRegisteredUsersList.length === 0) {
+            try {
+                const raw = localStorage.getItem('lotto_all_users_list_cache');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        state.allRegisteredUsersList = parsed;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        // 2. Asynchronously fetch full users and purchases from Firestore if not yet loaded
+        if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0 || !state.allUsersPurchasesMap) {
+            if (typeof fetchAllUsersPurchases === 'function') {
+                await fetchAllUsersPurchases();
+            }
+        }
+
         const history = state.mergedHistory || {};
         const fromRound = 1235;
         const historyRounds = Object.keys(history)
@@ -252,12 +277,6 @@ export async function updateHomeReviewDashboard() {
         const maxRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);
-
-        if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) {
-            if (typeof fetchAllUsersPurchases === 'function') {
-                await fetchAllUsersPurchases();
-            }
-        }
 
         let perf = null;
         if (typeof calculate7AlgorithmsPerformance === 'function') {

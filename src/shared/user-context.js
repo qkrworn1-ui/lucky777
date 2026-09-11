@@ -57,10 +57,10 @@ export const UserContextManager = {
         const dateStr = dt ? dt.toISOString() : String(createdAt).trim();
         this._userCreatedMap[cleanId] = dateStr;
         try {
-            if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(created_, dateStr);
+            if (typeof sessionStorage !== 'undefined') sessionStorage.setItem(`created_${cleanId}`, dateStr);
             if (typeof localStorage !== 'undefined') {
-                localStorage.setItem(created_, dateStr);
-                localStorage.setItem(lotto_user_created_, dateStr);
+                localStorage.setItem(`created_${cleanId}`, dateStr);
+                localStorage.setItem(`lotto_user_created_${cleanId}`, dateStr);
             }
         } catch(e) {}
     },
@@ -91,17 +91,18 @@ export const UserContextManager = {
 
         // 4. Session & Local Storage
         try {
-            const cached = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(created_)) ||
-                           (typeof localStorage !== 'undefined' && localStorage.getItem(created_)) ||
-                           (typeof localStorage !== 'undefined' && localStorage.getItem(lotto_user_created_));
+            const cached = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`created_${cleanId}`)) ||
+                           (typeof localStorage !== 'undefined' && localStorage.getItem(`created_${cleanId}`)) ||
+                           (typeof localStorage !== 'undefined' && localStorage.getItem(`lotto_user_created_${cleanId}`));
             if (cached) return cached;
         } catch(e) {}
 
         // 5. Current logged in user object
-        if (typeof window !== 'undefined' && window.currentUser) {
-            const cId = (window.currentUser.userId || window.currentUser.id || '').toLowerCase().trim();
-            if (cId === cleanId && (window.currentUser.createdAt || window.currentUser.created_at)) {
-                return window.currentUser.createdAt || window.currentUser.created_at;
+        const curUser = (typeof window !== 'undefined') ? (window.__currentUser || window.currentUser) : null;
+        if (curUser) {
+            const cId = (curUser.userId || curUser.id || '').toLowerCase().trim();
+            if (cId === cleanId && (curUser.createdAt || curUser.created_at)) {
+                return curUser.createdAt || curUser.created_at;
             }
         }
 

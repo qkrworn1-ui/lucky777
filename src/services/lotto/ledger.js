@@ -278,6 +278,12 @@ export async function fetchAllUsersPurchases() {
 
         state.allUsersPurchasesMap = allUsersMap;
         state.allUsersMergedLedger = mergedLedger;
+
+        // Auto-refresh landing dashboard if loaded to ensure 100% synchronized live data
+        if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+            try { window.renderLandingDashboard(); } catch(dashErr) {}
+        }
+
         return { allUsersMap, mergedLedger };
     } catch(e) {
         console.error('[fetchAllUsersPurchases Error]', e);

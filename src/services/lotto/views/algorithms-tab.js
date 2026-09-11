@@ -326,6 +326,17 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
             if (isAll) {
                 // Aggregate across all active registered users for this round
                 let baseList = [];
+                if (!state.allRegisteredUsersList || !Array.isArray(state.allRegisteredUsersList) || state.allRegisteredUsersList.length === 0) {
+                    try {
+                        const raw = localStorage.getItem('lotto_all_users_list_cache');
+                        if (raw) {
+                            const parsed = JSON.parse(raw);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                state.allRegisteredUsersList = parsed;
+                            }
+                        }
+                    } catch(e) {}
+                }
                 if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList) && state.allRegisteredUsersList.length > 0) {
                     baseList = [...state.allRegisteredUsersList];
                 }
