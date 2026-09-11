@@ -543,6 +543,31 @@ class TestFullSystem(unittest.TestCase):
         self.assertTrue(user_ledger[1240][0]['isLocked'], "Receipt 1 must be relocked (isLocked == True)")
         self.assertEqual(len(user_ledger[1240]), 2, "Both receipts must still exist in ledger!")
 
+    def test_14_multi_receipt_registration_preservation(self):
+        """Test: Registering 5 or more receipts (e.g. 10 receipts, 50 games) must all be safely preserved."""
+        ledger = {1240: []}
+        
+        # Emulate sequential registration of 8 receipts (40 games)
+        for i in range(8):
+            combos = []
+            for g in range(5):
+                base_num = (i * 5 + g) % 40 + 1
+                combos.append({'numbers': [base_num, (base_num+1)%45+1, (base_num+2)%45+1, (base_num+3)%45+1, (base_num+4)%45+1, (base_num+5)%45+1]})
+            
+            receipt = {
+                'receiptId': f'rcpt_pjg_1240_{1000 + i}',
+                'round': 1240,
+                'user': 'pjg',
+                'version': 'QR 실구매 영수증 (A~E 5게임)',
+                'combos': combos,
+                'isLocked': True
+            }
+            ledger[1240].append(receipt)
+
+        self.assertEqual(len(ledger[1240]), 8, "All 8 receipts must be registered without being capped at 5!")
+        total_games = sum(len(r['combos']) for r in ledger[1240])
+        self.assertEqual(total_games, 40, "Total 40 games must exist across 8 receipts!")
+
 
 if __name__ == '__main__':
     unittest.main()

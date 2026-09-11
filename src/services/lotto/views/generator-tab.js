@@ -1442,7 +1442,9 @@ export function setupGeneratorTabEvents() {
             const useV4 = chkReportLogic ? chkReportLogic.checked : false;
             const versionStr = useV4 ? 'V4.0 행동경제학 알고리즘' : 'V3.0 하이브리드 알고리즘';
             
-            const currentCombos = state.fixedTop5Combinations || (useV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3) || [];
+            const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
+            const rawCombos = state.fixedTop5Combinations || (useV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3) || [];
+            const currentCombos = rawCombos.length > 0 ? rawCombos.slice(0, comboCount) : [];
             if (!currentCombos || currentCombos.length === 0) {
                 alert('구매 확정할 추천 번호 조합이 없습니다. 먼저 번호를 생성해주세요.');
                 return;

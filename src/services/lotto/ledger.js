@@ -428,16 +428,29 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
     const r = parseInt(round);
     if (isNaN(r) || r <= 0) return false;
 
-    const authId = (user || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'master').toLowerCase().trim();
+    const currentLoggedUser = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+    const authId = (user || currentLoggedUser || 'master').toLowerCase().trim();
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
 
     const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : localStorage;
+    
+    // 🔒 1. Retrieve current complete ledger safely (priority: globalLedger if authId matches, allUsersPurchasesMap, then LocalStorage)
     let ledger = {};
-    try {
-        const raw = storage.getItem(`lotto_actual_ledger_${authId}`);
-        if (raw) ledger = JSON.parse(raw);
-    } catch(e) {}
-    if (!ledger[r]) ledger[r] = [];
+    if (currentLoggedUser === authId && state.globalLedger && typeof state.globalLedger === 'object' && Object.keys(state.globalLedger).length > 0) {
+        ledger = JSON.parse(JSON.stringify(state.globalLedger));
+    } else if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[authId]?.ledger && Object.keys(state.allUsersPurchasesMap[authId].ledger).length > 0) {
+        ledger = JSON.parse(JSON.stringify(state.allUsersPurchasesMap[authId].ledger));
+    } else {
+        try {
+            const raw = storage.getItem(`lotto_actual_ledger_${authId}`);
+            if (raw) ledger = JSON.parse(raw);
+        } catch(e) {}
+    }
+
+    if (!ledger[r] || !Array.isArray(ledger[r])) {
+        ledger[r] = [];
+    }
+
     const cleanCombos = combos.map(c => ({
         numbers: getComboNumbers(c),
         meta: c.meta || {},
@@ -487,8 +500,10 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
         let vStr = versionStr;
         if (!vStr || vStr === 'auto') {
             vStr = 'QR 실구매 영수증 (A~E 5게임)';
-        } else if (!vStr.includes('5게임')) {
+        } else if (!vStr.includes('5게임') && chunkCombos.length === 5) {
             vStr = `${vStr} (5게임)`;
+        } else if (!vStr.includes('게임')) {
+            vStr = `${vStr} (${chunkCombos.length}게임)`;
         }
 
         let uName = (typeof getUserRealName === 'function' ? getUserRealName(authId) : '') || authId;
@@ -513,8 +528,9 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
             algoName = '실물 QR 영수증 / 커스텀 수동';
         }
 
+        const uniqueSuffix = `${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}`;
         const purchaseRecord = {
-            receiptId: `rcpt_${authId}_${r}_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 6)}`,
+            receiptId: `rcpt_${authId}_${r}_${uniqueSuffix}`,
             version: vStr,
             algoName: algoName,
             user: authId,
@@ -533,6 +549,9 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
         addedReceipts.push(purchaseRecord);
     }
     
+    // Deduplicate to preserve integrity while retaining all distinct receipts
+    ledger[r] = deduplicateReceipts(ledger[r]);
+
     const successMsg = `실구매 ${addedReceipts.length}장(${cleanCombos.length}게임) 자동 잠금 보관`;
     return await saveLedgerDirectly(ledger, authId, successMsg);
 }
