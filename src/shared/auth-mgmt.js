@@ -2074,6 +2074,16 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
     };
 
     window.setUserFilterTab = function(tab) {
+        let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
+        }
+        const isMaster = ((authId || '').toLowerCase().trim() === 'master');
+        if (tab === 'trash' && !isMaster) {
+            alert('🔒 회원 휴지통은 최고 관리자(Master) 전용 기능입니다.');
+            return;
+        }
+
         __currentUserFilterTab = tab || 'all';
         const pills = document.querySelectorAll('#userFilterPills .user-filter-pill');
         pills.forEach(p => {
@@ -2328,9 +2338,17 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                         <button type="button" onclick="window.sendUserUnsentWinningReports(decodeURIComponent('${safeUserId}'))" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" style="background:rgba(167, 139, 250, 0.15); border:1px solid rgba(167, 139, 250, 0.45); color:#c4b5fd; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
                             <i class="fa-solid fa-box-archive"></i> 미전송발송
                         </button>
-                        <button type="button" onclick="window.deleteUser(decodeURIComponent('${safeUserId}'))" title="계정을 휴지통으로 이동" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
-                            <i class="fa-solid fa-trash-can"></i> 삭제
-                        </button>
+                        ${(function() {
+                            let curAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+                            if (typeof curAuth === 'string' && curAuth.startsWith('{')) {
+                                try { curAuth = JSON.parse(curAuth).userid || curAuth; } catch(e) {}
+                            }
+                            return (curAuth || '').toLowerCase().trim() === 'master' ? `
+                            <button type="button" onclick="window.deleteUser(decodeURIComponent('${safeUserId}'))" title="계정을 휴지통으로 이동" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                                <i class="fa-solid fa-trash-can"></i> 삭제
+                            </button>
+                            ` : '';
+                        })()}
                     </div>
                 </div>
             </div>
@@ -2344,10 +2362,20 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
         const userListContainer = document.getElementById('userListContainer');
         const summaryBadge = document.getElementById('userCountSummaryBadge');
         const trashBadge = document.getElementById('userTrashCountBadge');
+        const btnFilterTrash = document.getElementById('btnFilterTrash');
         if (!window.db || !userListContainer) return;
 
-        const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+        let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
+        }
         const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
+        const isMaster = ((authId || '').toLowerCase().trim() === 'master');
+
+        if (btnFilterTrash) {
+            btnFilterTrash.style.display = isMaster ? 'inline-flex' : 'none';
+        }
+
         if (!isAdmin) {
             userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#ef4444;">🔒 관리자 권한이 필요합니다.</div>`;
             return;
@@ -2407,12 +2435,12 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             if (summaryBadge) {
                 const purchasedCount = activeUsers.filter(u => u.pStatus && u.pStatus.hasPurchased).length;
                 const kakaoCount = activeUsers.filter(u => u.userId.startsWith('kakao_') || (u.data.kakaoAuth && u.data.kakaoAuth.hasTalkMessageScope)).length;
-                const trashText = trashUsers.length > 0 ? ` · <span style="color:#fca5a5; font-weight:700;"><i class="fa-solid fa-trash-can"></i> 휴지통 ${trashUsers.length}</span>` : '';
+                const trashText = (isMaster && trashUsers.length > 0) ? ` · <span style="color:#fca5a5; font-weight:700;"><i class="fa-solid fa-trash-can"></i> 휴지통 ${trashUsers.length}</span>` : '';
                 summaryBadge.innerHTML = `총 <strong style="color:#fff;">${activeUsers.length}</strong>명 (실구매 ${purchasedCount} · 카카오 ${kakaoCount}${trashText})`;
             }
 
             if (trashBadge) {
-                trashBadge.textContent = trashUsers.length;
+                trashBadge.textContent = isMaster ? trashUsers.length : '0';
             }
 
             // Sync global state registered users list (only active users)
@@ -4634,6 +4662,15 @@ window.startBatchWinningSend = async function() {
 
     // 1. [1단계] 회원을 휴지통으로 이동 (Soft Delete)
     window.deleteUser = async function(userId) {
+        let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
+        }
+        if ((authId || '').toLowerCase().trim() !== 'master') {
+            alert('🔒 회원 삭제(휴지통 이동)는 최고 관리자(Master) 전용 권한입니다.');
+            return;
+        }
+
         if (userId === 'master' || userId === 'admin') {
             alert('최상위 마스터/관리자 계정은 삭제할 수 없습니다.');
             return;
@@ -4666,6 +4703,15 @@ window.startBatchWinningSend = async function() {
 
     // 2. [복구] 휴지통에 보관된 회원을 정상 활성 계정으로 복구 (Restore)
     window.restoreUserFromTrash = async function(userId) {
+        let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
+        }
+        if ((authId || '').toLowerCase().trim() !== 'master') {
+            alert('🔒 회원 복구는 최고 관리자(Master) 전용 권한입니다.');
+            return;
+        }
+
         if (!userId || !window.db) return;
         const confirmMsg = `♻️ [${userId}] 회원을 다시 활성 계정으로 복구하시겠습니까?\n\n` +
             `• 기존 권한, 비밀번호, 실구매 내역, 전자 서약 문서가 모두 그대로 유지되어 정상 로그인 및 이용이 가능해집니다.`;
@@ -4693,6 +4739,15 @@ window.startBatchWinningSend = async function() {
 
     // 3. [2단계] 휴지통 내 회원을 DB에서 완전히 영구 삭제 (Permanent Delete)
     window.permanentlyDeleteUser = async function(userId) {
+        let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
+        }
+        if ((authId || '').toLowerCase().trim() !== 'master') {
+            alert('🔒 회원 영구 삭제는 최고 관리자(Master) 전용 권한입니다.');
+            return;
+        }
+
         if (userId === 'master' || userId === 'admin') {
             alert('최상위 마스터/관리자 계정은 영구 삭제할 수 없습니다.');
             return;
@@ -4724,6 +4779,15 @@ window.startBatchWinningSend = async function() {
 
     // 4. [일괄] 휴지통 전체 비우기 (Empty Trash)
     window.emptyUserTrash = async function() {
+        let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
+        }
+        if ((authId || '').toLowerCase().trim() !== 'master') {
+            alert('🔒 회원 휴지통 전체 비우기는 최고 관리자(Master) 전용 권한입니다.');
+            return;
+        }
+
         if (!__cachedUsersWithStatus || !window.db) return;
         const trashUsers = __cachedUsersWithStatus.filter(u => u.isDeleted);
         if (trashUsers.length === 0) {

@@ -19,6 +19,7 @@ export async function renderConfirmedPurchasesList() {
         } catch (e) {}
     }
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
+    const isMaster = ((authId || '').toLowerCase().trim() === 'master');
 
     // If Admin, prefetch all users' purchases if not yet loaded OR if merged cache was invalidated (e.g. after save)
     if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger)) {
@@ -437,37 +438,37 @@ export async function renderConfirmedPurchasesList() {
             </span>
         </div>
 
-        <div style="margin-bottom: 15px; padding: 12px 16px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                <span style="color: #cbd5e1; font-size: 0.88rem; display: flex; align-items: center; gap: 6px;">
+        <div style="margin-bottom: 14px; padding: 10px 14px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <span style="color: #cbd5e1; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
                     <i class="fa-solid fa-user-shield" style="color: #818cf8;"></i> 
                     접속 계정: <strong style="color: #fff; font-weight: 700; background: rgba(99, 102, 241, 0.25); border: 1px solid rgba(99, 102, 241, 0.5); padding: 2px 8px; border-radius: 6px;">${authId}</strong>
                     ${isAdmin ? `<span style="font-size:0.72rem; color:#fbbf24; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; padding:1px 6px; border-radius:4px; font-weight:800;"><i class="fa-solid fa-crown"></i> 관리자</span>` : ''}
                 </span>
-                <span style="font-size: 0.78rem; color: #a78bfa; background: rgba(167, 139, 250, 0.12); border: 1px solid rgba(167, 139, 250, 0.25); padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
+                <span style="font-size: 0.75rem; color: #a78bfa; background: rgba(167, 139, 250, 0.12); border: 1px solid rgba(167, 139, 250, 0.25); padding: 2px 7px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;">
                     <i class="fa-solid fa-shield-halved"></i> ${(() => { const cur = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239); return cur; })()}회차~ 신규 원장 운용중
                 </span>
             </div>
-            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                ${isAdmin ? `
-                    <button id="btnOpenReceiptTrash" title="삭제된 영수증이 임시 보관된 휴지통을 열어 원상 복원하거나 영구 삭제합니다." style="padding: 5px 12px; font-size: 0.78rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.25)); border: 1.5px solid #ef4444; color: #fca5a5; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 800; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                ${isMaster ? `
+                    <button id="btnOpenReceiptTrash" title="삭제된 영수증이 임시 보관된 휴지통을 열어 원상 복원하거나 영구 삭제합니다." style="padding: 4px 10px; font-size: 0.76rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.25)); border: 1.5px solid #ef4444; color: #fca5a5; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 800; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);">
                         <i class="fa-solid fa-trash-arrow-up" style="color: #f87171;"></i> 🗑️ 영수증 휴지통 
-                        <span id="badgeReceiptTrashCount" style="background: #ef4444; color: #fff; font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 900;">${getReceiptTrashList().length}</span>
+                        <span id="badgeReceiptTrashCount" style="background: #ef4444; color: #fff; font-size: 0.68rem; padding: 1px 5px; border-radius: 10px; font-weight: 900;">${getReceiptTrashList().length}</span>
                     </button>
                 ` : ''}
-                <button id="btnExportLedgerBackup" title="현재 등록된 실구매 확정 내역 전체를 고유 텍스트 파일(.json)로 안전하게 다운로드 백업합니다." style="padding: 5px 11px; font-size: 0.78rem; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.45); color: #6ee7b7; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 700;">
-                    <i class="fa-solid fa-download"></i> 💾 텍스트 백업 (.json)
+                <button id="btnExportLedgerBackup" title="현재 등록된 실구매 확정 내역 전체를 고유 텍스트 파일(.json)로 안전하게 다운로드 백업합니다." style="padding: 4px 10px; font-size: 0.75rem; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.45); color: #6ee7b7; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 700;">
+                    <i class="fa-solid fa-download"></i> 💾 텍스트 백업
                 </button>
-                <button id="btnTriggerImportLedger" title="백업해 둔 JSON 텍스트 파일을 업로드하여 원본 실구매 내역을 무결 복원합니다." style="padding: 5px 11px; font-size: 0.78rem; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.45); color: #93c5fd; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 700;">
+                <button id="btnTriggerImportLedger" title="백업해 둔 JSON 텍스트 파일을 업로드하여 원본 실구매 내역을 무결 복원합니다." style="padding: 4px 10px; font-size: 0.75rem; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.45); color: #93c5fd; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 700;">
                     <i class="fa-solid fa-upload"></i> 📥 백업 복원
                 </button>
                 <input type="file" id="ledgerBackupFileInput" accept=".json" style="display: none;" />
-                ${isAdmin ? `
-                    <button id="btnClearEntireLedger" title="구매확정 내역 전체를 깨끗하게 비웁니다." style="padding: 5px 11px; font-size: 0.78rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 600;">
+                ${isMaster ? `
+                    <button id="btnClearEntireLedger" title="구매확정 내역 전체를 깨끗하게 비웁니다." style="padding: 4px 10px; font-size: 0.75rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600;">
                         <i class="fa-solid fa-broom"></i> 🧹 전체 초기화
                     </button>
                 ` : ''}
-                <span style="font-size: 0.8rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 4px;">총 ${rounds.length}개 회차</span>
+                <span style="font-size: 0.76rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px; white-space: nowrap;">총 ${rounds.length}개 회차</span>
             </div>
         </div>
     `;
@@ -603,28 +604,30 @@ export async function renderConfirmedPurchasesList() {
                         ${winCountSummary}
                         ${allPurchasesLocked ? '<span style="color: #fbbf24; font-size: 0.74rem; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 2px 8px; border-radius: 12px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-lock"></i> 전체 잠금됨</span>' : ''}
                     </div>
-                    <div class="confirmed-round-sub-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; width: 100%; margin-top: 2px;">
+                    <div class="confirmed-round-sub-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px 10px; width: 100%; margin-top: 3px;">
                         <div style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;">
                             ${summaryHTML}
                         </div>
                         <div class="confirmed-round-actions" style="display:inline-flex; align-items:center; flex-wrap: wrap; gap: 5px; flex-shrink: 0; margin-left: auto;" onclick="event.stopPropagation();">
-                            <button type="button" class="btn-toggle-all-round-combos" data-round="${round}" onclick="window.toggleRoundAllReceipts && window.toggleRoundAllReceipts(this, ${round})" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; height: 26px; box-sizing: border-box;">
+                            <button type="button" class="btn-toggle-all-round-combos" data-round="${round}" onclick="window.toggleRoundAllReceipts && window.toggleRoundAllReceipts(this, ${round})" style="padding: 3px 9px; font-size: 0.73rem; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; height: 26px; box-sizing: border-box;">
                                 <i class="fa-solid fa-layer-group"></i> <span class="toggle-all-text">전체 번호 펼치기</span>
                             </button>
                             ${isAdmin ? `
-                                ${round === 1238 && purchases.length > 3 ? `
+                                ${round === 1238 && purchases.length > 3 && isMaster ? `
                                     <button class="btn-clean-1238-ghosts" data-round="1238" title="1238회 실제 구매(#1~#3) 외 가상 영수증 일괄 정리" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; height: 26px; box-sizing: border-box;">
                                         <i class="fa-solid fa-broom"></i> #4~#${purchases.length} 정리
                                     </button>
                                 ` : ''}
-                                <button class="btn-delete-unlocked-round" data-round="${round}" title="잠금되지 않은 영수증 일괄 삭제" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; height: 26px; box-sizing: border-box;">
-                                    <i class="fa-solid fa-trash-can"></i> 미잠금 삭제
-                                </button>
+                                ${isMaster ? `
+                                    <button class="btn-delete-unlocked-round" data-round="${round}" title="잠금되지 않은 영수증 일괄 삭제" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; height: 26px; box-sizing: border-box;">
+                                        <i class="fa-solid fa-trash-can"></i> 미잠금 삭제
+                                    </button>
+                                ` : ''}
                                 <button class="btn-toggle-lock-round" data-round="${round}" style="padding: 3px 9px; font-size: 0.72rem; background: ${roundLockBtnBg}; border: 1px solid ${roundLockBtnBorder}; color: ${roundLockBtnColor}; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; height: 26px; box-sizing: border-box;">
                                     <i class="fa-solid ${roundLockIcon}"></i> ${roundLockText}
                                 </button>
                             ` : ''}
-                            <span style="font-size: 0.76rem; color: var(--text-secondary); white-space: nowrap;">총 ${purchases.reduce((acc, p) => acc + p.combos.length, 0)}조합</span>
+                            <span style="font-size: 0.76rem; color: var(--text-secondary); background: rgba(255,255,255,0.05); padding: 2px 7px; border-radius: 4px; white-space: nowrap;">총 ${purchases.reduce((acc, p) => acc + p.combos.length, 0)}조합</span>
                         </div>
                     </div>
                 </div>
@@ -918,29 +921,27 @@ export async function renderConfirmedPurchasesList() {
                     </div>
 
                     <!-- 2. Pass Mid Control Bar -->
-                    <div class="confirmed-receipt-control-bar" style="padding: 6px 12px; background: rgba(15, 23, 42, 0.65); border-bottom: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <div class="confirmed-receipt-control-bar" style="padding: 6px 12px; background: rgba(15, 23, 42, 0.65); border-bottom: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <div style="font-size: 0.74rem; font-weight: 700; color: #cbd5e1; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0;">
                             <i class="fa-solid fa-list-check" style="color: #60a5fa; font-size: 0.72rem;"></i>
                             <span>${purchase.combos.length}개 게임 번호</span>
                         </div>
-                        <div class="confirmed-receipt-actions" style="display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; flex-shrink: 0; margin-left: auto;">
-                            <button type="button" class="btn-toggle-receipt-combos" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this)" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.45); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 800; transition: all 0.2s; white-space: nowrap; height: 26px; box-sizing: border-box;">
+                        <div class="confirmed-receipt-actions" style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap; flex-shrink: 0; margin-left: auto;">
+                            <button type="button" class="btn-toggle-receipt-combos" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this)" style="padding: 3px 9px; font-size: 0.73rem; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.45); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 800; transition: all 0.2s; white-space: nowrap; height: 26px; box-sizing: border-box;">
                                 <i class="fa-solid fa-list-ol"></i>
                                 <span class="toggle-combos-text">번호 펼치기</span>
                                 <i class="fa-solid fa-chevron-down toggle-combos-icon" style="transition: transform 0.2s; font-size: 0.62rem;"></i>
                             </button>
                             ${isAdmin ? `
-                                <button class="btn-toggle-lock-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="padding: 3px 7px; font-size: 0.72rem; background: ${lockBtnBg}; border: 1px solid ${lockBtnBorder}; color: ${lockBtnColor}; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px; font-weight: 700; white-space: nowrap; height: 26px; box-sizing: border-box;">
+                                <button class="btn-toggle-lock-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="padding: 3px 8px; font-size: 0.72rem; background: ${lockBtnBg}; border: 1px solid ${lockBtnBorder}; color: ${lockBtnColor}; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px; font-weight: 700; white-space: nowrap; height: 26px; box-sizing: border-box;">
                                     <i class="fa-solid ${lockIcon}"></i> ${lockBtnText}
                                 </button>
-                                <button class="btn-delete-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="padding: 3px 7px; font-size: 0.72rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'}; color: ${isLocked ? '#64748b' : '#fca5a5'}; border-radius: 6px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: inline-flex; align-items: center; justify-content: center; gap: 3px; font-weight: 700; white-space: nowrap; height: 26px; box-sizing: border-box;">
-                                    <i class="fa-solid fa-trash-can"></i> 삭제
-                                </button>
-                            ` : `
-                                <span style="color: #34d399; font-size: 0.7rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); padding: 2px 6px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 3px; white-space: nowrap; height: 24px;">
-                                    <i class="fa-solid fa-shield-halved"></i> 영구보관
-                                </span>
-                            `}
+                                ${isMaster ? `
+                                    <button class="btn-delete-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="padding: 3px 8px; font-size: 0.72rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'}; color: ${isLocked ? '#64748b' : '#fca5a5'}; border-radius: 6px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: inline-flex; align-items: center; justify-content: center; gap: 3px; font-weight: 700; white-space: nowrap; height: 26px; box-sizing: border-box;">
+                                        <i class="fa-solid fa-trash-can"></i> 삭제
+                                    </button>
+                                ` : ''}
+                            ` : ''}
                         </div>
                     </div>
 
@@ -1036,6 +1037,14 @@ export async function renderConfirmedPurchasesList() {
             btnTrash.onclick = (e) => {
                 e.stopPropagation();
                 e.preventDefault();
+                let currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
+                if (typeof currentAuthId === 'string' && currentAuthId.startsWith('{')) {
+                    try { const parsed = JSON.parse(currentAuthId); currentAuthId = parsed.userid || parsed.userId || currentAuthId; } catch(e) {}
+                }
+                if ((currentAuthId || '').toLowerCase().trim() !== 'master') {
+                    showToast('🔒 영수증 휴지통은 최고 관리자(Master) 전용 기능입니다.');
+                    return;
+                }
                 openReceiptTrashModal();
             };
         }
@@ -1045,6 +1054,14 @@ export async function renderConfirmedPurchasesList() {
             btnClear.onclick = async (e) => {
                 e.stopPropagation();
                 e.preventDefault();
+                let currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
+                if (typeof currentAuthId === 'string' && currentAuthId.startsWith('{')) {
+                    try { const parsed = JSON.parse(currentAuthId); currentAuthId = parsed.userid || parsed.userId || currentAuthId; } catch(e) {}
+                }
+                if ((currentAuthId || '').toLowerCase().trim() !== 'master') {
+                    showToast('🔒 구매확정 전체 초기화는 최고 관리자(Master) 전용 기능입니다.');
+                    return;
+                }
                 if (confirm('⚠️ 정말로 기존의 모든 구매확정 영수증을 완전히 삭제하시겠습니까?\n(1239회차부터 새롭게 시작하실 수 있습니다.)')) {
                     await clearEntireLedger();
                 }
@@ -1074,9 +1091,16 @@ export async function renderConfirmedPurchasesList() {
             e.stopPropagation();
             e.preventDefault();
 
-            const currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
-            if (currentAuthId !== 'master' && currentAuthId !== 'admin') {
-                showToast('🔒 영수증 일괄 삭제는 관리자(Master) 전용 기능입니다.');
+            let currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
+            if (typeof currentAuthId === 'string' && currentAuthId.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(currentAuthId);
+                    currentAuthId = parsed.userid || parsed.userId || currentAuthId;
+                } catch (e) {}
+            }
+            currentAuthId = (currentAuthId || '').toLowerCase().trim();
+            if (currentAuthId !== 'master') {
+                showToast('🔒 영수증 일괄 삭제는 최고 관리자(Master) 전용 기능입니다.');
                 return;
             }
 
@@ -1171,7 +1195,16 @@ export async function renderConfirmedPurchasesList() {
         btn.addEventListener('click', async (e) => {
             e.stopPropagation(); // prevent accordion toggle
 
-            const currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '').toLowerCase().trim();
+            let currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '');
+            if (typeof currentAuthId === 'string' && currentAuthId.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(currentAuthId);
+                    currentAuthId = parsed.userid || parsed.userId || currentAuthId;
+                } catch (e) {}
+            }
+            currentAuthId = (currentAuthId || '').toLowerCase().trim();
+            const isMaster = (currentAuthId === 'master');
+
             const round = parseInt(btn.dataset.round);
             const pIdx = parseInt(btn.dataset.pidx);
             
@@ -1184,9 +1217,8 @@ export async function renderConfirmedPurchasesList() {
                 }
 
                 const purchaseUser = (purchase.user || purchase.userId || currentAuthId).toLowerCase().trim();
-                const isAdmin = (currentAuthId === 'master' || currentAuthId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(currentAuthId)));
 
-                if (!isAdmin) {
+                if (!isMaster) {
                     showToast('🔒 영수증 삭제 및 관리는 최고 관리자(Master) 전용 기능입니다.');
                     return;
                 }
@@ -1534,6 +1566,15 @@ export async function changeConfirmedAdminUser(userId) {
 // 🗑️ 영수증 휴지통(Recycle Bin) 관리 모달
 // --------------------------------------------------------------------------
 export async function openReceiptTrashModal() {
+    let currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
+    if (typeof currentAuthId === 'string' && currentAuthId.startsWith('{')) {
+        try { const parsed = JSON.parse(currentAuthId); currentAuthId = parsed.userid || parsed.userId || currentAuthId; } catch(e) {}
+    }
+    if ((currentAuthId || '').toLowerCase().trim() !== 'master') {
+        showToast('🔒 영수증 휴지통은 최고 관리자(Master) 전용 기능입니다.');
+        return;
+    }
+
     let modal = document.getElementById('modalReceiptTrash');
     if (!modal) {
         modal = document.createElement('div');
@@ -1688,11 +1729,19 @@ export function renderReceiptTrashModalContent() {
     // Bind item restore listeners
     body.querySelectorAll('.btn-restore-single-trash').forEach(btn => {
         btn.onclick = async () => {
+            let currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
+            if (typeof currentAuthId === 'string' && currentAuthId.startsWith('{')) {
+                try { const parsed = JSON.parse(currentAuthId); currentAuthId = parsed.userid || parsed.userId || currentAuthId; } catch(e) {}
+            }
+            if ((currentAuthId || '').toLowerCase().trim() !== 'master') {
+                showToast('🔒 영수증 복원은 최고 관리자(Master) 전용 기능입니다.');
+                return;
+            }
+
             const trashId = btn.dataset.trashId;
             btn.disabled = true;
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 복원중...`;
             
-            const currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'master';
             await restoreFromReceiptTrash(trashId, currentAuthId);
 
             renderReceiptTrashModalContent();
@@ -1706,6 +1755,15 @@ export function renderReceiptTrashModalContent() {
     // Bind item permanent delete listeners
     body.querySelectorAll('.btn-delete-single-trash').forEach(btn => {
         btn.onclick = async () => {
+            let currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
+            if (typeof currentAuthId === 'string' && currentAuthId.startsWith('{')) {
+                try { const parsed = JSON.parse(currentAuthId); currentAuthId = parsed.userid || parsed.userId || currentAuthId; } catch(e) {}
+            }
+            if ((currentAuthId || '').toLowerCase().trim() !== 'master') {
+                showToast('🔒 영수증 영구 삭제는 최고 관리자(Master) 전용 기능입니다.');
+                return;
+            }
+
             const trashId = btn.dataset.trashId;
             if (confirm('💥 정말로 이 영수증을 완전히 영구 삭제하시겠습니까?\n\n이 작업은 복원할 수 없습니다.')) {
                 btn.disabled = true;
@@ -1722,6 +1780,15 @@ export function renderReceiptTrashModalContent() {
     const btnEmptyTrash = document.getElementById('btnEmptyEntireTrashModal');
     if (btnEmptyTrash) {
         btnEmptyTrash.onclick = async () => {
+            let currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
+            if (typeof currentAuthId === 'string' && currentAuthId.startsWith('{')) {
+                try { const parsed = JSON.parse(currentAuthId); currentAuthId = parsed.userid || parsed.userId || currentAuthId; } catch(e) {}
+            }
+            if ((currentAuthId || '').toLowerCase().trim() !== 'master') {
+                showToast('🔒 휴지통 비우기는 최고 관리자(Master) 전용 기능입니다.');
+                return;
+            }
+
             if (confirm('🧹 휴지통의 모든 영수증을 영구히 삭제하시겠습니까?\n\n휴지통이 완전히 비워지며 복원할 수 없습니다.')) {
                 btnEmptyTrash.disabled = true;
                 btnEmptyTrash.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 비우는중...`;

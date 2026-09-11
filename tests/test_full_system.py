@@ -658,6 +658,43 @@ class TestFullSystem(unittest.TestCase):
         self.assertTrue(can_open_user_management('pjg', True), "Admin pjg must be allowed")
         self.assertTrue(can_open_user_management('master', False), "master must be allowed")
 
+    def test_17_master_exclusive_receipt_deletion_permission(self):
+        """Test: Only master account is permitted to see and execute receipt deletion, trash modal, entire ledger reset, and user trash management."""
+        def can_delete_receipt(user_id):
+            clean = (user_id or '').strip().lower()
+            return clean == 'master'
+
+        def can_delete_unlocked_round(user_id):
+            clean = (user_id or '').strip().lower()
+            return clean == 'master'
+
+        def can_open_receipt_trash(user_id):
+            clean = (user_id or '').strip().lower()
+            return clean == 'master'
+
+        def can_clear_entire_ledger(user_id):
+            clean = (user_id or '').strip().lower()
+            return clean == 'master'
+
+        def can_manage_user_trash(user_id):
+            clean = (user_id or '').strip().lower()
+            return clean == 'master'
+
+        # Master must have full delete & trash permissions
+        self.assertTrue(can_delete_receipt('master'), "Master must be allowed to delete receipts")
+        self.assertTrue(can_delete_unlocked_round('master'), "Master must be allowed to batch delete unlocked round")
+        self.assertTrue(can_open_receipt_trash('master'), "Master must be allowed to open receipt trash")
+        self.assertTrue(can_clear_entire_ledger('master'), "Master must be allowed to clear entire ledger")
+        self.assertTrue(can_manage_user_trash('master'), "Master must be allowed to manage user trash")
+
+        # Non-master admin (e.g. admin, pjg) must NOT have delete / trash permissions
+        for non_master in ('admin', 'pjg', 'manager', 'user_a', 'guest'):
+            self.assertFalse(can_delete_receipt(non_master), f"{non_master} must NOT be allowed to delete receipts")
+            self.assertFalse(can_delete_unlocked_round(non_master), f"{non_master} must NOT be allowed to batch delete unlocked round")
+            self.assertFalse(can_open_receipt_trash(non_master), f"{non_master} must NOT be allowed to open receipt trash")
+            self.assertFalse(can_clear_entire_ledger(non_master), f"{non_master} must NOT be allowed to clear entire ledger")
+            self.assertFalse(can_manage_user_trash(non_master), f"{non_master} must NOT be allowed to manage user trash")
+
 
 if __name__ == '__main__':
     unittest.main()
