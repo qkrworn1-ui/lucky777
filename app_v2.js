@@ -1,7 +1,9 @@
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v736 - BUILD_DATE: 2026-09-11] */
+
 try {
 
 /**
- * Lucky777 Smart Bundle (v734)
+ * Lucky777 Smart Bundle (v736)
  */
 
 

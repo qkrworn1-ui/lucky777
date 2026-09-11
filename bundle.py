@@ -24,8 +24,8 @@ def sync_version_assets(auto_bump=True):
         vdata = json.load(f)
     old_version = vdata.get('version', 'v716').strip()
     
+    now_iso = datetime.datetime.now().isoformat()
     if auto_bump and '--no-bump' not in sys.argv:
-        # Extract numeric part and bump +1
         match = re.search(r'(\d+)', old_version)
         if match:
             v_int = int(match.group(1)) + 1
@@ -34,11 +34,15 @@ def sync_version_assets(auto_bump=True):
             version = old_version
         vdata['version'] = version
         vdata['buildDate'] = datetime.date.today().isoformat()
+        vdata['buildTimestamp'] = now_iso
         with open('version.json', 'w', encoding='utf-8') as f:
             json.dump(vdata, f, indent=2, ensure_ascii=False)
         print(f"[*] [AUTO-BUMP] Version incremented: {old_version} -> {version}")
     else:
         version = old_version
+        vdata['buildTimestamp'] = now_iso
+        with open('version.json', 'w', encoding='utf-8') as f:
+            json.dump(vdata, f, indent=2, ensure_ascii=False)
 
     v_num = version.lstrip('v')
     print(f"[*] [SYNC] Synchronizing Version: {version} (v_num: {v_num})...")
@@ -67,7 +71,7 @@ def sync_version_assets(auto_bump=True):
             html
         )
         html = re.sub(r'window\.APP_VERSION\s*=\s*[\'"][^\'"]+[\'"];', f"window.APP_VERSION = '{version}';", html)
-        html = re.sub(r'var\s+vStr\s*=\s*window\.APP_VERSION\s*\|\|\s*[\'"][^\'"]+[\'"];', f"var vStr = window.APP_VERSION || '{version}';", html)
+        html = re.sub(r'var\s+vStr\s*=\s*window\.LATEST_SERVER_VERSION\s*\|\|\s*window\.APP_VERSION\s*\|\|\s*[\'"][^\'"]+[\'"];', f"var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || '{version}';", html)
         html = re.sub(r'var\s+v\s*=\s*ver\s*\|\|\s*window\.APP_VERSION\s*\|\|\s*[\'"][^\'"]+[\'"];', f"var v = ver || window.APP_VERSION || '{version}';", html)
         with open('index.html', 'w', encoding='utf-8') as f:
             f.write(html)
@@ -84,7 +88,42 @@ def sync_version_assets(auto_bump=True):
     return version
 
 
-# File order based on dependency graph
+def verify_version_crosscheck(expected_version):
+    print(f"[*] [CROSS-CHECK] Verifying build integrity for version {expected_version}...")
+    v_num = expected_version.lstrip('v')
+    
+    # 1. version.json
+    with open('version.json', 'r', encoding='utf-8') as f:
+        vdata = json.load(f)
+    if vdata.get('version') != expected_version:
+        raise ValueError(f"version.json mismatch: expected {expected_version}, found {vdata.get('version')}")
+    
+    # 2. index.html
+    with open('index.html', 'r', encoding='utf-8') as f:
+        html = f.read()
+    if f"window.APP_VERSION = '{expected_version}';" not in html:
+        raise ValueError(f"index.html window.APP_VERSION mismatch for {expected_version}")
+    if f"styles.css?v={v_num}" not in html:
+        raise ValueError(f"index.html styles.css?v={v_num} query mismatch")
+    if f"app_v2.js?v={v_num}" not in html:
+        raise ValueError(f"index.html app_v2.js?v={v_num} query mismatch")
+    if f"sw.js?v={v_num}" not in html:
+        raise ValueError(f"index.html sw.js?v={v_num} query mismatch")
+    
+    # 3. sw.js
+    with open('sw.js', 'r', encoding='utf-8') as f:
+        sw = f.read()
+    if f"lucky777-pwa-{expected_version}" not in sw:
+        raise ValueError(f"sw.js CACHE_NAME mismatch for {expected_version}")
+    
+    # 4. app_v2.js
+    with open('app_v2.js', 'r', encoding='utf-8') as f:
+        app_js = f.read()
+    if f"BUILD_VERSION: {expected_version}" not in app_js:
+        raise ValueError(f"app_v2.js bundle header version mismatch for {expected_version}")
+    
+    print(f"[+] [PASS] Cross-check verified across all 4 build targets (version.json, index.html, sw.js, app_v2.js)!")
+
 FILES_TO_BUNDLE = [
     "src/shared/utils.js",
     "src/shared/crypto-utils.js",
@@ -215,6 +254,8 @@ def clean_and_bundle():
             
     # Wrap entire application execution in a try-catch to expose any hidden top-level errors
     final_output = []
+    build_date = datetime.date.today().isoformat()
+    final_output.append(f"/* [LUCKY777 APP BUNDLE - BUILD_VERSION: {version} - BUILD_DATE: {build_date}] */\n")
     final_output.append("try {\n")
     final_output.extend(bundled_content)
     final_output.append("\n} catch (FATAL_INIT_ERR) {")
@@ -223,6 +264,7 @@ def clean_and_bundle():
 
     with open("app_v2.js", "w", encoding="utf-8") as out:
         out.write("\n".join(final_output))
+    verify_version_crosscheck(version)
     print("[*] Done!")
 
 if __name__ == "__main__":

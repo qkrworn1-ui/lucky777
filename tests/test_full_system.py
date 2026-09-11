@@ -695,9 +695,47 @@ class TestFullSystem(unittest.TestCase):
             self.assertFalse(can_clear_entire_ledger(non_master), f"{non_master} must NOT be allowed to clear entire ledger")
             self.assertFalse(can_manage_user_trash(non_master), f"{non_master} must NOT be allowed to manage user trash")
 
+    def test_18_build_version_crosscheck_and_update_detection(self):
+        """Test: Cross-check version parsing, update detection algorithm, and build asset integrity."""
+        def parse_version_num(v_str):
+            if not v_str:
+                return 0
+            m = re.search(r'(\d+)', str(v_str))
+            return int(m.group(1)) if m else 0
+
+        def check_has_update(current_v, server_v):
+            return parse_version_num(server_v) > parse_version_num(current_v)
+
+        # 1. Version Comparison Logic
+        self.assertTrue(check_has_update('v734', 'v735'), "v735 must trigger update over v734")
+        self.assertTrue(check_has_update('v734', 'v800'), "v800 must trigger update over v734")
+        self.assertFalse(check_has_update('v735', 'v735'), "Same version must NOT trigger update")
+        self.assertFalse(check_has_update('v736', 'v735'), "Higher local version must NOT trigger update")
+
+        # 2. Build Assets Cross-Check
+        version_file = os.path.join(self.root_dir, 'version.json')
+        with open(version_file, 'r', encoding='utf-8') as f:
+            vdata = json.load(f)
+        current_version = vdata.get('version')
+        v_num = current_version.lstrip('v')
+
+        index_file = os.path.join(self.root_dir, 'index.html')
+        with open(index_file, 'r', encoding='utf-8') as f:
+            index_html = f.read()
+        self.assertIn(f"window.APP_VERSION = '{current_version}'", index_html)
+        self.assertIn(f"styles.css?v={v_num}", index_html)
+        self.assertIn(f"app_v2.js?v={v_num}", index_html)
+        self.assertIn(f"sw.js?v={v_num}", index_html)
+
+        sw_file = os.path.join(self.root_dir, 'sw.js')
+        with open(sw_file, 'r', encoding='utf-8') as f:
+            sw_js = f.read()
+        self.assertIn(f"lucky777-pwa-{current_version}", sw_js)
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
