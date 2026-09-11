@@ -1148,7 +1148,7 @@ export function exportImmutableUnifiedArchive(targetUserId = null) {
         URL.revokeObjectURL(url);
 
         if (typeof showToast === 'function') {
-            showToast('💾 복기리스트 및 구매영수증 통합 무결성 아카이브(.json)가 저장되었습니다.');
+            showToast('💾 추천당첨목록 및 구매영수증 통합 무결성 아카이브(.json)가 저장되었습니다.');
         }
     } catch(err) {
         console.error('Error exporting archive:', err);
@@ -1250,7 +1250,7 @@ export async function importImmutableUnifiedArchive(file) {
         const currentLedger = getLedger();
         const mergedLedger = { ...currentLedger, ...cleanLedger };
 
-        await saveLedgerDirectly(mergedLedger, null, '✅ 복기리스트 및 실구매 영수증이 서버와 로컬에 100% 무결점으로 완벽 복원되었습니다!');
+        await saveLedgerDirectly(mergedLedger, null, '✅ 추천당첨목록 및 실구매 영수증이 서버와 로컬에 100% 무결점으로 완벽 복원되었습니다!');
 
         if (typeof window.renderConfirmedPurchasesList === 'function') {
             window.renderConfirmedPurchasesList();

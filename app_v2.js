@@ -1,7 +1,7 @@
 try {
 
 /**
- * Lucky777 Smart Bundle (v718)
+ * Lucky777 Smart Bundle (v719)
  */
 
 
@@ -7521,7 +7521,7 @@ function exportImmutableUnifiedArchive(targetUserId = null) {
         URL.revokeObjectURL(url);
 
         if (typeof showToast === 'function') {
-            showToast('💾 복기리스트 및 구매영수증 통합 무결성 아카이브(.json)가 저장되었습니다.');
+            showToast('💾 추천당첨목록 및 구매영수증 통합 무결성 아카이브(.json)가 저장되었습니다.');
         }
     } catch(err) {
         console.error('Error exporting archive:', err);
@@ -7623,7 +7623,7 @@ async function importImmutableUnifiedArchive(file) {
         const currentLedger = getLedger();
         const mergedLedger = { ...currentLedger, ...cleanLedger };
 
-        await saveLedgerDirectly(mergedLedger, null, '✅ 복기리스트 및 실구매 영수증이 서버와 로컬에 100% 무결점으로 완벽 복원되었습니다!');
+        await saveLedgerDirectly(mergedLedger, null, '✅ 추천당첨목록 및 실구매 영수증이 서버와 로컬에 100% 무결점으로 완벽 복원되었습니다!');
 
         if (typeof window.renderConfirmedPurchasesList === 'function') {
             window.renderConfirmedPurchasesList();
@@ -10876,7 +10876,7 @@ function render7AlgorithmsRealReviewSection() {
 
                 <button type="button" onclick="window.toggleAlgoRealReviewAccordion && window.toggleAlgoRealReviewAccordion('${algo.id}')" style="width: 100%; padding: 6px 8px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12); background: rgba(30,41,59,0.8); color: ${algo.color}; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
-                    <span>${isExpanded ? '회차별 복기 닫기' : `회차별 복기 상세 (${algo.totalWins}회 적중)`}</span>
+                    <span>${isExpanded ? '회차별 결과 닫기' : `회차별 당첨 상세 (${algo.totalWins}회 적중)`}</span>
                 </button>
 
                 <div id="algo-review-detail-${algo.id}" style="display: ${isExpanded ? 'block' : 'none'}; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 6px; max-height: 350px; overflow-y: auto;">
@@ -10892,7 +10892,7 @@ function render7AlgorithmsRealReviewSection() {
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; cursor: pointer;" onclick="window.toggleAlgoReviewMainCollapse && window.toggleAlgoReviewMainCollapse()">
                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                     <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; padding: 2px 6px; border-radius: 6px; font-size: 0.7rem; font-weight: 900;">
-                        <i class="fa-solid fa-trophy"></i> 7대 알고리즘 실데이터 복기
+                        <i class="fa-solid fa-trophy"></i> 7대 알고리즘 실데이터 당첨 결과
                     </span>
                     <span style="font-size: 0.78rem; font-weight: 700; color: #f8fafc;">
                         제 ${fromRound}~${maxRound}회 (${totalRoundsCount}회차 누적)
@@ -12399,6 +12399,9 @@ function handleClearExtraPacks() {
  */
 function changeGeneratorAdminViewingUser(userId) {
     generatorAdminViewingUser = userId;
+    if (typeof window !== 'undefined') {
+        window.generatorAdminViewingUser = userId;
+    }
     const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
     
     // Recalculate deterministic recommendations for selected user
@@ -12408,6 +12411,13 @@ function changeGeneratorAdminViewingUser(userId) {
     renderTop5Combinations();
     renderExtraAddonPacksSection();
     render7AlgorithmsRealReviewSection();
+    // If Quick View (간편보기) modal is currently open, dynamically refresh its content
+    if (typeof window !== 'undefined' && typeof window.renderQuickViewContent === 'function') {
+        const compactModal = document.getElementById('compactViewModal');
+        if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+            window.renderQuickViewContent();
+        }
+    }
     showToast(`👑 [${userId}] 회원의 추천 번호 및 추가팩으로 즉시 전환되었습니다.`);
 }
 
@@ -13304,7 +13314,7 @@ async function renderReviewTab() {
                 const uId = (u.id || '').trim().toLowerCase();
                 return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'pjg' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
             });
-            let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 복기</option>`;
+            let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 당첨 결과 종합</option>`;
             userOptionsHtml += `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
 
             registeredUsers.forEach(u => {
@@ -13336,7 +13346,7 @@ async function renderReviewTab() {
 }
 
 /**
- * 🔄 복기 리포트 회차 드롭다운 옵션 동적 갱신
+ * 🔄 추천번호 당첨 결과 회차 드롭다운 옵션 동적 갱신
  * - 최상단에 가입회차~최신회차 [전체 회차 조회] 옵션 기본 제공
  * - 관리자(master/admin)가 'all'(전체 종합) 또는 본인 계정을 조회할 때는 1235회차부터 전체 노출
  * - 특정 회원을 조회하거나 일반 회원인 경우 가입 회차(joinRound)부터 노출
@@ -13427,7 +13437,7 @@ function selectSpecificReviewRound(roundNum) {
 }
 
 /**
- * 📊 1235회차부터 최신회차까지 전회차 누적 복기 리포트 렌더링
+ * 📊 1235회차부터 최신회차까지 전회차 누적 추천 당첨 결과 렌더링
  */
 function renderAllRoundsReviewDetail() {
     const reviewMatchingContainer = document.getElementById('reviewMatchingContainer');
@@ -13800,7 +13810,7 @@ function renderAllRoundsReviewDetail() {
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; white-space: nowrap;">
-                        <i class="fa-solid fa-chart-pie"></i> ${minTargetRound}회 ~ ${latestDrawnRound}회 전회차 누적 복기 리포트
+                        <i class="fa-solid fa-chart-pie"></i> ${minTargetRound}회 ~ ${latestDrawnRound}회 전회차 누적 추천 당첨 결과
                     </span>
                     <span style="font-size: 0.78rem; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px; border-radius: 12px; font-weight: 700;">
                         총 ${validRounds.length}개 회차 전수 집계
@@ -13813,7 +13823,7 @@ function renderAllRoundsReviewDetail() {
             </div>
             <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
                 <i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 4px;"></i>
-                <strong>안내:</strong> ${minTargetRound}회부터 최근 회차(${latestDrawnRound}회)까지 각 회차별 확정 추천번호(70게임)와 동행복권 공식 추첨번호를 1:1 전수 대조하여 누적 적중 및 당첨 성과를 종합 분석한 리포트입니다. 특정 회차를 상세 복기하시려면 표의 <strong>[상세 복기]</strong> 버튼이나 상단 회차 선택기를 이용하세요.
+                <strong>안내:</strong> ${minTargetRound}회부터 최근 회차(${latestDrawnRound}회)까지 각 회차별 확정 추천번호(70게임)와 동행복권 공식 추첨번호를 1:1 전수 대조하여 누적 적중 및 당첨 성과를 종합 분석한 리포트입니다. 특정 회차의 상세 당첨 결과를 확인하시려면 표의 <strong>[상세 결과]</strong> 버튼이나 상단 회차 선택기를 이용하세요.
             </div>
         </div>
     `;
@@ -13824,7 +13834,7 @@ function renderAllRoundsReviewDetail() {
             <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 10px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.82rem; padding: 3px 8px; border-radius: 6px; font-weight: 800;">
-                        <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 전회차 누적 복기 중
+                        <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 전회차 누적 결과 조회 중
                     </span>
                     <span style="font-size: 0.78rem; color: #cbd5e1;">
                         (총 <strong>${dispHits[1] + dispHits[2] + dispHits[3] + dispHits[4] + dispHits[5]}게임</strong> 적중 · 누적 당첨금 <strong style="color: #34d399;">+${dispPrize.toLocaleString()}원</strong>)
@@ -14038,7 +14048,7 @@ function renderAllRoundsReviewDetail() {
                     </td>
                     <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
                         <button type="button" onclick="window.selectSpecificReviewRound && window.selectSpecificReviewRound(${rItem.roundNum})" style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-magnifying-glass"></i> ${rItem.roundNum}회 복기
+                            <i class="fa-solid fa-magnifying-glass"></i> ${rItem.roundNum}회 결과 보기
                         </button>
                     </td>
                 </tr>
@@ -14074,7 +14084,7 @@ function renderAllRoundsReviewDetail() {
                                 <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
                                 <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
                                 <th style="padding: 8px 10px; text-align: right;">수익률</th>
-                                <th style="padding: 8px 10px; text-align: center;">상세 복기</th>
+                                <th style="padding: 8px 10px; text-align: center;">상세 결과</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -14143,7 +14153,7 @@ function renderAllRoundsReviewDetail() {
                     </td>
                     <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
                         <button type="button" onclick="window.changeReviewAdminUser && window.changeReviewAdminUser('${m.userId}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-magnifying-glass"></i> 회원 전회차 복기
+                            <i class="fa-solid fa-magnifying-glass"></i> 회원 전회차 결과
                         </button>
                     </td>
                 </tr>
@@ -14179,7 +14189,7 @@ function renderAllRoundsReviewDetail() {
                                 <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
                                 <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
                                 <th style="padding: 8px 10px; text-align: right;">수익률</th>
-                                <th style="padding: 8px 10px; text-align: center;">개별 복기</th>
+                                <th style="padding: 8px 10px; text-align: center;">개별 결과</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -14245,7 +14255,7 @@ function renderAllRoundsReviewDetail() {
                     </td>
                     <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
                         <button type="button" onclick="window.selectSpecificReviewRound && window.selectSpecificReviewRound(${uItem.roundNum})" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-magnifying-glass"></i> ${uItem.roundNum}회 70게임 복기
+                            <i class="fa-solid fa-magnifying-glass"></i> ${uItem.roundNum}회 70게임 결과
                         </button>
                     </td>
                 </tr>
@@ -14281,7 +14291,7 @@ function renderAllRoundsReviewDetail() {
                                 <th style="padding: 8px 10px; text-align: center; color: #38bdf8;">총적중</th>
                                 <th style="padding: 8px 10px; text-align: right; color: #34d399;">당첨금</th>
                                 <th style="padding: 8px 10px; text-align: right;">수익률</th>
-                                <th style="padding: 8px 10px; text-align: center;">상세 복기</th>
+                                <th style="padding: 8px 10px; text-align: center;">상세 결과</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -14621,7 +14631,7 @@ function renderReviewDetail(r) {
                         <span style="font-size: 0.78rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
                             ${actualDraw.date || actualDraw.drwNoDate || '추첨 완료'}
                         </span>
-                        ${isAdmin ? (isAllUsers ? `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">🌐 전체 회원 AI 추천번호 종합 복기 모드</span>` : `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">👤 [${effectiveUserId}] 회원 추천번호 복기</span>`) : `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;"><i class="fa-solid fa-user-check"></i> 나의 맞춤 추천번호 복기</span>`}
+                        ${isAdmin ? (isAllUsers ? `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">🌐 전체 회원 AI 추천번호 당첨 결과 종합 모드</span>` : `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">👤 [${effectiveUserId}] 회원 추천 당첨 결과</span>`) : `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;"><i class="fa-solid fa-user-check"></i> 나의 맞춤 추천 당첨 결과</span>`}
                     </div>
                     ${prize1Str ? `
                         <div style="font-size: 0.85rem; color: #cbd5e1; white-space: nowrap;">
@@ -14643,7 +14653,7 @@ function renderReviewDetail(r) {
                 <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 7px 12px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
                     <span style="font-size: 0.74rem; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-shield-check" style="color: #34d399;"></i>
-                        <strong>알고리즘 추천 복기 무결성 및 개인 맞춤 배정 원리:</strong> 본 복기 내역은 해당 회차 추첨 전 회원 고유 ID 시드로 확정된 7개 팩(70게임) 조합과 동행복권 공식 결과를 1:1 대조한 것입니다. 회원마다 고유한 맞춤 조합이 배정되므로 회원별 당첨 결과가 서로 다르게 산출되며, 사후 변경이나 조작이 불가능한 불변 데이터입니다.
+                        <strong>알고리즘 추천 당첨 검증 무결성 및 개인 맞춤 배정 원리:</strong> 본 당첨 대조 내역은 해당 회차 추첨 전 회원 고유 ID 시드로 확정된 7개 팩(70게임) 조합과 동행복권 공식 결과를 1:1 대조한 것입니다. 회원마다 고유한 맞춤 조합이 배정되므로 회원별 당첨 결과가 서로 다르게 산출되며, 사후 변경이나 조작이 불가능한 불변 데이터입니다.
                     </span>
                     <span style="font-size: 0.68rem; color: #34d399; font-weight: bold; background: rgba(16,185,129,0.15); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.25); white-space: nowrap;">
                         <i class="fa-solid fa-lock"></i> 추첨 전 데이터 잠금 완료
@@ -14659,7 +14669,7 @@ function renderReviewDetail(r) {
             <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 10px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                     <span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.82rem; padding: 3px 8px; border-radius: 6px; font-weight: 800;">
-                        <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 배정 추천번호 복기 중
+                        <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 배정 추천번호 결과 조회 중
                     </span>
                     <span style="font-size: 0.78rem; color: #cbd5e1;">
                         (70게임 중 <strong>${grandHits[1] + grandHits[2] + grandHits[3] + grandHits[4] + grandHits[5]}게임</strong> 적중 · 당첨금 <strong style="color: #34d399;">+${totalPrize.toLocaleString()}원</strong>)
@@ -14715,7 +14725,7 @@ function renderReviewDetail(r) {
                     </td>
                     <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
                         <button type="button" onclick="window.changeReviewAdminUser && window.changeReviewAdminUser('${m.userId}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-magnifying-glass"></i> 70게임 복기
+                            <i class="fa-solid fa-magnifying-glass"></i> 70게임 결과
                         </button>
                     </td>
                 </tr>
@@ -14736,7 +14746,7 @@ function renderReviewDetail(r) {
                     </div>
                 </div>
                 <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 12px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
-                    <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> <strong>안내:</strong> 본 성과표는 회원이 실제로 로또방에서 구매한 영수증 내역이 아니며, 각 회원에게 배정된 <strong>AI 추천 70게임 조합이 공식 추첨 결과와 대조되어 몇 게임이나 적중했는지를 측정한 시뮬레이션 복기 데이터</strong>입니다.
+                    <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> <strong>안내:</strong> 본 성과표는 회원이 실제로 로또방에서 구매한 영수증 내역이 아니며, 각 회원에게 배정된 <strong>AI 추천 70게임 조합이 공식 추첨 결과와 대조되어 몇 게임이나 적중했는지를 측정한 시뮬레이션 당첨 대조 데이터</strong>입니다.
                 </div>
 
                 <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
@@ -14752,7 +14762,7 @@ function renderReviewDetail(r) {
                                 <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
                                 <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
                                 <th style="padding: 8px 10px; text-align: right;">수익률</th>
-                                <th style="padding: 8px 10px; text-align: center;">개별 추천 복기</th>
+                                <th style="padding: 8px 10px; text-align: center;">개별 추천 결과</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -14781,7 +14791,7 @@ function renderReviewDetail(r) {
             <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
                 <span style="font-size: 0.78rem; color: #93c5fd; display: flex; align-items: center; gap: 6px;">
                     <i class="fa-solid fa-circle-info" style="color: #60a5fa;"></i>
-                    <strong>알림:</strong> 회원마다 고유한 70게임이 맞춤 배정되어 당첨 내역이 다릅니다. 아래 조합 카드는 관리자 계정(${effectiveUserId}) 기준 대표 예시이며, 각 회원의 개별 추천 70게임을 상세 복기하시려면 상단 표의 <strong>[70게임 복기]</strong> 버튼을 클릭하세요.
+                    <strong>알림:</strong> 회원마다 고유한 70게임이 맞춤 배정되어 당첨 내역이 다릅니다. 아래 조합 카드는 관리자 계정(${effectiveUserId}) 기준 대표 예시이며, 각 회원의 개별 추천 70게임을 상세 확인하시려면 상단 표의 <strong>[70게임 결과]</strong> 버튼을 클릭하세요.
                 </span>
             </div>
         `;
@@ -14809,9 +14819,9 @@ function renderReviewDetail(r) {
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
             <div style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; font-weight: 800; color: #f8fafc;">
                 <i class="fa-solid fa-cubes-stacked" style="color: #60a5fa;"></i> 
-                ${isAllUsers ? `전체 통합 7대 알고리즘 추천 70게임 복기` : `[${(typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || (effectiveUserId === 'master' ? '최고관리자' : effectiveUserId)}] 회원 배정 7대 알고리즘 70게임 복기`}
+                ${isAllUsers ? `전체 통합 7대 알고리즘 추천 70게임 당첨 결과` : `[${(typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || (effectiveUserId === 'master' ? '최고관리자' : effectiveUserId)}] 회원 배정 7대 알고리즘 70게임 당첨 결과`}
             </div>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            <div style="display: gap: 6px; flex-wrap: wrap; align-items: center;">
                 <button type="button" class="btn-filter-review ${activeReviewFilter === 'all' ? 'active' : ''}" onclick="window.setReviewViewFilter('all')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'all' ? '#fbbf24' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'all' ? 'linear-gradient(135deg, rgba(245,158,11,0.35), rgba(217,119,6,0.35))' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'all' ? '#fbbf24' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
                     전체 (70)
                 </button>
@@ -14836,7 +14846,7 @@ function renderReviewDetail(r) {
                 <button type="button" class="btn-filter-review ${activeReviewFilter === 'extra_5' ? 'active' : ''}" onclick="window.setReviewViewFilter('extra_5')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'extra_5' ? '#ec4899' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'extra_5' ? 'rgba(236,72,153,0.35)' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'extra_5' ? '#f472b6' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
                     추가5 (10)
                 </button>
-                <button type="button" onclick="window.exportImmutableUnifiedArchive && window.exportImmutableUnifiedArchive('${effectiveUserId}')" title="알고리즘명과 구매자 정보가 포함된 복기리스트 및 구매영수증을 불변 텍스트 파일(.json)로 백업합니다." style="padding: 5px 10px; border-radius: 8px; font-size: 0.74rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.45); background: rgba(16,185,129,0.2); color: #6ee7b7; display: inline-flex; align-items: center; gap: 4px; margin-left: 4px;">
+                <button type="button" onclick="window.exportImmutableUnifiedArchive && window.exportImmutableUnifiedArchive('${effectiveUserId}')" title="알고리즘명과 구매자 정보가 포함된 추천당첨목록 및 구매영수증을 불변 텍스트 파일(.json)로 백업합니다." style="padding: 5px 10px; border-radius: 8px; font-size: 0.74rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.45); background: rgba(16,185,129,0.2); color: #6ee7b7; display: inline-flex; align-items: center; gap: 4px; margin-left: 4px;">
                     <i class="fa-solid fa-file-arrow-down"></i> 💾 통합 텍스트 백업
                 </button>
             </div>
@@ -14890,8 +14900,8 @@ function renderReviewDetail(r) {
     // Render Sections based on active filter
     if (activeReviewFilter === 'all' || activeReviewFilter === 'v4') {
         html += renderComboCardSection(
-            '<i class="fa-solid fa-brain" style="color: #a78bfa;"></i> V4.0 행동경제학 포트폴리오 (추천 10게임 복기)',
-            `10게임 복기 완료 (적중 ${v4Eval.totalWins}회)`,
+            '<i class="fa-solid fa-brain" style="color: #a78bfa;"></i> V4.0 행동경제학 포트폴리오 (추천 10게임 검증)',
+            `10게임 검증 완료 (적중 ${v4Eval.totalWins}회)`,
             'rgba(139, 92, 246, 0.2)',
             '#c4b5fd',
             'rgba(139, 92, 246, 0.35)',
@@ -14901,8 +14911,8 @@ function renderReviewDetail(r) {
 
     if (activeReviewFilter === 'all' || activeReviewFilter === 'v3') {
         html += renderComboCardSection(
-            '<i class="fa-solid fa-gears" style="color: #60a5fa;"></i> V3.0 하이브리드 정통 수학 알고리즘 (추천 10게임 복기)',
-            `10게임 복기 완료 (적중 ${v3Eval.totalWins}회)`,
+            '<i class="fa-solid fa-gears" style="color: #60a5fa;"></i> V3.0 하이브리드 정통 수학 알고리즘 (추천 10게임 검증)',
+            `10게임 검증 완료 (적중 ${v3Eval.totalWins}회)`,
             'rgba(59, 130, 246, 0.2)',
             '#93c5fd',
             'rgba(59, 130, 246, 0.35)',
@@ -14914,8 +14924,8 @@ function renderReviewDetail(r) {
         const filterKey = `extra_${pack.packId}`;
         if (activeReviewFilter === 'all' || activeReviewFilter === filterKey) {
             html += renderComboCardSection(
-                `<i class="fa-solid fa-layer-group" style="color: ${pack.color};"></i> ${pack.name} (추가 ${pack.packId}팩 10게임 복기)`,
-                `10게임 복기 완료 (적중 ${pack.evalData.totalWins}회)`,
+                `<i class="fa-solid fa-layer-group" style="color: ${pack.color};"></i> ${pack.name} (추가 ${pack.packId}팩 10게임 검증)`,
+                `10게임 검증 완료 (적중 ${pack.evalData.totalWins}회)`,
                 `${pack.color}25`,
                 pack.color,
                 `${pack.color}40`,
@@ -14942,7 +14952,7 @@ function renderReviewDetail(r) {
         if (myCombos.length > 0) {
             const myEval = evaluateRecommendationSet(myCombos, actualDraw);
             html += renderComboCardSection(
-                `<i class="fa-solid fa-receipt" style="color: #10b981;"></i> 🧾 [${targetReceiptUser}] 회원의 제 ${roundNum}회 실구매 영수증 복기 (${myCombos.length}게임 대조)`,
+                `<i class="fa-solid fa-receipt" style="color: #10b981;"></i> 🧾 [${targetReceiptUser}] 회원의 제 ${roundNum}회 실구매 영수증 대조 (${myCombos.length}게임 대조)`,
                 `실구매 ${myCombos.length}게임 (적중 ${myEval.totalWins}회 · 당첨금 +${myEval.totalPrize.toLocaleString()}원)`,
                 'rgba(16, 185, 129, 0.25)',
                 '#34d399',
@@ -14979,7 +14989,7 @@ function changeReviewAdminUser(userId) {
     const isAll = (userId === 'all');
     const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '';
     const isSelf = (userId.toLowerCase().trim() === rawAuth.toLowerCase().trim() || userId === 'master' || userId === 'admin');
-    showToast(isAll ? '🌐 전체 회원 추천번호 종합 복기 화면으로 전환되었습니다.' : (isSelf ? '👑 관리자 본인의 70게임 복기로 전환되었습니다.' : `👤 [${userId}] 회원의 추천번호 70게임 복기로 전환되었습니다.`));
+    showToast(isAll ? '🌐 전체 회원 추천번호 당첨 결과 종합 화면으로 전환되었습니다.' : (isSelf ? '👑 관리자 본인의 70게임 당첨 결과로 전환되었습니다.' : `👤 [${userId}] 회원의 추천번호 70게임 당첨 결과로 전환되었습니다.`));
 }
 
 // ====================================================================
@@ -15019,7 +15029,7 @@ async function openAdmin1235ReviewModal(initialRound = null, initialUser = null)
                             <h3 style="margin: 0; color: #fbbf24; font-size: 1.05rem; font-weight: 900; letter-spacing: -0.3px;">
                                 1235회~ 추천·당첨 상세 리포트
                             </h3>
-                            <span style="font-size: 0.72rem; color: #94a3b8;">빅데이터 퀀트 알고리즘 실시간 복기 &amp; 대외 공유 콘솔</span>
+                            <span style="font-size: 0.72rem; color: #94a3b8;">빅데이터 퀀트 알고리즘 당첨 결과 &amp; 대외 공유 콘솔</span>
                         </div>
                     </div>
                     <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
@@ -15378,7 +15388,7 @@ function renderAdmin1235ReviewModalContent() {
                 <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-top: 4px;">
                     <div style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                         <span><i class="fa-solid fa-users"></i> 전체 회원별 1235회~ 누적 추천 성과 순위 (${memberAggList.length}명)</span>
-                        <span style="font-size: 0.7rem; color: #94a3b8;">회원을 클릭하면 상세 70게임 복기가 열립니다</span>
+                        <span style="font-size: 0.7rem; color: #94a3b8;">회원을 클릭하면 상세 70게임 결과가 열립니다</span>
                     </div>
                     <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.76rem; text-align: center; white-space: nowrap;">
@@ -15940,7 +15950,7 @@ ${roundLines.slice(0, 6).join('\n')}
         },
         buttons: [
             {
-                title: '📊 복기 리포트 확인하기',
+                title: '📊 추천번호 당첨 결과 확인하기',
                 link: {
                     mobileWebUrl: shareUrl,
                     webUrl: shareUrl
@@ -15970,7 +15980,7 @@ ${roundLines.slice(0, 6).join('\n')}
 }
 
 /**
- * 🎨 1235회차 복기 리포트 전용 무손실 고화질 캔버스 생성기
+ * 🎨 1235회차 추천번호 당첨 결과 전용 무손실 고화질 캔버스 생성기
  * - 스크롤 제한(max-height / overflow: hidden) 및 스크롤 위치(scrollY)로 인한 상하단 잘림 현상을 100% 원천 해결
  * - 독립된 오프스크린 컨테이너에서 100% 전장(Full Height) 고해상도 렌더링
  */
@@ -16016,7 +16026,7 @@ async function createAdmin1235ReportCanvas() {
                 </span>
                 <div>
                     <h2 style="margin: 0; color: #fbbf24; font-size: 1.15rem; font-weight: 900; letter-spacing: -0.3px;">
-                        운도실력 로또 AI 퀀트 복기 리포트
+                        운도실력 로또 AI 퀀트 추천 당첨 결과
                     </h2>
                     <div style="font-size: 0.74rem; color: #94a3b8; margin-top: 2px;">
                         ${roundTitle} 추천·당첨 성과 분석 [대상: ${userTitle}]
@@ -16080,7 +16090,7 @@ async function shareAdmin1235ReviewAsImage() {
         }
 
         const roundVal = _currentAdmin1235ModalRound;
-        const fileName = `운도실력_1235회차_복기리포트_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
+        const fileName = `운도실력_1235회차_추천당첨결과_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
 
         canvas.toBlob(async (blob) => {
             if (!blob) return;
@@ -16091,7 +16101,7 @@ async function shareAdmin1235ReviewAsImage() {
                 try {
                     await navigator.share({
                         files: [file],
-                        title: '🎰 운도실력 1235회~ 추천·당첨 복기 리포트',
+                        title: '🎰 운도실력 1235회~ 추천번호 당첨 결과',
                         text: `🎰 [운도실력] 1235회~ 로또 AI 추천·당첨 성과 리포트 카드입니다.`
                     });
                     showToast('✅ 카카오톡 등 원하는 대화방에 이미지가 공유되었습니다!');
@@ -16150,7 +16160,7 @@ async function downloadAdmin1235ReviewImage() {
         }
 
         const roundVal = _currentAdmin1235ModalRound;
-        const fileName = `운도실력_1235회차_복기리포트_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
+        const fileName = `운도실력_1235회차_추천당첨결과_${roundVal === 'all_rounds' ? '누적종합' : roundVal + '회'}.png`;
 
         canvas.toBlob((blob) => {
             if (!blob) return;
@@ -16946,7 +16956,7 @@ async function renderAlgorithmsTab(fromRound = null) {
     // Admin User Selector HTML
     let adminUserSelectHtml = '';
     if (isAdmin) {
-        let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 복기</option>`;
+        let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 당첨 결과</option>`;
         userOptions += `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
         
         // Fetch or use cached user list
@@ -16985,7 +16995,7 @@ async function renderAlgorithmsTab(fromRound = null) {
                 <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 220px;">
                     <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem; flex-shrink: 0;"></i>
                     <div style="min-width: 0;">
-                        <strong style="color: #fbbf24; font-size: 0.85rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">[관리자 전용] 회원별 7대 알고리즘 추천번호 복기 조회기</strong>
+                        <strong style="color: #fbbf24; font-size: 0.85rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">[관리자 전용] 회원별 7대 알고리즘 추천번호 당첨 결과 조회기</strong>
                         <div style="font-size: 0.73rem; color: #cbd5e1; word-break: break-all;">선택한 회원의 영구 박제 스냅샷 및 7대 알고리즘 누적 적중 실적 동기화 확인</div>
                     </div>
                 </div>
@@ -17140,14 +17150,14 @@ async function renderAlgorithmsTab(fromRound = null) {
                         <i class="fa-solid fa-brain"></i> QUANT &amp; AI ENGINE
                     </span>
                     <span style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 700;">
-                        7대 알고리즘 분산 추천 &amp; 실데이터 누적 복기 실적
+                        7대 알고리즘 분산 추천 &amp; 실데이터 누적 당첨 실적
                     </span>
                 </div>
                 <h2 style="margin: 0 0 8px 0; font-size: 1.45rem; font-weight: 900; color: #f8fafc; letter-spacing: -0.5px;">
                     로또 6/45 <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 AI 알고리즘</span> 정밀 해설 &amp; 실적
                 </h2>
                 <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; max-width: 800px;">
-                    단순한 무작위 번호 생성이 아닙니다. 행동경제학적 마킹 심리 회피, 마르코프 전이 확률, 직교 전수 커버리지, 휠링 하모닉 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 복기 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
+                    단순한 무작위 번호 생성이 아닙니다. 행동경제학적 마킹 심리 회피, 마르코프 전이 확률, 직교 전수 커버리지, 휠링 하모닉 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
                 </p>
             </div>
 
@@ -17174,13 +17184,13 @@ async function renderAlgorithmsTab(fromRound = null) {
                 </div>
             </section>
 
-            <!-- SECTION 2: 복기 리포트 기반 실데이터 누적 실적 대시보드 -->
+            <!-- SECTION 2: 추천번호 당첨 결과 기반 실데이터 누적 실적 대시보드 -->
             <section class="algo-performance-section" style="margin-top: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="width: 4px; height: 18px; background: #fbbf24; border-radius: 2px; display: inline-block;"></span>
                         <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #f8fafc;">
-                            2. 복기 리포트 기반 7대 알고리즘 전체 회원 누적 당첨 실적 (전체 회원 통합)
+                            2. 추천번호 당첨 결과 기반 7대 알고리즘 전체 회원 누적 당첨 실적 (전체 회원 통합)
                         </h3>
                     </div>
                     
@@ -19450,6 +19460,9 @@ async function renderConfirmedPurchasesList() {
             }
 
             let receiptResultBadge = '';
+            let winPillBadgeHtml = '';
+            const hasWonReceipt = actualDraw && (receiptHits[1] > 0 || receiptHits[2] > 0 || receiptHits[3] > 0 || receiptHits[4] > 0 || receiptHits[5] > 0);
+
             if (actualDraw) {
                 const parts = [];
                 if (receiptHits[1] > 0) parts.push(`1등 ${receiptHits[1]}개`);
@@ -19459,6 +19472,15 @@ async function renderConfirmedPurchasesList() {
                 if (receiptHits[5] > 0) parts.push(`5등 ${receiptHits[5]}개`);
 
                 if (parts.length > 0) {
+                    if (receiptHits[1] > 0) {
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; border: 1px solid #fbbf24; padding: 2px 9px; border-radius: 12px; font-weight: 900; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 12px rgba(251, 191, 36, 0.5);"><i class="fa-solid fa-crown" style="color: #0f172a;"></i> 1등 당첨</span>`;
+                    } else if (receiptHits[2] > 0) {
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; border: 1px solid #f87171; padding: 2px 9px; border-radius: 12px; font-weight: 900; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);"><i class="fa-solid fa-medal" style="color: #ffffff;"></i> 2등 당첨</span>`;
+                    } else if (receiptHits[3] > 0) {
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; border: 1px solid #60a5fa; padding: 2px 9px; border-radius: 12px; font-weight: 900; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.45);"><i class="fa-solid fa-trophy" style="color: #ffffff;"></i> 3등 당첨</span>`;
+                    } else {
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; border: 1px solid #34d399; padding: 2px 9px; border-radius: 12px; font-weight: 900; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.45);"><i class="fa-solid fa-award" style="color: #fde047;"></i> 당첨</span>`;
+                    }
                     receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); color: #34d399; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-award"></i> ${parts.join(', ')} (+${receiptPrize.toLocaleString()}원)</span>`;
                 } else {
                     receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">낙첨</span>`;
@@ -19586,11 +19608,21 @@ async function renderConfirmedPurchasesList() {
                 `;
             }
 
+            const cardBorderLeftColor = hasWonReceipt
+                ? (receiptHits[1] > 0 ? '#fbbf24' : (receiptHits[2] > 0 ? '#f87171' : (receiptHits[3] > 0 ? '#60a5fa' : '#10b981')))
+                : (isLocked ? '#f59e0b' : (pVer.includes('V4.0') ? '#8b5cf6' : (pVer.includes('V3.0') ? '#f59e0b' : '#64748b')));
+            const cardBgStyle = hasWonReceipt
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.5) 100%)'
+                : 'rgba(255,255,255,0.02)';
+            const cardBorderStyle = hasWonReceipt ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255,255,255,0.05)';
+            const cardShadowStyle = hasWonReceipt ? 'box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);' : '';
+
             html += `
-                <div class="confirmed-receipt-card" style="border-left: 3px solid ${isLocked ? '#f59e0b' : (pVer.includes('V4.0') ? '#8b5cf6' : (pVer.includes('V3.0') ? '#f59e0b' : '#64748b'))}; padding-left: 12px; margin-bottom: 14px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px;">
+                <div class="confirmed-receipt-card" style="border: ${cardBorderStyle}; border-left: 4px solid ${cardBorderLeftColor}; padding-left: 12px; margin-bottom: 14px; background: ${cardBgStyle}; padding: 12px; border-radius: 8px; ${cardShadowStyle}">
                     <div class="confirmed-receipt-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; flex-wrap: wrap; gap: 7px;">
                         <div class="confirmed-receipt-title-group" style="font-size: 0.82rem; color: var(--text-secondary); font-weight: bold; display:flex; align-items:center; gap: 6px; flex-wrap: wrap;">
                             <span class="confirmed-receipt-title" style="color: #fff; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-receipt" style="color: #f59e0b;"></i> 영수증 #${pIdx+1}</span>
+                            ${winPillBadgeHtml}
                             ${versionBadgeHtml}
                             <span class="confirmed-user-badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
                                 <i class="fa-solid fa-user-check" style="color: #60a5fa; font-size: 0.68rem;"></i> ${purchaserLabel}
@@ -19923,7 +19955,7 @@ async function renderConfirmedPurchasesList() {
                 
                 // Change modal title
                 const titleEl = document.querySelector('#manualLedgerModal .modal-header h2');
-                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-edit"></i> 수동 복기 내역 수정`;
+                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-edit"></i> 수동 구매 내역 수정`;
                 
                 document.getElementById('manualLedgerRound').value = round;
                 document.getElementById('manualLedgerVersion').value = purchase.version || 'V3.0 하이브리드 알고리즘';
@@ -20094,7 +20126,7 @@ function renderWinningHistoryModal() {
             <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
                 <i class="fa-solid fa-receipt" style="font-size: 2.5rem; margin-bottom: 12px; color: #f59e0b;"></i>
                 <p style="font-size: 1rem; color: #fff;">구매 확정된 번호 조합 내역이 없습니다.</p>
-                <p style="font-size: 0.85rem; margin-top: 5px;">추천 번호 생성기 탭에서 번호를 생성 후 [구매 확정]을 진행해주세요.</p>
+                <p style="font-size: 0.85rem; margin-top: 5px;">이번주 추천번호 탭에서 번호를 생성 후 [구매 확정]을 진행해주세요.</p>
             </div>
         `;
         return;
@@ -21277,7 +21309,7 @@ const __M_services_lotto_views_quick_view = (function() {
     try {
 const { state } = __M_services_lotto_state;
 const { getBallHexColor, showToast } = __M_shared_utils;
-const { SafeAuth, getUpcomingLottoRound } = __M_shared_auth_mgmt;
+const { SafeAuth, isAdminUser, getUpcomingLottoRound } = __M_shared_auth_mgmt;
 const { getComboNumbers } = __M_services_lotto_ledger;
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack } = __M_services_lotto_generator;
 
@@ -21288,10 +21320,13 @@ let currentQuickAlgo = 'v3'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
  * Strictly personalized for the logged-in user and current upcoming round.
  */
 function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    const isAdmin = (authId === 'master' || authId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(authId)));
+    const adminViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
+
     const effectiveUserId = (customUserId || 
-        (typeof window !== 'undefined' && window.generatorAdminViewingUser) || 
-        (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 
-        'guest').trim().toLowerCase();
+        (isAdmin && adminViewingUser ? adminViewingUser : null) || 
+        authId).trim().toLowerCase();
 
     const targetRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : 
         ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 
@@ -28398,7 +28433,7 @@ function renderTotoDashboard() {
             </div>
         </div>
 
-        <!-- Main View Mode Tabs (AI 추천 vs 스케줄/결과 vs 순위표 vs 구매확정리스트) -->
+        <!-- Main View Mode Tabs (AI 추천 vs 스케줄/결과 vs 순위표 vs 구매 확정현황) -->
         <div class="toto-nav-tabs">
             <button class="toto-nav-tab ${state.activeTab === 'recommendation' ? 'active' : ''}" onclick="window.switchTotoTab('recommendation')">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> 🎯 AI 경기 분석 &amp; 추천
@@ -28411,7 +28446,7 @@ function renderTotoDashboard() {
                 <i class="fa-solid fa-ranking-star"></i> 🏆 리그별 실시간 순위표
             </button>
             <button class="toto-nav-tab ${state.activeTab === 'confirmed' ? 'active' : ''}" onclick="window.switchTotoTab('confirmed')">
-                <i class="fa-solid fa-receipt"></i> 📜 구매확정리스트 &amp; 배팅손익 
+                <i class="fa-solid fa-receipt"></i> 📜 구매 확정현황 &amp; 배팅손익 
                 <span class="tab-count-badge">${state.purchasedSlips.length}건</span>
             </button>
         </div>
@@ -31396,7 +31431,7 @@ async function renderLandingDashboard() {
         }
     }
 
-    // 6. Update All Members AI Recommendation Review Dashboard (🔮 전체 회원 추천 복기 당첨 실적)
+    // 6. Update All Members AI Recommendation Review Dashboard (🔮 전체 회원 추천 당첨 결과 실적)
     await updateHomeReviewDashboard();
 
     // 7. Update Real-Purchase Winning Ticker Bar (🏆 실구매 영수증 기반 당첨 속보)
@@ -31575,7 +31610,7 @@ async function updateHomeReviewDashboard() {
 
         const roundRangeLabel = `제 ${fromRound}~${maxRound}회차 누적`;
 
-        // 1. Update Card 3: All Members AI Recommended Review (🔮 전체 회원 추천 복기 당첨)
+        // 1. Update Card 3: All Members AI Recommended Review (🔮 전체 회원 추천 당첨 결과)
         const elRevSub = document.getElementById('lp-review-mini-sub');
         const elRevPrize = document.getElementById('lp-review-mini-prize');
         const elRevHits = document.getElementById('lp-review-mini-hits');
@@ -31603,7 +31638,7 @@ async function updateHomeReviewDashboard() {
             }
         }
 
-        // 2. Update Table & Dashboard Section (🔮 전체 회원 AI 추천번호 복기 당첨 종합 요약)
+        // 2. Update Table & Dashboard Section (🔮 전체 회원 AI 추천번호 당첨 결과 종합 요약)
         const elRoundBadge = document.getElementById('lpReviewRoundBadge');
         if (elRoundBadge) elRoundBadge.textContent = roundRangeLabel;
 

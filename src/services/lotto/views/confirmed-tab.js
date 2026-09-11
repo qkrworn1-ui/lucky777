@@ -713,6 +713,9 @@ export async function renderConfirmedPurchasesList() {
             }
 
             let receiptResultBadge = '';
+            let winPillBadgeHtml = '';
+            const hasWonReceipt = actualDraw && (receiptHits[1] > 0 || receiptHits[2] > 0 || receiptHits[3] > 0 || receiptHits[4] > 0 || receiptHits[5] > 0);
+
             if (actualDraw) {
                 const parts = [];
                 if (receiptHits[1] > 0) parts.push(`1등 ${receiptHits[1]}개`);
@@ -722,6 +725,15 @@ export async function renderConfirmedPurchasesList() {
                 if (receiptHits[5] > 0) parts.push(`5등 ${receiptHits[5]}개`);
 
                 if (parts.length > 0) {
+                    if (receiptHits[1] > 0) {
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; border: 1px solid #fbbf24; padding: 2px 9px; border-radius: 12px; font-weight: 900; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 12px rgba(251, 191, 36, 0.5);"><i class="fa-solid fa-crown" style="color: #0f172a;"></i> 1등 당첨</span>`;
+                    } else if (receiptHits[2] > 0) {
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; border: 1px solid #f87171; padding: 2px 9px; border-radius: 12px; font-weight: 900; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);"><i class="fa-solid fa-medal" style="color: #ffffff;"></i> 2등 당첨</span>`;
+                    } else if (receiptHits[3] > 0) {
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; border: 1px solid #60a5fa; padding: 2px 9px; border-radius: 12px; font-weight: 900; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.45);"><i class="fa-solid fa-trophy" style="color: #ffffff;"></i> 3등 당첨</span>`;
+                    } else {
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; border: 1px solid #34d399; padding: 2px 9px; border-radius: 12px; font-weight: 900; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.45);"><i class="fa-solid fa-award" style="color: #fde047;"></i> 당첨</span>`;
+                    }
                     receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); color: #34d399; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-award"></i> ${parts.join(', ')} (+${receiptPrize.toLocaleString()}원)</span>`;
                 } else {
                     receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;">낙첨</span>`;
@@ -849,11 +861,21 @@ export async function renderConfirmedPurchasesList() {
                 `;
             }
 
+            const cardBorderLeftColor = hasWonReceipt
+                ? (receiptHits[1] > 0 ? '#fbbf24' : (receiptHits[2] > 0 ? '#f87171' : (receiptHits[3] > 0 ? '#60a5fa' : '#10b981')))
+                : (isLocked ? '#f59e0b' : (pVer.includes('V4.0') ? '#8b5cf6' : (pVer.includes('V3.0') ? '#f59e0b' : '#64748b')));
+            const cardBgStyle = hasWonReceipt
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.5) 100%)'
+                : 'rgba(255,255,255,0.02)';
+            const cardBorderStyle = hasWonReceipt ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255,255,255,0.05)';
+            const cardShadowStyle = hasWonReceipt ? 'box-shadow: 0 4px 14px rgba(16, 185, 129, 0.15);' : '';
+
             html += `
-                <div class="confirmed-receipt-card" style="border-left: 3px solid ${isLocked ? '#f59e0b' : (pVer.includes('V4.0') ? '#8b5cf6' : (pVer.includes('V3.0') ? '#f59e0b' : '#64748b'))}; padding-left: 12px; margin-bottom: 14px; background: rgba(255,255,255,0.02); padding: 12px; border-radius: 8px;">
+                <div class="confirmed-receipt-card" style="border: ${cardBorderStyle}; border-left: 4px solid ${cardBorderLeftColor}; padding-left: 12px; margin-bottom: 14px; background: ${cardBgStyle}; padding: 12px; border-radius: 8px; ${cardShadowStyle}">
                     <div class="confirmed-receipt-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px; flex-wrap: wrap; gap: 7px;">
                         <div class="confirmed-receipt-title-group" style="font-size: 0.82rem; color: var(--text-secondary); font-weight: bold; display:flex; align-items:center; gap: 6px; flex-wrap: wrap;">
                             <span class="confirmed-receipt-title" style="color: #fff; font-size: 0.84rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-receipt" style="color: #f59e0b;"></i> 영수증 #${pIdx+1}</span>
+                            ${winPillBadgeHtml}
                             ${versionBadgeHtml}
                             <span class="confirmed-user-badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
                                 <i class="fa-solid fa-user-check" style="color: #60a5fa; font-size: 0.68rem;"></i> ${purchaserLabel}
@@ -1186,7 +1208,7 @@ export async function renderConfirmedPurchasesList() {
                 
                 // Change modal title
                 const titleEl = document.querySelector('#manualLedgerModal .modal-header h2');
-                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-edit"></i> 수동 복기 내역 수정`;
+                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-edit"></i> 수동 구매 내역 수정`;
                 
                 document.getElementById('manualLedgerRound').value = round;
                 document.getElementById('manualLedgerVersion').value = purchase.version || 'V3.0 하이브리드 알고리즘';
@@ -1357,7 +1379,7 @@ export function renderWinningHistoryModal() {
             <div style="text-align: center; padding: 40px 20px; color: var(--text-secondary);">
                 <i class="fa-solid fa-receipt" style="font-size: 2.5rem; margin-bottom: 12px; color: #f59e0b;"></i>
                 <p style="font-size: 1rem; color: #fff;">구매 확정된 번호 조합 내역이 없습니다.</p>
-                <p style="font-size: 0.85rem; margin-top: 5px;">추천 번호 생성기 탭에서 번호를 생성 후 [구매 확정]을 진행해주세요.</p>
+                <p style="font-size: 0.85rem; margin-top: 5px;">이번주 추천번호 탭에서 번호를 생성 후 [구매 확정]을 진행해주세요.</p>
             </div>
         `;
         return;

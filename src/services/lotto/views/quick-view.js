@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { getBallHexColor, showToast } from '../../../shared/utils.js';
-import { SafeAuth, getUpcomingLottoRound } from '../../../shared/auth-mgmt.js';
+import { SafeAuth, isAdminUser, getUpcomingLottoRound } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
 
@@ -11,10 +11,13 @@ let currentQuickAlgo = 'v3'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
  * Strictly personalized for the logged-in user and current upcoming round.
  */
 export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    const isAdmin = (authId === 'master' || authId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(authId)));
+    const adminViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
+
     const effectiveUserId = (customUserId || 
-        (typeof window !== 'undefined' && window.generatorAdminViewingUser) || 
-        (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 
-        'guest').trim().toLowerCase();
+        (isAdmin && adminViewingUser ? adminViewingUser : null) || 
+        authId).trim().toLowerCase();
 
     const targetRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : 
         ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 

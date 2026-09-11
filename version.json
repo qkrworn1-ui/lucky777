@@ -1,5 +1,5 @@
 {
-  "version": "v718",
-  "buildDate": "2026-09-09",
-  "description": "Comprehensive Mobile UI optimizations for Confirmed Receipts, Review Modals, and Admin Controls"
+  "version": "v719",
+  "buildDate": "2026-09-11",
+  "description": "Terminology overhaul (추천번호 당첨 결과, 구매 확정현황, 이번주 추천번호, 통계분석) and Admin Quick View context sync"
 }

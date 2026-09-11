@@ -145,7 +145,7 @@ export async function renderLandingDashboard() {
         }
     }
 
-    // 6. Update All Members AI Recommendation Review Dashboard (🔮 전체 회원 추천 복기 당첨 실적)
+    // 6. Update All Members AI Recommendation Review Dashboard (🔮 전체 회원 추천 당첨 결과 실적)
     await updateHomeReviewDashboard();
 
     // 7. Update Real-Purchase Winning Ticker Bar (🏆 실구매 영수증 기반 당첨 속보)
@@ -324,7 +324,7 @@ export async function updateHomeReviewDashboard() {
 
         const roundRangeLabel = `제 ${fromRound}~${maxRound}회차 누적`;
 
-        // 1. Update Card 3: All Members AI Recommended Review (🔮 전체 회원 추천 복기 당첨)
+        // 1. Update Card 3: All Members AI Recommended Review (🔮 전체 회원 추천 당첨 결과)
         const elRevSub = document.getElementById('lp-review-mini-sub');
         const elRevPrize = document.getElementById('lp-review-mini-prize');
         const elRevHits = document.getElementById('lp-review-mini-hits');
@@ -352,7 +352,7 @@ export async function updateHomeReviewDashboard() {
             }
         }
 
-        // 2. Update Table & Dashboard Section (🔮 전체 회원 AI 추천번호 복기 당첨 종합 요약)
+        // 2. Update Table & Dashboard Section (🔮 전체 회원 AI 추천번호 당첨 결과 종합 요약)
         const elRoundBadge = document.getElementById('lpReviewRoundBadge');
         if (elRoundBadge) elRoundBadge.textContent = roundRangeLabel;
 

@@ -143,7 +143,7 @@ export function renderTotoDashboard() {
             </div>
         </div>
 
-        <!-- Main View Mode Tabs (AI 추천 vs 스케줄/결과 vs 순위표 vs 구매확정리스트) -->
+        <!-- Main View Mode Tabs (AI 추천 vs 스케줄/결과 vs 순위표 vs 구매 확정현황) -->
         <div class="toto-nav-tabs">
             <button class="toto-nav-tab ${state.activeTab === 'recommendation' ? 'active' : ''}" onclick="window.switchTotoTab('recommendation')">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> 🎯 AI 경기 분석 &amp; 추천
@@ -156,7 +156,7 @@ export function renderTotoDashboard() {
                 <i class="fa-solid fa-ranking-star"></i> 🏆 리그별 실시간 순위표
             </button>
             <button class="toto-nav-tab ${state.activeTab === 'confirmed' ? 'active' : ''}" onclick="window.switchTotoTab('confirmed')">
-                <i class="fa-solid fa-receipt"></i> 📜 구매확정리스트 &amp; 배팅손익 
+                <i class="fa-solid fa-receipt"></i> 📜 구매 확정현황 &amp; 배팅손익 
                 <span class="tab-count-badge">${state.purchasedSlips.length}건</span>
             </button>
         </div>

@@ -556,7 +556,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
     // Admin User Selector HTML
     let adminUserSelectHtml = '';
     if (isAdmin) {
-        let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 복기</option>`;
+        let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 당첨 결과</option>`;
         userOptions += `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
         
         // Fetch or use cached user list
@@ -595,7 +595,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                 <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 220px;">
                     <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem; flex-shrink: 0;"></i>
                     <div style="min-width: 0;">
-                        <strong style="color: #fbbf24; font-size: 0.85rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">[관리자 전용] 회원별 7대 알고리즘 추천번호 복기 조회기</strong>
+                        <strong style="color: #fbbf24; font-size: 0.85rem; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">[관리자 전용] 회원별 7대 알고리즘 추천번호 당첨 결과 조회기</strong>
                         <div style="font-size: 0.73rem; color: #cbd5e1; word-break: break-all;">선택한 회원의 영구 박제 스냅샷 및 7대 알고리즘 누적 적중 실적 동기화 확인</div>
                     </div>
                 </div>
@@ -750,14 +750,14 @@ export async function renderAlgorithmsTab(fromRound = null) {
                         <i class="fa-solid fa-brain"></i> QUANT &amp; AI ENGINE
                     </span>
                     <span style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 700;">
-                        7대 알고리즘 분산 추천 &amp; 실데이터 누적 복기 실적
+                        7대 알고리즘 분산 추천 &amp; 실데이터 누적 당첨 실적
                     </span>
                 </div>
                 <h2 style="margin: 0 0 8px 0; font-size: 1.45rem; font-weight: 900; color: #f8fafc; letter-spacing: -0.5px;">
                     로또 6/45 <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 AI 알고리즘</span> 정밀 해설 &amp; 실적
                 </h2>
                 <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; max-width: 800px;">
-                    단순한 무작위 번호 생성이 아닙니다. 행동경제학적 마킹 심리 회피, 마르코프 전이 확률, 직교 전수 커버리지, 휠링 하모닉 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 복기 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
+                    단순한 무작위 번호 생성이 아닙니다. 행동경제학적 마킹 심리 회피, 마르코프 전이 확률, 직교 전수 커버리지, 휠링 하모닉 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
                 </p>
             </div>
 
@@ -784,13 +784,13 @@ export async function renderAlgorithmsTab(fromRound = null) {
                 </div>
             </section>
 
-            <!-- SECTION 2: 복기 리포트 기반 실데이터 누적 실적 대시보드 -->
+            <!-- SECTION 2: 추천번호 당첨 결과 기반 실데이터 누적 실적 대시보드 -->
             <section class="algo-performance-section" style="margin-top: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span style="width: 4px; height: 18px; background: #fbbf24; border-radius: 2px; display: inline-block;"></span>
                         <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #f8fafc;">
-                            2. 복기 리포트 기반 7대 알고리즘 전체 회원 누적 당첨 실적 (전체 회원 통합)
+                            2. 추천번호 당첨 결과 기반 7대 알고리즘 전체 회원 누적 당첨 실적 (전체 회원 통합)
                         </h3>
                     </div>
                     

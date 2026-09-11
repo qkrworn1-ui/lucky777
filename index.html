@@ -54,7 +54,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=718">
+    <link rel="stylesheet" href="styles.css?v=719">
 </head>
 
 <body>
@@ -87,7 +87,7 @@
             <div class="lp-brand-badge" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
                 <span><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v718 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v719 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 style="margin: 0 0 8px 0;">운도<br><span class="lp-accent">실력</span></h1>
@@ -187,12 +187,12 @@
                     </div>
                 </div>
 
-                <!-- 🔮 전체 회원 로또 AI 추천 복기 당첨 실적 미니 카드 -->
-                <div class="lp-mini-win-card review" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-review'), 80);" title="전체 회원 AI추천번호 복기 탭으로 이동" style="border-color: rgba(167, 139, 250, 0.35);">
+                <!-- 🔮 전체 회원 로또 AI 추천 당첨 결과 미니 카드 -->
+                <div class="lp-mini-win-card review" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-review'), 80);" title="전체 회원 AI 추천번호 당첨 결과 탭으로 이동" style="border-color: rgba(167, 139, 250, 0.35);">
                     <div class="mini-win-top-row">
                         <div class="mini-win-header-left">
                             <div class="mini-win-icon review" style="background: rgba(167, 139, 250, 0.2); color: #a78bfa;"><i class="fa-solid fa-brain"></i></div>
-                            <span class="mini-win-title" id="lp-review-mini-title">🔮 전체 회원 추천 복기 당첨</span>
+                            <span class="mini-win-title" id="lp-review-mini-title">🔮 전체 회원 추천 당첨 결과</span>
                         </div>
                         <i class="fa-solid fa-chevron-right mini-win-arrow"></i>
                     </div>
@@ -200,21 +200,21 @@
                         <span class="mini-win-sub" id="lp-review-mini-sub">0게임 (0원)</span>
                         <div class="mini-win-prize-area">
                             <span class="mini-win-prize" id="lp-review-mini-prize">총 당첨 0원</span>
-                            <span class="mini-win-hits" id="lp-review-mini-hits">복기 내역 없음</span>
+                            <span class="mini-win-hits" id="lp-review-mini-hits">당첨 결과 없음</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- 🔮 제 XXX회차 전체 회원 AI 추천번호 복기 당첨 내역 요약 박스 -->
+        <!-- 🔮 제 XXX회차 전체 회원 AI 추천번호 당첨 결과 내역 요약 박스 -->
         <div id="lpAllMembersReviewSection" style="width: 100%; max-width: 900px; margin-bottom: 14px; background: rgba(15, 23, 42, 0.75); border: 1.5px solid rgba(167, 139, 250, 0.35); border-radius: 12px; padding: 14px 16px; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-brain" style="color: #a78bfa; font-size: 1.15rem;"></i>
                     <div>
                         <h4 id="lpReviewSectionTitle" style="margin: 0; color: #c4b5fd; font-size: 0.92rem; font-weight: 800; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                            <span>🔮 전체 회원 AI 추천번호 복기 당첨 종합 요약</span>
+                            <span>🔮 전체 회원 AI 추천번호 당첨 결과 종합 요약</span>
                             <span id="lpReviewRoundBadge" style="font-size: 0.72rem; color: #fbbf24; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); padding: 1px 7px; border-radius: 4px; font-weight: 800;">제 --회차</span>
                         </h4>
                         <div id="lpReviewSectionSub" style="font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">
@@ -224,7 +224,7 @@
                 </div>
                 <div>
                     <button type="button" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-review'), 80);" style="background: linear-gradient(135deg, rgba(167, 139, 250, 0.25), rgba(139, 92, 246, 0.25)); border: 1px solid #a78bfa; color: #ddd6fe; padding: 5px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 복기 리포트 탭 바로가기
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> 추천번호 당첨 결과 탭 바로가기
                     </button>
                 </div>
             </div>
@@ -240,7 +240,7 @@
             <div style="margin-top: 10px; padding: 10px 14px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); border-radius: 8px; display: flex; align-items: flex-start; gap: 10px;">
                 <i class="fa-solid fa-circle-info" style="color: #c4b5fd; font-size: 0.95rem; margin-top: 2px; flex-shrink: 0;"></i>
                 <div style="font-size: 0.74rem; color: #cbd5e1; line-height: 1.55;">
-                    <strong style="color: #e9d5ff;">[안내]</strong> 본 복기 데이터는 해당 회차에 회원별로 배정된 <strong>7대 퀀트 알고리즘(회원당 70조합)의 적중 여부를 사후 검증한 통계 데이터</strong>입니다. 실제 복권 구매는 회원의 자율적 선택이며, 실구매 영수증 인증이 완료되지 않은 복기 당첨 실적은 <strong>실제 당첨금 수령 권리와 무관</strong>합니다.
+                    <strong style="color: #e9d5ff;">[안내]</strong> 본 당첨 결과 데이터는 해당 회차에 회원별로 배정된 <strong>7대 퀀트 알고리즘(회원당 70조합)의 적중 여부를 사후 검증한 통계 데이터</strong>입니다. 실제 복권 구매는 회원의 자율적 선택이며, 실구매 영수증 인증이 완료되지 않은 추천 당첨 실적은 <strong>실제 당첨금 수령 권리와 무관</strong>합니다.
                 </div>
             </div>
         </div>
@@ -398,7 +398,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v718
+                                v719
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -530,7 +530,7 @@
 
             <button class="tab-btn active" data-tab="tab-generator">
 
-                <i class="fa-solid fa-wand-magic-sparkles"></i> 추천 번호 생성기
+                <i class="fa-solid fa-wand-magic-sparkles"></i> 이번주 추천번호
 
             </button>
 
@@ -548,19 +548,19 @@
 
             <button class="tab-btn" data-tab="tab-review">
 
-                <i class="fa-solid fa-list-check"></i> 복기 리포트
+                <i class="fa-solid fa-list-check"></i> 추천번호 당첨 결과
 
             </button>
 
             <button class="tab-btn" data-tab="tab-confirmed-list">
 
-                <i class="fa-solid fa-receipt"></i> 구매 확정 리스트
+                <i class="fa-solid fa-receipt"></i> 구매 확정현황
 
             </button>
 
             <button class="tab-btn" data-tab="tab-dashboard">
 
-                <i class="fa-solid fa-chart-pie"></i> 통계 분석 대시보드
+                <i class="fa-solid fa-chart-pie"></i> 통계분석
 
             </button>
 
@@ -570,15 +570,15 @@
 
         <main class="content-area">
 
-            <!-- TAB 1: 추천 번호 생성기 -->
+            <!-- TAB 1: 이번주 추천번호 -->
 
             <section id="tab-generator" class="tab-content active">
 
-                <!-- 📌 [메뉴 기능 안내] 추천 번호 생성기 -->
+                <!-- 📌 [메뉴 기능 안내] 이번주 추천번호 -->
                 <div class="menu-guide-banner">
                     <div class="guide-header">
                         <div class="guide-title">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> 추천 번호 생성기 (AI Quant Recommendation Engine)
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> 이번주 추천번호 (AI Quant Recommendation Engine)
                         </div>
                         <span class="guide-tag">메인 추천 엔진</span>
                     </div>
@@ -1227,26 +1227,26 @@
 
             <!-- TAB 2: 통계 분석 대시보드 -->
 
-            <!-- TAB: 복기 리포트 -->
+            <!-- TAB: 추천번호 당첨 결과 -->
 
             <section id="tab-review" class="tab-content">
 
-                <!-- 📌 [메뉴 기능 안내] 회차별 복기 리포트 -->
+                <!-- 📌 [메뉴 기능 안내] 회차별 추천번호 당첨 결과 -->
                 <div class="menu-guide-banner guide-emerald">
                     <div class="guide-header">
                         <div class="guide-title">
-                            <i class="fa-solid fa-list-check"></i> 7대 알고리즘 회차별 복기 리포트 (Algorithm Audit Report)
+                            <i class="fa-solid fa-list-check"></i> 7대 알고리즘 회차별 추천 당첨 결과 (Algorithm Audit Report)
                         </div>
                         <span class="guide-tag">7대 알고리즘 적중률 검증</span>
                     </div>
                     <p class="guide-desc">
-                        <strong>실구매 영수증 등록 여부와 상관없이</strong>, 본 플랫폼이 발급·추천했던 <strong>7대 AI 퀀트 알고리즘(기본 V4.0, V3.0 및 추가 5팩) 번호 조합들이 실제 추첨 결과 몇 등에 얼마나 적중했는지</strong>를 회차별로 투명하게 대조하고 분석하는 순수 알고리즘 성과 복기 메뉴입니다.
+                        <strong>실구매 영수증 등록 여부와 상관없이</strong>, 본 플랫폼이 발급·추천했던 <strong>7대 AI 퀀트 알고리즘(기본 V4.0, V3.0 및 추가 5팩) 번호 조합들이 실제 추첨 결과 몇 등에 얼마나 적중했는지</strong>를 회차별로 투명하게 대조하고 분석하는 순수 알고리즘 성과 검증 메뉴입니다.
                     </p>
                     <div class="guide-features">
                         <span class="feature-pill"><i class="fa-solid fa-chart-line" style="color:#10b981;"></i> <strong>7대 알고리즘 적중률 대조</strong> (V4, V3 및 추가팩 1~5 전체)</span>
                         <span class="feature-pill"><i class="fa-solid fa-trophy" style="color:#fbbf24;"></i> <strong>회차별 1~5등 배출 실적</strong> (알고리즘 추천 조합의 실제 등위 집계)</span>
-                        <span class="feature-pill"><i class="fa-solid fa-dna" style="color:#38bdf8;"></i> <strong>패턴 &amp; 적중 오차 복기</strong> (출현 번호와 추천 로직의 일치도 검증)</span>
-                        <span class="feature-pill"><i class="fa-solid fa-ban" style="color:#94a3b8;"></i> <strong>영수증 무관 전수 복기</strong> (구매 여부와 무관한 객관적 성과)</span>
+                        <span class="feature-pill"><i class="fa-solid fa-dna" style="color:#38bdf8;"></i> <strong>패턴 &amp; 적중 오차 분석</strong> (출현 번호와 추천 로직의 일치도 검증)</span>
+                        <span class="feature-pill"><i class="fa-solid fa-ban" style="color:#94a3b8;"></i> <strong>영수증 무관 전수 검증</strong> (구매 여부와 무관한 객관적 성과)</span>
                     </div>
                 </div>
 
@@ -1254,7 +1254,7 @@
 
                     <div>
 
-                        <h2><i class="fa-solid fa-list-check"></i> 7대 알고리즘 복기 리포트 <span style="font-size: 0.8rem; color: #a5b4fc; background: rgba(99,102,241,0.15); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(99,102,241,0.3); margin-left: 8px; font-weight: normal; vertical-align: middle;">제 1235회차부터 기준</span></h2>
+                        <h2><i class="fa-solid fa-list-check"></i> 7대 알고리즘 추천 당첨 결과 <span style="font-size: 0.8rem; color: #a5b4fc; background: rgba(99,102,241,0.15); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(99,102,241,0.3); margin-left: 8px; font-weight: normal; vertical-align: middle;">제 1235회차부터 기준</span></h2>
 
                         <p>실구매 영수증 등록 여부와 무관하게, 1235회차부터 7대 알고리즘이 추천했던 모든 번호의 실제 당첨 적중률과 누적 성과를 투명하게 대조하고 분석합니다.</p>
 
@@ -1345,15 +1345,15 @@
 
             </section>
 
-            <!-- TAB: 구매 확정 리스트 (상위 독립 메뉴 분리) -->
+            <!-- TAB: 구매 확정현황 (상위 독립 메뉴 분리) -->
 
             <section id="tab-confirmed-list" class="tab-content">
 
-                <!-- 📌 [메뉴 기능 안내] 구매 확정 리스트 -->
+                <!-- 📌 [메뉴 기능 안내] 구매 확정현황 -->
                 <div class="menu-guide-banner">
                     <div class="guide-header">
                         <div class="guide-title">
-                            <i class="fa-solid fa-receipt"></i> 실구매 확정 리스트 (QR 스캔 및 공인 원장)
+                            <i class="fa-solid fa-receipt"></i> 실구매 확정현황 (QR 스캔 및 공인 원장)
                         </div>
                         <span class="guide-tag">실구매 인증 원장</span>
                     </div>
@@ -1370,7 +1370,7 @@
 
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                     <div>
-                        <h2><i class="fa-solid fa-receipt"></i> 실제 구매 확정 전체 리스트 <span style="font-size: 0.8rem; color: #a5b4fc; background: rgba(99,102,241,0.15); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(99,102,241,0.3); margin-left: 8px; font-weight: normal; vertical-align: middle; white-space: nowrap; display: inline-block;">제 1235회차부터 실구매 기준</span></h2>
+                        <h2><i class="fa-solid fa-receipt"></i> 실제 구매 확정현황 <span style="font-size: 0.8rem; color: #a5b4fc; background: rgba(99,102,241,0.15); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(99,102,241,0.3); margin-left: 8px; font-weight: normal; vertical-align: middle; white-space: nowrap; display: inline-block;">제 1235회차부터 실구매 기준</span></h2>
                         <p>실제 로또 영수증을 바탕으로 등록한 모든 회차의 구매 조합 내역과 실시간 당첨 결과를 통합 모니터링합니다.</p>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
@@ -1464,11 +1464,11 @@
 
 <section id="tab-dashboard" class="tab-content">
 
-                <!-- 📌 [메뉴 기능 안내] 통계 분석 대시보드 -->
+                <!-- 📌 [메뉴 기능 안내] 통계분석 -->
                 <div class="menu-guide-banner guide-blue">
                     <div class="guide-header">
                         <div class="guide-title">
-                            <i class="fa-solid fa-chart-pie"></i> 빅데이터 통계 분석 대시보드 (Big Data Center)
+                            <i class="fa-solid fa-chart-pie"></i> 빅데이터 통계분석 (Big Data Center)
                         </div>
                         <span class="guide-tag">전 회차 통계 센터</span>
                     </div>
@@ -1788,7 +1788,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v718
+                        <i class="fa-solid fa-code-branch"></i> v719
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3010,9 +3010,9 @@
         // ========================================================
         // 📱 App Version & Cache Busting Controller
         // ========================================================
-        window.APP_VERSION = 'v718';
+        window.APP_VERSION = 'v719';
         window.updateAppVersionBadges = function(ver) {
-            var v = ver || window.APP_VERSION || 'v718';
+            var v = ver || window.APP_VERSION || 'v719';
             var landingBadge = document.getElementById('appVersionBadgeLanding');
             if (landingBadge) {
                 landingBadge.innerHTML = '<i class="fa-solid fa-code-branch"></i> ' + v + ' <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>';
@@ -3036,7 +3036,7 @@
         }
 
         window.forceReloadCache = async function() {
-            var vStr = window.APP_VERSION || 'v718';
+            var vStr = window.APP_VERSION || 'v719';
             if (confirm('🔄 최신 버전(' + vStr + ')으로 캐시를 비우고 새로고침하시겠습니까?')) {
                 try {
                     if ('caches' in window) {

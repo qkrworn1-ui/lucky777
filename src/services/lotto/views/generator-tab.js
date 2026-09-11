@@ -423,7 +423,7 @@ export function render7AlgorithmsRealReviewSection() {
 
                 <button type="button" onclick="window.toggleAlgoRealReviewAccordion && window.toggleAlgoRealReviewAccordion('${algo.id}')" style="width: 100%; padding: 6px 8px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12); background: rgba(30,41,59,0.8); color: ${algo.color}; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
-                    <span>${isExpanded ? '회차별 복기 닫기' : `회차별 복기 상세 (${algo.totalWins}회 적중)`}</span>
+                    <span>${isExpanded ? '회차별 결과 닫기' : `회차별 당첨 상세 (${algo.totalWins}회 적중)`}</span>
                 </button>
 
                 <div id="algo-review-detail-${algo.id}" style="display: ${isExpanded ? 'block' : 'none'}; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 6px; max-height: 350px; overflow-y: auto;">
@@ -439,7 +439,7 @@ export function render7AlgorithmsRealReviewSection() {
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; cursor: pointer;" onclick="window.toggleAlgoReviewMainCollapse && window.toggleAlgoReviewMainCollapse()">
                 <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                     <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; padding: 2px 6px; border-radius: 6px; font-size: 0.7rem; font-weight: 900;">
-                        <i class="fa-solid fa-trophy"></i> 7대 알고리즘 실데이터 복기
+                        <i class="fa-solid fa-trophy"></i> 7대 알고리즘 실데이터 당첨 결과
                     </span>
                     <span style="font-size: 0.78rem; font-weight: 700; color: #f8fafc;">
                         제 ${fromRound}~${maxRound}회 (${totalRoundsCount}회차 누적)
@@ -1946,6 +1946,9 @@ export function handleClearExtraPacks() {
  */
 export function changeGeneratorAdminViewingUser(userId) {
     generatorAdminViewingUser = userId;
+    if (typeof window !== 'undefined') {
+        window.generatorAdminViewingUser = userId;
+    }
     const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
     
     // Recalculate deterministic recommendations for selected user
@@ -1955,6 +1958,13 @@ export function changeGeneratorAdminViewingUser(userId) {
     renderTop5Combinations();
     renderExtraAddonPacksSection();
     render7AlgorithmsRealReviewSection();
+    // If Quick View (간편보기) modal is currently open, dynamically refresh its content
+    if (typeof window !== 'undefined' && typeof window.renderQuickViewContent === 'function') {
+        const compactModal = document.getElementById('compactViewModal');
+        if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+            window.renderQuickViewContent();
+        }
+    }
     showToast(`👑 [${userId}] 회원의 추천 번호 및 추가팩으로 즉시 전환되었습니다.`);
 }
 
