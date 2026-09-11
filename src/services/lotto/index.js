@@ -18,7 +18,7 @@ import { setupManualLedgerModal, updateManualModalCrossCheck } from './views/man
 import { setupManualDrawModal } from './views/manual-draw-modal.js';
 import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
 import { computeAbsoluteTop10Combinations } from './generator.js';
-import { getLedger, getHistoricalTop10Combinations, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash } from './ledger.js';
+import { getLedger, getHistoricalTop10Combinations, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint } from './ledger.js';
 
 export async function initLottoService() {
     window.initLottoService = initLottoService;
@@ -43,6 +43,9 @@ export async function initLottoService() {
         showToast('데이터베이스 동기화 중...');
         if (statusIndicator) { statusIndicator.style.background = '#10b981'; statusIndicator.style.boxShadow = '0 0 8px #10b981'; }
         if (statusText) statusText.textContent = 'DB 접속 완료 (Cloud)';
+
+        // Initial background sync for receipt trash
+        fetchReceiptTrash().catch(() => {});
 
         const authId = (SafeAuth.get() || '').trim().toLowerCase();
         // Reset in-memory ledger to prevent cross-account pollution on re-login
@@ -379,9 +382,11 @@ if (typeof window !== 'undefined') {
     window.computeAbsoluteTop10Combinations = computeAbsoluteTop10Combinations;
     window.updateManualModalCrossCheck = updateManualModalCrossCheck;
     window.getReceiptTrashList = getReceiptTrashList;
+    window.fetchReceiptTrash = fetchReceiptTrash;
     window.saveReceiptTrashList = saveReceiptTrashList;
     window.moveToReceiptTrash = moveToReceiptTrash;
     window.restoreFromReceiptTrash = restoreFromReceiptTrash;
     window.permanentDeleteFromReceiptTrash = permanentDeleteFromReceiptTrash;
     window.emptyEntireReceiptTrash = emptyEntireReceiptTrash;
+    window.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
 }

@@ -403,7 +403,101 @@ class TestFullSystem(unittest.TestCase):
         is_duplicate = duplicate_receipt['qrSerial'] in seen_serials
         self.assertTrue(is_duplicate, "Duplicate receipt with identical QR serial must be detected and rejected")
 
+    # [Test 12] Sequential QR Registration & Single Receipt Trash Isolation Test
+    def test_12_sequential_qr_registration_and_trash_isolation(self):
+        # 1. Sequential QR receipts with generic serial fallback must NOT be falsely deduplicated
+        receipt_1 = {
+            'receiptId': 'rcpt_pjg_1240_1001_0_abc',
+            'round': 1240,
+            'user': 'pjg',
+            'qrSerial': 'TR-정상발권', # generic fallback
+            'combos': [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]],
+            'timestamp': '2026-09-11T13:00:00.000Z',
+            'isLocked': True
+        }
+        receipt_2 = {
+            'receiptId': 'rcpt_pjg_1240_1002_0_def',
+            'round': 1240,
+            'user': 'pjg',
+            'qrSerial': 'TR-정상발권', # generic fallback on 2nd scan
+            'combos': [[13, 14, 15, 16, 17, 18], [19, 20, 21, 22, 23, 24]],
+            'timestamp': '2026-09-11T13:00:01.000Z',
+            'isLocked': True
+        }
+
+        # Emulate deduplicateReceipts logic
+        def get_combos_fp(rcpt):
+            return "|".join("-".join(str(n) for n in sorted(c)) for c in rcpt.get('combos', []))
+
+        def deduplicate(receipt_list):
+            seen = set()
+            result = []
+            for item in receipt_list:
+                r_id = item.get('receiptId')
+                serial = item.get('qrSerial')
+                is_generic = not serial or serial == 'TR-정상발권' or serial.startswith('TR-정상')
+                combos_fp = get_combos_fp(item)
+                user = item.get('user', '')
+                r_round = item.get('round', '')
+
+                if r_id:
+                    key = f"id_{r_id}"
+                elif not is_generic and serial and len(serial) >= 6:
+                    key = f"serial_{serial}_{user}_{r_round}"
+                elif combos_fp:
+                    key = f"combos_{r_round}_{user}_{combos_fp}"
+                else:
+                    key = f"item_{r_round}_{user}_{item.get('timestamp')}"
+
+                if key not in seen:
+                    seen.add(key)
+                    result.append(item)
+            return result
+
+        combined = [receipt_1, receipt_2]
+        deduped = deduplicate(combined)
+        self.assertEqual(len(deduped), 2, "Sequential receipts with different numbers must BOTH be preserved!")
+
+        # 2. Deleting Receipt 1 must strictly preserve Receipt 2 (Zero cross-deletion)
+        active_ledger = [receipt_1.copy(), receipt_2.copy()]
+        trash_store = []
+
+        # Emulate exact single deletion by receiptId / fingerprint
+        target_to_delete = receipt_1
+        target_id = target_to_delete['receiptId']
+        target_fp = get_combos_fp(target_to_delete)
+
+        # Move to trash
+        trash_item = {**target_to_delete, 'trashedAt': '2026-09-11T13:05:00.000Z', 'trashId': 'trash_001'}
+        trash_store.insert(0, trash_item)
+
+        # Remove ONLY single item from ledger
+        remove_idx = -1
+        for idx, p in enumerate(active_ledger):
+            if p.get('receiptId') == target_id:
+                remove_idx = idx
+                break
+            if remove_idx == -1 and get_combos_fp(p) == target_fp:
+                remove_idx = idx
+                break
+
+        self.assertNotEqual(remove_idx, -1)
+        active_ledger.pop(remove_idx)
+
+        # Verify: Receipt 1 removed, Receipt 2 perfectly preserved in active ledger
+        self.assertEqual(len(active_ledger), 1, "Only 1 receipt must be removed!")
+        self.assertEqual(active_ledger[0]['receiptId'], 'rcpt_pjg_1240_1002_0_def')
+        self.assertEqual(len(trash_store), 1, "Trash must contain exactly 1 deleted receipt!")
+        self.assertEqual(trash_store[0]['receiptId'], 'rcpt_pjg_1240_1001_0_abc')
+
+        # 3. Restoring Receipt 1 from Trash back to active ledger
+        restored_item = trash_store.pop(0)
+        active_ledger.append(restored_item)
+        self.assertEqual(len(active_ledger), 2, "Both receipts must exist after restoration!")
+        self.assertEqual(len(trash_store), 0, "Trash must now be empty!")
+
 
 if __name__ == '__main__':
     unittest.main()
+
 

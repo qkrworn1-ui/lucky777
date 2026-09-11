@@ -340,7 +340,8 @@ export function processLottoQrPayload(rawText) {
             if (combos.length > 0 && combosEl) {
                 const rawQrUrl = decodedText.startsWith('http') ? decodedText : `http://m.dhlottery.co.kr/qr.do?method=winQr&v=${vParam}`;
                 const rawSerial = vParam.replace(/^\d{3,4}/, '').replace(/[a-zA-Z]\d{12}/g, '').trim();
-                const qrSerial = rawSerial || 'TR-정상발권';
+                const uniqueFallbackSerial = `TR-${round}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+                const qrSerial = (rawSerial && rawSerial.length >= 4) ? rawSerial : uniqueFallbackSerial;
 
                 combosEl.removeAttribute('readonly');
                 combosEl.style.background = 'rgba(16, 185, 129, 0.08)';
@@ -870,14 +871,23 @@ export async function handleSaveManualLedger() {
 
         const qrRawUrl = combosEl ? (combosEl.dataset.qrRawUrl || null) : null;
         const qrSerial = combosEl ? (combosEl.dataset.qrSerial || null) : null;
+        const fallbackSerial = `TR-${roundInput}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
         const qrMeta = (combosEl && (combosEl.dataset.qrScanned === 'true' || qrRawUrl || qrSerial)) ? {
-            qrSerial: qrSerial || 'TR-정상발권',
+            qrSerial: qrSerial || fallbackSerial,
             qrRawUrl: qrRawUrl,
             qrScannedAt: new Date().toISOString()
         } : null;
 
-        console.log('[handleSaveManualLedger] Saving to ledger...', { roundInput, effectiveAuthId, qrSerial });
+        console.log('[handleSaveManualLedger] Saving to ledger...', { roundInput, effectiveAuthId, qrSerial: qrMeta?.qrSerial });
         await saveToLedger(roundInput, newCombos, finalVersionStr, effectiveAuthId, qrMeta);
+
+        // Reset combos element dataset & content to prevent stale state in sequential registrations
+        if (combosEl) {
+            combosEl.value = '';
+            delete combosEl.dataset.qrScanned;
+            delete combosEl.dataset.qrRawUrl;
+            delete combosEl.dataset.qrSerial;
+        }
 
         // Close modal immediately regardless of return value
         if (manualLedgerModal) {

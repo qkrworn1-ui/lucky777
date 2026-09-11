@@ -6449,7 +6449,22 @@ function isUserEligibleForExtraPacks(userId = null) {
 }
 
 /**
- * 🔒 Deduplicate receipts by QR serial or combination fingerprint
+ * 🔒 Get canonical fingerprint for a receipt (combines all 5 games in order)
+ * @param {Object} receipt 
+ * @returns {string}
+ */
+function getReceiptCombosFingerprint(receipt) {
+    if (!receipt || !Array.isArray(receipt.combos)) return '';
+    return receipt.combos.map(c => {
+        const nums = getComboNumbers(c);
+        if (!Array.isArray(nums) || nums.length === 0) return '';
+        return nums.slice().sort((a, b) => a - b).join('-');
+    }).filter(Boolean).join('|');
+}
+
+/**
+ * 🔒 Deduplicate receipts by unique receiptId, valid QR serial, or full combo fingerprint
+ * Ensures different receipts are NEVER falsely deleted or dropped.
  * @param {Array} receiptList 
  * @returns {Array}
  */
@@ -6460,11 +6475,27 @@ function deduplicateReceipts(receiptList) {
 
     receiptList.forEach(item => {
         if (!item) return;
-        const serial = (item.qrMeta && item.qrMeta.qrSerial) ? String(item.qrMeta.qrSerial).trim() : null;
-        const firstCombo = (item.combos && item.combos[0]) 
-            ? JSON.stringify(item.combos[0].numbers || item.combos[0]) 
-            : '';
-        const key = serial ? `serial_${serial}` : `combo_${firstCombo}_${item.timestamp || ''}`;
+        const receiptId = item.receiptId || item.id || null;
+        const serial = (item.qrMeta && item.qrMeta.qrSerial) ? String(item.qrMeta.qrSerial).trim() : (item.qrSerial ? String(item.qrSerial).trim() : null);
+        
+        // Detect generic/placeholder serials (e.g. 'TR-정상발권', 'TR-정상발권 확인됨')
+        const isGenericSerial = !serial || serial === 'TR-정상발권' || serial === 'TR-정상' || serial === 'TR-정상발권 확인됨' || serial.startsWith('TR-정상');
+
+        const combosFp = getReceiptCombosFingerprint(item);
+        const uUser = (item.user || item.userId || '').toLowerCase().trim();
+        const uRound = item.round || item.originalRound || '';
+
+        // Generate rigorous unique deduplication key
+        let key = '';
+        if (receiptId) {
+            key = `id_${receiptId}`;
+        } else if (!isGenericSerial && serial && serial.length >= 6) {
+            key = `serial_${serial}_${uUser}_${uRound}`;
+        } else if (combosFp) {
+            key = `combos_${uRound}_${uUser}_${combosFp}`;
+        } else {
+            key = `item_${uRound}_${uUser}_${item.timestamp || Math.random().toString(36)}`;
+        }
 
         if (!seen.has(key)) {
             seen.add(key);
@@ -6477,6 +6508,7 @@ function deduplicateReceipts(receiptList) {
 
 if (typeof window !== 'undefined') {
     window.isUserEligibleForExtraPacks = isUserEligibleForExtraPacks;
+    window.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
     window.deduplicateReceipts = deduplicateReceipts;
 }
 
@@ -6855,7 +6887,7 @@ async function saveToLedger(round, combos, versionStr, user = null, qrMeta = nul
         }
 
         const purchaseRecord = {
-            receiptId: `rcpt_${authId}_${r}_${Date.now()}_${i}`,
+            receiptId: `rcpt_${authId}_${r}_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 6)}`,
             version: vStr,
             algoName: algoName,
             user: authId,
@@ -7670,19 +7702,57 @@ async function clearEntireLedger() {
  */
 
 /**
- * Get the current receipt trash list
+ * Get the current receipt trash list from local cache or state
  * @returns {Array<Object>}
  */
 function getReceiptTrashList() {
+    if (state && Array.isArray(state.receiptTrashList) && state.receiptTrashList.length > 0) {
+        return state.receiptTrashList;
+    }
     const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : SafeLocalStorage;
     try {
         const raw = storage.getItem('lotto_purchases_trash');
         if (raw) {
             const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) return parsed;
+            if (Array.isArray(parsed)) {
+                if (state) state.receiptTrashList = parsed;
+                return parsed;
+            }
         }
     } catch(e) {}
     return [];
+}
+
+/**
+ * Fetch receipt trash list from Firestore Cloud and sync with local storage
+ * @returns {Promise<Array<Object>>}
+ */
+async function fetchReceiptTrash() {
+    const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : SafeLocalStorage;
+    const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+    
+    if (firestore) {
+        try {
+            const doc = await Promise.race([
+                firestore.collection('lotto_purchases_trash').doc('global_trash').get(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch Trash timeout')), 3000))
+            ]);
+            if (doc && doc.exists) {
+                const data = doc.data();
+                if (data && Array.isArray(data.trash)) {
+                    const cleanList = removeUndefined(data.trash);
+                    try {
+                        storage.setItem('lotto_purchases_trash', JSON.stringify(cleanList));
+                    } catch(e) {}
+                    if (state) state.receiptTrashList = cleanList;
+                    return cleanList;
+                }
+            }
+        } catch(err) {
+            console.warn('[Fetch Receipt Trash Notice]', err);
+        }
+    }
+    return getReceiptTrashList();
 }
 
 /**
@@ -7693,11 +7763,12 @@ async function saveReceiptTrashList(trashList) {
     const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : SafeLocalStorage;
     const cleanList = Array.isArray(trashList) ? removeUndefined(trashList) : [];
     
+    if (state) state.receiptTrashList = cleanList;
     try {
         storage.setItem('lotto_purchases_trash', JSON.stringify(cleanList));
     } catch(e) {}
 
-    const firestore = (db && typeof db.getFirestore === 'function') ? db.getFirestore() : window.db;
+    const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
     if (firestore) {
         try {
             await Promise.race([
@@ -7712,7 +7783,8 @@ async function saveReceiptTrashList(trashList) {
 }
 
 /**
- * Move a purchase record to receipt trash (Safe deletion)
+ * Move a single purchase record to receipt trash (Safe 2-step deletion)
+ * 🔒 Strictly removes ONLY the single targeted receipt, never deleting sibling receipts of the same round or day!
  * @param {number} round 
  * @param {number} pIdx 
  * @param {Object} purchase 
@@ -7721,7 +7793,7 @@ async function saveReceiptTrashList(trashList) {
 async function moveToReceiptTrash(round, pIdx, purchase, currentAuthId) {
     if (!purchase) return false;
     const r = parseInt(round);
-    const authId = (currentAuthId || 'master').toLowerCase().trim();
+    const authId = (currentAuthId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'master').toLowerCase().trim();
     const purchaseUser = (purchase.user || purchase.userId || authId).toLowerCase().trim();
 
     // 1. Create safe trash record
@@ -7738,13 +7810,14 @@ async function moveToReceiptTrash(round, pIdx, purchase, currentAuthId) {
     trashList.unshift(trashItem);
     await saveReceiptTrashList(trashList);
 
-    // 3. Remove permanently from main ledger across relevant accounts
+    // 3. Remove EXACTLY the single target receipt from user & master ledgers
     const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : SafeLocalStorage;
-    const firestore = (db && typeof db.getFirestore === 'function') ? db.getFirestore() : window.db;
+    const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
     const targetUsers = Array.from(new Set([purchaseUser, authId, 'master'].filter(Boolean)));
 
-    const pFirst = purchase.combos && purchase.combos[0] && (purchase.combos[0].numbers || purchase.combos[0]);
-    const pTimestamp = purchase.timestamp;
+    const targetReceiptId = purchase.receiptId || purchase.id || null;
+    const targetCombosFp = getReceiptCombosFingerprint(purchase);
+    const targetTimestamp = purchase.timestamp || null;
 
     for (const uId of targetUsers) {
         let uLedger = {};
@@ -7753,32 +7826,56 @@ async function moveToReceiptTrash(round, pIdx, purchase, currentAuthId) {
             if (raw) uLedger = JSON.parse(raw);
         } catch(e) {}
 
-        if (uLedger[r] && Array.isArray(uLedger[r])) {
-            uLedger[r] = uLedger[r].filter(p => {
-                if (pTimestamp && p.timestamp === pTimestamp) return false;
-                if (!p.combos || !pFirst) return true;
-                const f = p.combos[0] && (p.combos[0].numbers || p.combos[0]);
-                return JSON.stringify(f) !== JSON.stringify(pFirst);
-            });
-            if (uLedger[r].length === 0) delete uLedger[r];
-            try { storage.setItem(`lotto_actual_ledger_${uId}`, JSON.stringify(uLedger)); } catch(e){}
-        }
+        if (uLedger[r] && Array.isArray(uLedger[r]) && uLedger[r].length > 0) {
+            // Find EXACT index of target receipt to remove ONLY 1 item
+            let removeIdx = -1;
 
-        if (firestore) {
-            try {
-                const cleanLedger = removeUndefined(uLedger);
-                await Promise.race([
-                    firestore.collection('lotto_purchases').doc(uId).set({ ledger: cleanLedger }),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000))
-                ]);
-            } catch(e) {}
-        }
+            // Strategy 1: Match by unique receiptId
+            if (targetReceiptId) {
+                removeIdx = uLedger[r].findIndex(p => p && (p.receiptId === targetReceiptId || p.id === targetReceiptId));
+            }
 
-        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[uId]) {
-            state.allUsersPurchasesMap[uId].ledger = uLedger;
-        }
-        if (uId === authId) {
-            state.globalLedger = uLedger;
+            // Strategy 2: Match by exact 5-game combo fingerprint AND timestamp
+            if (removeIdx === -1 && targetCombosFp) {
+                removeIdx = uLedger[r].findIndex(p => {
+                    if (!p) return false;
+                    const pFp = getReceiptCombosFingerprint(p);
+                    if (pFp !== targetCombosFp) return false;
+                    if (targetTimestamp && p.timestamp && p.timestamp === targetTimestamp) return true;
+                    return true;
+                });
+            }
+
+            // Strategy 3: Fallback by pIdx if in bounds and matching target user
+            if (removeIdx === -1 && typeof pIdx === 'number' && pIdx >= 0 && pIdx < uLedger[r].length) {
+                const candidate = uLedger[r][pIdx];
+                if (candidate && (!candidate.isLocked || authId === 'master' || authId === 'admin')) {
+                    removeIdx = pIdx;
+                }
+            }
+
+            if (removeIdx !== -1) {
+                uLedger[r].splice(removeIdx, 1);
+                if (uLedger[r].length === 0) delete uLedger[r];
+                try { storage.setItem(`lotto_actual_ledger_${uId}`, JSON.stringify(uLedger)); } catch(e){}
+
+                if (firestore) {
+                    try {
+                        const cleanLedger = removeUndefined(uLedger);
+                        await Promise.race([
+                            firestore.collection('lotto_purchases').doc(uId).set({ ledger: cleanLedger }),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000))
+                        ]);
+                    } catch(e) {}
+                }
+
+                if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[uId]) {
+                    state.allUsersPurchasesMap[uId].ledger = uLedger;
+                }
+                if (uId === authId) {
+                    state.globalLedger = uLedger;
+                }
+            }
         }
     }
 
@@ -7802,10 +7899,17 @@ async function restoreFromReceiptTrash(trashId, currentAuthId) {
     const round = item.originalRound || parseInt(item.round);
     const targetUser = (item.user || item.userId || currentAuthId || 'master').toLowerCase().trim();
 
-    // Prepare restored purchase record
+    // Prepare restored purchase record with new unique ID if needed
     const restoredPurchase = {
-        version: item.version,
+        receiptId: item.receiptId || `rcpt_${targetUser}_${round}_${Date.now()}_restored`,
+        version: item.version || 'QR 실구매 영수증 (5게임)',
+        algoName: item.algoName || '실물 QR 영수증 / 복원',
         user: targetUser,
+        userId: targetUser,
+        userName: item.userName || targetUser,
+        phone: item.phone || '',
+        userType: item.userType || 'regular',
+        round: round,
         combos: item.combos,
         timestamp: item.timestamp || new Date().toISOString(),
         isLocked: true, // Auto-locked on restore to prevent accidental deletion
@@ -7989,6 +8093,13 @@ function getUserConfirmedWinningsAuditTrail(userId) {
 
 if (typeof window !== 'undefined') {
     window.getUserConfirmedWinningsAuditTrail = getUserConfirmedWinningsAuditTrail;
+    window.getReceiptTrashList = getReceiptTrashList;
+    window.fetchReceiptTrash = fetchReceiptTrash;
+    window.saveReceiptTrashList = saveReceiptTrashList;
+    window.moveToReceiptTrash = moveToReceiptTrash;
+    window.restoreFromReceiptTrash = restoreFromReceiptTrash;
+    window.permanentDeleteFromReceiptTrash = permanentDeleteFromReceiptTrash;
+    window.emptyEntireReceiptTrash = emptyEntireReceiptTrash;
 }
 
 
@@ -7997,6 +8108,10 @@ if (typeof window !== 'undefined') {
         if (typeof isUserEligibleForExtraPacks !== 'undefined') {
             __exports.isUserEligibleForExtraPacks = isUserEligibleForExtraPacks;
             if (typeof window !== 'undefined') window.isUserEligibleForExtraPacks = isUserEligibleForExtraPacks;
+        }
+        if (typeof getReceiptCombosFingerprint !== 'undefined') {
+            __exports.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
+            if (typeof window !== 'undefined') window.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
         }
         if (typeof deduplicateReceipts !== 'undefined') {
             __exports.deduplicateReceipts = deduplicateReceipts;
@@ -8065,6 +8180,10 @@ if (typeof window !== 'undefined') {
         if (typeof getReceiptTrashList !== 'undefined') {
             __exports.getReceiptTrashList = getReceiptTrashList;
             if (typeof window !== 'undefined') window.getReceiptTrashList = getReceiptTrashList;
+        }
+        if (typeof fetchReceiptTrash !== 'undefined') {
+            __exports.fetchReceiptTrash = fetchReceiptTrash;
+            if (typeof window !== 'undefined') window.fetchReceiptTrash = fetchReceiptTrash;
         }
         if (typeof saveReceiptTrashList !== 'undefined') {
             __exports.saveReceiptTrashList = saveReceiptTrashList;
@@ -18750,7 +18869,7 @@ const { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACVa
 const { createBallHtml, renderBallRow, getRankBadge, openModal, closeModal } = __M_shared_components;
 const { db } = __M_shared_db;
 const { SafeAuth, isAdminUser, getUserRealName } = __M_shared_auth_mgmt;
-const { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts } = __M_services_lotto_ledger;
+const { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash } = __M_services_lotto_ledger;
 const { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } = __M_services_lotto_generator;
 const { recalculateGroups } = __M_services_lotto_statistics;
 
@@ -19199,7 +19318,7 @@ async function renderConfirmedPurchasesList() {
                 ${isAdmin ? `
                     <button id="btnOpenReceiptTrash" title="삭제된 영수증이 임시 보관된 휴지통을 열어 원상 복원하거나 영구 삭제합니다." style="padding: 5px 12px; font-size: 0.78rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.25)); border: 1.5px solid #ef4444; color: #fca5a5; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 800; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);">
                         <i class="fa-solid fa-trash-arrow-up" style="color: #f87171;"></i> 🗑️ 영수증 휴지통 
-                        <span id="badgeReceiptTrashCount" style="background: #ef4444; color: #fff; font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 900;">${(typeof window.getReceiptTrashList === 'function' ? window.getReceiptTrashList().length : 0)}</span>
+                        <span id="badgeReceiptTrashCount" style="background: #ef4444; color: #fff; font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 900;">${getReceiptTrashList().length}</span>
                     </button>
                 ` : ''}
                 <button id="btnExportLedgerBackup" title="현재 등록된 실구매 확정 내역 전체를 고유 텍스트 파일(.json)로 안전하게 다운로드 백업합니다." style="padding: 5px 11px; font-size: 0.78rem; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.45); color: #6ee7b7; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 700;">
@@ -19787,15 +19906,12 @@ async function renderConfirmedPurchasesList() {
 
             if (confirm(`제 ${round}회차의 잠금되지 않은 영수증 ${unlockedCount}개를 모두 [휴지통]으로 이동하시겠습니까?\n(잠금된 ${lockedList.length}개 영수증은 안전하게 보존되며, 휴지통에서 언제든지 복원 가능합니다.)`)) {
                 const unlockedReceipts = purchases.filter(p => !p.isLocked);
-                for (const p of unlockedReceipts) {
-                    if (typeof moveToReceiptTrash === 'function') {
-                        await moveToReceiptTrash(round, 0, p, currentAuthId);
-                    } else if (typeof window.moveToReceiptTrash === 'function') {
-                        await window.moveToReceiptTrash(round, 0, p, currentAuthId);
-                    }
+                for (let i = 0; i < unlockedReceipts.length; i++) {
+                    await moveToReceiptTrash(round, i, unlockedReceipts[i], currentAuthId);
                 }
 
-                renderConfirmedPurchasesList();
+                await renderConfirmedPurchasesList();
+                renderReceiptTrashModalContent();
                 if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
                 if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
                 showToast(`🗑️ 제 ${round}회차 미잠금 영수증 ${unlockedCount}개가 [휴지통]으로 안전 보관 이동되었습니다.`);
@@ -19999,17 +20115,14 @@ async function renderConfirmedPurchasesList() {
 
                 if (confirm(`정말 이 구매 내역을 [휴지통]으로 이동하시겠습니까?\n(회차: ${round}회, 내역 #${pIdx+1}, 회원: ${purchaseUser})\n\n💡 삭제된 영수증은 휴지통에 안전 보관되며, 언제든지 [복원] 버튼으로 되돌릴 수 있습니다.`)) {
                     // 1. Safely move to receipt trash
-                    if (typeof moveToReceiptTrash === 'function') {
-                        await moveToReceiptTrash(round, pIdx, purchase, currentAuthId);
-                    } else if (typeof window.moveToReceiptTrash === 'function') {
-                        await window.moveToReceiptTrash(round, pIdx, purchase, currentAuthId);
-                    }
+                    await moveToReceiptTrash(round, pIdx, purchase, currentAuthId);
 
                     // 2. Re-render UI immediately
-                    renderConfirmedPurchasesList();
+                    await renderConfirmedPurchasesList();
+                    renderReceiptTrashModalContent();
                     if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
                     if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
-                    showToast('🗑️ 구매 영수증이 [휴지통]으로 안전 보관 이동되었습니다. (휴지통에서 복원 가능)');
+                    showToast('🗑️ 구매 영수증 1장이 [휴지통]으로 안전 보관 이동되었습니다. (휴지통에서 복원 가능)');
                 }
             }
         });
@@ -20342,7 +20455,7 @@ async function changeConfirmedAdminUser(userId) {
 // --------------------------------------------------------------------------
 // 🗑️ 영수증 휴지통(Recycle Bin) 관리 모달
 // --------------------------------------------------------------------------
-function openReceiptTrashModal() {
+async function openReceiptTrashModal() {
     let modal = document.getElementById('modalReceiptTrash');
     if (!modal) {
         modal = document.createElement('div');
@@ -20389,6 +20502,11 @@ function openReceiptTrashModal() {
         });
     }
 
+    // Always fetch latest cloud trash list before rendering
+    try {
+        await fetchReceiptTrash();
+    } catch(e) {}
+
     renderReceiptTrashModalContent();
     modal.style.display = 'flex';
 }
@@ -20402,7 +20520,7 @@ function renderReceiptTrashModalContent() {
     const body = document.getElementById('receiptTrashModalBody');
     if (!body) return;
 
-    const trashList = (typeof window.getReceiptTrashList === 'function') ? window.getReceiptTrashList() : [];
+    const trashList = getReceiptTrashList();
     
     // Update badge on toolbar
     const badge = document.getElementById('badgeReceiptTrashCount');
@@ -20497,9 +20615,8 @@ function renderReceiptTrashModalContent() {
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 복원중...`;
             
             const currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'master';
-            if (typeof window.restoreFromReceiptTrash === 'function') {
-                await window.restoreFromReceiptTrash(trashId, currentAuthId);
-            }
+            await restoreFromReceiptTrash(trashId, currentAuthId);
+
             renderReceiptTrashModalContent();
             await renderConfirmedPurchasesList();
             if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
@@ -20515,9 +20632,8 @@ function renderReceiptTrashModalContent() {
             if (confirm('💥 정말로 이 영수증을 완전히 영구 삭제하시겠습니까?\n\n이 작업은 복원할 수 없습니다.')) {
                 btn.disabled = true;
                 btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 삭제중...`;
-                if (typeof window.permanentDeleteFromReceiptTrash === 'function') {
-                    await window.permanentDeleteFromReceiptTrash(trashId);
-                }
+                await permanentDeleteFromReceiptTrash(trashId);
+
                 renderReceiptTrashModalContent();
                 showToast('💥 영수증이 영구 삭제되었습니다.');
             }
@@ -20531,9 +20647,8 @@ function renderReceiptTrashModalContent() {
             if (confirm('🧹 휴지통의 모든 영수증을 영구히 삭제하시겠습니까?\n\n휴지통이 완전히 비워지며 복원할 수 없습니다.')) {
                 btnEmptyTrash.disabled = true;
                 btnEmptyTrash.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 비우는중...`;
-                if (typeof window.emptyEntireReceiptTrash === 'function') {
-                    await window.emptyEntireReceiptTrash();
-                }
+                await emptyEntireReceiptTrash();
+
                 renderReceiptTrashModalContent();
                 showToast('🧹 휴지통이 깨끗하게 비워졌습니다.');
             }
@@ -21977,7 +22092,8 @@ function processLottoQrPayload(rawText) {
             if (combos.length > 0 && combosEl) {
                 const rawQrUrl = decodedText.startsWith('http') ? decodedText : `http://m.dhlottery.co.kr/qr.do?method=winQr&v=${vParam}`;
                 const rawSerial = vParam.replace(/^\d{3,4}/, '').replace(/[a-zA-Z]\d{12}/g, '').trim();
-                const qrSerial = rawSerial || 'TR-정상발권';
+                const uniqueFallbackSerial = `TR-${round}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+                const qrSerial = (rawSerial && rawSerial.length >= 4) ? rawSerial : uniqueFallbackSerial;
 
                 combosEl.removeAttribute('readonly');
                 combosEl.style.background = 'rgba(16, 185, 129, 0.08)';
@@ -22507,14 +22623,23 @@ async function handleSaveManualLedger() {
 
         const qrRawUrl = combosEl ? (combosEl.dataset.qrRawUrl || null) : null;
         const qrSerial = combosEl ? (combosEl.dataset.qrSerial || null) : null;
+        const fallbackSerial = `TR-${roundInput}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
         const qrMeta = (combosEl && (combosEl.dataset.qrScanned === 'true' || qrRawUrl || qrSerial)) ? {
-            qrSerial: qrSerial || 'TR-정상발권',
+            qrSerial: qrSerial || fallbackSerial,
             qrRawUrl: qrRawUrl,
             qrScannedAt: new Date().toISOString()
         } : null;
 
-        console.log('[handleSaveManualLedger] Saving to ledger...', { roundInput, effectiveAuthId, qrSerial });
+        console.log('[handleSaveManualLedger] Saving to ledger...', { roundInput, effectiveAuthId, qrSerial: qrMeta?.qrSerial });
         await saveToLedger(roundInput, newCombos, finalVersionStr, effectiveAuthId, qrMeta);
+
+        // Reset combos element dataset & content to prevent stale state in sequential registrations
+        if (combosEl) {
+            combosEl.value = '';
+            delete combosEl.dataset.qrScanned;
+            delete combosEl.dataset.qrRawUrl;
+            delete combosEl.dataset.qrSerial;
+        }
 
         // Close modal immediately regardless of return value
         if (manualLedgerModal) {
@@ -24585,7 +24710,7 @@ const { setupManualLedgerModal, updateManualModalCrossCheck } = __M_services_lot
 const { setupManualDrawModal } = __M_services_lotto_views_manual_draw_modal;
 const { autoSyncMissingDraws, setupSyncEvents } = __M_services_lotto_views_sync;
 const { computeAbsoluteTop10Combinations } = __M_services_lotto_generator;
-const { getLedger, getHistoricalTop10Combinations, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash } = __M_services_lotto_ledger;
+const { getLedger, getHistoricalTop10Combinations, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint } = __M_services_lotto_ledger;
 
 async function initLottoService() {
     window.initLottoService = initLottoService;
@@ -24610,6 +24735,9 @@ async function initLottoService() {
         showToast('데이터베이스 동기화 중...');
         if (statusIndicator) { statusIndicator.style.background = '#10b981'; statusIndicator.style.boxShadow = '0 0 8px #10b981'; }
         if (statusText) statusText.textContent = 'DB 접속 완료 (Cloud)';
+
+        // Initial background sync for receipt trash
+        fetchReceiptTrash().catch(() => {});
 
         const authId = (SafeAuth.get() || '').trim().toLowerCase();
         // Reset in-memory ledger to prevent cross-account pollution on re-login
@@ -24946,11 +25074,13 @@ if (typeof window !== 'undefined') {
     window.computeAbsoluteTop10Combinations = computeAbsoluteTop10Combinations;
     window.updateManualModalCrossCheck = updateManualModalCrossCheck;
     window.getReceiptTrashList = getReceiptTrashList;
+    window.fetchReceiptTrash = fetchReceiptTrash;
     window.saveReceiptTrashList = saveReceiptTrashList;
     window.moveToReceiptTrash = moveToReceiptTrash;
     window.restoreFromReceiptTrash = restoreFromReceiptTrash;
     window.permanentDeleteFromReceiptTrash = permanentDeleteFromReceiptTrash;
     window.emptyEntireReceiptTrash = emptyEntireReceiptTrash;
+    window.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
 }
 
         if (typeof initLottoService !== 'undefined') {

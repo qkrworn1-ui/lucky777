@@ -3,7 +3,7 @@ import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACV
 import { createBallHtml, renderBallRow, getRankBadge, openModal, closeModal } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgmt.js';
-import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts } from '../ledger.js';
+import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 
@@ -452,7 +452,7 @@ export async function renderConfirmedPurchasesList() {
                 ${isAdmin ? `
                     <button id="btnOpenReceiptTrash" title="삭제된 영수증이 임시 보관된 휴지통을 열어 원상 복원하거나 영구 삭제합니다." style="padding: 5px 12px; font-size: 0.78rem; background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(185, 28, 28, 0.25)); border: 1.5px solid #ef4444; color: #fca5a5; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 800; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);">
                         <i class="fa-solid fa-trash-arrow-up" style="color: #f87171;"></i> 🗑️ 영수증 휴지통 
-                        <span id="badgeReceiptTrashCount" style="background: #ef4444; color: #fff; font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 900;">${(typeof window.getReceiptTrashList === 'function' ? window.getReceiptTrashList().length : 0)}</span>
+                        <span id="badgeReceiptTrashCount" style="background: #ef4444; color: #fff; font-size: 0.7rem; padding: 1px 6px; border-radius: 10px; font-weight: 900;">${getReceiptTrashList().length}</span>
                     </button>
                 ` : ''}
                 <button id="btnExportLedgerBackup" title="현재 등록된 실구매 확정 내역 전체를 고유 텍스트 파일(.json)로 안전하게 다운로드 백업합니다." style="padding: 5px 11px; font-size: 0.78rem; background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.45); color: #6ee7b7; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: 700;">
@@ -1040,15 +1040,12 @@ export async function renderConfirmedPurchasesList() {
 
             if (confirm(`제 ${round}회차의 잠금되지 않은 영수증 ${unlockedCount}개를 모두 [휴지통]으로 이동하시겠습니까?\n(잠금된 ${lockedList.length}개 영수증은 안전하게 보존되며, 휴지통에서 언제든지 복원 가능합니다.)`)) {
                 const unlockedReceipts = purchases.filter(p => !p.isLocked);
-                for (const p of unlockedReceipts) {
-                    if (typeof moveToReceiptTrash === 'function') {
-                        await moveToReceiptTrash(round, 0, p, currentAuthId);
-                    } else if (typeof window.moveToReceiptTrash === 'function') {
-                        await window.moveToReceiptTrash(round, 0, p, currentAuthId);
-                    }
+                for (let i = 0; i < unlockedReceipts.length; i++) {
+                    await moveToReceiptTrash(round, i, unlockedReceipts[i], currentAuthId);
                 }
 
-                renderConfirmedPurchasesList();
+                await renderConfirmedPurchasesList();
+                renderReceiptTrashModalContent();
                 if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
                 if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
                 showToast(`🗑️ 제 ${round}회차 미잠금 영수증 ${unlockedCount}개가 [휴지통]으로 안전 보관 이동되었습니다.`);
@@ -1252,17 +1249,14 @@ export async function renderConfirmedPurchasesList() {
 
                 if (confirm(`정말 이 구매 내역을 [휴지통]으로 이동하시겠습니까?\n(회차: ${round}회, 내역 #${pIdx+1}, 회원: ${purchaseUser})\n\n💡 삭제된 영수증은 휴지통에 안전 보관되며, 언제든지 [복원] 버튼으로 되돌릴 수 있습니다.`)) {
                     // 1. Safely move to receipt trash
-                    if (typeof moveToReceiptTrash === 'function') {
-                        await moveToReceiptTrash(round, pIdx, purchase, currentAuthId);
-                    } else if (typeof window.moveToReceiptTrash === 'function') {
-                        await window.moveToReceiptTrash(round, pIdx, purchase, currentAuthId);
-                    }
+                    await moveToReceiptTrash(round, pIdx, purchase, currentAuthId);
 
                     // 2. Re-render UI immediately
-                    renderConfirmedPurchasesList();
+                    await renderConfirmedPurchasesList();
+                    renderReceiptTrashModalContent();
                     if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
                     if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
-                    showToast('🗑️ 구매 영수증이 [휴지통]으로 안전 보관 이동되었습니다. (휴지통에서 복원 가능)');
+                    showToast('🗑️ 구매 영수증 1장이 [휴지통]으로 안전 보관 이동되었습니다. (휴지통에서 복원 가능)');
                 }
             }
         });
@@ -1595,7 +1589,7 @@ export async function changeConfirmedAdminUser(userId) {
 // --------------------------------------------------------------------------
 // 🗑️ 영수증 휴지통(Recycle Bin) 관리 모달
 // --------------------------------------------------------------------------
-export function openReceiptTrashModal() {
+export async function openReceiptTrashModal() {
     let modal = document.getElementById('modalReceiptTrash');
     if (!modal) {
         modal = document.createElement('div');
@@ -1642,6 +1636,11 @@ export function openReceiptTrashModal() {
         });
     }
 
+    // Always fetch latest cloud trash list before rendering
+    try {
+        await fetchReceiptTrash();
+    } catch(e) {}
+
     renderReceiptTrashModalContent();
     modal.style.display = 'flex';
 }
@@ -1655,7 +1654,7 @@ export function renderReceiptTrashModalContent() {
     const body = document.getElementById('receiptTrashModalBody');
     if (!body) return;
 
-    const trashList = (typeof window.getReceiptTrashList === 'function') ? window.getReceiptTrashList() : [];
+    const trashList = getReceiptTrashList();
     
     // Update badge on toolbar
     const badge = document.getElementById('badgeReceiptTrashCount');
@@ -1750,9 +1749,8 @@ export function renderReceiptTrashModalContent() {
             btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 복원중...`;
             
             const currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'master';
-            if (typeof window.restoreFromReceiptTrash === 'function') {
-                await window.restoreFromReceiptTrash(trashId, currentAuthId);
-            }
+            await restoreFromReceiptTrash(trashId, currentAuthId);
+
             renderReceiptTrashModalContent();
             await renderConfirmedPurchasesList();
             if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
@@ -1768,9 +1766,8 @@ export function renderReceiptTrashModalContent() {
             if (confirm('💥 정말로 이 영수증을 완전히 영구 삭제하시겠습니까?\n\n이 작업은 복원할 수 없습니다.')) {
                 btn.disabled = true;
                 btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 삭제중...`;
-                if (typeof window.permanentDeleteFromReceiptTrash === 'function') {
-                    await window.permanentDeleteFromReceiptTrash(trashId);
-                }
+                await permanentDeleteFromReceiptTrash(trashId);
+
                 renderReceiptTrashModalContent();
                 showToast('💥 영수증이 영구 삭제되었습니다.');
             }
@@ -1784,9 +1781,8 @@ export function renderReceiptTrashModalContent() {
             if (confirm('🧹 휴지통의 모든 영수증을 영구히 삭제하시겠습니까?\n\n휴지통이 완전히 비워지며 복원할 수 없습니다.')) {
                 btnEmptyTrash.disabled = true;
                 btnEmptyTrash.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> 비우는중...`;
-                if (typeof window.emptyEntireReceiptTrash === 'function') {
-                    await window.emptyEntireReceiptTrash();
-                }
+                await emptyEntireReceiptTrash();
+
                 renderReceiptTrashModalContent();
                 showToast('🧹 휴지통이 깨끗하게 비워졌습니다.');
             }

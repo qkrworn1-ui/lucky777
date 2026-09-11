@@ -76,7 +76,22 @@ export function isUserEligibleForExtraPacks(userId = null) {
 }
 
 /**
- * 🔒 Deduplicate receipts by QR serial or combination fingerprint
+ * 🔒 Get canonical fingerprint for a receipt (combines all 5 games in order)
+ * @param {Object} receipt 
+ * @returns {string}
+ */
+export function getReceiptCombosFingerprint(receipt) {
+    if (!receipt || !Array.isArray(receipt.combos)) return '';
+    return receipt.combos.map(c => {
+        const nums = getComboNumbers(c);
+        if (!Array.isArray(nums) || nums.length === 0) return '';
+        return nums.slice().sort((a, b) => a - b).join('-');
+    }).filter(Boolean).join('|');
+}
+
+/**
+ * 🔒 Deduplicate receipts by unique receiptId, valid QR serial, or full combo fingerprint
+ * Ensures different receipts are NEVER falsely deleted or dropped.
  * @param {Array} receiptList 
  * @returns {Array}
  */
@@ -87,11 +102,27 @@ export function deduplicateReceipts(receiptList) {
 
     receiptList.forEach(item => {
         if (!item) return;
-        const serial = (item.qrMeta && item.qrMeta.qrSerial) ? String(item.qrMeta.qrSerial).trim() : null;
-        const firstCombo = (item.combos && item.combos[0]) 
-            ? JSON.stringify(item.combos[0].numbers || item.combos[0]) 
-            : '';
-        const key = serial ? `serial_${serial}` : `combo_${firstCombo}_${item.timestamp || ''}`;
+        const receiptId = item.receiptId || item.id || null;
+        const serial = (item.qrMeta && item.qrMeta.qrSerial) ? String(item.qrMeta.qrSerial).trim() : (item.qrSerial ? String(item.qrSerial).trim() : null);
+        
+        // Detect generic/placeholder serials (e.g. 'TR-정상발권', 'TR-정상발권 확인됨')
+        const isGenericSerial = !serial || serial === 'TR-정상발권' || serial === 'TR-정상' || serial === 'TR-정상발권 확인됨' || serial.startsWith('TR-정상');
+
+        const combosFp = getReceiptCombosFingerprint(item);
+        const uUser = (item.user || item.userId || '').toLowerCase().trim();
+        const uRound = item.round || item.originalRound || '';
+
+        // Generate rigorous unique deduplication key
+        let key = '';
+        if (receiptId) {
+            key = `id_${receiptId}`;
+        } else if (!isGenericSerial && serial && serial.length >= 6) {
+            key = `serial_${serial}_${uUser}_${uRound}`;
+        } else if (combosFp) {
+            key = `combos_${uRound}_${uUser}_${combosFp}`;
+        } else {
+            key = `item_${uRound}_${uUser}_${item.timestamp || Math.random().toString(36)}`;
+        }
 
         if (!seen.has(key)) {
             seen.add(key);
@@ -104,6 +135,7 @@ export function deduplicateReceipts(receiptList) {
 
 if (typeof window !== 'undefined') {
     window.isUserEligibleForExtraPacks = isUserEligibleForExtraPacks;
+    window.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
     window.deduplicateReceipts = deduplicateReceipts;
 }
 
@@ -482,7 +514,7 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
         }
 
         const purchaseRecord = {
-            receiptId: `rcpt_${authId}_${r}_${Date.now()}_${i}`,
+            receiptId: `rcpt_${authId}_${r}_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 6)}`,
             version: vStr,
             algoName: algoName,
             user: authId,
@@ -1297,19 +1329,57 @@ export async function clearEntireLedger() {
  */
 
 /**
- * Get the current receipt trash list
+ * Get the current receipt trash list from local cache or state
  * @returns {Array<Object>}
  */
 export function getReceiptTrashList() {
+    if (state && Array.isArray(state.receiptTrashList) && state.receiptTrashList.length > 0) {
+        return state.receiptTrashList;
+    }
     const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : localStorage;
     try {
         const raw = storage.getItem('lotto_purchases_trash');
         if (raw) {
             const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) return parsed;
+            if (Array.isArray(parsed)) {
+                if (state) state.receiptTrashList = parsed;
+                return parsed;
+            }
         }
     } catch(e) {}
     return [];
+}
+
+/**
+ * Fetch receipt trash list from Firestore Cloud and sync with local storage
+ * @returns {Promise<Array<Object>>}
+ */
+export async function fetchReceiptTrash() {
+    const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : localStorage;
+    const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+    
+    if (firestore) {
+        try {
+            const doc = await Promise.race([
+                firestore.collection('lotto_purchases_trash').doc('global_trash').get(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Fetch Trash timeout')), 3000))
+            ]);
+            if (doc && doc.exists) {
+                const data = doc.data();
+                if (data && Array.isArray(data.trash)) {
+                    const cleanList = removeUndefined(data.trash);
+                    try {
+                        storage.setItem('lotto_purchases_trash', JSON.stringify(cleanList));
+                    } catch(e) {}
+                    if (state) state.receiptTrashList = cleanList;
+                    return cleanList;
+                }
+            }
+        } catch(err) {
+            console.warn('[Fetch Receipt Trash Notice]', err);
+        }
+    }
+    return getReceiptTrashList();
 }
 
 /**
@@ -1320,11 +1390,12 @@ export async function saveReceiptTrashList(trashList) {
     const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : localStorage;
     const cleanList = Array.isArray(trashList) ? removeUndefined(trashList) : [];
     
+    if (state) state.receiptTrashList = cleanList;
     try {
         storage.setItem('lotto_purchases_trash', JSON.stringify(cleanList));
     } catch(e) {}
 
-    const firestore = (db && typeof db.getFirestore === 'function') ? db.getFirestore() : window.db;
+    const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
     if (firestore) {
         try {
             await Promise.race([
@@ -1339,7 +1410,8 @@ export async function saveReceiptTrashList(trashList) {
 }
 
 /**
- * Move a purchase record to receipt trash (Safe deletion)
+ * Move a single purchase record to receipt trash (Safe 2-step deletion)
+ * 🔒 Strictly removes ONLY the single targeted receipt, never deleting sibling receipts of the same round or day!
  * @param {number} round 
  * @param {number} pIdx 
  * @param {Object} purchase 
@@ -1348,7 +1420,7 @@ export async function saveReceiptTrashList(trashList) {
 export async function moveToReceiptTrash(round, pIdx, purchase, currentAuthId) {
     if (!purchase) return false;
     const r = parseInt(round);
-    const authId = (currentAuthId || 'master').toLowerCase().trim();
+    const authId = (currentAuthId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'master').toLowerCase().trim();
     const purchaseUser = (purchase.user || purchase.userId || authId).toLowerCase().trim();
 
     // 1. Create safe trash record
@@ -1365,13 +1437,14 @@ export async function moveToReceiptTrash(round, pIdx, purchase, currentAuthId) {
     trashList.unshift(trashItem);
     await saveReceiptTrashList(trashList);
 
-    // 3. Remove permanently from main ledger across relevant accounts
+    // 3. Remove EXACTLY the single target receipt from user & master ledgers
     const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : localStorage;
-    const firestore = (db && typeof db.getFirestore === 'function') ? db.getFirestore() : window.db;
+    const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
     const targetUsers = Array.from(new Set([purchaseUser, authId, 'master'].filter(Boolean)));
 
-    const pFirst = purchase.combos && purchase.combos[0] && (purchase.combos[0].numbers || purchase.combos[0]);
-    const pTimestamp = purchase.timestamp;
+    const targetReceiptId = purchase.receiptId || purchase.id || null;
+    const targetCombosFp = getReceiptCombosFingerprint(purchase);
+    const targetTimestamp = purchase.timestamp || null;
 
     for (const uId of targetUsers) {
         let uLedger = {};
@@ -1380,32 +1453,56 @@ export async function moveToReceiptTrash(round, pIdx, purchase, currentAuthId) {
             if (raw) uLedger = JSON.parse(raw);
         } catch(e) {}
 
-        if (uLedger[r] && Array.isArray(uLedger[r])) {
-            uLedger[r] = uLedger[r].filter(p => {
-                if (pTimestamp && p.timestamp === pTimestamp) return false;
-                if (!p.combos || !pFirst) return true;
-                const f = p.combos[0] && (p.combos[0].numbers || p.combos[0]);
-                return JSON.stringify(f) !== JSON.stringify(pFirst);
-            });
-            if (uLedger[r].length === 0) delete uLedger[r];
-            try { storage.setItem(`lotto_actual_ledger_${uId}`, JSON.stringify(uLedger)); } catch(e){}
-        }
+        if (uLedger[r] && Array.isArray(uLedger[r]) && uLedger[r].length > 0) {
+            // Find EXACT index of target receipt to remove ONLY 1 item
+            let removeIdx = -1;
 
-        if (firestore) {
-            try {
-                const cleanLedger = removeUndefined(uLedger);
-                await Promise.race([
-                    firestore.collection('lotto_purchases').doc(uId).set({ ledger: cleanLedger }),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000))
-                ]);
-            } catch(e) {}
-        }
+            // Strategy 1: Match by unique receiptId
+            if (targetReceiptId) {
+                removeIdx = uLedger[r].findIndex(p => p && (p.receiptId === targetReceiptId || p.id === targetReceiptId));
+            }
 
-        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[uId]) {
-            state.allUsersPurchasesMap[uId].ledger = uLedger;
-        }
-        if (uId === authId) {
-            state.globalLedger = uLedger;
+            // Strategy 2: Match by exact 5-game combo fingerprint AND timestamp
+            if (removeIdx === -1 && targetCombosFp) {
+                removeIdx = uLedger[r].findIndex(p => {
+                    if (!p) return false;
+                    const pFp = getReceiptCombosFingerprint(p);
+                    if (pFp !== targetCombosFp) return false;
+                    if (targetTimestamp && p.timestamp && p.timestamp === targetTimestamp) return true;
+                    return true;
+                });
+            }
+
+            // Strategy 3: Fallback by pIdx if in bounds and matching target user
+            if (removeIdx === -1 && typeof pIdx === 'number' && pIdx >= 0 && pIdx < uLedger[r].length) {
+                const candidate = uLedger[r][pIdx];
+                if (candidate && (!candidate.isLocked || authId === 'master' || authId === 'admin')) {
+                    removeIdx = pIdx;
+                }
+            }
+
+            if (removeIdx !== -1) {
+                uLedger[r].splice(removeIdx, 1);
+                if (uLedger[r].length === 0) delete uLedger[r];
+                try { storage.setItem(`lotto_actual_ledger_${uId}`, JSON.stringify(uLedger)); } catch(e){}
+
+                if (firestore) {
+                    try {
+                        const cleanLedger = removeUndefined(uLedger);
+                        await Promise.race([
+                            firestore.collection('lotto_purchases').doc(uId).set({ ledger: cleanLedger }),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000))
+                        ]);
+                    } catch(e) {}
+                }
+
+                if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[uId]) {
+                    state.allUsersPurchasesMap[uId].ledger = uLedger;
+                }
+                if (uId === authId) {
+                    state.globalLedger = uLedger;
+                }
+            }
         }
     }
 
@@ -1429,10 +1526,17 @@ export async function restoreFromReceiptTrash(trashId, currentAuthId) {
     const round = item.originalRound || parseInt(item.round);
     const targetUser = (item.user || item.userId || currentAuthId || 'master').toLowerCase().trim();
 
-    // Prepare restored purchase record
+    // Prepare restored purchase record with new unique ID if needed
     const restoredPurchase = {
-        version: item.version,
+        receiptId: item.receiptId || `rcpt_${targetUser}_${round}_${Date.now()}_restored`,
+        version: item.version || 'QR 실구매 영수증 (5게임)',
+        algoName: item.algoName || '실물 QR 영수증 / 복원',
         user: targetUser,
+        userId: targetUser,
+        userName: item.userName || targetUser,
+        phone: item.phone || '',
+        userType: item.userType || 'regular',
+        round: round,
         combos: item.combos,
         timestamp: item.timestamp || new Date().toISOString(),
         isLocked: true, // Auto-locked on restore to prevent accidental deletion
@@ -1616,6 +1720,13 @@ export function getUserConfirmedWinningsAuditTrail(userId) {
 
 if (typeof window !== 'undefined') {
     window.getUserConfirmedWinningsAuditTrail = getUserConfirmedWinningsAuditTrail;
+    window.getReceiptTrashList = getReceiptTrashList;
+    window.fetchReceiptTrash = fetchReceiptTrash;
+    window.saveReceiptTrashList = saveReceiptTrashList;
+    window.moveToReceiptTrash = moveToReceiptTrash;
+    window.restoreFromReceiptTrash = restoreFromReceiptTrash;
+    window.permanentDeleteFromReceiptTrash = permanentDeleteFromReceiptTrash;
+    window.emptyEntireReceiptTrash = emptyEntireReceiptTrash;
 }
 
 
