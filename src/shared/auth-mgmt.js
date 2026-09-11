@@ -1992,6 +1992,12 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
     // User Management Modal (Admin/Master Only)
     // ========================================================
     window.openUserManagement = () => {
+        const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+        const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
+        if (!isAdmin) {
+            alert('⚠️ 관리자 전용 메뉴입니다.');
+            return;
+        }
         if (userMgmtModal) userMgmtModal.style.display = 'flex';
         loadUserList();
     };
@@ -2339,6 +2345,13 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
         const summaryBadge = document.getElementById('userCountSummaryBadge');
         const trashBadge = document.getElementById('userTrashCountBadge');
         if (!window.db || !userListContainer) return;
+
+        const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+        const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
+        if (!isAdmin) {
+            userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#ef4444;">🔒 관리자 권한이 필요합니다.</div>`;
+            return;
+        }
         
         userListContainer.innerHTML = `<div style="text-align:center; padding: 24px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> 사용자 및 실구매 데이터 동기화 중...</div>`;
         
@@ -2354,10 +2367,13 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             
             const users = [];
             snapshot.forEach(doc => {
-                // Ignore corrupt/garbage JSON string IDs if any
-                if (doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) {
+                const uIdClean = (doc.id || '').toLowerCase().trim();
+                // Ignore corrupt/garbage JSON string IDs or admin test account if any
+                if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'admin') {
                     // asynchronously clean up in background
                     window.db.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
+                    window.db.collection('lotto_agreements').doc(doc.id).delete().catch(console.warn);
+                    window.db.collection('lotto_purchases').doc(doc.id).delete().catch(console.warn);
                     return;
                 }
                 users.push({ userId: doc.id, data: doc.data() });
@@ -4758,7 +4774,7 @@ window.startBatchWinningSend = async function() {
                 return id.startsWith('test_') || id.startsWith('{') || 
                        id === 'user_alpha' || id === 'user_beta' || id === 'user_gamma' || 
                        id === 'user_1235' || id === 'user_1238' || id === 'user_1240' || id === 'user_1241' ||
-                       id === 'sample' || id === 'hms';
+                       id === 'sample' || id === 'hms' || id === 'admin';
             };
 
             let deletedUserCount = 0;

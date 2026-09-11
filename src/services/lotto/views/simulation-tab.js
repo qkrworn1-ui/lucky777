@@ -139,7 +139,7 @@ export function getCombosForSimulationRound(round, config = null, customUserId =
         }
         const filteredUsers = userList.filter(u => {
             const uId = (u.id || '').trim().toLowerCase();
-            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && uId !== 'admin' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
         });
         const finalUsers = filteredUsers.length > 0 ? filteredUsers : [{ id: 'master', name: '관리자 본인' }];
         
@@ -235,7 +235,7 @@ export function renderSimulationTab(targetRound = null) {
                     const loadedList = [];
                     uSnap.forEach(d => {
                         const cleanId = (d.id || '').trim();
-                        if (!cleanId || cleanId.startsWith('{') || cleanId.startsWith('test_')) return;
+                        if (!cleanId || cleanId.startsWith('{') || cleanId.startsWith('test_') || cleanId.toLowerCase() === 'admin') return;
                         const uData = d.data() || {};
                         const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || cleanId === 'master' || cleanId === 'admin');
                         if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {

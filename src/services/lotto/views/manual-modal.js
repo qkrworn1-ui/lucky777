@@ -85,8 +85,10 @@ export function updateManualModalCrossCheck() {
     }
 
     let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
+    const cleanAuth = authId.toLowerCase().trim();
+    const isMaster = (cleanAuth === 'master');
     const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
-    if (authId.toLowerCase() === 'master' && masterUserSelect && masterUserSelect.value) {
+    if (isMaster && masterUserSelect && masterUserSelect.value) {
         authId = masterUserSelect.value.trim().toLowerCase();
     }
     const check = crossCheckCombosWithRecommendations(round, parsedCombos, authId);
@@ -854,8 +856,9 @@ export async function handleSaveManualLedger() {
         }
 
         const currentLoggedAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+        const isMaster = (currentLoggedAuthId === 'master');
         const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
-        const selectedMasterTargetUser = (currentLoggedAuthId === 'master' && masterUserSelect && masterUserSelect.value) 
+        const selectedMasterTargetUser = (isMaster && masterUserSelect && masterUserSelect.value) 
             ? masterUserSelect.value.trim().toLowerCase() 
             : null;
 
@@ -971,8 +974,13 @@ export function openManualLedgerModal() {
             combosInput.dataset.qrRawUrl = '';
             combosInput.dataset.qrSerial = '';
         }
-        // 👑 [Master 전용] 대리 QR구매등록 회원 선택기 동적 렌더링 (오직 master 계정에만 노출)
-        const currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+        // 👑 [Master / 관리자 전용] 대리 QR구매등록 회원 선택기 동적 렌더링
+        let currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '').toLowerCase().trim();
+        if (!currentAuthId && typeof window !== 'undefined') {
+            try { currentAuthId = (window.sessionStorage.getItem('currentUser') || window.localStorage.getItem('currentUser') || '').toLowerCase().trim(); } catch(e) {}
+        }
+        if (!currentAuthId) currentAuthId = 'guest';
+
         const isMaster = (currentAuthId === 'master');
         const masterUserRow = document.getElementById('manualLedgerMasterUserRow');
         const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
@@ -980,20 +988,41 @@ export function openManualLedgerModal() {
         if (isMaster && masterUserRow && masterUserSelect) {
             masterUserRow.style.display = 'block';
             
-            // Build unique valid users list
+            // Build unique valid users list from memory, cache, and state
             const userMap = new Map();
-            if (Array.isArray(state.allRegisteredUsersList)) {
+            
+            // 1. Try memory allRegisteredUsersList
+            if (Array.isArray(state.allRegisteredUsersList) && state.allRegisteredUsersList.length > 0) {
                 state.allRegisteredUsersList.forEach(u => {
                     const uId = (u.id || '').trim().toLowerCase();
-                    if (uId && uId !== 'master' && !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'guest' && uId !== 'sample') {
+                    if (uId && uId !== currentAuthId && uId !== 'admin' && !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'guest' && uId !== 'sample') {
                         userMap.set(uId, { id: uId, name: u.name || '', phone: u.phone || '' });
                     }
                 });
+            } else {
+                // 2. Fallback to localStorage cache
+                try {
+                    const cached = localStorage.getItem('lotto_all_users_list_cache');
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        if (Array.isArray(parsed)) {
+                            state.allRegisteredUsersList = parsed;
+                            parsed.forEach(u => {
+                                const uId = (u.id || '').trim().toLowerCase();
+                                if (uId && uId !== currentAuthId && uId !== 'admin' && !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'guest' && uId !== 'sample') {
+                                    userMap.set(uId, { id: uId, name: u.name || '', phone: u.phone || '' });
+                                }
+                            });
+                        }
+                    }
+                } catch(e) {}
             }
+
+            // 3. Merge state.allUsersPurchasesMap
             if (state.allUsersPurchasesMap) {
                 Object.keys(state.allUsersPurchasesMap).forEach(uId => {
                     const clean = (uId || '').trim().toLowerCase();
-                    if (clean && clean !== 'master' && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'guest' && clean !== 'sample' && !userMap.has(clean)) {
+                    if (clean && clean !== currentAuthId && clean !== 'admin' && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'guest' && clean !== 'sample' && !userMap.has(clean)) {
                         const rName = state.allUsersPurchasesMap[clean]?.realName || (typeof getUserRealName === 'function' ? getUserRealName(clean) : '') || '';
                         userMap.set(clean, { id: clean, name: rName, phone: '' });
                     }
@@ -1002,9 +1031,10 @@ export function openManualLedgerModal() {
 
             const currentAdminTarget = (state.adminViewingTarget && state.adminViewingTarget !== 'all' && state.adminViewingTarget !== 'my') 
                 ? state.adminViewingTarget.toLowerCase().trim() 
-                : 'master';
+                : currentAuthId;
 
-            let optionsHtml = `<option value="master" ${currentAdminTarget === 'master' ? 'selected' : ''}>👑 Master 본인 (master)</option>`;
+            let optionsHtml = `<option value="${currentAuthId}" ${currentAdminTarget === currentAuthId ? 'selected' : ''}>👑 Master 본인 (master)</option>`;
+            
             Array.from(userMap.values()).sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)).forEach(u => {
                 const displayName = u.name ? `${u.name}` : u.id;
                 const phoneTag = u.phone ? ` / ${u.phone}` : '';

@@ -1,6 +1,7 @@
 import { state, applyNewDrawData } from '../state.js';
 import { db } from '../../../shared/db.js';
 import { showToast, getDrawDateByRound, removeUndefined } from '../../../shared/utils.js';
+import { isAdminUser } from '../../../shared/auth-mgmt.js';
 import { recalculateGroups } from '../statistics.js';
 import { renderLatestDrawBanner } from './draw-banner.js';
 import { renderTop5Combinations } from './generator-tab.js';
@@ -38,6 +39,12 @@ export function openManualModal() {
     const authId = (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null) || sessionStorage.getItem('lotto_auth') || localStorage.getItem('lotto_auth');
     if (!authId) {
         alert('⚠️ 로그인이 필요합니다.');
+        return;
+    }
+
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
+    if (!isAdmin) {
+        alert('⚠️ 관리자 전용 기능입니다.');
         return;
     }
 

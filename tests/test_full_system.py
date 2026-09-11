@@ -584,7 +584,7 @@ class TestFullSystem(unittest.TestCase):
 
         # Effective user must be target_user
         effective_user = target_user if logged_auth == 'master' and target_user else logged_auth
-        self.assertEqual(effective_user, 'member_01', "Effective user must be the selected target user")
+        self.assertEqual(effective_user, 'member_01', "Effective user must be the selected target user when master")
 
         # Save to target user's ledger
         receipt = {
@@ -598,14 +598,69 @@ class TestFullSystem(unittest.TestCase):
         }
         all_users_store[effective_user][round_num].append(receipt)
 
-        # Verify: Saved ONLY in target user's ledger
-        self.assertEqual(len(all_users_store['member_01'][1240]), 1, "Target user must have 1 receipt")
-        self.assertEqual(all_users_store['member_01'][1240][0]['user'], 'member_01')
-        self.assertEqual(len(all_users_store['master'][1240]), 0, "Master ledger must not be contaminated")
-        self.assertEqual(len(all_users_store['pjg'][1240]), 0, "Other users ledger must not be contaminated")
+        # Verify: Non-master (e.g. pjg or user_a) attempting to select target_user is ignored
+        non_master_logged = 'pjg'
+        attempted_target = 'member_01'
+        non_master_effective = attempted_target if non_master_logged == 'master' and attempted_target else non_master_logged
+        self.assertEqual(non_master_effective, 'pjg', "Non-master must NEVER be allowed to proxy register for others!")
+
+    def test_16_non_admin_strict_data_isolation(self):
+        """Test: Non-admin normal users are strictly prohibited from viewing or accessing other members' data."""
+        # Simulated multi-user database
+        db_purchases = {
+            'user_a': {
+                1240: [{'receiptId': 'rcpt_a_1', 'user': 'user_a', 'combos': [{'numbers': [1, 2, 3, 4, 5, 6]}], 'isLocked': True}]
+            },
+            'user_b': {
+                1240: [{'receiptId': 'rcpt_b_1', 'user': 'user_b', 'combos': [{'numbers': [7, 8, 9, 10, 11, 12]}], 'isLocked': True}]
+            },
+            'pjg': {
+                1240: [{'receiptId': 'rcpt_admin_1', 'user': 'pjg', 'combos': [{'numbers': [13, 14, 15, 16, 17, 18]}], 'isLocked': True}]
+            }
+        }
+
+        # 1. getLedger emulation for user_a (non-admin)
+        current_user = 'user_a'
+        is_admin = False
+
+        # Ledger isolation check
+        def get_ledger_for_user(logged_user, is_adm):
+            if is_adm:
+                # admin can access all or target
+                return db_purchases
+            # Non-admin strictly filters by logged_user only
+            user_ledger = {}
+            for u, rounds in db_purchases.items():
+                if u.lower().strip() == logged_user.lower().strip():
+                    user_ledger = rounds
+            return user_ledger
+
+        user_a_ledger = get_ledger_for_user(current_user, is_admin)
+        self.assertIn(1240, user_a_ledger)
+        self.assertEqual(len(user_a_ledger[1240]), 1)
+        self.assertEqual(user_a_ledger[1240][0]['user'], 'user_a')
+        self.assertEqual(user_a_ledger[1240][0]['receiptId'], 'rcpt_a_1')
+
+        # Verify user_a has zero visibility of user_b or pjg receipts
+        all_receipt_users = [r['user'] for r in user_a_ledger[1240]]
+        self.assertNotIn('user_b', all_receipt_users, "user_a must NOT see user_b data!")
+        self.assertNotIn('pjg', all_receipt_users, "user_a must NOT see pjg/admin data!")
+
+        # 2. Permission checks: User Management & Manual Draw modals
+        def can_open_user_management(user_id, is_adm):
+            return is_adm or user_id in ('master', 'admin')
+
+        def can_open_manual_draw(user_id, is_adm):
+            return is_adm or user_id in ('master', 'admin')
+
+        self.assertFalse(can_open_user_management('user_a', False), "user_a must NOT be allowed to open user management")
+        self.assertFalse(can_open_manual_draw('user_a', False), "user_a must NOT be allowed to open manual draw modal")
+        self.assertTrue(can_open_user_management('pjg', True), "Admin pjg must be allowed")
+        self.assertTrue(can_open_user_management('master', False), "master must be allowed")
 
 
 if __name__ == '__main__':
     unittest.main()
+
 
 

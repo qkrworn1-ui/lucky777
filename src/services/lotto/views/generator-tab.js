@@ -675,7 +675,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                 state.allRegisteredUsersList = [];
                 uSnap.forEach(d => {
                     const uId = d.id.trim().toLowerCase();
-                    if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'sample' || uId === 'hms') return;
+                    if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'sample' || uId === 'hms' || uId === 'admin') return;
                     const uData = d.data() || {};
                     if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') return;
                     const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
@@ -737,6 +737,9 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                     </div>
                 </div>
             `;
+        } else if (!isAdmin) {
+            const existing = document.getElementById('generatorAdminUserBarContainer');
+            if (existing) existing.remove();
         }
 
         const container = document.getElementById('combinationsContainer');
