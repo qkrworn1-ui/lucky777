@@ -336,19 +336,24 @@ body {
 }
 
 /* ==========================================================================
-   Navigation Tabs
+   Navigation Tabs (Subtle Ambient Glow & High Visibility System)
    ========================================================================== */
 .tab-nav {
     display: flex;
     gap: 8px;
-    background: var(--bg-card);
-    backdrop-filter: blur(16px);
-    border: 1px solid var(--border-color);
-    padding: 6px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.92) 50%, rgba(15, 23, 42, 0.96) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1.5px solid rgba(99, 102, 241, 0.45);
+    padding: 7px;
     border-radius: var(--radius-md);
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.22), inset 0 1px 2px rgba(255, 255, 255, 0.15);
+    position: relative;
 }
 
 .tab-nav::-webkit-scrollbar {
@@ -358,36 +363,45 @@ body {
 .tab-btn {
     flex: 1;
     min-width: 120px;
-    padding: 12px 16px;
-    background: transparent;
-    border: none;
+    padding: 11px 16px;
+    background: rgba(30, 41, 59, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: var(--radius-sm);
-    color: var(--text-secondary);
+    color: #f1f5f9;
     font-size: 0.88rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     white-space: nowrap;
     min-height: 44px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    user-select: none;
 }
 
 .tab-btn i {
-    font-size: 0.95rem;
+    font-size: 1rem;
+    transition: transform 0.2s ease;
 }
 
 .tab-btn:hover {
-    color: var(--text-primary);
-    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+    border-color: rgba(129, 140, 248, 0.6);
+    transform: translateY(-1px);
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.35), 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 
 .tab-btn.active {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-    color: #ffffff;
-    box-shadow: 0 4px 16px var(--primary-glow);
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%) !important;
+    color: #ffffff !important;
+    border: 1.5px solid #c7d2fe !important;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.7), 0 4px 16px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
+    font-weight: 800;
+    animation: tabActiveGlow 3s infinite alternate ease-in-out;
 }
 
 .tab-content {
@@ -2225,16 +2239,19 @@ body {
         overflow-wrap: anywhere !important;
     }
 
-    /* Tab Navigation - Smooth Horizontal Scroll */
+    /* Tab Navigation - Smooth Horizontal Scroll with Ambient Glow */
     .tab-nav {
         display: flex;
         flex-wrap: nowrap;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
         scrollbar-width: none;
-        padding: 5px;
-        gap: 6px;
-        border-radius: 12px;
+        padding: 6px;
+        gap: 7px;
+        border-radius: 14px;
+        border: 1.5px solid rgba(99, 102, 241, 0.45);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.55), 0 0 16px rgba(99, 102, 241, 0.22);
     }
 
     .tab-nav::-webkit-scrollbar {
@@ -2244,15 +2261,17 @@ body {
     .tab-btn {
         flex: 0 0 auto;
         min-width: unset;
-        padding: 8px 12px;
-        font-size: 0.8rem;
-        min-height: 38px;
+        padding: 9px 13px;
+        font-size: 0.84rem;
+        font-weight: 700;
+        min-height: 40px;
         white-space: nowrap;
-        gap: 5px;
+        gap: 6px;
+        border-radius: 8px;
     }
 
     .tab-btn i {
-        font-size: 0.85rem;
+        font-size: 0.92rem;
     }
 
     /* Generator Hero Section */
@@ -2833,18 +2852,21 @@ html, body {
         font-size: 0.7rem !important;
     }
 
-    /* Tab Navigation - Smooth Horizontal Scroll */
+    /* Tab Navigation - Smooth Horizontal Scroll with Ambient Glow */
     .tab-nav {
         display: flex !important;
         flex-wrap: nowrap !important;
         overflow-x: auto !important;
         -webkit-overflow-scrolling: touch !important;
+        scroll-behavior: smooth !important;
         scrollbar-width: none !important;
-        padding: 4px !important;
-        gap: 5px !important;
+        padding: 5px !important;
+        gap: 6px !important;
         width: 100% !important;
         border-radius: 12px !important;
         scroll-snap-type: x mandatory !important;
+        border: 1.5px solid rgba(99, 102, 241, 0.45) !important;
+        box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 14px rgba(99, 102, 241, 0.2) !important;
     }
 
     .tab-nav::-webkit-scrollbar {
@@ -10674,22 +10696,24 @@ html, body {
 
 
 /* ==========================================================================
-   Navigation Tabs (Ultra-High Contrast & Dark/Black Theme Optimization)
+   Navigation Tabs (Subtle Ambient Glow & Ultra-High Visibility System)
    ========================================================================== */
 .tab-nav {
     display: flex;
     gap: 8px;
-    background: rgba(15, 23, 42, 0.95);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.92) 50%, rgba(15, 23, 42, 0.96) 100%);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1.5px solid rgba(255, 255, 255, 0.16);
+    border: 1.5px solid rgba(99, 102, 241, 0.45);
     padding: 8px;
     border-radius: var(--radius-md);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.22), inset 0 1px 2px rgba(255, 255, 255, 0.15);
+    position: relative;
 }
 
 .tab-nav::-webkit-scrollbar {
@@ -10707,14 +10731,14 @@ html, body {
     font-size: 0.88rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
     white-space: nowrap;
     min-height: 44px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     user-select: none;
 }
 
@@ -10726,35 +10750,35 @@ html, body {
 /* Individual Distinct Glowing Icons for Inactive & Active States */
 .tab-btn[data-tab="tab-generator"] i {
     color: #facc15;
-    text-shadow: 0 0 10px rgba(250, 204, 21, 0.45);
+    text-shadow: 0 0 10px rgba(250, 204, 21, 0.75);
 }
 .tab-btn[data-tab="tab-algorithms"] i {
     color: #c084fc;
-    text-shadow: 0 0 10px rgba(192, 132, 252, 0.45);
+    text-shadow: 0 0 10px rgba(192, 132, 252, 0.75);
 }
 .tab-btn[data-tab="tab-simulation"] i {
     color: #38bdf8;
-    text-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+    text-shadow: 0 0 12px rgba(56, 189, 248, 0.85);
 }
 .tab-btn[data-tab="tab-review"] i {
     color: #34d399;
-    text-shadow: 0 0 12px rgba(52, 211, 153, 0.6);
+    text-shadow: 0 0 12px rgba(52, 211, 153, 0.85);
 }
 .tab-btn[data-tab="tab-confirmed-list"] i {
     color: #fbbf24;
-    text-shadow: 0 0 12px rgba(251, 191, 36, 0.6);
+    text-shadow: 0 0 12px rgba(251, 191, 36, 0.85);
 }
 .tab-btn[data-tab="tab-dashboard"] i {
     color: #fb7185;
-    text-shadow: 0 0 10px rgba(251, 113, 133, 0.45);
+    text-shadow: 0 0 10px rgba(251, 113, 133, 0.75);
 }
 
 .tab-btn:hover {
     color: #ffffff;
-    background: rgba(51, 65, 85, 0.95);
-    border-color: rgba(255, 255, 255, 0.35);
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+    border-color: rgba(129, 140, 248, 0.6);
     transform: translateY(-1px);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.35), 0 4px 14px rgba(0, 0, 0, 0.5);
 }
 
 .tab-btn:hover i {
@@ -10762,16 +10786,28 @@ html, body {
 }
 
 .tab-btn.active {
-    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #7c3aed 100%) !important;
     color: #ffffff !important;
-    border: 1.5px solid #a5b4fc !important;
-    box-shadow: 0 4px 20px rgba(99, 102, 241, 0.65), inset 0 1px 2px rgba(255, 255, 255, 0.4) !important;
+    border: 1.5px solid #c7d2fe !important;
+    box-shadow: 0 0 22px rgba(99, 102, 241, 0.75), 0 4px 16px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.5) !important;
     font-weight: 800;
+    animation: tabActiveGlow 3s infinite alternate ease-in-out;
 }
 
 .tab-btn.active i {
     color: #ffffff !important;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8) !important;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.9) !important;
+}
+
+@keyframes tabActiveGlow {
+    0% {
+        box-shadow: 0 0 16px rgba(99, 102, 241, 0.6), 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.4);
+        border-color: rgba(199, 210, 254, 0.85);
+    }
+    100% {
+        box-shadow: 0 0 26px rgba(129, 140, 248, 0.9), 0 4px 18px rgba(0, 0, 0, 0.65), inset 0 1px 3px rgba(255, 255, 255, 0.65);
+        border-color: #ffffff;
+    }
 }
 
 .tab-content {
@@ -11449,8 +11485,8 @@ body.is-admin .btn-user-mgmt-compact {
 }
 
 .top-algo-card {
-    background: rgba(30, 41, 59, 0.82);
-    border: 1.5px solid rgba(255, 255, 255, 0.14);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.92) 100%);
+    border: 1.5px solid rgba(255, 255, 255, 0.16);
     border-radius: 10px;
     padding: 10px 12px;
     display: flex;
@@ -11460,7 +11496,7 @@ body.is-admin .btn-user-mgmt-compact {
     cursor: pointer;
     text-align: left;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     position: relative;
     user-select: none;
     min-height: 84px;
@@ -11468,15 +11504,27 @@ body.is-admin .btn-user-mgmt-compact {
 
 .top-algo-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(255, 255, 255, 0.35);
-    background: rgba(51, 65, 85, 0.95);
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    border-color: rgba(129, 140, 248, 0.6);
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+    box-shadow: 0 0 18px rgba(99, 102, 241, 0.4), 0 6px 18px rgba(0, 0, 0, 0.5);
 }
 
 .top-algo-card.active {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3) 0%, rgba(30, 41, 59, 0.95) 100%) !important;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.4) 0%, rgba(30, 41, 59, 0.95) 100%) !important;
     border-color: #818cf8 !important;
-    box-shadow: 0 0 16px rgba(99, 102, 241, 0.5) !important;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.6), 0 4px 16px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+    animation: algoCardActiveGlow 3s infinite alternate ease-in-out;
+}
+
+@keyframes algoCardActiveGlow {
+    0% {
+        box-shadow: 0 0 16px rgba(99, 102, 241, 0.5), 0 4px 14px rgba(0, 0, 0, 0.5);
+        border-color: rgba(129, 140, 248, 0.8);
+    }
+    100% {
+        box-shadow: 0 0 24px rgba(129, 140, 248, 0.8), 0 4px 18px rgba(0, 0, 0, 0.6);
+        border-color: #a5b4fc;
+    }
 }
 
 .algo-card-top-row {
@@ -11494,7 +11542,8 @@ body.is-admin .btn-user-mgmt-compact {
     width: 26px;
     height: 26px;
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .algo-games-badge {
@@ -11502,20 +11551,21 @@ body.is-admin .btn-user-mgmt-compact {
     font-weight: 800;
     padding: 1px 6px;
     border-radius: 5px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
     color: #e2e8f0;
 }
 
 .algo-card-title {
-    font-size: 0.82rem;
+    font-size: 0.84rem;
     font-weight: 800;
     color: #f8fafc;
     line-height: 1.25;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
 
 .algo-card-sub {
-    font-size: 0.7rem;
-    color: #94a3b8;
+    font-size: 0.72rem;
+    color: #cbd5e1;
     line-height: 1.25;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -11536,20 +11586,23 @@ body.is-admin .btn-user-mgmt-compact {
 
 .algo-status-badge.active {
     background: rgba(99, 102, 241, 0.35);
-    color: #c7d2fe;
-    border: 1px solid rgba(99, 102, 241, 0.6);
+    color: #e0e7ff;
+    border: 1px solid rgba(129, 140, 248, 0.7);
+    box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
 }
 
 .algo-status-badge.unlocked {
     background: rgba(16, 185, 129, 0.25);
     color: #6ee7b7;
-    border: 1px solid rgba(16, 185, 129, 0.5);
+    border: 1px solid rgba(16, 185, 129, 0.6);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.35);
 }
 
 .algo-status-badge.locked {
     background: rgba(245, 158, 11, 0.2);
     color: #fde047;
-    border: 1px solid rgba(245, 158, 11, 0.5);
+    border: 1px solid rgba(245, 158, 11, 0.6);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.35);
 }
 
 .top-algo-actions {

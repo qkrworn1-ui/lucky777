@@ -1,7 +1,7 @@
 try {
 
 /**
- * Lucky777 Smart Bundle (v732)
+ * Lucky777 Smart Bundle (v733)
  */
 
 
