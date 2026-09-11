@@ -14449,3 +14449,83 @@ body.is-admin .btn-user-mgmt-compact {
     box-shadow: 0 0 8px #ef4444;
     animation: pulse 1.5s infinite;
 }
+
+
+/* ==========================================================================
+   🚀 PWA 실시간 새 버전 감지 플로팅 배너 스타일
+   ========================================================================== */
+.pwa-update-banner {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999999;
+    max-width: 94%;
+    width: 440px;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%);
+    border: 1.5px solid #f59e0b;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.75), 0 0 20px rgba(245, 158, 11, 0.5);
+    border-radius: 14px;
+    padding: 10px 14px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    animation: bannerSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    box-sizing: border-box;
+}
+
+@keyframes bannerSlideIn {
+    from { opacity: 0; transform: translate(-50%, -24px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.pwa-update-banner-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #f8fafc;
+    flex-wrap: wrap;
+}
+
+.pwa-update-banner-content strong {
+    color: #fde047;
+    font-weight: 800;
+}
+
+.btn-pwa-update-now {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    color: #0f172a;
+    border: none;
+    padding: 6px 13px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.45);
+    white-space: nowrap;
+    transition: transform 0.15s ease;
+}
+
+.btn-pwa-update-now:hover {
+    transform: scale(1.05);
+}
+
+.btn-pwa-update-close {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-pwa-update-close:hover {
+    color: #ffffff;
+}

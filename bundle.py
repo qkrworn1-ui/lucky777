@@ -5,6 +5,36 @@ import sys
 import unittest
 
 import datetime
+import urllib.request
+
+def push_version_to_firestore(version, build_date):
+    print(f"[*] [FIREBASE] Pushing build version {version} to Firestore...")
+    api_key = "AIzaSyAnkGVAlO39p6rnTEibygeQTBYDbp505dA"
+    project_id = "sonamu-jokgu-club"
+    doc_path = "lotto_users/app_latest_version"
+    url = f"https://firestore.googleapis.com/v1/projects/{project_id}/databases/(default)/documents/{doc_path}?key={api_key}"
+    
+    now_iso = datetime.datetime.now().isoformat()
+    payload = {
+        "fields": {
+            "version": {"stringValue": version},
+            "buildDate": {"stringValue": build_date},
+            "updatedAt": {"stringValue": now_iso},
+            "channel": {"stringValue": "production"}
+        }
+    }
+    
+    try:
+        data_bytes = json.dumps(payload).encode('utf-8')
+        req = urllib.request.Request(url, data=data_bytes, method='PATCH', headers={'Content-Type': 'application/json', 'User-Agent': 'Lucky777-Builder'})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            if resp.status in (200, 204):
+                print(f"[+] [FIREBASE-SYNC-PASS] Version {version} successfully pushed to Firestore ({doc_path})!")
+                return True
+    except Exception as ex:
+        print(f"[!] [FIREBASE-WARN] Firestore push skipped/failed (offline or timeout): {ex}")
+        return False
+
 
 def run_preflight_tests():
     print("[*] [TEST] Running Pre-flight Integrity Tests...")
@@ -265,6 +295,7 @@ def clean_and_bundle():
     with open("app_v2.js", "w", encoding="utf-8") as out:
         out.write("\n".join(final_output))
     verify_version_crosscheck(version)
+    push_version_to_firestore(version, build_date)
     print("[*] Done!")
 
 if __name__ == "__main__":

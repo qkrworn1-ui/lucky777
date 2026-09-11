@@ -54,10 +54,29 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=736">
+    <link rel="stylesheet" href="styles.css?v=739">
 </head>
 
 <body>
+
+    <!-- 🚀 실시간 신규 빌드 감지 플로팅 알림 배너 -->
+    <div id="pwaUpdateFloatingBanner" class="pwa-update-banner" style="display: none;">
+        <div class="pwa-update-banner-content">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-sparkles" style="color: #fde047; font-size: 1.05rem;"></i>
+                <span>새로운 최신 버전(<strong id="pwaUpdateBannerVerText">v736</strong>)이 배포되었습니다!</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <button type="button" onclick="window.forceReloadCache && window.forceReloadCache()" class="btn-pwa-update-now">
+                    <i class="fa-solid fa-rotate"></i> 1초 업데이트
+                </button>
+                <button type="button" onclick="document.getElementById('pwaUpdateFloatingBanner').style.display='none'" class="btn-pwa-update-close" title="닫기">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- ===== LANDING PAGE: Service Selection ===== -->
 
@@ -87,7 +106,7 @@
             <div class="lp-brand-badge" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
                 <span><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v736 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v739 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 style="margin: 0 0 8px 0;">운도<br><span class="lp-accent">실력</span></h1>
@@ -398,7 +417,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v736
+                                v739
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1788,7 +1807,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v736
+                        <i class="fa-solid fa-code-branch"></i> v739
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3019,11 +3038,14 @@
         window.handleFetchLatestDrawClick = handleFetchLatestDrawClick;
 
         // ========================================================
-        // 📱 App Version, Live Cross-Check & Cache Busting Controller
+        // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v736';
+        window.APP_VERSION = 'v739';
         window.LATEST_SERVER_VERSION = null;
+        window.FIREBASE_LATEST_VERSION = null;
+        window.HOSTING_LATEST_VERSION = null;
         window.SERVER_BUILD_DATE = null;
+        window.FIREBASE_BUILD_DATE = null;
 
         function parseVersionNum(vStr) {
             if (!vStr) return 0;
@@ -3031,9 +3053,29 @@
             return m ? parseInt(m[1], 10) : 0;
         }
 
+        function getVersionJsonUrl() {
+            var loc = window.location;
+            var path = loc.pathname;
+            if (!path.endsWith('/')) {
+                path = path.substring(0, path.lastIndexOf('/') + 1);
+            }
+            return loc.origin + path + 'version.json?_t=' + Date.now();
+        }
+
+        function getHighestKnownVersion() {
+            var currentNum = parseVersionNum(window.APP_VERSION);
+            var fbNum = parseVersionNum(window.FIREBASE_LATEST_VERSION);
+            var hostNum = parseVersionNum(window.HOSTING_LATEST_VERSION);
+            var highestNum = Math.max(currentNum, fbNum, hostNum);
+            
+            if (fbNum === highestNum && window.FIREBASE_LATEST_VERSION) return window.FIREBASE_LATEST_VERSION;
+            if (hostNum === highestNum && window.HOSTING_LATEST_VERSION) return window.HOSTING_LATEST_VERSION;
+            return window.APP_VERSION;
+        }
+
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v736';
-            var sVer = serverVer || window.LATEST_SERVER_VERSION;
+            var v = ver || window.APP_VERSION || 'v739';
+            var sVer = serverVer || getHighestKnownVersion();
             var currentNum = parseVersionNum(v);
             var serverNum = parseVersionNum(sVer);
             var hasUpdate = serverNum > currentNum;
@@ -3069,40 +3111,105 @@
                     }
                 }
             });
+
+            // Update floating banner if update available
+            var banner = document.getElementById('pwaUpdateFloatingBanner');
+            var bannerVer = document.getElementById('pwaUpdateBannerVerText');
+            if (banner) {
+                if (hasUpdate) {
+                    if (bannerVer) bannerVer.textContent = sVer;
+                    banner.style.display = 'block';
+                }
+            }
         };
 
+        // 1. Firebase Firestore Real-time Push Listener (0.1s Instant Detection)
+        window.initFirestoreVersionListener = function() {
+            try {
+                if (window.db && typeof window.db.collection === 'function') {
+                    window.db.collection('lotto_users').doc('app_latest_version').onSnapshot(function(doc) {
+                        if (doc && doc.exists) {
+                            var data = doc.data();
+                            var fbVer = data.version;
+                            var fbDate = data.buildDate || data.updatedAt || '';
+                            if (fbVer) {
+                                console.log('[Firebase Version Listener] Live Firestore Push received:', fbVer, fbDate);
+                                window.FIREBASE_LATEST_VERSION = fbVer;
+                                window.FIREBASE_BUILD_DATE = fbDate;
+                                window.LATEST_SERVER_VERSION = getHighestKnownVersion();
+                                window.updateAppVersionBadges(window.APP_VERSION, window.LATEST_SERVER_VERSION);
+                                
+                                var currentNum = parseVersionNum(window.APP_VERSION);
+                                var fbNum = parseVersionNum(fbVer);
+                                if (fbNum > currentNum && 'serviceWorker' in navigator) {
+                                    navigator.serviceWorker.getRegistrations().then(function(regs) {
+                                        regs.forEach(function(r) { if (typeof r.update === 'function') r.update(); });
+                                    });
+                                }
+                            }
+                        }
+                    }, function(err) {
+                        console.warn('[Firebase Version Listener] Snapshot skipped:', err);
+                    });
+                }
+            } catch(e) {
+                console.warn('[Firebase Version Listener] Init failed:', e);
+            }
+        };
+
+        // 2. 2-Track (Firebase + Hosting version.json) Cross-Check
         window.checkLatestBuildVersion = async function(isSilent) {
             try {
-                var res = await fetch('version.json?_t=' + Date.now(), { cache: 'no-store' });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                var data = await res.json();
-                var serverVer = data.version || window.APP_VERSION;
-                window.LATEST_SERVER_VERSION = serverVer;
-                window.SERVER_BUILD_DATE = data.buildDate || '';
+                // Track 1: Hosting Server version.json
+                var url = getVersionJsonUrl();
+                var res = await fetch(url, { cache: 'no-store' });
+                if (res.ok) {
+                    var data = await res.json();
+                    window.HOSTING_LATEST_VERSION = data.version;
+                    window.SERVER_BUILD_DATE = data.buildDate || '';
+                }
+            } catch (err) {
+                console.warn('[checkLatestBuildVersion] Hosting fetch skipped:', err);
+            }
 
-                var currentNum = parseVersionNum(window.APP_VERSION);
-                var serverNum = parseVersionNum(serverVer);
-                var hasUpdate = serverNum > currentNum;
-
-                window.updateAppVersionBadges(window.APP_VERSION, serverVer);
-
-                if (hasUpdate && isSilent) {
-                    if (window.showAppToast) {
-                        window.showAppToast('🚀 새로운 최신 버전 (' + serverVer + ')이 출시되었습니다! 버전 배지를 눌러 업데이트하세요.', 'warning');
+            // Track 2: Direct Firestore Document Read (if listener not yet loaded)
+            try {
+                if (window.db && typeof window.db.collection === 'function') {
+                    var doc = await window.db.collection('lotto_users').doc('app_latest_version').get();
+                    if (doc && doc.exists) {
+                        var fbData = doc.data();
+                        if (fbData && fbData.version) {
+                            window.FIREBASE_LATEST_VERSION = fbData.version;
+                            window.FIREBASE_BUILD_DATE = fbData.buildDate || '';
+                        }
                     }
                 }
-
-                return {
-                    isLatest: !hasUpdate,
-                    currentVersion: window.APP_VERSION,
-                    serverVersion: serverVer,
-                    serverBuildDate: data.buildDate,
-                    buildTimestamp: data.buildTimestamp
-                };
-            } catch (err) {
-                console.warn('[checkLatestBuildVersion] Version check skipped:', err);
-                return { isLatest: true, currentVersion: window.APP_VERSION, serverVersion: window.APP_VERSION };
+            } catch (fbErr) {
+                console.warn('[checkLatestBuildVersion] Firestore read skipped:', fbErr);
             }
+
+            var highestVer = getHighestKnownVersion();
+            window.LATEST_SERVER_VERSION = highestVer;
+            var currentNum = parseVersionNum(window.APP_VERSION);
+            var highestNum = parseVersionNum(highestVer);
+            var hasUpdate = highestNum > currentNum;
+
+            window.updateAppVersionBadges(window.APP_VERSION, highestVer);
+
+            if (hasUpdate && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(regs) {
+                    regs.forEach(function(r) { if (typeof r.update === 'function') r.update(); });
+                });
+            }
+
+            return {
+                isLatest: !hasUpdate,
+                currentVersion: window.APP_VERSION,
+                serverVersion: highestVer,
+                firebaseVersion: window.FIREBASE_LATEST_VERSION || '-',
+                hostingVersion: window.HOSTING_LATEST_VERSION || '-',
+                serverBuildDate: window.FIREBASE_BUILD_DATE || window.SERVER_BUILD_DATE || ''
+            };
         };
 
         window.handleVersionBadgeClick = async function(event) {
@@ -3111,13 +3218,16 @@
             var checkResult = await window.checkLatestBuildVersion(false);
             var currentV = checkResult.currentVersion;
             var serverV = checkResult.serverVersion;
+            var fbV = checkResult.firebaseVersion;
+            var hostV = checkResult.hostingVersion;
             var buildDate = checkResult.serverBuildDate || '최신';
 
             if (!checkResult.isLatest) {
                 var proceed = confirm(
-                    '🚀 [새로운 최신 버전 발견!]\n\n' +
+                    '🚀 [새로운 최신 버전 감지!]\n\n' +
                     '• 현재 실행 버전: ' + currentV + '\n' +
-                    '• 서버 최신 버전: ' + serverV + ' (' + buildDate + ' 배포)\n\n' +
+                    '• 최신 배포 버전: ' + serverV + ' (' + buildDate + ' 배포)\n' +
+                    '  (파이어베이스: ' + fbV + ' / 웹 호스팅: ' + hostV + ')\n\n' +
                     '최신 기능 및 알고리즘을 즉시 반영하기 위해 캐시를 비우고 최신 버전으로 업데이트하시겠습니까?'
                 );
                 if (proceed) {
@@ -3125,10 +3235,11 @@
                 }
             } else {
                 var proceedReload = confirm(
-                    '✅ [최신 빌드 정상 작동 중]\n\n' +
-                    '• 현재 버전: ' + currentV + ' (최신 버전과 일치)\n' +
-                    '• 빌드 일자: ' + buildDate + '\n' +
-                    '• 시스템 상태: 정상 무결성 검증 완료\n\n' +
+                    '✅ [2-Track 크로스체크 정상: 최신 빌드 실행 중]\n\n' +
+                    '• 현재 버전: ' + currentV + ' (최신 버전과 100% 일치)\n' +
+                    '• 파이어베이스 버전: ' + fbV + '\n' +
+                    '• 웹 호스팅 버전: ' + hostV + '\n' +
+                    '• 배포 일시: ' + buildDate + '\n\n' +
                     '정적 캐시를 강제로 비우고 전체 화면을 새로고침하시겠습니까?'
                 );
                 if (proceedReload) {
@@ -3138,7 +3249,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v736';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v739';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -3156,12 +3267,14 @@
         };
 
         window.checkBuildIntegrity = async function() {
-            console.log("%c🔍 [운도실력] 프로그램 빌드 번호 & 최신 빌드 실시간 크로스체크...", "color: #38bdf8; font-weight: bold; font-size: 14px;");
+            console.log("%c🔍 [운도실력] 파이어베이스 ⟷ 웹 호스팅 2-Track 버전 크로스체크...", "color: #38bdf8; font-weight: bold; font-size: 14px;");
             var result = await window.checkLatestBuildVersion(true);
             console.table({
                 '현재 실행 버전 (window.APP_VERSION)': result.currentVersion,
-                '서버 배포 버전 (version.json)': result.serverVersion,
-                '서버 빌드 일자': result.serverBuildDate || '-',
+                '파이어베이스 최신 버전': result.firebaseVersion,
+                '웹 호스팅 최신 버전': result.hostingVersion,
+                '최종 판정 최신 버전': result.serverVersion,
+                '배포 일자': result.serverBuildDate || '-',
                 '최신 빌드 일치 여부': result.isLatest ? '✅ 최신 빌드 일치 (정상)' : '🚨 새 버전 배포됨 (업데이트 필요)',
                 '서비스워커 지원': ('serviceWorker' in navigator) ? '지원됨' : '미지원',
                 '캐시 스토리지 지원': ('caches' in window) ? '지원됨' : '미지원'
@@ -3169,14 +3282,17 @@
             return result;
         };
 
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() { 
-                window.updateAppVersionBadges(); 
-                setTimeout(function() { window.checkLatestBuildVersion(true); }, 1200);
-            });
-        } else {
+        // Bootstrap on DOM ready
+        function bootstrapVersionManagement() {
             window.updateAppVersionBadges();
-            setTimeout(function() { window.checkLatestBuildVersion(true); }, 1200);
+            window.initFirestoreVersionListener();
+            setTimeout(function() { window.checkLatestBuildVersion(true); }, 1000);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', bootstrapVersionManagement);
+        } else {
+            bootstrapVersionManagement();
         }
 
         document.addEventListener('visibilitychange', function() {
@@ -3220,7 +3336,7 @@
         // ========================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=736')
+                navigator.serviceWorker.register('./sw.js?v=739')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -3229,7 +3345,7 @@
                             if (installingWorker) {
                                 installingWorker.onstatechange = function() {
                                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        console.log('[PWA] New version (v736) installed! Refreshing cache...');
+                                        console.log('[PWA] New version (v739) installed! Refreshing cache...');
                                         window.location.reload();
                                     }
                                 };
@@ -3296,8 +3412,8 @@
         };
     </script>
 
-    <script src="data.js?v=736"></script>
-    <script src="app_v2.js?v=736"></script>
+    <script src="data.js?v=739"></script>
+    <script src="app_v2.js?v=739"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">

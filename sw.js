@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lucky777-pwa-v736';
+const CACHE_NAME = 'lucky777-pwa-v739';
 
 function getBasePath() {
   try {
@@ -51,7 +51,7 @@ self.addEventListener('fetch', (e) => {
 
   // Bypass Firestore, Kakao, External APIs
   const url = e.request.url;
-  if (url.includes('firestore') || url.includes('kakao') || url.includes('googleapis') || url.includes('dhlottery') || url.includes('gstatic.com') || url.includes('cloudflare.com') || url.includes('jsdelivr.net') || url.includes('unpkg.com')) {
+  if (url.includes('version.json') || url.includes('firestore') || url.includes('kakao') || url.includes('googleapis') || url.includes('dhlottery') || url.includes('gstatic.com') || url.includes('cloudflare.com') || url.includes('jsdelivr.net') || url.includes('unpkg.com')) {
     return;
   }
 

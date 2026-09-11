@@ -732,9 +732,44 @@ class TestFullSystem(unittest.TestCase):
             sw_js = f.read()
         self.assertIn(f"lucky777-pwa-{current_version}", sw_js)
 
+    def test_19_firebase_version_crosscheck_logic(self):
+        """Test: 2-Track (Firebase + Hosting) priority selection and update decision logic."""
+        def parse_version_num(v_str):
+            if not v_str:
+                return 0
+            m = re.search(r'(\d+)', str(v_str))
+            return int(m.group(1)) if m else 0
+
+        def get_highest_known_version(app_v, fb_v, host_v):
+            current_num = parse_version_num(app_v)
+            fb_num = parse_version_num(fb_v)
+            host_num = parse_version_num(host_v)
+            highest_num = max(current_num, fb_num, host_num)
+            
+            if fb_num == highest_num and fb_v:
+                return fb_v
+            if host_num == highest_num and host_v:
+                return host_v
+            return app_v
+
+        # Case A: Firebase receives v738 first before hosting CDN caches expire
+        highest = get_highest_known_version('v737', 'v738', 'v737')
+        self.assertEqual(highest, 'v738')
+        self.assertTrue(parse_version_num(highest) > parse_version_num('v737'))
+
+        # Case B: Hosting has v739, Firebase had v738
+        highest = get_highest_known_version('v737', 'v738', 'v739')
+        self.assertEqual(highest, 'v739')
+
+        # Case C: All matching v738
+        highest = get_highest_known_version('v738', 'v738', 'v738')
+        self.assertEqual(highest, 'v738')
+        self.assertFalse(parse_version_num(highest) > parse_version_num('v738'))
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
