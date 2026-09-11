@@ -607,24 +607,24 @@ export async function renderConfirmedPurchasesList() {
                         <div style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;">
                             ${summaryHTML}
                         </div>
-                        <div class="confirmed-round-actions" style="display:inline-flex; align-items:center; flex-wrap: wrap; gap: 6px; flex-shrink: 0; margin-left: auto;" onclick="event.stopPropagation();">
-                            <button type="button" class="btn-toggle-all-round-combos" data-round="${round}" onclick="window.toggleRoundAllReceipts && window.toggleRoundAllReceipts(this, ${round})" style="padding: 3px 9px; font-size: 0.74rem; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
+                        <div class="confirmed-round-actions" style="display:inline-flex; align-items:center; flex-wrap: wrap; gap: 5px; flex-shrink: 0; margin-left: auto;" onclick="event.stopPropagation();">
+                            <button type="button" class="btn-toggle-all-round-combos" data-round="${round}" onclick="window.toggleRoundAllReceipts && window.toggleRoundAllReceipts(this, ${round})" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; height: 26px; box-sizing: border-box;">
                                 <i class="fa-solid fa-layer-group"></i> <span class="toggle-all-text">전체 번호 펼치기</span>
                             </button>
                             ${isAdmin ? `
                                 ${round === 1238 && purchases.length > 3 ? `
-                                    <button class="btn-clean-1238-ghosts" data-round="1238" title="1238회 실제 구매(#1~#3) 외 가상 영수증 일괄 정리" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;">
+                                    <button class="btn-clean-1238-ghosts" data-round="1238" title="1238회 실제 구매(#1~#3) 외 가상 영수증 일괄 정리" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; height: 26px; box-sizing: border-box;">
                                         <i class="fa-solid fa-broom"></i> #4~#${purchases.length} 정리
                                     </button>
                                 ` : ''}
-                                <button class="btn-delete-unlocked-round" data-round="${round}" title="잠금되지 않은 영수증 일괄 삭제" style="padding: 3px 8px; font-size: 0.75rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 600;">
+                                <button class="btn-delete-unlocked-round" data-round="${round}" title="잠금되지 않은 영수증 일괄 삭제" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; height: 26px; box-sizing: border-box;">
                                     <i class="fa-solid fa-trash-can"></i> 미잠금 삭제
                                 </button>
-                                <button class="btn-toggle-lock-round" data-round="${round}" style="padding: 3px 10px; font-size: 0.75rem; background: ${roundLockBtnBg}; border: 1px solid ${roundLockBtnBorder}; color: ${roundLockBtnColor}; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 5px; font-weight: bold;">
+                                <button class="btn-toggle-lock-round" data-round="${round}" style="padding: 3px 9px; font-size: 0.72rem; background: ${roundLockBtnBg}; border: 1px solid ${roundLockBtnBorder}; color: ${roundLockBtnColor}; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; height: 26px; box-sizing: border-box;">
                                     <i class="fa-solid ${roundLockIcon}"></i> ${roundLockText}
                                 </button>
                             ` : ''}
-                            <span style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap;">총 ${purchases.reduce((acc, p) => acc + p.combos.length, 0)}조합</span>
+                            <span style="font-size: 0.76rem; color: var(--text-secondary); white-space: nowrap;">총 ${purchases.reduce((acc, p) => acc + p.combos.length, 0)}조합</span>
                         </div>
                     </div>
                 </div>
@@ -918,29 +918,26 @@ export async function renderConfirmedPurchasesList() {
                     </div>
 
                     <!-- 2. Pass Mid Control Bar -->
-                    <div class="confirmed-receipt-control-bar" style="padding: 7px 12px; background: rgba(15, 23, 42, 0.65); border-bottom: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <div class="confirmed-receipt-control-bar" style="padding: 6px 12px; background: rgba(15, 23, 42, 0.65); border-bottom: 1px solid rgba(255, 255, 255, 0.06); display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
                         <div style="font-size: 0.74rem; font-weight: 700; color: #cbd5e1; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0;">
                             <i class="fa-solid fa-list-check" style="color: #60a5fa; font-size: 0.72rem;"></i>
                             <span>${purchase.combos.length}개 게임 번호</span>
                         </div>
                         <div class="confirmed-receipt-actions" style="display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; flex-shrink: 0; margin-left: auto;">
-                            <button type="button" class="btn-toggle-receipt-combos" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this)" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.45); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-weight: 800; transition: all 0.2s; white-space: nowrap;">
+                            <button type="button" class="btn-toggle-receipt-combos" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this)" style="padding: 3px 8px; font-size: 0.72rem; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.45); color: #93c5fd; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-weight: 800; transition: all 0.2s; white-space: nowrap; height: 26px; box-sizing: border-box;">
                                 <i class="fa-solid fa-list-ol"></i>
                                 <span class="toggle-combos-text">번호 펼치기</span>
                                 <i class="fa-solid fa-chevron-down toggle-combos-icon" style="transition: transform 0.2s; font-size: 0.62rem;"></i>
                             </button>
                             ${isAdmin ? `
-                                <button class="btn-toggle-lock-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="padding: 3px 7px; font-size: 0.72rem; background: ${lockBtnBg}; border: 1px solid ${lockBtnBorder}; color: ${lockBtnColor}; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; font-weight: 700; white-space: nowrap;">
+                                <button class="btn-toggle-lock-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="padding: 3px 7px; font-size: 0.72rem; background: ${lockBtnBg}; border: 1px solid ${lockBtnBorder}; color: ${lockBtnColor}; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 3px; font-weight: 700; white-space: nowrap; height: 26px; box-sizing: border-box;">
                                     <i class="fa-solid ${lockIcon}"></i> ${lockBtnText}
                                 </button>
-                                <button class="btn-edit-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" ${isLocked ? 'disabled' : ''} style="padding: 3px 7px; font-size: 0.72rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(59, 130, 246, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(59, 130, 246, 0.4)'}; color: ${isLocked ? '#64748b' : '#93c5fd'}; border-radius: 6px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: inline-flex; align-items: center; gap: 3px; font-weight: 700; white-space: nowrap;">
-                                    <i class="fa-solid fa-edit"></i> 수정
-                                </button>
-                                <button class="btn-delete-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="padding: 3px 7px; font-size: 0.72rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'}; color: ${isLocked ? '#64748b' : '#fca5a5'}; border-radius: 6px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: inline-flex; align-items: center; gap: 3px; font-weight: 700; white-space: nowrap;">
+                                <button class="btn-delete-purchase" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="padding: 3px 7px; font-size: 0.72rem; background: ${isLocked ? 'rgba(255,255,255,0.05)' : 'rgba(239, 68, 68, 0.2)'}; border: 1px solid ${isLocked ? 'rgba(255,255,255,0.1)' : 'rgba(239, 68, 68, 0.4)'}; color: ${isLocked ? '#64748b' : '#fca5a5'}; border-radius: 6px; cursor: ${isLocked ? 'not-allowed' : 'pointer'}; display: inline-flex; align-items: center; justify-content: center; gap: 3px; font-weight: 700; white-space: nowrap; height: 26px; box-sizing: border-box;">
                                     <i class="fa-solid fa-trash-can"></i> 삭제
                                 </button>
                             ` : `
-                                <span style="color: #34d399; font-size: 0.7rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); padding: 2px 6px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">
+                                <span style="color: #34d399; font-size: 0.7rem; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.3); padding: 2px 6px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 3px; white-space: nowrap; height: 24px;">
                                     <i class="fa-solid fa-shield-halved"></i> 영구보관
                                 </span>
                             `}
@@ -1168,49 +1165,7 @@ export async function renderConfirmedPurchasesList() {
         });
     });
 
-    // Bind edit listeners
-    container.querySelectorAll('.btn-edit-purchase').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation(); // prevent accordion toggle
 
-            const currentAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
-            if (currentAuthId !== 'master' && currentAuthId !== 'admin') {
-                showToast('🔒 영수증 수정은 관리자(Master) 전용 기능입니다.');
-                return;
-            }
-
-            const round = parseInt(btn.dataset.round);
-            const pIdx = parseInt(btn.dataset.pidx);
-            
-            const ledger = getLedger();
-            if (ledger[round] && ledger[round][pIdx]) {
-                const purchase = ledger[round][pIdx];
-                if (purchase.isLocked) {
-                    showToast('🔒 잠겨있는 구매 내역입니다. 잠금을 해제한 후 수정해주세요.');
-                    return;
-                }
-                
-                state.editingLedgerInfo = { round: round, index: pIdx, user: purchase.user || null };
-                
-                // Change modal title
-                const titleEl = document.querySelector('#manualLedgerModal .modal-header h2');
-                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-edit"></i> 수동 구매 내역 수정`;
-                
-                document.getElementById('manualLedgerRound').value = round;
-                document.getElementById('manualLedgerVersion').value = purchase.version || 'V3.0 하이브리드 알고리즘';
-                
-                // Populate combos text
-                const combos = purchase.combos || [];
-                const linesText = combos.map(c => getComboNumbers(c).join(', ')).join('\n');
-                document.getElementById('manualLedgerCombos').value = linesText;
-                
-                // Open modal
-                const manualLedgerModal = document.getElementById('manualLedgerModal');
-                if (manualLedgerModal) manualLedgerModal.style.display = 'flex';
-            }
-        });
-    });
-    
     // Bind delete listeners
     container.querySelectorAll('.btn-delete-purchase').forEach(btn => {
         btn.addEventListener('click', async (e) => {

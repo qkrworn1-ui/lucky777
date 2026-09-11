@@ -13958,4 +13958,18 @@ body.is-admin .btn-user-mgmt-compact {
     transition: transform 0.25s ease;
 }
 
+.confirmed-receipt-actions button,
+.confirmed-round-actions button {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+.confirmed-receipt-actions button:hover:not(:disabled),
+.confirmed-round-actions button:hover:not(:disabled) {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
+.confirmed-receipt-actions button:active:not(:disabled),
+.confirmed-round-actions button:active:not(:disabled) {
+    transform: scale(0.96);
+}
