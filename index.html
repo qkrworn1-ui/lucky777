@@ -2529,31 +2529,31 @@
         </div>
     </div>
 
-    <!-- Manual Ledger Input Modal (수동/QR 실구매 등록 모달 - 원스크린 초소형 최적화) -->
-    <div id="manualLedgerModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 10, 20, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 10000; align-items: center; justify-content: center; padding: 8px; box-sizing: border-box;">
-        <div class="modal-content" style="max-width: 440px; width: 100%; max-height: 98vh; max-height: 98dvh; display: flex; flex-direction: column; overflow: hidden; border-radius: 14px; box-shadow: 0 16px 36px rgba(0,0,0,0.85);">
-            <div class="modal-header" style="padding: 9px 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="font-size: 1.02rem; margin: 0; display: flex; align-items: center; gap: 6px;"><i class="fa-solid fa-cart-shopping" style="color: #f59e0b;"></i> 실구매 QR 등록</h2>
-                <button class="close-modal" id="closeManualLedgerModal" onclick="window.closeManualLedgerModal && window.closeManualLedgerModal()" style="cursor: pointer; background: transparent; border: none; color: #94a3b8; font-size: 1.2rem; padding: 2px 6px;"><i class="fa-solid fa-xmark"></i></button>
+    <!-- Manual Ledger Input Modal (수동/QR 실구매 등록 모달 - 스마트폰/PC 반응형 최적화) -->
+    <div id="manualLedgerModal" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 10, 20, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 10000; align-items: center; justify-content: center; padding: 12px; box-sizing: border-box;">
+        <div class="modal-content" style="max-width: 500px; width: 100%; max-height: 92vh; max-height: 92dvh; display: flex; flex-direction: column; overflow: hidden; border-radius: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.85); border: 1px solid rgba(251, 191, 36, 0.35); background: linear-gradient(145deg, #131b2e 0%, #0b1120 100%);">
+            <div class="modal-header" style="padding: 14px 18px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; background: rgba(15, 23, 42, 0.95);">
+                <h2 style="font-size: 1.12rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 8px; color: #f8fafc;"><i class="fa-solid fa-cart-shopping" style="color: #fbbf24;"></i> 실구매 QR 등록</h2>
+                <button class="close-modal" id="closeManualLedgerModal" onclick="window.closeManualLedgerModal && window.closeManualLedgerModal()" style="cursor: pointer; background: transparent; border: none; color: #94a3b8; font-size: 1.3rem; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; transition: all 0.2s;"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="modal-body" style="padding: 8px 12px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch;">
+            <div class="modal-body" style="padding: 14px 18px; overflow-y: auto; flex: 1; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 10px;">
                 <!-- 콤팩트 안내 배지 -->
-                <div style="background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.25); border-radius: 6px; padding: 5px 8px; margin-bottom: 6px; font-size: 0.72rem; line-height: 1.3; color: #10b981; display: flex; align-items: center; justify-content: space-between; gap: 6px;">
-                    <span><i class="fa-solid fa-qrcode"></i> <strong>QR 스캔</strong> 시 회차와 번호 자동입력</span>
-                    <span style="color: #fde68a; font-size: 0.68rem; white-space: nowrap; background: rgba(245, 158, 11, 0.15); padding: 2px 5px; border-radius: 4px;"><i class="fa-solid fa-shield-halved"></i> 주 10게임 유지</span>
+                <div style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.82rem; line-height: 1.4; color: #34d399; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
+                    <span style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-qrcode" style="font-size: 0.95rem;"></i> <strong>QR 스캔</strong> 시 회차와 번호 자동입력</span>
+                    <span style="color: #fde68a; font-size: 0.74rem; font-weight: 700; white-space: nowrap; background: rgba(245, 158, 11, 0.2); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);"><i class="fa-solid fa-shield-halved"></i> 주 10게임 유지</span>
                 </div>
                 
-                <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 6px; margin-bottom: 6px;">
+                <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px;">
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label style="display:block; margin-bottom: 2px; color: #cbd5e1; font-size: 0.73rem; font-weight: 600; white-space: nowrap;">등록 회차</label>
-                        <input type="number" id="manualLedgerRound" class="modern-input" placeholder="예: 1240" style="width: 100%; padding: 4px 8px; font-size: 0.82rem; height: 32px; box-sizing: border-box; border-radius: 6px;">
+                        <label style="display:block; margin-bottom: 4px; color: #e2e8f0; font-size: 0.82rem; font-weight: 700; white-space: nowrap;">등록 회차</label>
+                        <input type="number" id="manualLedgerRound" class="modern-input" placeholder="예: 1240" style="width: 100%; padding: 8px 12px; font-size: 0.92rem; height: 42px; box-sizing: border-box; border-radius: 8px;">
                     </div>
                     <div class="form-group" style="margin-bottom: 0;">
-                        <label style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 2px; color: #cbd5e1; font-size: 0.73rem; font-weight: 600; white-space: nowrap;">
+                        <label style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 4px; color: #e2e8f0; font-size: 0.82rem; font-weight: 700; white-space: nowrap;">
                             <span>알고리즘 버전</span>
-                            <span id="manualLedgerVersionBadge" style="font-size: 0.68rem; color: #fbbf24; font-weight: 700;">(자동)</span>
+                            <span id="manualLedgerVersionBadge" style="font-size: 0.74rem; color: #fbbf24; font-weight: 700;">(자동)</span>
                         </label>
-                        <select id="manualLedgerVersion" class="modern-input" style="width: 100%; padding: 4px 8px; background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 6px; font-size: 0.8rem; height: 32px; box-sizing: border-box;">
+                        <select id="manualLedgerVersion" class="modern-input" style="width: 100%; padding: 8px 10px; background: rgba(15,23,42,0.9); color: white; border: 1px solid #475569; border-radius: 8px; font-size: 0.88rem; height: 42px; box-sizing: border-box;">
                             <option value="V4.0 행동경제학 포트폴리오">🧠 V4.0 행동경제학</option>
                             <option value="V3.0 하이브리드 알고리즘">⚡ V3.0 하이브리드</option>
                             <option value="수동/직접입력">📝 수동/직접입력</option>
@@ -2561,58 +2561,58 @@
                     </div>
                 </div>
                 
-                <div id="manualLedgerDateGuide" style="display: none; font-size: 0.75rem; color: #38bdf8; margin-bottom: 6px; padding: 4px 8px; background: rgba(56, 189, 248, 0.1); border-radius: 6px;"></div>
+                <div id="manualLedgerDateGuide" style="display: none; font-size: 0.82rem; color: #38bdf8; padding: 6px 10px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px;"></div>
 
                 <!-- QR 스캔 액션 버튼 -->
-                <div class="form-group" style="margin-bottom: 6px;">
-                    <div style="display: flex; gap: 6px;">
-                        <button type="button" id="btnOpenQrScanner" class="btn-primary" style="flex: 1.2; padding: 6px 10px; font-size: 0.82rem; font-weight: 700; border-radius: 6px; height: 34px; background: linear-gradient(135deg, #10b981, #059669); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <div style="display: flex; gap: 8px;">
+                        <button type="button" id="btnOpenQrScanner" class="btn-primary" style="flex: 1.2; padding: 10px 14px; font-size: 0.92rem; font-weight: 800; border-radius: 8px; height: 44px; background: linear-gradient(135deg, #10b981, #059669); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 3px 10px rgba(16, 185, 129, 0.3);">
                             <i class="fa-solid fa-camera"></i> 📷 실시간 스캔
                         </button>
-                        <label class="btn-secondary" style="flex: 1; padding: 6px 10px; font-size: 0.8rem; font-weight: 700; border-radius: 6px; height: 34px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; text-align: center; box-sizing: border-box; margin: 0;">
+                        <label class="btn-secondary" style="flex: 1; padding: 10px 12px; font-size: 0.88rem; font-weight: 700; border-radius: 8px; height: 44px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; text-align: center; box-sizing: border-box; margin: 0;">
                             <i class="fa-solid fa-image"></i> 📸 사진/갤러리
                             <input type="file" id="lottoQrFileInput" accept="image/*" capture="environment" style="display: none;" onchange="window.handleLottoQrFile && window.handleLottoQrFile(event)">
                         </label>
                     </div>
                     
-                    <!-- QR 스캔 카메라 리더 영역 (초소형 뷰파인더) -->
-                    <div id="qrScannerContainer" style="display: none; margin-top: 5px; border: 1.5px solid #10b981; border-radius: 8px; padding: 6px; background: rgba(15, 23, 42, 0.98); text-align: center; box-shadow: 0 6px 18px rgba(0,0,0,0.5);">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; padding: 0 2px;">
-                            <span style="font-size: 0.72rem; color: #10b981; font-weight: 800; display: flex; align-items: center; gap: 4px;">
-                                <i class="fa-solid fa-satellite-dish fa-fade"></i> QR 코드를 비춰주세요
+                    <!-- QR 스캔 카메라 리더 영역 -->
+                    <div id="qrScannerContainer" style="display: none; margin-top: 8px; border: 1.5px solid #10b981; border-radius: 10px; padding: 10px; background: rgba(15, 23, 42, 0.98); text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.6);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 0 4px;">
+                            <span style="font-size: 0.82rem; color: #10b981; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-satellite-dish fa-fade"></i> QR 코드를 네모 안에 맞춰주세요
                             </span>
-                            <div id="qrCameraControls" style="display: flex; gap: 4px;">
-                                <button type="button" id="btnToggleTorch" onclick="window.toggleLottoTorch && window.toggleLottoTorch()" style="display: none; background: rgba(251, 191, 36, 0.2); border: 1px solid #fbbf24; color: #fef08a; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; cursor: pointer;">
+                            <div id="qrCameraControls" style="display: flex; gap: 6px;">
+                                <button type="button" id="btnToggleTorch" onclick="window.toggleLottoTorch && window.toggleLottoTorch()" style="display: none; background: rgba(251, 191, 36, 0.2); border: 1px solid #fbbf24; color: #fef08a; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
                                     <i class="fa-solid fa-lightbulb"></i> 플래시
                                 </button>
-                                <button type="button" id="btnToggleZoom" onclick="window.toggleLottoZoom && window.toggleLottoZoom()" style="display: none; background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #7dd3fc; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; cursor: pointer;">
+                                <button type="button" id="btnToggleZoom" onclick="window.toggleLottoZoom && window.toggleLottoZoom()" style="display: none; background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #7dd3fc; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
                                     <i class="fa-solid fa-magnifying-glass-plus"></i> 1.5x
                                 </button>
                             </div>
                         </div>
-                        <div id="qrReader" style="width: 100%; max-width: 220px; height: 135px; min-height: 120px; max-height: 145px; margin: 0 auto; border-radius: 6px; overflow: hidden; background: #000; position: relative;"></div>
-                        <button type="button" id="btnStopQrScanner" style="margin-top: 4px; width: 100%; padding: 3px 6px; background: #ef4444; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.74rem; font-weight: 700; height: 26px;">
+                        <div id="qrReader" style="width: 100%; max-width: 100%; height: 230px; min-height: 200px; max-height: 260px; margin: 0 auto; border-radius: 8px; overflow: hidden; background: #000; position: relative;"></div>
+                        <button type="button" id="btnStopQrScanner" style="margin-top: 8px; width: 100%; padding: 6px 12px; background: rgba(239, 68, 68, 0.85); hover: background: #ef4444; color: #fff; border: 1px solid rgba(239, 68, 68, 0.9); border-radius: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 700; height: 34px;">
                             <i class="fa-solid fa-xmark"></i> 스캔 닫기
                         </button>
                     </div>
                 </div>
 
                 <!-- 💡 AI Cross-check Real-time Banner -->
-                <div id="manualLedgerAiCheckResult" style="display: none; padding: 6px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; line-height: 1.3; margin-bottom: 6px;"></div>
+                <div id="manualLedgerAiCheckResult" style="display: none; padding: 10px 14px; border-radius: 8px; font-size: 0.84rem; font-weight: 700; line-height: 1.4;"></div>
 
                 <div class="form-group" style="margin-bottom: 0;">
-                    <label style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 2px; color: #cbd5e1; font-size: 0.73rem;">
+                    <label style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 4px; color: #e2e8f0; font-size: 0.82rem; font-weight: 700;">
                         <span>스캔된 로또 번호</span>
-                        <span style="color: #10b981; font-size: 0.68rem; font-weight: 700;"><i class="fa-solid fa-lock"></i> QR 전용</span>
+                        <span style="color: #10b981; font-size: 0.74rem; font-weight: 700;"><i class="fa-solid fa-lock"></i> QR 인증 자동 등록</span>
                     </label>
-                    <textarea id="manualLedgerCombos" readonly class="modern-input" style="width: 100%; height: 48px; min-height: 42px; max-height: 75px; font-family: monospace; font-size: 0.78rem; line-height: 1.25; padding: 4px 6px; resize: none; box-sizing: border-box; background: rgba(5,10,20,0.7); cursor: not-allowed; color: #94a3b8; border-radius: 6px;" placeholder="📷 QR 코드를 스캔하면 번호가 자동 입력됩니다."></textarea>
+                    <textarea id="manualLedgerCombos" readonly class="modern-input" style="width: 100%; height: 115px; min-height: 90px; max-height: 160px; font-family: monospace; font-size: 0.88rem; line-height: 1.45; padding: 8px 10px; resize: none; box-sizing: border-box; background: rgba(5,10,20,0.7); cursor: not-allowed; color: #94a3b8; border-radius: 8px;" placeholder="📷 QR 코드를 스캔하면 번호가 자동 입력됩니다."></textarea>
                 </div>
             </div>
-            <div class="modal-footer" style="padding: 7px 14px; background: rgba(11, 16, 30, 0.95); border-top: 1px solid rgba(255, 255, 255, 0.08); flex-shrink: 0; display: flex; gap: 8px;">
-                <button id="btnSaveManualLedger" onclick="window.handleSaveManualLedger && window.handleSaveManualLedger()" class="btn-primary" style="flex: 2; padding: 7px 12px; font-size: 0.9rem; font-weight: 700; border-radius: 7px; height: 36px; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.35);">
+            <div class="modal-footer" style="padding: 12px 18px; background: rgba(11, 16, 30, 0.95); border-top: 1px solid rgba(255, 255, 255, 0.08); flex-shrink: 0; display: flex; gap: 10px;">
+                <button id="btnSaveManualLedger" onclick="window.handleSaveManualLedger && window.handleSaveManualLedger()" class="btn-primary" style="flex: 2; padding: 10px 16px; font-size: 0.96rem; font-weight: 800; border-radius: 8px; height: 46px; background: linear-gradient(135deg, #3b82f6, #2563eb); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);">
                     <i class="fa-solid fa-save"></i> 실구매 등록하기
                 </button>
-                <button type="button" id="btnCancelManualLedger" onclick="window.closeManualLedgerModal && window.closeManualLedgerModal()" class="btn-secondary" style="flex: 1; padding: 7px 10px; font-size: 0.85rem; border-radius: 7px; height: 36px; cursor: pointer; text-align: center; justify-content: center; border: 1px solid #475569; background: rgba(30, 41, 59, 0.8); color: #cbd5e1; display: flex; align-items: center;">
+                <button type="button" id="btnCancelManualLedger" onclick="window.closeManualLedgerModal && window.closeManualLedgerModal()" class="btn-secondary" style="flex: 1; padding: 10px 14px; font-size: 0.9rem; font-weight: 700; border-radius: 8px; height: 46px; cursor: pointer; text-align: center; justify-content: center; border: 1px solid #475569; background: rgba(30, 41, 59, 0.8); color: #cbd5e1; display: flex; align-items: center;">
                     <i class="fa-solid fa-xmark"></i> 닫기
                 </button>
             </div>
