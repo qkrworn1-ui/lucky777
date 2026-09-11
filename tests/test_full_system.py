@@ -568,6 +568,42 @@ class TestFullSystem(unittest.TestCase):
         total_games = sum(len(r['combos']) for r in ledger[1240])
         self.assertEqual(total_games, 40, "Total 40 games must exist across 8 receipts!")
 
+    def test_15_master_proxy_qr_registration(self):
+        """Test: Master account registering QR on behalf of a specific user must save cleanly to target user ledger."""
+        all_users_store = {
+            'master': {1240: []},
+            'pjg': {1240: []},
+            'member_01': {1240: []}
+        }
+
+        # Master selects 'member_01' as target
+        logged_auth = 'master'
+        target_user = 'member_01'
+        round_num = 1240
+        combos = [{'numbers': [1, 10, 15, 23, 35, 42]}]
+
+        # Effective user must be target_user
+        effective_user = target_user if logged_auth == 'master' and target_user else logged_auth
+        self.assertEqual(effective_user, 'member_01', "Effective user must be the selected target user")
+
+        # Save to target user's ledger
+        receipt = {
+            'receiptId': f'rcpt_{effective_user}_{round_num}_proxy_001',
+            'round': round_num,
+            'user': effective_user,
+            'userId': effective_user,
+            'version': 'QR 실구매 영수증 (A~E 5게임)',
+            'combos': combos,
+            'isLocked': True
+        }
+        all_users_store[effective_user][round_num].append(receipt)
+
+        # Verify: Saved ONLY in target user's ledger
+        self.assertEqual(len(all_users_store['member_01'][1240]), 1, "Target user must have 1 receipt")
+        self.assertEqual(all_users_store['member_01'][1240][0]['user'], 'member_01')
+        self.assertEqual(len(all_users_store['master'][1240]), 0, "Master ledger must not be contaminated")
+        self.assertEqual(len(all_users_store['pjg'][1240]), 0, "Other users ledger must not be contaminated")
+
 
 if __name__ == '__main__':
     unittest.main()

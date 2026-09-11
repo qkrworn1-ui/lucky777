@@ -1,6 +1,7 @@
 import { state } from '../state.js';
 import { showToast, getDrawDateByRound } from '../../../shared/utils.js';
 import { getLedger, saveToLedger } from '../ledger.js';
+import { SafeAuth, getUserRealName, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { renderReviewTab, renderReviewDetail } from './review-tab.js';
 import { renderConfirmedPurchasesList } from './confirmed-tab.js';
 import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, crossCheckCombosWithRecommendations } from '../generator.js';
@@ -83,7 +84,11 @@ export function updateManualModalCrossCheck() {
         return;
     }
 
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
+    const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
+    if (authId.toLowerCase() === 'master' && masterUserSelect && masterUserSelect.value) {
+        authId = masterUserSelect.value.trim().toLowerCase();
+    }
     const check = crossCheckCombosWithRecommendations(round, parsedCombos, authId);
 
     // Auto-select detected version in dropdown
@@ -232,6 +237,16 @@ export function setupManualLedgerModal() {
     if (combosInputEl) {
         combosInputEl.addEventListener('input', updateManualModalCrossCheck);
         combosInputEl.addEventListener('change', updateManualModalCrossCheck);
+    }
+
+    const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
+    if (masterUserSelect) {
+        masterUserSelect.addEventListener('change', () => {
+            updateManualModalCrossCheck();
+            const selectedUId = masterUserSelect.value;
+            const uName = (typeof getUserRealName === 'function' ? getUserRealName(selectedUId) : '') || selectedUId;
+            showToast(`👤 대리 등록 대상 회원: [${uName}] 지정됨`);
+        });
     }
 
     const btnOpenQrScanner = document.getElementById('btnOpenQrScanner');
@@ -838,7 +853,13 @@ export async function handleSaveManualLedger() {
             state.editingLedgerInfo = null;
         }
 
-        const effectiveAuthId = originalUser || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
+        const currentLoggedAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+        const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
+        const selectedMasterTargetUser = (currentLoggedAuthId === 'master' && masterUserSelect && masterUserSelect.value) 
+            ? masterUserSelect.value.trim().toLowerCase() 
+            : null;
+
+        const effectiveAuthId = originalUser || selectedMasterTargetUser || currentLoggedAuthId || 'guest';
 
         // Safe cross-check
         let finalVersionStr = versionStr;
@@ -908,7 +929,12 @@ export async function handleSaveManualLedger() {
         if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        showToast(`🎉 제 ${roundInput}회차 [${finalVersionStr.split(' ')[0]}] 실구매 내역이 정상 등록되었습니다.`);
+        const targetUserName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveAuthId) : '') || effectiveAuthId;
+        if (currentLoggedAuthId === 'master' && effectiveAuthId !== 'master') {
+            showToast(`🎉 [${targetUserName}] 회원님의 제 ${roundInput}회차 [${finalVersionStr.split(' ')[0]}] 실구매 내역이 정상 대리 등록되었습니다.`);
+        } else {
+            showToast(`🎉 제 ${roundInput}회차 [${finalVersionStr.split(' ')[0]}] 실구매 내역이 정상 등록되었습니다.`);
+        }
     } catch (err) {
         console.error('[handleSaveManualLedger] Error:', err);
         alert('실구매 내역 저장 중 오류가 발생했습니다: ' + err.message);
@@ -945,6 +971,52 @@ export function openManualLedgerModal() {
             combosInput.dataset.qrRawUrl = '';
             combosInput.dataset.qrSerial = '';
         }
+        // 👑 [Master 전용] 대리 QR구매등록 회원 선택기 동적 렌더링 (오직 master 계정에만 노출)
+        const currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+        const isMaster = (currentAuthId === 'master');
+        const masterUserRow = document.getElementById('manualLedgerMasterUserRow');
+        const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
+
+        if (isMaster && masterUserRow && masterUserSelect) {
+            masterUserRow.style.display = 'block';
+            
+            // Build unique valid users list
+            const userMap = new Map();
+            if (Array.isArray(state.allRegisteredUsersList)) {
+                state.allRegisteredUsersList.forEach(u => {
+                    const uId = (u.id || '').trim().toLowerCase();
+                    if (uId && uId !== 'master' && !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'guest' && uId !== 'sample') {
+                        userMap.set(uId, { id: uId, name: u.name || '', phone: u.phone || '' });
+                    }
+                });
+            }
+            if (state.allUsersPurchasesMap) {
+                Object.keys(state.allUsersPurchasesMap).forEach(uId => {
+                    const clean = (uId || '').trim().toLowerCase();
+                    if (clean && clean !== 'master' && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'guest' && clean !== 'sample' && !userMap.has(clean)) {
+                        const rName = state.allUsersPurchasesMap[clean]?.realName || (typeof getUserRealName === 'function' ? getUserRealName(clean) : '') || '';
+                        userMap.set(clean, { id: clean, name: rName, phone: '' });
+                    }
+                });
+            }
+
+            const currentAdminTarget = (state.adminViewingTarget && state.adminViewingTarget !== 'all' && state.adminViewingTarget !== 'my') 
+                ? state.adminViewingTarget.toLowerCase().trim() 
+                : 'master';
+
+            let optionsHtml = `<option value="master" ${currentAdminTarget === 'master' ? 'selected' : ''}>👑 Master 본인 (master)</option>`;
+            Array.from(userMap.values()).sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id)).forEach(u => {
+                const displayName = u.name ? `${u.name}` : u.id;
+                const phoneTag = u.phone ? ` / ${u.phone}` : '';
+                const isSelected = (currentAdminTarget === u.id) ? 'selected' : '';
+                optionsHtml += `<option value="${u.id}" ${isSelected}>👤 ${u.id} (${displayName}${phoneTag})</option>`;
+            });
+
+            masterUserSelect.innerHTML = optionsHtml;
+        } else if (masterUserRow) {
+            masterUserRow.style.display = 'none';
+        }
+
         if (resultBox) resultBox.style.display = 'none';
         modal.style.display = 'flex';
 

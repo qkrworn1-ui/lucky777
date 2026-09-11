@@ -4,6 +4,8 @@ import json
 import sys
 import unittest
 
+import datetime
+
 def run_preflight_tests():
     print("[*] [TEST] Running Pre-flight Integrity Tests...")
     loader = unittest.TestLoader()
@@ -15,12 +17,29 @@ def run_preflight_tests():
         sys.exit(1)
     print("[+] [PASS] All pre-flight integrity tests PASSED!")
 
-def sync_version_assets():
+def sync_version_assets(auto_bump=True):
     if not os.path.exists('version.json'):
         return 'v716'
     with open('version.json', 'r', encoding='utf-8') as f:
         vdata = json.load(f)
-    version = vdata.get('version', 'v716').strip()
+    old_version = vdata.get('version', 'v716').strip()
+    
+    if auto_bump and '--no-bump' not in sys.argv:
+        # Extract numeric part and bump +1
+        match = re.search(r'(\d+)', old_version)
+        if match:
+            v_int = int(match.group(1)) + 1
+            version = f"v{v_int}"
+        else:
+            version = old_version
+        vdata['version'] = version
+        vdata['buildDate'] = datetime.date.today().isoformat()
+        with open('version.json', 'w', encoding='utf-8') as f:
+            json.dump(vdata, f, indent=2, ensure_ascii=False)
+        print(f"[*] [AUTO-BUMP] Version incremented: {old_version} -> {version}")
+    else:
+        version = old_version
+
     v_num = version.lstrip('v')
     print(f"[*] [SYNC] Synchronizing Version: {version} (v_num: {v_num})...")
 
@@ -59,6 +78,7 @@ def sync_version_assets():
         print("  [+] sw.js CACHE_NAME synced.")
 
     return version
+
 
 # File order based on dependency graph
 FILES_TO_BUNDLE = [

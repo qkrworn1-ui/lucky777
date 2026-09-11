@@ -54,7 +54,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=719">
+    <link rel="stylesheet" href="styles.css?v=721">
 </head>
 
 <body>
@@ -87,7 +87,7 @@
             <div class="lp-brand-badge" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
                 <span><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v719 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v721 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 style="margin: 0 0 8px 0;">운도<br><span class="lp-accent">실력</span></h1>
@@ -398,7 +398,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v719
+                                v721
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1788,7 +1788,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.forceReloadCache && window.forceReloadCache()" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v719
+                        <i class="fa-solid fa-code-branch"></i> v721
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -2543,6 +2543,17 @@
                     <span style="color: #fde68a; font-size: 0.74rem; font-weight: 700; white-space: nowrap; background: rgba(245, 158, 11, 0.2); padding: 3px 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);"><i class="fa-solid fa-shield-halved"></i> 주 10게임 유지</span>
                 </div>
                 
+                <!-- 👑 [Master 전용] 대리 QR구매등록 회원 선택 드롭다운 (오직 master 계정 로그인 시에만 표시) -->
+                <div id="manualLedgerMasterUserRow" style="display: none; background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 9px 12px; margin-bottom: 2px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                    <label for="manualLedgerMasterUserSelect" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; color: #fbbf24; font-size: 0.82rem; font-weight: 800;">
+                        <span><i class="fa-solid fa-crown" style="color: #fbbf24;"></i> [Master 전용] 등록 대상 회원 선택</span>
+                        <span style="font-size: 0.72rem; color: #38bdf8; font-weight: 600;"><i class="fa-solid fa-user-pen"></i> 회원 대신 QR등록</span>
+                    </label>
+                    <select id="manualLedgerMasterUserSelect" class="modern-input" style="width: 100%; padding: 6px 10px; background: #0f172a; color: #fff; border: 1px solid #f59e0b; border-radius: 8px; font-size: 0.84rem; font-weight: 700; height: 38px; box-sizing: border-box; cursor: pointer; outline: none;">
+                        <option value="master">👑 Master 본인 (master)</option>
+                    </select>
+                </div>
+                
                 <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px;">
                     <div class="form-group" style="margin-bottom: 0;">
                         <label style="display:block; margin-bottom: 4px; color: #e2e8f0; font-size: 0.82rem; font-weight: 700; white-space: nowrap;">등록 회차</label>
@@ -3010,9 +3021,9 @@
         // ========================================================
         // 📱 App Version & Cache Busting Controller
         // ========================================================
-        window.APP_VERSION = 'v719';
+        window.APP_VERSION = 'v721';
         window.updateAppVersionBadges = function(ver) {
-            var v = ver || window.APP_VERSION || 'v719';
+            var v = ver || window.APP_VERSION || 'v721';
             var landingBadge = document.getElementById('appVersionBadgeLanding');
             if (landingBadge) {
                 landingBadge.innerHTML = '<i class="fa-solid fa-code-branch"></i> ' + v + ' <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>';
@@ -3036,7 +3047,7 @@
         }
 
         window.forceReloadCache = async function() {
-            var vStr = window.APP_VERSION || 'v719';
+            var vStr = window.APP_VERSION || 'v721';
             if (confirm('🔄 최신 버전(' + vStr + ')으로 캐시를 비우고 새로고침하시겠습니까?')) {
                 try {
                     if ('caches' in window) {
