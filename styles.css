@@ -12421,6 +12421,354 @@ body.is-admin .btn-user-mgmt-compact {
     }
 }
 
+
+/* ==========================================================================
+   📱 시뮬레이션 등수별 당첨이력 초경량 고가독성 UI (모바일 & 데스크톱)
+   ========================================================================== */
+.first-place-evidence-card {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 16px;
+    margin-top: 18px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.evidence-header {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+@media (min-width: 768px) {
+    .evidence-header {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+.evidence-header .filter-actions {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding-bottom: 3px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    max-width: 100%;
+}
+
+.evidence-header .filter-actions::-webkit-scrollbar {
+    display: none;
+}
+
+.evidence-header .filter-actions button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 6px 10px !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    cursor: pointer;
+    background: rgba(30, 41, 59, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+    transition: all 0.2s ease;
+}
+
+.evidence-header .filter-actions button:hover {
+    background: rgba(51, 65, 85, 0.95);
+    color: #ffffff;
+}
+
+.evidence-header .filter-actions button.active-filter {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
+    color: #ffffff !important;
+    border-color: #a5b4fc !important;
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.6) !important;
+}
+
+.sim-wins-count-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    background: rgba(30, 41, 59, 0.6);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    font-size: 0.78rem;
+    color: #cbd5e1;
+}
+
+.sim-wins-count-bar strong {
+    color: #fbbf24;
+}
+
+.sim-wins-scroll-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 440px;
+    overflow-y: auto;
+    padding-right: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sim-wins-scroll-list::-webkit-scrollbar {
+    width: 4px;
+}
+.sim-wins-scroll-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+.sim-wins-scroll-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.sim-win-item-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.9) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.sim-win-item-card:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: linear-gradient(135deg, rgba(51, 65, 85, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%);
+}
+
+.sim-win-item-card.rank-1 {
+    border-color: rgba(251, 191, 36, 0.5);
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%);
+}
+.sim-win-item-card.rank-2 {
+    border-color: rgba(96, 165, 250, 0.45);
+    background: linear-gradient(135deg, rgba(96, 165, 250, 0.1) 0%, rgba(15, 23, 42, 0.95) 100%);
+}
+.sim-win-item-card.rank-3 {
+    border-color: rgba(52, 211, 153, 0.45);
+    background: linear-gradient(135deg, rgba(52, 211, 153, 0.1) 0%, rgba(15, 23, 42, 0.95) 100%);
+}
+
+.sim-win-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.sim-win-info-left {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
+}
+
+.sim-win-round-tag {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #f8fafc;
+    white-space: nowrap;
+}
+
+.sim-win-rank-tag {
+    font-size: 0.74rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.sim-win-rank-tag.rank-1 {
+    background: rgba(251, 191, 36, 0.25);
+    color: #fbbf24;
+    border: 1px solid #fbbf24;
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.4);
+}
+.sim-win-rank-tag.rank-2 {
+    background: rgba(96, 165, 250, 0.25);
+    color: #93c5fd;
+    border: 1px solid #60a5fa;
+}
+.sim-win-rank-tag.rank-3 {
+    background: rgba(52, 211, 153, 0.25);
+    color: #6ee7b7;
+    border: 1px solid #34d399;
+}
+.sim-win-rank-tag.rank-4 {
+    background: rgba(167, 139, 250, 0.2);
+    color: #c4b5fd;
+    border: 1px solid #a78bfa;
+}
+.sim-win-rank-tag.rank-5 {
+    background: rgba(244, 114, 182, 0.2);
+    color: #f472b6;
+    border: 1px solid #f472b6;
+}
+
+.sim-win-combo-tag {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+}
+
+.sim-win-user-tag {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.15);
+    border: 1px solid rgba(251, 191, 36, 0.4);
+    padding: 1px 5px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.sim-win-info-right {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.sim-win-prize-tag {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #fde047;
+    white-space: nowrap;
+}
+
+.sim-win-balls-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 2px 0;
+}
+
+.sim-win-balls-row::-webkit-scrollbar {
+    display: none;
+}
+
+.sim-win-ball {
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-align: center;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.sim-win-ball.hit-ball {
+    border: 2px solid #fbbf24;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
+    transform: scale(1.08);
+    z-index: 2;
+    opacity: 1;
+}
+
+.sim-win-ball.bonus-ball {
+    border: 2px solid #f87171;
+    box-shadow: 0 0 8px rgba(248, 113, 113, 0.8);
+    transform: scale(1.08);
+    z-index: 2;
+    opacity: 1;
+}
+
+.sim-win-ball.dim-ball {
+    opacity: 0.45;
+    filter: grayscale(25%);
+}
+
+.sim-empty-state {
+    text-align: center;
+    padding: 28px 16px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    background: rgba(15, 23, 42, 0.4);
+    border-radius: 10px;
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.sim-empty-state i {
+    font-size: 1.8rem;
+    color: #fbbf24;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.sim-empty-state strong {
+    color: #f8fafc;
+    font-size: 0.92rem;
+}
+
+.sim-empty-state span {
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    display: inline-block;
+    margin-top: 4px;
+    line-height: 1.5;
+}
+
+/* Mobile Smartphone Optimizations */
+@media (max-width: 640px) {
+    .first-place-evidence-card {
+        padding: 10px 8px;
+        border-radius: 10px;
+    }
+    .sim-win-item-card {
+        padding: 6px 8px;
+        border-radius: 7px;
+        gap: 4px;
+    }
+    .sim-win-round-tag {
+        font-size: 0.76rem;
+    }
+    .sim-win-rank-tag {
+        font-size: 0.68rem;
+        padding: 1px 5px;
+    }
+    .sim-win-combo-tag {
+        font-size: 0.7rem;
+        max-width: 90px;
+    }
+    .sim-win-prize-tag {
+        font-size: 0.72rem;
+    }
+    .sim-win-balls-row {
+        gap: 3px;
+    }
+    .sim-win-ball {
+        width: 22px;
+        height: 22px;
+        line-height: 22px;
+        font-size: 0.68rem;
+    }
+    .sim-wins-scroll-list {
+        max-height: 360px;
+    }
+}
+
 /* ── 2. 알고리즘 소개 탭 (#tab-algorithms) 모바일 최적화 ── */
 @media (max-width: 768px) {
     #tab-algorithms .algo-spec-card {

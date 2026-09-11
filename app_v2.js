@@ -1,7 +1,7 @@
 try {
 
 /**
- * Lucky777 Smart Bundle (v733)
+ * Lucky777 Smart Bundle (v734)
  */
 
 
@@ -18814,10 +18814,10 @@ function renderAccumulatedWins(rankFilter) {
     if (!hasExecutedSim) {
         const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1239);
         accumulatedWinsContainer.innerHTML = `
-            <div style="text-align:center; padding:32px 16px; color:#94a3b8; font-size:0.88rem; background:rgba(15,23,42,0.4); border-radius:10px; border:1px dashed rgba(255,255,255,0.12);">
-                <i class="fa-solid fa-flask-vial" style="font-size:1.8rem; color:#fbbf24; margin-bottom:10px; display:block;"></i>
-                <strong style="color:#f8fafc; font-size:0.95rem;">백테스팅 실행 대기 중</strong><br>
-                <span style="font-size:0.82rem; color:#cbd5e1; display:inline-block; margin-top:6px; line-height:1.5;">
+            <div class="sim-empty-state">
+                <i class="fa-solid fa-flask-vial"></i>
+                <strong>백테스팅 실행 대기 중</strong><br>
+                <span>
                     아직 백테스팅이 실행되지 않았습니다.<br>
                     상단의 <strong style="color: #fbbf24;">[1~${maxR}회 리얼 백테스팅 시작]</strong> 버튼을 누르시면 과거 전 회차 실제 당첨번호와 7대 알고리즘의 진짜 적중 실적이 1:1로 집계됩니다.
                 </span>
@@ -18833,10 +18833,10 @@ function renderAccumulatedWins(rankFilter) {
     if (filtered.length === 0) {
         const rankName = rankFilter === 1 ? '1등 (6개 일치)' : (rankFilter === 2 ? '2등 (5개+보너스 일치)' : (rankFilter === 3 ? '3등 (5개 일치)' : (rankFilter === 4 ? '4등 (4개 일치)' : '5등 (3개 일치)')));
         accumulatedWinsContainer.innerHTML = `
-            <div style="text-align:center; padding:28px 16px; color:#94a3b8; font-size:0.85rem; background:rgba(15,23,42,0.4); border-radius:10px; border:1px dashed rgba(255,255,255,0.12);">
-                <i class="fa-solid fa-circle-info" style="font-size:1.6rem; color:#38bdf8; margin-bottom:8px; display:block;"></i>
-                <strong style="color:#f8fafc; font-size:0.92rem;">${rankName} 당첨 기록 없음</strong><br>
-                <span style="font-size:0.8rem; color:#cbd5e1; display:inline-block; margin-top:4px; line-height:1.5;">
+            <div class="sim-empty-state">
+                <i class="fa-solid fa-circle-info" style="color:#38bdf8;"></i>
+                <strong>${rankName} 당첨 기록 없음</strong><br>
+                <span>
                     시뮬레이션 기간 동안 ${rankName} 당첨이 발생하지 않았습니다.<br>
                     상단 필터에서 <strong>[전체]</strong> 또는 <strong>[역대 4등 / 5등]</strong> 버튼을 눌러 적중 내역을 확인해보세요.
                 </span>
@@ -18845,30 +18845,58 @@ function renderAccumulatedWins(rankFilter) {
         return;
     }
 
-    const rankColors = { 1: '#fbbf24', 2: '#60a5fa', 3: '#34d399', 4: '#a78bfa', 5: '#f472b6' };
-    const rankLabels = { 1: '1등 (6개 일치)', 2: '2등 (5개+보너스)', 3: '3등 (5개 일치)', 4: '4등 (4개 일치)', 5: '5등 (3개 일치)' };
+    const rankShortLabels = { 1: '🥇 1등 (6개)', 2: '🥈 2등 (5+보)', 3: '🥉 3등 (5개)', 4: '✨ 4등 (4개)', 5: '⭐ 5등 (3개)' };
+    const prizeAmounts = { 1: '약 20억+ 원', 2: '5,000만 원', 3: '150만 원', 4: '50,000 원', 5: '5,000 원' };
 
-    accumulatedWinsContainer.innerHTML = filtered.slice(0, 150).map(w => {
-        const rColor = rankColors[w.prizeRank] || '#94a3b8';
-        const rLabel = rankLabels[w.prizeRank] || `${w.prizeRank}등`;
+    const itemsHtml = filtered.slice(0, 150).map(w => {
+        const rLabel = rankShortLabels[w.prizeRank] || `${w.prizeRank}등`;
+        const prizeTxt = prizeAmounts[w.prizeRank] || '';
         const comboName = (w.combo && w.combo.meta && w.combo.meta.name) ? w.combo.meta.name : (w.combo ? w.combo.name : '추천 번호');
+        const ownerName = (w.combo && w.combo.meta && w.combo.meta.ownerName) ? w.combo.meta.ownerName : (w.combo ? w.combo.userName : '');
         const nums = (w.combo && w.combo.numbers) ? w.combo.numbers : [];
 
+        const drawData = (state.mergedHistory && state.mergedHistory[w.round]) ? state.mergedHistory[w.round] : null;
+        const winningSet = (drawData && Array.isArray(drawData.numbers)) ? new Set(drawData.numbers) : null;
+        const bonusNum = drawData ? drawData.bonus : null;
+
         return `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; margin-bottom:6px; background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.06); border-radius:8px; font-size:0.82rem;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="font-weight:800; color:#f8fafc; min-width:65px;">제 ${w.round}회</span>
-                    <span style="background:${rColor}25; border:1px solid ${rColor}; color:${rColor}; padding:2px 8px; border-radius:12px; font-weight:800; font-size:0.75rem;">
-                        ${rLabel}
-                    </span>
-                    <span style="color:#94a3b8; font-size:0.78rem;">${comboName}</span>
+            <div class="sim-win-item-card rank-${w.prizeRank}">
+                <div class="sim-win-card-header">
+                    <div class="sim-win-info-left">
+                        <span class="sim-win-round-tag">제 ${w.round}회</span>
+                        <span class="sim-win-rank-tag rank-${w.prizeRank}">${rLabel}</span>
+                        <span class="sim-win-combo-tag" title="${comboName}">${comboName}</span>
+                        ${ownerName ? `<span class="sim-win-user-tag"><i class="fa-solid fa-user"></i> ${ownerName}</span>` : ''}
+                    </div>
+                    <div class="sim-win-info-right">
+                        <span class="sim-win-prize-tag">${prizeTxt}</span>
+                    </div>
                 </div>
-                <div class="balls-row" style="display:inline-flex; gap:3px;">
-                    ${nums.map(n => `<span class="lotto-ball sm-ball ${getBallColorClass(n)}" style="width:22px; height:22px; line-height:22px; font-size:0.7rem; text-align:center; border-radius:50%; display:inline-block; font-weight:700; color:#fff; background:${getBallHexColor(n)};">${n}</span>`).join('')}
+                <div class="sim-win-balls-row">
+                    ${nums.map(n => {
+                        const isHit = winningSet ? winningSet.has(n) : false;
+                        const isBonus = (n === bonusNum);
+                        const ballBg = getBallHexColor(n);
+                        let hitClass = '';
+                        if (isHit) hitClass = 'hit-ball';
+                        else if (isBonus) hitClass = 'bonus-ball';
+                        else if (winningSet) hitClass = 'dim-ball';
+                        return `<span class="sim-win-ball ${hitClass} ${getBallColorClass(n)}" style="background:${ballBg};">${n}</span>`;
+                    }).join('')}
                 </div>
             </div>
         `;
     }).join('');
+
+    accumulatedWinsContainer.innerHTML = `
+        <div class="sim-wins-count-bar">
+            <span><i class="fa-solid fa-list-check"></i> 적중 내역 총 <strong>${filtered.length.toLocaleString()}</strong>건 (상위 150건)</span>
+            <span style="color:#94a3b8; font-size:0.75rem;">최신 회차순</span>
+        </div>
+        <div class="sim-wins-scroll-list">
+            ${itemsHtml}
+        </div>
+    `;
 }
 
 function renderSimulationCharts(hit1st, hit2nd, hit3rd, hit4th, hit5th, totalWins) {
