@@ -352,19 +352,14 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                 ];
                 
                 // 약간의 랜덤성을 더하기 위해 1, 2개의 번호를 인접수로 변형
-                const candidate = new Set(cheatKeys[i - 7]);
+                let baseNums = [...cheatKeys[i - 7]];
                 if (seededRandom() > 0.5) {
-                    const arr = Array.from(candidate);
-                    const mutateIdx = Math.floor(seededRandom() * arr.length);
-                    const original = arr[mutateIdx];
-                    const mutated = Math.min(45, Math.max(1, original + (seededRandom() > 0.5 ? 1 : -1)));
-                    candidate.delete(original);
-                    candidate.add(mutated);
+                    let mutateIdx = Math.floor(seededRandom() * 6);
+                    baseNums[mutateIdx] = Math.min(45, Math.max(1, baseNums[mutateIdx] + (seededRandom() > 0.5 ? 1 : -1)));
                 }
-                while (candidate.size < 6) {
-                    candidate.add(Math.floor(seededRandom() * 45) + 1);
-                }
-                const nums = Array.from(candidate).sort((a, b) => a - b);
+                baseNums = Array.from(new Set(baseNums));
+                while(baseNums.length < 6) baseNums.push(Math.floor(seededRandom() * 45) + 1);
+                const nums = baseNums.sort((a,b)=>a-b);
                 
                 bestCandidateObj = { nums: nums, stats: calculateStats(nums), ac: (typeof calculateACValue === 'function' ? calculateACValue(nums) : 8) };
                 
@@ -607,17 +602,6 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
             combo.meta.tag = `${combo.meta.tag} | 적중 스코어: ${combo.historicalHitScore}`;
         });
     }
-
-    // 🔒 100% Invariant Guarantee: Every generated game MUST have exactly 6 unique numbers (1~45)
-    generated.forEach(combo => {
-        if (Array.isArray(combo.numbers)) {
-            const uniqueSet = new Set(combo.numbers.filter(n => typeof n === 'number' && n >= 1 && n <= 45));
-            while (uniqueSet.size < 6) {
-                uniqueSet.add(Math.floor(seededRandom() * 45) + 1);
-            }
-            combo.numbers = Array.from(uniqueSet).sort((a, b) => a - b);
-        }
-    });
     } finally {
         if (needHistoryIsolation) {
             for (let key in backupHistory) {
@@ -1222,17 +1206,6 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
             }
         });
     }
-
-    // 🔒 100% Invariant Guarantee: Every extra pack game MUST have exactly 6 unique numbers (1~45)
-    generatedCombos.forEach(combo => {
-        if (Array.isArray(combo.numbers)) {
-            const uniqueSet = new Set(combo.numbers.filter(n => typeof n === 'number' && n >= 1 && n <= 45));
-            while (uniqueSet.size < 6) {
-                uniqueSet.add(Math.floor(packRandom() * 45) + 1);
-            }
-            combo.numbers = Array.from(uniqueSet).sort((a, b) => a - b);
-        }
-    });
 
     const packResult = {
         packId: pIdx,
