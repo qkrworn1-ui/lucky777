@@ -5,251 +5,36 @@ import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeekl
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, getLedger, getHistoricalTop10Combinations, saveToLedger } from '../ledger.js';
+import { calculate7AlgorithmsPerformance } from './algorithms-tab.js';
 
 let currentAlgoReviewStartRound = 1235;
 let algoAccordionStateMap = {};
 let generatorAdminViewingUser = null;
 
 /**
- * 1235회차부터 최신 회차까지 7개 알고리즘의 100% 무결점 실데이터 전수 복기 채점 집계
- * (신규 당첨번호 업데이트 시 state.mergedHistory 기반으로 실시간 자동 반영)
+ * 1235회차부터 최신 회차까지 7대 알고리즘의 100% 무결점 실데이터 전수 복기 채점 집계
+ * (복기 리포트와 100% 동일한 calculate7AlgorithmsPerformance 엔진 기반 실시간 연동)
  */
-export function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = null) {
-    const history = state.mergedHistory || {};
-    const drawnRounds = Object.keys(history)
-        .map(Number)
-        .filter(r => !isNaN(r) && r >= fromRound && history[r] && Array.isArray(history[r].numbers) && history[r].numbers.length === 6)
-        .sort((a, b) => a - b);
-
-    const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : fromRound;
-
-    // 7개 알고리즘 명확한 정의 (각 10게임)
-    const algoDefinitions = [
-        {
-            id: 'v4',
-            name: 'V4.0 행동경제학 포트폴리오',
-            shortName: 'V4.0 행동경제학',
-            icon: 'fa-brain',
-            badge: 'V4.0 BEHAVIORAL',
-            color: '#a78bfa',
-            bgGradient: 'linear-gradient(135deg, rgba(167, 139, 250, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
-            borderColor: 'rgba(167, 139, 250, 0.4)',
-            desc: '통계적 밸런스 + 클러스터링 믹스 + 과적합 치트키 10게임 앙상블',
-            getCombos: (r) => computeAbsoluteTop10Combinations(false, r, 'v4', true, targetUserId) || []
-        },
-        {
-            id: 'v3',
-            name: 'V3.0 하이브리드 정통 수학 알고리즘',
-            shortName: 'V3.0 하이브리드',
-            icon: 'fa-gears',
-            badge: 'V3.0 HYBRID MATH',
-            color: '#60a5fa',
-            bgGradient: 'linear-gradient(135deg, rgba(96, 165, 250, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
-            borderColor: 'rgba(96, 165, 250, 0.4)',
-            desc: '빈도·Pair·보너스·Cold·EV·이웃수·거울수·모멘텀 복합 수학 모델 (10게임)',
-            getCombos: (r) => computeAbsoluteTop10Combinations(false, r, 'v3', true, targetUserId) || []
-        },
-        {
-            id: 'extra1',
-            name: '추가 1: 30게임 완성형 100% 전수 커버리지팩',
-            shortName: '추가 1: 전수 커버리지',
-            icon: 'fa-shield-halved',
-            badge: '추가 1 KEYSTONE 100%',
-            color: '#10b981',
-            bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
-            borderColor: 'rgba(16, 185, 129, 0.4)',
-            desc: '기본 20게임(V3+V4) 누락 번호 100% 포섭 + 핫 앵커 직교 결합 (10게임)',
-            getCombos: (r) => { const p = generateExtraAddonPack(1, r, targetUserId); return (p && p.combos) ? p.combos : []; }
-        },
-        {
-            id: 'extra2',
-            name: '추가 2: 초고배당 EV 독점 수령팩',
-            shortName: '추가 2: 초고배당 EV',
-            icon: 'fa-sack-dollar',
-            badge: '추가 2 HIGH EV MONOPOLY',
-            color: '#f59e0b',
-            bgGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
-            borderColor: 'rgba(245, 158, 11, 0.4)',
-            desc: '30~45번대 고번호 + 2연번 집중으로 1등 당첨 시 독점 수령금 극대화 (10게임)',
-            getCombos: (r) => { const p = generateExtraAddonPack(2, r, targetUserId); return (p && p.combos) ? p.combos : []; }
-        },
-        {
-            id: 'extra3',
-            name: '추가 3: 기하학적 휠링 하모닉팩',
-            shortName: '추가 3: 기하학 휠링',
-            icon: 'fa-dharmachakra',
-            badge: '추가 3 HARMONIC WHEELING',
-            color: '#8b5cf6',
-            bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
-            borderColor: 'rgba(139, 92, 246, 0.4)',
-            desc: '45각형 5구간 대칭 분산형 휠링 매트릭스로 3~4등 다중 적중 방어망 (10게임)',
-            getCombos: (r) => { const p = generateExtraAddonPack(3, r, targetUserId); return (p && p.combos) ? p.combos : []; }
-        },
-        {
-            id: 'extra4',
-            name: '추가 4: 마르코프 2차 전이 & 페어 부스터팩',
-            shortName: '추가 4: 마르코프&페어',
-            icon: 'fa-bolt',
-            badge: '추가 4 MARKOV & PAIR',
-            color: '#06b6d4',
-            bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
-            borderColor: 'rgba(6, 182, 212, 0.4)',
-            desc: '직전 회차 마르코프 전이 확률 및 역대 최다 동반 출현 Pair 집중 타격 (10게임)',
-            getCombos: (r) => { const p = generateExtraAddonPack(4, r, targetUserId); return (p && p.combos) ? p.combos : []; }
-        },
-        {
-            id: 'extra5',
-            name: '추가 5: 골든 클러스터 올인팩',
-            shortName: '추가 5: 골든 클러스터',
-            icon: 'fa-crown',
-            badge: '추가 5 GOLDEN CLIQUE',
-            color: '#ec4899',
-            bgGradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(15, 23, 42, 0.7) 100%)',
-            borderColor: 'rgba(236, 72, 153, 0.4)',
-            desc: '역대 1등 추첨 데이터 최다 중복 출현 3수 고정틀(Golden Trios) 마스터 (10게임)',
-            getCombos: (r) => { const p = generateExtraAddonPack(5, r, targetUserId); return (p && p.combos) ? p.combos : []; }
-        }
-    ];
-
-    let grandTotalGames = 0;
-    let grandTotalInvest = 0;
-    let grandTotalPrize = 0;
-    const grandRankCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-
-    const results = algoDefinitions.map(algo => {
-        let totalGames = 0;
-        let totalInvest = 0;
-        let totalPrize = 0;
-        const rankCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-        const roundDetails = [];
-
-        drawnRounds.forEach(round => {
-            const draw = history[round];
-            if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) return;
-
-            const winningSet = new Set(draw.numbers);
-            const bonus = draw.bonus;
-            const combos = algo.getCombos(round) || [];
-            
-            let roundPrize = 0;
-            const roundHits = [];
-
-            combos.forEach((combo, gIdx) => {
-                totalGames++;
-                totalInvest += 1000;
-                grandTotalGames++;
-                grandTotalInvest += 1000;
-
-                const nums = getComboNumbers(combo);
-                if (!Array.isArray(nums) || nums.length !== 6) return;
-
-                const matches = nums.filter(n => winningSet.has(n));
-                const matchCount = matches.length;
-                const hasBonus = (bonus !== undefined && bonus !== null) ? nums.includes(bonus) : false;
-
-                let rank = null;
-                let prize = 0;
-                let rankLabel = '';
-
-                if (matchCount === 6) {
-                    rank = 1;
-                    prize = draw.rank1Prize || draw.firstWinamnt || 2000000000;
-                    rankLabel = '🎉 1등 (6개 일치)';
-                } else if (matchCount === 5 && hasBonus) {
-                    rank = 2;
-                    prize = draw.rank2Prize || 50000000;
-                    rankLabel = '🥈 2등 (5개+보너스)';
-                } else if (matchCount === 5) {
-                    rank = 3;
-                    prize = draw.rank3Prize || 1500000;
-                    rankLabel = '🥉 3등 (5개 일치)';
-                } else if (matchCount === 4) {
-                    rank = 4;
-                    prize = 50000;
-                    rankLabel = '✨ 4등 (4개 일치)';
-                } else if (matchCount === 3) {
-                    rank = 5;
-                    prize = 5000;
-                    rankLabel = '⭐ 5등 (3개 일치)';
-                }
-
-                if (rank !== null) {
-                    rankCounts[rank]++;
-                    grandRankCounts[rank]++;
-                    totalPrize += prize;
-                    grandTotalPrize += prize;
-                    roundPrize += prize;
-
-                    roundHits.push({
-                        gameIdx: gIdx + 1,
-                        comboName: combo.meta ? combo.meta.name : (combo.name || `게임 #${gIdx + 1}`),
-                        nums: nums,
-                        matchedNums: matches,
-                        hasBonus: hasBonus,
-                        bonusNum: bonus,
-                        matchCount: matchCount,
-                        rank: rank,
-                        rankLabel: rankLabel,
-                        prize: prize
-                    });
-                }
-            });
-
-            roundDetails.push({
-                round: round,
-                date: draw.date || draw.drwNoDate || '',
-                drawNumbers: draw.numbers,
-                bonus: bonus,
-                roundPrize: roundPrize,
-                hits: roundHits,
-                hitCount: roundHits.length
-            });
-        });
-
-        const totalWins = rankCounts[1] + rankCounts[2] + rankCounts[3] + rankCounts[4] + rankCounts[5];
-        const winRate = totalGames > 0 ? ((totalWins / totalGames) * 100).toFixed(1) : '0.0';
-        const roi = totalInvest > 0 ? (((totalPrize - totalInvest) / totalInvest) * 100).toFixed(1) : '0.0';
-        
-        let topRank = null;
-        for (let r = 1; r <= 5; r++) {
-            if (rankCounts[r] > 0) {
-                topRank = r;
-                break;
-            }
-        }
-
-        return {
-            ...algo,
-            totalRounds: drawnRounds.length,
-            totalGames,
-            totalInvest,
-            totalPrize,
-            rankCounts,
-            totalWins,
-            winRate,
-            roi,
-            topRank,
-            roundDetails: roundDetails.sort((a, b) => b.round - a.round)
-        };
-    });
-
-    const grandTotalWins = grandRankCounts[1] + grandRankCounts[2] + grandRankCounts[3] + grandRankCounts[4] + grandRankCounts[5];
-    const grandWinRate = grandTotalGames > 0 ? ((grandTotalWins / grandTotalGames) * 100).toFixed(1) : '0.0';
-    const grandRoi = grandTotalInvest > 0 ? (((grandTotalPrize - grandTotalInvest) / grandTotalInvest) * 100).toFixed(1) : '0.0';
-
+export function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = 'all') {
+    const rawUser = targetUserId || 'all';
+    if (typeof calculate7AlgorithmsPerformance === 'function') {
+        return calculate7AlgorithmsPerformance(fromRound, rawUser);
+    }
+    if (typeof window !== 'undefined' && window.calculate7AlgorithmsPerformance) {
+        return window.calculate7AlgorithmsPerformance(fromRound, rawUser);
+    }
     return {
         fromRound,
-        maxRound,
-        totalRoundsCount: drawnRounds.length,
-        drawnRounds,
-        grandTotalGames,
-        grandTotalInvest,
-        grandTotalPrize,
-        grandRankCounts,
-        grandTotalWins,
-        grandWinRate,
-        grandRoi,
-        results
+        maxRound: fromRound,
+        totalRoundsCount: 0,
+        grandTotalGames: 0,
+        grandTotalInvest: 0,
+        grandTotalPrize: 0,
+        grandRankCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+        grandTotalWins: 0,
+        grandWinRate: '0.0',
+        grandRoi: '0.0',
+        results: []
     };
 }
 
@@ -269,7 +54,7 @@ function formatPrizeCompact(prize) {
 
 /**
  * 추천번호생성기 화면에 역대 7개 알고리즘 실데이터 누적 복기 리포트 렌더링
- * (스마트폰 최적화: 기본 초슬림 콤팩트 요약 뷰 + 펼치기 토글)
+ * (복기 리포트 기준 100% 동기화: 전체 회원 통합 또는 선택 회원 기준)
  */
 export function render7AlgorithmsRealReviewSection() {
     const container = document.getElementById('algoRealReviewSection');
@@ -277,7 +62,7 @@ export function render7AlgorithmsRealReviewSection() {
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
+    const effectiveUserId = (isAdmin && generatorAdminViewingUser && generatorAdminViewingUser !== 'all') ? generatorAdminViewingUser : (isAdmin ? 'all' : authId);
 
     const data = compute7AlgorithmsRealStats(currentAlgoReviewStartRound, effectiveUserId);
     const { fromRound, maxRound, totalRoundsCount, results, grandTotalGames, grandTotalPrize, grandRankCounts, grandTotalWins, grandWinRate, grandRoi } = data;
@@ -292,7 +77,7 @@ export function render7AlgorithmsRealReviewSection() {
     }
 
     // 1. Horizontal Quick Reference Mini Chips for each of the 7 algorithms
-    const algoChipsHtml = results.map(algo => {
+    const algoChipsHtml = (results || []).map(algo => {
         let topBadge = '';
         if (algo.topRank === 1) topBadge = `<span style="background: rgba(251,191,36,0.3); border: 1px solid #fbbf24; color: #fbbf24; padding: 1px 4px; border-radius: 4px; font-size: 0.68rem; font-weight: 800;">1등</span>`;
         else if (algo.topRank === 2) topBadge = `<span style="background: rgba(248,113,113,0.3); border: 1px solid #f87171; color: #f87171; padding: 1px 4px; border-radius: 4px; font-size: 0.68rem; font-weight: 800;">2등</span>`;
@@ -301,21 +86,25 @@ export function render7AlgorithmsRealReviewSection() {
         else if (algo.topRank === 5) topBadge = `<span style="background: rgba(167,139,250,0.3); border: 1px solid #a78bfa; color: #a78bfa; padding: 1px 4px; border-radius: 4px; font-size: 0.68rem; font-weight: 800;">5등</span>`;
         else topBadge = `<span style="background: rgba(255,255,255,0.06); color: #94a3b8; padding: 1px 4px; border-radius: 4px; font-size: 0.68rem;">-</span>`;
 
+        const aColor = algo.color || algo.badgeColor || '#fbbf24';
         return `
             <div style="background: ${algo.bgGradient}; border: 1px solid ${algo.borderColor}; border-radius: 8px; padding: 6px 10px; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                <i class="fa-solid ${algo.icon}" style="color: ${algo.color}; font-size: 0.8rem;"></i>
+                <i class="fa-solid ${algo.icon}" style="color: ${aColor}; font-size: 0.8rem;"></i>
                 <span style="font-size: 0.74rem; font-weight: 700; color: #f8fafc; white-space: nowrap;">${algo.shortName}</span>
                 ${topBadge}
-                <span style="font-size: 0.72rem; color: #fbbf24; font-weight: 700; white-space: nowrap;">${algo.totalWins}회 적중</span>
-                <span style="font-size: 0.72rem; color: #34d399; font-weight: 700; white-space: nowrap;">(+${formatPrizeCompact(algo.totalPrize)})</span>
+                <span style="font-size: 0.72rem; color: #fbbf24; font-weight: 700; white-space: nowrap;">${algo.totalWins || 0}회 적중</span>
+                <span style="font-size: 0.72rem; color: #34d399; font-weight: 700; white-space: nowrap;">(+${formatPrizeCompact(algo.totalPrize || 0)})</span>
             </div>
         `;
     }).join('');
 
     // 2. Detailed Full Breakdown HTML
     let fullDetailCardsHtml = '';
-    results.forEach(algo => {
+    (results || []).forEach(algo => {
         const isExpanded = !!algoAccordionStateMap[algo.id];
+        const aColor = algo.color || algo.badgeColor || '#fbbf24';
+        const aDesc = algo.desc || algo.corePhilosophy || algo.tag || '';
+        const rankCounts = algo.rankCounts || { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
         
         let topRankBadge = '';
         if (algo.topRank === 1) topRankBadge = `<span style="background: rgba(251,191,36,0.25); border: 1px solid #fbbf24; color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800;">🥇 최고 1등 적중</span>`;
@@ -326,13 +115,13 @@ export function render7AlgorithmsRealReviewSection() {
         else topRankBadge = `<span style="background: rgba(255,255,255,0.06); color: #94a3b8; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem;">추첨 추적 중</span>`;
 
         let roundRowsHtml = '';
-        algo.roundDetails.forEach(rd => {
+        (algo.roundDetails || []).forEach(rd => {
             let hitItemsHtml = '';
-            if (rd.hits.length > 0) {
+            if (rd.hits && rd.hits.length > 0) {
                 hitItemsHtml = rd.hits.map(h => {
                     const rankColor = h.rank === 1 ? '#fbbf24' : h.rank === 2 ? '#f87171' : h.rank === 3 ? '#60a5fa' : h.rank === 4 ? '#34d399' : '#a78bfa';
-                    const ballsHtml = h.nums.map(n => {
-                        const isHit = h.matchedNums.includes(n);
+                    const ballsHtml = (h.nums || []).map(n => {
+                        const isHit = (h.matchedNums || []).includes(n);
                         const isBonusHit = h.hasBonus && (n === rd.bonus);
                         return createBallHtml(n, {
                             isHit: isHit,
@@ -342,11 +131,15 @@ export function render7AlgorithmsRealReviewSection() {
                         });
                     }).join('');
 
+                    const userTag = (h.user && effectiveUserId === 'all') ? `<span style="font-size:0.68rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:1px 4px; border-radius:4px; margin-right:4px;">${h.userName || h.user}</span>` : '';
+
                     return `
                         <div style="background: rgba(0,0,0,0.3); border-left: 3px solid ${rankColor}; border-radius: 6px; padding: 6px 8px; margin-top: 4px; display: flex; flex-direction: column; gap: 4px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem;">
-                                <span style="color: #cbd5e1; font-weight: 700;">#${h.gameIdx} ${h.comboName}</span>
-                                <strong style="color: ${rankColor}; font-size: 0.78rem;">${h.rankLabel} (+${h.prize.toLocaleString()}원)</strong>
+                                <span style="color: #cbd5e1; font-weight: 700; display: flex; align-items: center;">
+                                    ${userTag}#${h.gameIdx} ${h.comboName || ''}
+                                </span>
+                                <strong style="color: ${rankColor}; font-size: 0.78rem;">${h.rankLabel || `${h.rank}등`} (+${(h.prize || 0).toLocaleString()}원)</strong>
                             </div>
                             <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
                                 ${ballsHtml}
@@ -358,7 +151,7 @@ export function render7AlgorithmsRealReviewSection() {
                 hitItemsHtml = `<div style="font-size: 0.72rem; color: #64748b; padding: 4px 0;">해당 회차는 5등 이상 미적중</div>`;
             }
 
-            const drawBallsHtml = rd.drawNumbers.map(n => createBallHtml(n, { size: 'mini' })).join('');
+            const drawBallsHtml = (rd.drawNumbers || []).map(n => createBallHtml(n, { size: 'mini' })).join('');
             const bonusBallHtml = rd.bonus ? createBallHtml(rd.bonus, { isBonusHit: true, size: 'mini' }) : '';
 
             roundRowsHtml += `
@@ -366,10 +159,10 @@ export function render7AlgorithmsRealReviewSection() {
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; font-size: 0.76rem;">
                         <div style="display: flex; align-items: center; gap: 6px;">
                             <strong style="color: #f8fafc;">제 ${rd.round}회</strong>
-                            <span style="font-size: 0.7rem; color: #64748b;">${rd.date}</span>
+                            <span style="font-size: 0.7rem; color: #64748b;">${rd.date || ''}</span>
                         </div>
                         <div style="font-size: 0.74rem; font-weight: 700; color: ${rd.roundPrize > 0 ? '#34d399' : '#64748b'};">
-                            ${rd.hitCount > 0 ? `🎯 ${rd.hitCount}게임 적중 (+${rd.roundPrize.toLocaleString()}원)` : '낙첨'}
+                            ${rd.hitCount > 0 ? `🎯 ${rd.hitCount}게임 적중 (+${(rd.roundPrize || 0).toLocaleString()}원)` : '낙첨'}
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
@@ -388,7 +181,7 @@ export function render7AlgorithmsRealReviewSection() {
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px;">
                     <div>
                         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                            <span style="background: ${algo.color}25; border: 1px solid ${algo.color}; color: ${algo.color}; padding: 2px 7px; border-radius: 12px; font-size: 0.7rem; font-weight: 800;">
+                            <span style="background: ${aColor}25; border: 1px solid ${aColor}; color: ${aColor}; padding: 2px 7px; border-radius: 12px; font-size: 0.7rem; font-weight: 800;">
                                 <i class="fa-solid ${algo.icon}"></i> ${algo.badge}
                             </span>
                             ${topRankBadge}
@@ -397,7 +190,7 @@ export function render7AlgorithmsRealReviewSection() {
                             ${algo.name}
                         </h4>
                         <p style="margin: 0; color: #94a3b8; font-size: 0.72rem; line-height: 1.3;">
-                            ${algo.desc}
+                            ${aDesc}
                         </p>
                     </div>
                 </div>
@@ -405,25 +198,25 @@ export function render7AlgorithmsRealReviewSection() {
                 <div style="background: rgba(0,0,0,0.35); border-radius: 8px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
                     <div>
                         <span style="font-size: 0.7rem; color: #94a3b8;">누적 당첨금</span>
-                        <div style="font-size: 0.95rem; font-weight: 800; color: #34d399;">+${algo.totalPrize.toLocaleString()}원</div>
+                        <div style="font-size: 0.95rem; font-weight: 800; color: #34d399;">+${(algo.totalPrize || 0).toLocaleString()}원</div>
                     </div>
                     <div style="text-align: right;">
                         <span style="font-size: 0.7rem; color: #94a3b8;">적중 건수 (적중률)</span>
-                        <div style="font-size: 0.92rem; font-weight: 800; color: #fbbf24;">${algo.totalWins}회 <span style="font-size:0.72rem; color:#fde047;">(${algo.winRate}%)</span></div>
+                        <div style="font-size: 0.92rem; font-weight: 800; color: #fbbf24;">${algo.totalWins || 0}회 <span style="font-size:0.72rem; color:#fde047;">(${algo.winRate || '0.0'}%)</span></div>
                     </div>
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 2px; font-size: 0.72rem; background: rgba(255,255,255,0.03); border-radius: 6px; padding: 4px 6px;">
-                    <span style="color: ${algo.rankCounts[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">1등: <strong>${algo.rankCounts[1]}</strong></span>
-                    <span style="color: ${algo.rankCounts[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700;">2등: <strong>${algo.rankCounts[2]}</strong></span>
-                    <span style="color: ${algo.rankCounts[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700;">3등: <strong>${algo.rankCounts[3]}</strong></span>
-                    <span style="color: ${algo.rankCounts[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700;">4등: <strong>${algo.rankCounts[4]}</strong></span>
-                    <span style="color: ${algo.rankCounts[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">5등: <strong>${algo.rankCounts[5]}</strong></span>
+                    <span style="color: ${rankCounts[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">1등: <strong>${rankCounts[1] || 0}</strong></span>
+                    <span style="color: ${rankCounts[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700;">2등: <strong>${rankCounts[2] || 0}</strong></span>
+                    <span style="color: ${rankCounts[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700;">3등: <strong>${rankCounts[3] || 0}</strong></span>
+                    <span style="color: ${rankCounts[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700;">4등: <strong>${rankCounts[4] || 0}</strong></span>
+                    <span style="color: ${rankCounts[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">5등: <strong>${rankCounts[5] || 0}</strong></span>
                 </div>
 
-                <button type="button" onclick="window.toggleAlgoRealReviewAccordion && window.toggleAlgoRealReviewAccordion('${algo.id}')" style="width: 100%; padding: 6px 8px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12); background: rgba(30,41,59,0.8); color: ${algo.color}; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                <button type="button" onclick="window.toggleAlgoRealReviewAccordion && window.toggleAlgoRealReviewAccordion('${algo.id}')" style="width: 100%; padding: 6px 8px; font-size: 0.74rem; font-weight: 700; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12); background: rgba(30,41,59,0.8); color: ${aColor}; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
                     <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
-                    <span>${isExpanded ? '회차별 결과 닫기' : `회차별 당첨 상세 (${algo.totalWins}회 적중)`}</span>
+                    <span>${isExpanded ? '회차별 결과 닫기' : `회차별 당첨 상세 (${algo.totalWins || 0}회 적중)`}</span>
                 </button>
 
                 <div id="algo-review-detail-${algo.id}" style="display: ${isExpanded ? 'block' : 'none'}; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 6px; max-height: 350px; overflow-y: auto;">
@@ -445,7 +238,10 @@ export function render7AlgorithmsRealReviewSection() {
                         제 ${fromRound}~${maxRound}회 (${totalRoundsCount}회차 누적)
                     </span>
                     <span style="font-size: 0.75rem; font-weight: 800; color: #34d399;">
-                        총 ${grandTotalWins}회 적중 (+${formatPrizeCompact(grandTotalPrize)})
+                        총 ${grandTotalWins || 0}회 적중 (+${formatPrizeCompact(grandTotalPrize || 0)})
+                    </span>
+                    <span style="font-size: 0.7rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px;">
+                        ${effectiveUserId === 'all' ? '전체 회원 통합' : `${effectiveUserId} 회원`}
                     </span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -713,7 +509,8 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
 
         if (isAdmin && adminBarContainer) {
             const userList = state.allRegisteredUsersList || [];
-            let userOptions = `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
+            let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 종합 실적</option>`;
+            userOptions += `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
             userList.forEach(u => {
                 if (u.id !== authId) {
                     userOptions += `<option value="${u.id}" ${effectiveUserId === u.id ? 'selected' : ''}>👤 ${u.id} (${u.name}${u.phone ? ` / ${u.phone}` : ''})</option>`;
@@ -1955,10 +1752,11 @@ export function changeGeneratorAdminViewingUser(userId) {
         window.generatorAdminViewingUser = userId;
     }
     const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const targetCombosUser = (userId === 'all') ? 'master' : userId;
     
     // Recalculate deterministic recommendations for selected user
-    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, userId);
-    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, userId);
+    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, targetCombosUser);
+    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, targetCombosUser);
     
     renderTop5Combinations();
     renderExtraAddonPacksSection();
@@ -1970,7 +1768,7 @@ export function changeGeneratorAdminViewingUser(userId) {
             window.renderQuickViewContent();
         }
     }
-    showToast(`👑 [${userId}] 회원의 추천 번호 및 추가팩으로 즉시 전환되었습니다.`);
+    showToast(`👑 [${userId === 'all' ? '전체 회원 종합' : userId}] 모드로 즉시 전환되었습니다.`);
 }
 
 if (typeof window !== 'undefined') {

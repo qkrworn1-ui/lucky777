@@ -499,6 +499,10 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
 
         return {
             ...algo,
+            color: algo.badgeColor || algo.color,
+            badgeColor: algo.badgeColor || algo.color,
+            desc: algo.corePhilosophy || algo.desc || algo.tag,
+            tag: algo.tag || algo.corePhilosophy || algo.desc,
             totalGames,
             totalInvest,
             totalPrize,

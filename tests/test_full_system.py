@@ -766,9 +766,28 @@ class TestFullSystem(unittest.TestCase):
         self.assertEqual(highest, 'v738')
         self.assertFalse(parse_version_num(highest) > parse_version_num('v738'))
 
+    def test_20_algorithm_performance_review_unification(self):
+        """Test: Verify 7-algorithm review calculation synchronization between generator and review tabs."""
+        # 1. Check that generator-tab.js imports and delegates to calculate7AlgorithmsPerformance
+        gen_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        with open(gen_file, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+        self.assertIn("import { calculate7AlgorithmsPerformance } from './algorithms-tab.js'", gen_code)
+        self.assertIn("calculate7AlgorithmsPerformance(fromRound, rawUser)", gen_code)
+
+        # 2. Check that bundle.py loads review-tab.js and algorithms-tab.js before generator-tab.js
+        bundle_file = os.path.join(self.root_dir, 'bundle.py')
+        with open(bundle_file, 'r', encoding='utf-8') as f:
+            bundle_code = f.read()
+        rev_idx = bundle_code.find("src/services/lotto/views/review-tab.js")
+        algo_idx = bundle_code.find("src/services/lotto/views/algorithms-tab.js")
+        gen_idx = bundle_code.find("src/services/lotto/views/generator-tab.js")
+        self.assertTrue(rev_idx < algo_idx < gen_idx, "Module order must be: review-tab -> algorithms-tab -> generator-tab")
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
