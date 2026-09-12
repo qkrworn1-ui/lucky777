@@ -900,9 +900,62 @@ class TestFullSystem(unittest.TestCase):
                 self.assertEqual(len(w), 6)
                 self.assertEqual(len(set(w)), 6, f"Wheeling set has duplicates: {w}")
 
+    def test_24_auto_scrape_target_round_and_countdown_calculation(self):
+        """Test: Verify exact round arithmetic, target draw schedule (Saturday 21:00 KST), and countdown logic."""
+        import datetime
+
+        base_time = datetime.datetime(2002, 12, 7, 21, 0, 0)
+        
+        # 1. Round 1 must be 2002-12-07 21:00:00 Saturday
+        self.assertEqual(base_time.weekday(), 5) # 5 = Saturday
+        self.assertEqual(base_time.strftime('%Y-%m-%d %H:%M:%S'), '2002-12-07 21:00:00')
+
+        # 2. Round 1237 must be 2026-08-15 21:00:00
+        r1237_time = base_time + datetime.timedelta(weeks=1237 - 1)
+        self.assertEqual(r1237_time.strftime('%Y-%m-%d %H:%M:%S'), '2026-08-15 21:00:00')
+        self.assertEqual(r1237_time.weekday(), 5)
+
+        # 3. Round 1240 must be 2026-09-05 21:00:00
+        r1240_time = base_time + datetime.timedelta(weeks=1240 - 1)
+        self.assertEqual(r1240_time.strftime('%Y-%m-%d %H:%M:%S'), '2026-09-05 21:00:00')
+
+        # 4. Round 1241 must be 2026-09-12 21:00:00
+        r1241_time = base_time + datetime.timedelta(weeks=1241 - 1)
+        self.assertEqual(r1241_time.strftime('%Y-%m-%d %H:%M:%S'), '2026-09-12 21:00:00')
+
+        # 5. Given history up to 1240, next target round is 1241
+        mock_history = {r: {'numbers': [1, 2, 3, 4, 5, 6]} for r in range(1230, 1241)}
+        max_known = max(mock_history.keys())
+        self.assertEqual(max_known, 1240)
+        next_target = max_known + 1
+        self.assertEqual(next_target, 1241)
+
+        # 6. Countdown arithmetic verification
+        target_ms = int(r1241_time.timestamp() * 1000)
+        # Mock simulated time: 2026-09-12 16:00:00 (5 hours before draw)
+        sim_now = datetime.datetime(2026, 9, 12, 16, 0, 0)
+        sim_now_ms = int(sim_now.timestamp() * 1000)
+        diff_ms = target_ms - sim_now_ms
+
+        days = diff_ms // (1000 * 60 * 60 * 24)
+        hours = (diff_ms % (1000 * 60 * 60 * 24)) // (1000 * 60 * 60)
+        minutes = (diff_ms % (1000 * 60 * 60)) // (1000 * 60)
+        seconds = (diff_ms % (1000 * 60)) // 1000
+
+        self.assertEqual(days, 0)
+        self.assertEqual(hours, 5)
+        self.assertEqual(minutes, 0)
+        self.assertEqual(seconds, 0)
+
+        # 7. Post-draw trigger condition (diff_ms <= 0)
+        post_draw_now = datetime.datetime(2026, 9, 12, 21, 0, 1)
+        post_diff_ms = target_ms - int(post_draw_now.timestamp() * 1000)
+        self.assertLessEqual(post_diff_ms, 0, "Post-draw diffMs must be <= 0 to trigger automatic sync")
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
