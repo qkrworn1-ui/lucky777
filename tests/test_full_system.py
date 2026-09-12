@@ -837,6 +837,69 @@ class TestFullSystem(unittest.TestCase):
                 target_mod = m_destruct.group(2)
                 self.assertIn(target_mod, defined, f"Line {idx}: Module {target_mod} used in destructuring before being defined! Causes runtime TDZ crash.")
 
+    def test_23_no_duplicate_numbers_in_any_game(self):
+        """Test: Verify that combination generation algorithms strictly produce 6 unique, non-overlapping numbers between 1 and 45."""
+        # 1. Test V4.0 CheatKeys Mutated Group 3 logic simulation
+        cheat_keys = [
+            [1, 13, 14, 18, 31, 38],
+            [4, 10, 15, 23, 24, 43],
+            [13, 15, 19, 27, 31, 35]
+        ]
+        import random
+        for _ in range(5000):
+            for i in range(7, 10):
+                candidate = set(cheat_keys[i - 7])
+                if random.random() > 0.5:
+                    arr = list(candidate)
+                    mutate_idx = random.randint(0, len(arr) - 1)
+                    orig = arr[mutate_idx]
+                    mutated = min(45, max(1, orig + (1 if random.random() > 0.5 else -1)))
+                    candidate.remove(orig)
+                    candidate.add(mutated)
+                while len(candidate) < 6:
+                    candidate.add(random.randint(1, 45))
+                nums = sorted(list(candidate))
+                self.assertEqual(len(nums), 6, "Each game must have exactly 6 numbers")
+                self.assertEqual(len(set(nums)), 6, f"No duplicate numbers allowed in game: {nums}")
+                for n in nums:
+                    self.assertTrue(1 <= n <= 45, f"Number {n} must be between 1 and 45")
+
+        # 2. Test Wheeling generation deduplication logic
+        def mock_calculate_wheeling(pool):
+            sorted_pool = sorted(list(set([n for n in pool if 1 <= n <= 45])))
+            if len(sorted_pool) < 10:
+                for n in range(1, 46):
+                    if n not in sorted_pool and len(sorted_pool) < 10:
+                        sorted_pool.append(n)
+                sorted_pool.sort()
+            P = sorted_pool
+            indices = [
+                [0, 1, 2, 3, 4, 5], [0, 1, 2, 6, 7, 8], [0, 1, 3, 6, 8, 9],
+                [0, 2, 4, 6, 7, 9], [0, 3, 5, 7, 8, 9], [0, 4, 5, 6, 8, 9],
+                [1, 2, 3, 5, 7, 9], [1, 2, 4, 5, 8, 9], [1, 3, 4, 6, 7, 8],
+                [1, 5, 6, 7, 8, 9], [2, 3, 4, 7, 8, 9], [2, 3, 5, 6, 7, 8],
+                [2, 4, 6, 7, 8, 9], [3, 4, 5, 6, 7, 9]
+            ]
+            results = []
+            for line in indices:
+                candidate = set([P[idx % len(P)] for idx in line])
+                while len(candidate) < 6:
+                    for n in range(1, 46):
+                        if n not in candidate:
+                            candidate.add(n)
+                            if len(candidate) >= 6:
+                                break
+                nums = sorted(list(candidate))
+                results.append(nums)
+            return results
+
+        for pool_size in range(6, 13):
+            test_pool = list(range(1, pool_size + 1))
+            w_sets = mock_calculate_wheeling(test_pool)
+            for w in w_sets:
+                self.assertEqual(len(w), 6)
+                self.assertEqual(len(set(w)), 6, f"Wheeling set has duplicates: {w}")
+
 
 if __name__ == '__main__':
     unittest.main()

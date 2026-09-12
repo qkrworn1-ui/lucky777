@@ -35,7 +35,17 @@ export function renderWheelingSelector() {
 }
 
 export function calculateWheelingCombinations(pool) {
-    const sortedPool = [...pool].sort((a, b) => a - b);
+    let sortedPool = Array.from(new Set((pool || []).filter(n => typeof n === 'number' && n >= 1 && n <= 45))).sort((a, b) => a - b);
+    
+    // 🔒 If pool has fewer than 10 numbers, pad with unused numbers from 1~45 to ensure 10 distinct anchors
+    if (sortedPool.length < 10) {
+        for (let n = 1; n <= 45 && sortedPool.length < 10; n++) {
+            if (!sortedPool.includes(n)) {
+                sortedPool.push(n);
+            }
+        }
+        sortedPool.sort((a, b) => a - b);
+    }
     const P = sortedPool;
     
     const indices = [
@@ -56,7 +66,16 @@ export function calculateWheelingCombinations(pool) {
     ];
 
     return indices.map((line, idx) => {
-        const nums = line.map(i => P[i % P.length]);
+        const candidate = new Set(line.map(i => P[i % P.length]));
+        while (candidate.size < 6) {
+            for (let n = 1; n <= 45; n++) {
+                if (!candidate.has(n)) {
+                    candidate.add(n);
+                    if (candidate.size >= 6) break;
+                }
+            }
+        }
+        const nums = Array.from(candidate).sort((a, b) => a - b);
         const stats = calculateStats(nums);
         return {
             id: `W-${idx + 1}`,

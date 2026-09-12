@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v743 - BUILD_DATE: 2026-09-12] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v744 - BUILD_DATE: 2026-09-12] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v743)
+ * Lucky777 Smart Bundle (v744)
  */
 
 
@@ -9554,14 +9554,19 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
                 ];
                 
                 // 약간의 랜덤성을 더하기 위해 1, 2개의 번호를 인접수로 변형
-                let baseNums = [...cheatKeys[i - 7]];
+                const candidate = new Set(cheatKeys[i - 7]);
                 if (seededRandom() > 0.5) {
-                    let mutateIdx = Math.floor(seededRandom() * 6);
-                    baseNums[mutateIdx] = Math.min(45, Math.max(1, baseNums[mutateIdx] + (seededRandom() > 0.5 ? 1 : -1)));
+                    const arr = Array.from(candidate);
+                    const mutateIdx = Math.floor(seededRandom() * arr.length);
+                    const original = arr[mutateIdx];
+                    const mutated = Math.min(45, Math.max(1, original + (seededRandom() > 0.5 ? 1 : -1)));
+                    candidate.delete(original);
+                    candidate.add(mutated);
                 }
-                baseNums = Array.from(new Set(baseNums));
-                while(baseNums.length < 6) baseNums.push(Math.floor(seededRandom() * 45) + 1);
-                const nums = baseNums.sort((a,b)=>a-b);
+                while (candidate.size < 6) {
+                    candidate.add(Math.floor(seededRandom() * 45) + 1);
+                }
+                const nums = Array.from(candidate).sort((a, b) => a - b);
                 
                 bestCandidateObj = { nums: nums, stats: calculateStats(nums), ac: (typeof calculateACValue === 'function' ? calculateACValue(nums) : 8) };
                 
@@ -9804,6 +9809,17 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
             combo.meta.tag = `${combo.meta.tag} | 적중 스코어: ${combo.historicalHitScore}`;
         });
     }
+
+    // 🔒 100% Invariant Guarantee: Every generated game MUST have exactly 6 unique numbers (1~45)
+    generated.forEach(combo => {
+        if (Array.isArray(combo.numbers)) {
+            const uniqueSet = new Set(combo.numbers.filter(n => typeof n === 'number' && n >= 1 && n <= 45));
+            while (uniqueSet.size < 6) {
+                uniqueSet.add(Math.floor(seededRandom() * 45) + 1);
+            }
+            combo.numbers = Array.from(uniqueSet).sort((a, b) => a - b);
+        }
+    });
     } finally {
         if (needHistoryIsolation) {
             for (let key in backupHistory) {
@@ -10408,6 +10424,17 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
             }
         });
     }
+
+    // 🔒 100% Invariant Guarantee: Every extra pack game MUST have exactly 6 unique numbers (1~45)
+    generatedCombos.forEach(combo => {
+        if (Array.isArray(combo.numbers)) {
+            const uniqueSet = new Set(combo.numbers.filter(n => typeof n === 'number' && n >= 1 && n <= 45));
+            while (uniqueSet.size < 6) {
+                uniqueSet.add(Math.floor(packRandom() * 45) + 1);
+            }
+            combo.numbers = Array.from(uniqueSet).sort((a, b) => a - b);
+        }
+    });
 
     const packResult = {
         packId: pIdx,
@@ -21859,7 +21886,17 @@ function renderWheelingSelector() {
 }
 
 function calculateWheelingCombinations(pool) {
-    const sortedPool = [...pool].sort((a, b) => a - b);
+    let sortedPool = Array.from(new Set((pool || []).filter(n => typeof n === 'number' && n >= 1 && n <= 45))).sort((a, b) => a - b);
+    
+    // 🔒 If pool has fewer than 10 numbers, pad with unused numbers from 1~45 to ensure 10 distinct anchors
+    if (sortedPool.length < 10) {
+        for (let n = 1; n <= 45 && sortedPool.length < 10; n++) {
+            if (!sortedPool.includes(n)) {
+                sortedPool.push(n);
+            }
+        }
+        sortedPool.sort((a, b) => a - b);
+    }
     const P = sortedPool;
     
     const indices = [
@@ -21880,7 +21917,16 @@ function calculateWheelingCombinations(pool) {
     ];
 
     return indices.map((line, idx) => {
-        const nums = line.map(i => P[i % P.length]);
+        const candidate = new Set(line.map(i => P[i % P.length]));
+        while (candidate.size < 6) {
+            for (let n = 1; n <= 45; n++) {
+                if (!candidate.has(n)) {
+                    candidate.add(n);
+                    if (candidate.size >= 6) break;
+                }
+            }
+        }
+        const nums = Array.from(candidate).sort((a, b) => a - b);
         const stats = calculateStats(nums);
         return {
             id: `W-${idx + 1}`,
@@ -24353,8 +24399,19 @@ function setupManualDrawModal() {
                 return;
             }
 
+            const uniqueNums = new Set(parsedNums);
+            if (uniqueNums.size !== 6) {
+                alert('당첨번호 6개 중 중복된 숫자가 있습니다. 6개 서로 다른 번호를 입력해주세요.');
+                return;
+            }
+
             if (isNaN(bonusVal) || bonusVal < 1 || bonusVal > 45) {
                 alert('보너스 번호를 올바르게 입력해주세요 (1~45 중 1개).');
+                return;
+            }
+
+            if (uniqueNums.has(bonusVal)) {
+                alert('보너스 번호는 6개 당첨번호와 중복될 수 없습니다.');
                 return;
             }
 

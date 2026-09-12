@@ -142,8 +142,19 @@ export function setupManualDrawModal() {
                 return;
             }
 
+            const uniqueNums = new Set(parsedNums);
+            if (uniqueNums.size !== 6) {
+                alert('당첨번호 6개 중 중복된 숫자가 있습니다. 6개 서로 다른 번호를 입력해주세요.');
+                return;
+            }
+
             if (isNaN(bonusVal) || bonusVal < 1 || bonusVal > 45) {
                 alert('보너스 번호를 올바르게 입력해주세요 (1~45 중 1개).');
+                return;
+            }
+
+            if (uniqueNums.has(bonusVal)) {
+                alert('보너스 번호는 6개 당첨번호와 중복될 수 없습니다.');
                 return;
             }
 

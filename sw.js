@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lucky777-pwa-v743';
+const CACHE_NAME = 'lucky777-pwa-v744';
 
 function getBasePath() {
   try {
