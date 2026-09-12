@@ -1,4 +1,4 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v740 - BUILD_DATE: 2026-09-11] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v740 - BUILD_DATE: 2026-09-12] */
 
 try {
 
@@ -25264,7 +25264,7 @@ async function initLottoService() {
             }
         } catch(e) {}
 
-        // 2) Query extra history from cloud Firestore
+        // 2) Query extra history from cloud Firestore and attach realtime push listener
         try {
             const extraDoc = await db.get('lotto_draw_history', 'extra_history');
             if (extraDoc && typeof extraDoc === 'object') {
@@ -25275,6 +25275,25 @@ async function initLottoService() {
             }
         } catch (e) {
             console.error('[DB] extra_history query error:', e);
+        }
+
+        if (window.db && typeof window.db.collection === 'function') {
+            window.db.collection('lotto_draw_history').doc('extra_history').onSnapshot(doc => {
+                if (doc && doc.exists) {
+                    const extraDoc = doc.data();
+                    if (extraDoc && typeof extraDoc === 'object') {
+                        state.lottoExtraHistory = { ...state.lottoExtraHistory, ...extraDoc };
+                        try { SafeLocalStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory)); } catch(e) {}
+                        state.mergedHistory = typeof LOTTO_HISTORY !== 'undefined' ? { ...LOTTO_HISTORY, ...state.lottoExtraHistory } : { ...state.lottoExtraHistory };
+                        recalculateGroups();
+                        state.latestDrawData = null;
+                        renderLatestDrawBanner();
+                        if (typeof window.renderLandingDashboard === 'function') {
+                            window.renderLandingDashboard();
+                        }
+                    }
+                }
+            }, err => console.warn('[Realtime Draw History Listener Skipped]', err));
         }
 
         // Merge history and recalculate groups
