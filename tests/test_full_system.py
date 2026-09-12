@@ -784,6 +784,59 @@ class TestFullSystem(unittest.TestCase):
         gen_idx = bundle_code.find("src/services/lotto/views/generator-tab.js")
         self.assertTrue(rev_idx < algo_idx < gen_idx, "Module order must be: review-tab -> algorithms-tab -> generator-tab")
 
+    def test_21_member_optimal_algorithm_modal_integration(self):
+        """Test: Verify Admin Member Optimal Algorithm Recommendation Modal integration."""
+        # 1. Check index.html contains #memberOptimalAlgoModal
+        index_file = os.path.join(self.root_dir, 'index.html')
+        with open(index_file, 'r', encoding='utf-8') as f:
+            index_html = f.read()
+        self.assertIn('id="memberOptimalAlgoModal"', index_html)
+        self.assertIn('id="memberOptimalAlgoKpiContainer"', index_html)
+        self.assertIn('id="memberOptimalAlgoListContainer"', index_html)
+
+        # 2. Check member-optimal-algo-modal.js exists and exports key functions
+        modal_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'member-optimal-algo-modal.js')
+        self.assertTrue(os.path.exists(modal_file))
+        with open(modal_file, 'r', encoding='utf-8') as f:
+            modal_code = f.read()
+        self.assertIn('openMemberOptimalAlgoModal', modal_code)
+        self.assertIn('diagnoseMemberOptimalAlgorithms', modal_code)
+        self.assertIn('analyzeAllMembersOptimalAlgorithms', modal_code)
+        self.assertIn('window.openMemberOptimalAlgoModal = openMemberOptimalAlgoModal', modal_code)
+
+        # 3. Check algorithms-tab.js contains admin modal button
+        algo_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'algorithms-tab.js')
+        with open(algo_file, 'r', encoding='utf-8') as f:
+            algo_code = f.read()
+        self.assertIn('openMemberOptimalAlgoModal', algo_code)
+        self.assertIn('회원별 최적 알고리즘 추천', algo_code)
+
+        # 4. Check bundle.py includes member-optimal-algo-modal.js
+        bundle_file = os.path.join(self.root_dir, 'bundle.py')
+        with open(bundle_file, 'r', encoding='utf-8') as f:
+            bundle_code = f.read()
+        self.assertIn('"src/services/lotto/views/member-optimal-algo-modal.js"', bundle_code)
+
+    def test_22_bundle_module_topological_order(self):
+        """Test: Verify that all imported modules in app_v2.js are declared before they are destructured/used."""
+        app_file = os.path.join(self.root_dir, 'app_v2.js')
+        if not os.path.exists(app_file):
+            return
+        with open(app_file, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+        
+        defined = set()
+        for idx, line in enumerate(lines, 1):
+            m_def = re.match(r'const\s+(__M_[a-zA-Z0-9_]+)\s*=', line)
+            if m_def:
+                defined.add(m_def.group(1))
+            
+            # Match top-level destructuring like: const { ... } = __M_...;
+            m_destruct = re.match(r'const\s+\{([^}]+)\}\s*=\s*(__M_[a-zA-Z0-9_]+);', line.strip())
+            if m_destruct:
+                target_mod = m_destruct.group(2)
+                self.assertIn(target_mod, defined, f"Line {idx}: Module {target_mod} used in destructuring before being defined! Causes runtime TDZ crash.")
+
 
 if __name__ == '__main__':
     unittest.main()

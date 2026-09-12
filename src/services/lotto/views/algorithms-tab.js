@@ -607,7 +607,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
         });
 
         adminUserSelectHtml = `
-            <div class="algo-admin-bar" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+            <div class="algo-admin-bar" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; max-width: 100%; box-sizing: border-box; overflow: hidden;">
                 <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 220px;">
                     <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem; flex-shrink: 0;"></i>
                     <div style="min-width: 0;">
@@ -615,11 +615,16 @@ export async function renderAlgorithmsTab(fromRound = null) {
                         <div style="font-size: 0.73rem; color: #cbd5e1; word-break: break-all;">선택한 회원의 영구 박제 스냅샷 및 7대 알고리즘 누적 적중 실적 동기화 확인</div>
                     </div>
                 </div>
-                <div class="algo-admin-select-wrapper" style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; max-width: 100%; box-sizing: border-box;">
-                    <label for="algoAdminUserSelect" style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;">조회 대상:</label>
-                    <select id="algoAdminUserSelect" onchange="window.changeAlgoAdminViewingUser && window.changeAlgoAdminViewingUser(this.value)" style="background: #0f172a; border: 1px solid #f59e0b; color: #fff; padding: 5px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; outline: none; max-width: 100%; min-width: 0; flex: 1; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; box-sizing: border-box;">
-                        ${userOptions}
-                    </select>
+                <div class="algo-admin-select-wrapper" style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; max-width: 100%; box-sizing: border-box; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex: 1 1 180px; min-width: 0;">
+                        <label for="algoAdminUserSelect" style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;">조회 대상:</label>
+                        <select id="algoAdminUserSelect" onchange="window.changeAlgoAdminViewingUser && window.changeAlgoAdminViewingUser(this.value)" style="background: #0f172a; border: 1px solid #f59e0b; color: #fff; padding: 5px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; outline: none; max-width: 100%; min-width: 0; flex: 1; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; box-sizing: border-box;">
+                            ${userOptions}
+                        </select>
+                    </div>
+                    <button type="button" onclick="window.openMemberOptimalAlgoModal && window.openMemberOptimalAlgoModal()" class="btn-primary" style="padding: 6px 12px; font-size: 0.78rem; font-weight: 800; border-radius: 8px; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #0f172a; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4); white-space: nowrap; flex-shrink: 0;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 회원별 최적 알고리즘 추천
+                    </button>
                 </div>
             </div>
         `;
