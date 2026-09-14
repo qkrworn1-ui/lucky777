@@ -1142,6 +1142,39 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('lpDrawCountdownBanner', dash_src)
 
 
+    # [Test 31] Generator Tab 7 Algorithms Real Stats User Isolation
+    def test_31_generator_tab_7_algorithms_user_isolation(self):
+        gen_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        with open(gen_path, 'r', encoding='utf-8') as f:
+            gen_src = f.read()
+
+        # 1. Verify that compute7AlgorithmsRealStats defaults to authId/targetUserId, NOT 'all'
+        self.assertIn('compute7AlgorithmsRealStats', gen_src)
+        self.assertIn('rawUser = authId || \'master\'', gen_src)
+        self.assertNotIn('calculate7AlgorithmsPerformance(fromRound, \'all\')', gen_src)
+
+        # 2. Verify effectiveUserId in render7AlgorithmsRealReviewSection falls back to authId
+        self.assertIn('effectiveUserId', gen_src)
+        self.assertIn('👤 [${displayName}] 님 고유 추천', gen_src)
+
+        # 3. Emulate resolution logic
+        def resolve_effective_user(auth_id, is_admin, admin_selected_user):
+            if is_admin and admin_selected_user and admin_selected_user != 'all':
+                return admin_selected_user
+            if is_admin and admin_selected_user == 'all':
+                return 'all'
+            return auth_id or 'master'
+
+        # Default regular user
+        self.assertEqual(resolve_effective_user('user_777', False, None), 'user_777')
+        # Default admin without selection
+        self.assertEqual(resolve_effective_user('master', True, None), 'master')
+        # Admin explicitly selects all
+        self.assertEqual(resolve_effective_user('master', True, 'all'), 'all')
+        # Admin explicitly selects another user
+        self.assertEqual(resolve_effective_user('master', True, 'user_999'), 'user_999')
+
+
 if __name__ == '__main__':
     unittest.main()
 

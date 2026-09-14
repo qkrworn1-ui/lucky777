@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v765 - BUILD_DATE: 2026-09-14] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v766 - BUILD_DATE: 2026-09-14] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v765)
+ * Lucky777 Smart Bundle (v766)
  */
 
 
@@ -16104,7 +16104,7 @@ const { getBallColorClass, getBallHexColor, showToast } = __M_shared_utils;
 const { createBallHtml } = __M_shared_components;
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot } = __M_services_lotto_generator;
 const { db } = __M_shared_db;
-const { SafeAuth, isAdminUser } = __M_shared_auth_mgmt;
+const { SafeAuth, isAdminUser, getUserRealName } = __M_shared_auth_mgmt;
 const { getComboNumbers, getLedger, getHistoricalTop10Combinations, saveToLedger } = __M_services_lotto_ledger;
 const { calculate7AlgorithmsPerformance } = __M_services_lotto_views_algorithms_tab;
 
@@ -16116,8 +16116,18 @@ let generatorAdminViewingUser = null;
  * 1235회차부터 최신 회차까지 7대 알고리즘의 100% 무결점 실데이터 전수 복기 채점 집계
  * (복기 리포트와 100% 동일한 calculate7AlgorithmsPerformance 엔진 기반 실시간 연동)
  */
-function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = 'all') {
-    const rawUser = targetUserId || 'all';
+function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = null) {
+    let rawUser = targetUserId;
+    if (!rawUser) {
+        let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(authId);
+                authId = parsed.userid || parsed.userId || authId;
+            } catch(e) {}
+        }
+        rawUser = authId || 'master';
+    }
     if (typeof calculate7AlgorithmsPerformance === 'function') {
         return calculate7AlgorithmsPerformance(fromRound, rawUser);
     }
@@ -16155,15 +16165,34 @@ function formatPrizeCompact(prize) {
 
 /**
  * 추천번호생성기 화면에 역대 7개 알고리즘 실데이터 누적 복기 리포트 렌더링
- * (복기 리포트 기준 100% 동기화: 전체 회원 통합 또는 선택 회원 기준)
+ * (해당 사용자의 고유 추천번호 당첨 결과 기본 표시)
  */
 function render7AlgorithmsRealReviewSection() {
     const container = document.getElementById('algoRealReviewSection');
     if (!container) return;
 
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
+        } catch(e) {}
+    }
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser && generatorAdminViewingUser !== 'all') ? generatorAdminViewingUser : (isAdmin ? 'all' : authId);
+    
+    // 🔒 해당 사용자의 고유 추천번호 당첨 결과 기본 표시 (관리자가 특정 회원/전체를 명시적으로 선택한 경우에만 해당 대상 표시)
+    const effectiveUserId = (isAdmin && generatorAdminViewingUser && generatorAdminViewingUser !== 'all') 
+        ? generatorAdminViewingUser 
+        : ((isAdmin && generatorAdminViewingUser === 'all') ? 'all' : (authId || 'master'));
+
+    const realName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || '';
+    let displayName = realName;
+    if (!displayName) {
+        if (effectiveUserId === 'master') displayName = '최고관리자 (master)';
+        else if (effectiveUserId.startsWith('kakao_')) displayName = `카카오회원 (${effectiveUserId.slice(-4)})`;
+        else if (effectiveUserId === 'all') displayName = '전체 회원 통합';
+        else displayName = effectiveUserId;
+    }
 
     const data = compute7AlgorithmsRealStats(currentAlgoReviewStartRound, effectiveUserId);
     const { fromRound, maxRound, totalRoundsCount, results, grandTotalGames, grandTotalPrize, grandRankCounts, grandTotalWins, grandWinRate, grandRoi } = data;
@@ -16341,8 +16370,8 @@ function render7AlgorithmsRealReviewSection() {
                     <span style="font-size: 0.75rem; font-weight: 800; color: #34d399;">
                         총 ${grandTotalWins || 0}회 적중 (+${formatPrizeCompact(grandTotalPrize || 0)})
                     </span>
-                    <span style="font-size: 0.7rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px;">
-                        ${effectiveUserId === 'all' ? '전체 회원 통합' : `${effectiveUserId} 회원`}
+                    <span style="font-size: 0.7rem; ${effectiveUserId === 'all' ? 'color: #94a3b8; background: rgba(255,255,255,0.06);' : 'color: #fbbf24; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); font-weight: 800;'} padding: 1px 6px; border-radius: 4px;">
+                        ${effectiveUserId === 'all' ? '🌐 전체 회원 통합' : `👤 [${displayName}] 님 고유 추천`}
                     </span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
