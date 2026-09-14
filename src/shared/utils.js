@@ -169,3 +169,33 @@ export async function shareLottoApp(customData = {}) {
 }
 window.shareLottoApp = shareLottoApp;
 
+/**
+ * 범용 클립보드 텍스트 복사 유틸리티
+ * @param {string} text 
+ * @param {string} successMsg 
+ */
+export async function copyToClipboard(text, successMsg = '클립보드에 복사되었습니다.') {
+    if (!text) return;
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            if (typeof showToast === 'function') showToast(successMsg);
+        } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            if (typeof showToast === 'function') showToast(successMsg);
+        }
+    } catch (err) {
+        console.error('[copyToClipboard error]', err);
+        prompt('아래 텍스트를 복사하세요:', text);
+    }
+}
+window.copyToClipboard = copyToClipboard;
+
+

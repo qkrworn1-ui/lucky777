@@ -18,7 +18,7 @@ import { setupManualLedgerModal, updateManualModalCrossCheck } from './views/man
 import { setupManualDrawModal } from './views/manual-draw-modal.js';
 import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
 import { computeAbsoluteTop10Combinations } from './generator.js';
-import { getLedger, getHistoricalTop10Combinations, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock } from './ledger.js';
+import { getLedger, getHistoricalTop10Combinations, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from './ledger.js';
 
 export async function initLottoService() {
     window.initLottoService = initLottoService;
@@ -93,12 +93,19 @@ export async function initLottoService() {
                     } catch(e) { state.globalLedger = {}; }
                 }
 
+                // Ensure 1239 is strictly normalized in master's ledger
+                if (state.globalLedger && state.globalLedger['1239']) {
+                    state.globalLedger['1239'] = normalizeMaster1239Order(state.globalLedger['1239']);
+                }
+
                 // Update local synchronized ledger with user-isolated key
                 try {
                     localStorage.setItem(`lotto_actual_ledger_${authId}`, JSON.stringify(state.globalLedger));
                 } catch(e) {}
 
                 state.ledgerFinancialsCache = null; // Invalidate memoized financials
+                state.allUsersPurchasesMap = null;  // Invalidate admin map cache
+                state.allUsersMergedLedger = null;  // Invalidate admin merged cache
                 updateDebugMonitor(state.globalLedger);
                 if (typeof window.renderLandingDashboard === 'function') {
                     window.renderLandingDashboard();
@@ -120,7 +127,12 @@ export async function initLottoService() {
                 const data = localStorage.getItem(userKey);
                 state.globalLedger = data ? JSON.parse(data) : {};
             } catch(e) { state.globalLedger = {}; }
+            if (state.globalLedger && state.globalLedger['1239']) {
+                state.globalLedger['1239'] = normalizeMaster1239Order(state.globalLedger['1239']);
+            }
             state.ledgerFinancialsCache = null;
+            state.allUsersPurchasesMap = null;
+            state.allUsersMergedLedger = null;
             updateDebugMonitor(state.globalLedger);
         }
 
@@ -410,4 +422,6 @@ if (typeof window !== 'undefined') {
     window.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
     window.toggleReceiptLock = toggleReceiptLock;
     window.toggleRoundLock = toggleRoundLock;
+    window.parseDonghangLotteryQrUrl = parseDonghangLotteryQrUrl;
+    window.syncPurchaseWithQrUrl = syncPurchaseWithQrUrl;
 }

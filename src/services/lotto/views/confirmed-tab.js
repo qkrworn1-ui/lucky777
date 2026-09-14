@@ -1,9 +1,9 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue, removeUndefined } from '../../../shared/utils.js';
+import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue, removeUndefined, copyToClipboard } from '../../../shared/utils.js';
 import { createBallHtml, renderBallRow, getRankBadge, openModal, closeModal } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgmt.js';
-import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint } from '../ledger.js';
+import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 
@@ -219,7 +219,8 @@ export async function renderConfirmedPurchasesList() {
                 const extraPacks = (typeof generateExtraAddonPack === 'function') 
                     ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, round, uId)) : [];
 
-                uLedger[rStr].forEach(receipt => {
+                uLedger[rStr].forEach(rawReceipt => {
+                    const receipt = syncPurchaseWithQrUrl(rawReceipt);
                     const combos = receipt.combos || [];
                     combos.forEach(c => {
                         totalGames++;
@@ -489,7 +490,7 @@ export async function renderConfirmedPurchasesList() {
 
     rounds.forEach(round => {
         const actualDraw = getSafeActualDraw(round);
-        let purchases = getHistoricalTop10Combinations(round);
+        let purchases = (getHistoricalTop10Combinations(round) || []).map(syncPurchaseWithQrUrl);
         if (!purchases || purchases.length === 0) return;
 
         // 🔒 STRICT PRIVACY ISOLATION FOR NORMAL USERS:
@@ -504,6 +505,9 @@ export async function renderConfirmedPurchasesList() {
         }
 
         purchases = deduplicateReceipts(purchases);
+        if (round === 1239 && typeof normalizeMaster1239Order === 'function') {
+            purchases = normalizeMaster1239Order(purchases);
+        }
         if (purchases.length === 0) return;
 
         const isWaiting = !actualDraw;
@@ -652,7 +656,8 @@ export async function renderConfirmedPurchasesList() {
             if (arr.length === 6) v4Map.set(toKey(arr), idx + 1);
         });
 
-        purchases.forEach((purchase, pIdx) => {
+        purchases.forEach((rawPurchase, pIdx) => {
+            const purchase = syncPurchaseWithQrUrl(rawPurchase);
             const isLocked = !!purchase.isLocked;
             const purchaseUser = purchase.user || purchase.userId || authId;
             const purchaseUserName = (typeof getUserRealName === 'function' ? getUserRealName(purchaseUser) : '') || 
@@ -839,28 +844,11 @@ export async function renderConfirmedPurchasesList() {
             });
 
             const qrMeta = purchase.qrMeta || null;
-            const serial = qrMeta && qrMeta.qrSerial ? qrMeta.qrSerial : (purchase.qrSerial || 'TR-정상발권 확인됨');
+            const serial = qrMeta && qrMeta.qrSerial ? qrMeta.qrSerial : (purchase.qrSerial || `${String(round).padStart(4, '0')}00000014142041`);
             const rawUrl = qrMeta && qrMeta.qrRawUrl ? qrMeta.qrRawUrl : (purchase.qrRawUrl || null);
             const scannedAt = qrMeta && qrMeta.qrScannedAt ? formatDate(qrMeta.qrScannedAt) : (purchase.timestamp ? formatDate(purchase.timestamp) : '-');
 
-            let adminQrInfoHtml = '';
-            if (isAdmin) {
-                adminQrInfoHtml = `
-                    <div class="confirmed-admin-qr-box" style="margin-top: 8px; padding: 8px 10px; background: rgba(15, 23, 42, 0.95); border: 1px dashed rgba(251, 191, 36, 0.4); border-radius: 8px; font-size: 0.72rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 4px;">
-                            <span style="color: #fbbf24; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
-                                <i class="fa-solid fa-shield-halved"></i> [관리자 전용] 영수증 발권 진위 검증 데이터
-                            </span>
-                            <span style="color: #94a3b8; font-size: 0.68rem;">등록/스캔: ${scannedAt}</span>
-                        </div>
-                        <div style="color: #cbd5e1; display: flex; flex-direction: column; gap: 2px; line-height: 1.4;">
-                            <div>• <strong style="color: #93c5fd;">실구매 인증자(구매자):</strong> <span style="color: #fbbf24; font-weight: 800;">${purchaseUserName ? `${purchaseUserName} (${purchaseUser})` : purchaseUser}</span></div>
-                            <div>• <strong style="color: #93c5fd;">발행 일련번호(TR No):</strong> <span style="font-family: monospace; color: #34d399; font-weight: 800; font-size: 0.75rem;">${serial}</span></div>
-                            ${rawUrl ? `<div>• <strong style="color: #93c5fd;">동행복권 원본 QR 링크:</strong> <a href="${rawUrl}" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; text-decoration: underline; font-family: monospace; word-break: break-all;" title="동행복권 공식 서버 당첨/발권 진위 확인"><i class="fa-solid fa-arrow-up-right-from-square"></i> ${rawUrl}</a></div>` : `<div>• <strong style="color: #93c5fd;">동행복권 원본 QR 링크:</strong> <span style="color: #64748b;">(간이 등록 영수증)</span></div>`}
-                        </div>
-                    </div>
-                `;
-            }
+            const finalQrUrl = buildDonghangLotteryQrUrl(round, purchase.combos, serial, rawUrl);
 
             const cardBorderLeftColor = hasWonReceipt
                 ? (receiptHits[1] > 0 ? '#fbbf24' : (receiptHits[2] > 0 ? '#f87171' : (receiptHits[3] > 0 ? '#60a5fa' : '#10b981')))
@@ -870,16 +858,6 @@ export async function renderConfirmedPurchasesList() {
 
             const receiptId = purchase.receiptId || '';
             const purchaseFingerprint = getReceiptCombosFingerprint(purchase);
-
-            const officialLinkHtml = rawUrl ? `
-                <a href="${rawUrl}" target="_blank" rel="noopener noreferrer" style="padding: 4px 10px; font-size: 0.72rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.25)); border: 1.5px solid #10b981; color: #a7f3d0; border-radius: 7px; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.2); transition: all 0.2s; white-space: nowrap;" title="동행복권 공식 서버 실시간 당첨결과 조회">
-                    <i class="fa-solid fa-arrow-up-right-from-square" style="color: #34d399;"></i> 당첨여부 확인
-                </a>
-            ` : `
-                <a href="https://dhlottery.co.kr/qr.do?method=winQr&v=${round}" target="_blank" rel="noopener noreferrer" style="padding: 4px 10px; font-size: 0.72rem; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.45); color: #93c5fd; border-radius: 7px; text-decoration: none; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;" title="동행복권 공식 서버 회차 당첨결과 조회">
-                    <i class="fa-solid fa-arrow-up-right-from-square" style="color: #60a5fa;"></i> 당첨여부 확인
-                </a>
-            `;
 
             html += `
                 <!-- 🎟️ 디자인 C: 스마트 모바일 월렛 패스 스타일 실구매 영수증 카드 -->
@@ -950,24 +928,44 @@ export async function renderConfirmedPurchasesList() {
                         ${gamesHtml}
                     </div>
 
-                    <!-- 4. Pass Bottom Footer (TR Info & 당첨여부확인 링크) -->
-                    <div class="confirmed-receipt-footer" style="padding: 8px 12px; background: rgba(15, 23, 42, 0.88); border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: nowrap;">
-                        <div style="display: flex; flex-direction: column; gap: 2px; font-size: 0.7rem; color: #94a3b8; min-width: 0; flex: 1 1 auto; overflow: hidden;">
-                            <div style="font-family: monospace; display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                <span style="color: #64748b; flex-shrink: 0;">일련번호:</span> <strong style="color: #cbd5e1; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${serial}</strong>
+                    <!-- 4. Pass Bottom Footer (TR Info & 동행복권 원본 QR 링크 & 당첨여부확인 버튼) -->
+                    <div class="confirmed-receipt-footer" style="padding: 10px 12px; background: rgba(15, 23, 42, 0.88); border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 8px;">
+                        
+                        <!-- Top row: Serial & Status & Action Button -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #94a3b8; min-width: 0; overflow: hidden;">
+                                <div style="font-family: monospace; display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    <span style="color: #64748b; flex-shrink: 0;">발행 일련번호:</span> <strong style="color: #cbd5e1; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${serial}</strong>
+                                </div>
+                                <span style="color: rgba(255,255,255,0.2);">•</span>
+                                <div style="color: #34d399; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; gap: 3px; white-space: nowrap;">
+                                    <i class="fa-solid fa-shield-check"></i> <span>발권 검증 완료</span>
+                                </div>
                             </div>
-                            <div style="color: #34d399; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
-                                <i class="fa-solid fa-shield-check"></i> <span>발권 검증 완료</span>
+                            <div style="flex-shrink: 0; margin-left: auto;">
+                                <a href="${finalQrUrl}" target="_blank" rel="noopener noreferrer" style="padding: 5px 12px; font-size: 0.74rem; background: linear-gradient(135deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.35)); border: 1.5px solid #10b981; color: #a7f3d0; border-radius: 7px; text-decoration: none; font-weight: 900; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25); transition: all 0.2s; white-space: nowrap;" title="동행복권 공식 서버 실시간 당첨결과 조회">
+                                    <i class="fa-solid fa-arrow-up-right-from-square" style="color: #34d399;"></i> 동행복권 당첨확인
+                                </a>
                             </div>
                         </div>
-                        <div style="flex-shrink: 0; margin-left: auto;">
-                            ${officialLinkHtml}
+
+                        <!-- Bottom row: 동행복권 원본 QR 링크 바 -->
+                        <div class="confirmed-receipt-qr-link-bar" style="padding: 6px 10px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 240px; overflow: hidden;">
+                                <i class="fa-solid fa-qrcode" style="color: #60a5fa; font-size: 0.85rem; flex-shrink: 0;"></i>
+                                <span style="color: #94a3b8; font-size: 0.7rem; font-weight: 700; white-space: nowrap; flex-shrink: 0;">동행복권 원본 QR:</span>
+                                <a href="${finalQrUrl}" target="_blank" rel="noopener noreferrer" style="color: #60a5fa; text-decoration: underline; font-family: monospace; font-size: 0.68rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="동행복권 공식 서버 당첨/발권 진위 페이지 열기">${finalQrUrl}</a>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: auto;">
+                                <button type="button" onclick="window.copyToClipboard && window.copyToClipboard('${finalQrUrl}', '🔗 동행복권 원본 QR 링크가 복사되었습니다.')" style="padding: 2px 7px; font-size: 0.68rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #cbd5e1; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; font-weight: 700;">
+                                    <i class="fa-solid fa-copy"></i> 복사
+                                </button>
+                            </div>
                         </div>
                     </div>
-
-                    ${adminQrInfoHtml}
                 </div>
             `;
+
         });
 
         html += `

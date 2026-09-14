@@ -156,7 +156,10 @@ export async function renderLandingDashboard() {
         try { window.updatePurchaseDeadlineCountdowns(); } catch(e){}
     }
 
-    // 9. Update Service Cards Access Permission Badges
+    // 9. Update Saturday 21:00 Lotto Winning Draw Countdown Banner (🎯 당첨번호 추첨 카운트다운)
+    updateDrawCountdownBanner();
+
+    // 10. Update Service Cards Access Permission Badges
     updateHomeServiceCardsPermissions();
 }
 
@@ -577,11 +580,155 @@ export async function updateHomeWinningTicker() {
     }
 }
 
+/**
+ * 🎯 Calculate Next Saturday 21:00:00 KST Target
+ */
+export function getNextSaturday21KST(now = new Date()) {
+    const day = now.getDay(); // 0: Sun, 1: Mon, ... 6: Sat
+    const diffToSat = (6 - day + 7) % 7;
+    const target = new Date(now);
+    target.setDate(now.getDate() + diffToSat);
+    target.setHours(21, 0, 0, 0);
+
+    // If today is Saturday and now >= 21:00:00, target next Saturday 21:00
+    if (diffToSat === 0 && now.getTime() >= target.getTime()) {
+        target.setDate(target.getDate() + 7);
+    }
+    return target;
+}
+
+/**
+ * 🎯 Calculate Draw Round Number for target Saturday 21:00 KST (Round 1 = 2002-12-07)
+ */
+export function getDrawRoundForSaturday21(targetDate = getNextSaturday21KST()) {
+    const firstDrawTime = new Date('2002-12-07T21:00:00+09:00');
+    const diff = targetDate.getTime() - firstDrawTime.getTime();
+    if (diff < 0) return 1;
+    const weeks = Math.round(diff / (7 * 24 * 60 * 60 * 1000));
+    return 1 + weeks;
+}
+
+/**
+ * 🎯 Render & Start Live Countdown Timer for Saturday 21:00 Winning Number Draw Banner
+ */
+let drawCountdownIntervalId = null;
+
+export function updateDrawCountdownBanner() {
+    const container = document.getElementById('lpDrawCountdownBanner');
+    if (!container) return;
+
+    function renderBanner() {
+        const now = new Date();
+        const target = getNextSaturday21KST(now);
+        const diffMs = target.getTime() - now.getTime();
+        const targetRound = getDrawRoundForSaturday21(target);
+
+        if (diffMs <= 0) {
+            container.innerHTML = `
+                <div class="lp-draw-countdown-banner is-live" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-generator'), 80); }" title="제 ${targetRound}회 로또 추첨 진행 중 - 번호 생성 및 확인 바로가기" style="display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; background: linear-gradient(135deg, rgba(30, 27, 75, 0.95) 0%, rgba(127, 29, 29, 0.9) 100%) !important; border: 1.5px solid #ef4444 !important; border-radius: 14px !important; padding: 10px 16px !important; gap: 10px !important; box-sizing: border-box !important; cursor: pointer !important; box-shadow: 0 4px 18px rgba(239, 68, 68, 0.3) !important; width: 100% !important; max-width: 900px !important; margin: 0 0 14px 0 !important; flex-wrap: wrap !important;">
+                    <div style="display: flex !important; flex-direction: row !important; align-items: center !important; gap: 10px !important; flex-shrink: 0 !important;">
+                        <div style="width: 36px !important; height: 36px !important; border-radius: 10px !important; background: rgba(239, 68, 68, 0.25) !important; border: 1px solid #ef4444 !important; color: #f87171 !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 1.1rem !important; flex-shrink: 0 !important;">
+                            <i class="fa-solid fa-satellite-dish"></i>
+                        </div>
+                        <div style="display: flex !important; flex-direction: column !important; gap: 2px !important;">
+                            <div style="display: flex !important; flex-direction: row !important; align-items: center !important; gap: 6px !important; flex-wrap: wrap !important;">
+                                <span style="background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important; color: #ffffff !important; font-size: 0.72rem !important; font-weight: 800 !important; padding: 2px 7px !important; border-radius: 6px !important; white-space: nowrap !important;">제 ${targetRound}회</span>
+                                <span style="font-size: 0.88rem !important; font-weight: 800 !important; color: #f8fafc !important; white-space: nowrap !important;">로또 6/45 실시간 추첨 진행 중!</span>
+                            </div>
+                            <div style="font-size: 0.73rem !important; color: #94a3b8 !important; white-space: nowrap !important;">동행복권 공식 당첨번호 추첨 및 집계 중</div>
+                        </div>
+                    </div>
+                    <div style="display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;">
+                        <span style="font-size: 0.86rem !important; font-weight: 800 !important; color: #f87171 !important; display: inline-flex !important; align-items: center !important; gap: 6px !important; background: rgba(239, 68, 68, 0.2) !important; border: 1px solid #ef4444 !important; padding: 4px 10px !important; border-radius: 10px !important; white-space: nowrap !important;">
+                            <i class="fa-solid fa-circle" style="font-size: 0.55rem !important; color: #ef4444;"></i> LIVE 추첨중
+                        </span>
+                    </div>
+                    <div style="display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: 5px !important; background: rgba(239, 68, 68, 0.2) !important; border: 1px solid rgba(239, 68, 68, 0.4) !important; color: #fca5a5 !important; font-size: 0.75rem !important; font-weight: 800 !important; padding: 5px 10px !important; border-radius: 8px !important; white-space: nowrap !important; flex-shrink: 0 !important;">
+                        <span>결과확인</span>
+                        <i class="fa-solid fa-chevron-right" style="font-size: 0.7rem !important;"></i>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+        const pad = (n) => String(n).padStart(2, '0');
+        const isUrgent = days === 0 && hours < 3; // Within 3 hours of draw
+
+        container.innerHTML = `
+            <div class="lp-draw-countdown-banner ${isUrgent ? 'is-urgent' : ''}" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-generator'), 80); }" title="제 ${targetRound}회 로또 6/45 추천 및 실구매 장부 바로가기" style="display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: space-between !important; background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 27, 75, 0.92) 50%, rgba(15, 23, 42, 0.95) 100%) !important; border: 1.5px solid ${isUrgent ? '#f59e0b' : 'rgba(139, 92, 246, 0.45)'} !important; border-radius: 14px !important; padding: 10px 16px !important; gap: 10px !important; box-sizing: border-box !important; cursor: pointer !important; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35), 0 0 16px rgba(124, 58, 237, 0.12) !important; width: 100% !important; max-width: 900px !important; margin: 0 0 14px 0 !important; flex-wrap: wrap !important;">
+                <!-- Left: Icon & Title -->
+                <div style="display: flex !important; flex-direction: row !important; align-items: center !important; gap: 10px !important; flex-shrink: 0 !important;">
+                    <div style="width: 36px !important; height: 36px !important; border-radius: 10px !important; background: ${isUrgent ? 'rgba(245, 158, 11, 0.25)' : 'rgba(139, 92, 246, 0.22)'} !important; border: 1px solid ${isUrgent ? '#f59e0b' : 'rgba(139, 92, 246, 0.5)'} !important; color: ${isUrgent ? '#fbbf24' : '#c4b5fd'} !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 1.1rem !important; flex-shrink: 0 !important;">
+                        <i class="fa-solid ${isUrgent ? 'fa-fire' : 'fa-clock'}"></i>
+                    </div>
+                    <div style="display: flex !important; flex-direction: column !important; gap: 2px !important;">
+                        <div style="display: flex !important; flex-direction: row !important; align-items: center !important; gap: 6px !important; flex-wrap: wrap !important;">
+                            <span style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%) !important; color: #ffffff !important; font-size: 0.72rem !important; font-weight: 800 !important; padding: 2px 7px !important; border-radius: 6px !important; letter-spacing: -0.2px !important; white-space: nowrap !important;">제 ${targetRound}회</span>
+                            <span style="font-size: 0.88rem !important; font-weight: 800 !important; color: #f8fafc !important; letter-spacing: -0.3px !important; white-space: nowrap !important;">당첨번호 추첨까지</span>
+                            ${isUrgent ? '<span style="background: rgba(245, 158, 11, 0.25) !important; border: 1px solid #f59e0b !important; color: #fbbf24 !important; font-size: 0.68rem !important; font-weight: 800 !important; padding: 1px 5px !important; border-radius: 4px !important; white-space: nowrap !important;">추첨임박</span>' : ''}
+                        </div>
+                        <div style="font-size: 0.73rem !important; color: #94a3b8 !important; letter-spacing: -0.2px !important; white-space: nowrap !important;">토요일 21:00 추첨 기준</div>
+                    </div>
+                </div>
+
+                <!-- Center: Digital Countdown -->
+                <div style="display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;">
+                    <div style="display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: 4px !important; background: rgba(15, 23, 42, 0.75) !important; border: 1px solid rgba(139, 92, 246, 0.35) !important; padding: 4px 10px !important; border-radius: 10px !important; white-space: nowrap !important;">
+                        ${days > 0 ? `
+                            <div style="display: inline-flex !important; flex-direction: row !important; align-items: baseline !important; gap: 2px !important;">
+                                <span style="font-family: 'JetBrains Mono', -apple-system, monospace !important; font-size: 1.05rem !important; font-weight: 900 !important; color: #38bdf8 !important; text-shadow: 0 0 8px rgba(56, 189, 248, 0.4) !important;">${days}</span>
+                                <span style="font-size: 0.72rem !important; color: #94a3b8 !important; font-weight: 700 !important;">일</span>
+                            </div>
+                            <span style="color: rgba(167, 139, 250, 0.6) !important; font-size: 0.85rem !important; font-weight: 800 !important; margin: 0 1px !important;">:</span>
+                        ` : ''}
+                        <div style="display: inline-flex !important; flex-direction: row !important; align-items: baseline !important; gap: 2px !important;">
+                            <span style="font-family: 'JetBrains Mono', -apple-system, monospace !important; font-size: 1.05rem !important; font-weight: 900 !important; color: #38bdf8 !important; text-shadow: 0 0 8px rgba(56, 189, 248, 0.4) !important;">${pad(hours)}</span>
+                            <span style="font-size: 0.72rem !important; color: #94a3b8 !important; font-weight: 700 !important;">시</span>
+                        </div>
+                        <span style="color: rgba(167, 139, 250, 0.6) !important; font-size: 0.85rem !important; font-weight: 800 !important; margin: 0 1px !important;">:</span>
+                        <div style="display: inline-flex !important; flex-direction: row !important; align-items: baseline !important; gap: 2px !important;">
+                            <span style="font-family: 'JetBrains Mono', -apple-system, monospace !important; font-size: 1.05rem !important; font-weight: 900 !important; color: #38bdf8 !important; text-shadow: 0 0 8px rgba(56, 189, 248, 0.4) !important;">${pad(minutes)}</span>
+                            <span style="font-size: 0.72rem !important; color: #94a3b8 !important; font-weight: 700 !important;">분</span>
+                        </div>
+                        <span style="color: rgba(167, 139, 250, 0.6) !important; font-size: 0.85rem !important; font-weight: 800 !important; margin: 0 1px !important;">:</span>
+                        <div style="display: inline-flex !important; flex-direction: row !important; align-items: baseline !important; gap: 2px !important;">
+                            <span style="font-family: 'JetBrains Mono', -apple-system, monospace !important; font-size: 1.05rem !important; font-weight: 900 !important; color: #fbbf24 !important; text-shadow: 0 0 8px rgba(251, 191, 36, 0.4) !important;">${pad(seconds)}</span>
+                            <span style="font-size: 0.72rem !important; color: #94a3b8 !important; font-weight: 700 !important;">초</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Action Hint -->
+                <div style="display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: 5px !important; background: rgba(139, 92, 246, 0.15) !important; border: 1px solid rgba(139, 92, 246, 0.4) !important; color: #c4b5fd !important; font-size: 0.75rem !important; font-weight: 800 !important; padding: 5px 10px !important; border-radius: 8px !important; white-space: nowrap !important; flex-shrink: 0 !important;">
+                    <span>번호생성</span>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 0.7rem !important;"></i>
+                </div>
+            </div>
+        `;
+    }
+
+    renderBanner();
+
+    if (drawCountdownIntervalId) {
+        clearInterval(drawCountdownIntervalId);
+    }
+    drawCountdownIntervalId = setInterval(renderBanner, 1000);
+}
+
 if (typeof window !== 'undefined') {
     window.renderLandingDashboard = renderLandingDashboard;
     window.updateHomeReviewDashboard = updateHomeReviewDashboard;
     window.updateHomeWinningTicker = updateHomeWinningTicker;
     window.updateHomeServiceCardsPermissions = updateHomeServiceCardsPermissions;
+    window.getNextSaturday21KST = getNextSaturday21KST;
+    window.getDrawRoundForSaturday21 = getDrawRoundForSaturday21;
+    window.updateDrawCountdownBanner = updateDrawCountdownBanner;
 }
 
 

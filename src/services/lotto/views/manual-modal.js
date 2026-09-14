@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { showToast, getDrawDateByRound } from '../../../shared/utils.js';
-import { getLedger, saveToLedger } from '../ledger.js';
+import { getLedger, saveToLedger, parseDonghangLotteryQrUrl, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
 import { SafeAuth, getUserRealName, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { renderReviewTab, renderReviewDetail } from './review-tab.js';
 import { renderConfirmedPurchasesList } from './confirmed-tab.js';
@@ -295,48 +295,16 @@ export function processLottoQrPayload(rawText) {
     console.log(`[QR Scanner] Processing payload: ${decodedText}`);
 
     try {
-        let vParam = null;
-        if (/v=/i.test(decodedText)) {
-            const match = decodedText.match(/[?&]?v=([^&#\s\r\n"']+)/i);
-            if (match && match[1]) {
-                vParam = match[1].trim();
-            }
-        } else if (/^\d{3,4}[a-zA-Z]/.test(decodedText)) {
-            vParam = decodedText;
-        }
+        const parsed = parseDonghangLotteryQrUrl(decodedText);
+        if (parsed && parsed.round && Array.isArray(parsed.combos) && parsed.combos.length > 0) {
+            const round = parsed.round;
+            const combosText = parsed.combos.map(c => c.numbers.join(', ')).join('\n');
+            const serial = parsed.serial || `${String(round).padStart(4, '0')}00000014142041`;
+            const canonicalUrl = buildDonghangLotteryQrUrl(round, parsed.combos, serial, decodedText);
 
-        if (vParam) {
-            // Extract 3~4 digit round number (e.g., 1239, 1240)
-            const roundMatch = vParam.match(/^(\d{3,4})/);
-            if (!roundMatch) {
-                alert('QR 코드에서 회차 정보를 확인할 수 없습니다.');
-                return false;
-            }
-            const roundStr = roundMatch[1];
-            const round = parseInt(roundStr, 10);
-            const gamesStr = vParam.substring(roundStr.length);
-            const gameRegex = /[a-zA-Z]\d{12}/g;
-            const matches = gamesStr.match(gameRegex) || [];
-            
-            const combos = [];
-            matches.forEach(match => {
-                const numbersStr = match.substring(1);
-                const numbers = [];
-                for (let i = 0; i < 12; i += 2) {
-                    numbers.push(parseInt(numbersStr.substring(i, i + 2), 10));
-                }
-                if (numbers.length === 6 && numbers.every(n => !isNaN(n) && n >= 1 && n <= 45)) {
-                    const uniqueSet = new Set(numbers);
-                    if (uniqueSet.size === 6) {
-                        numbers.sort((a, b) => a - b);
-                        combos.push(numbers.join(', '));
-                    }
-                }
-            });
-            
             // Automatically fill and sync round info
             const roundEl = document.getElementById('manualLedgerRound');
-            if (!isNaN(round) && round > 0 && roundEl) {
+            if (roundEl) {
                 roundEl.value = round;
                 syncLedgerDateGuide(round);
 
@@ -351,24 +319,20 @@ export function processLottoQrPayload(rawText) {
                     }
                 }
             }
-            
+
             // Automatically fill combinations
             const combosEl = document.getElementById('manualLedgerCombos');
-            if (combos.length > 0 && combosEl) {
-                const rawQrUrl = decodedText.startsWith('http') ? decodedText : `http://m.dhlottery.co.kr/qr.do?method=winQr&v=${vParam}`;
-                const rawSerial = vParam.replace(/^\d{3,4}/, '').replace(/[a-zA-Z]\d{12}/g, '').trim();
-                const uniqueFallbackSerial = `TR-${round}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
-                const qrSerial = (rawSerial && rawSerial.length >= 4) ? rawSerial : uniqueFallbackSerial;
-
+            if (combosEl) {
                 combosEl.removeAttribute('readonly');
                 combosEl.style.background = 'rgba(16, 185, 129, 0.08)';
                 combosEl.style.borderColor = '#10b981';
                 combosEl.style.color = '#f1f5f9';
                 combosEl.style.cursor = 'default';
-                combosEl.value = combos.join('\n');
+                combosEl.value = combosText;
                 combosEl.dataset.qrScanned = 'true';
-                combosEl.dataset.qrRawUrl = rawQrUrl;
-                combosEl.dataset.qrSerial = qrSerial;
+                combosEl.dataset.qrRawUrl = canonicalUrl;
+                combosEl.dataset.qrSerial = serial;
+                combosEl.dataset.qrRound = String(round);
                 stopScanning();
 
                 // Trigger real-time cross check immediately
@@ -381,7 +345,7 @@ export function processLottoQrPayload(rawText) {
 
                 const currentRound = (typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1240);
                 const isPastRound = round < currentRound;
-                showToast(`🎉 QR 인식 성공: 제 ${round}회차 ${isPastRound ? '(과거 회차)' : '(이번 주)'} ${combos.length}게임 등록 완료!`);
+                showToast(`🎉 QR 인식 성공: 제 ${round}회차 ${isPastRound ? '(과거 회차)' : '(이번 주)'} ${parsed.combos.length}게임 등록 완료!`);
                 return true;
             } else {
                 alert(`QR 코드에서 ${round}회차 정보는 확인되었으나, 유효한 6개 번호 조합을 파싱하지 못했습니다.\n\n영수증의 QR코드가 훼손되지 않았는지 확인해주세요.`);
@@ -895,11 +859,14 @@ export async function handleSaveManualLedger() {
 
         const qrRawUrl = combosEl ? (combosEl.dataset.qrRawUrl || null) : null;
         const qrSerial = combosEl ? (combosEl.dataset.qrSerial || null) : null;
-        const fallbackSerial = `TR-${roundInput}-${Date.now().toString(36)}-${Math.random().toString(36).substring(2,6).toUpperCase()}`;
+        const fallbackSerial = `${String(roundInput).padStart(4, '0')}00000014142041`;
+        const finalSerial = qrSerial || fallbackSerial;
+        const finalQrUrl = qrRawUrl || buildDonghangLotteryQrUrl(roundInput, newCombos, finalSerial);
         const qrMeta = (combosEl && (combosEl.dataset.qrScanned === 'true' || qrRawUrl || qrSerial)) ? {
-            qrSerial: qrSerial || fallbackSerial,
-            qrRawUrl: qrRawUrl,
-            qrScannedAt: new Date().toISOString()
+            qrSerial: finalSerial,
+            qrRawUrl: finalQrUrl,
+            qrScannedAt: new Date().toISOString(),
+            originalRound: roundInput
         } : null;
 
         console.log('[handleSaveManualLedger] Saving to ledger...', { roundInput, effectiveAuthId, qrSerial: qrMeta?.qrSerial });
@@ -911,6 +878,7 @@ export async function handleSaveManualLedger() {
             delete combosEl.dataset.qrScanned;
             delete combosEl.dataset.qrRawUrl;
             delete combosEl.dataset.qrSerial;
+            delete combosEl.dataset.qrRound;
         }
 
         // Close modal immediately regardless of return value

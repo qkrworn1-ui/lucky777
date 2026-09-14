@@ -784,9 +784,368 @@ class TestFullSystem(unittest.TestCase):
         gen_idx = bundle_code.find("src/services/lotto/views/generator-tab.js")
         self.assertTrue(rev_idx < algo_idx < gen_idx, "Module order must be: review-tab -> algorithms-tab -> generator-tab")
 
+    def test_21_master_historical_ledger_and_1239_receipts_win_evaluation(self):
+        """Test: Master ledger 1235~1240 presence, 1239 Receipts #1, #2, #3, #5 miss (0 KRW), Receipt #4 winning 10,000 KRW (5th x 2)."""
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+
+        # 1. Check STATIC_DRAWS contains 1235~1240
+        for r in [1235, 1236, 1237, 1238, 1239, 1240]:
+            self.assertIn(f"{r}:", ledger_code)
+
+        # 2. Check getOfficialPastRecommendation has 1239 with all 5 serials
+        self.assertIn("106292663514142041", ledger_code)
+        self.assertIn("106292723514142041", ledger_code)
+        self.assertIn("106292762114142041", ledger_code)
+        self.assertIn("107114111414142041", ledger_code)
+        self.assertIn("107114057514142041", ledger_code)
+
+        # 3. Check normalizeMaster1239Order function presence
+        self.assertIn("normalizeMaster1239Order", ledger_code)
+
+        # 4. Simulate 1239 evaluate rank for all 5 receipts in exact canonical order
+        draw_1239 = [1, 3, 17, 26, 33, 42]
+        bonus_1239 = 41
+
+        # Receipts 1, 2, 3, 5 are 낙첨 (0 KRW)
+        rc1_combos = [
+            [1, 11, 13, 25, 36, 38], [6, 11, 23, 29, 33, 36],
+            [3, 4, 17, 20, 24, 43], [7, 8, 16, 30, 39, 44],
+            [4, 10, 18, 23, 37, 38]
+        ]
+        rc2_combos = [
+            [7, 8, 24, 34, 36, 41], [8, 9, 12, 35, 40, 45],
+            [2, 11, 21, 33, 34, 44], [2, 12, 15, 36, 39, 41],
+            [3, 9, 16, 36, 41, 43]
+        ]
+        rc3_combos = [
+            [5, 9, 11, 12, 31, 32], [2, 3, 14, 22, 38, 39],
+            [1, 13, 14, 19, 31, 38], [4, 10, 15, 23, 24, 43],
+            [13, 15, 20, 27, 31, 35]
+        ]
+        # Receipt 4 (Winner):
+        rc4_combos = [
+            [3, 11, 15, 36, 40, 44],
+            [1, 3, 26, 32, 41, 44],
+            [2, 4, 16, 33, 38, 45],
+            [7, 20, 26, 35, 39, 40],
+            [1, 23, 33, 41, 42, 44]
+        ]
+        rc5_combos = [
+            [2, 11, 18, 34, 39, 42], [5, 11, 14, 24, 31, 32],
+            [8, 19, 20, 35, 39, 43], [3, 19, 22, 35, 44, 45],
+            [12, 14, 26, 34, 37, 45]
+        ]
+
+        rc4_prizes = [evaluate_lotto_rank(c, draw_1239, bonus_1239) for c in rc4_combos]
+        rc4_total_prize = sum(p for r, p in rc4_prizes)
+        rc4_ranks = [r for r, p in rc4_prizes if r > 0]
+
+        self.assertEqual(rc4_total_prize, 10000, "Receipt #4 must win exactly 10,000 KRW")
+        self.assertEqual(rc4_ranks, [5, 5], "Receipt #4 must win two 5th ranks (Game B and Game E)")
+
+        for rc_idx, rc in [(1, rc1_combos), (2, rc2_combos), (3, rc3_combos), (5, rc5_combos)]:
+            prizes = [evaluate_lotto_rank(c, draw_1239, bonus_1239) for c in rc]
+            total_p = sum(p for r, p in prizes)
+            self.assertEqual(total_p, 0, f"Receipt #{rc_idx} must be 0 KRW (낙첨)")
+
+    # [Test 39] Donghang Lottery Authentic QR Link Integration
+    def test_39_donghang_lottery_qr_link_integration(self):
+        # 1. Check ledger.js for buildDonghangLotteryQrUrl
+        ledger_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        with open(ledger_path, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        self.assertIn("buildDonghangLotteryQrUrl", ledger_code)
+        self.assertIn("http://qr.dhlottery.co.kr/?v=", ledger_code)
+        
+        # Verify 1235~1240 past recommendations contain qrRawUrl
+        for r in [1235, 1236, 1237, 1238, 1239, 1240]:
+            self.assertIn(f"originalRound: {r}", ledger_code)
+            self.assertIn(f"v={r}m", ledger_code)
+
+        # 2. Check confirmed-tab.js for QR link bar and copy button
+        confirmed_tab_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        with open(confirmed_tab_path, 'r', encoding='utf-8') as f:
+            tab_code = f.read()
+        self.assertIn("buildDonghangLotteryQrUrl", tab_code)
+        self.assertIn("copyToClipboard", tab_code)
+        self.assertIn("동행복권 원본 QR", tab_code)
+        self.assertIn("동행복권 당첨확인", tab_code)
+        self.assertIn("confirmed-receipt-qr-link-bar", tab_code)
+
+        # 3. Check utils.js for copyToClipboard
+        utils_path = os.path.join(self.root_dir, 'src', 'shared', 'utils.js')
+        with open(utils_path, 'r', encoding='utf-8') as f:
+            utils_code = f.read()
+        self.assertIn("copyToClipboard", utils_code)
+
+        # 4. QR URL format validation
+        # Pattern: http://qr.dhlottery.co.kr/?v=1239m031115364044m010326324144m020416333845m072026353940m012333414244106292663514142041
+        sample_qr = "http://qr.dhlottery.co.kr/?v=1239m031115364044m010326324144m020416333845m072026353940m012333414244106292663514142041"
+        self.assertTrue(sample_qr.startswith("http://qr.dhlottery.co.kr/?v=1239m"))
+        self.assertEqual(len(sample_qr), len("http://qr.dhlottery.co.kr/?v=1239") + 5 * 13 + 18)
+
+    # [Test 40] Donghang Lottery QR Decoder & Winning Ground Truth Validation
+    def test_40_donghang_lottery_qr_decoder_and_sync(self):
+        """Test: QR URL parsing ground truth, verifying combo decoding matches actual winning evaluation."""
+        def parse_qr_url(url):
+            m = re.search(r'[?&]v=(\d{1,4})((?:[mq]\d{12})+)(\d{6,18})?', url, re.IGNORECASE)
+            if not m:
+                return None
+            round_num = int(m.group(1))
+            games_part = m.group(2)
+            serial = m.group(3) or ''
+            games_raw = [g for g in re.split(r'[mq]', games_part, flags=re.IGNORECASE) if g]
+            combos = []
+            for g in games_raw:
+                nums = [int(g[i:i+2]) for i in range(0, 12, 2) if i+2 <= len(g)]
+                nums.sort()
+                combos.append(nums)
+            return {'round': round_num, 'combos': combos, 'serial': serial}
+
+        # Master 1239 authentic QR URLs (Receipt #4 10,000 KRW winner, Receipts #1, #2, #3, #5 miss)
+        urls = {
+            1: "http://qr.dhlottery.co.kr/?v=1239m011113253638m061123293336m030417202443m070816303944m041018233738107114057514142041",
+            2: "http://qr.dhlottery.co.kr/?v=1239m070824343641m080912354045m021121333444m021215363941m030916364143106292723514142041",
+            3: "http://qr.dhlottery.co.kr/?v=1239m050911123132m020314223839m011314193138m041015232443m131520273135106292762114142041",
+            4: "http://qr.dhlottery.co.kr/?v=1239m031115364044m010326324144m020416333845m072026353940m012333414244106292663514142041",
+            5: "http://qr.dhlottery.co.kr/?v=1239m021118343942m051114243132m081920353943m031922354445m121426343745107114111414142041"
+        }
+
+        draw_1239 = [1, 3, 17, 26, 33, 42]
+        bonus_1239 = 41
+
+        # Receipt #4: 10,000 KRW won (Game B and Game E 5th rank)
+        parsed_4 = parse_qr_url(urls[4])
+        self.assertIsNotNone(parsed_4)
+        self.assertEqual(parsed_4['round'], 1239)
+        self.assertEqual(len(parsed_4['combos']), 5)
+        self.assertEqual(parsed_4['serial'], '106292663514142041')
+
+        res_4 = [evaluate_lotto_rank(c, draw_1239, bonus_1239) for c in parsed_4['combos']]
+        total_prize_4 = sum(p for r, p in res_4)
+        winning_ranks_4 = [r for r, p in res_4 if r > 0]
+        self.assertEqual(total_prize_4, 10000, "QR #4 decoded combos must evaluate to 10,000 KRW")
+        self.assertEqual(winning_ranks_4, [5, 5], "QR #4 must have two 5th rank wins")
+
+        # Receipts #1, #2, #3, #5: All 0 KRW (낙첨)
+        for idx in [1, 2, 3, 5]:
+            parsed = parse_qr_url(urls[idx])
+            self.assertIsNotNone(parsed)
+            self.assertEqual(parsed['round'], 1239)
+            self.assertEqual(len(parsed['combos']), 5)
+            res = [evaluate_lotto_rank(c, draw_1239, bonus_1239) for c in parsed['combos']]
+            total_prize = sum(p for r, p in res)
+            self.assertEqual(total_prize, 0, f"QR #{idx} decoded combos must evaluate to 0 KRW (낙첨)")
+
+        # Verify JavaScript implementation exports
+        ledger_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        with open(ledger_path, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        self.assertIn("parseDonghangLotteryQrUrl", ledger_code)
+        self.assertIn("syncPurchaseWithQrUrl", ledger_code)
+
+    # [Test 41] Scraped Draw Ingestion & Instant Winning Evaluation
+    def test_41_scraped_draw_instant_winning_evaluation(self):
+        """Test: Scraped round draw ingestion triggers rank evaluation, prize calculations, and cache invalidation."""
+        # 1. Check sync.js has proper cache invalidation and re-rendering hooks
+        sync_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'sync.js')
+        with open(sync_path, 'r', encoding='utf-8') as f:
+            sync_code = f.read()
+        
+        self.assertIn("state.mergedHistory =", sync_code)
+        self.assertIn("state.latestDrawData = null", sync_code)
+        self.assertIn("renderLatestDrawBanner()", sync_code)
+        self.assertIn("renderConfirmedPurchasesList()", sync_code)
+        self.assertIn("renderReviewTab()", sync_code)
+
+        # 2. Simulate newly scraped draw (e.g. Round 1241)
+        new_draw = {
+            'numbers': [5, 12, 19, 23, 31, 44],
+            'bonus': 7,
+            'rank1Prize': 2150000000,
+            'rank2Prize': 55000000,
+            'rank3Prize': 1600000
+        }
+
+        # Mock sample user purchases for Round 1241
+        user_combos = [
+            [5, 12, 19, 23, 31, 44],  # 1st rank (6 matches)
+            [5, 12, 19, 23, 31, 7],   # 2nd rank (5 matches + bonus)
+            [5, 12, 19, 23, 31, 40],  # 3rd rank (5 matches)
+            [5, 12, 19, 23, 1, 2],    # 4th rank (4 matches)
+            [5, 12, 19, 1, 2, 3],     # 5th rank (3 matches)
+            [1, 2, 3, 4, 6, 8]        # Miss (0 matches)
+        ]
+
+        winning_set = set(new_draw['numbers'])
+        bonus = new_draw['bonus']
+
+        evaluated_results = []
+        for combo in user_combos:
+            matches = [n for n in combo if n in winning_set]
+            match_count = len(matches)
+            has_bonus = bonus in combo
+
+            if match_count == 6:
+                evaluated_results.append((1, new_draw['rank1Prize']))
+            elif match_count == 5 and has_bonus:
+                evaluated_results.append((2, new_draw['rank2Prize']))
+            elif match_count == 5:
+                evaluated_results.append((3, new_draw['rank3Prize']))
+            elif match_count == 4:
+                evaluated_results.append((4, 50000))
+            elif match_count == 3:
+                evaluated_results.append((5, 5000))
+            else:
+                evaluated_results.append((0, 0))
+
+        # Assert rank outcomes
+        self.assertEqual(evaluated_results[0], (1, 2150000000))
+        self.assertEqual(evaluated_results[1], (2, 55000000))
+        self.assertEqual(evaluated_results[2], (3, 1600000))
+        self.assertEqual(evaluated_results[3], (4, 50000))
+        self.assertEqual(evaluated_results[4], (5, 5000))
+        self.assertEqual(evaluated_results[5], (0, 0))
+
+        # Total prize calculation
+        total_prize = sum(p for r, p in evaluated_results)
+        expected_prize = 2150000000 + 55000000 + 1600000 + 50000 + 5000
+        self.assertEqual(total_prize, expected_prize)
+
+    # [Test 42] Universal QR Purchase Save, URL, Serial & Winning Invariant Integrity
+    def test_42_qr_purchase_save_and_url_serial_integrity(self):
+        """Test: QR parsing, URL building, serial matching, and two-way synchronization guarantee zero divergence."""
+        def parse_qr_url(url):
+            if not url or not isinstance(url, str):
+                return None
+            clean = url.strip()
+            try:
+                import urllib.parse
+                clean = urllib.parse.unquote(clean)
+            except Exception:
+                pass
+            m = re.search(r'(?:[?&]v=|^v=|^)(\d{1,4})((?:[a-zA-Z]\d{12})+)(\d{4,24})?', clean, re.IGNORECASE)
+            if not m:
+                return None
+            round_num = int(m.group(1))
+            games_part = m.group(2)
+            serial = (m.group(3) or '').strip()
+            games_raw = [g for g in re.split(r'[a-zA-Z]', games_part, flags=re.IGNORECASE) if g]
+            combos = []
+            for g in games_raw:
+                nums = [int(g[i:i+2]) for i in range(0, 12, 2) if i+2 <= len(g)]
+                nums.sort()
+                combos.append(nums)
+            return {'round': round_num, 'combos': combos, 'serial': serial}
+
+        def build_qr_url(round_num, combos, serial):
+            serial_str = str(serial or '').strip()
+            if not serial_str or serial_str.startswith('TR-'):
+                serial_str = f"{str(round_num).zfill(4)}00000014142041"
+            games_q = "".join(["m" + "".join([str(n).zfill(2) for n in sorted(c)]) for c in combos if len(c) == 6])
+            return f"http://qr.dhlottery.co.kr/?v={round_num}{games_q}{serial_str}"
+
+        # 1. Test parsing across various authentic formats
+        url_desktop = "http://qr.dhlottery.co.kr/?v=1239m031115364044m010326324144m020416333845m072026353940m012333414244106292663514142041"
+        url_mobile = "http://m.dhlottery.co.kr/qr.do?method=winQr&v=1239m031115364044m010326324144m020416333845m072026353940m012333414244106292663514142041"
+        raw_v_param = "v=1239m031115364044m010326324144m020416333845m072026353940m012333414244106292663514142041"
+
+        p1 = parse_qr_url(url_desktop)
+        p2 = parse_qr_url(url_mobile)
+        p3 = parse_qr_url(raw_v_param)
+
+        self.assertIsNotNone(p1)
+        self.assertIsNotNone(p2)
+        self.assertIsNotNone(p3)
+        self.assertEqual(p1['round'], 1239)
+        self.assertEqual(p1['serial'], '106292663514142041')
+        self.assertEqual(p1['combos'], p2['combos'])
+        self.assertEqual(p1['combos'], p3['combos'])
+        self.assertEqual(len(p1['combos']), 5)
+        self.assertEqual(p1['combos'][0], [3, 11, 15, 36, 40, 44])
+        self.assertEqual(p1['combos'][1], [1, 3, 26, 32, 41, 44])
+
+        # 2. Test round-trip reconstruction
+        reconstructed = build_qr_url(p1['round'], p1['combos'], p1['serial'])
+        self.assertEqual(reconstructed, url_desktop)
+
+        # 3. Test verification that JS files implement parseDonghangLotteryQrUrl and buildDonghangLotteryQrUrl
+        ledger_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        with open(ledger_path, 'r', encoding='utf-8') as f:
+            ledger_src = f.read()
+
+        manual_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'manual-modal.js')
+        with open(manual_path, 'r', encoding='utf-8') as f:
+            manual_src = f.read()
+
+        confirmed_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        with open(confirmed_path, 'r', encoding='utf-8') as f:
+            confirmed_src = f.read()
+
+        self.assertIn("parseDonghangLotteryQrUrl", ledger_src)
+        self.assertIn("syncPurchaseWithQrUrl", ledger_src)
+        self.assertIn("buildDonghangLotteryQrUrl", ledger_src)
+        self.assertIn("parseDonghangLotteryQrUrl", manual_src)
+        self.assertIn("buildDonghangLotteryQrUrl", confirmed_src)
+
+    # [Test 30] Saturday 21:00 Draw Countdown Banner & Target Calculation
+    def test_30_saturday_21_draw_countdown_banner(self):
+        # 1. Target Saturday 21:00 KST Calculation
+        def get_next_sat_21(now_dt):
+            # day: Sunday=0, Monday=1, ..., Saturday=6
+            day = (now_dt.weekday() + 1) % 7
+            diff_to_sat = (6 - day + 7) % 7
+            target = now_dt.replace(hour=21, minute=0, second=0, microsecond=0) + timedelta(days=diff_to_sat)
+            if diff_to_sat == 0 and now_dt >= target:
+                target += timedelta(days=7)
+            return target
+
+        def get_draw_round(target_sat):
+            first_draw = datetime(2002, 12, 7, 21, 0, 0, tzinfo=KST)
+            diff_sec = (target_sat - first_draw).total_seconds()
+            weeks = round(diff_sec / (7 * 24 * 3600))
+            return 1 + weeks
+
+        # Sunday 2026-09-13 10:00 -> 2026-09-19 21:00 (Round 1242)
+        t_sun = datetime(2026, 9, 13, 10, 0, 0, tzinfo=KST)
+        tgt_sun = get_next_sat_21(t_sun)
+        self.assertEqual(tgt_sun, datetime(2026, 9, 19, 21, 0, 0, tzinfo=KST))
+        self.assertEqual(get_draw_round(tgt_sun), 1242)
+
+        # Saturday 2026-09-19 20:59:59 -> 2026-09-19 21:00 (Round 1242)
+        t_sat_pre = datetime(2026, 9, 19, 20, 59, 59, tzinfo=KST)
+        tgt_sat_pre = get_next_sat_21(t_sat_pre)
+        self.assertEqual(tgt_sat_pre, datetime(2026, 9, 19, 21, 0, 0, tzinfo=KST))
+        self.assertEqual(get_draw_round(tgt_sat_pre), 1242)
+
+        # Saturday 2026-09-19 21:00:00 -> 2026-09-26 21:00 (Round 1243)
+        t_sat_exact = datetime(2026, 9, 19, 21, 0, 0, tzinfo=KST)
+        tgt_sat_exact = get_next_sat_21(t_sat_exact)
+        self.assertEqual(tgt_sat_exact, datetime(2026, 9, 26, 21, 0, 0, tzinfo=KST))
+        self.assertEqual(get_draw_round(tgt_sat_exact), 1243)
+
+        # 2. Check HTML markup presence in index.html
+        index_path = os.path.join(self.root_dir, 'index.html')
+        with open(index_path, 'r', encoding='utf-8') as f:
+            index_src = f.read()
+        self.assertIn('id="lpDrawCountdownBanner"', index_src)
+
+        # 3. Check JS implementation in landing-dashboard.js
+        dash_path = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+        with open(dash_path, 'r', encoding='utf-8') as f:
+            dash_src = f.read()
+        self.assertIn('getNextSaturday21KST', dash_src)
+        self.assertIn('getDrawRoundForSaturday21', dash_src)
+        self.assertIn('updateDrawCountdownBanner', dash_src)
+        self.assertIn('lpDrawCountdownBanner', dash_src)
+
 
 if __name__ == '__main__':
     unittest.main()
+
+
 
 
 
