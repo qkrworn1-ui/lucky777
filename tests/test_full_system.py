@@ -700,17 +700,19 @@ class TestFullSystem(unittest.TestCase):
         def parse_version_num(v_str):
             if not v_str:
                 return 0
-            m = re.search(r'(\d+)', str(v_str))
-            return int(m.group(1)) if m else 0
+            clean = re.sub(r'[^0-9]', '', str(v_str))
+            return int(clean) if clean else 0
 
         def check_has_update(current_v, server_v):
             return parse_version_num(server_v) > parse_version_num(current_v)
 
-        # 1. Version Comparison Logic
+        # 1. Version Comparison Logic (Legacy integers & Datetime format)
         self.assertTrue(check_has_update('v734', 'v735'), "v735 must trigger update over v734")
         self.assertTrue(check_has_update('v734', 'v800'), "v800 must trigger update over v734")
-        self.assertFalse(check_has_update('v735', 'v735'), "Same version must NOT trigger update")
-        self.assertFalse(check_has_update('v736', 'v735'), "Higher local version must NOT trigger update")
+        self.assertTrue(check_has_update('v767', 'v2026.09.14.2335'), "Datetime version must trigger update over legacy v767")
+        self.assertTrue(check_has_update('v2026.09.14.2335', 'v2026.09.14.2336'), "Higher datetime version must trigger update")
+        self.assertFalse(check_has_update('v2026.09.14.2335', 'v2026.09.14.2335'), "Same version must NOT trigger update")
+        self.assertFalse(check_has_update('v2026.09.14.2336', 'v2026.09.14.2335'), "Higher local version must NOT trigger update")
 
         # 2. Build Assets Cross-Check
         version_file = os.path.join(self.root_dir, 'version.json')
@@ -737,8 +739,8 @@ class TestFullSystem(unittest.TestCase):
         def parse_version_num(v_str):
             if not v_str:
                 return 0
-            m = re.search(r'(\d+)', str(v_str))
-            return int(m.group(1)) if m else 0
+            clean = re.sub(r'[^0-9]', '', str(v_str))
+            return int(clean) if clean else 0
 
         def get_highest_known_version(app_v, fb_v, host_v):
             current_num = parse_version_num(app_v)
@@ -752,19 +754,19 @@ class TestFullSystem(unittest.TestCase):
                 return host_v
             return app_v
 
-        # Case A: Firebase receives v738 first before hosting CDN caches expire
-        highest = get_highest_known_version('v737', 'v738', 'v737')
-        self.assertEqual(highest, 'v738')
-        self.assertTrue(parse_version_num(highest) > parse_version_num('v737'))
+        # Case A: Firebase receives v2026.09.14.2338 first before hosting CDN caches expire
+        highest = get_highest_known_version('v2026.09.14.2337', 'v2026.09.14.2338', 'v2026.09.14.2337')
+        self.assertEqual(highest, 'v2026.09.14.2338')
+        self.assertTrue(parse_version_num(highest) > parse_version_num('v2026.09.14.2337'))
 
-        # Case B: Hosting has v739, Firebase had v738
-        highest = get_highest_known_version('v737', 'v738', 'v739')
-        self.assertEqual(highest, 'v739')
+        # Case B: Hosting has v2026.09.14.2339, Firebase had v2026.09.14.2338
+        highest = get_highest_known_version('v2026.09.14.2337', 'v2026.09.14.2338', 'v2026.09.14.2339')
+        self.assertEqual(highest, 'v2026.09.14.2339')
 
-        # Case C: All matching v738
-        highest = get_highest_known_version('v738', 'v738', 'v738')
-        self.assertEqual(highest, 'v738')
-        self.assertFalse(parse_version_num(highest) > parse_version_num('v738'))
+        # Case C: All matching
+        highest = get_highest_known_version('v2026.09.14.2338', 'v2026.09.14.2338', 'v2026.09.14.2338')
+        self.assertEqual(highest, 'v2026.09.14.2338')
+        self.assertFalse(parse_version_num(highest) > parse_version_num('v2026.09.14.2338'))
 
     def test_20_algorithm_performance_review_unification(self):
         """Test: Verify 7-algorithm review calculation synchronization between generator and review tabs."""
@@ -1173,6 +1175,49 @@ class TestFullSystem(unittest.TestCase):
         self.assertEqual(resolve_effective_user('master', True, 'all'), 'all')
         # Admin explicitly selects another user
         self.assertEqual(resolve_effective_user('master', True, 'user_999'), 'user_999')
+
+
+    # [Test 32] User Personalized Prediction Report Based on Review Stats
+    def test_32_user_personalized_prediction_report(self):
+        pred_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'prediction-report.js')
+        with open(pred_path, 'r', encoding='utf-8') as f:
+            pred_src = f.read()
+
+        # 1. Check module structure and personalized logic
+        self.assertIn('generatePredictionReport', pred_src)
+        self.assertIn('setupPredictionReport', pred_src)
+        self.assertIn('compute7AlgorithmsRealStats', pred_src)
+        self.assertIn('getUserRealName', pred_src)
+        self.assertIn('👤 [${displayName}] 님 맞춤형 복기 분석', pred_src)
+        self.assertIn('과거 복기 성과 진단', pred_src)
+        self.assertIn('AI 황금 앵커 번호 TOP 7', pred_src)
+        self.assertIn('수리통계적 밸런스 및 퀀트 필터 통과 지표', pred_src)
+
+    # [Test 33] Datetime Versioning & Rollback Architecture
+    def test_33_datetime_versioning_and_rollback_system(self):
+        bundle_path = os.path.join(self.root_dir, 'bundle.py')
+        with open(bundle_path, 'r', encoding='utf-8') as f:
+            bundle_src = f.read()
+
+        # 1. Verify bundle.py features
+        self.assertIn('generate_unique_datetime_version', bundle_src)
+        self.assertIn('save_build_snapshot', bundle_src)
+        self.assertIn('perform_rollback', bundle_src)
+        self.assertIn('list_build_history', bundle_src)
+        self.assertIn('--rollback', bundle_src)
+        self.assertIn('--list-builds', bundle_src)
+
+        # 2. Emulate datetime version generation
+        import datetime
+        from bundle import generate_unique_datetime_version
+        test_time = datetime.datetime(2026, 9, 14, 23, 40)
+        ver = generate_unique_datetime_version(vdata={}, base_time=test_time)
+        self.assertEqual(ver, 'v2026.09.14.2340')
+
+        # Duplicate detection within same minute appends seconds
+        mock_vdata = {'version': 'v2026.09.14.2340', 'buildHistory': [{'version': 'v2026.09.14.2340'}]}
+        ver_with_sec = generate_unique_datetime_version(vdata=mock_vdata, base_time=test_time)
+        self.assertTrue(ver_with_sec.startswith('v2026.09.14.2340.'))
 
 
 if __name__ == '__main__':

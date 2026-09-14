@@ -3,9 +3,18 @@ import re
 import json
 import sys
 import unittest
-
+import shutil
 import datetime
 import urllib.request
+
+if sys.platform == 'win32':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass
+
+BACKUP_DIR = "backups"
 
 def push_version_to_firestore(version, build_date):
     print(f"[*] [FIREBASE] Pushing build version {version} to Firestore...")
@@ -47,32 +56,79 @@ def run_preflight_tests():
         sys.exit(1)
     print("[+] [PASS] All pre-flight integrity tests PASSED!")
 
-def sync_version_assets(auto_bump=True):
-    if not os.path.exists('version.json'):
-        return 'v716'
-    with open('version.json', 'r', encoding='utf-8') as f:
-        vdata = json.load(f)
-    old_version = vdata.get('version', 'v716').strip()
+
+def generate_unique_datetime_version(vdata=None, base_time=None):
+    """
+    Generate date/time version: vYYYY.MM.DD.HHMM (e.g. v2026.09.14.2335)
+    If a build already occurred in the same minute, append second.
+    """
+    now = base_time or datetime.datetime.now()
+    date_str = now.strftime('%Y.%m.%d')
+    time_str = now.strftime('%H%M')
+    version = f"v{date_str}.{time_str}"
     
-    now_iso = datetime.datetime.now().isoformat()
-    if auto_bump and '--no-bump' not in sys.argv:
-        match = re.search(r'(\d+)', old_version)
-        if match:
-            v_int = int(match.group(1)) + 1
-            version = f"v{v_int}"
-        else:
-            version = old_version
-        vdata['version'] = version
-        vdata['buildDate'] = datetime.date.today().isoformat()
-        vdata['buildTimestamp'] = now_iso
-        with open('version.json', 'w', encoding='utf-8') as f:
-            json.dump(vdata, f, indent=2, ensure_ascii=False)
-        print(f"[*] [AUTO-BUMP] Version incremented: {old_version} -> {version}")
+    if vdata:
+        old_ver = vdata.get('version', '')
+        history_vers = [h.get('version') for h in vdata.get('buildHistory', [])]
+        if version == old_ver or version in history_vers:
+            sec_str = now.strftime('%S')
+            version = f"{version}.{sec_str}"
+    return version
+
+
+def sync_version_assets(auto_bump=True, explicit_version=None, build_desc=""):
+    if not os.path.exists('version.json'):
+        vdata = {"version": "v2026.09.14.0000", "buildHistory": []}
+    else:
+        with open('version.json', 'r', encoding='utf-8') as f:
+            vdata = json.load(f)
+            
+    old_version = vdata.get('version', 'v767').strip()
+    now_dt = datetime.datetime.now()
+    now_iso = now_dt.isoformat()
+    build_date = now_dt.strftime('%Y-%m-%d')
+    build_time = now_dt.strftime('%H:%M')
+
+    if explicit_version:
+        version = explicit_version
+        print(f"[*] [EXPLICIT-VERSION] Using target version: {version}")
+    elif auto_bump and '--no-bump' not in sys.argv:
+        version = generate_unique_datetime_version(vdata, now_dt)
+        print(f"[*] [AUTO-DATETIME-BUILD] Version generated: {old_version} -> {version} ({build_date} {build_time})")
     else:
         version = old_version
-        vdata['buildTimestamp'] = now_iso
-        with open('version.json', 'w', encoding='utf-8') as f:
-            json.dump(vdata, f, indent=2, ensure_ascii=False)
+
+    # Update buildHistory in version.json
+    history = vdata.get('buildHistory', [])
+    if not isinstance(history, list):
+        history = []
+    
+    # Check if this version entry already exists
+    existing_entry = next((h for h in history if h.get('version') == version), None)
+    if not existing_entry:
+        history.append({
+            "version": version,
+            "buildDate": build_date,
+            "buildTime": build_time,
+            "buildTimestamp": now_iso,
+            "description": build_desc or vdata.get('description', 'Application production build')
+        })
+    else:
+        if build_desc:
+            existing_entry['description'] = build_desc
+            existing_entry['buildTimestamp'] = now_iso
+
+    # Keep last 50 builds in history
+    vdata['buildHistory'] = history[-50:]
+    vdata['version'] = version
+    vdata['buildDate'] = build_date
+    vdata['buildTime'] = build_time
+    vdata['buildTimestamp'] = now_iso
+    if build_desc:
+        vdata['description'] = build_desc
+
+    with open('version.json', 'w', encoding='utf-8') as f:
+        json.dump(vdata, f, indent=2, ensure_ascii=False)
 
     v_num = version.lstrip('v')
     print(f"[*] [SYNC] Synchronizing Version: {version} (v_num: {v_num})...")
@@ -80,23 +136,23 @@ def sync_version_assets(auto_bump=True):
     if os.path.exists('index.html'):
         with open('index.html', 'r', encoding='utf-8') as f:
             html = f.read()
-        html = re.sub(r'styles\.css\?v=[a-zA-Z0-9_-]+', f'styles.css?v={v_num}', html)
-        html = re.sub(r'app_v2\.js\?v=[a-zA-Z0-9_-]+', f'app_v2.js?v={v_num}', html)
-        html = re.sub(r'sw\.js\?v=[a-zA-Z0-9_-]+', f'sw.js?v={v_num}', html)
-        html = re.sub(r'data\.js\?v=[a-zA-Z0-9_-]+', f'data.js?v={v_num}', html)
+        html = re.sub(r'styles\.css\?v=[a-zA-Z0-9_.-]+', f'styles.css?v={v_num}', html)
+        html = re.sub(r'app_v2\.js\?v=[a-zA-Z0-9_.-]+', f'app_v2.js?v={v_num}', html)
+        html = re.sub(r'sw\.js\?v=[a-zA-Z0-9_.-]+', f'sw.js?v={v_num}', html)
+        html = re.sub(r'data\.js\?v=[a-zA-Z0-9_.-]+', f'data.js?v={v_num}', html)
         html = re.sub(r'New version \([^)]+\) installed!', f'New version ({version}) installed!', html)
         html = re.sub(
-            r'(<span id="appVersionBadgeLanding"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)(v[0-9]+)(\s*<i class="fa-solid fa-rotate"[^>]*></i>\s*</span>)',
+            r'(<span id="appVersionBadgeLanding"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)([vV0-9_.-]+)(\s*<i class="fa-solid fa-rotate"[^>]*></i>\s*</span>)',
             rf'\g<1>{version}\g<3>',
             html
         )
         html = re.sub(
-            r'(<span class="app-version-badge"[^>]*>\s*)(v[0-9]+)(\s*</span>)',
+            r'(<span class="app-version-badge"[^>]*>\s*)([vV0-9_.-]+)(\s*</span>)',
             rf'\g<1>{version}\g<3>',
             html
         )
         html = re.sub(
-            r'(<span class="app-version-badge"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)(v[0-9]+)(\s*</span>)',
+            r'(<span class="app-version-badge"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)([vV0-9_.-]+)(\s*</span>)',
             rf'\g<1>{version}\g<3>',
             html
         )
@@ -116,6 +172,78 @@ def sync_version_assets(auto_bump=True):
         print("  [+] sw.js CACHE_NAME synced.")
 
     return version
+
+
+def save_build_snapshot(version):
+    """
+    Saves snapshot of app_v2.js and version.json to backups/ directory.
+    Maintains the latest 50 build snapshots.
+    """
+    if not os.path.exists(BACKUP_DIR):
+        os.makedirs(BACKUP_DIR, exist_ok=True)
+        
+    if os.path.exists('app_v2.js'):
+        backup_js = os.path.join(BACKUP_DIR, f"app_v2_{version}.js")
+        shutil.copy2('app_v2.js', backup_js)
+        print(f"  [+] Backup snapshot saved: {backup_js}")
+        
+    if os.path.exists('version.json'):
+        backup_json = os.path.join(BACKUP_DIR, f"version_{version}.json")
+        shutil.copy2('version.json', backup_json)
+        
+    # Rotate backups - keep latest 50
+    try:
+        js_files = [os.path.join(BACKUP_DIR, f) for f in os.listdir(BACKUP_DIR) if f.startswith('app_v2_') and f.endswith('.js')]
+        js_files.sort(key=os.path.getmtime)
+        if len(js_files) > 50:
+            for old_f in js_files[:-50]:
+                os.remove(old_f)
+                old_meta = old_f.replace('app_v2_', 'version_').replace('.js', '.json')
+                if os.path.exists(old_meta):
+                    os.remove(old_meta)
+    except Exception as e:
+        print(f"  [!] Backup rotation note: {e}")
+
+
+def list_build_history():
+    """
+    Prints a formatted table of all builds recorded in version.json and backups/.
+    """
+    if not os.path.exists('version.json'):
+        print("[!] No version.json file found.")
+        return
+        
+    with open('version.json', 'r', encoding='utf-8') as f:
+        vdata = json.load(f)
+        
+    current_ver = vdata.get('version', 'unknown')
+    history = vdata.get('buildHistory', [])
+    
+    print("=" * 80)
+    print(f" 📜 Lucky777 빌드 이력 및 롤백 가능 목록 (현재 버전: {current_ver})")
+    print("=" * 80)
+    print(f"{'순번':<4} | {'버전 (Version)':<26} | {'빌드 일시':<18} | {'스냅샷':<6} | {'설명'}")
+    print("-" * 80)
+    
+    if not history:
+        has_snap = "O" if os.path.exists(os.path.join(BACKUP_DIR, f"app_v2_{current_ver}.js")) else "X"
+        print(f" 1   | {current_ver:<26} | {vdata.get('buildDate','')} {vdata.get('buildTime','')} | {has_snap:<6} | {vdata.get('description','Current build')}")
+    else:
+        for idx, h in enumerate(reversed(history), 1):
+            ver = h.get('version', '')
+            bdate = f"{h.get('buildDate', '')} {h.get('buildTime', '')}".strip()
+            desc = h.get('description', '')
+            snap_path = os.path.join(BACKUP_DIR, f"app_v2_{ver}.js")
+            has_snap = "O" if os.path.exists(snap_path) else "X"
+            is_active = " (현재)" if ver == current_ver else ""
+            ver_display = f"{ver}{is_active}"
+            print(f"{idx:<4} | {ver_display:<26} | {bdate:<18} | {has_snap:<6} | {desc}")
+
+    print("=" * 80)
+    print(" 💡 원하는 과거 버전으로 롤백하려면 아래 명령을 실행하세요:")
+    print("    python bundle.py --rollback <버전번호>")
+    print("    (예: python bundle.py --rollback v2026.09.14.2335)")
+    print("=" * 80)
 
 
 def verify_version_crosscheck(expected_version):
@@ -217,10 +345,10 @@ def get_mod_slug(path):
     slug = path_str.replace('/', '_').replace('-', '_')
     return f"__M_{slug}"
 
-def clean_and_bundle():
-    version = sync_version_assets()
-    run_preflight_tests()
-    print(f"[*] Starting smart bundling process for [{version}]...")
+def bundle_core(version):
+    """
+    Assembles all ES modules into single isolated app_v2.js bundle.
+    """
     bundled_content = [
         f"/**\n * Lucky777 Smart Bundle ({version})\n */\n",
         SAFE_STORAGE_DEFINITION
@@ -281,8 +409,6 @@ def clean_and_bundle():
             
             bundled_content.append(iife)
             
-            
-    # Wrap entire application execution in a try-catch to expose any hidden top-level errors
     final_output = []
     build_date = datetime.date.today().isoformat()
     final_output.append(f"/* [LUCKY777 APP BUNDLE - BUILD_VERSION: {version} - BUILD_DATE: {build_date}] */\n")
@@ -294,9 +420,97 @@ def clean_and_bundle():
 
     with open("app_v2.js", "w", encoding="utf-8") as out:
         out.write("\n".join(final_output))
+
+
+def perform_rollback(target_version):
+    """
+    Rolls back the application to a specific past version:
+    1. Restores app_v2.js from backups/ if available, or rebuilds with target_version
+    2. Synchronizes version.json, index.html, sw.js to target_version
+    3. Cross-checks build integrity
+    4. Pushes the rollback version to Firebase Firestore
+    """
+    clean_target = target_version.strip()
+    if not clean_target.startswith('v') and not clean_target.isdigit():
+        clean_target = f"v{clean_target}"
+    elif clean_target.isdigit():
+        clean_target = f"v{clean_target}"
+
+    print("=" * 80)
+    print(f" ⏪ [ROLLBACK] Lucky777 버전 롤백 시작: {clean_target}")
+    print("=" * 80)
+
+    # 1. Check if backup exists
+    backup_js = os.path.join(BACKUP_DIR, f"app_v2_{clean_target}.js")
+    
+    # 2. Sync version assets (index.html, sw.js, version.json)
+    build_desc = f"Rollback to {clean_target}"
+    sync_version_assets(auto_bump=False, explicit_version=clean_target, build_desc=build_desc)
+
+    # 3. Restore app_v2.js
+    if os.path.exists(backup_js):
+        print(f"[*] [RESTORE] Restoring app_v2.js from snapshot: {backup_js}...")
+        shutil.copy2(backup_js, 'app_v2.js')
+    else:
+        print(f"[*] [REBUILD] Backup snapshot not found. Regenerating bundle directly for version {clean_target}...")
+        bundle_core(clean_target)
+
+    # 4. Save snapshot of active state
+    save_build_snapshot(clean_target)
+
+    # 5. Cross-check
+    verify_version_crosscheck(clean_target)
+
+    # 6. Push to Firestore
+    with open('version.json', 'r', encoding='utf-8') as f:
+        vdata = json.load(f)
+    build_date = vdata.get('buildDate', datetime.date.today().isoformat())
+    push_version_to_firestore(clean_target, build_date)
+
+    print("\n" + "=" * 80)
+    print(f" [✅ ROLLBACK COMPLETE] 성공적으로 {clean_target} 버전으로 롤백되었습니다!")
+    print(" Firestore 실시간 알림이 전송되어 모든 접속 기기에서 롤백 버전이 즉시 반영됩니다.")
+    print(" 이제 변경사항을 Git에 push하시면 배포가 완료됩니다:")
+    print(f"    git add . && git commit -m \"Rollback to {clean_target}\" && git push")
+    print("=" * 80 + "\n")
+
+
+def clean_and_bundle(custom_desc=None, explicit_version=None):
+    version = sync_version_assets(explicit_version=explicit_version, build_desc=custom_desc)
+    run_preflight_tests()
+    print(f"[*] Starting smart bundling process for [{version}]...")
+    bundle_core(version)
+    save_build_snapshot(version)
     verify_version_crosscheck(version)
+    build_date = datetime.date.today().isoformat()
     push_version_to_firestore(version, build_date)
-    print("[*] Done!")
+    print(f"[*] Done! Build [{version}] completed and snapshot archived.")
+
 
 if __name__ == "__main__":
-    clean_and_bundle()
+    args = sys.argv[1:]
+    
+    if '--list-builds' in args or '-l' in args:
+        list_build_history()
+        sys.exit(0)
+        
+    if '--rollback' in args or '-r' in args:
+        flag = '--rollback' if '--rollback' in args else '-r'
+        idx = args.index(flag)
+        if idx + 1 < len(args):
+            target_v = args[idx + 1]
+            perform_rollback(target_v)
+            sys.exit(0)
+        else:
+            print("[!] Error: Please specify target version to rollback. Example: python bundle.py --rollback v2026.09.14.2335")
+            list_build_history()
+            sys.exit(1)
+            
+    desc = None
+    if '--desc' in args or '-m' in args:
+        flag = '--desc' if '--desc' in args else '-m'
+        idx = args.index(flag)
+        if idx + 1 < len(args):
+            desc = args[idx + 1]
+            
+    clean_and_bundle(custom_desc=desc)

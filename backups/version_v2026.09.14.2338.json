@@ -1,8 +1,8 @@
 {
-  "version": "v2026.09.14.2339",
+  "version": "v2026.09.14.2338",
   "buildDate": "2026-09-14",
-  "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots",
-  "buildTimestamp": "2026-09-14T23:39:47.456537",
+  "description": "Rollback to v2026.09.14.2338",
+  "buildTimestamp": "2026-09-14T23:39:14.153663",
   "buildHistory": [
     {
       "version": "v2026.09.14.2338",
@@ -17,13 +17,6 @@
       "buildTime": "23:38",
       "buildTimestamp": "2026-09-14T23:38:56.745457",
       "description": "Test build for rollback validation"
-    },
-    {
-      "version": "v2026.09.14.2339",
-      "buildDate": "2026-09-14",
-      "buildTime": "23:39",
-      "buildTimestamp": "2026-09-14T23:39:47.456537",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
     }
   ],
   "buildTime": "23:39"
