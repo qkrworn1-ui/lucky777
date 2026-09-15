@@ -31,6 +31,9 @@ export function generatePredictionReport() {
             authId = p.userid || p.userId || authId;
         } catch(e) {}
     }
+    const cleanAuth = (authId || '').toLowerCase().trim();
+    const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
+
     const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) : null;
     const effectiveUserId = (isAdmin && viewingUser && viewingUser !== 'all') 
         ? viewingUser 
@@ -97,8 +100,15 @@ export function generatePredictionReport() {
         (pack.combos || []).forEach(c => { if (c && (c.numbers || Array.isArray(c))) allGames.push(c.numbers || c); });
     });
 
-    if (allGames.length === 0 && Array.isArray(state.fixedTop5Combinations)) {
+    if (allGames.length === 0 && Array.isArray(state.fixedTop5Combinations) && state.fixedTop5Combinations.length > 0) {
         state.fixedTop5Combinations.forEach(c => { if (c && (c.numbers || Array.isArray(c))) allGames.push(c.numbers || c); });
+    }
+
+    if (allGames.length === 0) {
+        if (typeof computeAbsoluteTop10Combinations === 'function') {
+            const fallbackCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, targetCombosUser) || [];
+            fallbackCombos.forEach(c => { if (c && (c.numbers || Array.isArray(c))) allGames.push(c.numbers || c); });
+        }
     }
 
     if (allGames.length === 0) return;
@@ -365,35 +375,60 @@ export function generatePredictionReport() {
     }
 }
 
+export function openPredictionReportModal() {
+    const modal = document.getElementById('predictionReportModal');
+    if (modal) {
+        try {
+            generatePredictionReport();
+        } catch (err) {
+            console.error('[Prediction Report Generation Error]:', err);
+        }
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+        modal.classList.add('active');
+    }
+}
+
+export function closePredictionReportModal() {
+    const modal = document.getElementById('predictionReportModal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+        modal.classList.remove('active');
+    }
+}
+
 export function setupPredictionReport() {
     const btnPredictionReport = document.getElementById('btnPredictionReport');
     const predictionReportModal = document.getElementById('predictionReportModal');
     const btnClosePredictionReport = document.getElementById('btnClosePredictionReport');
     const btnConfirmPredictionReport = document.getElementById('btnConfirmPredictionReport');
 
-    if (btnPredictionReport && predictionReportModal) {
-        btnPredictionReport.addEventListener('click', () => {
-            generatePredictionReport();
-            predictionReportModal.style.display = 'flex';
+    if (btnPredictionReport) {
+        btnPredictionReport.addEventListener('click', (e) => {
+            e.preventDefault();
+            openPredictionReportModal();
         });
     }
 
-    if (btnClosePredictionReport && predictionReportModal) {
-        btnClosePredictionReport.addEventListener('click', () => {
-            predictionReportModal.style.display = 'none';
+    if (btnClosePredictionReport) {
+        btnClosePredictionReport.addEventListener('click', (e) => {
+            e.preventDefault();
+            closePredictionReportModal();
         });
     }
 
-    if (btnConfirmPredictionReport && predictionReportModal) {
-        btnConfirmPredictionReport.addEventListener('click', () => {
-            predictionReportModal.style.display = 'none';
+    if (btnConfirmPredictionReport) {
+        btnConfirmPredictionReport.addEventListener('click', (e) => {
+            e.preventDefault();
+            closePredictionReportModal();
         });
     }
 
     if (predictionReportModal) {
         predictionReportModal.addEventListener('click', (e) => {
             if (e.target === predictionReportModal) {
-                predictionReportModal.style.display = 'none';
+                closePredictionReportModal();
             }
         });
     }
@@ -401,12 +436,8 @@ export function setupPredictionReport() {
 
 if (typeof window !== 'undefined') {
     window.generatePredictionReport = generatePredictionReport;
-    window.openPredictionReportModal = function() {
-        const modal = document.getElementById('predictionReportModal');
-        if (modal) {
-            generatePredictionReport();
-            modal.style.display = 'flex';
-        }
-    };
+    window.openPredictionReportModal = openPredictionReportModal;
+    window.closePredictionReportModal = closePredictionReportModal;
 }
+
 

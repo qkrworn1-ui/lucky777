@@ -1531,9 +1531,40 @@ class TestFullSystem(unittest.TestCase):
             total_games += len(active) * 70
         self.assertEqual(total_games, 1260, "Sanitized total games across 1235..1240 must remain strictly 1,260 games")
 
+    def test_38_prediction_report_modal_integrity(self):
+        """Test 38: Verify Prediction Report modal DOM, event handlers, and export bindings."""
+        index_file = os.path.join(self.root_dir, 'index.html')
+        with open(index_file, 'r', encoding='utf-8') as f:
+            index_html = f.read()
+
+        # 1. Check Prediction Report Trigger Button in index.html
+        self.assertIn('id="btnPredictionReport"', index_html)
+        self.assertIn('window.openPredictionReportModal', index_html)
+
+        # 2. Check Prediction Report Modal Structure in index.html
+        self.assertIn('id="predictionReportModal"', index_html)
+        self.assertIn('id="btnClosePredictionReport"', index_html)
+        self.assertIn('id="predictionBriefingText"', index_html)
+        self.assertIn('id="reportFreqChart"', index_html)
+        self.assertIn('id="balanceChart"', index_html)
+        self.assertIn('id="btnConfirmPredictionReport"', index_html)
+
+        # 3. Check prediction-report.js module integrity
+        pred_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'prediction-report.js')
+        with open(pred_file, 'r', encoding='utf-8') as f:
+            pred_code = f.read()
+
+        self.assertIn('export function generatePredictionReport', pred_code)
+        self.assertIn('export function openPredictionReportModal', pred_code)
+        self.assertIn('export function closePredictionReportModal', pred_code)
+        self.assertIn('const isAdmin = (cleanAuth === \'master\' || cleanAuth === \'admin\'', pred_code)
+        self.assertIn('window.openPredictionReportModal = openPredictionReportModal', pred_code)
+        self.assertIn('window.closePredictionReportModal = closePredictionReportModal', pred_code)
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
