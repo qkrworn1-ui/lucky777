@@ -120,12 +120,25 @@ export const UserContextManager = {
         }
         cleanId = cleanId.toLowerCase().trim();
 
-        if (cleanId === 'master' || cleanId === 'admin' || cleanId === 'all') return 1235;
+        // 'all' is the collective aggregation identifier, baseline round is 1235
+        if (cleanId === 'all') return 1235;
 
+        // Strictly determine join round from createdAt for all accounts (including master and admin)
         const createdAt = this.getUserCreatedAt(cleanId);
         if (createdAt) {
             const calced = LottoTimeService.calcRoundFromDate(createdAt);
             return Math.max(calced, 1235);
+        }
+
+        // Check if the user has recorded purchases to determine their earliest active round
+        if (typeof window !== 'undefined' && window.state && window.state.allUsersPurchasesMap && window.state.allUsersPurchasesMap[cleanId]) {
+            const pObj = window.state.allUsersPurchasesMap[cleanId];
+            if (pObj.ledger && typeof pObj.ledger === 'object') {
+                const purchaseRounds = Object.keys(pObj.ledger).map(Number).filter(r => !isNaN(r) && Array.isArray(pObj.ledger[r]) && pObj.ledger[r].length > 0);
+                if (purchaseRounds.length > 0) {
+                    return Math.max(Math.min(...purchaseRounds), 1235);
+                }
+            }
         }
 
         // Fallback for Kakao users (Kakao login service was launched at Round 1240 in Sept 2026)

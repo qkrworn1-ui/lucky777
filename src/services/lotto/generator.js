@@ -1275,6 +1275,14 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
     const roundNum = parseInt(round, 10);
     if (isNaN(roundNum)) return null;
 
+    // 🔒 가입일 이전 회차는 추천번호 영구 스냅샷 생성 및 저장 차단 (가입 전 발급 불가)
+    const joinRound = (typeof UserContextManager !== 'undefined' && UserContextManager.getUserJoinRound)
+        ? UserContextManager.getUserJoinRound(cleanUser)
+        : ((typeof getUserJoinRound === 'function') ? getUserJoinRound(cleanUser) : 1235);
+    if (roundNum < joinRound) {
+        return null;
+    }
+
     const docKey = `${cleanUser}_${roundNum}`;
 
     // 1. Check memory / local cache first

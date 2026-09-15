@@ -127,7 +127,7 @@ export function getUserJoinRound(userId) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'all') return 1235;
+    if (cleanUser === 'all') return 1235;
 
     let createdAt = null;
 
@@ -225,6 +225,17 @@ export function getUserJoinRound(userId) {
                 }
             }
         } catch(e) {}
+    }
+
+    // Check if the user has recorded purchases to determine their earliest active round
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
+        const pObj = state.allUsersPurchasesMap[cleanUser];
+        if (pObj.ledger && typeof pObj.ledger === 'object') {
+            const purchaseRounds = Object.keys(pObj.ledger).map(Number).filter(r => !isNaN(r) && Array.isArray(pObj.ledger[r]) && pObj.ledger[r].length > 0);
+            if (purchaseRounds.length > 0) {
+                return Math.max(Math.min(...purchaseRounds), 1235);
+            }
+        }
     }
 
     // Fallback for Kakao users (Kakao login service was launched at Round 1240 in Sept 2026)
@@ -627,7 +638,7 @@ export function updateReviewRoundSelector(selectedRound = null) {
     } else {
         const viewingUser = (reviewAdminViewingUser || 'all').trim().toLowerCase();
         const isAll = (viewingUser === 'all');
-        if (!isAll && viewingUser !== 'master' && viewingUser !== 'admin') {
+        if (!isAll) {
             minReviewRound = Math.max(1235, getUserJoinRound(viewingUser));
         } else {
             minReviewRound = 1235;
@@ -720,7 +731,7 @@ export function renderAllRoundsReviewDetail() {
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
 
-    const userJoinRound = (!isAdmin || !isAllUsers) ? getUserJoinRound(effectiveUserId) : 1235;
+    const userJoinRound = (!isAllUsers) ? getUserJoinRound(effectiveUserId) : 1235;
     const minTargetRound = Math.max(1235, userJoinRound);
 
     // List of drawn rounds from latest down to minTargetRound

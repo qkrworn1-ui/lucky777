@@ -32,7 +32,7 @@ def calc_round_from_date(dt_input):
 
 def get_user_join_round(user_id, created_at, is_admin=False):
     clean_id = (user_id or '').lower().strip()
-    if clean_id in ('master', 'admin', 'all') or is_admin:
+    if clean_id == 'all':
         return 1235
     if not created_at:
         return 1235
@@ -117,9 +117,10 @@ class TestFullSystem(unittest.TestCase):
 
     # [Test 3] User Context & Pre-Join Isolation
     def test_03_user_context_and_prejoin_isolation(self):
-        # Admin / Master gets system baseline round 1235
+        # Master without createdAt gets fallback baseline 1235
         self.assertEqual(get_user_join_round('master', None, is_admin=True), 1235)
-        self.assertEqual(get_user_join_round('admin', '2026-09-01T00:00:00+09:00', is_admin=True), 1235)
+        # Admin with createdAt in round 1240 gets round 1240 (Pre-join isolation strictly enforced for admin accounts too)
+        self.assertEqual(get_user_join_round('admin', '2026-08-30T12:00:00+09:00', is_admin=True), 1240)
         
         # General user registered during round 1240
         user_1240_join = get_user_join_round('user_normal', '2026-08-30T12:00:00+09:00', is_admin=False)
