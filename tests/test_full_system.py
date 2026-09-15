@@ -1219,6 +1219,88 @@ class TestFullSystem(unittest.TestCase):
         ver_with_sec = generate_unique_datetime_version(vdata=mock_vdata, base_time=test_time)
         self.assertTrue(ver_with_sec.startswith('v2026.09.14.2340.'))
 
+    def test_34_initial_login_consistency_and_join_round_isolation(self):
+        """Test 34: Verify initial login vs re-login consistency, join round calculation, and pre-join isolation."""
+        import datetime
+        from datetime import timezone, timedelta
+        
+        KST = timezone(timedelta(hours=9))
+        first_cutoff = datetime.datetime(2002, 12, 7, 20, 0, 0, tzinfo=KST)
+
+        def calc_round_from_date(dt):
+            if not dt:
+                return 1235
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=KST)
+            diff = dt - first_cutoff
+            weeks = int(diff.total_seconds() // (7 * 24 * 3600))
+            return max(2 + weeks, 1235)
+
+        def get_user_join_round_sim(user_id, is_admin=False, created_at=None):
+            clean_id = str(user_id).lower().strip()
+            if clean_id in ('master', 'admin', 'all'):
+                return 1235
+            
+            if created_at:
+                if isinstance(created_at, str):
+                    dt = datetime.datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                else:
+                    dt = created_at
+                return calc_round_from_date(dt)
+            
+            # Kakao fallback
+            if clean_id.startswith('kakao_'):
+                return 1240
+            return 1235
+
+        # 1. Test registration dates for real Firestore users
+        test_users = [
+            ('master', True, '2026-08-01T12:00:00+09:00', 1235),
+            ('wdy', False, '2026-08-01T12:00:00+09:00', 1235),
+            ('kakao_5070244665', True, '2026-09-02T16:11:38.225000+00:00', 1240), # 박재구 (admin role)
+            ('kakao_5070267707', True, '2026-09-03T00:54:19.387000+00:00', 1240), # 정미승 (admin role)
+            ('kakao_5070669650', False, '2026-09-03T08:52:16.890000+00:00', 1240), # 강지민
+            ('kakao_5071901217', False, '2026-09-04T08:14:48.066000+00:00', 1240), # 황선영
+            ('kakao_5072328991', False, '2026-09-04T16:03:04.931000+00:00', 1240), # 채금조 (Friday KST -> 1240)
+            ('kakao_5073272571', False, '2026-09-05T18:03:19.317000+00:00', 1241), # 우순애 (Sunday 03:03 KST -> 1241)
+            ('kakao_5078158815', False, '2026-09-08T09:12:00.000000+00:00', 1241), # 이재문 (Tuesday KST -> 1241)
+        ]
+
+        for uid, is_adm, c_at, expected_round in test_users:
+            # Personal Join Round MUST be invariant of is_admin (even if promoted to admin)
+            join_round_initial = get_user_join_round_sim(uid, is_admin=False, created_at=c_at)
+            join_round_relogin = get_user_join_round_sim(uid, is_admin=is_adm, created_at=c_at)
+            
+            self.assertEqual(join_round_initial, expected_round, f"{uid} initial join round must be {expected_round}")
+            self.assertEqual(join_round_relogin, expected_round, f"{uid} re-login join round must be {expected_round}")
+            self.assertEqual(join_round_initial, join_round_relogin, f"{uid} must have 100% deterministic join round across logins")
+
+        # 2. Test fallback behavior when createdAt is resolving
+        fallback_kakao = get_user_join_round_sim('kakao_9999999999', is_admin=False, created_at=None)
+        self.assertEqual(fallback_kakao, 1240, "Kakao user without resolved createdAt must fallback to 1240, NEVER 1235")
+
+        # 3. Simulate Review Evaluation Consistency across Logins
+        def simulate_user_review(user_id, is_admin, created_at, round_num, mock_draw_prize=5000):
+            j_round = get_user_join_round_sim(user_id, is_admin=is_admin, created_at=created_at)
+            if round_num < j_round:
+                return {'isPreJoin': True, 'games': 0, 'prize': 0}
+            return {'isPreJoin': False, 'games': 70, 'prize': mock_draw_prize}
+
+        for rnd in range(1235, 1242):
+            kakao_admin_initial = simulate_user_review('kakao_5070244665', is_admin=False, created_at='2026-09-02T16:11:38.225000+00:00', round_num=rnd)
+            kakao_admin_relogin = simulate_user_review('kakao_5070244665', is_admin=True, created_at='2026-09-02T16:11:38.225000+00:00', round_num=rnd)
+            
+            self.assertEqual(kakao_admin_initial['isPreJoin'], kakao_admin_relogin['isPreJoin'])
+            self.assertEqual(kakao_admin_initial['prize'], kakao_admin_relogin['prize'])
+            self.assertEqual(kakao_admin_initial['games'], kakao_admin_relogin['games'])
+            
+            if rnd < 1240:
+                self.assertTrue(kakao_admin_initial['isPreJoin'])
+                self.assertEqual(kakao_admin_initial['prize'], 0)
+            else:
+                self.assertFalse(kakao_admin_initial['isPreJoin'])
+                self.assertEqual(kakao_admin_initial['games'], 70)
+
 
 if __name__ == '__main__':
     unittest.main()

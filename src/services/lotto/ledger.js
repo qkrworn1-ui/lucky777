@@ -417,7 +417,15 @@ export async function fetchAllUsersPurchases() {
                     window.setIsAdminCache(doc.id, isAdm);
                 }
                 if (d.createdAt) {
-                    try { localStorage.setItem(`lotto_user_created_${uId}`, d.createdAt); } catch(e) {}
+                    try {
+                        localStorage.setItem(`lotto_user_created_${uId}`, d.createdAt);
+                        localStorage.setItem(`created_${uId}`, d.createdAt);
+                        sessionStorage.setItem(`created_${uId}`, d.createdAt);
+                        if (typeof window !== 'undefined') {
+                            if (!window.__userCreatedMap) window.__userCreatedMap = {};
+                            window.__userCreatedMap[uId] = d.createdAt;
+                        }
+                    } catch(e) {}
                 }
                 state.allRegisteredUsersList.push({
                     id: doc.id,

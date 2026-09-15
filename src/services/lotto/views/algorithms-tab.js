@@ -292,8 +292,8 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
     const rawUser = targetUserId || 'all';
     const cleanUser = String(rawUser).toLowerCase().trim();
     const isAll = (cleanUser === 'all');
-    const isAdmin = (cleanUser === 'master' || cleanUser === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanUser)));
-    const userJoinRound = (!isAdmin && !isAll) ? getUserJoinRound(cleanUser) : 1235;
+    const isSystemAccount = (cleanUser === 'master' || cleanUser === 'admin');
+    const userJoinRound = (!isAll && !isSystemAccount) ? getUserJoinRound(cleanUser) : 1235;
 
     let grandTotalGames = 0;
     let grandTotalInvest = 0;
@@ -315,7 +315,7 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
             const bonus = draw.bonus;
 
             // If single regular user and before join round, skip completely
-            if (!isAll && !isAdmin && round < userJoinRound) {
+            if (!isAll && !isSystemAccount && round < userJoinRound) {
                 return;
             }
 

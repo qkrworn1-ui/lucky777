@@ -128,28 +128,32 @@ export function getUserJoinRound(userId) {
     }
     cleanUser = cleanUser.toLowerCase().trim();
     if (cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'all') return 1235;
-    if (typeof isAdminUser === 'function' && isAdminUser(cleanUser)) return 1235;
 
     let createdAt = null;
 
-    // 0. Check in global memory cache
-    if (typeof window !== 'undefined' && window.__userCreatedMap && window.__userCreatedMap[cleanUser]) {
+    // 0. Check UserContextManager
+    if (typeof UserContextManager !== 'undefined' && UserContextManager.getUserCreatedAt) {
+        createdAt = UserContextManager.getUserCreatedAt(cleanUser);
+    }
+
+    // 1. Check in global memory cache
+    if (!createdAt && typeof window !== 'undefined' && window.__userCreatedMap && window.__userCreatedMap[cleanUser]) {
         createdAt = window.__userCreatedMap[cleanUser];
     }
 
-    // 1. Check in state.allRegisteredUsersList
+    // 2. Check in state.allRegisteredUsersList
     if (!createdAt && state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
         const uObj = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase().trim() === cleanUser);
         if (uObj) createdAt = uObj.createdAt || uObj.created_at || uObj.registeredAt || uObj.joinDate;
     }
 
-    // 2. Check in state.allUsersPurchasesMap
+    // 3. Check in state.allUsersPurchasesMap
     if (!createdAt && state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
         const pObj = state.allUsersPurchasesMap[cleanUser];
         createdAt = pObj.createdAt || pObj.created_at || pObj.registeredAt;
     }
 
-    // 3. Check in SessionStorage & LocalStorage caches
+    // 4. Check in SessionStorage & LocalStorage caches
     if (!createdAt) {
         try {
             createdAt = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(`created_${cleanUser}`)) ||
@@ -182,11 +186,14 @@ export function getUserJoinRound(userId) {
         } catch(e) {}
     }
 
-    // 4. Check window.currentUser if matching
-    if (!createdAt && typeof window !== 'undefined' && window.currentUser) {
-        const cId = (window.currentUser.userId || window.currentUser.id || '').toLowerCase().trim();
-        if (cId === cleanUser) {
-            createdAt = window.currentUser.createdAt || window.currentUser.created_at || (window.currentUser.agreementDoc && window.currentUser.agreementDoc.createdAt);
+    // 5. Check window.currentUser / window.__currentUser if matching
+    if (!createdAt && typeof window !== 'undefined') {
+        const curUser = window.__currentUser || window.currentUser;
+        if (curUser) {
+            const cId = (curUser.userId || curUser.id || '').toLowerCase().trim();
+            if (cId === cleanUser) {
+                createdAt = curUser.createdAt || curUser.created_at || (curUser.agreementDoc && curUser.agreementDoc.createdAt);
+            }
         }
     }
 
@@ -220,11 +227,28 @@ export function getUserJoinRound(userId) {
         } catch(e) {}
     }
 
+    // Fallback for Kakao users (Kakao login service was launched at Round 1240 in Sept 2026)
+    if (cleanUser.startsWith('kakao_')) {
+        return 1240;
+    }
+
     // Default starting round for 7-quant algorithm review is 1235
     return 1235;
 }
 
 const _user70ReviewCache = {};
+
+/**
+ * In-memory cache reset for user recommendations review
+ */
+export function clearUser70ReviewCache() {
+    for (const k in _user70ReviewCache) {
+        delete _user70ReviewCache[k];
+    }
+}
+if (typeof window !== 'undefined') {
+    window.clearUser70ReviewCache = clearUser70ReviewCache;
+}
 
 /**
  * Computes all 70 recommended combinations and evaluates winnings for a specific user and round
@@ -598,8 +622,8 @@ export function updateReviewRoundSelector(selectedRound = null) {
         minReviewRound = Math.max(1235, getUserJoinRound(cleanAuth));
     } else {
         const viewingUser = (reviewAdminViewingUser || 'all').trim().toLowerCase();
-        const isViewingSelfOrAll = (viewingUser === 'all' || viewingUser === cleanAuth || viewingUser === 'master' || viewingUser === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(viewingUser)));
-        if (!isViewingSelfOrAll) {
+        const isAll = (viewingUser === 'all');
+        if (!isAll && viewingUser !== 'master' && viewingUser !== 'admin') {
             minReviewRound = Math.max(1235, getUserJoinRound(viewingUser));
         } else {
             minReviewRound = 1235;

@@ -62,18 +62,34 @@ export function handleLogout() {
     const currId = SafeAuth.get();
     SafeAuth.clear();
     if (currId) {
-        try { window.sessionStorage.removeItem(`perm_${currId.toLowerCase()}`); } catch(e){}
-        try { window.localStorage.removeItem(`perm_${currId.toLowerCase()}`); } catch(e){}
-        try { window.sessionStorage.removeItem(`role_${currId.toLowerCase()}`); } catch(e){}
-        try { window.localStorage.removeItem(`role_${currId.toLowerCase()}`); } catch(e){}
+        const cLower = currId.toLowerCase().trim();
+        try { window.sessionStorage.removeItem(`perm_${cLower}`); } catch(e){}
+        try { window.localStorage.removeItem(`perm_${cLower}`); } catch(e){}
+        try { window.sessionStorage.removeItem(`role_${cLower}`); } catch(e){}
+        try { window.localStorage.removeItem(`role_${cLower}`); } catch(e){}
+        try { window.sessionStorage.removeItem(`created_${cLower}`); } catch(e){}
+        try { window.localStorage.removeItem(`created_${cLower}`); } catch(e){}
+        try { window.localStorage.removeItem(`lotto_user_created_${cLower}`); } catch(e){}
+        try { window.sessionStorage.removeItem(`name_${cLower}`); } catch(e){}
+        try { window.localStorage.removeItem(`name_${cLower}`); } catch(e){}
     }
     if (typeof window !== 'undefined') {
         window.__permUsers = {};
+        window.__adminUsers = {};
+        window.__userNames = {};
+        window.__userCreatedMap = {};
+        window.__currentUser = null;
+        if (typeof window.clearUser70ReviewCache === 'function') {
+            window.clearUser70ReviewCache();
+        }
         if (window.lottoState) {
             window.lottoState.globalLedger = {};
             window.lottoState.allUsersPurchasesMap = {};
             window.lottoState.allUsersMergedLedger = null;
             window.lottoState.ledgerFinancialsCache = null;
+            window.lottoState.allRegisteredUsersList = [];
+            window.lottoState.localComboCache = {};
+            window.lottoState.userRecommendationSnapshots = {};
         }
     }
     try { window.sessionStorage.clear(); } catch(e){}
@@ -915,12 +931,26 @@ export function setupAuthEvents(initFirebaseAndData) {
                                     showToast(`👋 [${nickname}]님, 카카오 간편 로그인되었습니다!`);
                                 }
 
-                                // Update local session
+                                const existingData = userDoc.exists ? (userDoc.data() || {}) : {};
+                                const userRole = existingData.role || 'user';
+                                const userRealName = existingData.realName || nickname;
+                                const userCreatedAt = existingData.createdAt || existingData.created_at || (existingData.agreementDoc && existingData.agreementDoc.createdAt) || (userDoc.exists ? null : now.toISOString()) || new Date().toISOString();
+                                const isAdm = !!(userRole === 'admin' || existingData.isAdmin === true);
+                                const isPerm = !!(isAdm || existingData.isPermanent === true || existingData.userType === 'permanent');
+
+                                // Update local session & caches synchronously
                                 SafeAuth.set(customUserId);
+                                setUserCreatedCache(customUserId, userCreatedAt);
+                                setIsAdminCache(customUserId, isAdm);
+                                setIsPermanentCache(customUserId, isPerm);
+                                setUserNameCache(customUserId, userRealName);
+
                                 window.__currentUser = {
                                     userId: customUserId,
-                                    realName: nickname,
-                                    role: 'user',
+                                    realName: userRealName,
+                                    role: userRole,
+                                    isAdmin: isAdm,
+                                    createdAt: userCreatedAt,
                                     authProvider: 'kakao'
                                 };
 
@@ -1732,6 +1762,19 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
                 showToast(`🎉 [${rawId}] 회원가입 및 전자 서약서 체결이 완료되었습니다!`);
                 SafeAuth.set(rawId);
+                setUserCreatedCache(rawId, now.toISOString());
+                setUserNameCache(rawId, realName || rawId);
+                setIsAdminCache(rawId, false);
+                setIsPermanentCache(rawId, false);
+
+                window.__currentUser = {
+                    userId: rawId,
+                    realName: realName || rawId,
+                    role: 'user',
+                    isAdmin: false,
+                    createdAt: now.toISOString(),
+                    authProvider: 'password'
+                };
 
                 // ✅ Immediately hide modal & show landing page after signup
                 const signupModal = document.getElementById('loginModalOverlay');
@@ -1936,8 +1979,22 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
                     const isPerm = !!(data.isAdmin === true || data.role === 'admin' || data.isPermanent === true || data.isPermanent === 'true' || data.userType === 'permanent');
                     const isAdm = !!(data.isAdmin === true || data.role === 'admin' || rawId.toLowerCase() === 'master' || rawId.toLowerCase() === 'admin');
+                    const userCreatedAt = data.createdAt || data.created_at || (data.agreementDoc && data.agreementDoc.createdAt);
+                    const userRealName = data.realName || rawId;
+
                     setIsPermanentCache(rawId, isPerm);
                     setIsAdminCache(rawId, isAdm);
+                    if (userCreatedAt) setUserCreatedCache(rawId, userCreatedAt);
+                    if (userRealName) setUserNameCache(rawId, userRealName);
+
+                    window.__currentUser = {
+                        userId: rawId,
+                        realName: userRealName,
+                        role: data.role || (isAdm ? 'admin' : 'user'),
+                        isAdmin: isAdm,
+                        createdAt: userCreatedAt,
+                        authProvider: data.authProvider || 'password'
+                    };
 
                     // Reset fail count & migrate legacy plaintext if needed
                     const updatePayload = {
@@ -1951,7 +2008,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     }
 
                     await docRef.update(updatePayload);
-                    unlockUIImmediately(rawId, `👋 ${data.realName || rawId}님 환영합니다!`);
+                    unlockUIImmediately(rawId, `👋 ${userRealName}님 환영합니다!`);
                 } else {
                     // Failed login handling
                     const failCount = (data.loginFailCount || 0) + 1;

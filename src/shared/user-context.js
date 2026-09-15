@@ -121,12 +121,16 @@ export const UserContextManager = {
         cleanId = cleanId.toLowerCase().trim();
 
         if (cleanId === 'master' || cleanId === 'admin' || cleanId === 'all') return 1235;
-        if (typeof isAdminUser === 'function' && isAdminUser(cleanId)) return 1235;
 
         const createdAt = this.getUserCreatedAt(cleanId);
         if (createdAt) {
             const calced = LottoTimeService.calcRoundFromDate(createdAt);
             return Math.max(calced, 1235);
+        }
+
+        // Fallback for Kakao users (Kakao login service was launched at Round 1240 in Sept 2026)
+        if (cleanId.startsWith('kakao_')) {
+            return 1240;
         }
 
         return 1235;
