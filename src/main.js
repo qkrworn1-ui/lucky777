@@ -90,6 +90,21 @@ window.showLotto = function() {
 
 function runInit() {
     console.log('[System] Initializing decoupled independent services...');
+
+    // 0. Auto Cache-Bust on version mismatch
+    try {
+        const curAppVer = (typeof window !== 'undefined' && window.APP_VERSION) ? window.APP_VERSION : 'latest';
+        const lastSavedVer = localStorage.getItem('lucky777_last_app_version');
+        if (lastSavedVer !== curAppVer) {
+            console.log(`[Version Sync] App version update detected (${lastSavedVer} -> ${curAppVer}). Purging stale caches...`);
+            localStorage.removeItem('lotto_all_users_list_cache');
+            if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
+                window.clearUser70ReviewCache();
+            }
+            localStorage.setItem('lucky777_last_app_version', curAppVer);
+        }
+    } catch(e) {}
+
     try {
         if (typeof window.updateAppVersionBadges === 'function') {
             window.updateAppVersionBadges();
@@ -128,9 +143,22 @@ function runInit() {
     }, 20);
 }
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', runInit);
-} else {
-    runInit();
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', runInit);
+    } else {
+        runInit();
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+            if (typeof window.checkLatestBuildVersion === 'function') {
+                window.checkLatestBuildVersion(true);
+            }
+            if (typeof renderLandingDashboard === 'function') {
+                renderLandingDashboard();
+            }
+        }
+    });
 }
 

@@ -2,7 +2,7 @@ import { state } from '../services/lotto/state.js';
 import { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUsersPurchases } from '../services/lotto/ledger.js';
 import { SafeAuth, getUserRealName } from './auth-mgmt.js';
 import { isSystemOrDummyUser } from './utils.js';
-import { computeUser70RecommendationsReview } from '../services/lotto/views/review-tab.js';
+import { computeUser70RecommendationsReview, clearUser70ReviewCache } from '../services/lotto/views/review-tab.js';
 
 /**
  * Update Compact Financial & Actual Winning History Summary on Landing Page
