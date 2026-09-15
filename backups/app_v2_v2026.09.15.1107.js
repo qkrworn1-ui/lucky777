@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.15.1114 - BUILD_DATE: 2026-09-15] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.15.1107 - BUILD_DATE: 2026-09-15] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.15.1114)
+ * Lucky777 Smart Bundle (v2026.09.15.1107)
  */
 
 
@@ -9964,7 +9964,7 @@ const __M_services_lotto_generator = (function() {
     try {
 const { state, getHistoricalDrawData, saveGlobalState } = __M_services_lotto_state;
 const { calculateStats } = __M_services_lotto_scoring;
-const { calculateACValue, isSystemOrDummyUser } = __M_shared_utils;
+const { calculateACValue } = __M_shared_utils;
 const { getLedger, getHistoricalTop10Combinations: getHistCombo } = __M_services_lotto_ledger;
 const { recalculateGroups } = __M_services_lotto_statistics;
 const { SafeAuth, getUserRealName } = __M_shared_auth_mgmt;
@@ -11233,7 +11233,7 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (isSystemOrDummyUser(cleanUser) || cleanUser.startsWith('{') || cleanUser.startsWith('test_') || cleanUser === 'user_alpha' || cleanUser === 'user_beta' || cleanUser === 'sample' || cleanUser === 'hms') {
+    if (cleanUser.startsWith('{') || cleanUser.startsWith('test_') || cleanUser === 'user_alpha' || cleanUser === 'user_beta' || cleanUser === 'sample' || cleanUser === 'hms') {
         return null;
     }
     const roundNum = parseInt(round, 10);
@@ -16304,7 +16304,7 @@ const __M_services_lotto_views_generator_tab = (function() {
     const __exports = {};
     try {
 const { state, saveGlobalState } = __M_services_lotto_state;
-const { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } = __M_shared_utils;
+const { getBallColorClass, getBallHexColor, showToast } = __M_shared_utils;
 const { createBallHtml } = __M_shared_components;
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot } = __M_services_lotto_generator;
 const { db } = __M_shared_db;
@@ -16923,7 +16923,7 @@ async function renderTop5Combinations(isRollingAnimation = false) {
         }
 
         // 🔒 차기 회차에 대해 사용자별 7대 알고리즘 영구 불변 스냅샷 자동 생성/보존 (Write-Once)
-        if (typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
+        if (typeof saveUserWeeklyRecommendationSnapshot === 'function') {
             saveUserWeeklyRecommendationSnapshot(effectiveUserId, curUpcomingRound).catch(e => console.warn('[Auto Snapshot Error]', e));
         }
 

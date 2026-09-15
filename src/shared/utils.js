@@ -49,6 +49,25 @@ export function formatDate(date) {
     return `${yyyy}. ${mm}. ${dd}`;
 }
 
+export function isSystemOrDummyUser(userId) {
+    if (!userId) return true;
+    let clean = String(userId).trim().toLowerCase();
+    if (clean.startsWith('{')) {
+        try {
+            const p = JSON.parse(clean);
+            clean = (p.userid || p.userId || clean).trim().toLowerCase();
+        } catch(e) {}
+    }
+    if (!clean) return true;
+    if (clean === 'all' || clean === 'guest' || clean === 'admin' || clean === 'app_latest_version' ||
+        clean === 'global_trash' || clean === 'global_state' || clean === 'global_saved' || clean === 'extra_history' ||
+        clean === 'user_alpha' || clean === 'user_beta' || clean === 'sample' || clean === 'hms' ||
+        clean.startsWith('test_') || clean.startsWith('{')) {
+        return true;
+    }
+    return false;
+}
+
 export function calculateACValue(nums) {
     let diffs = new Set();
     for(let i=0; i<nums.length; i++) {

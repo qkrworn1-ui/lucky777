@@ -44,6 +44,9 @@ export function aggregateAllStatistics() {
     });
     state.latestRoundNum = maxRound;
     state.nextRoundNum = maxRound + 1;
+    state.PREVIOUS_DRAW = (maxRound > 0 && state.mergedHistory[maxRound]?.numbers && Array.isArray(state.mergedHistory[maxRound].numbers))
+        ? [...state.mergedHistory[maxRound].numbers]
+        : [];
 }
 
 /** Reclassify HOT/COLD/OVERDUE groups based on current frequency data */

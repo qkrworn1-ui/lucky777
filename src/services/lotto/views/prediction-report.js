@@ -31,11 +31,10 @@ export function generatePredictionReport() {
             authId = p.userid || p.userId || authId;
         } catch(e) {}
     }
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const viewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
+    const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) : null;
     const effectiveUserId = (isAdmin && viewingUser && viewingUser !== 'all') 
         ? viewingUser 
-        : ((isAdmin && viewingUser === 'all') ? 'all' : (authId || 'master'));
+        : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? 'all' : (authId || 'master')));
 
     const realName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || '';
     let displayName = realName;

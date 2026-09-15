@@ -1,5 +1,5 @@
 import { state, saveGlobalState } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast } from '../../../shared/utils.js';
+import { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml } from '../../../shared/components.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot } from '../generator.js';
 import { db } from '../../../shared/db.js';
@@ -79,10 +79,11 @@ export function render7AlgorithmsRealReviewSection() {
     }
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     
-    // 🔒 해당 사용자의 고유 추천번호 당첨 결과 기본 표시 (관리자가 특정 회원/전체를 명시적으로 선택한 경우에만 해당 대상 표시)
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser && generatorAdminViewingUser !== 'all') 
-        ? generatorAdminViewingUser 
-        : ((isAdmin && generatorAdminViewingUser === 'all') ? 'all' : (authId || 'master'));
+    // 🔒 해당 사용자의 고유 추천번호 당첨 결과 기본 표시 (관리자 기본값은 'all' 전체 회원 종합)
+    const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) : null;
+    const effectiveUserId = (isAdmin && viewingUser && viewingUser !== 'all') 
+        ? viewingUser 
+        : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? 'all' : (authId || 'master')));
 
     const realName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || '';
     let displayName = realName;
@@ -487,7 +488,10 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
     try {
         const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
         const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-        const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
+        const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) : null;
+        const effectiveUserId = (isAdmin && viewingUser && viewingUser !== 'all') 
+            ? viewingUser 
+            : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? 'all' : authId));
 
         if (typeof render7AlgorithmsRealReviewSection === 'function') {
             render7AlgorithmsRealReviewSection();
@@ -614,7 +618,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         }
 
         // 🔒 차기 회차에 대해 사용자별 7대 알고리즘 영구 불변 스냅샷 자동 생성/보존 (Write-Once)
-        if (typeof saveUserWeeklyRecommendationSnapshot === 'function') {
+        if (typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
             saveUserWeeklyRecommendationSnapshot(effectiveUserId, curUpcomingRound).catch(e => console.warn('[Auto Snapshot Error]', e));
         }
 
@@ -1778,9 +1782,12 @@ export function handleClearExtraPacks() {
 export function changeGeneratorAdminViewingUser(userId) {
     generatorAdminViewingUser = userId;
     if (typeof window !== 'undefined') {
+        window.selectedAdminViewingUser = userId;
         window.generatorAdminViewingUser = userId;
+        window.algoAdminViewingUser = userId;
+        window.reviewAdminViewingUser = userId;
     }
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1241);
     const targetCombosUser = (userId === 'all') ? 'master' : userId;
     
     // Recalculate deterministic recommendations for selected user
@@ -1790,6 +1797,7 @@ export function changeGeneratorAdminViewingUser(userId) {
     renderTop5Combinations();
     renderExtraAddonPacksSection();
     render7AlgorithmsRealReviewSection();
+    if (typeof generatePredictionReport === 'function') generatePredictionReport();
     // If Quick View (간편보기) modal is currently open, dynamically refresh its content
     if (typeof window !== 'undefined' && typeof window.renderQuickViewContent === 'function') {
         const compactModal = document.getElementById('compactViewModal');

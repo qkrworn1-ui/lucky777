@@ -512,14 +512,18 @@ export async function renderReviewTab() {
 
         if (!isAdmin) {
             reviewAdminViewingUser = authId;
+            if (typeof window !== 'undefined') window.selectedAdminViewingUser = authId;
             const existingAdminContainer = document.getElementById('reviewAdminUserFilterContainer');
             if (existingAdminContainer) existingAdminContainer.remove();
             if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
                 await fetchAllUsersPurchases();
             }
         } else {
-            if (!reviewAdminViewingUser) {
+            if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
+                reviewAdminViewingUser = window.selectedAdminViewingUser;
+            } else if (!reviewAdminViewingUser) {
                 reviewAdminViewingUser = 'all';
+                if (typeof window !== 'undefined') window.selectedAdminViewingUser = 'all';
             }
             if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
                 await fetchAllUsersPurchases();
@@ -2216,6 +2220,11 @@ export function renderReviewDetail(r) {
 
 export function changeReviewAdminUser(userId) {
     reviewAdminViewingUser = userId;
+    if (typeof window !== 'undefined') {
+        window.selectedAdminViewingUser = userId;
+        window.generatorAdminViewingUser = userId;
+        window.algoAdminViewingUser = userId;
+    }
     const adminSel = document.getElementById('reviewAdminUserSelect');
     if (adminSel) {
         adminSel.value = userId;

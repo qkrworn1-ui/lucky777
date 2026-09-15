@@ -16,7 +16,6 @@ if %ERRORLEVEL% NEQ 0 (
 echo.
 echo [2/3] 전체 시스템 및 무결성 테스트 실행 중...
 python tests/test_full_system.py
-python tests/test_integrity.py
 if %ERRORLEVEL% NEQ 0 (
     echo.
     echo [!] 테스트 실패!

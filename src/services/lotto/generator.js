@@ -1,6 +1,6 @@
 import { state, getHistoricalDrawData, saveGlobalState } from './state.js';
 import { calculateStats } from './scoring.js';
-import { calculateACValue } from '../../shared/utils.js';
+import { calculateACValue, isSystemOrDummyUser } from '../../shared/utils.js';
 import { getLedger, getHistoricalTop10Combinations as getHistCombo } from './ledger.js';
 import { recalculateGroups } from './statistics.js';
 import { SafeAuth, getUserRealName } from '../../shared/auth-mgmt.js';
@@ -900,328 +900,358 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
     const cfg = packMetas[pIdx];
     const generatedCombos = [];
 
-    // 1. Analyze Base 20 Games (V3.0 + V4.0) for this user & round
-    const v3Combos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId) || [];
-    const v4Combos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId) || [];
-    
-    // Frequency count of numbers used in Base 20 games
-    const baseUsageCounts = {};
-    for (let n = 1; n <= 45; n++) baseUsageCounts[n] = 0;
-    [...v3Combos, ...v4Combos].forEach(c => {
-        const nums = c.numbers || [];
-        nums.forEach(n => { if (baseUsageCounts[n] !== undefined) baseUsageCounts[n]++; });
-    });
+    const drawnRounds = Object.keys(state.mergedHistory || {})
+        .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers))
+        .map(Number);
+    const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1237;
+    const needHistoryIsolation = (targetRound !== null && targetRound <= maxKnownDrawnRound);
+    const backupHistory = {};
 
-    // Extract Missing Numbers (Used 0 times in Base 20) & Low Used Numbers
-    const missingNumbers = [];
-    const lowUsedNumbers = [];
-    for (let n = 1; n <= 45; n++) {
-        if (baseUsageCounts[n] === 0) missingNumbers.push(n);
-        else if (baseUsageCounts[n] === 1) lowUsedNumbers.push(n);
+    if (needHistoryIsolation) {
+        for (let key in state.mergedHistory) {
+            if (parseInt(key) >= targetRound) {
+                backupHistory[key] = state.mergedHistory[key];
+                delete state.mergedHistory[key];
+            }
+        }
+        recalculateGroups();
     }
 
-    // Calculate Global Quant Weights for each number (1~45)
-    const quantWeights = {};
-    for (let n = 1; n <= 45; n++) {
-        let freq = (state.HISTORICAL_FREQUENCY && state.HISTORICAL_FREQUENCY[n]) ? state.HISTORICAL_FREQUENCY[n] : 25;
-        let score = freq * 1.0;
+    try {
+        // 1. Analyze Base 20 Games (V3.0 + V4.0) for this user & round
+        const v3Combos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId) || [];
+        const v4Combos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId) || [];
+        
+        // Frequency count of numbers used in Base 20 games
+        const baseUsageCounts = {};
+        for (let n = 1; n <= 45; n++) baseUsageCounts[n] = 0;
+        [...v3Combos, ...v4Combos].forEach(c => {
+            const nums = c.numbers || [];
+            nums.forEach(n => { if (baseUsageCounts[n] !== undefined) baseUsageCounts[n]++; });
+        });
 
-        // Markov score from previous draw
-        if (state.PREVIOUS_DRAW && state.PREVIOUS_DRAW.length > 0 && state.TRANSITION_MATRIX) {
-            let mScore = 0;
-            state.PREVIOUS_DRAW.forEach(prev => {
-                if (state.TRANSITION_MATRIX[prev] && state.TRANSITION_MATRIX[prev][n]) {
-                    mScore += state.TRANSITION_MATRIX[prev][n];
+        // Extract Missing Numbers (Used 0 times in Base 20) & Low Used Numbers
+        const missingNumbers = [];
+        const lowUsedNumbers = [];
+        for (let n = 1; n <= 45; n++) {
+            if (baseUsageCounts[n] === 0) missingNumbers.push(n);
+            else if (baseUsageCounts[n] === 1) lowUsedNumbers.push(n);
+        }
+
+        // Calculate Global Quant Weights for each number (1~45)
+        const quantWeights = {};
+        for (let n = 1; n <= 45; n++) {
+            let freq = (state.HISTORICAL_FREQUENCY && state.HISTORICAL_FREQUENCY[n]) ? state.HISTORICAL_FREQUENCY[n] : 25;
+            let score = freq * 1.0;
+
+            // Markov score from previous draw
+            if (state.PREVIOUS_DRAW && state.PREVIOUS_DRAW.length > 0 && state.TRANSITION_MATRIX) {
+                let mScore = 0;
+                state.PREVIOUS_DRAW.forEach(prev => {
+                    if (state.TRANSITION_MATRIX[prev] && state.TRANSITION_MATRIX[prev][n]) {
+                        mScore += state.TRANSITION_MATRIX[prev][n];
+                    }
+                });
+                score += (mScore / state.PREVIOUS_DRAW.length) * 1.5;
+            }
+
+            // Consecutive carry-over probability
+            if (state.PREVIOUS_DRAW && state.PREVIOUS_DRAW.includes(n)) {
+                score += 15.0;
+            }
+
+            quantWeights[n] = Math.max(1, score);
+        }
+
+        // Top 8 Global Hot Anchors
+        const topHotAnchors = Object.keys(quantWeights)
+            .map(Number)
+            .sort((a, b) => quantWeights[b] - quantWeights[a])
+            .slice(0, 8);
+
+        // Weighted random selection helper
+        function pickWeightedNumber(pool, excludedSet) {
+            const validPool = pool.filter(n => !excludedSet.has(n));
+            if (validPool.length === 0) return null;
+            let totalW = 0;
+            validPool.forEach(n => { totalW += (quantWeights[n] || 10); });
+            let r = packRandom() * totalW;
+            for (const n of validPool) {
+                r -= (quantWeights[n] || 10);
+                if (r <= 0) return n;
+            }
+            return validPool[validPool.length - 1];
+        }
+
+        // 7-Point Quant Combo Validator
+        function validateQuantCombo(nums, packId) {
+            if (!nums || nums.length !== 6) return false;
+            
+            // 1. Sum Range
+            const sum = nums.reduce((a, b) => a + b, 0);
+            if (packId === 2) {
+                if (sum < 125 || sum > 220) return false;
+            } else {
+                if (sum < 95 || sum > 195) return false;
+            }
+
+            // 2. AC Value (Arithmetic Complexity >= 7)
+            const ac = calculateACValue(nums);
+            if (ac < 7) return false;
+
+            // 3. Odd / Even Ratio (2:4, 3:3, 4:2)
+            const odds = nums.filter(n => n % 2 !== 0).length;
+            if (odds < 2 || odds > 4) return false;
+
+            // 4. Low / High Ratio (1~22 vs 23~45)
+            const lows = nums.filter(n => n <= 22).length;
+            if (packId !== 2) {
+                if (lows < 2 || lows > 4) return false;
+            }
+
+            // 5. No 3 Consecutive Numbers (e.g. 14, 15, 16 prohibited)
+            let consecCount = 0;
+            for (let j = 0; j < nums.length - 1; j++) {
+                if (nums[j + 1] - nums[j] === 1) {
+                    consecCount++;
+                    if (j < nums.length - 2 && nums[j + 2] - nums[j + 1] === 1) {
+                        return false; // 3 consecutives
+                    }
+                }
+            }
+            if (packId === 2) {
+                if (consecCount < 1) return false;
+            } else {
+                if (consecCount > 1) return false;
+            }
+
+            // 6. Last Digit Redundancy (Max 2 numbers sharing same ending digit)
+            const lastDigits = {};
+            for (const n of nums) {
+                const d = n % 10;
+                lastDigits[d] = (lastDigits[d] || 0) + 1;
+                if (lastDigits[d] > 2) return false;
+            }
+
+            // 7. Color Section Diversity (At least 3 distinct color sections)
+            const colors = new Set();
+            for (const n of nums) {
+                if (n <= 10) colors.add('Y');
+                else if (n <= 20) colors.add('B');
+                else if (n <= 30) colors.add('R');
+                else if (n <= 40) colors.add('G');
+                else colors.add('Gr');
+            }
+            if (colors.size < 3) return false;
+
+            return true;
+        }
+
+        // Partition missing numbers evenly across 10 games for Pack 1
+        // Ensures 100% of missing numbers are covered in the 10 games of Pack 1!
+        const pack1MissingDistribution = Array.from({ length: 10 }, () => []);
+        if (missingNumbers.length > 0) {
+            missingNumbers.forEach((num, idx) => {
+                const gameIdx = idx % 10;
+                pack1MissingDistribution[gameIdx].push(num);
+            });
+            let lowIdx = 0;
+            for (let g = 0; g < 10; g++) {
+                while (pack1MissingDistribution[g].length < 2 && lowIdx < lowUsedNumbers.length) {
+                    pack1MissingDistribution[g].push(lowUsedNumbers[lowIdx++]);
+                }
+            }
+        }
+
+        const allNumbers1To45 = Array.from({ length: 45 }, (_, i) => i + 1);
+
+        for (let i = 0; i < 10; i++) {
+            let attempts = 0;
+            let bestNums = null;
+
+            while (attempts < 6000) {
+                attempts++;
+                const candidate = new Set();
+
+                if (pIdx === 1) {
+                    // ====================================================
+                    // Pack 1: 30-Game Keystone Coverage 100% + Top Anchor Matrix
+                    // ====================================================
+                    const assignedMissing = pack1MissingDistribution[i] || [];
+                    assignedMissing.forEach(n => candidate.add(n));
+
+                    const anchor1 = topHotAnchors[i % topHotAnchors.length];
+                    const anchor2 = topHotAnchors[(i + 3) % topHotAnchors.length];
+                    candidate.add(anchor1);
+                    if (packRandom() < 0.6) candidate.add(anchor2);
+
+                    while (candidate.size < 6) {
+                        const picked = pickWeightedNumber(allNumbers1To45, candidate);
+                        if (picked) candidate.add(picked);
+                        else candidate.add(Math.floor(packRandom() * 45) + 1);
+                    }
+
+                } else if (pIdx === 2) {
+                    // ====================================================
+                    // Pack 2: High EV Monopoly (High Numbers 30~45 + 2 Consecutive Pair)
+                    // ====================================================
+                    const highStart = 30 + Math.floor(packRandom() * 14);
+                    candidate.add(highStart);
+                    candidate.add(highStart + 1);
+
+                    const highPool = [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
+                    while (candidate.size < 5) {
+                        const n = pickWeightedNumber(highPool, candidate);
+                        if (n) candidate.add(n);
+                        else break;
+                    }
+
+                    while (candidate.size < 6) {
+                        const n = pickWeightedNumber(allNumbers1To45, candidate);
+                        if (n) candidate.add(n);
+                        else candidate.add(Math.floor(packRandom() * 45) + 1);
+                    }
+
+                } else if (pIdx === 3) {
+                    // ====================================================
+                    // Pack 3: Geometric Harmonic 5-Section Balanced Wheeling
+                    // ====================================================
+                    const sec1 = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                    const sec2 = [10, 11, 12, 13, 14, 15, 16, 17, 18];
+                    const sec3 = [19, 20, 21, 22, 23, 24, 25, 26, 27];
+                    const sec4 = [28, 29, 30, 31, 32, 33, 34, 35, 36];
+                    const sec5 = [37, 38, 39, 40, 41, 42, 43, 44, 45];
+
+                    candidate.add(pickWeightedNumber(sec1, candidate) || sec1[i % sec1.length]);
+                    candidate.add(pickWeightedNumber(sec2, candidate) || sec2[i % sec2.length]);
+                    candidate.add(pickWeightedNumber(sec3, candidate) || sec3[i % sec3.length]);
+                    candidate.add(pickWeightedNumber(sec4, candidate) || sec4[i % sec4.length]);
+                    candidate.add(pickWeightedNumber(sec5, candidate) || sec5[i % sec5.length]);
+
+                    while (candidate.size < 6) {
+                        const picked = pickWeightedNumber(allNumbers1To45, candidate);
+                        if (picked) candidate.add(picked);
+                        else candidate.add(Math.floor(packRandom() * 45) + 1);
+                    }
+
+                } else if (pIdx === 4) {
+                    // ====================================================
+                    // Pack 4: Markov 2nd-Order Transition & Top Pair Matrix
+                    // ====================================================
+                    if (state.PREVIOUS_DRAW && state.PREVIOUS_DRAW.length > 0) {
+                        const pNum = state.PREVIOUS_DRAW[i % state.PREVIOUS_DRAW.length];
+                        candidate.add(pNum);
+                    }
+
+                    if (state.PAIR_FREQUENCIES) {
+                        const anchor = Array.from(candidate)[0] || topHotAnchors[0];
+                        if (state.PAIR_FREQUENCIES[anchor]) {
+                            const bestPartner = Object.keys(state.PAIR_FREQUENCIES[anchor])
+                                .map(Number)
+                                .sort((a, b) => state.PAIR_FREQUENCIES[anchor][b] - state.PAIR_FREQUENCIES[anchor][a])[0];
+                            if (bestPartner) candidate.add(bestPartner);
+                        }
+                    }
+
+                    while (candidate.size < 6) {
+                        const picked = pickWeightedNumber(allNumbers1To45, candidate);
+                        if (picked) candidate.add(picked);
+                        else candidate.add(Math.floor(packRandom() * 45) + 1);
+                    }
+
+                } else {
+                    // ====================================================
+                    // Pack 5: Golden Clique Key Trios Master All-In
+                    // ====================================================
+                    const goldenTrios = [
+                        [1, 13, 38], [11, 29, 36], [4, 17, 43], [7, 16, 44], [10, 23, 37],
+                        [2, 18, 42], [5, 14, 31], [8, 20, 39], [3, 19, 35], [12, 26, 45]
+                    ];
+                    const trio = goldenTrios[i % goldenTrios.length];
+                    trio.forEach(n => candidate.add(n));
+
+                    while (candidate.size < 6) {
+                        const picked = pickWeightedNumber(allNumbers1To45, candidate);
+                        if (picked) candidate.add(picked);
+                        else candidate.add(Math.floor(packRandom() * 45) + 1);
+                    }
+                }
+
+                if (candidate.size === 6) {
+                    const sortedNums = Array.from(candidate).sort((a, b) => a - b);
+                    if (validateQuantCombo(sortedNums, pIdx)) {
+                        bestNums = sortedNums;
+                        break;
+                    }
+                }
+            }
+
+            if (!bestNums) {
+                const fallbackSet = new Set();
+                while (fallbackSet.size < 6) {
+                    fallbackSet.add(Math.floor(packRandom() * 45) + 1);
+                }
+                bestNums = Array.from(fallbackSet).sort((a, b) => a - b);
+            }
+
+            const stats = calculateStats(bestNums);
+            const ac = calculateACValue(bestNums);
+            const sum = bestNums.reduce((a, b) => a + b, 0);
+
+            generatedCombos.push({
+                id: `EXT${pIdx}-${i + 1}`,
+                name: `${cfg.name} (게임 ${i + 1})`,
+                numbers: bestNums,
+                stats: stats,
+                meta: {
+                    rankBadge: `추가 ${pIdx}-${i + 1}`,
+                    rankClass: `top-${(i % 5) + 1}-badge`,
+                    badgeClass: `strategy-b`,
+                    name: `${cfg.shortName} 게임 #${i + 1}`,
+                    tag: `합계 ${sum} | AC ${ac} | ${stats.evScore || 95}pt`,
+                    desc: cfg.desc,
+                    lawName: cfg.name,
+                    probRationale: cfg.tag,
+                    targetBenefit: cfg.shortName,
+                    numReasons: bestNums.map(n => {
+                        if (pIdx === 1 && missingNumbers.includes(n)) {
+                            return `${n}번: 기본 20게임 미선택 0회 번호 (100% 전수 커버리지 완성수)`;
+                        }
+                        if (pIdx === 2 && n >= 30) {
+                            return `${n}번: 30~45번대 고번호 (1등 당첨금 독점 타겟)`;
+                        }
+                        if (topHotAnchors.includes(n)) {
+                            return `${n}번: 퀀트 앙상블 상위 핫 앵커 번호`;
+                        }
+                        return `${n}번: ${cfg.shortName} 7대 퀀트 필터 통과 최적수`;
+                    })
                 }
             });
-            score += (mScore / state.PREVIOUS_DRAW.length) * 1.5;
         }
 
-        // Consecutive carry-over probability
-        if (state.PREVIOUS_DRAW && state.PREVIOUS_DRAW.includes(n)) {
-            score += 15.0;
+        const packResult = {
+            packId: pIdx,
+            name: cfg.name,
+            shortName: cfg.shortName,
+            badge: cfg.badge,
+            color: cfg.color,
+            desc: cfg.desc,
+            tag: cfg.tag,
+            combos: generatedCombos,
+            generatedAt: new Date().toISOString()
+        };
+        if (state.extraPackCache) {
+            state.extraPackCache[cacheKey] = packResult;
         }
-
-        quantWeights[n] = Math.max(1, score);
-    }
-
-    // Top 8 Global Hot Anchors
-    const topHotAnchors = Object.keys(quantWeights)
-        .map(Number)
-        .sort((a, b) => quantWeights[b] - quantWeights[a])
-        .slice(0, 8);
-
-    // Weighted random selection helper
-    function pickWeightedNumber(pool, excludedSet) {
-        const validPool = pool.filter(n => !excludedSet.has(n));
-        if (validPool.length === 0) return null;
-        let totalW = 0;
-        validPool.forEach(n => { totalW += (quantWeights[n] || 10); });
-        let r = packRandom() * totalW;
-        for (const n of validPool) {
-            r -= (quantWeights[n] || 10);
-            if (r <= 0) return n;
-        }
-        return validPool[validPool.length - 1];
-    }
-
-    // 7-Point Quant Combo Validator
-    function validateQuantCombo(nums, packId) {
-        if (!nums || nums.length !== 6) return false;
-        
-        // 1. Sum Range
-        const sum = nums.reduce((a, b) => a + b, 0);
-        if (packId === 2) {
-            if (sum < 125 || sum > 220) return false;
-        } else {
-            if (sum < 95 || sum > 195) return false;
-        }
-
-        // 2. AC Value (Arithmetic Complexity >= 7)
-        const ac = calculateACValue(nums);
-        if (ac < 7) return false;
-
-        // 3. Odd / Even Ratio (2:4, 3:3, 4:2)
-        const odds = nums.filter(n => n % 2 !== 0).length;
-        if (odds < 2 || odds > 4) return false;
-
-        // 4. Low / High Ratio (1~22 vs 23~45)
-        const lows = nums.filter(n => n <= 22).length;
-        if (packId !== 2) {
-            if (lows < 2 || lows > 4) return false;
-        }
-
-        // 5. No 3 Consecutive Numbers (e.g. 14, 15, 16 prohibited)
-        let consecCount = 0;
-        for (let j = 0; j < nums.length - 1; j++) {
-            if (nums[j + 1] - nums[j] === 1) {
-                consecCount++;
-                if (j < nums.length - 2 && nums[j + 2] - nums[j + 1] === 1) {
-                    return false; // 3 consecutives
-                }
+        return packResult;
+    } finally {
+        if (needHistoryIsolation) {
+            for (let key in backupHistory) {
+                state.mergedHistory[key] = backupHistory[key];
             }
-        }
-        if (packId === 2) {
-            if (consecCount < 1) return false;
-        } else {
-            if (consecCount > 1) return false;
-        }
-
-        // 6. Last Digit Redundancy (Max 2 numbers sharing same ending digit)
-        const lastDigits = {};
-        for (const n of nums) {
-            const d = n % 10;
-            lastDigits[d] = (lastDigits[d] || 0) + 1;
-            if (lastDigits[d] > 2) return false;
-        }
-
-        // 7. Color Section Diversity (At least 3 distinct color sections)
-        const colors = new Set();
-        for (const n of nums) {
-            if (n <= 10) colors.add('Y');
-            else if (n <= 20) colors.add('B');
-            else if (n <= 30) colors.add('R');
-            else if (n <= 40) colors.add('G');
-            else colors.add('Gr');
-        }
-        if (colors.size < 3) return false;
-
-        return true;
-    }
-
-    // Partition missing numbers evenly across 10 games for Pack 1
-    // Ensures 100% of missing numbers are covered in the 10 games of Pack 1!
-    const pack1MissingDistribution = Array.from({ length: 10 }, () => []);
-    if (missingNumbers.length > 0) {
-        missingNumbers.forEach((num, idx) => {
-            const gameIdx = idx % 10;
-            pack1MissingDistribution[gameIdx].push(num);
-        });
-        let lowIdx = 0;
-        for (let g = 0; g < 10; g++) {
-            while (pack1MissingDistribution[g].length < 2 && lowIdx < lowUsedNumbers.length) {
-                pack1MissingDistribution[g].push(lowUsedNumbers[lowIdx++]);
-            }
+            recalculateGroups();
         }
     }
-
-    const allNumbers1To45 = Array.from({ length: 45 }, (_, i) => i + 1);
-
-    for (let i = 0; i < 10; i++) {
-        let attempts = 0;
-        let bestNums = null;
-
-        while (attempts < 6000) {
-            attempts++;
-            const candidate = new Set();
-
-            if (pIdx === 1) {
-                // ====================================================
-                // Pack 1: 30-Game Keystone Coverage 100% + Top Anchor Matrix
-                // ====================================================
-                const assignedMissing = pack1MissingDistribution[i] || [];
-                assignedMissing.forEach(n => candidate.add(n));
-
-                const anchor1 = topHotAnchors[i % topHotAnchors.length];
-                const anchor2 = topHotAnchors[(i + 3) % topHotAnchors.length];
-                candidate.add(anchor1);
-                if (packRandom() < 0.6) candidate.add(anchor2);
-
-                while (candidate.size < 6) {
-                    const picked = pickWeightedNumber(allNumbers1To45, candidate);
-                    if (picked) candidate.add(picked);
-                    else candidate.add(Math.floor(packRandom() * 45) + 1);
-                }
-
-            } else if (pIdx === 2) {
-                // ====================================================
-                // Pack 2: High EV Monopoly (High Numbers 30~45 + 2 Consecutive Pair)
-                // ====================================================
-                const highStart = 30 + Math.floor(packRandom() * 14);
-                candidate.add(highStart);
-                candidate.add(highStart + 1);
-
-                const highPool = [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
-                while (candidate.size < 5) {
-                    const n = pickWeightedNumber(highPool, candidate);
-                    if (n) candidate.add(n);
-                    else break;
-                }
-
-                while (candidate.size < 6) {
-                    const n = pickWeightedNumber(allNumbers1To45, candidate);
-                    if (n) candidate.add(n);
-                    else candidate.add(Math.floor(packRandom() * 45) + 1);
-                }
-
-            } else if (pIdx === 3) {
-                // ====================================================
-                // Pack 3: Geometric Harmonic 5-Section Balanced Wheeling
-                // ====================================================
-                const sec1 = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-                const sec2 = [10, 11, 12, 13, 14, 15, 16, 17, 18];
-                const sec3 = [19, 20, 21, 22, 23, 24, 25, 26, 27];
-                const sec4 = [28, 29, 30, 31, 32, 33, 34, 35, 36];
-                const sec5 = [37, 38, 39, 40, 41, 42, 43, 44, 45];
-
-                candidate.add(pickWeightedNumber(sec1, candidate) || sec1[i % sec1.length]);
-                candidate.add(pickWeightedNumber(sec2, candidate) || sec2[i % sec2.length]);
-                candidate.add(pickWeightedNumber(sec3, candidate) || sec3[i % sec3.length]);
-                candidate.add(pickWeightedNumber(sec4, candidate) || sec4[i % sec4.length]);
-                candidate.add(pickWeightedNumber(sec5, candidate) || sec5[i % sec5.length]);
-
-                while (candidate.size < 6) {
-                    const picked = pickWeightedNumber(allNumbers1To45, candidate);
-                    if (picked) candidate.add(picked);
-                    else candidate.add(Math.floor(packRandom() * 45) + 1);
-                }
-
-            } else if (pIdx === 4) {
-                // ====================================================
-                // Pack 4: Markov 2nd-Order Transition & Top Pair Matrix
-                // ====================================================
-                if (state.PREVIOUS_DRAW && state.PREVIOUS_DRAW.length > 0) {
-                    const pNum = state.PREVIOUS_DRAW[i % state.PREVIOUS_DRAW.length];
-                    candidate.add(pNum);
-                }
-
-                if (state.PAIR_FREQUENCIES) {
-                    const anchor = Array.from(candidate)[0] || topHotAnchors[0];
-                    if (state.PAIR_FREQUENCIES[anchor]) {
-                        const bestPartner = Object.keys(state.PAIR_FREQUENCIES[anchor])
-                            .map(Number)
-                            .sort((a, b) => state.PAIR_FREQUENCIES[anchor][b] - state.PAIR_FREQUENCIES[anchor][a])[0];
-                        if (bestPartner) candidate.add(bestPartner);
-                    }
-                }
-
-                while (candidate.size < 6) {
-                    const picked = pickWeightedNumber(allNumbers1To45, candidate);
-                    if (picked) candidate.add(picked);
-                    else candidate.add(Math.floor(packRandom() * 45) + 1);
-                }
-
-            } else {
-                // ====================================================
-                // Pack 5: Golden Clique Key Trios Master All-In
-                // ====================================================
-                const goldenTrios = [
-                    [1, 13, 38], [11, 29, 36], [4, 17, 43], [7, 16, 44], [10, 23, 37],
-                    [2, 18, 42], [5, 14, 31], [8, 20, 39], [3, 19, 35], [12, 26, 45]
-                ];
-                const trio = goldenTrios[i % goldenTrios.length];
-                trio.forEach(n => candidate.add(n));
-
-                while (candidate.size < 6) {
-                    const picked = pickWeightedNumber(allNumbers1To45, candidate);
-                    if (picked) candidate.add(picked);
-                    else candidate.add(Math.floor(packRandom() * 45) + 1);
-                }
-            }
-
-            if (candidate.size === 6) {
-                const nums = Array.from(candidate).sort((a, b) => a - b);
-                if (validateQuantCombo(nums, pIdx)) {
-                    bestNums = nums;
-                    break;
-                }
-            }
-        }
-
-        if (!bestNums) {
-            const candidate = new Set();
-            while (candidate.size < 6) candidate.add(Math.floor(packRandom() * 45) + 1);
-            bestNums = Array.from(candidate).sort((a, b) => a - b);
-        }
-
-        const stats = calculateStats(bestNums);
-        const ac = calculateACValue(bestNums);
-        const sum = bestNums.reduce((a, b) => a + b, 0);
-
-        generatedCombos.push({
-            id: `EXTRA-P${pIdx}-${i + 1}`,
-            name: `[${cfg.shortName}] 조합 #${i + 1}: ${cfg.tag}`,
-            numbers: bestNums,
-            stats,
-            meta: {
-                packId: pIdx,
-                packName: cfg.name,
-                rankBadge: `${cfg.shortName} #${i + 1}`,
-                rankClass: `badge-extra-p${pIdx}`,
-                badgeColor: cfg.color,
-                name: `[${cfg.shortName}] 조합 #${i + 1}`,
-                tag: cfg.tag,
-                desc: cfg.desc,
-                lawName: cfg.name,
-                targetBenefit: `${cfg.shortName} #${i + 1} (AC:${ac} | 합:${sum})`,
-                numReasons: bestNums.map(n => {
-                    if (pIdx === 1 && missingNumbers.includes(n)) {
-                        return `${n}번: 30게임 전수 커버리지 100% 무결점 보충수`;
-                    }
-                    if (topHotAnchors.includes(n)) {
-                        return `${n}번: 퀀트 앙상블 상위 핫 앵커 번호`;
-                    }
-                    return `${n}번: ${cfg.shortName} 7대 퀀트 필터 통과 최적수`;
-                })
-            }
-        });
-    }
-
-    const packResult = {
-        packId: pIdx,
-        name: cfg.name,
-        shortName: cfg.shortName,
-        badge: cfg.badge,
-        color: cfg.color,
-        desc: cfg.desc,
-        tag: cfg.tag,
-        combos: generatedCombos,
-        generatedAt: new Date().toISOString()
-    };
-    if (state.extraPackCache) {
-        state.extraPackCache[cacheKey] = packResult;
-    }
-    return packResult;
 }
 
 /**
@@ -1239,7 +1269,7 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (cleanUser.startsWith('{') || cleanUser.startsWith('test_') || cleanUser === 'user_alpha' || cleanUser === 'user_beta' || cleanUser === 'sample' || cleanUser === 'hms') {
+    if (isSystemOrDummyUser(cleanUser) || cleanUser.startsWith('{') || cleanUser.startsWith('test_') || cleanUser === 'user_alpha' || cleanUser === 'user_beta' || cleanUser === 'sample' || cleanUser === 'hms') {
         return null;
     }
     const roundNum = parseInt(round, 10);
@@ -1384,7 +1414,7 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
 }
 
 /**
- * Retrieve snapshot synchronously if exists in cloud-synced state memory
+ * Retrieve snapshot synchronously if exists in cloud-synced state memory or localStorage
  */
 export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     if (!userId || !round) return null;
@@ -1402,6 +1432,17 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey]) {
         return state.userRecommendationSnapshots[docKey];
     }
+    try {
+        const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(`lotto_rec_snapshot_${docKey}`) : null;
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
+                if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                state.userRecommendationSnapshots[docKey] = parsed;
+                return parsed;
+            }
+        }
+    } catch(e) {}
     return null;
 }
 

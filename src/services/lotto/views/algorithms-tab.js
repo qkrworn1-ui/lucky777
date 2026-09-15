@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast, calculateACValue } from '../../../shared/utils.js';
+import { getBallColorClass, getBallHexColor, showToast, calculateACValue, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml } from '../../../shared/components.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
 import { getComboNumbers, fetchAllUsersPurchases } from '../ledger.js';
@@ -361,10 +361,13 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
                 }
                 baseList = baseList.filter(u => {
                     const uId = (u.id || '').trim().toLowerCase();
-                    return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+                    return !isSystemOrDummyUser(uId) && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
                 });
-                if (baseList.length === 0) {
-                    baseList = [{ id: 'master', name: '관리자' }];
+                if (!baseList.some(u => (u.id || '').toLowerCase().trim() === 'master')) {
+                    baseList.unshift({ id: 'master', name: '관리자', createdAt: null });
+                }
+                if (!baseList.some(u => (u.id || '').toLowerCase().trim() === 'wdy')) {
+                    baseList.push({ id: 'wdy', name: '우대용', createdAt: '2026-08-01T12:00:00+09:00' });
                 }
                 const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
 
@@ -559,8 +562,11 @@ export async function renderAlgorithmsTab(fromRound = null) {
         } catch(e) {}
     }
 
-    // Default target user is 'all' (전체 회원 통합 당첨 실적)
-    const effectiveUserId = (isAdmin && algoAdminViewingUser) ? algoAdminViewingUser : 'all';
+    // Default target user is 'all' for admin (전체 회원 통합 당첨 실적) or authId for regular member
+    const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.algoAdminViewingUser)) ? (window.selectedAdminViewingUser || window.algoAdminViewingUser) : null;
+    const effectiveUserId = (isAdmin && viewingUser && viewingUser !== 'all') 
+        ? viewingUser 
+        : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? 'all' : (authId || 'master')));
 
     const perfData = calculate7AlgorithmsPerformance(currentAlgoStartRound, effectiveUserId);
     const { fromRound: startR, maxRound, totalRoundsCount, grandTotalInvest, grandTotalPrize, grandProfit, grandRoi, grandRankCounts, grandTotalWins, grandWinRate, results } = perfData;
@@ -899,8 +905,16 @@ export async function renderAlgorithmsTab(fromRound = null) {
  */
 export function changeAlgoAdminViewingUser(userId) {
     algoAdminViewingUser = userId;
+    if (typeof window !== 'undefined') {
+        window.selectedAdminViewingUser = userId;
+        window.generatorAdminViewingUser = userId;
+        window.algoAdminViewingUser = userId;
+        window.reviewAdminViewingUser = userId;
+    }
     renderAlgorithmsTab();
-    showToast(`👑 [${userId}] 회원의 7대 알고리즘 추천 조합으로 전환되었습니다.`);
+    if (typeof render7AlgorithmsRealReviewSection === 'function') render7AlgorithmsRealReviewSection();
+    if (typeof generatePredictionReport === 'function') generatePredictionReport();
+    showToast(userId === 'all' ? '🌐 전체 회원 7대 알고리즘 추천 결과 종합으로 전환되었습니다.' : `👑 [${userId}] 회원의 7대 알고리즘 추천 조합으로 전환되었습니다.`);
 }
 
 /**

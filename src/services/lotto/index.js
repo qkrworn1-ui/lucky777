@@ -104,8 +104,9 @@ export async function initLottoService() {
                 } catch(e) {}
 
                 state.ledgerFinancialsCache = null; // Invalidate memoized financials
-                state.allUsersPurchasesMap = null;  // Invalidate admin map cache
-                state.allUsersMergedLedger = null;  // Invalidate admin merged cache
+                if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[authId]) {
+                    state.allUsersPurchasesMap[authId].ledger = state.globalLedger;
+                }
                 updateDebugMonitor(state.globalLedger);
                 if (typeof window.renderLandingDashboard === 'function') {
                     window.renderLandingDashboard();

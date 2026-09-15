@@ -1,8 +1,20 @@
 import { removeUndefined } from '../../shared/utils.js';
 import { db } from '../../shared/db.js';
 
+let initialCachedUsers = [];
+try {
+    const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem('lotto_all_users_list_cache') : null;
+    if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            initialCachedUsers = parsed;
+        }
+    }
+} catch(e) {}
+
 export const state = {
     allNumbers: Array.from({ length: 45 }, (_, i) => i + 1),
+    allRegisteredUsersList: initialCachedUsers,
     lottoExtraHistory: {},
     mergedHistory: {},
     HISTORICAL_FREQUENCY: {},
