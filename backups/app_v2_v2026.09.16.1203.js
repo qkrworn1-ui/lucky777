@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.16.1212 - BUILD_DATE: 2026-09-16] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.16.1203 - BUILD_DATE: 2026-09-16] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.16.1212)
+ * Lucky777 Smart Bundle (v2026.09.16.1203)
  */
 
 
@@ -19854,14 +19854,6 @@ function renderAccumulatedWins(rankFilter) {
     const rankShortLabels = { 1: '🥇 1등 (6개)', 2: '🥈 2등 (5+보)', 3: '🥉 3등 (5개)', 4: '✨ 4등 (4개)', 5: '⭐ 5등 (3개)' };
     const prizeAmounts = { 1: '약 20억+ 원', 2: '5,000만 원', 3: '150만 원', 4: '50,000 원', 5: '5,000 원' };
 
-    const rankThemes = {
-        1: { border: 'rgba(251, 191, 36, 0.65)', bg: 'linear-gradient(135deg, rgba(40, 35, 20, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)', tagColor: '#fbbf24', tagBg: 'rgba(251, 191, 36, 0.25)', tagBorder: '#fbbf24' },
-        2: { border: 'rgba(96, 165, 250, 0.65)', bg: 'linear-gradient(135deg, rgba(20, 35, 55, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)', tagColor: '#93c5fd', tagBg: 'rgba(96, 165, 250, 0.25)', tagBorder: '#60a5fa' },
-        3: { border: 'rgba(52, 211, 153, 0.65)', bg: 'linear-gradient(135deg, rgba(20, 45, 35, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)', tagColor: '#6ee7b7', tagBg: 'rgba(52, 211, 153, 0.25)', tagBorder: '#34d399' },
-        4: { border: 'rgba(167, 139, 250, 0.55)', bg: 'linear-gradient(135deg, rgba(35, 25, 50, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)', tagColor: '#c4b5fd', tagBg: 'rgba(167, 139, 250, 0.2)', tagBorder: '#a78bfa' },
-        5: { border: 'rgba(244, 114, 182, 0.55)', bg: 'linear-gradient(135deg, rgba(45, 20, 35, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%)', tagColor: '#f472b6', tagBg: 'rgba(244, 114, 182, 0.2)', tagBorder: '#f472b6' }
-    };
-
     const itemsHtml = filtered.slice(0, 150).map(w => {
         const rLabel = rankShortLabels[w.prizeRank] || `${w.prizeRank}등`;
         const prizeTxt = prizeAmounts[w.prizeRank] || '';
@@ -19873,39 +19865,29 @@ function renderAccumulatedWins(rankFilter) {
         const winningSet = (drawData && Array.isArray(drawData.numbers)) ? new Set(drawData.numbers) : null;
         const bonusNum = drawData ? drawData.bonus : null;
 
-        const theme = rankThemes[w.prizeRank] || rankThemes[4];
-
         return `
-            <div class="sim-win-item-card rank-${w.prizeRank}" style="background:${theme.bg}; border:1.5px solid ${theme.border}; border-radius:12px; padding:10px 14px; display:flex; flex-direction:column; justify-content:space-between; gap:8px; box-shadow:0 4px 14px rgba(0,0,0,0.35); box-sizing:border-box;">
-                <div class="sim-win-card-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
-                    <div class="sim-win-info-left" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; min-width:0;">
-                        <span class="sim-win-round-tag" style="font-size:0.88rem; font-weight:900; color:#f8fafc; white-space:nowrap;">제 ${w.round}회</span>
-                        <span class="sim-win-rank-tag rank-${w.prizeRank}" style="font-size:0.74rem; font-weight:800; padding:2px 7px; border-radius:6px; white-space:nowrap; background:${theme.tagBg}; color:${theme.tagColor}; border:1px solid ${theme.tagBorder};">${rLabel}</span>
-                        <span class="sim-win-combo-tag" title="${comboName}" style="font-size:0.75rem; color:#94a3b8; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;">${comboName}</span>
-                        ${ownerName ? `<span class="sim-win-user-tag" style="font-size:0.72rem; font-weight:800; color:#fbbf24; background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.4); padding:1px 6px; border-radius:4px; white-space:nowrap;"><i class="fa-solid fa-user"></i> ${ownerName}</span>` : ''}
+            <div class="sim-win-item-card rank-${w.prizeRank}">
+                <div class="sim-win-card-header">
+                    <div class="sim-win-info-left">
+                        <span class="sim-win-round-tag">제 ${w.round}회</span>
+                        <span class="sim-win-rank-tag rank-${w.prizeRank}">${rLabel}</span>
+                        <span class="sim-win-combo-tag" title="${comboName}">${comboName}</span>
+                        ${ownerName ? `<span class="sim-win-user-tag"><i class="fa-solid fa-user"></i> ${ownerName}</span>` : ''}
                     </div>
-                    <div class="sim-win-info-right" style="display:flex; align-items:center; margin-left:auto;">
-                        <span class="sim-win-prize-tag" style="font-size:0.85rem; font-weight:900; color:#fde047; white-space:nowrap; background:rgba(254,224,71,0.1); border:1px solid rgba(254,224,71,0.3); padding:2px 8px; border-radius:6px;">${prizeTxt}</span>
+                    <div class="sim-win-info-right">
+                        <span class="sim-win-prize-tag">${prizeTxt}</span>
                     </div>
                 </div>
-                <div class="sim-win-balls-row" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:2px 0;">
+                <div class="sim-win-balls-row">
                     ${nums.map(n => {
                         const isHit = winningSet ? winningSet.has(n) : false;
                         const isBonus = (n === bonusNum);
                         const ballBg = getBallHexColor(n);
-                        let hitStyle = 'border:1px solid rgba(255,255,255,0.2);';
                         let hitClass = '';
-                        if (isHit) {
-                            hitClass = 'hit-ball';
-                            hitStyle = 'border:2px solid #fbbf24; box-shadow:0 0 10px rgba(251,191,36,0.9); transform:scale(1.08); z-index:2;';
-                        } else if (isBonus) {
-                            hitClass = 'bonus-ball';
-                            hitStyle = 'border:2px solid #f87171; box-shadow:0 0 10px rgba(248,113,113,0.9); transform:scale(1.08); z-index:2;';
-                        } else if (winningSet) {
-                            hitClass = 'dim-ball';
-                            hitStyle = 'opacity:0.4; filter:grayscale(25%); border:1px solid rgba(255,255,255,0.1);';
-                        }
-                        return `<span class="sim-win-ball ${hitClass} ${getBallColorClass(n)}" style="width:28px; height:28px; line-height:28px; font-size:0.78rem; font-weight:900; color:#ffffff; text-align:center; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:${ballBg}; ${hitStyle} flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.4);">${n}</span>`;
+                        if (isHit) hitClass = 'hit-ball';
+                        else if (isBonus) hitClass = 'bonus-ball';
+                        else if (winningSet) hitClass = 'dim-ball';
+                        return `<span class="sim-win-ball ${hitClass} ${getBallColorClass(n)}" style="background:${ballBg};">${n}</span>`;
                     }).join('')}
                 </div>
             </div>
@@ -19913,11 +19895,11 @@ function renderAccumulatedWins(rankFilter) {
     }).join('');
 
     accumulatedWinsContainer.innerHTML = `
-        <div class="sim-wins-count-bar" style="display:flex; justify-content:space-between; align-items:center; padding:8px 12px; margin-bottom:8px; background:rgba(30, 41, 59, 0.7); border-radius:8px; border:1px solid rgba(255, 255, 255, 0.08); font-size:0.82rem; color:#cbd5e1; box-sizing:border-box;">
-            <span><i class="fa-solid fa-list-check" style="color:#60a5fa;"></i> 적중 내역 총 <strong style="color:#fbbf24;">${filtered.length.toLocaleString()}</strong>건 (상위 150건)</span>
+        <div class="sim-wins-count-bar">
+            <span><i class="fa-solid fa-list-check"></i> 적중 내역 총 <strong>${filtered.length.toLocaleString()}</strong>건 (상위 150건)</span>
             <span style="color:#94a3b8; font-size:0.75rem;">최신 회차순</span>
         </div>
-        <div class="sim-wins-scroll-list" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:10px; max-height:620px; overflow-y:auto; padding:4px 6px; box-sizing:border-box;">
+        <div class="sim-wins-scroll-list">
             ${itemsHtml}
         </div>
     `;

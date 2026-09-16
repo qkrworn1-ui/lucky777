@@ -1568,6 +1568,33 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('window.closePredictionReportModal = closePredictionReportModal', pred_code)
 
 
+    def test_39_bundle_module_topological_order(self):
+        """Test 39: Ensure all ES module imports in bundle.py are strictly topologically ordered with 0 order violations."""
+        bundle_file = os.path.join(self.root_dir, 'bundle.py')
+        with open(bundle_file, 'r', encoding='utf-8') as f:
+            b_code = f.read()
+
+        match = re.search(r'FILES_TO_BUNDLE\s*=\s*\[(.*?)\]', b_code, re.DOTALL)
+        self.assertIsNotNone(match, "FILES_TO_BUNDLE list must exist in bundle.py")
+        raw_entries = re.findall(r'[\'"]([^\'"]+)[\'"]', match.group(1))
+        
+        violations = []
+        for file_rel in raw_entries:
+            file_abs = os.path.join(self.root_dir, file_rel.replace('/', os.sep))
+            if os.path.exists(file_abs):
+                with open(file_abs, 'r', encoding='utf-8') as fh:
+                    content = fh.read()
+                imports = re.findall(r'import\s+\{([^}]+)\}\s+from\s+[\'"]([^\'"]+)[\'"]', content)
+                for vars_str, path_str in imports:
+                    resolved = os.path.normpath(os.path.join(os.path.dirname(file_rel), path_str)).replace(os.sep, '/')
+                    idx_f = raw_entries.index(file_rel) if file_rel in raw_entries else -1
+                    idx_dep = raw_entries.index(resolved) if resolved in raw_entries else -1
+                    if idx_dep >= idx_f and idx_dep != -1:
+                        violations.append(f"{file_rel} (idx {idx_f}) imports {resolved} (idx {idx_dep}) -> {vars_str.strip()}")
+
+        self.assertEqual(len(violations), 0, f"Module ordering violations found in FILES_TO_BUNDLE: {violations}")
+
+
 if __name__ == '__main__':
     unittest.main()
 

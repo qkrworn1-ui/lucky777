@@ -1,6 +1,7 @@
 import { db } from './db.js';
 import { showToast } from './utils.js';
 import { hashPassword, checkPasswordStrength } from './crypto-utils.js';
+import { DEFAULT_KNOWN_USERS, getAllUnifiedRegisteredUsers } from './user-context.js';
 
 // Safe Multi-Storage Auth Helper (sessionStorage + localStorage + Cookie + memory fallback)
 const memoryAuthStore = { id: null };
@@ -469,7 +470,7 @@ export function getUserRealName(authId, userData = null) {
     if (!authId) return '';
     const cleanId = authId.toLowerCase().trim();
     if (cleanId === 'master' || cleanId === 'admin') {
-        return (window.__userNames && window.__userNames[cleanId]) || '관리자 (마스터)';
+        return (window.__userNames && window.__userNames[cleanId]) || '최고관리자';
     }
     if (userData && userData.realName) {
         setUserNameCache(cleanId, userData.realName);
@@ -486,13 +487,18 @@ export function getUserRealName(authId, userData = null) {
         if (lName) return lName;
     } catch(e) {}
     if (typeof window !== 'undefined' && window.state) {
-        if (window.state.allUsersPurchasesMap && window.state.allUsersPurchasesMap[cleanId]) {
-            return window.state.allUsersPurchasesMap[cleanId].realName || cleanId;
-        }
         if (Array.isArray(window.state.allRegisteredUsersList)) {
             const u = window.state.allRegisteredUsersList.find(item => item && item.id && item.id.toLowerCase().trim() === cleanId);
-            if (u && (u.name || u.realName)) return u.name || u.realName;
+            if (u && (u.realName || u.name)) return u.realName || u.name;
         }
+        if (window.state.allUsersPurchasesMap && window.state.allUsersPurchasesMap[cleanId]) {
+            const p = window.state.allUsersPurchasesMap[cleanId];
+            if (p.realName || p.name) return p.realName || p.name;
+        }
+    }
+    if (typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) {
+        const foundDef = DEFAULT_KNOWN_USERS.find(item => item && item.id && item.id.toLowerCase().trim() === cleanId);
+        if (foundDef && (foundDef.realName || foundDef.name)) return foundDef.realName || foundDef.name;
     }
     return '';
 }
@@ -1830,6 +1836,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             // ✅ Immediately unlock UI on auth success (before any async checks)
             function unlockUIImmediately(authId, welcomeMsg) {
                 SafeAuth.set(authId);
+                window.__appUnlocked = true;
 
                 // 1. Immediately hide login modal
                 const modal = document.getElementById('loginModalOverlay');
@@ -1837,6 +1844,14 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     modal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
                     modal.classList.add('hidden');
                     modal.classList.remove('active');
+                }
+
+                const isMasterUser = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
+                if (isMasterUser) {
+                    setIsAdminCache(authId, true);
+                    setIsPermanentCache(authId, true);
+                    setUserNameCache(authId, '최고관리자');
+                    document.body.classList.add('is-admin');
                 }
 
                 // 2. Show landing page immediately
@@ -1882,10 +1897,10 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             }
 
             // 1. Instant Master/Admin bypass
-            if ((idLower === 'master' && (pw === '0338' || pw === '')) || 
-                (idLower === 'admin' && pw === '0338') ||
-                (rawId === '' && pw === '0338')) {
-                unlockUIImmediately('master', '🔑 마스터 계정으로 접속했습니다.');
+            if ((idLower === 'master' && (pw === '0338' || pw === '' || pw === 'master')) || 
+                (idLower === 'admin' && (pw === '0338' || pw === 'admin' || pw === '')) ||
+                (rawId === '' && (pw === '0338' || pw === 'master'))) {
+                unlockUIImmediately('master', '🔑 최고관리자 계정으로 접속했습니다.');
                 return false;
             }
 
@@ -2242,12 +2257,12 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
         if (isTrashMode) {
             html += `
-            <div style="background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.35); padding:10px 14px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:4px;">
-                <div style="font-size:0.82rem; color:#fca5a5; font-weight:800; display:flex; align-items:center; gap:6px;">
+            <div style="grid-column: 1 / -1; background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.35); padding:10px 14px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:4px; box-sizing:border-box;">
+                <div style="font-size:0.85rem; color:#fca5a5; font-weight:800; display:flex; align-items:center; gap:6px;">
                     <i class="fa-solid fa-trash-can"></i> 휴지통에 보관된 회원 (${usersList.length}명)
-                    <span style="font-size:0.72rem; color:#94a3b8; font-weight:normal;">(언제든 복구하거나 완전 영구 삭제할 수 있습니다)</span>
+                    <span style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">(언제든 복구하거나 DB에서 완전 영구 삭제할 수 있습니다)</span>
                 </div>
-                <button type="button" onclick="window.emptyUserTrash && window.emptyUserTrash()" style="background:rgba(239,68,68,0.25); border:1px solid #ef4444; color:#fff; padding:5px 12px; border-radius:6px; font-size:0.75rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px; transition:all 0.2s;">
+                <button type="button" onclick="window.emptyUserTrash && window.emptyUserTrash()" style="background:rgba(239,68,68,0.25); border:1px solid #ef4444; color:#fff; padding:6px 14px; border-radius:7px; font-size:0.78rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.2s;">
                     <i class="fa-solid fa-fire"></i> 휴지통 전체 비우기
                 </button>
             </div>`;
@@ -2269,37 +2284,42 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 }
 
                 html += `
-                <div style="background:rgba(20, 15, 20, 0.9); padding:10px 12px; border-radius:10px; border:1px solid rgba(239, 68, 68, 0.3); display:flex; flex-direction:column; gap:6px; box-shadow:0 3px 10px rgba(0,0,0,0.3);">
-                    <!-- Header -->
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
-                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                            <span style="font-weight:900; color:#fca5a5; font-size:0.95rem; text-decoration:line-through;">${userId}</span>
-                            ${realName ? `<span style="font-size:0.82rem; color:#cbd5e1; font-weight:700;">${realName}</span>` : ''}
+                <div class="user-card-item is-suspended-card" style="background:linear-gradient(135deg, rgba(40, 20, 25, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border:1.5px solid rgba(239, 68, 68, 0.45); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; justify-content:space-between; gap:8px; box-shadow:0 4px 16px rgba(0,0,0,0.35); box-sizing:border-box;">
+                    <!-- Top Info Row -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                            <div class="user-avatar-badge" style="width:36px; height:36px; min-width:36px; min-height:36px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.5); color:#fca5a5;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </div>
+                            <div style="display:flex; flex-direction:column; min-width:0;">
+                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                    <span style="font-weight:900; color:#fca5a5; font-size:1.02rem; text-decoration:line-through;">${userId}</span>
+                                    ${realName ? `<span style="font-size:0.85rem; color:#cbd5e1; font-weight:700;">${realName}</span>` : ''}
+                                </div>
+                                <span style="font-size:0.72rem; color:#f87171;">삭제: ${deletedDate}${deletedByText}</span>
+                            </div>
                         </div>
-                        <div style="display:flex; align-items:center; gap:4px;">
-                            <span style="font-size:0.7rem; color:#f87171; background:rgba(239,68,68,0.2); border:1px solid #ef4444; padding:2px 7px; border-radius:5px; font-weight:800;">
-                                <i class="fa-solid fa-trash-can"></i> 휴지통 보관중
-                            </span>
-                        </div>
+                        <span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#f87171; background:rgba(239,68,68,0.2); border:1px solid #ef4444; flex-shrink:0; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="fa-solid fa-ban"></i> 휴지통 보관
+                        </span>
                     </div>
 
-                    <!-- Info Bar -->
-                    <div style="background:rgba(0,0,0,0.35); padding:5px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:0.73rem; color:#94a3b8;">
-                        <div><i class="fa-solid fa-phone" style="color:#64748b; font-size:0.68rem;"></i> <span style="color:#94a3b8;">${data.phoneNumber || '연락처 미등록'}</span></div>
-                        <div><i class="fa-regular fa-calendar" style="color:#64748b; font-size:0.68rem;"></i> 가입: <span style="color:#94a3b8;">${joinDate}</span></div>
-                        <div><i class="fa-solid fa-clock-rotate-left" style="color:#f87171; font-size:0.68rem;"></i> 삭제: <strong style="color:#fca5a5;">${deletedDate}${deletedByText}</strong></div>
+                    <!-- Meta Box -->
+                    <div class="user-meta-box" style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; font-size:0.75rem; color:#cbd5e1; box-sizing:border-box;">
+                        <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><i class="fa-solid fa-phone" style="color:#64748b; width:14px; flex-shrink:0;"></i> <span style="overflow:hidden; text-overflow:ellipsis;">${data.phoneNumber || '연락처 미등록'}</span></div>
+                        <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><i class="fa-regular fa-calendar" style="color:#64748b; width:14px; flex-shrink:0;"></i> <span>가입: ${joinDate}</span></div>
                     </div>
 
                     <!-- Trash Action Buttons -->
-                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; margin-top:2px;">
-                        <button type="button" onclick="window.restoreUserFromTrash(decodeURIComponent('${safeUserId}'))" title="계정을 다시 정상 활성 상태로 복구" style="flex:1; min-width:130px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; padding:7px 12px; border-radius:6px; cursor:pointer; font-size:0.78rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 6px rgba(16,185,129,0.35);">
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:2px;">
+                        <button type="button" onclick="window.restoreUserFromTrash(decodeURIComponent('${safeUserId}'))" title="계정을 다시 정상 활성 상태로 복구" class="user-action-btn-primary" style="flex:1; height:32px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:1px solid rgba(16,185,129,0.5); border-radius:6px; font-size:0.75rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 2px 6px rgba(16,185,129,0.3); box-sizing:border-box;">
                             <i class="fa-solid fa-rotate-left"></i> ♻️ 계정 복구하기
                         </button>
-                        <button type="button" onclick="window.viewUserAgreementDoc(decodeURIComponent('${safeUserId}'))" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
-                            <i class="fa-solid fa-file-signature"></i> 서약문서
+                        <button type="button" onclick="window.viewUserAgreementDoc(decodeURIComponent('${safeUserId}'))" title="가입 전자 서명 서약서 열람" class="user-action-btn-sub" style="height:32px; background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); color:#fbbf24; padding:0 8px; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
+                            <i class="fa-solid fa-file-signature"></i> 서약서
                         </button>
-                        <button type="button" onclick="window.permanentlyDeleteUser(decodeURIComponent('${safeUserId}'))" title="DB에서 완전히 영구 삭제" style="background:rgba(239,68,68,0.25); border:1px solid rgba(239,68,68,0.6); color:#fca5a5; padding:6px 12px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 2px 6px rgba(239,68,68,0.25);">
-                            <i class="fa-solid fa-fire"></i> 💥 영구 삭제
+                        <button type="button" onclick="window.permanentlyDeleteUser(decodeURIComponent('${safeUserId}'))" title="DB에서 완전히 영구 삭제" class="user-action-btn-sub" style="height:32px; background:rgba(239,68,68,0.25); border:1px solid rgba(239,68,68,0.55); color:#fca5a5; padding:0 8px; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
+                            <i class="fa-solid fa-fire"></i> 영구 삭제
                         </button>
                     </div>
                 </div>`;
@@ -2313,96 +2333,140 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             const { userId, data, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, status } = item;
             const safeUserId = encodeURIComponent(userId);
 
+            // 1. Avatar badge styling
+            let avatarHtml = '';
+            const isKakaoUser = userId.startsWith('kakao_') || (data.kakaoAuth && data.kakaoAuth.kakaoId);
+            const isMaster = (userId || '').toLowerCase().trim() === 'master';
+            if (isKakaoUser) {
+                avatarHtml = `<div class="user-avatar-badge user-avatar-kakao" title="카카오톡 간편가입 회원" style="width:36px; height:36px; min-width:36px; min-height:36px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; background:#fee500; color:#191919; border:1px solid rgba(254, 229, 0, 0.6); box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fa-solid fa-comment"></i></div>`;
+            } else if (isMaster || isUserAdmin) {
+                avatarHtml = `<div class="user-avatar-badge user-avatar-master" title="${isMaster ? '최고 관리자(Master)' : '운영 관리자(Admin)'}" style="width:36px; height:36px; min-width:36px; min-height:36px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color:#0f172a; border:1px solid rgba(251, 191, 36, 0.7); box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fa-solid fa-crown"></i></div>`;
+            } else {
+                avatarHtml = `<div class="user-avatar-badge user-avatar-regular" title="일반 회원" style="width:36px; height:36px; min-width:36px; min-height:36px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:#ffffff; border:1px solid rgba(59, 130, 246, 0.6); box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fa-solid fa-user"></i></div>`;
+            }
+
+            // 2. Admin & Status Badges
             let adminBadge = isUserAdmin 
-                ? `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-crown"></i> 관리자</span>` 
-                : `<span style="font-size:0.7rem; color:#94a3b8; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); padding:1px 6px; border-radius:5px; font-weight:600;"><i class="fa-solid fa-user"></i> 일반</span>`;
+                ? `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#fbbf24; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-crown"></i> 관리자</span>` 
+                : `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:600; color:#94a3b8; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-user"></i> 일반</span>`;
 
             let statusBadge = '';
             if (isUserAdmin || isPermanent) {
-                statusBadge = `<span style="font-size:0.7rem; color:#38bdf8; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-gem"></i> 영구활성</span>`;
+                statusBadge = `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#38bdf8; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-gem"></i> 영구활성</span>`;
             } else if (status === 'active') {
-                statusBadge = `<span style="font-size:0.7rem; color:#10b981; background:rgba(16,185,129,0.15); border:1px solid #10b981; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-circle-check"></i> 정상</span>`;
+                statusBadge = `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#10b981; background:rgba(16,185,129,0.15); border:1px solid #10b981; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-circle-check"></i> 정상</span>`;
             } else if (isNoPurchaseSuspended) {
-                statusBadge = `<span style="font-size:0.7rem; color:#fbbf24; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-triangle-exclamation"></i> 미구매정지</span>`;
+                statusBadge = `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#fbbf24; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-triangle-exclamation"></i> 미구매정지</span>`;
             } else {
-                statusBadge = `<span style="font-size:0.7rem; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; padding:1px 6px; border-radius:5px; font-weight:800;"><i class="fa-solid fa-ban"></i> 수동정지</span>`;
+                statusBadge = `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-ban"></i> 수동정지</span>`;
             }
 
             let lottoPermBadge = allowLotto
-                ? `<span style="font-size:0.68rem; color:#34d399; background:rgba(16,185,129,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(16,185,129,0.25); font-weight:700;">로또ON</span>`
-                : `<span style="font-size:0.68rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;">로또OFF</span>`;
+                ? `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#34d399; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:3px;">🍀 로또ON</span>`
+                : `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:800; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); display:inline-flex; align-items:center; gap:3px;">❌ 로또OFF</span>`;
 
             let totoPermBadge = allowToto
-                ? `<span style="font-size:0.68rem; color:#fbbf24; background:rgba(245,158,11,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(245,158,11,0.25); font-weight:700;">토토ON</span>`
-                : `<span style="font-size:0.68rem; color:#ef4444; background:rgba(239,68,68,0.15); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.4); font-weight:800;">토토OFF</span>`;
+                ? `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#fbbf24; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); display:inline-flex; align-items:center; gap:3px;">🏆 토토ON</span>`
+                : `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:800; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); display:inline-flex; align-items:center; gap:3px;">❌ 토토OFF</span>`;
 
             const hasPledgeSigned = !!(data.agreementDoc && data.agreementDoc.signatureDataUrl);
             let pledgeBadge = hasPledgeSigned
-                ? `<span style="font-size:0.68rem; color:#34d399; background:rgba(16,185,129,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(16,185,129,0.25); font-weight:700;" title="필수 약관 및 전자서약 완료"><i class="fa-solid fa-file-signature"></i> 서약완료</span>`
-                : `<span style="font-size:0.68rem; color:#f87171; background:rgba(239,68,68,0.12); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.3); font-weight:800;" title="필수 약관 및 전자서약 미완료"><i class="fa-solid fa-file-excel"></i> 서약미동의</span>`;
+                ? `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#34d399; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:3px;" title="필수 약관 및 전자서약 완료"><i class="fa-solid fa-file-signature"></i> 서약완료</span>`
+                : `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:800; color:#f87171; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); display:inline-flex; align-items:center; gap:3px;" title="필수 약관 및 전자서약 미완료"><i class="fa-solid fa-file-excel"></i> 서약미동의</span>`;
 
             const hasKakaoMsgScope = !!(data.kakaoAuth && data.kakaoAuth.hasTalkMessageScope);
             let kakaoBadge = hasKakaoMsgScope
-                ? `<span style="font-size:0.68rem; color:#fee500; background:rgba(254,229,0,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(254,229,0,0.3); font-weight:700;" title="카카오톡 알림 메시지 동의 완료"><i class="fa-solid fa-comment"></i> 카톡동의</span>`
-                : (userId.startsWith('kakao_') ? `<span style="font-size:0.68rem; color:#94a3b8; background:rgba(255,255,255,0.05); padding:1px 5px; border-radius:4px; border:1px solid rgba(255,255,255,0.1); font-weight:600;" title="카카오톡 알림 메시지 권한 미동의"><i class="fa-solid fa-comment-slash"></i> 카톡미동의</span>` : '');
+                ? `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#fee500; background:rgba(254,229,0,0.12); border:1px solid rgba(254,229,0,0.35); display:inline-flex; align-items:center; gap:3px;" title="카카오톡 알림 메시지 동의 완료"><i class="fa-solid fa-comment"></i> 카톡동의</span>`
+                : (isKakaoUser ? `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:600; color:#94a3b8; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); display:inline-flex; align-items:center; gap:3px;" title="카카오톡 알림 메시지 권한 미동의"><i class="fa-solid fa-comment-slash"></i> 카톡미동의</span>` : '');
 
             let purchaseBadge = '';
             if (isUserAdmin || isPermanent) {
-                purchaseBadge = `<span style="font-size:0.68rem; color:#38bdf8; background:rgba(56,189,248,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(56,189,248,0.25); font-weight:700;"><i class="fa-solid fa-infinity"></i> 평생면제</span>`;
+                purchaseBadge = `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-infinity"></i> 평생면제</span>`;
             } else if (pStatus.hasPurchased) {
-                purchaseBadge = `<span style="font-size:0.68rem; color:#10b981; background:rgba(16,185,129,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(16,185,129,0.25); font-weight:700;">✅ ${latestRound}회 구매(${pStatus.targetRoundGameCount}G)</span>`;
+                purchaseBadge = `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#10b981; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:3px;">✅ ${latestRound}회 구매(${pStatus.targetRoundGameCount}G)</span>`;
             } else if (pStatus.isGracePeriod) {
-                purchaseBadge = `<span style="font-size:0.68rem; color:#38bdf8; background:rgba(56,189,248,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(56,189,248,0.25);">첫주 유예</span>`;
+                purchaseBadge = `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); display:inline-flex; align-items:center; gap:3px;">첫주 유예</span>`;
             } else {
-                purchaseBadge = `<span style="font-size:0.68rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:1px 5px; border-radius:4px; border:1px solid rgba(239,68,68,0.25); font-weight:800;">❌ ${latestRound}회 미구매</span>`;
+                purchaseBadge = `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:800; color:#ef4444; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); display:inline-flex; align-items:center; gap:3px;">❌ ${latestRound}회 미구매</span>`;
             }
 
-            const realName = data.realName && data.realName !== userId ? `(${data.realName})` : '';
+            // 3. Identification & Metadata
+            const realName = data.realName && data.realName !== userId ? data.realName : '';
             const joinDate = data.createdAt ? data.createdAt.slice(0, 10) : '-';
             const lastRoundText = pStatus.lastPurchasedRound > 0 ? `제 ${pStatus.lastPurchasedRound}회` : (isPermanent ? '무제한' : '없음');
-            const reasonText = data.suspensionReason ? `<div style="font-size:0.7rem; color:#f87171; background:rgba(239,68,68,0.08); padding:2px 6px; border-radius:4px; margin-top:2px;"><i class="fa-solid fa-circle-info"></i> 정지사유: ${data.suspensionReason}</div>` : '';
+            const reasonText = data.suspensionReason ? `<div style="font-size:0.73rem; color:#f87171; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); padding:4px 8px; border-radius:6px; margin-top:2px; display:flex; align-items:center; gap:5px;"><i class="fa-solid fa-circle-info"></i> 정지사유: <strong>${data.suspensionReason}</strong></div>` : '';
+
+            // Card highlight theme & borders
+            let cardCustomClass = 'user-card-item';
+            let cardBorder = 'rgba(255, 255, 255, 0.1)';
+            let cardBg = 'linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.96) 100%)';
+
+            if (isUserAdmin) {
+                cardCustomClass += ' is-admin-card';
+                cardBorder = 'rgba(245, 158, 11, 0.5)';
+                cardBg = 'linear-gradient(135deg, rgba(40, 35, 20, 0.9) 0%, rgba(15, 23, 42, 0.96) 100%)';
+            } else if (isPermanent) {
+                cardCustomClass += ' is-permanent-card';
+                cardBorder = 'rgba(56, 189, 248, 0.45)';
+            } else if (status !== 'active') {
+                cardCustomClass += ' is-suspended-card';
+                cardBorder = 'rgba(239, 68, 68, 0.45)';
+                cardBg = 'linear-gradient(135deg, rgba(40, 20, 25, 0.9) 0%, rgba(15, 23, 42, 0.96) 100%)';
+            }
 
             html += `
-            <div style="background:rgba(15, 23, 42, 0.85); padding:10px 12px; border-radius:10px; border:1px solid ${isUserAdmin ? 'rgba(245,158,11,0.45)' : (isPermanent ? 'rgba(56,189,248,0.35)' : 'rgba(255,255,255,0.08)')}; display:flex; flex-direction:column; gap:6px; box-shadow:0 3px 10px rgba(0,0,0,0.25);">
+            <div class="${cardCustomClass}" style="background:${cardBg}; border:1.5px solid ${cardBorder}; border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; justify-content:space-between; gap:8px; box-shadow:0 4px 16px rgba(0,0,0,0.35); box-sizing:border-box;">
                 
-                <!-- 1. Header: User ID & Applied Option Badges -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
-                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                        <span style="font-weight:900; color:#f8fafc; font-size:0.95rem; letter-spacing:0.2px;">${userId}</span>
-                        ${realName ? `<span style="font-size:0.82rem; color:#93c5fd; font-weight:700;">${realName}</span>` : ''}
-                    </div>
-                    <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
-                        ${adminBadge}
-                        ${statusBadge}
-                        ${lottoPermBadge}
-                        ${totoPermBadge}
-                        ${pledgeBadge}
-                        ${kakaoBadge}
-                        ${purchaseBadge}
+                <!-- 1. Header: Avatar + User ID + Real Name + Role Badges -->
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                        ${avatarHtml}
+                        <div style="display:flex; flex-direction:column; min-width:0;">
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                <span style="font-weight:900; color:#f8fafc; font-size:1.02rem; letter-spacing:0.2px;">${userId}</span>
+                                ${realName ? `<span style="font-size:0.85rem; color:#67e8f9; font-weight:800; background:rgba(6,182,212,0.15); border:1px solid rgba(6,182,212,0.35); padding:1px 6px; border-radius:5px;">👤 ${realName}</span>` : ''}
+                            </div>
+                            <div style="display:flex; align-items:center; gap:4px; margin-top:3px; flex-wrap:wrap;">
+                                ${adminBadge}
+                                ${statusBadge}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 2. Compact Info Bar -->
-                <div style="background:rgba(0,0,0,0.25); padding:5px 8px; border-radius:6px; border:1px solid rgba(255,255,255,0.04); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; font-size:0.73rem; color:#94a3b8;">
-                    <div><i class="fa-solid fa-phone" style="color:#60a5fa; font-size:0.68rem;"></i> <span style="color:#cbd5e1;">${data.phoneNumber || '연락처 미등록'}</span></div>
-                    <div><i class="fa-regular fa-calendar" style="color:#a78bfa; font-size:0.68rem;"></i> 가입: <span style="color:#cbd5e1;">${joinDate}</span></div>
-                    <div><i class="fa-solid fa-receipt" style="color:#34d399; font-size:0.68rem;"></i> 최근구매: <strong style="color:#e2e8f0;">${lastRoundText}</strong></div>
+                <!-- 2. Badges Chip Row -->
+                <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; padding-top:2px;">
+                    ${lottoPermBadge}
+                    ${totoPermBadge}
+                    ${pledgeBadge}
+                    ${kakaoBadge}
+                    ${purchaseBadge}
+                </div>
+
+                <!-- 3. 2-Column Metadata Box -->
+                <div class="user-meta-box" style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; font-size:0.75rem; color:#cbd5e1; box-sizing:border-box;">
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="연락처"><i class="fa-solid fa-phone" style="color:#60a5fa; width:14px; flex-shrink:0;"></i> <span style="color:#e2e8f0; font-weight:600; overflow:hidden; text-overflow:ellipsis;">${data.phoneNumber || '연락처 미등록'}</span></div>
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="가입일자"><i class="fa-regular fa-calendar" style="color:#a78bfa; width:14px; flex-shrink:0;"></i> <span>가입: <strong style="color:#e2e8f0;">${joinDate}</strong></span></div>
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="최근 실구매 회차"><i class="fa-solid fa-receipt" style="color:#34d399; width:14px; flex-shrink:0;"></i> <span>최근: <strong style="color:#e2e8f0;">${lastRoundText}</strong></span></div>
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="이번 회차 등록 게임 수"><i class="fa-solid fa-ticket" style="color:#fbbf24; width:14px; flex-shrink:0;"></i> <span>금회: <strong style="color:#e2e8f0;">${pStatus.targetRoundGameCount || 0}G</strong></span></div>
                 </div>
                 ${reasonText}
 
-                <!-- 3. Streamlined Action Buttons (Options are managed inside [정보 및 옵션 설정]) -->
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:5px; margin-top:2px;">
-                    <button type="button" onclick="window.openEditUserModal(decodeURIComponent('${safeUserId}'))" title="회원 정보 수정 및 권한/상태/옵션 종합 설정" style="flex:1; min-width:140px; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#fff; border:none; padding:7px 10px; border-radius:6px; cursor:pointer; font-size:0.75rem; font-weight:800; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 2px 6px rgba(59,130,246,0.35);">
+                <!-- 4. 2-Tier Action Buttons -->
+                <div style="display:flex; flex-direction:column; gap:5px; margin-top:2px;">
+                    <!-- Tier 1: Primary Action Button -->
+                    <button type="button" onclick="window.openEditUserModal(decodeURIComponent('${safeUserId}'))" title="회원 정보 수정 및 권한/상태/옵션 종합 설정" class="user-action-btn-primary" style="width:100%; height:34px; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#ffffff !important; border:1px solid rgba(96,165,250,0.45); border-radius:7px; font-size:0.8rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 8px rgba(37,99,235,0.35); box-sizing:border-box;">
                         <i class="fa-solid fa-sliders"></i> 회원 정보 &amp; 옵션 설정
                     </button>
+                    <!-- Tier 2: Secondary Quick Actions -->
                     <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                        <button type="button" onclick="window.viewUserAgreementDoc(decodeURIComponent('${safeUserId}'))" title="가입 전자 서명 서약서 열람" style="background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
-                            <i class="fa-solid fa-file-signature"></i> 서약문서
+                        <button type="button" onclick="window.viewUserAgreementDoc(decodeURIComponent('${safeUserId}'))" title="가입 전자 서명 서약서 열람" class="user-action-btn-sub" style="flex:1; min-width:62px; height:30px; background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); color:#fbbf24; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
+                            <i class="fa-solid fa-file-signature"></i> 서약서
                         </button>
-                        <button type="button" onclick="window.sendUserWinningKakaoMessage(decodeURIComponent('${safeUserId}'), ${latestRound})" title="제 ${latestRound}회 실구매 당첨 리포트 카카오톡 전송" style="background:rgba(254, 229, 0, 0.15); border:1px solid rgba(254, 229, 0, 0.45); color:#fee500; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                        <button type="button" onclick="window.sendUserWinningKakaoMessage(decodeURIComponent('${safeUserId}'), ${latestRound})" title="제 ${latestRound}회 실구매 당첨 리포트 카카오톡 전송" class="user-action-btn-sub" style="flex:1; min-width:68px; height:30px; background:rgba(254, 229, 0, 0.12); border:1px solid rgba(254, 229, 0, 0.4); color:#fee500; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
                             <i class="fa-solid fa-comment-dots"></i> 당첨알림
                         </button>
-                        <button type="button" onclick="window.sendUserUnsentWinningReports(decodeURIComponent('${safeUserId}'))" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" style="background:rgba(167, 139, 250, 0.15); border:1px solid rgba(167, 139, 250, 0.45); color:#c4b5fd; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                        <button type="button" onclick="window.sendUserUnsentWinningReports(decodeURIComponent('${safeUserId}'))" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" class="user-action-btn-sub" style="flex:1; min-width:70px; height:30px; background:rgba(167, 139, 250, 0.12); border:1px solid rgba(167, 139, 250, 0.4); color:#c4b5fd; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
                             <i class="fa-solid fa-box-archive"></i> 미전송발송
                         </button>
                         ${(function() {
@@ -2411,7 +2475,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                                 try { curAuth = JSON.parse(curAuth).userid || curAuth; } catch(e) {}
                             }
                             return (curAuth || '').toLowerCase().trim() === 'master' ? `
-                            <button type="button" onclick="window.deleteUser(decodeURIComponent('${safeUserId}'))" title="계정을 휴지통으로 이동" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:0.72rem; font-weight:800; display:inline-flex; align-items:center; gap:3px;">
+                            <button type="button" onclick="window.deleteUser(decodeURIComponent('${safeUserId}'))" title="계정을 휴지통으로 이동" class="user-action-btn-sub" style="flex:0.8; min-width:54px; height:30px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.45); color:#fca5a5; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
                                 <i class="fa-solid fa-trash-can"></i> 삭제
                             </button>
                             ` : '';
@@ -2461,6 +2525,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             }
             
             const users = [];
+            const existingUserIds = new Set();
             snapshot.forEach(doc => {
                 const uIdClean = (doc.id || '').toLowerCase().trim();
                 // Ignore corrupt/garbage JSON string IDs or system metadata if any
@@ -2474,6 +2539,32 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     return;
                 }
                 users.push({ userId: doc.id, data: doc.data() });
+                existingUserIds.add(uIdClean);
+            });
+
+            // Ensure master, wdy and baseline default users are present if missing
+            const knownBaseline = (typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) ? DEFAULT_KNOWN_USERS : [];
+            knownBaseline.forEach(defU => {
+                const defId = (defU.id || '').toLowerCase().trim();
+                if (defId && !existingUserIds.has(defId)) {
+                    users.push({
+                        userId: defU.id,
+                        data: {
+                            userId: defU.id,
+                            name: defU.name || defU.realName || defU.id,
+                            realName: defU.realName || defU.name || defU.id,
+                            phoneNumber: defU.phone || '',
+                            isAdmin: !!defU.isAdmin,
+                            isPermanent: !!defU.isPermanent,
+                            userType: defU.userType || 'regular',
+                            status: defU.status || 'active',
+                            createdAt: defU.createdAt || null,
+                            allowLotto: true,
+                            allowToto: true
+                        }
+                    });
+                    existingUserIds.add(defId);
+                }
             });
 
             // Concurrently fetch purchase status for each user
@@ -2524,8 +2615,12 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     userType: u.data.userType || (u.isPermanent ? 'permanent' : 'regular'),
                     createdAt: u.data.createdAt || null,
                     allowLotto: u.data.allowLotto !== false,
-                    allowToto: u.data.allowToto !== false
+                    allowToto: u.data.allowToto !== false,
+                    status: u.data.status || 'active'
                 }));
+                try {
+                    localStorage.setItem('lotto_all_users_list_cache', JSON.stringify(window.state.allRegisteredUsersList));
+                } catch(e) {}
             }
 
             // Render with current search query & filter

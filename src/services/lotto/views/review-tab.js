@@ -413,7 +413,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const found = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase().trim() === cleanUser);
             if (found) {
-                if (found.name) rName = found.name;
+                if (found.realName || found.name) rName = found.realName || found.name;
                 if (found.phone) uPhone = found.phone;
                 if (found.userType) uType = found.userType;
                 if (found.createdAt) uCreatedAt = found.createdAt;
@@ -773,9 +773,10 @@ export function renderAllRoundsReviewDetail() {
 
         const memberAggMap = {};
         baseList.forEach(u => {
+            const officialName = (typeof getUserRealName === 'function' ? getUserRealName(u.id) : '') || u.realName || u.name || u.id;
             memberAggMap[u.id] = {
                 userId: u.id,
-                realName: u.name || (typeof getUserRealName === 'function' ? getUserRealName(u.id) : '') || u.id,
+                realName: officialName,
                 participatedRounds: 0,
                 totalGames: 0,
                 hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },

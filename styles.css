@@ -9763,12 +9763,12 @@ html, body {
 
 /* User Management Modal UX Enhancements */
 #userMgmtModal .user-mgmt-card {
-    max-width: 780px;
-    width: 100%;
-    height: 90vh;
-    max-height: 92vh;
-    display: flex;
-    flex-direction: column;
+    max-width: 1440px !important;
+    width: 96vw !important;
+    height: 92vh !important;
+    max-height: 94vh !important;
+    display: flex !important;
+    flex-direction: column !important;
 }
 
 .user-filter-pill {
@@ -14759,5 +14759,210 @@ body.is-admin .btn-user-mgmt-compact {
     .lp-timer-num {
         font-size: 0.95rem !important;
     }
+}
+
+/* ==========================================================================
+   User Management Laptop & Desktop Responsive High-Visibility UI Revamp
+   ========================================================================== */
+.user-mgmt-card {
+    max-width: 1400px !important;
+    width: 95vw !important;
+    height: 92vh !important;
+    max-height: 94vh !important;
+    background: radial-gradient(circle at 50% 0%, rgba(30, 41, 59, 0.98) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
+    border: 1.5px solid rgba(59, 130, 246, 0.45) !important;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(59, 130, 246, 0.15) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+}
+
+.user-list-grid {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+}
+
+@media (min-width: 860px) {
+    .user-list-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 14px !important;
+    }
+}
+
+@media (min-width: 1360px) {
+    .user-list-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 14px !important;
+    }
+}
+
+.user-card-item {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.82) 0%, rgba(15, 23, 42, 0.92) 100%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    position: relative !important;
+}
+
+.user-card-item:hover {
+    transform: translateY(-2px) !important;
+    border-color: rgba(96, 165, 250, 0.6) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 15px rgba(59, 130, 246, 0.2) !important;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
+}
+
+.user-card-item.is-admin-card {
+    border-color: rgba(245, 158, 11, 0.5) !important;
+    background: linear-gradient(135deg, rgba(40, 35, 20, 0.85) 0%, rgba(15, 23, 42, 0.92) 100%) !important;
+}
+
+.user-card-item.is-permanent-card {
+    border-color: rgba(56, 189, 248, 0.45) !important;
+}
+
+.user-card-item.is-suspended-card {
+    border-color: rgba(239, 68, 68, 0.45) !important;
+    background: linear-gradient(135deg, rgba(40, 20, 25, 0.85) 0%, rgba(15, 23, 42, 0.92) 100%) !important;
+}
+
+.user-avatar-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.user-avatar-kakao {
+    background: #fee500;
+    color: #191919;
+    border: 1px solid rgba(254, 229, 0, 0.5);
+}
+
+.user-avatar-master {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #0f172a;
+    border: 1px solid rgba(251, 191, 36, 0.6);
+}
+
+.user-avatar-regular {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    color: #ffffff;
+    border: 1px solid rgba(59, 130, 246, 0.5);
+}
+
+.user-chip-badge {
+    font-size: 0.72rem !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+}
+
+.user-meta-box {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    font-size: 0.76rem;
+    color: #cbd5e1;
+}
+
+.user-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.user-action-btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: #fff !important;
+    border: 1px solid rgba(59, 130, 246, 0.4) !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    font-size: 0.82rem !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35) !important;
+    transition: all 0.2s ease !important;
+}
+
+.user-action-btn-primary:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.5) !important;
+    filter: brightness(1.08) !important;
+}
+
+.user-action-btn-sub {
+    padding: 7px 10px !important;
+    border-radius: 7px !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    transition: all 0.2s ease !important;
+    border: 1px solid transparent !important;
+}
+
+.user-action-btn-sub:hover {
+    transform: translateY(-1px) !important;
+    filter: brightness(1.1) !important;
+}
+
+.user-filter-pill {
+    padding: 6px 12px !important;
+    font-size: 0.78rem !important;
+    font-weight: 700 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 8px !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    color: #94a3b8 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+    transition: all 0.2s ease !important;
+}
+
+.user-filter-pill:hover {
+    background: rgba(30, 41, 59, 0.9) !important;
+    color: #f1f5f9 !important;
+    border-color: rgba(96, 165, 250, 0.4) !important;
+}
+
+.user-filter-pill.active {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    border-color: #60a5fa !important;
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.45) !important;
 }
 
