@@ -4,7 +4,7 @@ import { createBallHtml, renderBallRow, getRankBadge } from '../../../shared/com
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
-import { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive } from '../ledger.js';
+import { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync, saveUserWeeklyRecommendationSnapshot } from '../generator.js';
 
 let reviewAdminViewingUser = 'all'; // 'all' or specific userId
@@ -305,7 +305,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         return emptyResult;
     }
 
-    const actualDraw = state.mergedHistory ? state.mergedHistory[roundNum] : null;
+    const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(roundNum) || (state.mergedHistory ? state.mergedHistory[roundNum] : null)) : (state.mergedHistory ? state.mergedHistory[roundNum] : null);
 
     // 🔒 1순위: 영구 박제된 불변 스냅샷(Immutable Snapshot)이 존재하는지 확인!
     let snapshot = null;

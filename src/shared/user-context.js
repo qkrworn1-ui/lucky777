@@ -44,6 +44,19 @@ export const LottoTimeService = {
     }
 };
 
+export const DEFAULT_KNOWN_USERS = [
+    { id: 'master', name: '관리자', realName: '관리자', phone: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-07-25T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'wdy', name: '우대용', realName: '우대용', phone: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-01T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'kakao_5070244665', name: '카카오회원(4665)', realName: '카카오회원(4665)', phone: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-30T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'kakao_5070267707', name: '카카오회원(7707)', realName: '카카오회원(7707)', phone: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-30T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'kakao_5070669650', name: '카카오회원(9650)', realName: '카카오회원(9650)', phone: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-30T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'kakao_5071901217', name: '카카오회원(1217)', realName: '카카오회원(1217)', phone: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-30T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'kakao_5072328991', name: '카카오회원(8991)', realName: '카카오회원(8991)', phone: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-30T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'kakao_5073272571', name: '카카오회원(2571)', realName: '카카오회원(2571)', phone: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-30T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'kakao_5078158815', name: '카카오회원(8815)', realName: '카카오회원(8815)', phone: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-06T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'kakao_5081166702', name: '카카오회원(6702)', realName: '카카오회원(6702)', phone: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-06T12:00:00+09:00', status: 'active', isDeleted: false }
+];
+
 /**
  * 👤 UserContextManager: Single Source of Truth for User Metadata & Permissions
  */
@@ -98,13 +111,13 @@ export const UserContextManager = {
         } catch(e) {}
 
         // 5. Current logged in user object
-        const curUser = (typeof window !== 'undefined') ? (window.__currentUser || window.currentUser) : null;
-        if (curUser) {
-            const cId = (curUser.userId || curUser.id || '').toLowerCase().trim();
-            if (cId === cleanId && (curUser.createdAt || curUser.created_at)) {
-                return curUser.createdAt || curUser.created_at;
-            }
+        if (typeof window !== 'undefined' && window.currentUser && (window.currentUser.userId || window.currentUser.id) === cleanId) {
+            if (window.currentUser.createdAt) return window.currentUser.createdAt;
         }
+
+        // 6. DEFAULT_KNOWN_USERS Baseline
+        const foundKnown = DEFAULT_KNOWN_USERS.find(u => u.id === cleanId);
+        if (foundKnown && foundKnown.createdAt) return foundKnown.createdAt;
 
         return null;
     },
@@ -114,34 +127,23 @@ export const UserContextManager = {
         let cleanId = String(userId).trim();
         if (cleanId.startsWith('{')) {
             try {
-                const p = JSON.parse(cleanId);
-                cleanId = p.userid || p.userId || cleanId;
+                const parsed = JSON.parse(cleanId);
+                cleanId = parsed.userid || parsed.userId || cleanId;
             } catch(e) {}
         }
         cleanId = cleanId.toLowerCase().trim();
-
-        // 'all' is the collective aggregation identifier, baseline round is 1235
         if (cleanId === 'all') return 1235;
+        if (cleanId === 'master' || cleanId === 'admin') return 1235;
+        if (cleanId === 'wdy') return 1235;
 
-        // Strictly determine join round from createdAt for all accounts (including master and admin)
+        // Check if user has explicit createdAt
         const createdAt = this.getUserCreatedAt(cleanId);
         if (createdAt) {
             const calced = LottoTimeService.calcRoundFromDate(createdAt);
             return Math.max(calced, 1235);
         }
 
-        // Check if the user has recorded purchases to determine their earliest active round
-        if (typeof window !== 'undefined' && window.state && window.state.allUsersPurchasesMap && window.state.allUsersPurchasesMap[cleanId]) {
-            const pObj = window.state.allUsersPurchasesMap[cleanId];
-            if (pObj.ledger && typeof pObj.ledger === 'object') {
-                const purchaseRounds = Object.keys(pObj.ledger).map(Number).filter(r => !isNaN(r) && Array.isArray(pObj.ledger[r]) && pObj.ledger[r].length > 0);
-                if (purchaseRounds.length > 0) {
-                    return Math.max(Math.min(...purchaseRounds), 1235);
-                }
-            }
-        }
-
-        // Fallback for Kakao users (Kakao login service was launched at Round 1240 in Sept 2026)
+        // Fallback for Kakao users without registered date (default baseline 1240)
         if (cleanId.startsWith('kakao_')) {
             return 1240;
         }
@@ -161,11 +163,16 @@ export const UserContextManager = {
 
     /**
      * 🌐 Single Source of Truth (SSOT) Unified Registered Users List Provider
-     * Perfectly merges state.allRegisteredUsersList, allUsersPurchasesMap, snapshots, and localStorage caches.
-     * Guarantees master and wdy presence while strictly filtering out system dummy test accounts.
+     * Perfectly merges DEFAULT_KNOWN_USERS, localStorage, state.allRegisteredUsersList, allUsersPurchasesMap, and snapshots.
+     * Guarantees all members presence while strictly filtering out system dummy test accounts.
      */
     getAllUnifiedUsers() {
         const userMap = new Map();
+
+        // 0. Seed with DEFAULT_KNOWN_USERS baseline (guarantees instant zero-delay consistency)
+        DEFAULT_KNOWN_USERS.forEach(u => {
+            userMap.set(u.id.toLowerCase(), { ...u });
+        });
 
         // 1. Synchronously pre-load cached users from localStorage
         try {
