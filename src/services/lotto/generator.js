@@ -35,6 +35,39 @@ export function seededShuffle(array, rng) {
     return arr;
 }
 
+let _historyIsolationDepth = 0;
+const _globalHistoryBackup = {};
+
+export function enterHistoryIsolation(targetRound, maxKnownDrawnRound) {
+    if (targetRound === null || targetRound === undefined || targetRound > maxKnownDrawnRound) {
+        return false;
+    }
+    if (_historyIsolationDepth === 0) {
+        for (let key in state.mergedHistory) {
+            if (parseInt(key, 10) >= targetRound) {
+                _globalHistoryBackup[key] = state.mergedHistory[key];
+                delete state.mergedHistory[key];
+            }
+        }
+        recalculateGroups();
+    }
+    _historyIsolationDepth++;
+    return true;
+}
+
+export function exitHistoryIsolation(wasIsolated) {
+    if (!wasIsolated) return;
+    _historyIsolationDepth--;
+    if (_historyIsolationDepth <= 0) {
+        _historyIsolationDepth = 0;
+        for (let key in _globalHistoryBackup) {
+            state.mergedHistory[key] = _globalHistoryBackup[key];
+            delete _globalHistoryBackup[key];
+        }
+        recalculateGroups();
+    }
+}
+
 export function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound = null, overrideVersion = null, ignoreLedger = false, customUserId = null) {
     const drawnRounds = Object.keys(state.mergedHistory || {})
         .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers))
@@ -74,19 +107,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
         return state.localComboCache[cacheKey];
     }
     
-    const needHistoryIsolation = (targetRound !== null && targetRound <= maxKnownDrawnRound);
-    const backupHistory = {};
-
-    if (needHistoryIsolation) {
-        for (let key in state.mergedHistory) {
-            if (parseInt(key) >= targetRound) {
-                backupHistory[key] = state.mergedHistory[key];
-                delete state.mergedHistory[key];
-            }
-        }
-        recalculateGroups();
-    }
-
+    const needHistoryIsolation = enterHistoryIsolation(targetRound, maxKnownDrawnRound);
     const generated = [];
 
     try {
@@ -603,12 +624,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
         });
     }
     } finally {
-        if (needHistoryIsolation) {
-            for (let key in backupHistory) {
-                state.mergedHistory[key] = backupHistory[key];
-            }
-            recalculateGroups();
-        }
+        exitHistoryIsolation(needHistoryIsolation);
     }
 
     if (isCurrentRound) {
@@ -904,18 +920,7 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
         .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers))
         .map(Number);
     const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1237;
-    const needHistoryIsolation = (targetRound !== null && targetRound <= maxKnownDrawnRound);
-    const backupHistory = {};
-
-    if (needHistoryIsolation) {
-        for (let key in state.mergedHistory) {
-            if (parseInt(key) >= targetRound) {
-                backupHistory[key] = state.mergedHistory[key];
-                delete state.mergedHistory[key];
-            }
-        }
-        recalculateGroups();
-    }
+    const needHistoryIsolation = enterHistoryIsolation(targetRound, maxKnownDrawnRound);
 
     try {
         // 1. Analyze Base 20 Games (V3.0 + V4.0) for this user & round
@@ -1245,12 +1250,7 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
         }
         return packResult;
     } finally {
-        if (needHistoryIsolation) {
-            for (let key in backupHistory) {
-                state.mergedHistory[key] = backupHistory[key];
-            }
-            recalculateGroups();
-        }
+        exitHistoryIsolation(needHistoryIsolation);
     }
 }
 
@@ -1259,7 +1259,7 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
  * Permanently snapshots a user's complete 70 combinations (V4 10G, V3 10G, Extra Packs 1~5 50G) for a specific round.
  * Write-Once policy: If already snapshot exists, never overwrite!
  */
-export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
+export async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnapshot = null) {
     if (!userId || !round) return null;
     let cleanUser = String(userId).trim();
     if (cleanUser.startsWith('{')) {
@@ -1285,22 +1285,7 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
 
     const docKey = `${cleanUser}_${roundNum}`;
 
-    // 1. Check memory / local cache first
-    if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-    if (state.userRecommendationSnapshots[docKey]) {
-        return state.userRecommendationSnapshots[docKey];
-    }
-
-    try {
-        const localRaw = localStorage.getItem(`lotto_rec_snapshot_${docKey}`);
-        if (localRaw) {
-            const parsed = JSON.parse(localRaw);
-            state.userRecommendationSnapshots[docKey] = parsed;
-            return parsed;
-        }
-    } catch(e) {}
-
-    // 2. Check Firestore (lotto_users/{userId}.recommendationSnapshots.{roundNum})
+    // 1. Check Firestore first (Single Source of Truth for immutable snapshots)
     const firestore = (db && typeof db.getFirestore === 'function') ? db.getFirestore() : window.db;
     if (firestore) {
         try {
@@ -1309,9 +1294,12 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
                 const uData = uDoc.data();
                 if (uData && uData.recommendationSnapshots && uData.recommendationSnapshots[String(roundNum)]) {
                     const existingData = uData.recommendationSnapshots[String(roundNum)];
-                    state.userRecommendationSnapshots[docKey] = existingData;
-                    try { localStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
-                    return existingData;
+                    if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks) {
+                        if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                        state.userRecommendationSnapshots[docKey] = existingData;
+                        try { localStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
+                        return existingData;
+                    }
                 }
             }
         } catch(e) {
@@ -1319,76 +1307,95 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
         }
     }
 
-    // 3. Generate fresh 70 combinations once for this round & user
-    const v4Combos = computeAbsoluteTop10Combinations(false, roundNum, 'v4', true, cleanUser) || [];
-    const v3Combos = computeAbsoluteTop10Combinations(false, roundNum, 'v3', true, cleanUser) || [];
-    const extraPacks = {};
-    for (let p = 1; p <= 5; p++) {
-        const packObj = generateExtraAddonPack(p, roundNum, cleanUser);
-        extraPacks[p] = {
-            packId: p,
-            name: packObj.name,
-            badge: packObj.badge,
-            color: packObj.color,
-            combos: packObj.combos || []
+    // 2. Determine snapshot data to save (explicit > memory > localStorage > fresh generation)
+    let snapshotData = null;
+    if (explicitSnapshot && explicitSnapshot.v4Combos && explicitSnapshot.v3Combos && explicitSnapshot.extraPacks) {
+        snapshotData = explicitSnapshot;
+    } else if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey] && state.userRecommendationSnapshots[docKey].v4Combos) {
+        snapshotData = state.userRecommendationSnapshots[docKey];
+    } else {
+        try {
+            const localRaw = localStorage.getItem(`lotto_rec_snapshot_${docKey}`);
+            if (localRaw) {
+                const parsed = JSON.parse(localRaw);
+                if (parsed && parsed.v4Combos && parsed.v3Combos && parsed.extraPacks) {
+                    snapshotData = parsed;
+                }
+            }
+        } catch(e) {}
+    }
+
+    if (!snapshotData) {
+        // 3. Generate fresh 70 combinations once for this round & user
+        const v4Combos = computeAbsoluteTop10Combinations(false, roundNum, 'v4', true, cleanUser) || [];
+        const v3Combos = computeAbsoluteTop10Combinations(false, roundNum, 'v3', true, cleanUser) || [];
+        const extraPacks = {};
+        for (let p = 1; p <= 5; p++) {
+            const packObj = generateExtraAddonPack(p, roundNum, cleanUser);
+            extraPacks[p] = {
+                packId: p,
+                name: packObj.name,
+                badge: packObj.badge,
+                color: packObj.color,
+                combos: packObj.combos || []
+            };
+        }
+
+        // Retrieve purchaser (user) metadata
+        let rName = (typeof getUserRealName === 'function' ? getUserRealName(cleanUser) : '') || cleanUser;
+        let uPhone = '';
+        let uType = 'regular';
+        let uCreatedAt = null;
+        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+            const found = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase().trim() === cleanUser);
+            if (found) {
+                if (found.name) rName = found.name;
+                if (found.phone) uPhone = found.phone;
+                if (found.userType) uType = found.userType;
+                if (found.createdAt) uCreatedAt = found.createdAt;
+            }
+        }
+
+        const algorithmsMetadata = [
+            { algoId: 'v4', algoName: 'V4.0 행동경제학 포트폴리오 (10게임)', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6' },
+            { algoId: 'v3', algoName: 'V3.0 하이브리드 정통 수학 알고리즘 (10게임)', badge: 'HYBRID MATH', color: '#3b82f6' }
+        ];
+        for (let p = 1; p <= 5; p++) {
+            if (extraPacks[p]) {
+                algorithmsMetadata.push({
+                    algoId: `extra_${p}`,
+                    algoName: extraPacks[p].name || `추가팩 ${p}`,
+                    badge: extraPacks[p].badge || `EXTRA ${p}`,
+                    color: extraPacks[p].color || '#10b981'
+                });
+            }
+        }
+
+        // Hash fingerprint for data integrity
+        const payloadStr = JSON.stringify({ cleanUser, rName, roundNum, v4Combos, v3Combos, extraPacks, algorithmsMetadata });
+        let hash = 0;
+        for (let i = 0; i < payloadStr.length; i++) {
+            hash = ((hash << 5) - hash) + payloadStr.charCodeAt(i);
+            hash |= 0;
+        }
+
+        snapshotData = {
+            userId: cleanUser,
+            realName: rName,
+            phone: uPhone,
+            userType: uType,
+            userCreatedAt: uCreatedAt,
+            round: roundNum,
+            createdAt: new Date().toISOString(),
+            isLocked: true,
+            hashFingerprint: `hash_${Math.abs(hash).toString(16)}`,
+            totalGames: 70,
+            v4Combos,
+            v3Combos,
+            extraPacks,
+            algorithms: algorithmsMetadata
         };
     }
-
-    // Retrieve purchaser (user) metadata
-    let rName = (typeof getUserRealName === 'function' ? getUserRealName(cleanUser) : '') || cleanUser;
-    let uPhone = '';
-    let uType = 'regular';
-    let uCreatedAt = null;
-    if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
-        const found = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase().trim() === cleanUser);
-        if (found) {
-            if (found.name) rName = found.name;
-            if (found.phone) uPhone = found.phone;
-            if (found.userType) uType = found.userType;
-            if (found.createdAt) uCreatedAt = found.createdAt;
-        }
-    }
-
-    const algorithmsMetadata = [
-        { algoId: 'v4', algoName: 'V4.0 행동경제학 포트폴리오 (10게임)', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6', combos: v4Combos },
-        { algoId: 'v3', algoName: 'V3.0 하이브리드 정통 수학 알고리즘 (10게임)', badge: 'HYBRID MATH', color: '#3b82f6', combos: v3Combos }
-    ];
-    for (let p = 1; p <= 5; p++) {
-        if (extraPacks[p]) {
-            algorithmsMetadata.push({
-                algoId: `extra_${p}`,
-                algoName: extraPacks[p].name || `추가팩 ${p}`,
-                badge: extraPacks[p].badge || `EXTRA ${p}`,
-                color: extraPacks[p].color || '#10b981',
-                combos: extraPacks[p].combos || []
-            });
-        }
-    }
-
-    // Hash fingerprint for data integrity
-    const payloadStr = JSON.stringify({ cleanUser, rName, roundNum, v4Combos, v3Combos, extraPacks, algorithmsMetadata });
-    let hash = 0;
-    for (let i = 0; i < payloadStr.length; i++) {
-        hash = ((hash << 5) - hash) + payloadStr.charCodeAt(i);
-        hash |= 0;
-    }
-
-    const snapshotData = {
-        userId: cleanUser,
-        realName: rName,
-        phone: uPhone,
-        userType: uType,
-        userCreatedAt: uCreatedAt,
-        round: roundNum,
-        createdAt: new Date().toISOString(),
-        isLocked: true,
-        hashFingerprint: `hash_${Math.abs(hash).toString(16)}`,
-        totalGames: 70,
-        v4Combos,
-        v3Combos,
-        extraPacks,
-        algorithms: algorithmsMetadata
-    };
 
     // Save to memory and LocalStorage
     state.userRecommendationSnapshots[docKey] = snapshotData;
@@ -1396,7 +1403,7 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
         localStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(snapshotData));
     } catch(e) {}
 
-    // Save to Firestore (Write-Once into lotto_users and fallback lotto_purchases)
+    // Save to Firestore (Write-Once into BOTH lotto_users and lotto_purchases)
     if (firestore) {
         try {
             await firestore.collection('lotto_users').doc(cleanUser).set({
@@ -1405,16 +1412,16 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round) {
                 }
             }, { merge: true });
         } catch(e) {
-            console.warn('[Snapshot Save to lotto_users Error, trying lotto_purchases]', e);
-            try {
-                await firestore.collection('lotto_purchases').doc(cleanUser).set({
-                    recommendationSnapshots: {
-                        [String(roundNum)]: snapshotData
-                    }
-                }, { merge: true });
-            } catch(e2) {
-                console.error('[Snapshot Save to lotto_purchases Error]', e2);
-            }
+            console.warn('[Snapshot Save to lotto_users Error]', e);
+        }
+        try {
+            await firestore.collection('lotto_purchases').doc(cleanUser).set({
+                recommendationSnapshots: {
+                    [String(roundNum)]: snapshotData
+                }
+            }, { merge: true });
+        } catch(e2) {
+            console.error('[Snapshot Save to lotto_purchases Error]', e2);
         }
     }
 

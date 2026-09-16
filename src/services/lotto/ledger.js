@@ -105,19 +105,21 @@ export function deduplicateReceipts(receiptList) {
         const receiptId = item.receiptId || item.id || null;
         const serial = (item.qrMeta && item.qrMeta.qrSerial) ? String(item.qrMeta.qrSerial).trim() : (item.qrSerial ? String(item.qrSerial).trim() : null);
         
-        // Detect generic/placeholder serials (e.g. 'TR-정상발권', 'TR-정상발권 확인됨')
+        // Detect generic/placeholder serials (e.g. 'TR-정상발권', 'TR-정상', 'TR-정상발권 확인됨')
         const isGenericSerial = !serial || serial === 'TR-정상발권' || serial === 'TR-정상' || serial === 'TR-정상발권 확인됨' || serial.startsWith('TR-정상');
 
         const combosFp = getReceiptCombosFingerprint(item);
         const uUser = (item.user || item.userId || '').toLowerCase().trim();
         const uRound = item.round || item.originalRound || '';
 
-        // Generate rigorous unique deduplication key
+        // 🔒 Generate rigorous unique deduplication key that ALWAYS scopes by user & combos to prevent cross-user collision
         let key = '';
-        if (receiptId) {
-            key = `id_${receiptId}`;
+        if (receiptId && combosFp) {
+            key = `id_${receiptId}_${uUser}_${uRound}_${combosFp}`;
+        } else if (receiptId) {
+            key = `id_${receiptId}_${uUser}_${uRound}`;
         } else if (!isGenericSerial && serial && serial.length >= 6) {
-            key = `serial_${serial}_${uUser}_${uRound}`;
+            key = `serial_${serial}_${uUser}_${uRound}_${combosFp || ''}`;
         } else if (combosFp) {
             key = `combos_${uRound}_${uUser}_${combosFp}`;
         } else {
@@ -552,9 +554,23 @@ export async function fetchAllUsersPurchases() {
             if (hadPollution && !isMasterDoc) {
                 console.warn(`[Firestore Cloud Repair] Automatically purged leaked receipts for user: ${userId}`);
                 try {
-                    firestore.collection('lotto_purchases').doc(rawUserId).set({ ledger: cleanUserLedger });
+                    firestore.collection('lotto_purchases').doc(rawUserId).set({ ledger: cleanUserLedger }, { merge: true });
                 } catch(repairErr) {
                     console.error('[Cloud Repair Failed]', repairErr);
+                }
+            }
+
+            // 🔒 Also preload recommendationSnapshots from lotto_purchases (for master, wdy, or fallback)
+            if (data.recommendationSnapshots && typeof data.recommendationSnapshots === 'object') {
+                if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                for (const rKey in data.recommendationSnapshots) {
+                    const snapData = data.recommendationSnapshots[rKey];
+                    if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
+                        const mapKey = `${userId}_${parseInt(rKey, 10)}`;
+                        if (!state.userRecommendationSnapshots[mapKey]) {
+                            state.userRecommendationSnapshots[mapKey] = snapData;
+                        }
+                    }
                 }
             }
 
@@ -778,6 +794,9 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null)
     if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[authId]) {
         state.allUsersPurchasesMap[authId].ledger = protectedLedger;
     }
+    if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
+        window.clearUser70ReviewCache();
+    }
     
     try {
         storage.setItem(`lotto_actual_ledger_${authId}`, JSON.stringify(protectedLedger));
@@ -791,7 +810,7 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null)
             try {
                 // Direct server save with 4-second safety guard
                 await Promise.race([
-                    firestore.collection('lotto_purchases').doc(authId).set({ ledger: cleanLedger }),
+                    firestore.collection('lotto_purchases').doc(authId).set({ ledger: cleanLedger }, { merge: true }),
                     new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore sync timeout')), 4000))
                 ]);
                 isServerSaved = true;
@@ -1817,58 +1836,109 @@ export function calculateLedgerFinancials(forceRefresh = false, explicitTarget =
  * Used for Main Landing Dashboard & Platform Global Overview
  */
 export async function calculateAllUsersTotalFinancials() {
-    if (!state.allUsersMergedLedger || Object.keys(state.allUsersMergedLedger).length === 0) {
+    if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger || Object.keys(state.allUsersMergedLedger).length === 0) {
         if (typeof fetchAllUsersPurchases === 'function') {
             await fetchAllUsersPurchases();
         }
     }
 
-    const mergedLedger = state.allUsersMergedLedger || {};
     let totalInvest = 0;
     let totalPrize = 0;
     let totalCombos = 0;
     let hits = [0, 0, 0, 0, 0]; // 1~5 ranks
 
-    const rounds = Object.keys(mergedLedger).map(Number).filter(r => !isNaN(r) && r > 0 && Array.isArray(mergedLedger[r]));
+    // 🔒 Priority 1: Aggregate directly across every registered user's clean ledger to eliminate any risk of cross-user collision
+    if (state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0) {
+        for (const uId in state.allUsersPurchasesMap) {
+            const uData = state.allUsersPurchasesMap[uId];
+            if (!uData || !uData.ledger) continue;
+            const uLedger = uData.ledger;
 
-    rounds.forEach(round => {
-        const actualDraw = getSafeActualDraw(round);
-        const receipts = deduplicateReceipts((mergedLedger[round] || []).map(syncPurchaseWithQrUrl));
+            for (const r in uLedger) {
+                const round = parseInt(r, 10);
+                if (isNaN(round) || round <= 0 || !Array.isArray(uLedger[r])) continue;
 
-        const flatCombos = [];
-        receipts.forEach(p => {
-            if (p.combos && Array.isArray(p.combos)) {
-                flatCombos.push(...p.combos);
+                const actualDraw = getSafeActualDraw(round);
+                const receipts = deduplicateReceipts((uLedger[round] || []).map(syncPurchaseWithQrUrl));
+
+                const flatCombos = [];
+                receipts.forEach(p => {
+                    if (p.combos && Array.isArray(p.combos)) {
+                        flatCombos.push(...p.combos);
+                    }
+                });
+
+                totalInvest += flatCombos.length * 1000;
+                totalCombos += flatCombos.length;
+
+                if (actualDraw && actualDraw.numbers) {
+                    const winningSet = new Set(actualDraw.numbers);
+                    const bonus = actualDraw.bonus;
+
+                    const p1 = (actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000);
+                    const p2 = (actualDraw.rank2Prize || 50000000);
+                    const p3 = (actualDraw.rank3Prize || 1500000);
+                    const p4 = (actualDraw.rank4Prize || 50000);
+                    const p5 = (actualDraw.rank5Prize || 5000);
+
+                    flatCombos.forEach(combo => {
+                        const nums = getComboNumbers(combo);
+                        const matches = nums.filter(n => winningSet.has(n));
+                        const matchCount = matches.length;
+                        const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
+
+                        if (matchCount === 6) { hits[0]++; totalPrize += p1; }
+                        else if (matchCount === 5 && hasBonus) { hits[1]++; totalPrize += p2; }
+                        else if (matchCount === 5) { hits[2]++; totalPrize += p3; }
+                        else if (matchCount === 4) { hits[3]++; totalPrize += p4; }
+                        else if (matchCount === 3) { hits[4]++; totalPrize += p5; }
+                    });
+                }
+            }
+        }
+    } else {
+        const mergedLedger = state.allUsersMergedLedger || {};
+        const rounds = Object.keys(mergedLedger).map(Number).filter(r => !isNaN(r) && r > 0 && Array.isArray(mergedLedger[r]));
+
+        rounds.forEach(round => {
+            const actualDraw = getSafeActualDraw(round);
+            const receipts = deduplicateReceipts((mergedLedger[round] || []).map(syncPurchaseWithQrUrl));
+
+            const flatCombos = [];
+            receipts.forEach(p => {
+                if (p.combos && Array.isArray(p.combos)) {
+                    flatCombos.push(...p.combos);
+                }
+            });
+
+            totalInvest += flatCombos.length * 1000;
+            totalCombos += flatCombos.length;
+
+            if (actualDraw && actualDraw.numbers) {
+                const winningSet = new Set(actualDraw.numbers);
+                const bonus = actualDraw.bonus;
+
+                const p1 = (actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000);
+                const p2 = (actualDraw.rank2Prize || 50000000);
+                const p3 = (actualDraw.rank3Prize || 1500000);
+                const p4 = (actualDraw.rank4Prize || 50000);
+                const p5 = (actualDraw.rank5Prize || 5000);
+
+                flatCombos.forEach(combo => {
+                    const nums = getComboNumbers(combo);
+                    const matches = nums.filter(n => winningSet.has(n));
+                    const matchCount = matches.length;
+                    const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
+
+                    if (matchCount === 6) { hits[0]++; totalPrize += p1; }
+                    else if (matchCount === 5 && hasBonus) { hits[1]++; totalPrize += p2; }
+                    else if (matchCount === 5) { hits[2]++; totalPrize += p3; }
+                    else if (matchCount === 4) { hits[3]++; totalPrize += p4; }
+                    else if (matchCount === 3) { hits[4]++; totalPrize += p5; }
+                });
             }
         });
-
-        totalInvest += flatCombos.length * 1000;
-        totalCombos += flatCombos.length;
-
-        if (actualDraw && actualDraw.numbers) {
-            const winningSet = new Set(actualDraw.numbers);
-            const bonus = actualDraw.bonus;
-
-            const p1 = (actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000);
-            const p2 = (actualDraw.rank2Prize || 50000000);
-            const p3 = (actualDraw.rank3Prize || 1500000);
-            const p4 = (actualDraw.rank4Prize || 50000);
-            const p5 = (actualDraw.rank5Prize || 5000);
-
-            flatCombos.forEach(combo => {
-                const nums = getComboNumbers(combo);
-                const matches = nums.filter(n => winningSet.has(n));
-                const matchCount = matches.length;
-                const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
-
-                if (matchCount === 6) { hits[0]++; totalPrize += p1; }
-                else if (matchCount === 5 && hasBonus) { hits[1]++; totalPrize += p2; }
-                else if (matchCount === 5) { hits[2]++; totalPrize += p3; }
-                else if (matchCount === 4) { hits[3]++; totalPrize += p4; }
-                else if (matchCount === 3) { hits[4]++; totalPrize += p5; }
-            });
-        }
-    });
+    }
 
     const netProfit = totalPrize - totalInvest;
     const totalRoi = totalInvest > 0 ? ((totalPrize / totalInvest) * 100).toFixed(1) : '0.0';
@@ -2274,7 +2344,7 @@ export async function moveToReceiptTrash(round, pIdx, purchase, currentAuthId) {
                     try {
                         const cleanLedger = removeUndefined(uLedger);
                         await Promise.race([
-                            firestore.collection('lotto_purchases').doc(uId).set({ ledger: cleanLedger }),
+                            firestore.collection('lotto_purchases').doc(uId).set({ ledger: cleanLedger }, { merge: true }),
                             new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore timeout')), 3000))
                         ]);
                     } catch(e) {}

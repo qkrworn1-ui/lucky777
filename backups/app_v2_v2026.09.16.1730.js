@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.16.1734 - BUILD_DATE: 2026-09-16] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.16.1730 - BUILD_DATE: 2026-09-16] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.16.1734)
+ * Lucky777 Smart Bundle (v2026.09.16.1730)
  */
 
 
@@ -25438,7 +25438,8 @@ const __M_services_lotto_views_snapshot_audit_modal = (function() {
  * - 파이어베이스 실시간 서버 수정일(updateTime) 추적 및 불변성 무결성 진단
  */
 
-const { SafeAuth, isAdminUser } = __M_shared_auth_mgmt;
+const { SafeAuth } = __M_shared_utils;
+const { isAdminUser } = __M_shared_auth_mgmt;
 const { UserContextManager } = __M_shared_user_context;
 
 let __auditData = null;
@@ -25821,13 +25822,7 @@ async function openSnapshotAuditModal(targetUserId = null) {
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     if (!isAdmin) {
-        if (typeof alert === 'function') {
-            alert('⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.');
-        } else if (typeof window !== 'undefined' && typeof window.alert === 'function') {
-            window.alert('⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.');
-        } else {
-            console.warn('⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.');
-        }
+        alert('⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.');
         return;
     }
 
@@ -25923,19 +25918,27 @@ async function renderSnapshotAuditView(forceRefresh = false) {
 
         // 2. Populate Dropdowns if not done
         const userSelect = document.getElementById('auditFilterUserSelect');
-        if (userSelect && (!userSelect.options || userSelect.options.length <= 1)) {
-            userSelect.innerHTML = '<option value="all">전체 회원 (All Users)</option>' + auditData.users.map(u => {
-                const isSel = __auditFilter.user === u.id ? 'selected' : '';
-                return `<option value="${u.id}" ${isSel}>${u.realName} (${u.id}) [${u.joinRound}회 가입]</option>`;
-            }).join('');
+        if (userSelect && userSelect.options.length <= 1) {
+            userSelect.innerHTML = '<option value="all">전체 회원 (All Users)</option>';
+            auditData.users.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = `${u.realName} (${u.id}) [${u.joinRound}회 가입]`;
+                if (__auditFilter.user === u.id) opt.selected = true;
+                userSelect.appendChild(opt);
+            });
         }
 
         const roundSelect = document.getElementById('auditFilterRoundSelect');
-        if (roundSelect && (!roundSelect.options || roundSelect.options.length <= 1)) {
-            roundSelect.innerHTML = '<option value="all">전체 회차 (All Rounds)</option>' + auditData.rounds.map(r => {
-                const isSel = __auditFilter.round === String(r) ? 'selected' : '';
-                return `<option value="${r}" ${isSel}>제 ${r} 회차</option>`;
-            }).join('');
+        if (roundSelect && roundSelect.options.length <= 1) {
+            roundSelect.innerHTML = '<option value="all">전체 회차 (All Rounds)</option>';
+            auditData.rounds.forEach(r => {
+                const opt = document.createElement('option');
+                opt.value = String(r);
+                opt.textContent = `제 ${r} 회차`;
+                if (__auditFilter.round === String(r)) opt.selected = true;
+                roundSelect.appendChild(opt);
+            });
         }
 
         // 3. Filter rows
@@ -26114,9 +26117,7 @@ function openSnapshotDetail(safeUserId, round) {
     if (!__auditData) return;
     const row = __auditData.rows.find(r => r.user.id === userId && r.round === rNum);
     if (!row) {
-        if (typeof alert === 'function') alert('스냅샷 정보를 찾을 수 없습니다.');
-        else if (typeof window !== 'undefined' && typeof window.alert === 'function') window.alert('스냅샷 정보를 찾을 수 없습니다.');
-        else console.warn('스냅샷 정보를 찾을 수 없습니다.');
+        alert('스냅샷 정보를 찾을 수 없습니다.');
         return;
     }
 
@@ -26355,9 +26356,7 @@ async function runSnapshotIntegrityDiagnostic() {
 결과: 파이어베이스 서버 스냅샷 상태가 완벽하게 동기화되어 있습니다.
     `.trim();
 
-    if (typeof alert === 'function') alert(msg);
-    else if (typeof window !== 'undefined' && typeof window.alert === 'function') window.alert(msg);
-    else console.log(msg);
+    alert(msg);
 }
 
 /**
@@ -26366,7 +26365,7 @@ async function runSnapshotIntegrityDiagnostic() {
 function setupSnapshotAuditEvents() {
     // Filter controls
     const userSelect = document.getElementById('auditFilterUserSelect');
-    if (userSelect && typeof userSelect.addEventListener === 'function') {
+    if (userSelect) {
         userSelect.addEventListener('change', (e) => {
             __auditFilter.user = e.target.value;
             renderSnapshotAuditView();
@@ -26374,7 +26373,7 @@ function setupSnapshotAuditEvents() {
     }
 
     const roundSelect = document.getElementById('auditFilterRoundSelect');
-    if (roundSelect && typeof roundSelect.addEventListener === 'function') {
+    if (roundSelect) {
         roundSelect.addEventListener('change', (e) => {
             __auditFilter.round = e.target.value;
             renderSnapshotAuditView();
@@ -26382,7 +26381,7 @@ function setupSnapshotAuditEvents() {
     }
 
     const searchInput = document.getElementById('auditFilterSearchInput');
-    if (searchInput && typeof searchInput.addEventListener === 'function') {
+    if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             __auditFilter.search = e.target.value;
             renderSnapshotAuditView();
@@ -26390,26 +26389,22 @@ function setupSnapshotAuditEvents() {
     }
 
     // Status pills
-    const pills = (typeof document !== 'undefined' && document.querySelectorAll) ? document.querySelectorAll('.audit-status-pill') : [];
+    const pills = document.querySelectorAll('.audit-status-pill');
     pills.forEach(pill => {
-        if (typeof pill.addEventListener === 'function') {
-            pill.addEventListener('click', () => {
-                pills.forEach(p => p.classList && p.classList.remove && p.classList.remove('active'));
-                if (pill.classList && pill.classList.add) pill.classList.add('active');
-                __auditFilter.status = pill.getAttribute('data-status') || 'all';
-                renderSnapshotAuditView();
-            });
-        }
+        pill.addEventListener('click', () => {
+            pills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            __auditFilter.status = pill.getAttribute('data-status') || 'all';
+            renderSnapshotAuditView();
+        });
     });
 
     // Close buttons
     const btnClose = document.getElementById('btnCloseSnapshotAuditModal');
-    if (btnClose && typeof btnClose.addEventListener === 'function') {
-        btnClose.addEventListener('click', closeSnapshotAuditModal);
-    }
+    if (btnClose) btnClose.addEventListener('click', closeSnapshotAuditModal);
 
     const btnCloseDetail = document.getElementById('btnCloseSnapshotDetailSubModal');
-    if (btnCloseDetail && typeof btnCloseDetail.addEventListener === 'function') {
+    if (btnCloseDetail) {
         btnCloseDetail.addEventListener('click', () => {
             const m = document.getElementById('snapshotDetailSubModal');
             if (m) m.style.display = 'none';
@@ -26434,10 +26429,6 @@ if (typeof document !== 'undefined') {
     }
 }
 
-        if (typeof formatAuditDateTime !== 'undefined') {
-            __exports.formatAuditDateTime = formatAuditDateTime;
-            if (typeof window !== 'undefined') window.formatAuditDateTime = formatAuditDateTime;
-        }
         if (typeof fetchSnapshotAuditData !== 'undefined') {
             __exports.fetchSnapshotAuditData = fetchSnapshotAuditData;
             if (typeof window !== 'undefined') window.fetchSnapshotAuditData = fetchSnapshotAuditData;

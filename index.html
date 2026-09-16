@@ -54,7 +54,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.09.16.1621">
+    <link rel="stylesheet" href="styles.css?v=2026.09.16.1734">
 </head>
 
 <body>
@@ -106,7 +106,7 @@
             <div class="lp-brand-badge" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
                 <span><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.09.16.1621 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.09.16.1734 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 style="margin: 0 0 8px 0;">운도<br><span class="lp-accent">실력</span></h1>
@@ -420,7 +420,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.09.16.1621
+                                v2026.09.16.1734
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -435,8 +435,11 @@
                     <button onclick="showLanding()" class="btn-home-compact" title="홈으로" aria-label="홈으로">
                         <i class="fa-solid fa-house"></i>
                     </button>
-                    <button id="btnUserManagementApp" class="btn-user-mgmt-compact" style="display: none;" title="사용자 추가" aria-label="사용자 추가">
+                    <button id="btnUserManagementApp" class="btn-user-mgmt-compact" style="display: none;" title="사용자 추가 및 통합 관리" aria-label="사용자 추가">
                         <i class="fa-solid fa-users-gear"></i>
+                    </button>
+                    <button id="btnAdminSnapshotAudit" class="btn-snapshot-audit-compact" style="display: none;" title="서버 스냅샷 상태 모니터링 (관리자 전용)" aria-label="서버 스냅샷 상태 모니터링" onclick="window.openSnapshotAuditModal && window.openSnapshotAuditModal()">
+                        <i class="fa-solid fa-server"></i>
                     </button>
                     <button onclick="handleLogout()" class="btn-logout-compact" title="로그아웃" aria-label="로그아웃">
                         <i class="fa-solid fa-right-from-bracket"></i>
@@ -1808,7 +1811,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.09.16.1621
+                        <i class="fa-solid fa-code-branch"></i> v2026.09.16.1734
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -2100,6 +2103,9 @@
                     <button type="button" id="btnToggleKakaoDiag" onclick="window.toggleKakaoDiagSection && window.toggleKakaoDiagSection()" style="background:rgba(254, 229, 0, 0.15); border:1px solid rgba(254, 229, 0, 0.4); color:#fee500; padding:6px 10px; border-radius:7px; font-size:0.8rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
                         <i class="fa-solid fa-comment-dots"></i> 카카오 발송·설정
                     </button>
+                    <button type="button" id="btnOpenSnapshotAuditFromMgmt" onclick="window.openSnapshotAuditModal && window.openSnapshotAuditModal()" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; padding:6px 12px; border-radius:7px; font-size:0.8rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(16,185,129,0.35);">
+                        <i class="fa-solid fa-server"></i> <span>스냅샷 모니터링</span>
+                    </button>
                 </div>
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
                     <button type="button" onclick="window.autoSuspendAllNonPurchasers && window.autoSuspendAllNonPurchasers()" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#0f172a; border:none; padding:6px 10px; border-radius:7px; font-size:0.76rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(245,158,11,0.3);">
@@ -2213,6 +2219,82 @@
                         <i class="fa-solid fa-spinner fa-spin"></i> 데이터를 불러오는 중...
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🛡️ 관리자 전용 서버 스냅샷 상태 모니터링 모달 (Snapshot Audit Console Modal) -->
+    <div id="snapshotAuditModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.88); z-index:99999; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px; box-sizing:border-box;">
+        <div class="modal-card snapshot-audit-card" style="width:96vw; max-width:1440px; height:92vh; max-height:94vh; background:radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%); border:1.5px solid rgba(16, 185, 129, 0.45); padding:18px 20px; border-radius:16px; color:#fff; box-shadow:0 24px 60px rgba(0,0,0,0.85), 0 0 35px rgba(16,185,129,0.15); display:flex; flex-direction:column; box-sizing:border-box;">
+            <!-- Header -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; padding-bottom:10px; border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink:0;">
+                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <h3 style="margin:0; color:#34d399; font-size:1.15rem; display:flex; align-items:center; gap:8px; font-weight:800;">
+                        <i class="fa-solid fa-server" style="color: #10b981;"></i> 서버 스냅샷 상태 모니터링 &amp; 무결성 감사
+                    </h3>
+                    <span style="font-size:0.75rem; background:rgba(16, 185, 129, 0.2); border:1px solid rgba(16, 185, 129, 0.4); color:#34d399; padding:2px 8px; border-radius:10px; font-weight:800;">
+                        관리자 전용 (Firestore 불변성 보존)
+                    </span>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button type="button" onclick="window.runSnapshotIntegrityDiagnostic && window.runSnapshotIntegrityDiagnostic()" style="background:rgba(251,191,36,0.15); border:1px solid rgba(251,191,36,0.45); color:#fbbf24; padding:6px 12px; border-radius:7px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+                        <i class="fa-solid fa-shield-halved"></i> 무결성 진단
+                    </button>
+                    <button type="button" onclick="window.refreshSnapshotAuditData && window.refreshSnapshotAuditData()" style="background:rgba(59,130,246,0.2); border:1px solid rgba(96,165,250,0.45); color:#93c5fd; padding:6px 12px; border-radius:7px; font-size:0.78rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:5px;">
+                        <i class="fa-solid fa-rotate"></i> 실시간 새로고침
+                    </button>
+                    <button id="btnCloseSnapshotAuditModal" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:1.4rem; cursor:pointer; width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition:background 0.2s;">&times;</button>
+                </div>
+            </div>
+
+            <!-- KPI Cards Area -->
+            <div id="snapshotAuditKpiArea" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:10px; margin-bottom:12px; flex-shrink:0;">
+            </div>
+
+            <!-- Filter & Search Toolbar -->
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; background:rgba(15, 23, 42, 0.6); padding:8px 10px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); flex-shrink:0;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center; flex:1;">
+                    <!-- User Dropdown -->
+                    <select id="auditFilterUserSelect" style="height:34px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:7px; font-size:0.8rem; font-weight:700; outline:none; cursor:pointer;">
+                        <option value="all">전체 회원 (All Users)</option>
+                    </select>
+                    <!-- Round Dropdown -->
+                    <select id="auditFilterRoundSelect" style="height:34px; padding:0 10px; background:#0f172a; border:1px solid #334155; color:#fbbf24; border-radius:7px; font-size:0.8rem; font-weight:800; outline:none; cursor:pointer;">
+                        <option value="all">전체 회차 (All Rounds)</option>
+                    </select>
+                    <!-- Status Filter Pills -->
+                    <div id="auditFilterStatusPills" style="display:flex; gap:4px; overflow-x:auto;">
+                        <button type="button" class="user-filter-pill audit-status-pill active" data-status="all">전체</button>
+                        <button type="button" class="user-filter-pill audit-status-pill" data-status="locked" style="color:#34d399;">고정완료 (70G)</button>
+                        <button type="button" class="user-filter-pill audit-status-pill" data-status="purchased" style="color:#38bdf8;">구매확정</button>
+                        <button type="button" class="user-filter-pill audit-status-pill" data-status="unpurchased" style="color:#fbbf24;">미구매</button>
+                        <button type="button" class="user-filter-pill audit-status-pill" data-status="prejoin" style="color:#94a3b8;">가입이전 차단</button>
+                        <button type="button" class="user-filter-pill audit-status-pill" data-status="warning" style="color:#f87171;">주의/누락</button>
+                    </div>
+                </div>
+                <!-- Search Box -->
+                <div style="position:relative; width:200px;">
+                    <i class="fa-solid fa-magnifying-glass" style="position:absolute; left:10px; top:50%; transform:translateY(-50%); color:#64748b; font-size:0.8rem;"></i>
+                    <input type="text" id="auditFilterSearchInput" placeholder="회원명/아이디 검색..." style="width:100%; height:34px; padding:0 10px 0 30px; background:#0f172a; border:1px solid #334155; color:#fff; border-radius:7px; font-size:0.82rem; outline:none; box-sizing:border-box;">
+                </div>
+            </div>
+
+            <!-- Table Content Area -->
+            <div id="snapshotAuditContentArea" style="flex-grow:1; overflow-y:auto; padding-right:4px; display:flex; flex-direction:column; min-height:250px;">
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔍 스냅샷 세부검사 서브모달 (Snapshot Detail Sub-Modal) -->
+    <div id="snapshotDetailSubModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100001; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px; box-sizing:border-box;">
+        <div class="modal-card" style="background:#1e293b; border:1.5px solid #10b981; padding:20px; border-radius:16px; max-width:850px; width:95vw; color:#fff; box-shadow:0 24px 60px rgba(0,0,0,0.85); max-height:92vh; display:flex; flex-direction:column; box-sizing:border-box;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.08); flex-shrink:0;">
+                <h3 style="margin:0; color:#34d399; font-size:1.1rem; display:flex; align-items:center; gap:8px; font-weight:800;">
+                    <i class="fa-solid fa-file-shield" style="color:#10b981;"></i> 회차별 스냅샷 상세 검사
+                </h3>
+                <button type="button" id="btnCloseSnapshotDetailSubModal" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; font-size:1.4rem; cursor:pointer; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center;">&times;</button>
+            </div>
+            <div id="snapshotDetailSubModalContent" style="overflow-y:auto; flex-grow:1; padding-right:4px;">
             </div>
         </div>
     </div>
@@ -3041,7 +3123,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.09.16.1621';
+        window.APP_VERSION = 'v2026.09.16.1734';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -3083,7 +3165,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.09.16.1621';
+            var v = ver || window.APP_VERSION || 'v2026.09.16.1734';
             var sVer = serverVer || getHighestKnownVersion();
             var currentNum = parseVersionNum(v);
             var serverNum = parseVersionNum(sVer);
@@ -3270,7 +3352,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.16.1621';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.16.1734';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -3364,7 +3446,7 @@
         // ========================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.09.16.1621')
+                navigator.serviceWorker.register('./sw.js?v=2026.09.16.1734')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -3373,7 +3455,7 @@
                             if (installingWorker) {
                                 installingWorker.onstatechange = function() {
                                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        console.log('[PWA] New version (v2026.09.16.1621) installed! Refreshing cache...');
+                                        console.log('[PWA] New version (v2026.09.16.1734) installed! Refreshing cache...');
                                         window.location.reload();
                                     }
                                 };
@@ -3440,8 +3522,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.09.16.1621"></script>
-    <script src="app_v2.js?v=2026.09.16.1621"></script>
+    <script src="data.js?v=2026.09.16.1734"></script>
+    <script src="app_v2.js?v=2026.09.16.1734"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">

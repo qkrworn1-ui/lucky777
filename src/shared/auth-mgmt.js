@@ -622,6 +622,7 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
     const landingPage = document.getElementById('landingPage');
     const btnUserManagement = document.getElementById('btnUserManagement');
     const btnUserManagementApp = document.getElementById('btnUserManagementApp');
+    const btnAdminSnapshotAudit = document.getElementById('btnAdminSnapshotAudit');
     const btnUserManagementToto = document.getElementById('btnUserManagementToto');
     const btnFetchLatestDraw = document.getElementById('btnFetchLatestDraw');
     const btnOpenManualDrawModal = document.getElementById('btnOpenManualDrawModal');
@@ -747,6 +748,7 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             document.body.classList.add('is-admin');
             if (btnUserManagement) btnUserManagement.style.setProperty('display', 'inline-flex', 'important');
             if (btnUserManagementApp) btnUserManagementApp.style.setProperty('display', 'inline-flex', 'important');
+            if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.setProperty('display', 'inline-flex', 'important');
             if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'inline-flex', 'important');
             if (btnFetchLatestDraw) btnFetchLatestDraw.style.display = 'inline-flex';
             if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'inline-block';
@@ -754,6 +756,7 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             document.body.classList.remove('is-admin');
             if (btnUserManagement) btnUserManagement.style.setProperty('display', 'none', 'important');
             if (btnUserManagementApp) btnUserManagementApp.style.setProperty('display', 'none', 'important');
+            if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.setProperty('display', 'none', 'important');
             if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'none', 'important');
             if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'none';
         }
@@ -2086,6 +2089,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
     if (btnUserManagement) btnUserManagement.addEventListener('click', window.openUserManagement);
     if (btnUserManagementApp) btnUserManagementApp.addEventListener('click', window.openUserManagement);
+    if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.addEventListener('click', () => { if (window.openSnapshotAuditModal) window.openSnapshotAuditModal(); });
     const btnUserManagementToto = document.getElementById('btnUserManagementToto');
     if (btnUserManagementToto) btnUserManagementToto.addEventListener('click', window.openUserManagement);
 
@@ -2468,6 +2472,9 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                         </button>
                         <button type="button" onclick="window.sendUserUnsentWinningReports(decodeURIComponent('${safeUserId}'))" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" class="user-action-btn-sub" style="flex:1; min-width:70px; height:30px; background:rgba(167, 139, 250, 0.12); border:1px solid rgba(167, 139, 250, 0.4); color:#c4b5fd; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
                             <i class="fa-solid fa-box-archive"></i> 미전송발송
+                        </button>
+                        <button type="button" onclick="window.openSnapshotAuditModal && window.openSnapshotAuditModal(decodeURIComponent('${safeUserId}'))" title="이 회원의 추천번호 및 실구매 스냅샷 상태 상세 확인" class="user-action-btn-sub" style="flex:1; min-width:62px; height:30px; background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.45); color:#34d399; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
+                            <i class="fa-solid fa-server"></i> 스냅샷
                         </button>
                         ${(function() {
                             let curAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
@@ -3748,7 +3755,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 /**
  * 조합 객체/배열에서 정수 번호 6개 추출
  */
-export function extractNumbersFromCombo(c) {
+function extractNumbersFromCombo(c) {
     if (!c) return [];
     if (Array.isArray(c)) {
         return c.map(Number).filter(n => !isNaN(n) && n >= 1 && n <= 45).sort((a,b)=>a-b);
@@ -3765,7 +3772,7 @@ export function extractNumbersFromCombo(c) {
 /**
  * 특정 회차의 공식 당첨 번호 및 당첨금 정보 조회
  */
-export function getDrawWinningNumbers(round) {
+function getDrawWinningNumbers(round) {
     if (!round) return null;
     const rNum = Number(round);
     try {
@@ -3829,7 +3836,7 @@ export function getDrawWinningNumbers(round) {
 /**
  * 특정 사용자의 특정 회차 실구매 데이터 채점
  */
-export async function scoreUserRoundPurchases(userId, round, userLedgerData = null) {
+async function scoreUserRoundPurchases(userId, round, userLedgerData = null) {
     const rNum = Number(round);
     let ledger = userLedgerData;
 
@@ -3931,7 +3938,7 @@ export async function scoreUserRoundPurchases(userId, round, userLedgerData = nu
 /**
  * 사용자의 가입 후 미전송 당첨 회차 목록 탐색 (오직 본인의 실구매 당첨 회차만)
  */
-export async function getUnsentWinningRoundsForUser(userId, userData = null, userLedgerData = null) {
+async function getUnsentWinningRoundsForUser(userId, userData = null, userLedgerData = null) {
     if (!userId || !window.db) return [];
 
     let uData = userData;
@@ -3972,7 +3979,7 @@ export async function getUnsentWinningRoundsForUser(userId, userData = null, use
 /**
  * 단일 회차 실구매 당첨 채점 카카오톡 템플릿 생성
  */
-export async function buildUserWinningReportTemplate(userId, targetRound, userScoreData = null, userData = null) {
+async function buildUserWinningReportTemplate(userId, targetRound, userScoreData = null, userData = null) {
     let score = userScoreData;
     if (!score) {
         score = await scoreUserRoundPurchases(userId, targetRound);
@@ -4068,7 +4075,7 @@ ${combosDetail}${feeNotice}`;
 /**
  * 가입 후 누적 미전송 당첨건 통합 리포트 카카오톡 템플릿 생성
  */
-export async function buildUserAccumulatedWinningReportTemplate(userId, unsentScoresList, userData = null) {
+async function buildUserAccumulatedWinningReportTemplate(userId, unsentScoresList, userData = null) {
     let uData = userData;
     if (!uData && window.db) {
         try {
@@ -5222,7 +5229,7 @@ window.startBatchWinningSend = async function() {
         }, INACTIVITY_TIMEOUT_MS);
     }
 
-    export function setupInactivityAutoLogout() {
+    function setupInactivityAutoLogout() {
         if (typeof window === 'undefined') return;
         
         const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
@@ -5254,7 +5261,7 @@ window.startBatchWinningSend = async function() {
         return target;
     }
 
-    export async function updatePurchaseDeadlineCountdowns() {
+    async function updatePurchaseDeadlineCountdowns() {
         const authId = SafeAuth.get();
         const lpBanner = document.getElementById('lpPurchaseDeadlineBanner');
         const lottoBanner = document.getElementById('lottoPurchaseDeadlineBanner');

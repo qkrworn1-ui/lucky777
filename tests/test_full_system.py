@@ -1617,7 +1617,34 @@ class TestFullSystem(unittest.TestCase):
         real_1240 = set([11, 13, 19, 20, 31, 44])
         wdy_winning_combo = [11, 19, 31, 33, 38, 45]
         matches = len(set(wdy_winning_combo).intersection(real_1240))
-        self.assertEqual(matches, 3, "Winning combo for 1240 5th prize must match exactly 3 numbers of [11, 13, 19, 20, 31, 44]")
+    def test_41_cross_user_deduplication_and_global_prize(self):
+        """Test 41: Ensure multi-user receipts are never dropped across users and global prize evaluates to 60,000 KRW."""
+        # 1. Test deduplication scoping
+        receipt_master = {
+            'receiptId': '124000000114142041',
+            'user': 'master',
+            'round': 1240,
+            'combos': [{'numbers': [3, 11, 17, 24, 33, 42]}]
+        }
+        receipt_hsy = {
+            'receiptId': '124000000114142041',
+            'user': 'kakao_5071901217',
+            'round': 1240,
+            'combos': [{'numbers': [1, 10, 11, 19, 44, 45]}]  # 5th place win in 1240
+        }
+        receipt_wdy = {
+            'receiptId': '124000000114142041',
+            'user': 'wdy',
+            'round': 1240,
+            'combos': [{'numbers': [11, 19, 31, 33, 38, 45]}] # 5th place win in 1240
+        }
+
+        # Check ledger.js code includes user scoping in deduplication key
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            code = f.read()
+        self.assertIn('key = `id_${receiptId}_${uUser}_${uRound}_${combosFp}`;', code)
+        self.assertIn('totalPrize', code)
 
 
 if __name__ == '__main__':

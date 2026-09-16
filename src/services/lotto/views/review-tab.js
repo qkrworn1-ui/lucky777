@@ -456,6 +456,10 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         try {
             localStorage.setItem(`lotto_rec_snapshot_${cacheKey}`, JSON.stringify(createdSnapshot));
         } catch(e) {}
+        // 🔒 Asynchronously sync to Firestore if not present
+        if (typeof saveUserWeeklyRecommendationSnapshot === 'function') {
+            saveUserWeeklyRecommendationSnapshot(cleanUser, roundNum, createdSnapshot).catch(() => {});
+        }
     }
 
     const v4Eval = evaluateRecommendationSet(v4Combos, actualDraw);

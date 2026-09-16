@@ -311,6 +311,7 @@ FILES_TO_BUNDLE = [
     "src/services/lotto/views/manual-modal.js",
     "src/services/lotto/views/celebration.js",
     "src/services/lotto/views/manual-draw-modal.js",
+    "src/services/lotto/views/snapshot-audit-modal.js",
     "src/services/lotto/views/sync.js",
     "src/services/lotto/views/hex-map.js",
     "src/services/lotto/index.js",
