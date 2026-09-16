@@ -157,10 +157,194 @@ export const UserContextManager = {
             rounds.push(r);
         }
         return rounds.length > 0 ? rounds : [minRound];
+    },
+
+    /**
+     * 🌐 Single Source of Truth (SSOT) Unified Registered Users List Provider
+     * Perfectly merges state.allRegisteredUsersList, allUsersPurchasesMap, snapshots, and localStorage caches.
+     * Guarantees master and wdy presence while strictly filtering out system dummy test accounts.
+     */
+    getAllUnifiedUsers() {
+        const userMap = new Map();
+
+        // 1. Synchronously pre-load cached users from localStorage
+        try {
+            if (typeof localStorage !== 'undefined') {
+                const raw = localStorage.getItem('lotto_all_users_list_cache');
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(u => {
+                            if (u && u.id) {
+                                const cleanId = String(u.id).trim().toLowerCase();
+                                if (cleanId && !userMap.has(cleanId)) {
+                                    userMap.set(cleanId, {
+                                        id: u.id,
+                                        name: u.name || u.realName || u.id,
+                                        realName: u.realName || u.name || u.id,
+                                        phone: u.phone || u.phoneNumber || '',
+                                        isAdmin: !!u.isAdmin,
+                                        isPermanent: !!u.isPermanent,
+                                        userType: u.userType || 'regular',
+                                        createdAt: u.createdAt || null,
+                                        status: u.status || 'active',
+                                        isDeleted: u.isDeleted || false
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        } catch(e) {}
+
+        // 2. Merge in-memory state.allRegisteredUsersList
+        if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+            window.state.allRegisteredUsersList.forEach(u => {
+                if (u && u.id) {
+                    const cleanId = String(u.id).trim().toLowerCase();
+                    if (cleanId) {
+                        const existing = userMap.get(cleanId) || {};
+                        userMap.set(cleanId, {
+                            ...existing,
+                            id: u.id,
+                            name: u.name || u.realName || existing.name || u.id,
+                            realName: u.realName || u.name || existing.realName || u.id,
+                            phone: u.phone || u.phoneNumber || existing.phone || '',
+                            isAdmin: u.isAdmin !== undefined ? !!u.isAdmin : existing.isAdmin,
+                            isPermanent: u.isPermanent !== undefined ? !!u.isPermanent : existing.isPermanent,
+                            userType: u.userType || existing.userType || 'regular',
+                            createdAt: u.createdAt || existing.createdAt || null,
+                            status: u.status || existing.status || 'active',
+                            isDeleted: u.isDeleted !== undefined ? u.isDeleted : existing.isDeleted
+                        });
+                    }
+                }
+            });
+        }
+
+        // 3. Merge state.allUsersPurchasesMap
+        if (typeof window !== 'undefined' && window.state && window.state.allUsersPurchasesMap && typeof window.state.allUsersPurchasesMap === 'object') {
+            Object.keys(window.state.allUsersPurchasesMap).forEach(uId => {
+                const pObj = window.state.allUsersPurchasesMap[uId];
+                if (pObj) {
+                    const cleanId = String(uId).trim().toLowerCase();
+                    if (cleanId) {
+                        const existing = userMap.get(cleanId) || {};
+                        userMap.set(cleanId, {
+                            ...existing,
+                            id: pObj.userId || uId,
+                            name: pObj.realName || pObj.name || existing.name || uId,
+                            realName: pObj.realName || pObj.name || existing.realName || uId,
+                            phone: existing.phone || '',
+                            isAdmin: existing.isAdmin !== undefined ? existing.isAdmin : false,
+                            isPermanent: existing.isPermanent !== undefined ? existing.isPermanent : false,
+                            userType: existing.userType || 'regular',
+                            createdAt: pObj.createdAt || pObj.created_at || existing.createdAt || null,
+                            status: existing.status || 'active',
+                            isDeleted: existing.isDeleted || false
+                        });
+                    }
+                }
+            });
+        }
+
+        // 4. Merge state.userRecommendationSnapshots
+        if (typeof window !== 'undefined' && window.state && window.state.userRecommendationSnapshots && typeof window.state.userRecommendationSnapshots === 'object') {
+            Object.keys(window.state.userRecommendationSnapshots).forEach(k => {
+                const snap = window.state.userRecommendationSnapshots[k];
+                if (snap && snap.userId) {
+                    const cleanId = String(snap.userId).trim().toLowerCase();
+                    if (cleanId) {
+                        const existing = userMap.get(cleanId) || {};
+                        userMap.set(cleanId, {
+                            ...existing,
+                            id: snap.userId,
+                            name: snap.realName || existing.name || snap.userId,
+                            realName: snap.realName || existing.realName || snap.userId,
+                            phone: snap.phone || existing.phone || '',
+                            isAdmin: existing.isAdmin !== undefined ? existing.isAdmin : false,
+                            isPermanent: existing.isPermanent !== undefined ? existing.isPermanent : false,
+                            userType: snap.userType || existing.userType || 'regular',
+                            createdAt: snap.userCreatedAt || existing.createdAt || null,
+                            status: existing.status || 'active',
+                            isDeleted: existing.isDeleted || false
+                        });
+                    }
+                }
+            });
+        }
+
+        // 5. Ensure master and wdy are always guaranteed
+        if (!userMap.has('master')) {
+            userMap.set('master', {
+                id: 'master',
+                name: '관리자',
+                realName: '관리자',
+                phone: '',
+                isAdmin: true,
+                isPermanent: true,
+                userType: 'permanent',
+                createdAt: '2026-07-25T12:00:00+09:00',
+                status: 'active',
+                isDeleted: false
+            });
+        } else {
+            const m = userMap.get('master');
+            m.isAdmin = true;
+            m.isPermanent = true;
+            if (!m.name) m.name = '관리자';
+        }
+
+        if (!userMap.has('wdy')) {
+            userMap.set('wdy', {
+                id: 'wdy',
+                name: '우대용',
+                realName: '우대용',
+                phone: '',
+                isAdmin: false,
+                isPermanent: false,
+                userType: 'regular',
+                createdAt: '2026-08-01T12:00:00+09:00',
+                status: 'active',
+                isDeleted: false
+            });
+        }
+
+        // 6. Filter out deleted or dummy test accounts
+        const unifiedList = Array.from(userMap.values()).filter(u => {
+            if (!u || !u.id) return false;
+            const uId = String(u.id).trim().toLowerCase();
+            if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted') return false;
+            if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'app_latest_version' ||
+                uId === 'global_trash' || uId === 'global_state' || uId === 'global_saved' || uId === 'extra_history' ||
+                uId === 'user_alpha' || uId === 'user_beta' || uId === 'user_gamma' || uId === 'sample' || uId === 'hms' ||
+                uId === 'guest' || uId === 'all') {
+                return false;
+            }
+            return true;
+        });
+
+        // 7. Update in-memory state and localStorage cache if list has elements
+        if (unifiedList.length > 0 && typeof window !== 'undefined' && window.state) {
+            window.state.allRegisteredUsersList = unifiedList;
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem('lotto_all_users_list_cache', JSON.stringify(unifiedList));
+                }
+            } catch(e) {}
+        }
+
+        return unifiedList;
     }
 };
+
+export function getAllUnifiedRegisteredUsers() {
+    return UserContextManager.getAllUnifiedUsers();
+}
 
 if (typeof window !== 'undefined') {
     window.LottoTimeService = LottoTimeService;
     window.UserContextManager = UserContextManager;
+    window.getAllUnifiedRegisteredUsers = getAllUnifiedRegisteredUsers;
 }

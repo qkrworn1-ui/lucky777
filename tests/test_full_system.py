@@ -1500,12 +1500,17 @@ class TestFullSystem(unittest.TestCase):
         algo_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'algorithms-tab.js')
         with open(algo_file, 'r', encoding='utf-8') as f:
             algo_code = f.read()
-        self.assertIn('!isSystemOrDummyUser(uId)', algo_code)
+        self.assertIn('getAllUnifiedRegisteredUsers', algo_code)
 
         landing_file = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
         with open(landing_file, 'r', encoding='utf-8') as f:
             landing_code = f.read()
-        self.assertIn('!isSystemOrDummyUser(uId)', landing_code)
+        self.assertIn('getAllUnifiedRegisteredUsers', landing_code)
+
+        ucontext_file = os.path.join(self.root_dir, 'src', 'shared', 'user-context.js')
+        with open(ucontext_file, 'r', encoding='utf-8') as f:
+            ucontext_code = f.read()
+        self.assertIn('getAllUnifiedRegisteredUsers', ucontext_code)
 
         # 3. Simulate and verify user sanitization preventing game bloat
         raw_firestore_users = [

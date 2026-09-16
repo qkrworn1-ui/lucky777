@@ -2463,11 +2463,11 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             const users = [];
             snapshot.forEach(doc => {
                 const uIdClean = (doc.id || '').toLowerCase().trim();
-                // Ignore corrupt/garbage JSON string IDs, system metadata, or admin test account if any
-                if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'admin' || uIdClean === 'app_latest_version') {
+                // Ignore corrupt/garbage JSON string IDs or system metadata if any
+                if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'app_latest_version') {
                     // asynchronously clean up in background
-                    window.db.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
                     if (uIdClean !== 'app_latest_version') {
+                        window.db.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
                         window.db.collection('lotto_agreements').doc(doc.id).delete().catch(console.warn);
                         window.db.collection('lotto_purchases').doc(doc.id).delete().catch(console.warn);
                     }
@@ -4907,7 +4907,7 @@ window.startBatchWinningSend = async function() {
                 return id.startsWith('test_') || id.startsWith('{') || 
                        id === 'user_alpha' || id === 'user_beta' || id === 'user_gamma' || 
                        id === 'user_1235' || id === 'user_1238' || id === 'user_1240' || id === 'user_1241' ||
-                       id === 'sample' || id === 'hms' || id === 'admin';
+                       id === 'sample' || id === 'hms';
             };
 
             let deletedUserCount = 0;

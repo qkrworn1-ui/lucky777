@@ -2,6 +2,7 @@ import { state } from '../services/lotto/state.js';
 import { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUsersPurchases } from '../services/lotto/ledger.js';
 import { SafeAuth, getUserRealName } from './auth-mgmt.js';
 import { isSystemOrDummyUser } from './utils.js';
+import { getAllUnifiedRegisteredUsers } from './user-context.js';
 import { computeUser70RecommendationsReview, clearUser70ReviewCache } from '../services/lotto/views/review-tab.js';
 
 /**
@@ -309,22 +310,7 @@ export async function updateHomeReviewDashboard() {
             grandTotalWins = perf.grandTotalWins || (grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5);
         } else {
             // Fallback direct calculation across rounds 1235..maxRound and registered users
-            const rawRegisteredUsers = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0)
-                ? state.allRegisteredUsersList
-                : Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id, realName: id }));
-
-            const registeredUsers = rawRegisteredUsers.filter(u => {
-                const uId = (u.id || '').trim().toLowerCase();
-                return !isSystemOrDummyUser(uId) && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
-            });
-            if (!registeredUsers.some(u => (u.id || '').toLowerCase().trim() === 'master')) {
-                registeredUsers.unshift({ id: 'master', name: '관리자', realName: '관리자' });
-            }
-            if (!registeredUsers.some(u => (u.id || '').toLowerCase().trim() === 'wdy')) {
-                registeredUsers.push({ id: 'wdy', name: '우대용', realName: '우대용', createdAt: '2026-08-01T12:00:00+09:00' });
-            }
-
-            const userList = registeredUsers;
+            const userList = getAllUnifiedRegisteredUsers();
 
             const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
 

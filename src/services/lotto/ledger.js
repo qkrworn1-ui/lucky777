@@ -450,6 +450,33 @@ export async function fetchAllUsersPurchases() {
                     }
                 }
             });
+
+            // 🔒 Ensure master and wdy are always present in state.allRegisteredUsersList
+            if (!state.allRegisteredUsersList.some(u => (u.id || '').toLowerCase().trim() === 'master')) {
+                state.allRegisteredUsersList.unshift({
+                    id: 'master',
+                    name: '관리자',
+                    realName: '관리자',
+                    phone: '',
+                    isAdmin: true,
+                    isPermanent: true,
+                    userType: 'permanent',
+                    createdAt: '2026-07-25T12:00:00+09:00'
+                });
+            }
+            if (!state.allRegisteredUsersList.some(u => (u.id || '').toLowerCase().trim() === 'wdy')) {
+                state.allRegisteredUsersList.push({
+                    id: 'wdy',
+                    name: '우대용',
+                    realName: '우대용',
+                    phone: '',
+                    isAdmin: false,
+                    isPermanent: false,
+                    userType: 'regular',
+                    createdAt: '2026-08-01T12:00:00+09:00'
+                });
+            }
+
             try { localStorage.setItem('lotto_all_users_list_cache', JSON.stringify(state.allRegisteredUsersList)); } catch(e) {}
         }
 

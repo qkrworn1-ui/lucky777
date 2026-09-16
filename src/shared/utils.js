@@ -59,9 +59,9 @@ export function isSystemOrDummyUser(userId) {
         } catch(e) {}
     }
     if (!clean) return true;
-    if (clean === 'all' || clean === 'guest' || clean === 'admin' || clean === 'app_latest_version' ||
+    if (clean === 'all' || clean === 'guest' || clean === 'app_latest_version' ||
         clean === 'global_trash' || clean === 'global_state' || clean === 'global_saved' || clean === 'extra_history' ||
-        clean === 'user_alpha' || clean === 'user_beta' || clean === 'sample' || clean === 'hms' ||
+        clean === 'user_alpha' || clean === 'user_beta' || clean === 'user_gamma' || clean === 'sample' || clean === 'hms' ||
         clean.startsWith('test_') || clean.startsWith('{')) {
         return true;
     }

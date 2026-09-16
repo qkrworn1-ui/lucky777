@@ -4,6 +4,7 @@ import { createBallHtml } from '../../../shared/components.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
 import { getComboNumbers, fetchAllUsersPurchases } from '../ledger.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
+import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
 import { computeUser70RecommendationsReview, getUserJoinRound } from './review-tab.js';
 
 let currentAlgoStartRound = 1235;
@@ -324,50 +325,7 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
 
             if (isAll) {
                 // Aggregate across all active registered users for this round
-                let baseList = [];
-                if (!state.allRegisteredUsersList || !Array.isArray(state.allRegisteredUsersList) || state.allRegisteredUsersList.length === 0) {
-                    try {
-                        const raw = localStorage.getItem('lotto_all_users_list_cache');
-                        if (raw) {
-                            const parsed = JSON.parse(raw);
-                            if (Array.isArray(parsed) && parsed.length > 0) {
-                                state.allRegisteredUsersList = parsed;
-                            }
-                        }
-                    } catch(e) {}
-                }
-                if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList) && state.allRegisteredUsersList.length > 0) {
-                    baseList = [...state.allRegisteredUsersList];
-                }
-                if (state.allUsersPurchasesMap && typeof state.allUsersPurchasesMap === 'object') {
-                    Object.keys(state.allUsersPurchasesMap).forEach(uId => {
-                        if (!baseList.some(u => (u.id || '').toLowerCase().trim() === uId.toLowerCase().trim())) {
-                            const pObj = state.allUsersPurchasesMap[uId];
-                            baseList.push({ id: uId, name: pObj.realName || uId, createdAt: pObj.createdAt || null });
-                        }
-                    });
-                }
-                if (state.userRecommendationSnapshots && typeof state.userRecommendationSnapshots === 'object') {
-                    Object.keys(state.userRecommendationSnapshots).forEach(k => {
-                        const snap = state.userRecommendationSnapshots[k];
-                        if (snap && snap.userId) {
-                            const uId = snap.userId.toLowerCase().trim();
-                            if (!baseList.some(u => (u.id || '').toLowerCase().trim() === uId)) {
-                                baseList.push({ id: uId, name: snap.realName || uId, createdAt: snap.userCreatedAt || null });
-                            }
-                        }
-                    });
-                }
-                baseList = baseList.filter(u => {
-                    const uId = (u.id || '').trim().toLowerCase();
-                    return !isSystemOrDummyUser(uId) && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
-                });
-                if (!baseList.some(u => (u.id || '').toLowerCase().trim() === 'master')) {
-                    baseList.unshift({ id: 'master', name: '관리자', createdAt: null });
-                }
-                if (!baseList.some(u => (u.id || '').toLowerCase().trim() === 'wdy')) {
-                    baseList.push({ id: 'wdy', name: '우대용', createdAt: '2026-08-01T12:00:00+09:00' });
-                }
+                const baseList = getAllUnifiedRegisteredUsers();
                 const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
 
                 activeUsers.forEach(u => {
@@ -579,35 +537,12 @@ export async function renderAlgorithmsTab(fromRound = null) {
         let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 당첨 결과</option>`;
         userOptions += `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
         
-        // Fetch or use cached user list
-        if (!state.allRegisteredUsersList && window.db) {
-            try {
-                const uSnap = await window.db.collection('lotto_users').get();
-                state.allRegisteredUsersList = [];
-                uSnap.forEach(d => {
-                    if (d.id === 'app_latest_version') return;
-                    const uData = d.data();
-                    const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
-                    if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
-                        window.setIsPermanentCache(d.id, isPerm);
-                    }
-                    state.allRegisteredUsersList.push({
-                        id: d.id,
-                        name: uData.realName || d.id,
-                        phone: uData.phoneNumber || '',
-                        isAdmin: !!(uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin'),
-                        isPermanent: isPerm,
-                        userType: uData.userType || (isPerm ? 'permanent' : 'regular'),
-                        createdAt: uData.createdAt || null
-                    });
-                });
-            } catch(e) {}
-        }
-
-        const userList = state.allRegisteredUsersList || [];
+        const userList = getAllUnifiedRegisteredUsers();
         userList.forEach(u => {
-            if ((u.id || '').toLowerCase().trim() !== cleanAuth) {
-                userOptions += `<option value="${u.id}" ${effectiveUserId === u.id ? 'selected' : ''}>👤 ${u.id} (${u.name}${u.phone ? ` / ${u.phone}` : ''})</option>`;
+            const uClean = (u.id || '').toLowerCase().trim();
+            if (uClean !== cleanAuth) {
+                const uDisplayName = u.name || u.realName || u.id;
+                userOptions += `<option value="${u.id}" ${effectiveUserId.toLowerCase() === uClean ? 'selected' : ''}>👤 ${u.id} (${uDisplayName}${u.phone ? ` / ${u.phone}` : ''})</option>`;
             }
         });
 

@@ -1,8 +1,9 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue, removeUndefined } from '../../../shared/utils.js';
+import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue, removeUndefined, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml, renderBallRow, getRankBadge } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
+import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
 import { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync, saveUserWeeklyRecommendationSnapshot } from '../generator.js';
 
@@ -571,17 +572,15 @@ export async function renderReviewTab() {
                 currentSelectorEl.parentElement.appendChild(adminSelectorContainer);
             }
 
-            const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
-            const registeredUsers = rawUsers.filter(u => {
-                const uId = (u.id || '').trim().toLowerCase();
-                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && uId !== 'admin' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
-            });
+            const registeredUsers = getAllUnifiedRegisteredUsers();
             let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 당첨 결과 종합</option>`;
             userOptionsHtml += `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
 
             registeredUsers.forEach(u => {
-                if ((u.id || '').toLowerCase().trim() !== cleanAuth) {
-                    userOptionsHtml += `<option value="${u.id}" ${reviewAdminViewingUser === u.id ? 'selected' : ''}>👤 ${u.id} (${u.name || u.id})</option>`;
+                const uClean = (u.id || '').toLowerCase().trim();
+                if (uClean !== cleanAuth) {
+                    const uDisplayName = u.name || u.realName || u.id;
+                    userOptionsHtml += `<option value="${u.id}" ${reviewAdminViewingUser.toLowerCase() === uClean ? 'selected' : ''}>👤 ${u.id} (${uDisplayName})</option>`;
                 }
             });
 
@@ -770,12 +769,7 @@ export function renderAllRoundsReviewDetail() {
 
     if (isAdmin && isAllUsers) {
         // --- 1. ADMIN + ALL USERS AGGREGATION ---
-        const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
-        const registeredUsers = rawUsers.filter(u => {
-            const uId = (u.id || '').trim().toLowerCase();
-            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && uId !== 'admin' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
-        });
-        const baseList = (registeredUsers.length > 0 ? registeredUsers : [{ id: authId, name: '관리자' }]);
+        const baseList = getAllUnifiedRegisteredUsers();
 
         const memberAggMap = {};
         baseList.forEach(u => {
@@ -1742,12 +1736,7 @@ export function renderReviewDetail(r) {
     let grandTotalPrize = 0, grandTotalGames = 0, grandTotalInvest = 0, grandTotalRoi = 0;
 
     if (isAdmin && isAllUsers) {
-        const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
-        const rawRegisteredUsers = rawUsers.filter(u => {
-            const uId = (u.id || '').trim().toLowerCase();
-            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && uId !== 'admin' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
-        });
-        const baseList = (rawRegisteredUsers && rawRegisteredUsers.length > 0 ? rawRegisteredUsers : [{ id: authId, name: '관리자' }]);
+        const baseList = getAllUnifiedRegisteredUsers();
         
         // 🔒 회원 가입일 이전 회차 필터링: 해당 회차(roundNum) 시점에 이미 가입되어 있던 회원만 종합 집계 및 표에 포함
         const activeUsers = baseList.filter(u => {
@@ -2413,12 +2402,7 @@ export async function openAdmin1235ReviewModal(initialRound = null, initialUser 
     // Populate Member Options
     const userSelect = document.getElementById('admin1235ModalUserSelect');
     if (userSelect) {
-        const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
-        const registeredUsers = rawUsers.filter(u => {
-            const uId = (u.id || '').trim().toLowerCase();
-            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
-        });
-
+        const registeredUsers = getAllUnifiedRegisteredUsers();
         let userOpts = `<option value="all" ${_currentAdmin1235ModalUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천 종합 (${registeredUsers.length}명)</option>`;
         userOpts += `<option value="${rawAuth}" ${_currentAdmin1235ModalUser === rawAuth ? 'selected' : ''}>👑 관리자 본인 (${rawAuth})</option>`;
         registeredUsers.forEach(u => {
@@ -2501,12 +2485,7 @@ export function renderAdmin1235ReviewModalContent() {
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
 
-    const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
-    const registeredUsers = rawUsers.filter(u => {
-        const uId = (u.id || '').trim().toLowerCase();
-        return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
-    });
-    const baseList = (registeredUsers && registeredUsers.length > 0) ? registeredUsers : [{ id: 'master', name: '관리자' }];
+    const baseList = getAllUnifiedRegisteredUsers();
 
     let html = '';
 
@@ -3464,12 +3443,7 @@ export async function copyAdmin1235ReviewText() {
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
 
-    const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
-    const registeredUsers = rawUsers.filter(u => {
-        const uId = (u.id || '').trim().toLowerCase();
-        return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
-    });
-    const baseList = (registeredUsers && registeredUsers.length > 0) ? registeredUsers : [{ id: 'master', name: '관리자' }];
+    const baseList = getAllUnifiedRegisteredUsers();
 
     let fullText = '';
     if (roundVal === 'all_rounds') {
