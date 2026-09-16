@@ -9,7 +9,8 @@ import {
     openScrapingLogModal, 
     closeScrapingLogModal, 
     appendScrapingLog, 
-    updateScrapingStatus 
+    updateScrapingStatus,
+    isRoundDrawnYet
 } from '../scraper.js';
 import { renderTop5Combinations } from './generator-tab.js';
 import { renderVerificationTab } from './verification.js';
@@ -91,6 +92,18 @@ export async function repairMissingPrizeHistory(showModal = false) {
  * Displays full real-time text logs in the Scraping Console Modal (1238회 이후부터만 탐색)
  */
 export async function autoSyncMissingDraws(showModal = false) {
+    // 0. Pre-sync extra_history from Firestore if in-memory history only has base data
+    if ((!state.lottoExtraHistory || Object.keys(state.lottoExtraHistory).length === 0) && window.db) {
+        try {
+            const extraDoc = await db.get('lotto_draw_history', 'extra_history');
+            if (extraDoc && typeof extraDoc === 'object') {
+                state.lottoExtraHistory = { ...state.lottoExtraHistory, ...extraDoc };
+                try { localStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory)); } catch(e) {}
+                state.mergedHistory = typeof LOTTO_HISTORY !== 'undefined' ? { ...LOTTO_HISTORY, ...state.lottoExtraHistory } : { ...state.lottoExtraHistory };
+            }
+        } catch (e) {}
+    }
+
     const currentMaxRound = state.mergedHistory 
         ? Math.max(...Object.keys(state.mergedHistory).map(Number).filter(n => !isNaN(n)), 1237) 
         : 1237;
@@ -98,6 +111,15 @@ export async function autoSyncMissingDraws(showModal = false) {
     // 1237회까지는 내장 DB에 영구 보존되어 있으므로 항상 1238회부터 신규 자동 수집 시작
     let targetRound = Math.max(currentMaxRound + 1, 1238);
     let syncedCount = 0;
+
+    // Fast-exit check: If the target round hasn't occurred yet (before Saturday 21:00 KST), don't hit external scrapers
+    if (typeof isRoundDrawnYet === 'function' && !isRoundDrawnYet(targetRound)) {
+        if (showModal) {
+            openScrapingLogModal();
+            appendScrapingLog(`🏁 제 ${targetRound}회는 아직 추첨 전입니다 (토요일 21:00 이후 추첨).`, 'info');
+        }
+        return 0;
+    }
 
     if (showModal) {
         openScrapingLogModal();

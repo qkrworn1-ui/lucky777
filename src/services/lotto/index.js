@@ -20,41 +20,60 @@ import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
 import { computeAbsoluteTop10Combinations } from './generator.js';
 import { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from './ledger.js';
 
+let _isLottoInitializing = false;
+let _lottoInitPromise = null;
+let _activePurchasesUnsub = null;
+let _activeExtraHistoryUnsub = null;
+let _activeAppStateUnsub = null;
+let _activePurchasesAuthId = null;
+
 export async function initLottoService() {
     window.initLottoService = initLottoService;
-    window.__lottoInitialized = true;
-    initHistory();
-    try {
-        recalculateGroups();
-    } catch(initErr) {
-        console.error('[INIT] Early init error (non-fatal):', initErr);
+    if (_isLottoInitializing && _lottoInitPromise) {
+        return _lottoInitPromise;
     }
+    _isLottoInitializing = true;
 
-    const statusIndicator = document.getElementById('serverStatusIndicator');
-    const statusText = document.getElementById('serverStatusText');
+    _lottoInitPromise = (async () => {
+        try {
+            window.__lottoInitialized = true;
+            initHistory();
+            try {
+                recalculateGroups();
+            } catch(initErr) {
+                console.error('[INIT] Early init error (non-fatal):', initErr);
+            }
 
-    if (!window.db) {
-        console.error("Firebase not initialized.");
-        state.lottoExtraHistory = {};
-        state.savedCombinations = [];
-        if (statusIndicator) { statusIndicator.style.background = '#ef4444'; statusIndicator.style.boxShadow = '0 0 8px #ef4444'; }
-        if (statusText) statusText.textContent = 'DB 접속 오류 (로컬)';
-    } else {
-        showToast('데이터베이스 동기화 중...');
-        if (statusIndicator) { statusIndicator.style.background = '#10b981'; statusIndicator.style.boxShadow = '0 0 8px #10b981'; }
-        if (statusText) statusText.textContent = 'DB 접속 완료 (Cloud)';
+            const statusIndicator = document.getElementById('serverStatusIndicator');
+            const statusText = document.getElementById('serverStatusText');
 
-        // Initial background sync for receipt trash
-        fetchReceiptTrash().catch(() => {});
+            if (!window.db) {
+                console.error("Firebase not initialized.");
+                state.lottoExtraHistory = {};
+                state.savedCombinations = [];
+                if (statusIndicator) { statusIndicator.style.background = '#ef4444'; statusIndicator.style.boxShadow = '0 0 8px #ef4444'; }
+                if (statusText) statusText.textContent = 'DB 접속 오류 (로컬)';
+            } else {
+                showToast('데이터베이스 동기화 중...');
+                if (statusIndicator) { statusIndicator.style.background = '#10b981'; statusIndicator.style.boxShadow = '0 0 8px #10b981'; }
+                if (statusText) statusText.textContent = 'DB 접속 완료 (Cloud)';
 
-        const authId = (SafeAuth.get() || '').trim().toLowerCase();
-        // Reset in-memory ledger to prevent cross-account pollution on re-login
-        state.globalLedger = {};
-        state.ledgerFinancialsCache = null;
-        state.allUsersMergedLedger = null;
+                // Initial background sync for receipt trash
+                fetchReceiptTrash().catch(() => {});
 
-        if (authId && window.db) {
-            window.db.collection('lotto_purchases').doc(authId).onSnapshot(async doc => {
+                const authId = (SafeAuth.get() || '').trim().toLowerCase();
+                // Reset in-memory ledger to prevent cross-account pollution on re-login
+                state.globalLedger = {};
+                state.ledgerFinancialsCache = null;
+                state.allUsersMergedLedger = null;
+
+                if (authId && window.db) {
+                    if (_activePurchasesUnsub) {
+                        try { _activePurchasesUnsub(); } catch(e) {}
+                        _activePurchasesUnsub = null;
+                    }
+                    _activePurchasesAuthId = authId;
+                    _activePurchasesUnsub = window.db.collection('lotto_purchases').doc(authId).onSnapshot(async doc => {
                 if (doc && doc.exists) {
                     const rawLedger = doc.data().ledger || {};
                     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
@@ -159,7 +178,11 @@ export async function initLottoService() {
         }
 
         if (window.db && typeof window.db.collection === 'function') {
-            window.db.collection('lotto_draw_history').doc('extra_history').onSnapshot(doc => {
+            if (_activeExtraHistoryUnsub) {
+                try { _activeExtraHistoryUnsub(); } catch(e) {}
+                _activeExtraHistoryUnsub = null;
+            }
+            _activeExtraHistoryUnsub = window.db.collection('lotto_draw_history').doc('extra_history').onSnapshot(doc => {
                 if (doc && doc.exists) {
                     const extraDoc = doc.data();
                     if (extraDoc && typeof extraDoc === 'object') {
@@ -215,7 +238,11 @@ export async function initLottoService() {
 
         // Realtime sync for lotto_app_state across devices
         if (window.db) {
-            window.db.collection('lotto_app_state').doc('global_state').onSnapshot(doc => {
+            if (_activeAppStateUnsub) {
+                try { _activeAppStateUnsub(); } catch(e) {}
+                _activeAppStateUnsub = null;
+            }
+            _activeAppStateUnsub = window.db.collection('lotto_app_state').doc('global_state').onSnapshot(doc => {
                 if (doc && doc.exists) {
                     const data = doc.data();
                     const curUpcoming = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
@@ -315,30 +342,45 @@ export async function initLottoService() {
         });
     }
 
-    // Tab buttons event listeners
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const target = btn.dataset.tab;
-            switchLottoTab(target);
+    // Tab buttons and component event listeners (only setup once)
+    if (!window.__lottoEventsSetup) {
+        window.__lottoEventsSetup = true;
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.tab;
+                switchLottoTab(target);
+            });
         });
-    });
 
-    // Initialize all components event listeners
-    setupGeneratorTabEvents();
-    setupSimulationEvents();
-    setupWheelingTab();
-    setupEvolutionButton();
-    setupPredictionReport();
-    setupQuickView();
-    setupManualLedgerModal();
-    setupManualDrawModal();
-    setupSyncEvents();
+        // Initialize all components event listeners
+        setupGeneratorTabEvents();
+        setupSimulationEvents();
+        setupWheelingTab();
+        setupEvolutionButton();
+        setupPredictionReport();
+        setupQuickView();
+        setupManualLedgerModal();
+        setupManualDrawModal();
+        setupSyncEvents();
+    }
 
-    autoSyncMissingDraws();
+    // Run auto-sync in the background non-blockingly after initial render
+    setTimeout(() => {
+        if (typeof autoSyncMissingDraws === 'function') {
+            autoSyncMissingDraws().catch(err => console.warn('[AutoSync Background Skipped/Error]', err));
+        }
+    }, 1500);
+
     if (typeof window.renderLandingDashboard === 'function') {
         window.renderLandingDashboard();
     }
+        } finally {
+            _isLottoInitializing = false;
+        }
+    })();
+
+    return _lottoInitPromise;
 }
 
 // Global Lotto Tab Switcher

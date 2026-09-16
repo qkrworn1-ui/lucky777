@@ -11,14 +11,20 @@ import { computeUser70RecommendationsReview, clearUser70ReviewCache } from '../s
  * and All Members AI Recommendation (70 games) Review Winning History.
  */
 export async function renderLandingDashboard() {
-    console.log('[Landing Dashboard] Updating individual and global winning summary...');
-
-    // 0. Ensure full purchases and user maps are loaded from Firestore
-    if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
-        if (typeof fetchAllUsersPurchases === 'function') {
-            await fetchAllUsersPurchases();
-        }
+    if (typeof window !== 'undefined') {
+        if (window.__isRenderingDashboard) return;
+        window.__isRenderingDashboard = true;
     }
+
+    try {
+        console.log('[Landing Dashboard] Updating individual and global winning summary...');
+
+        // 0. Ensure full purchases and user maps are loaded from Firestore
+        if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+            if (typeof fetchAllUsersPurchases === 'function') {
+                await fetchAllUsersPurchases();
+            }
+        }
 
     let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '비로그인';
     if (typeof authId === 'string' && authId.startsWith('{')) {
@@ -159,6 +165,11 @@ export async function renderLandingDashboard() {
 
     // 10. Update Service Cards Access Permission Badges
     updateHomeServiceCardsPermissions();
+    } finally {
+        if (typeof window !== 'undefined') {
+            window.__isRenderingDashboard = false;
+        }
+    }
 }
 
 /**

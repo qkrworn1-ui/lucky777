@@ -383,18 +383,21 @@ if (typeof window !== 'undefined') {
 }
 
 
-/**
- * Fetch all users' purchase ledgers from Firestore for Admin overview
- * Automatically purges and repairs polluted cross-user records (e.g. master receipts leaked into normal users).
- */
+let _inFlightFetchAllUsersPurchasesPromise = null;
+
 export async function fetchAllUsersPurchases() {
+    if (_inFlightFetchAllUsersPurchasesPromise) {
+        return _inFlightFetchAllUsersPurchasesPromise;
+    }
+
     const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
     if (!firestore) return {};
 
-    try {
-        const pSnapshot = await firestore.collection('lotto_purchases').get();
-        let uSnapshot = null;
-        try { uSnapshot = await firestore.collection('lotto_users').get(); } catch(e) {}
+    _inFlightFetchAllUsersPurchasesPromise = (async () => {
+        try {
+            const pSnapshot = await firestore.collection('lotto_purchases').get();
+            let uSnapshot = null;
+            try { uSnapshot = await firestore.collection('lotto_users').get(); } catch(e) {}
         
         const userNames = {};
         if (uSnapshot && !uSnapshot.empty) {
@@ -631,7 +634,7 @@ export async function fetchAllUsersPurchases() {
 
         // Auto-refresh landing dashboard and tabs if loaded to ensure 100% synchronized live data
         if (typeof window !== 'undefined') {
-            if (typeof window.renderLandingDashboard === 'function') {
+            if (typeof window.renderLandingDashboard === 'function' && !window.__isRenderingDashboard) {
                 try { window.renderLandingDashboard(); } catch(dashErr) {}
             }
             if (typeof window.renderReviewTab === 'function') {
@@ -650,6 +653,11 @@ export async function fetchAllUsersPurchases() {
         console.error('[fetchAllUsersPurchases Error]', e);
         return {};
     }
+    })().finally(() => {
+        _inFlightFetchAllUsersPurchasesPromise = null;
+    });
+
+    return _inFlightFetchAllUsersPurchasesPromise;
 }
 
 /**

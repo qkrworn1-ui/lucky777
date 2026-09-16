@@ -761,7 +761,7 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'none';
         }
 
-        if (typeof initFirebaseAndData === 'function') {
+        if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) {
             try {
                 initFirebaseAndData();
             } catch (err) {
@@ -979,7 +979,7 @@ export function setupAuthEvents(initFirebaseAndData) {
                                 if (kakaoTpEl) { kakaoTpEl.classList.remove('active'); kakaoTpEl.style.setProperty('display', 'none', 'important'); }
 
                                 setTimeout(async function() {
-                                    try { if (typeof initFirebaseAndData === 'function') await initFirebaseAndData(); } catch(ex) {}
+                                    try { if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) await initFirebaseAndData(); } catch(ex) {}
                                     try { if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard(); } catch(ex) {}
                                     checkAuthOnLoad(initFirebaseAndData).then(function() {
                                         try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(e){}
@@ -1799,7 +1799,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 if (tpEl) { tpEl.classList.remove('active'); tpEl.style.setProperty('display', 'none', 'important'); }
 
                 setTimeout(async function() {
-                    try { if (typeof initFirebaseAndData === 'function') await initFirebaseAndData(); } catch(ex) {}
+                    try { if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) await initFirebaseAndData(); } catch(ex) {}
                     try { if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard(); } catch(ex) {}
                     checkAuthOnLoad(initFirebaseAndData).then(function() {
                         try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(e){}
@@ -1883,7 +1883,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 // 4. Initialize services (non-blocking, background)
                 setTimeout(async function() {
                     try {
-                        if (typeof initFirebaseAndData === 'function') await initFirebaseAndData();
+                        if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) await initFirebaseAndData();
                     } catch(ex) {}
                     try {
                         if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
@@ -3330,7 +3330,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 landingPage.style.display = 'flex';
             }
 
-            if (typeof initFirebaseAndData === 'function') {
+            if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) {
                 try { initFirebaseAndData(); } catch(e){}
             }
             if (typeof window.renderLandingDashboard === 'function') {
