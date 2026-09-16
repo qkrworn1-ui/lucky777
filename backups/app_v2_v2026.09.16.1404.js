@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.16.1443 - BUILD_DATE: 2026-09-16] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.16.1404 - BUILD_DATE: 2026-09-16] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.16.1443)
+ * Lucky777 Smart Bundle (v2026.09.16.1404)
  */
 
 
@@ -7276,8 +7276,8 @@ function buildDonghangLotteryQrUrl(round, combos = [], serial = '', existingRawU
     if (isNaN(r) || r <= 0) return 'https://dhlottery.co.kr';
 
     let serialStr = String(serial || '').trim();
-    if (!serialStr || !/^\d{10,24}$/.test(serialStr) || serialStr.startsWith('TR-') || serialStr === 'TR-정상발권 확인됨') {
-        serialStr = `${String(r).padStart(4, '0')}00000114142041`;
+    if (!serialStr || serialStr.startsWith('TR-') || serialStr === 'TR-정상발권 확인됨') {
+        serialStr = `${String(r).padStart(4, '0')}00000014142041`;
     }
 
     let gamesQuery = '';
@@ -8558,7 +8558,7 @@ function getSafeActualDraw(round) {
         1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, rank1Prize: 2180450000, date: '2026-08-15' },
         1238: { numbers: [2, 13, 18, 32, 38, 42], bonus: 22, rank1Prize: 1197250000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-22' },
         1239: { numbers: [1, 3, 17, 26, 33, 42], bonus: 41, rank1Prize: 1980500000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-29' },
-        1240: { numbers: [11, 13, 19, 20, 31, 44], bonus: 27, rank1Prize: 2000000000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-05' },
+        1240: { numbers: [1, 12, 18, 20, 26, 40], bonus: 14, rank1Prize: 2000000000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-05' },
         1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-12' }
     };
     if (STATIC_DRAWS[r]) return STATIC_DRAWS[r];

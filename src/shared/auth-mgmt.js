@@ -3770,6 +3770,19 @@ export function getDrawWinningNumbers(round) {
     const rNum = Number(round);
     try {
         if (typeof window !== 'undefined') {
+            if (typeof window.getSafeActualDraw === 'function') {
+                const d = window.getSafeActualDraw(rNum);
+                if (d && d.numbers && d.numbers.length >= 6) {
+                    return {
+                        round: rNum,
+                        numbers: d.numbers.map(Number).filter(n => !isNaN(n) && n > 0).sort((a,b)=>a-b),
+                        bonus: Number(d.bonus || d.bnusNo || 0),
+                        date: d.date || d.drawDate || d.drwNoDate || '',
+                        firstWinamnt: d.firstWinamnt || d.rank1Prize || 2000000000,
+                        prizes: d.prizes || d.prizeInfo || null
+                    };
+                }
+            }
             if (window.state && window.state.mergedHistory && window.state.mergedHistory[rNum]) {
                 const d = window.state.mergedHistory[rNum];
                 const rawNums = (d.numbers && d.numbers.length >= 6) ? d.numbers : [d.drwtNo1, d.drwtNo2, d.drwtNo3, d.drwtNo4, d.drwtNo5, d.drwtNo6];

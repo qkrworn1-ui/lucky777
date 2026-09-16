@@ -3,7 +3,7 @@ import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACV
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 import { calculateStats, getNeighborMatches } from '../scoring.js';
-import { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations } from '../ledger.js';
+import { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations, getSafeActualDraw } from '../ledger.js';
 import { db } from '../../../shared/db.js';
 import { getSelectedComboCountOption } from './generator-tab.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
@@ -289,8 +289,8 @@ export function renderSimulationTab(targetRound = null) {
     }
 
     function getHistoricalDrawData(round) {
-        if (state.mergedHistory && state.mergedHistory[round]) {
-            const h = state.mergedHistory[round];
+        const h = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(round) || (state.mergedHistory ? state.mergedHistory[round] : null)) : (state.mergedHistory ? state.mergedHistory[round] : null);
+        if (h) {
             return {
                 drwNo: round,
                 drwNoDate: h.date || h.drwNoDate || '',
@@ -748,8 +748,8 @@ export async function runRealHistoricalSimulation() {
     const chunkSize = 50;
 
     function getHistoricalDrawData(round) {
-        if (state.mergedHistory && state.mergedHistory[round]) {
-            const h = state.mergedHistory[round];
+        const h = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(round) || (state.mergedHistory ? state.mergedHistory[round] : null)) : (state.mergedHistory ? state.mergedHistory[round] : null);
+        if (h) {
             return {
                 drwNo: round,
                 drwNoDate: h.date || h.drwNoDate || '',

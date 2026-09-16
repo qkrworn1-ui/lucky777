@@ -3,7 +3,8 @@ import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACV
 import { createBallHtml, renderBallRow, getRankBadge, openModal, closeModal } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgmt.js';
-import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
+import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
+import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 
@@ -18,22 +19,24 @@ export async function renderConfirmedPurchasesList() {
             authId = parsed.userid || parsed.userId || authId;
         } catch (e) {}
     }
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const isMaster = ((authId || '').toLowerCase().trim() === 'master');
+    const cleanAuthId = String(authId).toLowerCase().trim();
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(cleanAuthId) : (cleanAuthId === 'master' || cleanAuthId === 'admin'));
+    const isMaster = (cleanAuthId === 'master');
 
     // If Admin, prefetch all users' purchases if not yet loaded OR if merged cache was invalidated (e.g. after save)
     if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger)) {
         await fetchAllUsersPurchases();
     }
 
-    const ledger = getLedger();
+    const currentTarget = isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId;
+    const ledger = getLedger(currentTarget);
 
     // Only render actual confirmed rounds saved in ledger (e.g. 1239+)
     const ledgerRounds = Object.keys(ledger).map(Number).filter(r => !isNaN(r) && r > 0 && Array.isArray(ledger[r]) && ledger[r].length > 0);
     const rounds = ledgerRounds.sort((a,b) => b - a); // descending order: newest first!
 
     // --- 💰 Financial & Chart Calculation (Optimized & Memoized) ---
-    const fin = calculateLedgerFinancials(true);
+    const fin = calculateLedgerFinancials(true, currentTarget);
     const { totalInvest, totalPrize, netProfit, totalRoi, hits, trendLabels, trendInvest, trendPrize } = fin;
 
     // Update financial text fields
@@ -152,19 +155,19 @@ export async function renderConfirmedPurchasesList() {
 
     // Admin user selector dropdown HTML
     let adminUserSelectHtml = '';
+    const allUnifiedUsers = (typeof getAllUnifiedRegisteredUsers === 'function') ? getAllUnifiedRegisteredUsers() : [];
+    const validUnifiedUsers = allUnifiedUsers.filter(u => {
+        const clean = (u.id || '').trim().toLowerCase();
+        return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
+    });
+
     if (isAdmin) {
-        const currentTarget = state.adminViewingTarget || 'my';
-        const userList = Object.keys(state.allUsersPurchasesMap || {}).filter(uId => {
-            const clean = (uId || '').trim().toLowerCase();
-            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
-        });
+        let optionsHtml = `<option value="all" ${currentTarget === 'all' ? 'selected' : ''}>👥 [전체 회원 통합 보기 (${validUnifiedUsers.length}명)]</option>`;
+        optionsHtml += `<option value="my" ${currentTarget === 'my' ? 'selected' : ''}>👤 [내 계정 구매내역 (${cleanAuthId})]</option>`;
         
-        let optionsHtml = `<option value="all" ${currentTarget === 'all' ? 'selected' : ''}>👥 [전체 회원 통합 보기 (${userList.length}명)]</option>`;
-        optionsHtml += `<option value="my" ${currentTarget === 'my' ? 'selected' : ''}>👤 [내 계정 구매내역 (${authId})]</option>`;
-        
-        userList.forEach(uId => {
-            const uInfo = state.allUsersPurchasesMap[uId];
-            const uName = uInfo ? uInfo.realName : uId;
+        validUnifiedUsers.forEach(u => {
+            const uId = u.id;
+            const uName = u.name || u.realName || (typeof getUserRealName === 'function' ? getUserRealName(uId) : '') || uId;
             const label = uName !== uId ? `${uId} (${uName})` : uId;
             optionsHtml += `<option value="${uId}" ${currentTarget === uId ? 'selected' : ''}>👤 ${label}</option>`;
         });
@@ -186,19 +189,25 @@ export async function renderConfirmedPurchasesList() {
 
     // 1-1. [ADMIN ALL USERS SUMMARY TABLE] Real Purchase Winnings & Algorithm Distribution Overview (When Admin)
     let adminOverviewTableHtml = '';
-    if (isAdmin && state.allUsersPurchasesMap) {
-        const currentTarget = state.adminViewingTarget || 'my';
-        const userList = Object.keys(state.allUsersPurchasesMap || {}).filter(uId => {
-            const clean = (uId || '').trim().toLowerCase();
-            return !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
-        });
-        const history = state.mergedHistory || {};
-
+    if (isAdmin) {
         // Compute actual purchase winning stats with algorithm breakdown for each user
-        const memberStatsList = userList.map(uId => {
-            const uInfo = state.allUsersPurchasesMap[uId] || {};
-            const uLedger = uInfo.ledger || {};
-            const uName = uInfo.realName || uId;
+        const memberStatsList = validUnifiedUsers.map(u => {
+            const uId = u.id;
+            const cleanId = uId.toLowerCase().trim();
+            const uInfo = (state.allUsersPurchasesMap && (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId])) 
+                ? (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId]) 
+                : {};
+            let uLedger = uInfo.ledger || {};
+            if (typeof uLedger === 'string') {
+                try { uLedger = JSON.parse(uLedger); } catch(e) { uLedger = {}; }
+            }
+            if (!uLedger || typeof uLedger !== 'object' || Object.keys(uLedger).length === 0) {
+                uLedger = getLedger(cleanId);
+            }
+            if (!uLedger || typeof uLedger !== 'object' || Object.keys(uLedger).length === 0) {
+                uLedger = getLedger(uId);
+            }
+            const uName = u.name || u.realName || uInfo.realName || (typeof getUserRealName === 'function' ? getUserRealName(uId) : '') || uId;
 
             let totalGames = 0;
             let totalInvest = 0;
@@ -209,7 +218,7 @@ export async function renderConfirmedPurchasesList() {
             Object.keys(uLedger).forEach(rStr => {
                 const round = parseInt(rStr);
                 if (isNaN(round) || !Array.isArray(uLedger[rStr])) return;
-                const actualDraw = history[round];
+                const actualDraw = getSafeActualDraw(round);
                 const winningSet = actualDraw && actualDraw.numbers ? new Set(actualDraw.numbers) : null;
                 const bonus = actualDraw ? actualDraw.bonus : null;
 
@@ -219,7 +228,8 @@ export async function renderConfirmedPurchasesList() {
                 const extraPacks = (typeof generateExtraAddonPack === 'function') 
                     ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, round, uId)) : [];
 
-                uLedger[rStr].forEach(rawReceipt => {
+                const receipts = deduplicateReceipts(uLedger[rStr].map(syncPurchaseWithQrUrl));
+                receipts.forEach(rawReceipt => {
                     const receipt = syncPurchaseWithQrUrl(rawReceipt);
                     const combos = receipt.combos || [];
                     combos.forEach(c => {
@@ -232,7 +242,7 @@ export async function renderConfirmedPurchasesList() {
                         if (winningSet) {
                             const matches = nums.filter(n => winningSet.has(n));
                             const matchCount = matches.length;
-                            const hasBonus = bonus ? nums.includes(bonus) : false;
+                            const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
 
                             if (matchCount === 6) {
                                 rank = 1;
@@ -284,7 +294,7 @@ export async function renderConfirmedPurchasesList() {
                 totalWins,
                 roi
             };
-        }).sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins);
+        }).sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins || b.totalInvest - a.totalInvest);
 
         const grandPurchased = memberStatsList.reduce((a, b) => a + b.totalInvest, 0);
         const grandGames = memberStatsList.reduce((a, b) => a + b.totalGames, 0);
@@ -301,7 +311,7 @@ export async function renderConfirmedPurchasesList() {
 
         let rowsHtml = '';
         memberStatsList.forEach(m => {
-            const isCurrent = (currentTarget === m.userId);
+            const isCurrent = (currentTarget === m.userId) || (currentTarget === 'my' && (m.userId === 'master' || m.userId === cleanAuthId));
             rowsHtml += `
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem; background: ${isCurrent ? 'rgba(245, 158, 11, 0.12)' : 'transparent'};">
                     <td style="padding: 8px 10px; font-weight: 700; color: #f8fafc; white-space: nowrap;">
@@ -490,16 +500,15 @@ export async function renderConfirmedPurchasesList() {
 
     rounds.forEach(round => {
         const actualDraw = getSafeActualDraw(round);
-        let purchases = (getHistoricalTop10Combinations(round) || []).map(syncPurchaseWithQrUrl);
+        let purchases = (ledger[round] || []).map(syncPurchaseWithQrUrl);
         if (!purchases || purchases.length === 0) return;
 
         // 🔒 STRICT PRIVACY ISOLATION FOR NORMAL USERS:
         // Normal users must NEVER see other members' receipts!
-        if (!isAdmin) {
+        if (!isAdmin && currentTarget !== 'all') {
             purchases = purchases.filter(p => {
                 const pUser = (p.user || p.userId || '').trim().toLowerCase();
-                const myUser = authId.trim().toLowerCase();
-                return pUser === myUser;
+                return pUser === cleanAuthId;
             });
             if (purchases.length === 0) return;
         }
@@ -1332,7 +1341,15 @@ export function renderWinningHistoryModal() {
     const body = document.getElementById('winningHistoryModalBody');
     if (!body) return;
 
-    const fin = calculateLedgerFinancials();
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try { const parsed = JSON.parse(authId); authId = parsed.userid || parsed.userId || authId; } catch(e) {}
+    }
+    const cleanAuthId = String(authId).toLowerCase().trim();
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(cleanAuthId) : (cleanAuthId === 'master' || cleanAuthId === 'admin'));
+    const currentTarget = isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId;
+
+    const fin = calculateLedgerFinancials(true, currentTarget);
     const { totalInvest, totalPrize, netProfit, totalRoi, totalCombos, totalWins, winRate, hits, roundBreakdown } = fin;
     const roundDataList = Object.values(roundBreakdown).sort((a, b) => b.round - a.round);
     const rounds = Object.keys(roundBreakdown);

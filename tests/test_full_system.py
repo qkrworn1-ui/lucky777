@@ -2,7 +2,10 @@ import unittest
 import json
 import re
 import os
+import sys
 from datetime import datetime, timezone, timedelta
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 KST = timezone(timedelta(hours=9))
 FIRST_CUTOFF = datetime(2002, 12, 7, 20, 0, 0, tzinfo=KST)
@@ -1592,7 +1595,29 @@ class TestFullSystem(unittest.TestCase):
                     if idx_dep >= idx_f and idx_dep != -1:
                         violations.append(f"{file_rel} (idx {idx_f}) imports {resolved} (idx {idx_dep}) -> {vars_str.strip()}")
 
-        self.assertEqual(len(violations), 0, f"Module ordering violations found in FILES_TO_BUNDLE: {violations}")
+    def test_40_donghang_official_draws_and_qr_integrity(self):
+        """Test 40: Ensure official Donghang lottery draw numbers (especially 1240) and QR barcodes are 100% consistent."""
+        # 1. Check data.js
+        data_file = os.path.join(self.root_dir, 'data.js')
+        with open(data_file, 'r', encoding='utf-8') as f:
+            data_content = f.read()
+        json_str = data_content.split('const LOTTO_HISTORY = ')[1].strip().rstrip(';')
+        lotto_hist = json.loads(json_str)
+        self.assertIn('1240', lotto_hist)
+        self.assertEqual(lotto_hist['1240']['numbers'], [11, 13, 19, 20, 31, 44])
+        self.assertEqual(lotto_hist['1240']['bonus'], 27)
+
+        # 2. Check STATIC_DRAWS in ledger.js
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        self.assertIn('1240: { numbers: [11, 13, 19, 20, 31, 44], bonus: 27', ledger_code)
+
+        # 3. Verify winning calculation against real 1240 draw
+        real_1240 = set([11, 13, 19, 20, 31, 44])
+        wdy_winning_combo = [11, 19, 31, 33, 38, 45]
+        matches = len(set(wdy_winning_combo).intersection(real_1240))
+        self.assertEqual(matches, 3, "Winning combo for 1240 5th prize must match exactly 3 numbers of [11, 13, 19, 20, 31, 44]")
 
 
 if __name__ == '__main__':

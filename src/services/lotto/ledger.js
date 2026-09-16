@@ -353,8 +353,8 @@ export function buildDonghangLotteryQrUrl(round, combos = [], serial = '', exist
     if (isNaN(r) || r <= 0) return 'https://dhlottery.co.kr';
 
     let serialStr = String(serial || '').trim();
-    if (!serialStr || serialStr.startsWith('TR-') || serialStr === 'TR-정상발권 확인됨') {
-        serialStr = `${String(r).padStart(4, '0')}00000014142041`;
+    if (!serialStr || !/^\d{10,24}$/.test(serialStr) || serialStr.startsWith('TR-') || serialStr === 'TR-정상발권 확인됨') {
+        serialStr = `${String(r).padStart(4, '0')}00000114142041`;
     }
 
     let gamesQuery = '';
@@ -489,8 +489,12 @@ export async function fetchAllUsersPurchases() {
             if (isSystemOrDummyUser(userId)) {
                 return; // 🔒 Exclude test accounts from aggregation!
             }
-            const data = doc.data();
-            const rawUserLedger = data.ledger || {};
+            const data = doc.data() || {};
+            let rawUserLedger = data.ledger || {};
+            if (typeof rawUserLedger === 'string') {
+                try { rawUserLedger = JSON.parse(rawUserLedger); } catch(e) { rawUserLedger = {}; }
+            }
+            if (!rawUserLedger || typeof rawUserLedger !== 'object') rawUserLedger = {};
             const cleanUserLedger = {};
             let hadPollution = false;
 
@@ -635,40 +639,72 @@ export async function fetchAllUsersPurchases() {
 /**
  * Get the current active ledger (Individual user ledger or Admin multi-user merged ledger)
  * Strictly isolates normal users' data so they only ever see their own purchases.
+ * @param {string|null} explicitTarget
  * @returns {Object}
  */
-export function getLedger() {
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
+export function getLedger(explicitTarget = null) {
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
+        } catch (e) {}
+    }
+    const cleanAuthId = String(authId).toLowerCase().trim();
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(cleanAuthId) : (cleanAuthId === 'master' || cleanAuthId === 'admin'));
 
     if (isAdmin) {
-        const target = state.adminViewingTarget || 'my';
-        if (target === 'all' && state.allUsersMergedLedger && Object.keys(state.allUsersMergedLedger).length > 0) {
+        const target = explicitTarget || state.adminViewingTarget || 'my';
+        const cleanTarget = String(target).toLowerCase().trim();
+
+        if (cleanTarget === 'all' && state.allUsersMergedLedger && Object.keys(state.allUsersMergedLedger).length > 0) {
             return state.allUsersMergedLedger;
         }
-        if (target !== 'all' && target !== 'my' && state.allUsersPurchasesMap && state.allUsersPurchasesMap[target]) {
-            return state.allUsersPurchasesMap[target].ledger || {};
+        if (cleanTarget !== 'all' && cleanTarget !== 'my') {
+            if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanTarget]) {
+                return state.allUsersPurchasesMap[cleanTarget].ledger || {};
+            }
+            if (cleanTarget === 'master' || cleanTarget === 'admin') {
+                const rawLedger = state.globalLedger || {};
+                const masterLedger = {};
+                for (const r in rawLedger) {
+                    if (!Array.isArray(rawLedger[r])) continue;
+                    const mOnly = rawLedger[r].filter(p => (p.user || p.userId || 'master').toLowerCase().trim() === 'master').map(syncPurchaseWithQrUrl);
+                    if (mOnly.length > 0) masterLedger[r] = mOnly;
+                }
+                [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
+                    if (!masterLedger[r] || masterLedger[r].length === 0) {
+                        const off = getOfficialPastRecommendation(r);
+                        if (off && off.length > 0) masterLedger[r] = off.map(syncPurchaseWithQrUrl);
+                    }
+                });
+                if (masterLedger[1239]) masterLedger[1239] = normalizeMaster1239Order(masterLedger[1239]);
+                return masterLedger;
+            }
+            return {};
         }
-        if (target === 'my') {
+        if (cleanTarget === 'my') {
             // Admin's own purchases
             const rawLedger = state.globalLedger || {};
             const adminMyLedger = {};
             for (const r in rawLedger) {
                 if (!Array.isArray(rawLedger[r])) continue;
-                const myOnly = rawLedger[r].filter(p => (p.user || p.userId || authId) === authId).map(syncPurchaseWithQrUrl);
+                const myOnly = rawLedger[r].filter(p => (p.user || p.userId || cleanAuthId).toLowerCase().trim() === cleanAuthId).map(syncPurchaseWithQrUrl);
                 if (myOnly.length > 0) adminMyLedger[r] = myOnly;
             }
-            // 🔒 Master fallback: ensure 1235~1240 verified rounds are always present
-            [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
-                if (!adminMyLedger[r] || adminMyLedger[r].length === 0) {
-                    const off = getOfficialPastRecommendation(r);
-                    if (off && off.length > 0) {
-                        adminMyLedger[r] = off.map(syncPurchaseWithQrUrl);
+            // 🔒 Master ONLY fallback: ensure 1235~1240 verified rounds are present ONLY for master
+            if (cleanAuthId === 'master' || cleanAuthId === 'admin') {
+                [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
+                    if (!adminMyLedger[r] || adminMyLedger[r].length === 0) {
+                        const off = getOfficialPastRecommendation(r);
+                        if (off && off.length > 0) {
+                            adminMyLedger[r] = off.map(syncPurchaseWithQrUrl);
+                        }
                     }
+                });
+                if (adminMyLedger[1239]) {
+                    adminMyLedger[1239] = normalizeMaster1239Order(adminMyLedger[1239]);
                 }
-            });
-            if (adminMyLedger[1239]) {
-                adminMyLedger[1239] = normalizeMaster1239Order(adminMyLedger[1239]);
             }
             return adminMyLedger;
         }
@@ -683,8 +719,7 @@ export function getLedger() {
         if (!Array.isArray(rawLedger[r])) continue;
         const myReceipts = rawLedger[r].filter(p => {
             const pUser = (p.user || p.userId || '').trim().toLowerCase();
-            const myUser = authId.trim().toLowerCase();
-            return pUser === myUser;
+            return pUser === cleanAuthId;
         }).map(syncPurchaseWithQrUrl);
         if (myReceipts.length > 0) {
             userOnlyLedger[r] = deduplicateReceipts(myReceipts);
@@ -973,15 +1008,68 @@ export function getComboNumbers(combo) {
 }
 
 /**
+ * 🔒 Get confirmed purchases for a specific user and round safely
+ * @param {string} userId
+ * @param {number|string} round
+ * @returns {Array}
+ */
+export function getUserPurchasesForRound(userId, round) {
+    if (!userId) return [];
+    const r = Number(round);
+    if (isNaN(r) || r <= 0) return [];
+    const cleanId = String(userId).trim().toLowerCase();
+
+    if (cleanId === 'all') {
+        const merged = state.allUsersMergedLedger || {};
+        const receipts = merged[r] || merged[String(r)] || [];
+        return deduplicateReceipts(receipts.map(syncPurchaseWithQrUrl));
+    }
+
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanId] && state.allUsersPurchasesMap[cleanId].ledger) {
+        const uLedger = state.allUsersPurchasesMap[cleanId].ledger;
+        const receipts = uLedger[r] || uLedger[String(r)] || [];
+        if (receipts && receipts.length > 0) {
+            return deduplicateReceipts(receipts.map(syncPurchaseWithQrUrl));
+        }
+    }
+
+    // Check local storage / global ledger
+    const rawLedger = state.globalLedger || {};
+    if (rawLedger[r] && Array.isArray(rawLedger[r])) {
+        const userReceipts = rawLedger[r].filter(p => {
+            const pUser = (p.user || p.userId || '').trim().toLowerCase();
+            return pUser === cleanId;
+        }).map(syncPurchaseWithQrUrl);
+        if (userReceipts.length > 0) {
+            return deduplicateReceipts(userReceipts);
+        }
+    }
+
+    // Master fallback for 1235~1240 only
+    if (cleanId === 'master' || cleanId === 'admin') {
+        const off = getOfficialPastRecommendation(r);
+        if (off && off.length > 0) {
+            return (r === 1239 ? normalizeMaster1239Order(off.map(syncPurchaseWithQrUrl)) : off.map(syncPurchaseWithQrUrl));
+        }
+    }
+
+    return [];
+}
+
+/**
  * Get historical confirmed combinations for a specific round
  * Returns actual confirmed purchases, or default official recommendations for 1235+ rounds when unrecorded.
  * If explicitly deleted (ledger[r] === []), returns empty array [].
  * @param {number} r 
+ * @param {string|null} targetUser
  * @returns {Array}
  */
-export function getHistoricalTop10Combinations(r) {
+export function getHistoricalTop10Combinations(r, targetUser = null) {
+    if (targetUser) {
+        return getUserPurchasesForRound(targetUser, r);
+    }
     const ledger = getLedger();
-    let purchases = ledger[r];
+    let purchases = ledger[r] || ledger[String(r)];
     
     if (purchases !== undefined && purchases !== null) {
         if (!Array.isArray(purchases)) {
@@ -1033,11 +1121,19 @@ export function getHistoricalTop10Combinations(r) {
         return validPurchases.map(syncPurchaseWithQrUrl);
     }
     
-    // 🔒 Fallback to official past recommendation for verified rounds (1235~1240) if unrecorded
-    const official = getOfficialPastRecommendation(r);
-    if (official && Array.isArray(official) && official.length > 0) {
-        if (r === 1239) return normalizeMaster1239Order(official.map(syncPurchaseWithQrUrl));
-        return official.map(syncPurchaseWithQrUrl);
+    // 🔒 Fallback to official past recommendation ONLY if current viewing target or logged-in user is master
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try { const parsed = JSON.parse(authId); authId = parsed.userid || parsed.userId || authId; } catch(e) {}
+    }
+    const cleanAuth = String(authId).toLowerCase().trim();
+    const target = String(state.adminViewingTarget || 'my').toLowerCase().trim();
+    if ((target === 'my' && (cleanAuth === 'master' || cleanAuth === 'admin')) || target === 'master' || target === 'admin') {
+        const official = getOfficialPastRecommendation(r);
+        if (official && Array.isArray(official) && official.length > 0) {
+            if (r === 1239) return normalizeMaster1239Order(official.map(syncPurchaseWithQrUrl));
+            return official.map(syncPurchaseWithQrUrl);
+        }
     }
     
     return [];
@@ -1532,14 +1628,15 @@ export function getOfficialPastRecommendation(round) {
 export function getSafeActualDraw(round) {
     const r = parseInt(round);
     
-    // Immutable verified draws for verified rounds 1235~1240
+    // Immutable verified draws for verified rounds 1235~1241
     const STATIC_DRAWS = {
         1235: { numbers: [6, 14, 22, 29, 36, 41], bonus: 17, rank1Prize: 1985670000, date: '2026-08-01' },
         1236: { numbers: [3, 11, 18, 25, 33, 42], bonus: 8, rank1Prize: 2450320000, date: '2026-08-08' },
         1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, rank1Prize: 2180450000, date: '2026-08-15' },
-        1238: { numbers: [2, 13, 18, 32, 38, 42], bonus: 22, rank1Prize: 1197250000, date: '2026-08-22' },
-        1239: { numbers: [1, 3, 17, 26, 33, 42], bonus: 41, rank1Prize: 1980500000, date: '2026-08-29' },
-        1240: { numbers: [1, 12, 18, 20, 26, 40], bonus: 14, rank1Prize: 2000000000, date: '2026-09-05' }
+        1238: { numbers: [2, 13, 18, 32, 38, 42], bonus: 22, rank1Prize: 1197250000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-22' },
+        1239: { numbers: [1, 3, 17, 26, 33, 42], bonus: 41, rank1Prize: 1980500000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-29' },
+        1240: { numbers: [11, 13, 19, 20, 31, 44], bonus: 27, rank1Prize: 2000000000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-05' },
+        1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-12' }
     };
     if (STATIC_DRAWS[r]) return STATIC_DRAWS[r];
 
@@ -1552,16 +1649,29 @@ export function getSafeActualDraw(round) {
 
 /**
  * Optimized Ledger Financials & Hits Calculation (Single Pass & Memoized)
+ * @param {boolean} forceRefresh
+ * @param {string|null} explicitTarget
+ * @returns {Object}
  */
-export function calculateLedgerFinancials(forceRefresh = false) {
-    if (!forceRefresh && state.ledgerFinancialsCache && state.ledgerFinancialsCache._valid) {
+export function calculateLedgerFinancials(forceRefresh = false, explicitTarget = null) {
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
+        } catch (e) {}
+    }
+    const cleanAuthId = String(authId).toLowerCase().trim();
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(cleanAuthId) : (cleanAuthId === 'master' || cleanAuthId === 'admin'));
+    const target = explicitTarget || (isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId);
+    const cleanTarget = String(target).toLowerCase().trim();
+
+    const cacheKey = `${cleanAuthId}_${cleanTarget}`;
+    if (!forceRefresh && state.ledgerFinancialsCache && state.ledgerFinancialsCache._key === cacheKey && state.ledgerFinancialsCache._valid) {
         return state.ledgerFinancialsCache;
     }
 
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-
-    const ledger = getLedger();
+    const ledger = getLedger(cleanTarget);
 
     let totalInvest = 0;
     let totalPrize = 0;
@@ -1577,33 +1687,20 @@ export function calculateLedgerFinancials(forceRefresh = false) {
     const roundBreakdown = {};
 
     const ledgerRounds = Object.keys(ledger || {}).map(Number).filter(r => !isNaN(r) && r > 0 && Array.isArray(ledger[r]) && ledger[r].length > 0);
-
-    let chronoRounds = [];
-    if (isAdmin) {
-        const defaultPastRounds = [1235, 1236, 1237, 1238, 1239, 1240];
-        const defaultRounds = [];
-        defaultPastRounds.forEach(r => {
-            if (ledger[r] === undefined) {
-                defaultRounds.push(r);
-            }
-        });
-        chronoRounds = Array.from(new Set([...ledgerRounds, ...defaultRounds])).sort((a, b) => a - b);
-    } else {
-        // 🔒 Normal user: strictly only include their own confirmed purchase rounds
-        chronoRounds = Array.from(new Set(ledgerRounds)).sort((a, b) => a - b);
-    }
+    const chronoRounds = Array.from(new Set(ledgerRounds)).sort((a, b) => a - b);
 
     chronoRounds.forEach(round => {
         const actualDraw = getSafeActualDraw(round);
-        let purchases = getHistoricalTop10Combinations(round) || [];
+        let purchases = (ledger[round] || []).map(syncPurchaseWithQrUrl);
 
-        // 🔒 Normal users: strictly only calculate their own combos
-        if (!isAdmin) {
+        if (!isAdmin && cleanTarget !== 'all') {
             purchases = purchases.filter(p => {
                 const pUser = (p.user || p.userId || '').trim().toLowerCase();
-                return pUser === authId.trim().toLowerCase();
+                return pUser === cleanAuthId;
             });
         }
+
+        purchases = deduplicateReceipts(purchases);
 
         const flatCombos = [];
         purchases.forEach(p => {
@@ -1617,7 +1714,7 @@ export function calculateLedgerFinancials(forceRefresh = false) {
         let roundHits = [0, 0, 0, 0, 0, 0];
         const winningCombos = [];
 
-        if (actualDraw) {
+        if (actualDraw && actualDraw.numbers) {
             const winningSet = new Set(actualDraw.numbers);
             const bonus = actualDraw.bonus;
 
@@ -1631,7 +1728,7 @@ export function calculateLedgerFinancials(forceRefresh = false) {
                 const nums = getComboNumbers(combo);
                 const matches = nums.filter(n => winningSet.has(n));
                 const matchCount = matches.length;
-                const hasBonus = nums.includes(bonus);
+                const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
 
                 let rank = 0;
                 let prize = 0;
@@ -1688,6 +1785,7 @@ export function calculateLedgerFinancials(forceRefresh = false) {
 
     const result = {
         _valid: true,
+        _key: cacheKey,
         totalInvest,
         totalPrize,
         netProfit,
@@ -1727,7 +1825,7 @@ export async function calculateAllUsersTotalFinancials() {
 
     rounds.forEach(round => {
         const actualDraw = getSafeActualDraw(round);
-        const receipts = mergedLedger[round] || [];
+        const receipts = deduplicateReceipts((mergedLedger[round] || []).map(syncPurchaseWithQrUrl));
 
         const flatCombos = [];
         receipts.forEach(p => {
@@ -1753,7 +1851,7 @@ export async function calculateAllUsersTotalFinancials() {
                 const nums = getComboNumbers(combo);
                 const matches = nums.filter(n => winningSet.has(n));
                 const matchCount = matches.length;
-                const hasBonus = nums.includes(bonus);
+                const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
 
                 if (matchCount === 6) { hits[0]++; totalPrize += p1; }
                 else if (matchCount === 5 && hasBonus) { hits[1]++; totalPrize += p2; }

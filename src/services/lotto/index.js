@@ -18,7 +18,7 @@ import { setupManualLedgerModal, updateManualModalCrossCheck } from './views/man
 import { setupManualDrawModal } from './views/manual-draw-modal.js';
 import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
 import { computeAbsoluteTop10Combinations } from './generator.js';
-import { getLedger, getHistoricalTop10Combinations, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from './ledger.js';
+import { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from './ledger.js';
 
 export async function initLottoService() {
     window.initLottoService = initLottoService;
@@ -425,4 +425,8 @@ if (typeof window !== 'undefined') {
     window.toggleRoundLock = toggleRoundLock;
     window.parseDonghangLotteryQrUrl = parseDonghangLotteryQrUrl;
     window.syncPurchaseWithQrUrl = syncPurchaseWithQrUrl;
+    window.getSafeActualDraw = getSafeActualDraw;
+    window.getUserPurchasesForRound = getUserPurchasesForRound;
+    window.calculateLedgerFinancials = calculateLedgerFinancials;
+    window.calculateAllUsersTotalFinancials = calculateAllUsersTotalFinancials;
 }

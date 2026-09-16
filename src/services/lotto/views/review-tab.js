@@ -3,8 +3,7 @@ import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACV
 import { createBallHtml, renderBallRow, getRankBadge } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
-import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
-import { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
+import { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync, saveUserWeeklyRecommendationSnapshot } from '../generator.js';
 
 let reviewAdminViewingUser = 'all'; // 'all' or specific userId
@@ -790,7 +789,7 @@ export function renderAllRoundsReviewDetail() {
         });
 
         validRounds.forEach(rnd => {
-            const actualDraw = state.mergedHistory ? state.mergedHistory[rnd] : null;
+            const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
             const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
             
             // Active users joined on or before rnd
@@ -877,10 +876,20 @@ export function renderAllRoundsReviewDetail() {
                 mAgg.totalInvest = mAgg.totalGames * 1000;
                 mAgg.roi = mAgg.totalInvest > 0 ? (mAgg.totalPrize / mAgg.totalInvest) * 100 : 0;
 
-                const userLedger = (state.allUsersPurchasesMap && state.allUsersPurchasesMap[u.id] && state.allUsersPurchasesMap[u.id].ledger) ? state.allUsersPurchasesMap[u.id].ledger : {};
+                const cleanUId = (u.id || '').toLowerCase().trim();
+                let userLedger = (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUId] && state.allUsersPurchasesMap[cleanUId].ledger) ? state.allUsersPurchasesMap[cleanUId].ledger : {};
+                if (typeof userLedger === 'string') {
+                    try { userLedger = JSON.parse(userLedger); } catch(e) { userLedger = {}; }
+                }
+                if (!userLedger || typeof userLedger !== 'object' || Object.keys(userLedger).length === 0) {
+                    userLedger = (typeof getLedger === 'function') ? getLedger(cleanUId) : {};
+                }
                 let realPurchasedRnds = 0, realPurchasedGms = 0;
                 validRounds.forEach(r => {
-                    const rReceipts = userLedger[r] || [];
+                    const rawRList = (userLedger && userLedger[r]) ? userLedger[r] : [];
+                    const rReceipts = (typeof deduplicateReceipts === 'function') 
+                        ? deduplicateReceipts(rawRList.map(syncPurchaseWithQrUrl))
+                        : rawRList;
                     if (rReceipts.length > 0) {
                         realPurchasedRnds++;
                         realPurchasedGms += rReceipts.reduce((acc, cur) => acc + (cur && Array.isArray(cur.combos) ? cur.combos.length : 0), 0);
@@ -900,7 +909,7 @@ export function renderAllRoundsReviewDetail() {
     } else {
         // --- 2. SINGLE USER AGGREGATION (Regular User or Admin viewing specific user) ---
         validRounds.forEach(rnd => {
-            const actualDraw = state.mergedHistory ? state.mergedHistory[rnd] : null;
+            const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
             const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
             const uRev = computeUser70RecommendationsReview(effectiveUserId, rnd);
 
@@ -940,10 +949,7 @@ export function renderAllRoundsReviewDetail() {
             });
 
             // Check real purchases for this user in this round
-            const myPurchases = (getHistoricalTop10Combinations(rnd) || []).filter(p => {
-                const pUser = (p.user || p.userId || '').trim().toLowerCase();
-                return pUser === effectiveUserId.trim().toLowerCase();
-            });
+            const myPurchases = getUserPurchasesForRound(effectiveUserId, rnd);
             const realGames = myPurchases.reduce((acc, cur) => acc + (cur && Array.isArray(cur.combos) ? cur.combos.length : 0), 0);
 
             userRoundSummaryList.push({
@@ -1727,7 +1733,7 @@ export function renderReviewDetail(r) {
     const isAllUsers = (isAdmin && (!reviewAdminViewingUser || reviewAdminViewingUser === 'all'));
     const effectiveUserId = (isAdmin && reviewAdminViewingUser && reviewAdminViewingUser !== 'all') ? reviewAdminViewingUser : authId;
 
-    const actualDraw = state.mergedHistory ? state.mergedHistory[roundNum] : null;
+    const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(roundNum) || (state.mergedHistory ? state.mergedHistory[roundNum] : null)) : (state.mergedHistory ? state.mergedHistory[roundNum] : null);
     const winningSet = actualDraw && actualDraw.numbers ? new Set(actualDraw.numbers) : new Set();
     const bonus = actualDraw ? actualDraw.bonus : null;
 
@@ -2188,10 +2194,7 @@ export function renderReviewDetail(r) {
 
     // 3. Render Logged-in User's Real Purchases for this round
     const targetReceiptUser = (isAdmin && !isAllUsers) ? effectiveUserId : authId;
-    const myRealPurchases = (getHistoricalTop10Combinations(roundNum) || []).filter(p => {
-        const pUser = (p.user || p.userId || '').trim().toLowerCase();
-        return pUser === targetReceiptUser.trim().toLowerCase();
-    });
+    const myRealPurchases = getUserPurchasesForRound(targetReceiptUser, roundNum);
 
     if (myRealPurchases.length > 0) {
         const myCombos = [];
@@ -2524,7 +2527,7 @@ export function renderAdmin1235ReviewModalContent() {
         });
 
         validRounds.forEach(rnd => {
-            const actualDraw = state.mergedHistory ? state.mergedHistory[rnd] : null;
+            const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
             const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
             const winningBalls = actualDraw && actualDraw.numbers ? actualDraw.numbers : [];
             const bonusBall = actualDraw ? actualDraw.bonus : null;
@@ -2746,7 +2749,7 @@ export function renderAdmin1235ReviewModalContent() {
         // 2. [특정 단일 회차 추천 & 당첨 상세 모드]
         // ==========================================
         const targetRound = parseInt(roundVal);
-        const actualDraw = state.mergedHistory ? state.mergedHistory[targetRound] : null;
+        const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(targetRound) || (state.mergedHistory ? state.mergedHistory[targetRound] : null)) : (state.mergedHistory ? state.mergedHistory[targetRound] : null);
         const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
         const winningBalls = actualDraw && actualDraw.numbers ? actualDraw.numbers : [];
         const bonusBall = actualDraw ? actualDraw.bonus : null;
@@ -3124,7 +3127,7 @@ ${roundLines.slice(0, 6).join('\n')}
 💡 빅데이터 퀀트 알고리즘 실시간 분석 시스템`;
     } else {
         const targetRound = parseInt(roundVal);
-        const actualDraw = state.mergedHistory ? state.mergedHistory[targetRound] : null;
+        const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(targetRound) || (state.mergedHistory ? state.mergedHistory[targetRound] : null)) : (state.mergedHistory ? state.mergedHistory[targetRound] : null);
         const winningBalls = actualDraw && actualDraw.numbers ? actualDraw.numbers.join(', ') : '미추첨';
         const bonusBall = actualDraw ? ` + 보너스 ${actualDraw.bonus}` : '';
 
@@ -3500,7 +3503,7 @@ ${roundLines.join('\n')}
 운도실력 빅데이터 퀀트 분석 시스템 (https://wook2100.github.io/lucky777/)`;
     } else {
         const targetRound = parseInt(roundVal);
-        const actualDraw = state.mergedHistory ? state.mergedHistory[targetRound] : null;
+        const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(targetRound) || (state.mergedHistory ? state.mergedHistory[targetRound] : null)) : (state.mergedHistory ? state.mergedHistory[targetRound] : null);
         const winningBalls = actualDraw && actualDraw.numbers ? actualDraw.numbers.join(', ') : '미추첨';
         const bonusBall = actualDraw ? ` + 보너스 ${actualDraw.bonus}` : '';
 

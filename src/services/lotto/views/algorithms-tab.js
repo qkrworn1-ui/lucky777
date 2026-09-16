@@ -2,7 +2,7 @@ import { state } from '../state.js';
 import { getBallColorClass, getBallHexColor, showToast, calculateACValue, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml } from '../../../shared/components.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
-import { getComboNumbers, fetchAllUsersPurchases } from '../ledger.js';
+import { getComboNumbers, fetchAllUsersPurchases, getSafeActualDraw } from '../ledger.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
 import { computeUser70RecommendationsReview, getUserJoinRound } from './review-tab.js';
@@ -308,7 +308,7 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
         const roundDetails = [];
 
         drawnRounds.forEach(round => {
-            const draw = history[round];
+            const draw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(round) || history[round]) : history[round];
             if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) return;
 
             const winningSet = new Set(draw.numbers);
