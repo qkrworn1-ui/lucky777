@@ -1,5 +1,5 @@
 import { state } from '../services/lotto/state.js';
-import { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUsersPurchases } from '../services/lotto/ledger.js';
+import { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUsersPurchases, getSafeActualDraw } from '../services/lotto/ledger.js';
 import { SafeAuth, getUserRealName } from './auth-mgmt.js';
 import { isSystemOrDummyUser } from './utils.js';
 import { getAllUnifiedRegisteredUsers } from './user-context.js';
@@ -12,6 +12,13 @@ import { computeUser70RecommendationsReview, clearUser70ReviewCache } from '../s
  */
 export async function renderLandingDashboard() {
     console.log('[Landing Dashboard] Updating individual and global winning summary...');
+
+    // 0. Ensure full purchases and user maps are loaded from Firestore
+    if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+        if (typeof fetchAllUsersPurchases === 'function') {
+            await fetchAllUsersPurchases();
+        }
+    }
 
     let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '비로그인';
     if (typeof authId === 'string' && authId.startsWith('{')) {
@@ -418,7 +425,7 @@ export async function updateHomeWinningTicker() {
         }
 
         candidateRounds.forEach(roundNum => {
-            const actualDraw = history[roundNum];
+            const actualDraw = (typeof getSafeActualDraw === 'function' ? getSafeActualDraw(roundNum) : history[roundNum]) || history[roundNum];
             if (!actualDraw || !Array.isArray(actualDraw.numbers)) return;
 
             const winningSet = new Set(actualDraw.numbers);

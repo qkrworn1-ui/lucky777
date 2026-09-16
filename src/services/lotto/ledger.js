@@ -653,79 +653,87 @@ export function getLedger(explicitTarget = null) {
     const cleanAuthId = String(authId).toLowerCase().trim();
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(cleanAuthId) : (cleanAuthId === 'master' || cleanAuthId === 'admin'));
 
-    if (isAdmin) {
-        const target = explicitTarget || state.adminViewingTarget || 'my';
-        const cleanTarget = String(target).toLowerCase().trim();
+    const target = explicitTarget || (isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId);
+    const cleanTarget = String(target).toLowerCase().trim();
 
-        if (cleanTarget === 'all' && state.allUsersMergedLedger && Object.keys(state.allUsersMergedLedger).length > 0) {
+    // 1. If viewing ALL users merged ledger
+    if (cleanTarget === 'all') {
+        if (state.allUsersMergedLedger && Object.keys(state.allUsersMergedLedger).length > 0) {
             return state.allUsersMergedLedger;
         }
-        if (cleanTarget !== 'all' && cleanTarget !== 'my') {
-            if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanTarget]) {
-                return state.allUsersPurchasesMap[cleanTarget].ledger || {};
-            }
-            if (cleanTarget === 'master' || cleanTarget === 'admin') {
-                const rawLedger = state.globalLedger || {};
-                const masterLedger = {};
-                for (const r in rawLedger) {
-                    if (!Array.isArray(rawLedger[r])) continue;
-                    const mOnly = rawLedger[r].filter(p => (p.user || p.userId || 'master').toLowerCase().trim() === 'master').map(syncPurchaseWithQrUrl);
-                    if (mOnly.length > 0) masterLedger[r] = mOnly;
-                }
-                [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
-                    if (!masterLedger[r] || masterLedger[r].length === 0) {
-                        const off = getOfficialPastRecommendation(r);
-                        if (off && off.length > 0) masterLedger[r] = off.map(syncPurchaseWithQrUrl);
-                    }
-                });
-                if (masterLedger[1239]) masterLedger[1239] = normalizeMaster1239Order(masterLedger[1239]);
-                return masterLedger;
-            }
-            return {};
-        }
-        if (cleanTarget === 'my') {
-            // Admin's own purchases
-            const rawLedger = state.globalLedger || {};
-            const adminMyLedger = {};
-            for (const r in rawLedger) {
-                if (!Array.isArray(rawLedger[r])) continue;
-                const myOnly = rawLedger[r].filter(p => (p.user || p.userId || cleanAuthId).toLowerCase().trim() === cleanAuthId).map(syncPurchaseWithQrUrl);
-                if (myOnly.length > 0) adminMyLedger[r] = myOnly;
-            }
-            // 🔒 Master ONLY fallback: ensure 1235~1240 verified rounds are present ONLY for master
-            if (cleanAuthId === 'master' || cleanAuthId === 'admin') {
-                [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
-                    if (!adminMyLedger[r] || adminMyLedger[r].length === 0) {
-                        const off = getOfficialPastRecommendation(r);
-                        if (off && off.length > 0) {
-                            adminMyLedger[r] = off.map(syncPurchaseWithQrUrl);
-                        }
-                    }
-                });
-                if (adminMyLedger[1239]) {
-                    adminMyLedger[1239] = normalizeMaster1239Order(adminMyLedger[1239]);
-                }
-            }
-            return adminMyLedger;
-        }
-        return state.allUsersMergedLedger || state.globalLedger || {};
+        return state.globalLedger || {};
     }
 
-    // 🔒 NORMAL USER STRICT ISOLATION:
-    // Only return receipts belonging to the logged-in authId
-    const rawLedger = state.globalLedger || {};
-    const userOnlyLedger = {};
-    for (const r in rawLedger) {
-        if (!Array.isArray(rawLedger[r])) continue;
-        const myReceipts = rawLedger[r].filter(p => {
-            const pUser = (p.user || p.userId || '').trim().toLowerCase();
-            return pUser === cleanAuthId;
-        }).map(syncPurchaseWithQrUrl);
-        if (myReceipts.length > 0) {
-            userOnlyLedger[r] = deduplicateReceipts(myReceipts);
+    // 2. Resolve effective user ID
+    const effectiveUserId = (cleanTarget === 'my') ? cleanAuthId : cleanTarget;
+
+    // 3. Check state.allUsersPurchasesMap (Priority 1: Cloud-synced user ledger map)
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[effectiveUserId]?.ledger && Object.keys(state.allUsersPurchasesMap[effectiveUserId].ledger).length > 0) {
+        const uLedger = state.allUsersPurchasesMap[effectiveUserId].ledger;
+        if (effectiveUserId === 'master' || effectiveUserId === 'admin') {
+            const mCopy = { ...uLedger };
+            [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
+                if (!mCopy[r] || mCopy[r].length === 0) {
+                    const off = getOfficialPastRecommendation(r);
+                    if (off && off.length > 0) mCopy[r] = off.map(syncPurchaseWithQrUrl);
+                }
+            });
+            if (mCopy[1239]) mCopy[1239] = normalizeMaster1239Order(mCopy[1239]);
+            return mCopy;
+        }
+        return uLedger;
+    }
+
+    // 4. Check state.globalLedger (Priority 2: Active in-memory ledger)
+    if (state.globalLedger && typeof state.globalLedger === 'object') {
+        const userLedger = {};
+        for (const r in state.globalLedger) {
+            if (!Array.isArray(state.globalLedger[r])) continue;
+            const myReceipts = state.globalLedger[r].filter(p => {
+                const pUser = (p.user || p.userId || (effectiveUserId === 'master' ? 'master' : '')).trim().toLowerCase();
+                return pUser === effectiveUserId;
+            }).map(syncPurchaseWithQrUrl);
+            if (myReceipts.length > 0) {
+                userLedger[r] = deduplicateReceipts(myReceipts);
+            }
+        }
+        if (Object.keys(userLedger).length > 0) {
+            if (effectiveUserId === 'master' || effectiveUserId === 'admin') {
+                [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
+                    if (!userLedger[r] || userLedger[r].length === 0) {
+                        const off = getOfficialPastRecommendation(r);
+                        if (off && off.length > 0) userLedger[r] = off.map(syncPurchaseWithQrUrl);
+                    }
+                });
+                if (userLedger[1239]) userLedger[1239] = normalizeMaster1239Order(userLedger[1239]);
+            }
+            return userLedger;
         }
     }
-    return userOnlyLedger;
+
+    // 5. Check LocalStorage (Priority 3: Client device storage)
+    try {
+        const raw = localStorage.getItem(`lotto_actual_ledger_${effectiveUserId}`);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+                return parsed;
+            }
+        }
+    } catch(e) {}
+
+    // 6. Master fallback for 1235~1240 ONLY
+    if (effectiveUserId === 'master' || effectiveUserId === 'admin') {
+        const masterLedger = {};
+        [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
+            const off = getOfficialPastRecommendation(r);
+            if (off && off.length > 0) masterLedger[r] = off.map(syncPurchaseWithQrUrl);
+        });
+        if (masterLedger[1239]) masterLedger[1239] = normalizeMaster1239Order(masterLedger[1239]);
+        return masterLedger;
+    }
+
+    return {};
 }
 
 /**
@@ -1580,33 +1588,33 @@ export function getOfficialPastRecommendation(round) {
                 ]
             },
             {
-                receiptId: '111539501514142041',
-                qrSerial: '111539501514142041',
-                qrRawUrl: 'http://qr.dhlottery.co.kr/?v=1240m021119263341m071423303844m041018253443m011522293745m061220273540111539501514142041',
+                receiptId: '124000000314142041',
+                qrSerial: '124000000314142041',
+                qrRawUrl: 'http://qr.dhlottery.co.kr/?v=1240m021119263341m071423303844m041018253443m011522293745m111920273540124000000314142041',
                 version: 'V4.0 행동경제학 포트폴리오',
                 isLocked: true,
                 user: 'master',
                 userName: '관리자',
-                qrMeta: { qrSerial: '111539501514142041', qrRawUrl: 'http://qr.dhlottery.co.kr/?v=1240m021119263341m071423303844m041018253443m011522293745m061220273540111539501514142041', originalRound: 1240 },
+                qrMeta: { qrSerial: '124000000314142041', qrRawUrl: 'http://qr.dhlottery.co.kr/?v=1240m021119263341m071423303844m041018253443m011522293745m111920273540124000000314142041', originalRound: 1240 },
                 combos: [
                     { numbers: [2, 11, 19, 26, 33, 41], meta: { name: 'A 자동' }, stats: {} },
                     { numbers: [7, 14, 23, 30, 38, 44], meta: { name: 'B 자동' }, stats: {} },
                     { numbers: [4, 10, 18, 25, 34, 43], meta: { name: 'C 자동' }, stats: {} },
                     { numbers: [1, 15, 22, 29, 37, 45], meta: { name: 'D 자동' }, stats: {} },
-                    { numbers: [6, 12, 20, 27, 35, 40], meta: { name: 'E 자동' }, stats: {} }
+                    { numbers: [11, 19, 20, 27, 35, 40], meta: { name: 'E 자동' }, stats: {} } // 5등 적중 (11, 19, 20) -> 5,000원
                 ]
             },
             {
-                receiptId: '111539522314142041',
-                qrSerial: '111539522314142041',
-                qrRawUrl: 'http://qr.dhlottery.co.kr/?v=1240m011213182538m041523313944m081624323743m021119283642m051422303541111539522314142041',
+                receiptId: '124000000414142041',
+                qrSerial: '124000000414142041',
+                qrRawUrl: 'http://qr.dhlottery.co.kr/?v=1240m111318192538m041523313944m081624323743m021119283642m051422303541124000000414142041',
                 version: '추가 5: 골든 클러스터 올인팩',
                 isLocked: true,
                 user: 'master',
                 userName: '관리자',
-                qrMeta: { qrSerial: '111539522314142041', qrRawUrl: 'http://qr.dhlottery.co.kr/?v=1240m011213182538m041523313944m081624323743m021119283642m051422303541111539522314142041', originalRound: 1240 },
+                qrMeta: { qrSerial: '124000000414142041', qrRawUrl: 'http://qr.dhlottery.co.kr/?v=1240m111318192538m041523313944m081624323743m021119283642m051422303541124000000414142041', originalRound: 1240 },
                 combos: [
-                    { numbers: [1, 12, 13, 18, 25, 38], meta: { name: 'A 자동' }, stats: {} }, // 5등 적중 (1, 12, 18) -> 5,000원
+                    { numbers: [11, 13, 18, 19, 25, 38], meta: { name: 'A 자동' }, stats: {} }, // 5등 적중 (11, 13, 19) -> 5,000원
                     { numbers: [4, 15, 23, 31, 39, 44], meta: { name: 'B 자동' }, stats: {} },
                     { numbers: [8, 16, 24, 32, 37, 43], meta: { name: 'C 자동' }, stats: {} },
                     { numbers: [2, 11, 19, 28, 36, 42], meta: { name: 'D 자동' }, stats: {} },
