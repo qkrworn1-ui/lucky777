@@ -191,12 +191,12 @@ def save_build_snapshot(version):
         backup_json = os.path.join(BACKUP_DIR, f"version_{version}.json")
         shutil.copy2('version.json', backup_json)
         
-    # Rotate backups - keep latest 50
+    # Rotate backups - keep latest 5
     try:
         js_files = [os.path.join(BACKUP_DIR, f) for f in os.listdir(BACKUP_DIR) if f.startswith('app_v2_') and f.endswith('.js')]
         js_files.sort(key=os.path.getmtime)
-        if len(js_files) > 50:
-            for old_f in js_files[:-50]:
+        if len(js_files) > 5:
+            for old_f in js_files[:-5]:
                 os.remove(old_f)
                 old_meta = old_f.replace('app_v2_', 'version_').replace('.js', '.json')
                 if os.path.exists(old_meta):
