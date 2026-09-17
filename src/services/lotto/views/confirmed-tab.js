@@ -722,6 +722,7 @@ export async function renderConfirmedPurchasesList() {
             // Brief Outcome calculation for this single receipt
             let receiptHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, miss: 0 };
             let receiptPrize = 0;
+            const winningGamesList = [];
             if (actualDraw) {
                 const winningSet = new Set(actualDraw.numbers);
                 const bonus = actualDraw.bonus;
@@ -731,17 +732,38 @@ export async function renderConfirmedPurchasesList() {
                 const p4 = 50000;
                 const p5 = 5000;
 
-                purchase.combos.forEach(c => {
+                purchase.combos.forEach((c, cIdx) => {
                     const nums = getComboNumbers(c);
                     const matches = nums.filter(n => winningSet.has(n));
                     const matchCount = matches.length;
                     const hasBonus = bonus ? nums.includes(bonus) : false;
+                    const gameLetter = ['A', 'B', 'C', 'D', 'E'][cIdx] || `${cIdx + 1}`;
 
-                    if (matchCount === 6) { receiptHits[1]++; receiptPrize += p1; }
-                    else if (matchCount === 5 && hasBonus) { receiptHits[2]++; receiptPrize += p2; }
-                    else if (matchCount === 5) { receiptHits[3]++; receiptPrize += p3; }
-                    else if (matchCount === 4) { receiptHits[4]++; receiptPrize += p4; }
-                    else if (matchCount === 3) { receiptHits[5]++; receiptPrize += p5; }
+                    if (matchCount === 6) { 
+                        receiptHits[1]++; 
+                        receiptPrize += p1; 
+                        winningGamesList.push({ letter: gameLetter, rank: 1, label: '1등 대박', prize: p1 });
+                    }
+                    else if (matchCount === 5 && hasBonus) { 
+                        receiptHits[2]++; 
+                        receiptPrize += p2; 
+                        winningGamesList.push({ letter: gameLetter, rank: 2, label: '2등 당첨', prize: p2 });
+                    }
+                    else if (matchCount === 5) { 
+                        receiptHits[3]++; 
+                        receiptPrize += p3; 
+                        winningGamesList.push({ letter: gameLetter, rank: 3, label: '3등 당첨', prize: p3 });
+                    }
+                    else if (matchCount === 4) { 
+                        receiptHits[4]++; 
+                        receiptPrize += p4; 
+                        winningGamesList.push({ letter: gameLetter, rank: 4, label: '4등 (50,000원)', prize: p4 });
+                    }
+                    else if (matchCount === 3) { 
+                        receiptHits[5]++; 
+                        receiptPrize += p5; 
+                        winningGamesList.push({ letter: gameLetter, rank: 5, label: '5등 (5,000원)', prize: p5 });
+                    }
                     else { receiptHits.miss++; }
                 });
             }
@@ -750,25 +772,73 @@ export async function renderConfirmedPurchasesList() {
             let winPillBadgeHtml = '';
             const hasWonReceipt = actualDraw && (receiptHits[1] > 0 || receiptHits[2] > 0 || receiptHits[3] > 0 || receiptHits[4] > 0 || receiptHits[5] > 0);
 
-            if (actualDraw) {
-                const parts = [];
-                if (receiptHits[1] > 0) parts.push(`1등 ${receiptHits[1]}개`);
-                if (receiptHits[2] > 0) parts.push(`2등 ${receiptHits[2]}개`);
-                if (receiptHits[3] > 0) parts.push(`3등 ${receiptHits[3]}개`);
-                if (receiptHits[4] > 0) parts.push(`4등 ${receiptHits[4]}개`);
-                if (receiptHits[5] > 0) parts.push(`5등 ${receiptHits[5]}개`);
+            let highestRank = 0;
+            let themeColor = '#10b981';
+            let themeGlow = 'rgba(16, 185, 129, 0.35)';
+            let themeBorder = '#10b981';
+            let themeDarkBg = '#071f16';
+            let themeBannerBg = 'rgba(16, 185, 129, 0.25)';
+            let rankIconEmoji = '🎉';
+            let highestRankLabel = '당첨';
 
+            if (receiptHits[1] > 0) {
+                highestRank = 1;
+                themeColor = '#fbbf24';
+                themeGlow = 'rgba(251, 191, 36, 0.4)';
+                themeBorder = '#fbbf24';
+                themeDarkBg = '#1c1705';
+                themeBannerBg = 'rgba(245, 158, 11, 0.3)';
+                rankIconEmoji = '👑';
+                highestRankLabel = '1등 대박';
+            } else if (receiptHits[2] > 0) {
+                highestRank = 2;
+                themeColor = '#f87171';
+                themeGlow = 'rgba(248, 113, 113, 0.4)';
+                themeBorder = '#f87171';
+                themeDarkBg = '#1f0d0d';
+                themeBannerBg = 'rgba(239, 68, 68, 0.28)';
+                rankIconEmoji = '🥈';
+                highestRankLabel = '2등';
+            } else if (receiptHits[3] > 0) {
+                highestRank = 3;
+                themeColor = '#60a5fa';
+                themeGlow = 'rgba(96, 165, 250, 0.4)';
+                themeBorder = '#60a5fa';
+                themeDarkBg = '#0b1626';
+                themeBannerBg = 'rgba(59, 130, 246, 0.28)';
+                rankIconEmoji = '🥉';
+                highestRankLabel = '3등';
+            } else if (receiptHits[4] > 0) {
+                highestRank = 4;
+                themeColor = '#34d399';
+                themeGlow = 'rgba(16, 185, 129, 0.35)';
+                themeBorder = '#10b981';
+                themeDarkBg = '#081f16';
+                themeBannerBg = 'rgba(16, 185, 129, 0.25)';
+                rankIconEmoji = '🏆';
+                highestRankLabel = '4등';
+            } else if (receiptHits[5] > 0) {
+                highestRank = 5;
+                themeColor = '#a78bfa';
+                themeGlow = 'rgba(167, 139, 250, 0.35)';
+                themeBorder = '#8b5cf6';
+                themeDarkBg = '#140f21';
+                themeBannerBg = 'rgba(139, 92, 246, 0.25)';
+                rankIconEmoji = '🎁';
+                highestRankLabel = '5등';
+            }
+
+            const parts = [];
+            if (receiptHits[1] > 0) parts.push(`1등 ${receiptHits[1]}개`);
+            if (receiptHits[2] > 0) parts.push(`2등 ${receiptHits[2]}개`);
+            if (receiptHits[3] > 0) parts.push(`3등 ${receiptHits[3]}개`);
+            if (receiptHits[4] > 0) parts.push(`4등 ${receiptHits[4]}개`);
+            if (receiptHits[5] > 0) parts.push(`5등 ${receiptHits[5]}개`);
+
+            if (actualDraw) {
                 if (parts.length > 0) {
-                    if (receiptHits[1] > 0) {
-                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-crown" style="color: #fbbf24;"></i> 1등 당첨</span>`;
-                    } else if (receiptHits[2] > 0) {
-                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.35); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-medal" style="color: #f87171;"></i> 2등 당첨</span>`;
-                    } else if (receiptHits[3] > 0) {
-                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.35); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="color: #60a5fa;"></i> 3등 당첨</span>`;
-                    } else {
-                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-award" style="color: #34d399;"></i> 당첨 (+${receiptPrize.toLocaleString()}원)</span>`;
-                    }
-                    receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-award"></i> ${parts.join(', ')} (+${receiptPrize.toLocaleString()}원)</span>`;
+                    winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: ${themeBannerBg}; color: ${themeColor}; border: 1px solid ${themeBorder}; padding: 3px 9px; border-radius: 6px; font-weight: 800; font-size: 0.74rem; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px ${themeGlow}; white-space: nowrap;"><i class="fa-solid fa-trophy" style="color: ${themeColor};"></i> ${highestRankLabel} 당첨 (+${receiptPrize.toLocaleString()}원)</span>`;
+                    receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-award"></i> ${parts.join(', ')} (+${receiptPrize.toLocaleString()}원)</span>`;
                 } else {
                     receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">낙첨</span>`;
                 }
@@ -803,6 +873,7 @@ export async function renderConfirmedPurchasesList() {
                 let resultText = "추첨 대기";
                 let rowBg = "rgba(255,255,255,0.015)";
                 let border = "1px solid rgba(255,255,255,0.04)";
+                let isRowWon = false;
 
                 const getColor = (n) => {
                     if (n <= 10) return '#fbc400';
@@ -817,37 +888,54 @@ export async function renderConfirmedPurchasesList() {
                     const bonus = actualDraw.bonus;
                     const matches = nums.filter(n => winningSet.has(n));
                     const matchCount = matches.length;
-                    const hasBonus = nums.includes(bonus);
+                    const hasBonus = bonus ? nums.includes(bonus) : false;
+                    const p1 = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
+                    const p2 = actualDraw.rank2Prize || 50000000;
+                    const p3 = actualDraw.rank3Prize || 1500000;
 
-                    resultText = `<span style="color: #94a3b8; font-size: 0.74rem;">낙첨</span>`;
                     if (matchCount === 6) {
-                        resultText = `<span style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(217, 119, 6, 0.3)); border: 1px solid #fbbf24; color: #fef08a; padding: 2px 7px; border-radius: 5px; font-size: 0.74rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);"><i class="fa-solid fa-crown" style="color: #fbbf24;"></i> 1등 당첨</span>`;
-                        rowBg = "rgba(251,191,36,0.08)";
-                        border = "1px solid #fbbf24";
+                        isRowWon = true;
+                        resultText = `<span style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(217, 119, 6, 0.35)); border: 1px solid #fbbf24; color: #fef08a; padding: 2px 8px; border-radius: 5px; font-size: 0.74rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);"><i class="fa-solid fa-crown" style="color: #fbbf24;"></i> 1등 대박 (+${p1.toLocaleString()}원)</span>`;
+                        rowBg = "rgba(251,191,36,0.12)";
+                        border = "1.5px solid #fbbf24";
                     } else if (matchCount === 5 && hasBonus) {
-                        resultText = `<span style="background: rgba(248, 113, 113, 0.25); border: 1px solid #f87171; color: #fecaca; padding: 2px 6px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-medal" style="color: #f87171;"></i> 2등 당첨</span>`;
-                        rowBg = "rgba(248,113,113,0.08)";
-                        border = "1px solid #f87171";
+                        isRowWon = true;
+                        resultText = `<span style="background: rgba(248, 113, 113, 0.3); border: 1px solid #f87171; color: #fecaca; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(248, 113, 113, 0.35);"><i class="fa-solid fa-medal" style="color: #f87171;"></i> 2등 당첨 (+${p2.toLocaleString()}원)</span>`;
+                        rowBg = "rgba(248,113,113,0.12)";
+                        border = "1.5px solid #f87171";
                     } else if (matchCount === 5) {
-                        resultText = `<span style="background: rgba(96, 165, 250, 0.25); border: 1px solid #60a5fa; color: #bfdbfe; padding: 2px 6px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-trophy" style="color: #60a5fa;"></i> 3등 당첨</span>`;
-                        rowBg = "rgba(96,165,250,0.08)";
-                        border = "1px solid #60a5fa";
+                        isRowWon = true;
+                        resultText = `<span style="background: rgba(96, 165, 250, 0.3); border: 1px solid #60a5fa; color: #bfdbfe; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(96, 165, 250, 0.35);"><i class="fa-solid fa-trophy" style="color: #60a5fa;"></i> 3등 당첨 (+${p3.toLocaleString()}원)</span>`;
+                        rowBg = "rgba(96,165,250,0.12)";
+                        border = "1.5px solid #60a5fa";
                     } else if (matchCount === 4) {
-                        resultText = `<span style="background: rgba(52, 211, 153, 0.25); border: 1px solid #34d399; color: #a7f3d0; padding: 2px 6px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-award" style="color: #34d399;"></i> 4등 (50,000원)</span>`;
-                        rowBg = "rgba(52,211,153,0.08)";
-                        border = "1px solid #34d399";
+                        isRowWon = true;
+                        resultText = `<span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; color: #a7f3d0; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-award" style="color: #34d399;"></i> 4등 (50,000원)</span>`;
+                        rowBg = "rgba(16,185,129,0.12)";
+                        border = "1.5px solid #10b981";
                     } else if (matchCount === 3) {
-                        resultText = `<span style="background: rgba(167, 139, 250, 0.25); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 6px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 6px rgba(167, 139, 250, 0.2);"><i class="fa-solid fa-award" style="color: #c4b5fd;"></i> 5등 (5,000원)</span>`;
-                        rowBg = "rgba(167,139,250,0.08)";
-                        border = "1px solid #a78bfa";
+                        isRowWon = true;
+                        resultText = `<span style="background: rgba(167, 139, 250, 0.25); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(167, 139, 250, 0.3);"><i class="fa-solid fa-award" style="color: #c4b5fd;"></i> 5등 (5,000원)</span>`;
+                        rowBg = "rgba(167,139,250,0.12)";
+                        border = "1.5px solid #a78bfa";
+                    } else {
+                        resultText = `<span style="color: #64748b; font-size: 0.72rem;">낙첨</span>`;
+                        if (hasWonReceipt) {
+                            rowBg = "rgba(255,255,255,0.01)";
+                            border = "1px solid rgba(255,255,255,0.03)";
+                        }
                     }
                 }
 
                 const gameLetter = ['A', 'B', 'C', 'D', 'E'][cIdx] || `${cIdx + 1}`;
+                const letterStyle = isRowWon
+                    ? `background: ${border.split(' ')[2] || '#10b981'}; color: #000; font-weight: 900;`
+                    : `color: var(--text-secondary); background: rgba(0,0,0,0.3); font-weight: 800;`;
+
                 gamesHtml += `
-                    <div class="confirmed-game-row" style="display: flex; justify-content: space-between; align-items: center; background: ${rowBg}; border: ${border}; padding: 5px 8px; border-radius: 6px; gap: 4px; width: 100%; box-sizing: border-box;">
+                    <div class="confirmed-game-row" style="display: flex; justify-content: space-between; align-items: center; background: ${rowBg}; border: ${border}; padding: 5px 8px; border-radius: 6px; gap: 4px; width: 100%; box-sizing: border-box; ${hasWonReceipt && !isRowWon ? 'opacity: 0.7;' : ''}">
                         <div class="confirmed-game-main" style="display: inline-flex; align-items: center; gap: 5px; flex-shrink: 1; min-width: 0;">
-                            <span class="confirmed-game-letter" style="font-size: 0.72rem; font-weight: 800; color: var(--text-secondary); background: rgba(0,0,0,0.3); min-width: 18px; text-align: center; padding: 2px 3px; border-radius: 4px; font-family: monospace; flex-shrink: 0;">${gameLetter}</span>
+                            <span class="confirmed-game-letter" style="font-size: 0.72rem; ${letterStyle} min-width: 18px; text-align: center; padding: 2px 3px; border-radius: 4px; font-family: monospace; flex-shrink: 0;">${gameLetter}</span>
                             <div class="balls-row confirmed-balls-row" style="display: inline-flex; gap: 3px; flex-shrink: 0; flex-wrap: nowrap;">
                                 ${nums.map(n => {
                                     const isHit = actualDraw ? new Set(actualDraw.numbers).has(n) : false;
@@ -855,7 +943,7 @@ export async function renderConfirmedPurchasesList() {
                                     const ballBg = getColor(n);
                                     let extraStyle = '';
                                     if (actualDraw) {
-                                        extraStyle = isHit ? 'border: 2px solid #fbbf24; font-weight: 800; box-shadow: 0 0 6px rgba(251,191,36,0.6);' : (isBonusHit ? 'border: 2px solid #f87171; font-weight: 800; box-shadow: 0 0 6px rgba(248,113,113,0.6);' : 'opacity: 0.35;');
+                                        extraStyle = isHit ? 'border: 2.5px solid #fbbf24; font-weight: 900; box-shadow: 0 0 8px rgba(251,191,36,0.8);' : (isBonusHit ? 'border: 2.5px solid #f87171; font-weight: 900; box-shadow: 0 0 8px rgba(248,113,113,0.8);' : (hasWonReceipt && !isRowWon ? 'opacity: 0.35;' : 'opacity: 0.55;'));
                                     }
                                     return `<span class="lotto-ball-mini" style="background: ${ballBg}; ${extraStyle} width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; font-size: 0.68rem; color: #fff; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
                                 }).join('')}
@@ -876,19 +964,41 @@ export async function renderConfirmedPurchasesList() {
 
             const finalQrUrl = buildDonghangLotteryQrUrl(round, purchase.combos, serial, rawUrl);
 
-            const cardBorderLeftColor = hasWonReceipt
-                ? (receiptHits[1] > 0 ? '#fbbf24' : (receiptHits[2] > 0 ? '#f87171' : (receiptHits[3] > 0 ? '#60a5fa' : '#10b981')))
-                : (isLocked ? '#f59e0b' : 'rgba(255, 255, 255, 0.2)');
-            const cardBorderStyle = hasWonReceipt ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255,255,255,0.08)';
-            const cardShadowStyle = hasWonReceipt ? 'box-shadow: 0 4px 18px rgba(16, 185, 129, 0.15);' : 'box-shadow: 0 4px 14px rgba(0,0,0,0.35);';
+            const cardBorderLeftColor = hasWonReceipt ? themeColor : (isLocked ? '#f59e0b' : 'rgba(255, 255, 255, 0.2)');
+            const cardBorderStyle = hasWonReceipt ? `1.5px solid ${themeBorder}` : '1px solid rgba(255,255,255,0.08)';
+            const cardBgStyle = hasWonReceipt ? `linear-gradient(180deg, ${themeDarkBg} 0%, #0a0f1d 100%)` : '#0a0f1d';
+            const cardShadowStyle = hasWonReceipt ? `box-shadow: 0 0 22px ${themeGlow}, 0 6px 18px rgba(0,0,0,0.5);` : 'box-shadow: 0 4px 14px rgba(0,0,0,0.35);';
 
             const receiptId = purchase.receiptId || '';
             const purchaseFingerprint = getReceiptCombosFingerprint(purchase);
 
             html += `
-                <!-- 🎟️ 스마트 모바일 월렛 패스 스타일 실구매 영수증 카드 (Clean Deep Black) -->
-                <div class="confirmed-receipt-card confirmed-receipt-pass" style="border: ${cardBorderStyle}; border-left: 3px solid ${cardBorderLeftColor}; border-radius: 12px; margin-bottom: 14px; background: #0a0f1d; overflow: hidden; position: relative; ${cardShadowStyle}">
+                <!-- 🎟️ 스마트 모바일 월렛 패스 스타일 실구매 영수증 카드 (Clean Deep Black / Winning High Contrast) -->
+                <div class="confirmed-receipt-card confirmed-receipt-pass ${hasWonReceipt ? 'confirmed-receipt-won' : ''}" style="border: ${cardBorderStyle}; border-left: 4px solid ${cardBorderLeftColor}; border-radius: 12px; margin-bottom: 14px; background: ${cardBgStyle}; overflow: hidden; position: relative; ${cardShadowStyle}">
                     
+                    ${hasWonReceipt ? `
+                        <!-- 🏆 당첨 영수증 상단 하이라이트 배너 (High Contrast Radiant Win Ribbon) -->
+                        <div class="confirmed-receipt-win-banner" style="background: linear-gradient(90deg, ${themeBannerBg} 0%, rgba(15, 23, 42, 0.95) 100%); border-bottom: 1px solid ${themeBorder}; padding: 9px 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; box-sizing: border-box; width: 100%; min-width: 0;">
+                            <div style="display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1 1 auto;">
+                                <span style="font-size: 1.15rem; line-height: 1; filter: drop-shadow(0 0 6px ${themeColor}); flex-shrink: 0;">${rankIconEmoji}</span>
+                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0;">
+                                    <strong style="font-size: 0.88rem; color: #ffffff; letter-spacing: -0.2px; font-weight: 800; white-space: nowrap;">
+                                        축하합니다! <span style="color: ${themeColor};">${highestRankLabel} 당첨!</span>
+                                    </strong>
+                                    <span style="font-size: 0.72rem; color: #cbd5e1; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12); padding: 2px 7px; border-radius: 4px; white-space: nowrap;">
+                                        ${parts.join(' · ')}
+                                    </span>
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 5px; margin-left: auto; flex-shrink: 0;">
+                                <span style="font-size: 0.72rem; color: #94a3b8; white-space: nowrap;">당첨금</span>
+                                <strong style="font-size: 1.02rem; font-weight: 900; color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4); font-family: monospace; white-space: nowrap;">
+                                    +${receiptPrize.toLocaleString()}원
+                                </strong>
+                            </div>
+                        </div>
+                    ` : ''}
+
                     <!-- 1. Pass Top Header -->
                     <div class="confirmed-receipt-header" style="padding: 11px 13px; background: #0f172a; border-bottom: 1px dashed rgba(255,255,255,0.08); position: relative;">
                         <!-- Top Badges Row -->
@@ -920,10 +1030,16 @@ export async function renderConfirmedPurchasesList() {
                     </div>
 
                     <!-- 2. Pass Mid Control Bar -->
-                    <div class="confirmed-receipt-control-bar" style="padding: 6px 12px; background: #0b1120; border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <div style="font-size: 0.74rem; font-weight: 700; color: #cbd5e1; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0;">
-                            <i class="fa-solid fa-list-check" style="color: #818cf8; font-size: 0.72rem;"></i>
+                    <div class="confirmed-receipt-control-bar" style="padding: 6px 12px; background: #0b1120; border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; box-sizing: border-box; min-width: 0;">
+                        <div style="font-size: 0.74rem; font-weight: 700; color: #cbd5e1; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; min-width: 0;">
+                            <i class="fa-solid fa-list-check" style="color: #818cf8; font-size: 0.72rem; flex-shrink: 0;"></i>
                             <span>${purchase.combos.length}개 게임 번호</span>
+                            ${hasWonReceipt && winningGamesList.length > 0 ? `
+                                <span class="confirmed-win-folded-badge" style="font-size: 0.7rem; font-weight: 800; color: ${themeColor}; background: rgba(16, 185, 129, 0.15); border: 1px solid ${themeBorder}; padding: 2px 7px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 8px ${themeGlow}; white-space: nowrap;">
+                                    <i class="fa-solid fa-trophy" style="font-size: 0.65rem;"></i>
+                                    <span>${winningGamesList.map(w => `${w.letter}게임 ${w.label}`).join(', ')}</span>
+                                </span>
+                            ` : ''}
                         </div>
                         <div class="confirmed-receipt-actions" style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap; flex-shrink: 0; margin-left: auto;">
                             <button type="button" class="btn-toggle-receipt-combos btn-dark-pill" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this)" style="height: 26px; box-sizing: border-box;">
@@ -950,38 +1066,40 @@ export async function renderConfirmedPurchasesList() {
                     </div>
 
                     <!-- 4. Pass Bottom Footer (TR Info & 동행복권 원본 QR 링크 & 당첨여부확인 버튼) -->
-                    <div class="confirmed-receipt-footer" style="padding: 10px 12px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 8px;">
+                    <div class="confirmed-receipt-footer" style="padding: 10px 12px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box; min-width: 0; overflow: hidden;">
                         
                         <!-- Top row: Serial & Status & Action Button -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #94a3b8; min-width: 0; overflow: hidden;">
-                                <div style="font-family: monospace; display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                    <span style="color: #64748b; flex-shrink: 0;">발행 일련번호:</span> <strong style="color: #cbd5e1; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${serial}</strong>
+                        <div class="confirmed-footer-top-row">
+                            <div class="confirmed-serial-group">
+                                <div class="confirmed-serial-text">
+                                    <span class="confirmed-serial-label">발행 일련번호:</span>
+                                    <strong class="confirmed-serial-num" title="${serial}">${serial}</strong>
                                 </div>
-                                <span style="color: rgba(255,255,255,0.2);">•</span>
-                                <div style="color: #34d399; font-size: 0.68rem; font-weight: 700; display: flex; align-items: center; gap: 3px; white-space: nowrap;">
-                                    <i class="fa-solid fa-shield-check"></i> <span>발권 검증 완료</span>
+                                <span class="confirmed-serial-dot">•</span>
+                                <div class="confirmed-verify-status">
+                                    <i class="fa-solid fa-shield-check"></i>
+                                    <span>발권 검증 완료</span>
                                 </div>
                             </div>
-                            <div style="flex-shrink: 0; margin-left: auto;">
-                                <a href="${finalQrUrl}" target="_blank" rel="noopener noreferrer" style="padding: 5px 12px; font-size: 0.74rem; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; border-radius: 7px; text-decoration: none; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s; white-space: nowrap;" title="동행복권 공식 서버 실시간 당첨결과 조회">
-                                    <i class="fa-solid fa-arrow-up-right-from-square" style="color: #34d399;"></i> 동행복권 당첨확인
+                            <div class="confirmed-footer-btn-wrap">
+                                <a href="${finalQrUrl}" target="_blank" rel="noopener noreferrer" class="confirmed-btn-verify-qr" title="동행복권 공식 서버 실시간 당첨결과 조회">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                    <span>동행복권 당첨확인</span>
                                 </a>
                             </div>
                         </div>
 
                         <!-- Bottom row: 동행복권 원본 QR 링크 바 -->
-                        <div class="confirmed-receipt-qr-link-bar" style="padding: 6px 10px; background: #080d1a; border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 6px; display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
-                            <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 240px; overflow: hidden;">
-                                <i class="fa-solid fa-qrcode" style="color: #818cf8; font-size: 0.85rem; flex-shrink: 0;"></i>
-                                <span style="color: #94a3b8; font-size: 0.7rem; font-weight: 600; white-space: nowrap; flex-shrink: 0;">공식 QR:</span>
-                                <a href="${finalQrUrl}" target="_blank" rel="noopener noreferrer" style="color: #818cf8; text-decoration: underline; font-family: monospace; font-size: 0.68rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="동행복권 공식 서버 당첨/발권 진위 페이지 열기">${finalQrUrl}</a>
+                        <div class="confirmed-receipt-qr-link-bar">
+                            <div class="confirmed-qr-info-wrap">
+                                <i class="fa-solid fa-qrcode confirmed-qr-icon"></i>
+                                <span class="confirmed-qr-badge">공식 QR:</span>
+                                <a href="${finalQrUrl}" target="_blank" rel="noopener noreferrer" class="confirmed-qr-url-link" title="${finalQrUrl}">${finalQrUrl}</a>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: auto;">
-                                <button type="button" class="btn-dark-pill" onclick="window.copyToClipboard && window.copyToClipboard('${finalQrUrl}', '🔗 동행복권 원본 QR 링크가 복사되었습니다.')" style="padding: 2px 7px; font-size: 0.68rem;">
-                                    <i class="fa-solid fa-copy"></i> 복사
-                                </button>
-                            </div>
+                            <button type="button" class="btn-dark-pill confirmed-qr-copy-btn" onclick="window.copyToClipboard && window.copyToClipboard('${finalQrUrl}', '🔗 동행복권 원본 QR 링크가 복사되었습니다.')" title="동행복권 공식 QR 원본 링크 클립보드 복사">
+                                <i class="fa-solid fa-copy"></i>
+                                <span>복사</span>
+                            </button>
                         </div>
                     </div>
                 </div>

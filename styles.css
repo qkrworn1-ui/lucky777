@@ -15396,19 +15396,37 @@ body.is-admin .btn-snapshot-audit-compact {
 
 /* 4. 실구매 영수증 티켓 패스 (Ticket Pass Card) */
 .confirmed-receipt-pass {
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 12px !important;
-    margin-bottom: 12px !important;
-    background: #0a0f1d !important;
+    margin-bottom: 14px !important;
+    background: #0a0f1d;
     overflow: hidden !important;
     position: relative !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
     transition: transform 0.2s ease, border-color 0.2s ease !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
 }
 
-.confirmed-receipt-pass.is-winner {
-    border-color: rgba(16, 185, 129, 0.35) !important;
-    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.12) !important;
+/* 🌟 당첨 영수증 고대비 하이라이트 (Winning High Contrast) */
+.confirmed-receipt-pass.confirmed-receipt-won {
+    border-width: 1.5px !important;
+    box-shadow: 0 0 24px rgba(16, 185, 129, 0.25), 0 4px 16px rgba(0,0,0,0.5) !important;
+}
+
+.confirmed-receipt-win-banner {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+}
+
+.confirmed-win-folded-badge {
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
 }
 
 .confirmed-receipt-header {
@@ -15416,6 +15434,9 @@ body.is-admin .btn-snapshot-audit-compact {
     background: #0f172a !important;
     border-bottom: 1px dashed rgba(255, 255, 255, 0.1) !important;
     position: relative !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
 }
 
 .confirmed-receipt-control-bar {
@@ -15427,6 +15448,9 @@ body.is-admin .btn-snapshot-audit-compact {
     align-items: center !important;
     gap: 8px !important;
     flex-wrap: wrap !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
 }
 
 .confirmed-game-row {
@@ -15440,6 +15464,7 @@ body.is-admin .btn-snapshot-audit-compact {
     gap: 6px !important;
     width: 100% !important;
     box-sizing: border-box !important;
+    min-width: 0 !important;
     transition: background 0.15s ease !important;
 }
 
@@ -15448,19 +15473,231 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 
 .confirmed-game-row.win-hit {
-    background: rgba(16, 185, 129, 0.06) !important;
-    border-color: rgba(16, 185, 129, 0.3) !important;
+    background: rgba(16, 185, 129, 0.12) !important;
+    border-color: #10b981 !important;
 }
 
+/* 5. 영수증 하단 푸터 (Footer) - 수직 2단 스택 구조 */
 .confirmed-receipt-footer {
-    padding: 9px 12px !important;
+    padding: 10px 12px !important;
     background: #0f172a !important;
     border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+
+/* Top Row: Serial & Verification & Action Button */
+.confirmed-footer-top-row {
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
     gap: 8px !important;
-    flex-wrap: wrap !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+}
+
+.confirmed-serial-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 0.72rem !important;
+    color: #94a3b8 !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    overflow: hidden !important;
+}
+
+.confirmed-serial-text {
+    font-family: monospace !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.confirmed-serial-label {
+    color: #64748b !important;
+    flex-shrink: 0 !important;
+}
+
+.confirmed-serial-num {
+    color: #cbd5e1 !important;
+    font-weight: 700 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.confirmed-serial-dot {
+    color: rgba(255, 255, 255, 0.2) !important;
+    flex-shrink: 0 !important;
+}
+
+.confirmed-verify-status {
+    color: #34d399 !important;
+    font-size: 0.68rem !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 3px !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+
+.confirmed-footer-btn-wrap {
+    flex-shrink: 0 !important;
+    margin-left: auto !important;
+}
+
+.confirmed-btn-verify-qr {
+    padding: 5px 12px !important;
+    font-size: 0.74rem !important;
+    background: rgba(16, 185, 129, 0.12) !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+    color: #34d399 !important;
+    border-radius: 7px !important;
+    text-decoration: none !important;
+    font-weight: 700 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    transition: all 0.2s !important;
+    white-space: nowrap !important;
+}
+
+.confirmed-btn-verify-qr:hover {
+    background: rgba(16, 185, 129, 0.22) !important;
+    border-color: #10b981 !important;
+    color: #6ee7b7 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+}
+
+/* Bottom Row: QR Link Bar */
+.confirmed-receipt-qr-link-bar {
+    padding: 6px 10px !important;
+    background: #080d1a !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+}
+
+.confirmed-qr-info-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+    flex: 1 1 0% !important;
+    overflow: hidden !important;
+}
+
+.confirmed-qr-icon {
+    color: #818cf8 !important;
+    font-size: 0.85rem !important;
+    flex-shrink: 0 !important;
+}
+
+.confirmed-qr-badge {
+    color: #94a3b8 !important;
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+
+.confirmed-qr-url-link {
+    color: #818cf8 !important;
+    text-decoration: underline !important;
+    font-family: monospace !important;
+    font-size: 0.68rem !important;
+    display: block !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    word-break: break-all !important;
+}
+
+.confirmed-qr-url-link:hover {
+    color: #a5b4fc !important;
+}
+
+.confirmed-qr-copy-btn {
+    padding: 3px 8px !important;
+    font-size: 0.68rem !important;
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+}
+
+/* Mobile Responsive Optimization (≤ 480px) */
+@media (max-width: 480px) {
+    .confirmed-footer-top-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 6px !important;
+    }
+
+    .confirmed-footer-btn-wrap {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+
+    .confirmed-btn-verify-qr {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 7px 10px !important;
+        font-size: 0.76rem !important;
+        box-sizing: border-box !important;
+    }
+
+    .confirmed-serial-group {
+        width: 100% !important;
+        justify-content: space-between !important;
+    }
+
+    .confirmed-serial-text {
+        max-width: calc(100% - 95px) !important;
+        min-width: 0 !important;
+    }
+
+    .confirmed-receipt-qr-link-bar {
+        padding: 6px 8px !important;
+        gap: 6px !important;
+    }
+
+    .confirmed-qr-url-link {
+        font-size: 0.65rem !important;
+    }
+
+    .confirmed-receipt-win-banner {
+        padding: 8px 10px !important;
+    }
+
+    .confirmed-receipt-control-bar {
+        padding: 6px 10px !important;
+    }
+
+    .confirmed-round-actions {
+        width: 100% !important;
+        justify-content: flex-end !important;
+    }
 }
 
 @keyframes fadeInSlideDown {
