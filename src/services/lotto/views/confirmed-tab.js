@@ -964,7 +964,6 @@ export async function renderConfirmedPurchasesList() {
 
             const finalQrUrl = buildDonghangLotteryQrUrl(round, purchase.combos, serial, rawUrl);
 
-            const cardBorderLeftColor = hasWonReceipt ? themeColor : (isLocked ? '#f59e0b' : 'rgba(255, 255, 255, 0.2)');
             const cardBorderStyle = hasWonReceipt ? `1.5px solid ${themeBorder}` : '1px solid rgba(255,255,255,0.08)';
             const cardBgStyle = hasWonReceipt ? `linear-gradient(180deg, ${themeDarkBg} 0%, #0a0f1d 100%)` : '#0a0f1d';
             const cardShadowStyle = hasWonReceipt ? `box-shadow: 0 0 22px ${themeGlow}, 0 6px 18px rgba(0,0,0,0.5);` : 'box-shadow: 0 4px 14px rgba(0,0,0,0.35);';
@@ -974,7 +973,7 @@ export async function renderConfirmedPurchasesList() {
 
             html += `
                 <!-- 🎟️ 스마트 모바일 월렛 패스 스타일 실구매 영수증 카드 (Clean Deep Black / Winning High Contrast) -->
-                <div class="confirmed-receipt-card confirmed-receipt-pass ${hasWonReceipt ? 'confirmed-receipt-won' : ''}" style="border: ${cardBorderStyle}; border-left: 4px solid ${cardBorderLeftColor}; border-radius: 12px; margin-bottom: 14px; background: ${cardBgStyle}; overflow: hidden; position: relative; ${cardShadowStyle}">
+                <div class="confirmed-receipt-card confirmed-receipt-pass ${hasWonReceipt ? 'confirmed-receipt-won' : ''}" style="border: ${cardBorderStyle}; border-radius: 12px; margin-bottom: 14px; background: ${cardBgStyle}; overflow: hidden; position: relative; ${cardShadowStyle}">
                     
                     ${hasWonReceipt ? `
                         <!-- 🏆 당첨 영수증 상단 하이라이트 배너 (High Contrast Radiant Win Ribbon) -->
