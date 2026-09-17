@@ -3353,6 +3353,205 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
         }
     };
 
+    // ========================================================
+    // 📱 [모던 회원 정보 & 권한 설정 모달] UI 동기화 헬퍼 함수들
+    // ========================================================
+    window.syncModalUIFromState = function(role, status, allowLotto, allowToto, realName, userId, phone) {
+        // 1. 프로필 아바타 & 텍스트
+        const displayName = realName || userId || '회원';
+        const avatarText = displayName.length >= 2 ? displayName.slice(0, 2) : displayName;
+        const elAvatar = document.getElementById('modalUserAvatarText');
+        const elRealNameDisp = document.getElementById('modalUserRealNameDisplay');
+        const elIdPhoneDisp = document.getElementById('modalUserIdPhoneDisplay');
+        if (elAvatar) elAvatar.textContent = avatarText;
+        if (elRealNameDisp) elRealNameDisp.textContent = displayName;
+        if (elIdPhoneDisp) elIdPhoneDisp.textContent = `${userId} (${phone || '연락처 미등록'})`;
+
+        // 2. 역할 등급 프리셋 버튼 & 뱃지 동기화
+        window.selectModalRolePreset(role, false);
+
+        // 3. 프로그램 이용 권한 스위치
+        const chkLotto = document.getElementById('editUserAllowLotto');
+        const chkToto = document.getElementById('editUserAllowToto');
+        if (chkLotto) chkLotto.checked = (allowLotto !== false);
+        if (chkToto) chkToto.checked = (allowToto !== false);
+        window.onModalPermSwitchChange();
+
+        // 4. 계정 상태 동기화
+        window.setModalAccountStatus(status || 'active', false);
+    };
+
+    window.selectModalRolePreset = function(role, autoSetSwitches = true) {
+        const elRole = document.getElementById('editUserRole');
+        if (elRole) elRole.value = role;
+
+        // 프리셋 버튼 active 클래스 및 인라인 스타일 제어
+        ['regular', 'permanent', 'admin'].forEach(r => {
+            const btn = document.getElementById(`modalRoleBtn_${r}`);
+            if (!btn) return;
+            const titleEl = btn.querySelector('.role-title');
+            if (r === role) {
+                btn.className = 'modal-role-btn active';
+                btn.style.background = 'rgba(59, 130, 246, 0.15)';
+                btn.style.border = '1.5px solid #3b82f6';
+                btn.style.color = '#60a5fa';
+                btn.style.boxShadow = '0 0 16px rgba(59, 130, 246, 0.25)';
+                if (titleEl) titleEl.style.color = '#60a5fa';
+            } else {
+                btn.className = 'modal-role-btn';
+                btn.style.background = '#111827';
+                btn.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+                btn.style.color = '#cbd5e1';
+                btn.style.boxShadow = 'none';
+                if (titleEl) titleEl.style.color = '#e2e8f0';
+            }
+        });
+
+        // 역할 뱃지 업데이트
+        const badge = document.getElementById('modalUserRoleBadge');
+        if (badge) {
+            if (role === 'admin') {
+                badge.textContent = '👑 관리자';
+                badge.style.background = 'rgba(192, 132, 252, 0.18)';
+                badge.style.color = '#c084fc';
+                badge.style.borderColor = 'rgba(192, 132, 252, 0.35)';
+            } else if (role === 'permanent') {
+                badge.textContent = '💎 영구회원';
+                badge.style.background = 'rgba(59, 130, 246, 0.18)';
+                badge.style.color = '#60a5fa';
+                badge.style.borderColor = 'rgba(59, 130, 246, 0.35)';
+            } else {
+                badge.textContent = '👤 일반회원';
+                badge.style.background = 'rgba(148, 163, 184, 0.18)';
+                badge.style.color = '#94a3b8';
+                badge.style.borderColor = 'rgba(148, 163, 184, 0.35)';
+            }
+        }
+
+        // 프리셋 클릭 시 기본 권한 스위치 자동 ON (관리자/영구회원 시)
+        if (autoSetSwitches && (role === 'admin' || role === 'permanent')) {
+            const chkLotto = document.getElementById('editUserAllowLotto');
+            const chkToto = document.getElementById('editUserAllowToto');
+            if (chkLotto) chkLotto.checked = true;
+            if (chkToto) chkToto.checked = true;
+            window.onModalPermSwitchChange();
+        }
+
+        const hint = document.getElementById('modalRolePresetHint');
+        if (hint) hint.textContent = '프리셋 동기화됨';
+    };
+
+    window.toggleModalAccordion = function(accKey) {
+        const body = document.getElementById('body_' + accKey);
+        const arrow = document.getElementById('arrow_' + accKey);
+        if (!body) return;
+        const isHidden = body.style.display === 'none';
+        if (isHidden) {
+            body.style.display = 'flex';
+            if (arrow) arrow.classList.add('open');
+        } else {
+            body.style.display = 'none';
+            if (arrow) arrow.classList.remove('open');
+        }
+    };
+
+    window.setModalAccountStatus = function(status, updateReasonDisplay = true) {
+        const elStatus = document.getElementById('editUserStatus');
+        if (elStatus) elStatus.value = status;
+
+        ['active', 'suspended', 'suspended_nopurchase'].forEach(st => {
+            const btn = document.getElementById(`modalStatusBtn_${st}`);
+            if (!btn) return;
+            if (st === status) {
+                btn.className = `modal-status-btn active-${st === 'suspended_nopurchase' ? 'nopurchase' : st}`;
+                if (st === 'active') {
+                    btn.style.background = 'rgba(16, 185, 129, 0.18)';
+                    btn.style.border = '1.5px solid #10b981';
+                    btn.style.color = '#34d399';
+                } else if (st === 'suspended') {
+                    btn.style.background = 'rgba(239, 68, 68, 0.18)';
+                    btn.style.border = '1.5px solid #ef4444';
+                    btn.style.color = '#f87171';
+                } else {
+                    btn.style.background = 'rgba(245, 158, 11, 0.18)';
+                    btn.style.border = '1.5px solid #f59e0b';
+                    btn.style.color = '#fbbf24';
+                }
+            } else {
+                btn.className = 'modal-status-btn';
+                btn.style.background = '#162032';
+                btn.style.border = '1px solid rgba(255, 255, 255, 0.08)';
+                btn.style.color = '#94a3b8';
+            }
+        });
+
+        // 인디케이터 및 요약 텍스트
+        const indicator = document.getElementById('modalAccountStatusIndicator');
+        const summary = document.getElementById('modalStatusSummaryText');
+        const divReason = document.getElementById('divEditSuspensionReason');
+
+        let statusText = '정상 활성 (Active)';
+        let statusColor = '#34d399';
+
+        if (status === 'suspended') {
+            statusText = '관리자 수동 정지';
+            statusColor = '#f87171';
+        } else if (status === 'suspended_nopurchase') {
+            statusText = '미구매 자동 정지';
+            statusColor = '#fbbf24';
+        }
+
+        if (indicator) {
+            indicator.style.color = statusColor;
+            indicator.innerHTML = `<span style="width:6px; height:6px; border-radius:50%; background:${statusColor}; display:inline-block;"></span> ${statusText}`;
+        }
+        if (summary) {
+            summary.style.color = statusColor;
+            summary.textContent = statusText;
+        }
+
+        if (updateReasonDisplay && divReason) {
+            divReason.style.display = (status !== 'active') ? 'flex' : 'none';
+        }
+    };
+
+    window.onModalPermSwitchChange = function() {
+        const chkLotto = document.getElementById('editUserAllowLotto');
+        const chkToto = document.getElementById('editUserAllowToto');
+        const isLotto = chkLotto ? chkLotto.checked : false;
+        const isToto = chkToto ? chkToto.checked : false;
+
+        const summary = document.getElementById('modalProgramsCountText');
+        if (!summary) return;
+
+        const total = (isLotto ? 1 : 0) + (isToto ? 1 : 0);
+        if (total === 2) {
+            summary.textContent = '2개 허용됨 (로또/토토)';
+            summary.style.color = '#34d399';
+        } else if (isLotto) {
+            summary.textContent = '1개 허용됨 (로또 6/45 전용)';
+            summary.style.color = '#60a5fa';
+        } else if (isToto) {
+            summary.textContent = '1개 허용됨 (토토/프로토 전용)';
+            summary.style.color = '#f59e0b';
+        } else {
+            summary.textContent = '모든 프로그램 이용 차단됨';
+            summary.style.color = '#f87171';
+        }
+    };
+
+    window.onModalNameInputChange = function(val) {
+        const trimmed = (val || '').trim();
+        const userId = document.getElementById('editUserIdHidden')?.value || '';
+        const nameToUse = trimmed || userId || '회원';
+        const avatarText = nameToUse.length >= 2 ? nameToUse.slice(0, 2) : nameToUse;
+
+        const elAvatar = document.getElementById('modalUserAvatarText');
+        const elRealNameDisp = document.getElementById('modalUserRealNameDisplay');
+        if (elAvatar) elAvatar.textContent = avatarText;
+        if (elRealNameDisp) elRealNameDisp.textContent = nameToUse;
+    };
+
     window.openEditUserModal = async function(userId) {
         if (!window.db) return;
         try {
@@ -3374,32 +3573,30 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
             if (elName) elName.value = data.realName || '';
             if (elPhone) elPhone.value = data.phoneNumber || '';
             if (elPw) elPw.value = '';
-            
-            // Program Permissions
-            const chkLotto = document.getElementById('editUserAllowLotto');
-            const chkToto = document.getElementById('editUserAllowToto');
-            if (chkLotto) chkLotto.checked = (data.allowLotto !== false);
-            if (chkToto) chkToto.checked = (data.allowToto !== false);
 
             // Determine Role
             const isUserAdmin = !!(data.isAdmin === true || data.role === 'admin' || userId === 'master' || userId === 'admin');
             const isPermanent = !!(data.isPermanent === true || data.userType === 'permanent');
-            
-            const elRole = document.getElementById('editUserRole');
-            if (elRole) {
-                if (isUserAdmin) elRole.value = 'admin';
-                else if (isPermanent) elRole.value = 'permanent';
-                else elRole.value = 'regular';
-            }
+            let initialRole = 'regular';
+            if (isUserAdmin) initialRole = 'admin';
+            else if (isPermanent) initialRole = 'permanent';
 
-            const elStatus = document.getElementById('editUserStatus');
+            const currentStatus = (data.status === 'suspended' || data.status === 'suspended_nopurchase') ? data.status : 'active';
             const elSuspReason = document.getElementById('editUserSuspensionReason');
             const elSuspReasonDiv = document.getElementById('divEditSuspensionReason');
-            
-            const currentStatus = (data.status === 'suspended' || data.status === 'suspended_nopurchase') ? data.status : 'active';
-            if (elStatus) elStatus.value = currentStatus;
             if (elSuspReason) elSuspReason.value = data.suspensionReason || '';
             if (elSuspReasonDiv) elSuspReasonDiv.style.display = (currentStatus !== 'active') ? 'flex' : 'none';
+
+            // 신규 모던 UI 상태 동기화
+            window.syncModalUIFromState(
+                initialRole,
+                currentStatus,
+                data.allowLotto,
+                data.allowToto,
+                data.realName,
+                userId,
+                data.phoneNumber
+            );
 
             const modal = document.getElementById('editUserModal');
             if (modal) modal.style.display = 'flex';

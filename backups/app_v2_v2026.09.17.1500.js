@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.17.1509 - BUILD_DATE: 2026-09-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.17.1500 - BUILD_DATE: 2026-09-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.17.1509)
+ * Lucky777 Smart Bundle (v2026.09.17.1500)
  */
 
 
@@ -21270,15 +21270,15 @@ async function renderConfirmedPurchasesList() {
             const pVer = purchase.version || '';
             let versionBadgeHtml = '';
             if (pVer.includes('추가')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.65rem;"></i> ${pVer.split(' (')[0]}</span>`;
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(5, 150, 105, 0.28)); border: 1px solid #34d399; color: #a7f3d0; padding: 2px 7px; border-radius: 12px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="color: #6ee7b7; font-size: 0.68rem;"></i> ${pVer.split(' (')[0]}</span>`;
             } else if (pVer.includes('QR') || pVer.includes('qr')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-qrcode" style="font-size: 0.65rem;"></i> QR영수증</span>`;
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.28), rgba(5, 150, 105, 0.28)); border: 1px solid #34d399; color: #a7f3d0; padding: 2px 7px; border-radius: 12px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-qrcode" style="color: #6ee7b7; font-size: 0.68rem;"></i> QR영수증</span>`;
             } else if (pVer.includes('V4.0') || pVer.includes('4.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); color: #c4b5fd; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.65rem;"></i> V4.0 행동경제학</span>`;
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.28), rgba(124, 58, 237, 0.28)); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 7px; border-radius: 12px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-brain" style="color: #c4b5fd; font-size: 0.68rem;"></i> V4.0 행동경제학</span>`;
             } else if (pVer.includes('V3.0') || pVer.includes('3.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.65rem;"></i> V3.0 하이브리드</span>`;
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(217, 119, 6, 0.28)); border: 1px solid #f59e0b; color: #fef08a; padding: 2px 7px; border-radius: 12px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="color: #fbbf24; font-size: 0.68rem;"></i> V3.0 하이브리드</span>`;
             } else {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-weight: 600; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.65rem;"></i> 수동구매</span>`;
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(148, 163, 184, 0.18); border: 1px solid rgba(148, 163, 184, 0.35); color: #cbd5e1; padding: 2px 7px; border-radius: 12px; font-weight: 700; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.68rem;"></i> 수동구매</span>`;
             }
 
             let purchaserLabel = '';
@@ -21329,20 +21329,20 @@ async function renderConfirmedPurchasesList() {
 
                 if (parts.length > 0) {
                     if (receiptHits[1] > 0) {
-                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-crown" style="color: #fbbf24;"></i> 1등 당첨</span>`;
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; border: 1px solid #fbbf24; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 10px rgba(251, 191, 36, 0.5); white-space: nowrap;"><i class="fa-solid fa-crown" style="color: #0f172a;"></i> 1등 당첨</span>`;
                     } else if (receiptHits[2] > 0) {
-                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: rgba(248, 113, 113, 0.15); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.35); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-medal" style="color: #f87171;"></i> 2등 당첨</span>`;
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #ffffff; border: 1px solid #f87171; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(239, 68, 68, 0.45); white-space: nowrap;"><i class="fa-solid fa-medal" style="color: #ffffff;"></i> 2등 당첨</span>`;
                     } else if (receiptHits[3] > 0) {
-                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: rgba(96, 165, 250, 0.15); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.35); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="color: #60a5fa;"></i> 3등 당첨</span>`;
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; border: 1px solid #60a5fa; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(59, 130, 246, 0.45); white-space: nowrap;"><i class="fa-solid fa-trophy" style="color: #ffffff;"></i> 3등 당첨</span>`;
                     } else {
-                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); padding: 2px 8px; border-radius: 6px; font-weight: 800; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-award" style="color: #34d399;"></i> 당첨 (+${receiptPrize.toLocaleString()}원)</span>`;
+                        winPillBadgeHtml = `<span class="confirmed-receipt-win-badge" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; border: 1px solid #34d399; padding: 2px 8px; border-radius: 12px; font-weight: 900; font-size: 0.72rem; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.45); white-space: nowrap;"><i class="fa-solid fa-award" style="color: #fde047;"></i> 당첨 (+${receiptPrize.toLocaleString()}원)</span>`;
                     }
-                    receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-award"></i> ${parts.join(', ')} (+${receiptPrize.toLocaleString()}원)</span>`;
+                    receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.5); color: #34d399; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-award"></i> ${parts.join(', ')} (+${receiptPrize.toLocaleString()}원)</span>`;
                 } else {
-                    receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">낙첨</span>`;
+                    receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">낙첨</span>`;
                 }
             } else {
-                receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-clock"></i> 추첨 대기 (${purchase.combos.length}게임)</span>`;
+                receiptResultBadge = `<span class="confirmed-receipt-result-badge" style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.35); color: #93c5fd; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-clock"></i> 추첨 대기 (${purchase.combos.length}게임)</span>`;
             }
 
             let gamesHtml = '';
