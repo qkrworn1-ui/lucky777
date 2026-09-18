@@ -24,11 +24,15 @@ export function openBudgetOptimizerModal() {
     const targetViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
     const effectiveUserId = (isAdmin && targetViewingUser ? targetViewingUser : authId).toLowerCase().trim();
 
-    const isEligible = isAdmin || ((typeof isUserEligibleForExtraPacks === 'function')
-        ? isUserEligibleForExtraPacks(effectiveUserId)
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+
+    const isEligible = (typeof isUserEligibleForExtraPacks === 'function')
+        ? isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
         : ((typeof window !== 'undefined' && typeof window.isUserEligibleForExtraPacks === 'function')
-            ? window.isUserEligibleForExtraPacks(effectiveUserId)
-            : false));
+            ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
+            : false);
 
     if (!isEligible) {
         const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 2조합인 V4.0 / V3.0 추천번호 20게임이 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);

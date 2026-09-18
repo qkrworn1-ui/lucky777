@@ -17,12 +17,16 @@ export async function renderLandingDashboard() {
     }
 
     try {
-        console.log('[Landing Dashboard] Updating individual and global winning summary...');
-
-        // 0. Ensure full purchases and user maps are loaded from Firestore
+        // 0. Ensure full purchases and user maps are loaded from Firestore (non-blocking for instant initial paint)
         if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+            if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) {
+                try {
+                    const localUsers = localStorage.getItem('lotto_all_users_list_cache');
+                    if (localUsers) state.allRegisteredUsersList = JSON.parse(localUsers);
+                } catch(e) {}
+            }
             if (typeof fetchAllUsersPurchases === 'function') {
-                await fetchAllUsersPurchases();
+                fetchAllUsersPurchases().catch(e => console.warn('[BG fetch users purchases]', e));
             }
         }
 

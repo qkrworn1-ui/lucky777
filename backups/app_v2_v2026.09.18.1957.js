@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.2010 - BUILD_DATE: 2026-09-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.1957 - BUILD_DATE: 2026-09-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.18.2010)
+ * Lucky777 Smart Bundle (v2026.09.18.1957)
  */
 
 
@@ -1888,7 +1888,78 @@ async function checkAuthOnLoad(initFirebaseAndData) {
     if (authId) {
         let isUserAdmin = isAdminUser(authId);
 
-        // 1. Instant UI Unlock from Local Cache (Zero Mobile Delay)
+        // 🔒 Background Security Check: Check if active user has been suspended or is admin
+        if (window.db) {
+            try {
+                const userDoc = await window.db.collection('lotto_users').doc(authId).get();
+                if (userDoc.exists) {
+                    const uData = userDoc.data();
+                    if (uData.isAdmin === true || uData.role === 'admin') {
+                        isUserAdmin = true;
+                        setIsAdminCache(authId, true);
+                    }
+                    const isPerm = isUserAdmin || !!(uData.isPermanent === true || uData.userType === 'permanent');
+                    setIsPermanentCache(authId, isPerm);
+                    if (uData.realName) {
+                        setUserNameCache(authId, uData.realName);
+                    }
+                    if (uData.createdAt || (uData.agreementDoc && uData.agreementDoc.createdAt)) {
+                        setUserCreatedCache(authId, uData.createdAt || uData.agreementDoc.createdAt);
+                    }
+                    setUserPermissionsCache(authId, {
+                        allowLotto: isUserAdmin || uData.allowLotto !== false,
+                        allowToto: isUserAdmin || uData.allowToto !== false
+                    });
+
+                    if (!isUserAdmin) {
+                        const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
+
+                        // Note: Non-purchased users are NOT suspended from logging in.
+                        // Instead, they are restricted from accessing Extra 5 Packs and Simulation tab.
+                        if (uData.status === 'suspended') {
+                            SafeAuth.clear();
+                            alert(`⚠️ [계정 이용 정지]\n\n사유: ${uData.suspensionReason || '관리자에 의해 이용 정지된 계정입니다.'}\n\n관리자에게 문의해주세요.`);
+                            location.reload();
+                            return;
+                        }
+                    }
+
+                    // 🔒 Check if Mandatory Profile & E-Signature Pledge is Complete
+                    // (Exempt only root built-in master/admin ID, but enforce for all members including admin-promoted accounts)
+                    const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
+                    if (!isRootMaster) {
+                        const isPhoneValid = uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.length >= 10;
+                        const isSigValid = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl);
+                        const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2);
+
+                        if (!isPhoneValid || !isSigValid || !isNameValid) {
+                            if (loginModal) {
+                                loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
+                            }
+                            setTimeout(() => {
+                                if (typeof window.openMandatoryPledgeModal === 'function') {
+                                    window.openMandatoryPledgeModal(authId, uData);
+                                }
+                            }, 100);
+                            return; // Halt service access until pledge is submitted
+                        }
+                    }
+
+                    // 💬 Check Kakao Talk Message Scope Consent (for Kakao users)
+                    if (authId.startsWith('kakao_') || (uData.kakaoAuth && typeof uData.kakaoAuth === 'object')) {
+                        const hasKakaoScope = !!(uData.kakaoAuth && uData.kakaoAuth.hasTalkMessageScope);
+                        if (!hasKakaoScope && typeof window.checkAndPromptKakaoScope === 'function') {
+                            setTimeout(() => {
+                                window.checkAndPromptKakaoScope('talk_message');
+                            }, 350);
+                        }
+                    }
+                }
+            } catch(e) {
+                console.error('[Active User Verification Error]', e);
+            }
+        }
+
         if (loginModal) {
             loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
             loginModal.classList.add('hidden');
@@ -1937,93 +2008,6 @@ async function checkAuthOnLoad(initFirebaseAndData) {
 
         if (typeof window.renderLandingDashboard === 'function') {
             try { window.renderLandingDashboard(); } catch(e) {}
-        }
-
-        // 2. Background Security Check: Check if active user has been suspended or is admin (Non-blocking)
-        if (window.db) {
-            (async () => {
-                try {
-                    const userDoc = await window.db.collection('lotto_users').doc(authId).get();
-                    if (userDoc.exists) {
-                        const uData = userDoc.data();
-                        let freshAdmin = isUserAdmin;
-                        if (uData.isAdmin === true || uData.role === 'admin') {
-                            freshAdmin = true;
-                            setIsAdminCache(authId, true);
-                        }
-                        const isPerm = freshAdmin || !!(uData.isPermanent === true || uData.userType === 'permanent');
-                        setIsPermanentCache(authId, isPerm);
-                        if (uData.realName) {
-                            setUserNameCache(authId, uData.realName);
-                        }
-                        if (uData.createdAt || (uData.agreementDoc && uData.agreementDoc.createdAt)) {
-                            setUserCreatedCache(authId, uData.createdAt || uData.agreementDoc.createdAt);
-                        }
-                        setUserPermissionsCache(authId, {
-                            allowLotto: freshAdmin || uData.allowLotto !== false,
-                            allowToto: freshAdmin || uData.allowToto !== false
-                        });
-
-                        if (freshAdmin !== isUserAdmin) {
-                            if (freshAdmin) {
-                                document.body.classList.add('is-admin');
-                                if (btnUserManagement) btnUserManagement.style.setProperty('display', 'inline-flex', 'important');
-                                if (btnUserManagementApp) btnUserManagementApp.style.setProperty('display', 'inline-flex', 'important');
-                                if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.setProperty('display', 'inline-flex', 'important');
-                                if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'inline-flex', 'important');
-                                if (btnFetchLatestDraw) btnFetchLatestDraw.style.display = 'inline-flex';
-                                if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'inline-block';
-                            }
-                        }
-
-                        if (!freshAdmin) {
-                            const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
-
-                            // Note: Non-purchased users are NOT suspended from logging in.
-                            // Instead, they are restricted from accessing Extra 5 Packs and Simulation tab.
-                            if (uData.status === 'suspended') {
-                                SafeAuth.clear();
-                                alert(`⚠️ [계정 이용 정지]\n\n사유: ${uData.suspensionReason || '관리자에 의해 이용 정지된 계정입니다.'}\n\n관리자에게 문의해주세요.`);
-                                location.reload();
-                                return;
-                            }
-                        }
-
-                        // 🔒 Check if Mandatory Profile & E-Signature Pledge is Complete
-                        // (Exempt only root built-in master/admin ID, but enforce for all members including admin-promoted accounts)
-                        const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
-                        if (!isRootMaster) {
-                            const isPhoneValid = uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.length >= 10;
-                            const isSigValid = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl);
-                            const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2);
-
-                            if (!isPhoneValid || !isSigValid || !isNameValid) {
-                                if (loginModal) {
-                                    loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
-                                }
-                                setTimeout(() => {
-                                    if (typeof window.openMandatoryPledgeModal === 'function') {
-                                        window.openMandatoryPledgeModal(authId, uData);
-                                    }
-                                }, 100);
-                                return; // Halt service access until pledge is submitted
-                            }
-                        }
-
-                        // 💬 Check Kakao Talk Message Scope Consent (for Kakao users)
-                        if (authId.startsWith('kakao_') || (uData.kakaoAuth && typeof uData.kakaoAuth === 'object')) {
-                            const hasKakaoScope = !!(uData.kakaoAuth && uData.kakaoAuth.hasTalkMessageScope);
-                            if (!hasKakaoScope && typeof window.checkAndPromptKakaoScope === 'function') {
-                                setTimeout(() => {
-                                    window.checkAndPromptKakaoScope('talk_message');
-                                }, 350);
-                            }
-                        }
-                    }
-                } catch(e) {
-                    console.error('[Active User Verification Error]', e);
-                }
-            })();
         }
 
         // 💬 [Kakao Auto-Dispatch] Check pending queue & auto-dispatch unsent real winning reports upon login
@@ -3232,6 +3216,22 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 const isLegacyMatch = !data.passwordHash && data.password === pw;
 
                 if (isHashMatch || isLegacyMatch) {
+                    // 4. Weekly Purchase Mandatory Check (해당 주차 실구매 등록 검증)
+                    const pStatus = await checkUserWeeklyPurchaseStatus(rawId, data);
+                    if (!pStatus.isExempt && !pStatus.isGracePeriod && !pStatus.hasPurchased) {
+                        const reason = `제 ${pStatus.targetRound}회차 실구매 미등록으로 인한 자동 이용정지`;
+                        await docRef.update({
+                            status: 'suspended_nopurchase',
+                            suspensionReason: reason,
+                            suspendedAt: new Date().toISOString()
+                        });
+                        if (loginError) {
+                            loginError.textContent = `⚠️ [자동 이용정지]\n제 ${pStatus.targetRound}회차에 실구매 번호를 등록하지 않아 계정이 자동 이용정지되었습니다.\n관리자에게 문의하여 해제를 요청하세요.`;
+                            loginError.style.display = 'block';
+                        }
+                        return false;
+                    }
+
                     const isPerm = !!(data.isAdmin === true || data.role === 'admin' || data.isPermanent === true || data.isPermanent === 'true' || data.userType === 'permanent');
                     const isAdm = !!(data.isAdmin === true || data.role === 'admin' || rawId.toLowerCase() === 'master' || rawId.toLowerCase() === 'admin');
                     const userCreatedAt = data.createdAt || data.created_at || (data.agreementDoc && data.agreementDoc.createdAt);
@@ -3251,10 +3251,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                         authProvider: data.authProvider || 'password'
                     };
 
-                    // ✅ Instant UI Unlock without waiting for network round-trips
-                    unlockUIImmediately(rawId, `👋 ${userRealName}님 환영합니다!`);
-
-                    // Reset fail count & migrate legacy plaintext in background
+                    // Reset fail count & migrate legacy plaintext if needed
                     const updatePayload = {
                         loginFailCount: 0,
                         lockoutUntil: null,
@@ -3265,7 +3262,8 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                         updatePayload.passwordHash = computedHash;
                     }
 
-                    docRef.update(updatePayload).catch(upErr => console.warn('[Login update non-blocking error]', upErr));
+                    await docRef.update(updatePayload);
+                    unlockUIImmediately(rawId, `👋 ${userRealName}님 환영합니다!`);
                 } else {
                     // Failed login handling
                     const failCount = (data.loginFailCount || 0) + 1;
@@ -7554,14 +7552,8 @@ if (typeof window !== 'undefined') {
 
 
 let _inFlightFetchAllUsersPurchasesPromise = null;
-let _lastFetchAllUsersPurchasesTime = 0;
-const FETCH_ALL_CACHE_TTL_MS = 30000;
 
-async function fetchAllUsersPurchases(forceRefresh = false) {
-    if (!forceRefresh && state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0 && (Date.now() - _lastFetchAllUsersPurchasesTime < FETCH_ALL_CACHE_TTL_MS)) {
-        return { allUsersMap: state.allUsersPurchasesMap, mergedLedger: state.allUsersMergedLedger || {} };
-    }
-
+async function fetchAllUsersPurchases() {
     if (_inFlightFetchAllUsersPurchasesPromise) {
         return _inFlightFetchAllUsersPurchasesPromise;
     }
@@ -7571,10 +7563,9 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
 
     _inFlightFetchAllUsersPurchasesPromise = (async () => {
         try {
-            const [pSnapshot, uSnapshot] = await Promise.all([
-                firestore.collection('lotto_purchases').get().catch(err => { console.warn('[Purchases Fetch Error]', err); return { forEach: () => {} }; }),
-                firestore.collection('lotto_users').get().catch(err => { console.warn('[Users Fetch Error]', err); return null; })
-            ]);
+            const pSnapshot = await firestore.collection('lotto_purchases').get();
+            let uSnapshot = null;
+            try { uSnapshot = await firestore.collection('lotto_users').get(); } catch(e) {}
         
         const userNames = {};
         if (uSnapshot && !uSnapshot.empty) {
@@ -7803,7 +7794,6 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
 
         state.allUsersPurchasesMap = allUsersMap;
         state.allUsersMergedLedger = mergedLedger;
-        _lastFetchAllUsersPurchasesTime = Date.now();
 
         // Invalidate in-memory 70 review memo cache so fresh cloud users/snapshots are used
         if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
@@ -28264,6 +28254,7 @@ async function initLottoService() {
                 if (statusIndicator) { statusIndicator.style.background = '#ef4444'; statusIndicator.style.boxShadow = '0 0 8px #ef4444'; }
                 if (statusText) statusText.textContent = 'DB 접속 오류 (로컬)';
             } else {
+                showToast('데이터베이스 동기화 중...');
                 if (statusIndicator) { statusIndicator.style.background = '#10b981'; statusIndicator.style.boxShadow = '0 0 8px #10b981'; }
                 if (statusText) statusText.textContent = 'DB 접속 완료 (Cloud)';
 
@@ -28373,29 +28364,17 @@ async function initLottoService() {
             }
         } catch(e) {}
 
-        // 2) Query extra history, global state, and saved combinations in parallel from Firestore
-        let extraDoc = null;
-        let stateDoc = null;
-        let savedDoc = null;
-
+        // 2) Query extra history from cloud Firestore and attach realtime push listener
         try {
-            const [rExtra, rState, rSaved] = await Promise.all([
-                db.get('lotto_draw_history', 'extra_history').catch(e => { console.warn('[DB] extra_history query error:', e); return null; }),
-                db.get('lotto_app_state', 'global_state').catch(e => { console.warn('[DB] global_state query error:', e); return null; }),
-                db.get('lotto_saved_combinations', 'global_saved').catch(e => { console.warn('[DB] saved_combinations query error:', e); return null; })
-            ]);
-            extraDoc = rExtra;
-            stateDoc = rState;
-            savedDoc = rSaved;
-        } catch(e) {
-            console.error('[DB] Parallel initial fetch error:', e);
-        }
-
-        if (extraDoc && typeof extraDoc === 'object') {
-            state.lottoExtraHistory = { ...state.lottoExtraHistory, ...extraDoc };
-            try {
-                SafeLocalStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory));
-            } catch(e) {}
+            const extraDoc = await db.get('lotto_draw_history', 'extra_history');
+            if (extraDoc && typeof extraDoc === 'object') {
+                state.lottoExtraHistory = { ...state.lottoExtraHistory, ...extraDoc };
+                try {
+                    SafeLocalStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory));
+                } catch(e) {}
+            }
+        } catch (e) {
+            console.error('[DB] extra_history query error:', e);
         }
 
         if (window.db && typeof window.db.collection === 'function') {
@@ -28427,21 +28406,26 @@ async function initLottoService() {
         state.latestDrawData = null; // force recalculation
         renderLatestDrawBanner();
 
-        // Process global state
+        // Query global state
         const upcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
-        if (stateDoc) {
-            if (stateDoc.aiState) state.aiState = stateDoc.aiState;
-            if (!stateDoc.round || stateDoc.round === upcomingRound) {
-                if (stateDoc.fixedTop5Combinations) state.fixedTop5Combinations = stateDoc.fixedTop5Combinations;
-                if (stateDoc.fixedTop5Combinations_v3) state.fixedTop5Combinations_v3 = stateDoc.fixedTop5Combinations_v3;
-                if (stateDoc.fixedTop5Combinations_v4) state.fixedTop5Combinations_v4 = stateDoc.fixedTop5Combinations_v4;
-                if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks;
-            } else {
-                state.fixedTop5Combinations = [];
-                state.fixedTop5Combinations_v3 = [];
-                state.fixedTop5Combinations_v4 = [];
-                state.extraPacks = [];
+        try {
+            const stateDoc = await db.get('lotto_app_state', 'global_state');
+            if (stateDoc) {
+                if (stateDoc.aiState) state.aiState = stateDoc.aiState;
+                if (!stateDoc.round || stateDoc.round === upcomingRound) {
+                    if (stateDoc.fixedTop5Combinations) state.fixedTop5Combinations = stateDoc.fixedTop5Combinations;
+                    if (stateDoc.fixedTop5Combinations_v3) state.fixedTop5Combinations_v3 = stateDoc.fixedTop5Combinations_v3;
+                    if (stateDoc.fixedTop5Combinations_v4) state.fixedTop5Combinations_v4 = stateDoc.fixedTop5Combinations_v4;
+                    if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks;
+                } else {
+                    state.fixedTop5Combinations = [];
+                    state.fixedTop5Combinations_v3 = [];
+                    state.fixedTop5Combinations_v4 = [];
+                    state.extraPacks = [];
+                }
             }
+        } catch (e) {
+            console.error(e);
         }
 
         // Restore local extra packs fallback if offline
@@ -28491,9 +28475,14 @@ async function initLottoService() {
             });
         }
 
-        // Process saved combinations
-        if (savedDoc) {
-            state.savedCombinations = savedDoc.combos || [];
+        // Query saved combinations
+        try {
+            const savedDoc = await db.get('lotto_saved_combinations', 'global_saved');
+            if (savedDoc) {
+                state.savedCombinations = savedDoc.combos || [];
+            }
+        } catch (e) {
+            console.error(e);
         }
     }
 
@@ -35034,16 +35023,12 @@ async function renderLandingDashboard() {
     }
 
     try {
-        // 0. Ensure full purchases and user maps are loaded from Firestore (non-blocking for instant initial paint)
+        console.log('[Landing Dashboard] Updating individual and global winning summary...');
+
+        // 0. Ensure full purchases and user maps are loaded from Firestore
         if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
-            if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) {
-                try {
-                    const localUsers = SafeLocalStorage.getItem('lotto_all_users_list_cache');
-                    if (localUsers) state.allRegisteredUsersList = JSON.parse(localUsers);
-                } catch(e) {}
-            }
             if (typeof fetchAllUsersPurchases === 'function') {
-                fetchAllUsersPurchases().catch(e => console.warn('[BG fetch users purchases]', e));
+                await fetchAllUsersPurchases();
             }
         }
 

@@ -4,75 +4,147 @@ import { removeUndefined, isSystemOrDummyUser } from '../../shared/utils.js';
 import { SafeAuth, isAdminUser, isPermanentUser, getUserRealName, setUserNameCache } from '../../shared/auth-mgmt.js';
 
 /**
- * 실구매 인증 완료 회원 여부 판별 (추가 5팩 및 시뮬레이션 이용 권한)
- * - 관리자(master, admin) 또는 영구회원(isPermanent): 100% 무조건 프리패스 (상시 영구 활성화)
- * - 일반 회원: 이번 회차 또는 최근 회차에 본인 명의 5게임 이상 실구매 영수증 등록 시 true
+ * 🔒 특정 회차(또는 이번 주 다가오는 회차) 본인 명의 실구매 등록 게임 수 반환
+ * @param {string|null} userId 
+ * @param {number|string|null} targetRound - 특정 회차 번호, 또는 'any'(과거 포함 아무 회차)
+ * @returns {number} 등록된 실구매 게임 수 (A~E 5게임 = 5)
  */
-export function isUserEligibleForExtraPacks(userId = null) {
-    const authId = (userId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest').trim().toLowerCase();
-    
-    // 1. 관리자 및 영구 사용 회원은 무조건 프리패스 (실구매 등록 의무 평생 면제)
-    if (authId === 'master' || authId === 'admin' || 
-        (typeof isAdminUser === 'function' && isAdminUser(authId)) || 
-        (typeof isPermanentUser === 'function' && isPermanentUser(authId)) ||
-        (typeof window !== 'undefined' && window.isPermanentUser && window.isPermanentUser(authId))) {
-        return true;
+export function getUserConfirmedGameCountForRound(userId = null, targetRound = null) {
+    let authId = (userId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest');
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
+        } catch(e) {}
+    }
+    const cleanAuthId = String(authId).trim().toLowerCase();
+
+    if (!cleanAuthId || cleanAuthId === 'guest' || cleanAuthId === '비로그인' || cleanAuthId === 'anonymous') {
+        return 0;
     }
 
-    if (authId === 'guest') {
-        return false;
+    // 1. 대상 회차 결정 (미지정 시 현재 다가오는 최신 회차)
+    let roundToCheck = targetRound;
+    if (!roundToCheck) {
+        if (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function') {
+            roundToCheck = window.getUpcomingLottoRound();
+        } else if (state && state.latestDrawData && state.latestDrawData.drwNo) {
+            roundToCheck = state.latestDrawData.drwNo + 1;
+        } else if (state && state.latestRoundNum) {
+            roundToCheck = state.latestRoundNum + 1;
+        } else {
+            roundToCheck = 1242;
+        }
     }
 
-    // 2. Check state.globalLedger (현재 활성화된 유저의 장부)
-    if (state && state.globalLedger) {
-        for (const r in state.globalLedger) {
-            const receipts = state.globalLedger[r];
-            if (Array.isArray(receipts)) {
-                const myReceipts = receipts.filter(rc => (rc.user || rc.userId || authId).toLowerCase() === authId);
-                let gameCount = 0;
-                myReceipts.forEach(rc => {
-                    if (rc && Array.isArray(rc.combos)) gameCount += rc.combos.length;
+    const isAny = (roundToCheck === 'any');
+
+    // 특정 회차의 영수증 목록 수집 헬퍼
+    const collectReceiptsForRound = (rnd) => {
+        const rawList = [];
+        const rKey = Number(rnd);
+        const rStr = String(rnd);
+
+        // A. state.allUsersPurchasesMap (서버 동기화된 회원 장부 맵)
+        if (state && state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanAuthId]?.ledger) {
+            const uLedger = state.allUsersPurchasesMap[cleanAuthId].ledger;
+            const list = uLedger[rKey] || uLedger[rStr];
+            if (Array.isArray(list)) rawList.push(...list);
+        }
+
+        // B. state.globalLedger (현재 활성화된 장부)
+        if (state && state.globalLedger) {
+            const list = state.globalLedger[rKey] || state.globalLedger[rStr];
+            if (Array.isArray(list)) {
+                list.forEach(rc => {
+                    if (!rc) return;
+                    const u = (rc.user || rc.userId || '').trim().toLowerCase();
+                    if (u === cleanAuthId) rawList.push(rc);
                 });
-                if (gameCount >= 5) return true;
             }
         }
+
+        // C. LocalStorage (클라이언트 저장소)
+        try {
+            const raw = localStorage.getItem(`lotto_actual_ledger_${cleanAuthId}`);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                const list = parsed[rKey] || parsed[rStr];
+                if (Array.isArray(list)) rawList.push(...list);
+            }
+        } catch(e) {}
+
+        // D. 영구 아카이브 캐시
+        try {
+            const rawArc = localStorage.getItem(`lotto_receipt_archive_${cleanAuthId}_${rKey}`);
+            if (rawArc) {
+                const parsedArc = JSON.parse(rawArc);
+                if (Array.isArray(parsedArc)) rawList.push(...parsedArc);
+            }
+        } catch(e) {}
+
+        return deduplicateReceipts(rawList);
+    };
+
+    // 영수증들에서 유효한 게임 수 합산
+    const countGames = (receipts) => {
+        let count = 0;
+        receipts.forEach(rc => {
+            if (!rc) return;
+            const u = (rc.user || rc.userId || '').trim().toLowerCase();
+            // 타인 소유 영수증 배제
+            if (u && u !== cleanAuthId) return;
+
+            // master 기본 추천번호(1235~1240) 등 mock/placeholder 제외
+            if (rc.isDefaultRecommendation && !rc.isActualScanned) return;
+
+            if (Array.isArray(rc.combos)) {
+                count += rc.combos.length;
+            }
+        });
+        return count;
+    };
+
+    if (isAny) {
+        const allRounds = new Set();
+        if (state && state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanAuthId]?.ledger) {
+            Object.keys(state.allUsersPurchasesMap[cleanAuthId].ledger).forEach(r => allRounds.add(Number(r)));
+        }
+        if (state && state.globalLedger) {
+            Object.keys(state.globalLedger).forEach(r => allRounds.add(Number(r)));
+        }
+        try {
+            const raw = localStorage.getItem(`lotto_actual_ledger_${cleanAuthId}`);
+            if (raw) Object.keys(JSON.parse(raw)).forEach(r => allRounds.add(Number(r)));
+        } catch(e) {}
+
+        let maxCount = 0;
+        for (const r of allRounds) {
+            if (isNaN(r) || r <= 0) continue;
+            const c = countGames(collectReceiptsForRound(r));
+            if (c > maxCount) maxCount = c;
+        }
+        return maxCount;
     }
 
-    // 3. LocalStorage에서 해당 사용자의 영수증 확인
-    try {
-        const raw = localStorage.getItem(`lotto_actual_ledger_${authId}`);
-        if (raw) {
-            const ledger = JSON.parse(raw);
-            for (const r in ledger) {
-                const receipts = ledger[r];
-                if (Array.isArray(receipts)) {
-                    const myReceipts = receipts.filter(rc => (rc.user || rc.userId || authId).toLowerCase() === authId);
-                    let gameCount = 0;
-                    myReceipts.forEach(rc => {
-                        if (rc && Array.isArray(rc.combos)) gameCount += rc.combos.length;
-                    });
-                    if (gameCount >= 5) return true;
-                }
-            }
-        }
-    } catch(e) {}
+    const targetRoundNum = Number(roundToCheck);
+    if (isNaN(targetRoundNum) || targetRoundNum <= 0) return 0;
 
-    // 3. state.allUsersPurchasesMap에 로드된 영수증 확인
-    if (state && state.allUsersPurchasesMap && state.allUsersPurchasesMap[authId]) {
-        const ledger = state.allUsersPurchasesMap[authId].ledger || {};
-        for (const r in ledger) {
-            const receipts = ledger[r];
-            if (Array.isArray(receipts)) {
-                let gameCount = 0;
-                receipts.forEach(rc => {
-                    if (rc && Array.isArray(rc.combos)) gameCount += rc.combos.length;
-                });
-                if (gameCount >= 5) return true;
-            }
-        }
-    }
+    const receipts = collectReceiptsForRound(targetRoundNum);
+    return countGames(receipts);
+}
 
-    return false;
+/**
+ * 실구매 인증 완료 회원 여부 판별 (추가 5팩 및 7대 퀀트 알고리즘 이용 권한)
+ * - 특정 회차(기본: 이번 주 다가오는 회차)에 본인 명의 5게임 이상 실구매 영수증(QR) 등록 시 true
+ * - 마스터/관리자 계정도 실구매 QR 등록 전에는 해당 회차 실구매 미등록으로 정확히 판별
+ * @param {string|null} userId 
+ * @param {number|string|null} targetRound 
+ * @returns {boolean}
+ */
+export function isUserEligibleForExtraPacks(userId = null, targetRound = null) {
+    const gameCount = getUserConfirmedGameCountForRound(userId, targetRound);
+    return gameCount >= 5;
 }
 
 /**
@@ -334,6 +406,7 @@ export function syncPurchaseWithQrUrl(purchase) {
 
 if (typeof window !== 'undefined') {
     window.isUserEligibleForExtraPacks = isUserEligibleForExtraPacks;
+    window.getUserConfirmedGameCountForRound = getUserConfirmedGameCountForRound;
     window.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
     window.deduplicateReceipts = deduplicateReceipts;
     window.normalizeMaster1239Order = normalizeMaster1239Order;
@@ -384,8 +457,14 @@ if (typeof window !== 'undefined') {
 
 
 let _inFlightFetchAllUsersPurchasesPromise = null;
+let _lastFetchAllUsersPurchasesTime = 0;
+const FETCH_ALL_CACHE_TTL_MS = 30000;
 
-export async function fetchAllUsersPurchases() {
+export async function fetchAllUsersPurchases(forceRefresh = false) {
+    if (!forceRefresh && state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0 && (Date.now() - _lastFetchAllUsersPurchasesTime < FETCH_ALL_CACHE_TTL_MS)) {
+        return { allUsersMap: state.allUsersPurchasesMap, mergedLedger: state.allUsersMergedLedger || {} };
+    }
+
     if (_inFlightFetchAllUsersPurchasesPromise) {
         return _inFlightFetchAllUsersPurchasesPromise;
     }
@@ -395,9 +474,10 @@ export async function fetchAllUsersPurchases() {
 
     _inFlightFetchAllUsersPurchasesPromise = (async () => {
         try {
-            const pSnapshot = await firestore.collection('lotto_purchases').get();
-            let uSnapshot = null;
-            try { uSnapshot = await firestore.collection('lotto_users').get(); } catch(e) {}
+            const [pSnapshot, uSnapshot] = await Promise.all([
+                firestore.collection('lotto_purchases').get().catch(err => { console.warn('[Purchases Fetch Error]', err); return { forEach: () => {} }; }),
+                firestore.collection('lotto_users').get().catch(err => { console.warn('[Users Fetch Error]', err); return null; })
+            ]);
         
         const userNames = {};
         if (uSnapshot && !uSnapshot.empty) {
@@ -626,6 +706,7 @@ export async function fetchAllUsersPurchases() {
 
         state.allUsersPurchasesMap = allUsersMap;
         state.allUsersMergedLedger = mergedLedger;
+        _lastFetchAllUsersPurchasesTime = Date.now();
 
         // Invalidate in-memory 70 review memo cache so fresh cloud users/snapshots are used
         if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {

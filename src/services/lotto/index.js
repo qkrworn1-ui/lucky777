@@ -54,7 +54,6 @@ export async function initLottoService() {
                 if (statusIndicator) { statusIndicator.style.background = '#ef4444'; statusIndicator.style.boxShadow = '0 0 8px #ef4444'; }
                 if (statusText) statusText.textContent = 'DB 접속 오류 (로컬)';
             } else {
-                showToast('데이터베이스 동기화 중...');
                 if (statusIndicator) { statusIndicator.style.background = '#10b981'; statusIndicator.style.boxShadow = '0 0 8px #10b981'; }
                 if (statusText) statusText.textContent = 'DB 접속 완료 (Cloud)';
 
@@ -164,17 +163,29 @@ export async function initLottoService() {
             }
         } catch(e) {}
 
-        // 2) Query extra history from cloud Firestore and attach realtime push listener
+        // 2) Query extra history, global state, and saved combinations in parallel from Firestore
+        let extraDoc = null;
+        let stateDoc = null;
+        let savedDoc = null;
+
         try {
-            const extraDoc = await db.get('lotto_draw_history', 'extra_history');
-            if (extraDoc && typeof extraDoc === 'object') {
-                state.lottoExtraHistory = { ...state.lottoExtraHistory, ...extraDoc };
-                try {
-                    localStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory));
-                } catch(e) {}
-            }
-        } catch (e) {
-            console.error('[DB] extra_history query error:', e);
+            const [rExtra, rState, rSaved] = await Promise.all([
+                db.get('lotto_draw_history', 'extra_history').catch(e => { console.warn('[DB] extra_history query error:', e); return null; }),
+                db.get('lotto_app_state', 'global_state').catch(e => { console.warn('[DB] global_state query error:', e); return null; }),
+                db.get('lotto_saved_combinations', 'global_saved').catch(e => { console.warn('[DB] saved_combinations query error:', e); return null; })
+            ]);
+            extraDoc = rExtra;
+            stateDoc = rState;
+            savedDoc = rSaved;
+        } catch(e) {
+            console.error('[DB] Parallel initial fetch error:', e);
+        }
+
+        if (extraDoc && typeof extraDoc === 'object') {
+            state.lottoExtraHistory = { ...state.lottoExtraHistory, ...extraDoc };
+            try {
+                localStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory));
+            } catch(e) {}
         }
 
         if (window.db && typeof window.db.collection === 'function') {
@@ -206,26 +217,21 @@ export async function initLottoService() {
         state.latestDrawData = null; // force recalculation
         renderLatestDrawBanner();
 
-        // Query global state
+        // Process global state
         const upcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
-        try {
-            const stateDoc = await db.get('lotto_app_state', 'global_state');
-            if (stateDoc) {
-                if (stateDoc.aiState) state.aiState = stateDoc.aiState;
-                if (!stateDoc.round || stateDoc.round === upcomingRound) {
-                    if (stateDoc.fixedTop5Combinations) state.fixedTop5Combinations = stateDoc.fixedTop5Combinations;
-                    if (stateDoc.fixedTop5Combinations_v3) state.fixedTop5Combinations_v3 = stateDoc.fixedTop5Combinations_v3;
-                    if (stateDoc.fixedTop5Combinations_v4) state.fixedTop5Combinations_v4 = stateDoc.fixedTop5Combinations_v4;
-                    if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks;
-                } else {
-                    state.fixedTop5Combinations = [];
-                    state.fixedTop5Combinations_v3 = [];
-                    state.fixedTop5Combinations_v4 = [];
-                    state.extraPacks = [];
-                }
+        if (stateDoc) {
+            if (stateDoc.aiState) state.aiState = stateDoc.aiState;
+            if (!stateDoc.round || stateDoc.round === upcomingRound) {
+                if (stateDoc.fixedTop5Combinations) state.fixedTop5Combinations = stateDoc.fixedTop5Combinations;
+                if (stateDoc.fixedTop5Combinations_v3) state.fixedTop5Combinations_v3 = stateDoc.fixedTop5Combinations_v3;
+                if (stateDoc.fixedTop5Combinations_v4) state.fixedTop5Combinations_v4 = stateDoc.fixedTop5Combinations_v4;
+                if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks;
+            } else {
+                state.fixedTop5Combinations = [];
+                state.fixedTop5Combinations_v3 = [];
+                state.fixedTop5Combinations_v4 = [];
+                state.extraPacks = [];
             }
-        } catch (e) {
-            console.error(e);
         }
 
         // Restore local extra packs fallback if offline
@@ -275,14 +281,9 @@ export async function initLottoService() {
             });
         }
 
-        // Query saved combinations
-        try {
-            const savedDoc = await db.get('lotto_saved_combinations', 'global_saved');
-            if (savedDoc) {
-                state.savedCombinations = savedDoc.combos || [];
-            }
-        } catch (e) {
-            console.error(e);
+        // Process saved combinations
+        if (savedDoc) {
+            state.savedCombinations = savedDoc.combos || [];
         }
     }
 

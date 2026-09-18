@@ -651,78 +651,7 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
     if (authId) {
         let isUserAdmin = isAdminUser(authId);
 
-        // 🔒 Background Security Check: Check if active user has been suspended or is admin
-        if (window.db) {
-            try {
-                const userDoc = await window.db.collection('lotto_users').doc(authId).get();
-                if (userDoc.exists) {
-                    const uData = userDoc.data();
-                    if (uData.isAdmin === true || uData.role === 'admin') {
-                        isUserAdmin = true;
-                        setIsAdminCache(authId, true);
-                    }
-                    const isPerm = isUserAdmin || !!(uData.isPermanent === true || uData.userType === 'permanent');
-                    setIsPermanentCache(authId, isPerm);
-                    if (uData.realName) {
-                        setUserNameCache(authId, uData.realName);
-                    }
-                    if (uData.createdAt || (uData.agreementDoc && uData.agreementDoc.createdAt)) {
-                        setUserCreatedCache(authId, uData.createdAt || uData.agreementDoc.createdAt);
-                    }
-                    setUserPermissionsCache(authId, {
-                        allowLotto: isUserAdmin || uData.allowLotto !== false,
-                        allowToto: isUserAdmin || uData.allowToto !== false
-                    });
-
-                    if (!isUserAdmin) {
-                        const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
-
-                        // Note: Non-purchased users are NOT suspended from logging in.
-                        // Instead, they are restricted from accessing Extra 5 Packs and Simulation tab.
-                        if (uData.status === 'suspended') {
-                            SafeAuth.clear();
-                            alert(`⚠️ [계정 이용 정지]\n\n사유: ${uData.suspensionReason || '관리자에 의해 이용 정지된 계정입니다.'}\n\n관리자에게 문의해주세요.`);
-                            location.reload();
-                            return;
-                        }
-                    }
-
-                    // 🔒 Check if Mandatory Profile & E-Signature Pledge is Complete
-                    // (Exempt only root built-in master/admin ID, but enforce for all members including admin-promoted accounts)
-                    const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
-                    if (!isRootMaster) {
-                        const isPhoneValid = uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.length >= 10;
-                        const isSigValid = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl);
-                        const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2);
-
-                        if (!isPhoneValid || !isSigValid || !isNameValid) {
-                            if (loginModal) {
-                                loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
-                            }
-                            setTimeout(() => {
-                                if (typeof window.openMandatoryPledgeModal === 'function') {
-                                    window.openMandatoryPledgeModal(authId, uData);
-                                }
-                            }, 100);
-                            return; // Halt service access until pledge is submitted
-                        }
-                    }
-
-                    // 💬 Check Kakao Talk Message Scope Consent (for Kakao users)
-                    if (authId.startsWith('kakao_') || (uData.kakaoAuth && typeof uData.kakaoAuth === 'object')) {
-                        const hasKakaoScope = !!(uData.kakaoAuth && uData.kakaoAuth.hasTalkMessageScope);
-                        if (!hasKakaoScope && typeof window.checkAndPromptKakaoScope === 'function') {
-                            setTimeout(() => {
-                                window.checkAndPromptKakaoScope('talk_message');
-                            }, 350);
-                        }
-                    }
-                }
-            } catch(e) {
-                console.error('[Active User Verification Error]', e);
-            }
-        }
-
+        // 1. Instant UI Unlock from Local Cache (Zero Mobile Delay)
         if (loginModal) {
             loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
             loginModal.classList.add('hidden');
@@ -771,6 +700,93 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
 
         if (typeof window.renderLandingDashboard === 'function') {
             try { window.renderLandingDashboard(); } catch(e) {}
+        }
+
+        // 2. Background Security Check: Check if active user has been suspended or is admin (Non-blocking)
+        if (window.db) {
+            (async () => {
+                try {
+                    const userDoc = await window.db.collection('lotto_users').doc(authId).get();
+                    if (userDoc.exists) {
+                        const uData = userDoc.data();
+                        let freshAdmin = isUserAdmin;
+                        if (uData.isAdmin === true || uData.role === 'admin') {
+                            freshAdmin = true;
+                            setIsAdminCache(authId, true);
+                        }
+                        const isPerm = freshAdmin || !!(uData.isPermanent === true || uData.userType === 'permanent');
+                        setIsPermanentCache(authId, isPerm);
+                        if (uData.realName) {
+                            setUserNameCache(authId, uData.realName);
+                        }
+                        if (uData.createdAt || (uData.agreementDoc && uData.agreementDoc.createdAt)) {
+                            setUserCreatedCache(authId, uData.createdAt || uData.agreementDoc.createdAt);
+                        }
+                        setUserPermissionsCache(authId, {
+                            allowLotto: freshAdmin || uData.allowLotto !== false,
+                            allowToto: freshAdmin || uData.allowToto !== false
+                        });
+
+                        if (freshAdmin !== isUserAdmin) {
+                            if (freshAdmin) {
+                                document.body.classList.add('is-admin');
+                                if (btnUserManagement) btnUserManagement.style.setProperty('display', 'inline-flex', 'important');
+                                if (btnUserManagementApp) btnUserManagementApp.style.setProperty('display', 'inline-flex', 'important');
+                                if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.setProperty('display', 'inline-flex', 'important');
+                                if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'inline-flex', 'important');
+                                if (btnFetchLatestDraw) btnFetchLatestDraw.style.display = 'inline-flex';
+                                if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'inline-block';
+                            }
+                        }
+
+                        if (!freshAdmin) {
+                            const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
+
+                            // Note: Non-purchased users are NOT suspended from logging in.
+                            // Instead, they are restricted from accessing Extra 5 Packs and Simulation tab.
+                            if (uData.status === 'suspended') {
+                                SafeAuth.clear();
+                                alert(`⚠️ [계정 이용 정지]\n\n사유: ${uData.suspensionReason || '관리자에 의해 이용 정지된 계정입니다.'}\n\n관리자에게 문의해주세요.`);
+                                location.reload();
+                                return;
+                            }
+                        }
+
+                        // 🔒 Check if Mandatory Profile & E-Signature Pledge is Complete
+                        // (Exempt only root built-in master/admin ID, but enforce for all members including admin-promoted accounts)
+                        const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
+                        if (!isRootMaster) {
+                            const isPhoneValid = uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.length >= 10;
+                            const isSigValid = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl);
+                            const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2);
+
+                            if (!isPhoneValid || !isSigValid || !isNameValid) {
+                                if (loginModal) {
+                                    loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
+                                }
+                                setTimeout(() => {
+                                    if (typeof window.openMandatoryPledgeModal === 'function') {
+                                        window.openMandatoryPledgeModal(authId, uData);
+                                    }
+                                }, 100);
+                                return; // Halt service access until pledge is submitted
+                            }
+                        }
+
+                        // 💬 Check Kakao Talk Message Scope Consent (for Kakao users)
+                        if (authId.startsWith('kakao_') || (uData.kakaoAuth && typeof uData.kakaoAuth === 'object')) {
+                            const hasKakaoScope = !!(uData.kakaoAuth && uData.kakaoAuth.hasTalkMessageScope);
+                            if (!hasKakaoScope && typeof window.checkAndPromptKakaoScope === 'function') {
+                                setTimeout(() => {
+                                    window.checkAndPromptKakaoScope('talk_message');
+                                }, 350);
+                            }
+                        }
+                    }
+                } catch(e) {
+                    console.error('[Active User Verification Error]', e);
+                }
+            })();
         }
 
         // 💬 [Kakao Auto-Dispatch] Check pending queue & auto-dispatch unsent real winning reports upon login
@@ -1979,22 +1995,6 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 const isLegacyMatch = !data.passwordHash && data.password === pw;
 
                 if (isHashMatch || isLegacyMatch) {
-                    // 4. Weekly Purchase Mandatory Check (해당 주차 실구매 등록 검증)
-                    const pStatus = await checkUserWeeklyPurchaseStatus(rawId, data);
-                    if (!pStatus.isExempt && !pStatus.isGracePeriod && !pStatus.hasPurchased) {
-                        const reason = `제 ${pStatus.targetRound}회차 실구매 미등록으로 인한 자동 이용정지`;
-                        await docRef.update({
-                            status: 'suspended_nopurchase',
-                            suspensionReason: reason,
-                            suspendedAt: new Date().toISOString()
-                        });
-                        if (loginError) {
-                            loginError.textContent = `⚠️ [자동 이용정지]\n제 ${pStatus.targetRound}회차에 실구매 번호를 등록하지 않아 계정이 자동 이용정지되었습니다.\n관리자에게 문의하여 해제를 요청하세요.`;
-                            loginError.style.display = 'block';
-                        }
-                        return false;
-                    }
-
                     const isPerm = !!(data.isAdmin === true || data.role === 'admin' || data.isPermanent === true || data.isPermanent === 'true' || data.userType === 'permanent');
                     const isAdm = !!(data.isAdmin === true || data.role === 'admin' || rawId.toLowerCase() === 'master' || rawId.toLowerCase() === 'admin');
                     const userCreatedAt = data.createdAt || data.created_at || (data.agreementDoc && data.agreementDoc.createdAt);
@@ -2014,7 +2014,10 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                         authProvider: data.authProvider || 'password'
                     };
 
-                    // Reset fail count & migrate legacy plaintext if needed
+                    // ✅ Instant UI Unlock without waiting for network round-trips
+                    unlockUIImmediately(rawId, `👋 ${userRealName}님 환영합니다!`);
+
+                    // Reset fail count & migrate legacy plaintext in background
                     const updatePayload = {
                         loginFailCount: 0,
                         lockoutUntil: null,
@@ -2025,8 +2028,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                         updatePayload.passwordHash = computedHash;
                     }
 
-                    await docRef.update(updatePayload);
-                    unlockUIImmediately(rawId, `👋 ${userRealName}님 환영합니다!`);
+                    docRef.update(updatePayload).catch(upErr => console.warn('[Login update non-blocking error]', upErr));
                 } else {
                     // Failed login handling
                     const failCount = (data.loginFailCount || 0) + 1;

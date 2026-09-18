@@ -1471,7 +1471,9 @@ export function renderExtraAddonPacksSection() {
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240));
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
     // ☁️ Seamless Multi-Device Sync: Fetch from cloud in background once per session
     if (effectiveUserId !== 'guest' && (!state._extraPacksCloudSynced || !state._extraPacksCloudSynced[`${effectiveUserId}_${curUpcomingRound}`])) {
@@ -1480,9 +1482,9 @@ export function renderExtraAddonPacksSection() {
         syncUserActiveExtraPacksFromCloud(effectiveUserId, curUpcomingRound);
     }
 
-    const isEligible = isAdmin || ((typeof window.isUserEligibleForExtraPacks === 'function')
-        ? window.isUserEligibleForExtraPacks(effectiveUserId)
-        : true);
+    const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
+        ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
+        : false;
 
     if (!isEligible) {
         if (headerActions) headerActions.style.display = 'none';
@@ -1641,11 +1643,13 @@ export async function handleToggleSpecificExtraPack(packId) {
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
-    const isEligible = isAdmin || ((typeof window.isUserEligibleForExtraPacks === 'function')
-        ? window.isUserEligibleForExtraPacks(effectiveUserId)
-        : true);
+    const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
+        ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
+        : false;
 
     if (!isEligible) {
         alert('🔒 [실구매 인증 회원 전용 혜택]\n\n추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 무료로 제공됩니다.\n\n이번 주 실구매 영수증을 등록하고 즉시 열람해 보세요!');
@@ -1694,7 +1698,9 @@ export function handleRemoveSingleExtraPack(packId) {
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
     let activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
     if (!activePackIds.includes(pIdx)) return;
@@ -1714,11 +1720,13 @@ export function handleGenerateAllExtraPacks() {
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
-    const isEligible = isAdmin || ((typeof window.isUserEligibleForExtraPacks === 'function')
-        ? window.isUserEligibleForExtraPacks(effectiveUserId)
-        : true);
+    const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
+        ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
+        : false;
 
     if (!isEligible) {
         alert('🔒 [실구매 인증 회원 전용 혜택]\n\n추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 무료로 제공됩니다.\n\n이번 주 실구매 영수증을 등록하고 즉시 열람해 보세요!');
@@ -1740,7 +1748,9 @@ export async function handleAddExtraPack() {
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
     const activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
     if (activePackIds.length >= 5) {
@@ -1761,7 +1771,9 @@ export function handleClearExtraPacks() {
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
     const activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
     if (activePackIds.length === 0) {
@@ -1787,7 +1799,9 @@ export function changeGeneratorAdminViewingUser(userId) {
         window.algoAdminViewingUser = userId;
         window.reviewAdminViewingUser = userId;
     }
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1241);
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
     const targetCombosUser = (userId === 'all') ? 'master' : userId;
     
     // Recalculate deterministic recommendations for selected user
@@ -1839,11 +1853,15 @@ export function updateTop7AlgoUI() {
         const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
         const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
         const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
-        const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+        const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+            ? window.getUpcomingLottoRound()
+            : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
-        const isEligible = isAdmin || ((typeof window.isUserEligibleForExtraPacks === 'function')
-            ? window.isUserEligibleForExtraPacks(effectiveUserId)
-            : true);
+        const confirmedGameCount = (typeof window.getUserConfirmedGameCountForRound === 'function')
+            ? window.getUserConfirmedGameCountForRound(effectiveUserId, curUpcomingRound)
+            : ((typeof window.isUserEligibleForExtraPacks === 'function' && window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)) ? 5 : 0);
+
+        const isEligible = confirmedGameCount >= 5;
 
         // 1. Update Weekly Purchase Status & Inducement Banner
         const statusBanner = document.getElementById('userWeeklyPurchaseStatusBanner');
@@ -1862,7 +1880,8 @@ export function updateTop7AlgoUI() {
                 }
             } else {
                 statusBanner.className = 'purchase-status-banner unverified';
-                txtStatus.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> [제 ${curUpcomingRound}회차] 실구매 미등록</strong> 매주 5게임 이상 실구매 영수증(QR) 등록 시 7대 알고리즘(추가 50게임)이 즉시 무료 잠금 해제됩니다!`;
+                const countMsg = (confirmedGameCount > 0) ? ` (${confirmedGameCount}/5게임 등록)` : '';
+                txtStatus.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> [제 ${curUpcomingRound}회차] 실구매 미등록${countMsg}</strong> 매주 5게임 이상 실구매 영수증(QR) 등록 시 7대 알고리즘(추가 50게임)이 즉시 무료 잠금 해제됩니다!`;
                 if (btnStatusBanner) {
                     btnStatusBanner.style.background = 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)';
                     btnStatusBanner.style.color = '#0f172a';
@@ -1974,11 +1993,13 @@ export async function selectGeneratorAlgo(algoId) {
     // Extra Packs (extra1 ~ extra5)
     if (algoId.startsWith('extra')) {
         const packNum = parseInt(algoId.replace('extra', ''));
-        if (isNaN(packNum) || packNum < 1 || packNum > 5) return;
+        const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+            ? window.getUpcomingLottoRound()
+            : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
-        const isEligible = isAdmin || ((typeof window.isUserEligibleForExtraPacks === 'function')
-            ? window.isUserEligibleForExtraPacks(effectiveUserId)
-            : true);
+        const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
+            ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
+            : false;
 
         if (!isEligible) {
             const wantConfirm = confirm('🔒 [실구매 인증 회원 전용 혜택]\n\n추가 1~5팩(총 50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n지금 실구매 영수증(QR)을 등록하고 추가 50게임을 즉시 잠금 해제하시겠습니까?');
@@ -2004,16 +2025,18 @@ export async function handleGenerateAll70Games() {
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
     // 1. Force compute both V3 and V4 (20 Games)
     state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
     state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
     state.fixedTop5Combinations = state.fixedTop5Combinations_v4;
 
-    const isEligible = isAdmin || ((typeof window.isUserEligibleForExtraPacks === 'function')
-        ? window.isUserEligibleForExtraPacks(effectiveUserId)
-        : true);
+    const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
+        ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
+        : false;
 
     if (isEligible) {
         // 2. Compute Extra 1~5 (50 Games)
