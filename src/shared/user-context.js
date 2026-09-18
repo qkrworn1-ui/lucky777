@@ -323,7 +323,7 @@ export const UserContextManager = {
             });
         }
 
-        // 6. Filter out deleted or dummy test accounts
+        // 6. Filter out deleted or dummy test accounts and duplicate name aliases
         const unifiedList = Array.from(userMap.values()).filter(u => {
             if (!u || !u.id) return false;
             const uId = String(u.id).trim().toLowerCase();
@@ -333,6 +333,15 @@ export const UserContextManager = {
                 uId === 'user_alpha' || uId === 'user_beta' || uId === 'user_gamma' || uId === 'sample' || uId === 'hms' ||
                 uId === 'guest' || uId === 'all') {
                 return false;
+            }
+            // Filter out non-canonical name aliases if an official kakao account already exists for this person
+            if (!uId.startsWith('kakao_') && uId !== 'master' && uId !== 'wdy') {
+                const uRaw = String(u.name || u.realName || u.id).trim();
+                const hasKakaoAccount = Array.from(userMap.values()).some(other => 
+                    other && other.id && String(other.id).startsWith('kakao_') && 
+                    ((other.name && String(other.name).trim() === uRaw) || (other.realName && String(other.realName).trim() === uRaw))
+                );
+                if (hasKakaoAccount) return false;
             }
             return true;
         });

@@ -235,8 +235,8 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
     for (const user of processedUsers) {
         for (const round of sortedRounds) {
             const isPreJoin = round < user.joinRound;
-            const snap = (user.recommendationSnapshots && user.recommendationSnapshots[String(round)]) || null;
-            const receipts = (user.ledger && user.ledger[String(round)]) || [];
+            const rawReceipts = (user.ledger && (user.ledger[String(round)] || user.ledger[round])) || [];
+            const receipts = Array.isArray(rawReceipts) ? rawReceipts : (rawReceipts && typeof rawReceipts === 'object' ? Object.values(rawReceipts) : []);
 
             // 1. Recommendation snapshot analysis
             let recStatus = 'missing';

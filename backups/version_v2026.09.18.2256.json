@@ -1,9 +1,16 @@
 {
-  "version": "v2026.09.18.2315",
+  "version": "v2026.09.18.2256",
   "buildDate": "2026-09-18",
   "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots",
-  "buildTimestamp": "2026-09-18T23:15:38.475644",
+  "buildTimestamp": "2026-09-18T22:56:42.354421",
   "buildHistory": [
+    {
+      "version": "v2026.09.16.1409",
+      "buildDate": "2026-09-16",
+      "buildTime": "14:09",
+      "buildTimestamp": "2026-09-16T14:09:34.396825",
+      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
+    },
     {
       "version": "v2026.09.16.1415",
       "buildDate": "2026-09-16",
@@ -346,14 +353,7 @@
       "buildTime": "22:56",
       "buildTimestamp": "2026-09-18T22:56:42.354421",
       "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.18.2315",
-      "buildDate": "2026-09-18",
-      "buildTime": "23:15",
-      "buildTimestamp": "2026-09-18T23:15:38.475644",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
     }
   ],
-  "buildTime": "23:15"
+  "buildTime": "22:56"
 }

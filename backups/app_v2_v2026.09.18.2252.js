@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.2315 - BUILD_DATE: 2026-09-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.2252 - BUILD_DATE: 2026-09-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.18.2315)
+ * Lucky777 Smart Bundle (v2026.09.18.2252)
  */
 
 
@@ -1172,7 +1172,7 @@ const UserContextManager = {
             });
         }
 
-        // 6. Filter out deleted or dummy test accounts and duplicate name aliases
+        // 6. Filter out deleted or dummy test accounts
         const unifiedList = Array.from(userMap.values()).filter(u => {
             if (!u || !u.id) return false;
             const uId = String(u.id).trim().toLowerCase();
@@ -1182,15 +1182,6 @@ const UserContextManager = {
                 uId === 'user_alpha' || uId === 'user_beta' || uId === 'user_gamma' || uId === 'sample' || uId === 'hms' ||
                 uId === 'guest' || uId === 'all') {
                 return false;
-            }
-            // Filter out non-canonical name aliases if an official kakao account already exists for this person
-            if (!uId.startsWith('kakao_') && uId !== 'master' && uId !== 'wdy') {
-                const uRaw = String(u.name || u.realName || u.id).trim();
-                const hasKakaoAccount = Array.from(userMap.values()).some(other => 
-                    other && other.id && String(other.id).startsWith('kakao_') && 
-                    ((other.name && String(other.name).trim() === uRaw) || (other.realName && String(other.realName).trim() === uRaw))
-                );
-                if (hasKakaoAccount) return false;
             }
             return true;
         });
@@ -26229,8 +26220,8 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
     for (const user of processedUsers) {
         for (const round of sortedRounds) {
             const isPreJoin = round < user.joinRound;
-            const rawReceipts = (user.ledger && (user.ledger[String(round)] || user.ledger[round])) || [];
-            const receipts = Array.isArray(rawReceipts) ? rawReceipts : (rawReceipts && typeof rawReceipts === 'object' ? Object.values(rawReceipts) : []);
+            const snap = (user.recommendationSnapshots && user.recommendationSnapshots[String(round)]) || null;
+            const receipts = (user.ledger && user.ledger[String(round)]) || [];
 
             // 1. Recommendation snapshot analysis
             let recStatus = 'missing';
@@ -35503,34 +35494,17 @@ async function updateHomeWinningTicker() {
             if (state.allUsersPurchasesMap) {
                 for (const uid in state.allUsersPurchasesMap) {
                     const uData = state.allUsersPurchasesMap[uid];
-                    const rawLedgerRound = uData?.ledger?.[roundNum] || uData?.ledger?.[String(roundNum)];
-                    let roundReceipts = [];
-                    if (Array.isArray(rawLedgerRound)) {
-                        roundReceipts = rawLedgerRound;
-                    } else if (rawLedgerRound && typeof rawLedgerRound === 'object') {
-                        roundReceipts = Object.values(rawLedgerRound);
-                    }
+                    const roundReceipts = uData?.ledger?.[roundNum] || [];
                     roundReceipts.forEach(rcpt => {
-                        if (rcpt && typeof rcpt === 'object') {
-                            allReceipts.push({
-                                ...rcpt,
-                                user: rcpt.user || uid,
-                                userName: rcpt.userName || uData.realName || uid
-                            });
-                        }
+                        allReceipts.push({
+                            ...rcpt,
+                            user: rcpt.user || uid,
+                            userName: rcpt.userName || uData.realName || uid
+                        });
                     });
                 }
-            } else if (state.allUsersMergedLedger) {
-                const rawMergedRound = state.allUsersMergedLedger[roundNum] || state.allUsersMergedLedger[String(roundNum)];
-                let mergedReceipts = [];
-                if (Array.isArray(rawMergedRound)) {
-                    mergedReceipts = rawMergedRound;
-                } else if (rawMergedRound && typeof rawMergedRound === 'object') {
-                    mergedReceipts = Object.values(rawMergedRound);
-                }
-                mergedReceipts.forEach(rcpt => {
-                    if (rcpt && typeof rcpt === 'object') allReceipts.push(rcpt);
-                });
+            } else if (state.allUsersMergedLedger && state.allUsersMergedLedger[roundNum]) {
+                state.allUsersMergedLedger[roundNum].forEach(rcpt => allReceipts.push(rcpt));
             }
 
             allReceipts.forEach(receipt => {

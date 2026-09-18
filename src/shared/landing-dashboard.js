@@ -405,8 +405,8 @@ export async function updateHomeReviewDashboard() {
         if (elRoundBadge) elRoundBadge.textContent = roundRangeLabel;
 
         const elMobileRevRound = document.getElementById('lpReviewMobileRound');
-        if (elMobileRevRound && candidateRounds && candidateRounds[0]) {
-            elMobileRevRound.textContent = candidateRounds[0];
+        if (elMobileRevRound && maxRound) {
+            elMobileRevRound.textContent = maxRound;
         }
 
         const elKpiGames = document.getElementById('lpReviewKpiGames');
@@ -482,17 +482,34 @@ export async function updateHomeWinningTicker() {
             if (state.allUsersPurchasesMap) {
                 for (const uid in state.allUsersPurchasesMap) {
                     const uData = state.allUsersPurchasesMap[uid];
-                    const roundReceipts = uData?.ledger?.[roundNum] || [];
+                    const rawLedgerRound = uData?.ledger?.[roundNum] || uData?.ledger?.[String(roundNum)];
+                    let roundReceipts = [];
+                    if (Array.isArray(rawLedgerRound)) {
+                        roundReceipts = rawLedgerRound;
+                    } else if (rawLedgerRound && typeof rawLedgerRound === 'object') {
+                        roundReceipts = Object.values(rawLedgerRound);
+                    }
                     roundReceipts.forEach(rcpt => {
-                        allReceipts.push({
-                            ...rcpt,
-                            user: rcpt.user || uid,
-                            userName: rcpt.userName || uData.realName || uid
-                        });
+                        if (rcpt && typeof rcpt === 'object') {
+                            allReceipts.push({
+                                ...rcpt,
+                                user: rcpt.user || uid,
+                                userName: rcpt.userName || uData.realName || uid
+                            });
+                        }
                     });
                 }
-            } else if (state.allUsersMergedLedger && state.allUsersMergedLedger[roundNum]) {
-                state.allUsersMergedLedger[roundNum].forEach(rcpt => allReceipts.push(rcpt));
+            } else if (state.allUsersMergedLedger) {
+                const rawMergedRound = state.allUsersMergedLedger[roundNum] || state.allUsersMergedLedger[String(roundNum)];
+                let mergedReceipts = [];
+                if (Array.isArray(rawMergedRound)) {
+                    mergedReceipts = rawMergedRound;
+                } else if (rawMergedRound && typeof rawMergedRound === 'object') {
+                    mergedReceipts = Object.values(rawMergedRound);
+                }
+                mergedReceipts.forEach(rcpt => {
+                    if (rcpt && typeof rcpt === 'object') allReceipts.push(rcpt);
+                });
             }
 
             allReceipts.forEach(receipt => {

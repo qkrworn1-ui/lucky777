@@ -513,7 +513,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
     const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
 
     // Ensure users and purchase ledger are loaded
-    if ((typeof window !== 'undefined' && window.db || db) && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
+    if ((typeof window !== 'undefined' && window.db) && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
         try {
             await fetchAllUsersPurchases();
         } catch(e) {}

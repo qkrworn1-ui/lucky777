@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.2315 - BUILD_DATE: 2026-09-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.2256 - BUILD_DATE: 2026-09-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.18.2315)
+ * Lucky777 Smart Bundle (v2026.09.18.2256)
  */
 
 
@@ -1172,7 +1172,7 @@ const UserContextManager = {
             });
         }
 
-        // 6. Filter out deleted or dummy test accounts and duplicate name aliases
+        // 6. Filter out deleted or dummy test accounts
         const unifiedList = Array.from(userMap.values()).filter(u => {
             if (!u || !u.id) return false;
             const uId = String(u.id).trim().toLowerCase();
@@ -1182,15 +1182,6 @@ const UserContextManager = {
                 uId === 'user_alpha' || uId === 'user_beta' || uId === 'user_gamma' || uId === 'sample' || uId === 'hms' ||
                 uId === 'guest' || uId === 'all') {
                 return false;
-            }
-            // Filter out non-canonical name aliases if an official kakao account already exists for this person
-            if (!uId.startsWith('kakao_') && uId !== 'master' && uId !== 'wdy') {
-                const uRaw = String(u.name || u.realName || u.id).trim();
-                const hasKakaoAccount = Array.from(userMap.values()).some(other => 
-                    other && other.id && String(other.id).startsWith('kakao_') && 
-                    ((other.name && String(other.name).trim() === uRaw) || (other.realName && String(other.realName).trim() === uRaw))
-                );
-                if (hasKakaoAccount) return false;
             }
             return true;
         });
