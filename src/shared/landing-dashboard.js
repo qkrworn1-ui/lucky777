@@ -645,6 +645,11 @@ let drawCountdownIntervalId = null;
 export function updateDrawCountdownBanner() {
     const container = document.getElementById('lpDrawCountdownBanner');
     if (!container) return;
+    // 중복으로 있는 추첨까지 남은시간 배너 숨김 처리 시 렌더링 중단
+    if (container.style.display === 'none' || container.hasAttribute('hidden') || (typeof window !== 'undefined' && window.getComputedStyle && window.getComputedStyle(container).display === 'none')) {
+        container.innerHTML = '';
+        return;
+    }
 
     function renderBanner() {
         const now = new Date();

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lucky777-pwa-v2026.09.18.1507';
+const CACHE_NAME = 'lucky777-pwa-v2026.09.18.1553';
 
 function getBasePath() {
   try {
@@ -52,6 +52,27 @@ self.addEventListener('fetch', (e) => {
   // Bypass Firestore, Kakao, External APIs
   const url = e.request.url;
   if (url.includes('version.json') || url.includes('firestore') || url.includes('kakao') || url.includes('googleapis') || url.includes('dhlottery') || url.includes('gstatic.com') || url.includes('cloudflare.com') || url.includes('jsdelivr.net') || url.includes('unpkg.com')) {
+    return;
+  }
+
+  // For HTML documents / page navigation: ALWAYS fetch fresh from network first!
+  const isHtmlNavigation = e.request.mode === 'navigate' || (e.request.headers.get('accept') && e.request.headers.get('accept').includes('text/html'));
+  if (isHtmlNavigation) {
+    e.respondWith(
+      fetch(e.request, { cache: 'no-cache' })
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const resClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(e.request, resClone));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(e.request).then((cachedResponse) => {
+            return cachedResponse || caches.match(`${BASE_PATH}index.html`) || caches.match(BASE_PATH);
+          });
+        })
+    );
     return;
   }
 

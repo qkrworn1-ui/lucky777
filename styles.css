@@ -3868,22 +3868,23 @@ html, body {
 
         .lp-card { padding: 28px 24px; }
 
-        /* 📂 Landing Page Collapsible Sections Base Rules */
-        details.lp-collapsible-section {
+        /* 📂 Landing Page Accordion Card Base Rules */
+        .lp-accordion-card {
             display: block;
+            width: 100%;
+            box-sizing: border-box;
             transition: all 0.25s ease;
         }
 
-        details.lp-collapsible-section summary {
+        .lp-accordion-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            box-sizing: border-box;
             cursor: pointer;
-            list-style: none;
-            outline: none;
             user-select: none;
-        }
-
-        details.lp-collapsible-section summary::-webkit-details-marker,
-        details.lp-collapsible-section summary::marker {
-            display: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .lp-accordion-chevron {
@@ -3891,8 +3892,8 @@ html, body {
             transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        details.lp-collapsible-section[open] .lp-accordion-chevron {
-            transform: rotate(180deg);
+        .lp-accordion-body {
+            transition: all 0.25s ease;
         }
 
         .lp-card-actions-row {
@@ -3922,6 +3923,39 @@ html, body {
             align-items: center;
             gap: 8px;
             z-index: 10005;
+        }
+
+        .btn-lp-manual {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff !important;
+            text-decoration: none;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+            white-space: nowrap;
+        }
+
+        .btn-lp-pwa {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            color: #0f172a !important;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+            white-space: nowrap;
         }
 
         .btn-lp-user, .btn-lp-logout {
@@ -4250,9 +4284,25 @@ html, body {
 
         @media (max-width: 768px) {
             .lp-top-bar {
-                top: 12px;
-                right: 14px;
-                gap: 6px;
+                position: static !important;
+                width: 100% !important;
+                display: flex !important;
+                justify-content: flex-end !important;
+                align-items: center !important;
+                gap: 6px !important;
+                padding: 4px 6px 0 6px !important;
+                margin-bottom: 6px !important;
+                box-sizing: border-box !important;
+            }
+
+            .lp-top-qr-btn {
+                display: none !important;
+            }
+
+            .btn-lp-manual, .btn-lp-pwa {
+                padding: 5px 10px !important;
+                font-size: 0.72rem !important;
+                border-radius: 14px !important;
             }
 
             .btn-lp-user, .btn-lp-logout {
@@ -4264,8 +4314,8 @@ html, body {
             }
 
             .lp-header {
-                margin-top: 40px !important;
-                margin-bottom: 20px !important;
+                margin-top: 6px !important;
+                margin-bottom: 16px !important;
             }
 
             .lp-financial-summary {
@@ -11128,7 +11178,7 @@ html, body {
     }
 
     .lp-header {
-        margin-top: 44px !important;
+        margin-top: 6px !important;
         margin-bottom: 16px !important;
         width: 100% !important;
     }
@@ -11334,15 +11384,36 @@ html, body {
         white-space: nowrap !important;
     }
 
-    /* 6. 데이터 무결성 보증 배너 모바일 */
+    /* 6. 데이터 무결성 보증 배너 & 아코디언 카드 모바일 */
+    .lp-accordion-card {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin-bottom: 14px !important;
+    }
+
+    .lp-accordion-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        cursor: pointer !important;
+        user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+
+    .lp-accordion-chevron {
+        display: inline-block !important;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+
     .lp-integrity-guarantee-box {
         padding: 12px 14px !important;
         margin-bottom: 14px !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 10px !important;
+        display: block !important;
     }
 
     .lp-integrity-guarantee-box > div:first-child {
@@ -11357,6 +11428,7 @@ html, body {
 
     /* 7. 서비스 카드 그리드 */
     .lp-service-grid {
+        display: grid !important;
         grid-template-columns: 1fr !important;
         gap: 14px !important;
         width: 100% !important;
@@ -11385,32 +11457,6 @@ html, body {
     }
 
     /* 📂 Landing Page Collapsible Sections & Dual Actions */
-    details.lp-collapsible-section {
-        display: block !important;
-        transition: all 0.25s ease;
-    }
-
-    details.lp-collapsible-section summary {
-        cursor: pointer !important;
-        list-style: none !important;
-        outline: none !important;
-        user-select: none !important;
-    }
-
-    details.lp-collapsible-section summary::-webkit-details-marker,
-    details.lp-collapsible-section summary::marker {
-        display: none !important;
-    }
-
-    .lp-accordion-chevron {
-        display: inline-block;
-        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    details.lp-collapsible-section[open] .lp-accordion-chevron {
-        transform: rotate(180deg);
-    }
-
     .lp-card-actions-row {
         display: flex !important;
         gap: 10px !important;
@@ -11422,12 +11468,18 @@ html, body {
     .lp-card-actions-row .lp-btn {
         margin-top: 0 !important;
         flex: 1 1 130px !important;
+        min-height: 42px !important;
+        padding: 8px 12px !important;
+        font-size: 0.84rem !important;
     }
 
     .lp-card-actions-row .btn-ledger-qr-prominent {
         margin-top: 0 !important;
         flex: 1 1 130px !important;
         justify-content: center !important;
+        min-height: 42px !important;
+        padding: 8px 12px !important;
+        font-size: 0.84rem !important;
     }
 }
 
