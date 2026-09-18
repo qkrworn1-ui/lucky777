@@ -54,7 +54,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.09.18.1208">
+    <link rel="stylesheet" href="styles.css?v=2026.09.18.1507">
 </head>
 
 <body>
@@ -84,6 +84,9 @@
 
         <!-- Floating buttons for Auth & User Management on Landing Page -->
         <div class="lp-top-bar" style="display:flex; align-items:center; gap:8px;">
+            <button id="btnLandingOpenQr" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.openManualLedgerModal) window.openManualLedgerModal(); else if(document.getElementById('btnOpenManualLedger')) document.getElementById('btnOpenManualLedger').click(); }, 120); }" class="btn-ledger-qr-prominent" title="실물 로또 영수증 QR 등록 바로가기" style="padding: 6px 14px !important; font-size: 0.8rem !important; min-height: 32px !important; border-radius: 20px !important;">
+                <i class="fa-solid fa-qrcode"></i> <span>실구매 QR 등록</span>
+            </button>
             <a href="lotto_user_manual.pdf" download="로또_추천프로그램_사용자_설명서.pdf" target="_blank" onclick="window.downloadUserManual && window.downloadUserManual(event)" id="btnDownloadManualTop" class="btn-lp-manual" title="사용자 설명서 다운로드 (PDF)" aria-label="설명서 다운로드" style="display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border: none; padding: 6px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 800; cursor: pointer; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);">
                 <i class="fa-solid fa-file-pdf"></i> 📖 설명서 다운로드
             </a>
@@ -106,44 +109,76 @@
             <div class="lp-brand-badge" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
                 <span><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.09.18.1208 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.09.18.1507 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 style="margin: 0 0 8px 0;">운도<br><span class="lp-accent">실력</span></h1>
             <p class="lp-tagline">당신의 경제적 자유를 위한 스마트 서비스 플랫폼</p>
         </div>
 
-        <!-- 📖 사용자 설명서 (PDF) 다운로드 배너 -->
-        <div class="lp-manual-banner" style="width: 100%; max-width: 900px; margin: 0 auto 14px auto; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.12)); border: 1.5px solid rgba(16, 185, 129, 0.45); border-radius: 14px; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; box-sizing: border-box; box-shadow: 0 4px 16px rgba(0,0,0,0.25);">
-            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 250px;">
-                <div style="background: rgba(16, 185, 129, 0.25); color: #34d399; font-size: 1.35rem; width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(16, 185, 129, 0.4);">
-                    <i class="fa-solid fa-book-open"></i>
-                </div>
-                <div>
-                    <div style="font-size: 0.9rem; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                        <span>운도실력 로또 6/45 초간편 그림 사용자 설명서</span>
-                        <span style="font-size: 0.7rem; background: #10b981; color: #fff; padding: 1px 7px; border-radius: 4px; font-weight: 800;">PDF 가이드</span>
-                    </div>
-                    <div style="font-size: 0.77rem; color: #94a3b8; margin-top: 3px; line-height: 1.4;">
-                        카카오 1초 로그인부터 실구매 QR 1초 인증, 7대 알고리즘, 토요일 자동 당첨 확인까지 알기 쉽게 정리!
-                    </div>
-                </div>
-            </div>
-            <a href="lotto_user_manual.pdf" download="로또_추천프로그램_사용자_설명서.pdf" target="_blank" onclick="window.downloadUserManual && window.downloadUserManual(event)" style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 9px 18px; border-radius: 9px; font-size: 0.84rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); white-space: nowrap; transition: transform 0.15s;">
-                <i class="fa-solid fa-download"></i> 설명서 PDF 다운로드
-            </a>
-        </div>
-
-        <!-- 🎯 로또 6/45 당첨번호 추첨 실시간 카운트다운 배너 (매주 토요일 21:00 기준) -->
-        <div id="lpDrawCountdownBanner" style="width: 100%; max-width: 900px; margin-bottom: 14px; box-sizing: border-box;"></div>
-
-        <!-- 🚨 일반회원 주간 실구매 등록 마감 실시간 카운트다운 배너 -->
-        <div id="lpPurchaseDeadlineBanner" style="display:none; width: 100%; max-width: 900px; margin-bottom: 14px; box-sizing: border-box;"></div>
-
         <!-- 🏆 실구매 영수증 기반 지난주차 당첨자 실시간 롤링 티커 바 -->
         <div id="lpWinningTickerContainer" style="width: 100%; max-width: 900px; margin-bottom: 14px; box-sizing: border-box;"></div>
 
-        <!-- 실시간 금융 현황 보드 -->
+        <!-- 🎯 로또 6/45 당첨번호 추첨 실시간 카운트다운 배너 (상단 헤더 배지로 일원화하여 중복 숨김) -->
+        <div id="lpDrawCountdownBanner" style="display: none !important; width: 100%; max-width: 900px; margin-bottom: 14px; box-sizing: border-box;"></div>
+
+        <!-- 🚨 일반회원 주간 실구매 등록 마감 실시간 카운트다운 배너 -->
+        <div id="lpPurchaseDeadlineBanner" style="display: none !important; width: 100%; max-width: 900px; margin-bottom: 14px; box-sizing: border-box;"></div>
+
+        <!-- 🔥 [제1안: 서비스 우선형] 서비스 카드 그리드 (최상단 첫 화면 즉시 노출) -->
+        <div class="lp-service-grid" style="width: 100%; max-width: 900px; margin-bottom: 16px;">
+
+            <!-- 1. 로또 추천 서비스 (Primary Service Card) -->
+            <div class="lp-card lp-card-lotto" id="btnGoLotto" onclick="showLotto();" role="button" tabindex="0">
+                <div class="lp-card-glow-lotto"></div>
+                <div class="lp-card-icon lp-card-icon-lotto">
+                    <i class="fa-solid fa-clover"></i>
+                </div>
+                <div class="lp-card-badge lp-badge-active">
+                    <i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> 서비스 운영중
+                </div>
+                <h2 class="lp-card-title">로또 추천 서비스</h2>
+                <p class="lp-card-desc">통계학 &amp; 게임이론 기반 AI 알고리즘으로<br>매주 최적의 로또 번호를 추천해 드립니다.</p>
+                <ul class="lp-card-features">
+                    <li><i class="fa-solid fa-check-circle"></i> AI 통계 분석 추천 10게임 즉시 확인</li>
+                    <li><i class="fa-solid fa-check-circle"></i> 역대 당첨 데이터 기반 7대 퀀트 시뮬레이션</li>
+                    <li><i class="fa-solid fa-check-circle"></i> 구매 이력 관리 &amp; 손익·ROI 실시간 분석</li>
+                    <li><i class="fa-solid fa-check-circle"></i> 실시간 클라우드 데이터 동기화 &amp; 100% 무결성 보증</li>
+                </ul>
+                <div class="lp-card-actions-row">
+                    <button class="lp-btn lp-btn-lotto" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-generator'), 80); return false;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 지금 이용하기
+                    </button>
+                    <button type="button" class="btn-ledger-qr-prominent lp-btn-qr-action" onclick="event.stopPropagation(); if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.openManualLedgerModal) window.openManualLedgerModal(); else if(document.getElementById('btnOpenManualLedger')) document.getElementById('btnOpenManualLedger').click(); }, 120); } return false;" title="실물 로또 영수증 QR 1초 등록">
+                        <i class="fa-solid fa-qrcode"></i> 실구매 QR 등록
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. 토토/프로토 서비스 (Beta Card) -->
+            <div class="lp-card lp-card-toto" id="btnGoToto" onclick="showToto(); return false;" role="button" tabindex="0" style="background: linear-gradient(145deg, rgba(25, 20, 5, 0.95) 0%, rgba(35, 24, 5, 0.9) 100%); border: 1.5px solid rgba(245, 158, 11, 0.35); box-shadow: 0 0 40px rgba(245, 158, 11, 0.08), 0 20px 60px rgba(0,0,0,0.5);">
+                <div class="lp-card-glow-stock" style="background: radial-gradient(circle at 50% 0%, rgba(251, 191, 36, 0.18) 0%, transparent 70%);"></div>
+                <div class="lp-card-icon" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24;">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <div class="lp-card-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-weight: 800;">
+                    <i class="fa-solid fa-flask"></i> 🧪 테스트중 (Beta)
+                </div>
+                <h2 class="lp-card-title">토토/프로토 AI 추천</h2>
+                <p class="lp-card-desc">포아송 득점 확률 &amp; 결장 Impact NLP 분석으로<br>최적의 가치 배팅(+EV) 2~4폴더 조합을 추천합니다.</p>
+                <ul class="lp-card-features">
+                    <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 포아송 xG 기반 승무패/언오버 확률 예측</li>
+                    <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 결장/부상 뉴스 NLP 전력 손실(Impact) 반영</li>
+                    <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 기대값(+EV) 가치 배팅(Value Bet) 실시간 포착</li>
+                    <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 켈리 공식 &amp; 프로토 규정 기반 3대 포트폴리오</li>
+                </ul>
+                <button class="lp-btn" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #ffffff; cursor: pointer; border: none; font-weight: 800; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);" onclick="showToto(); return false;">
+                    <i class="fa-solid fa-arrow-right"></i> 지금 이용하기 (테스트중)
+                </button>
+            </div>
+        </div>
+
+        <!-- 📊 실시간 금융 & 당첨 현황 보드 (서비스 바로 아래 배치) -->
         <div class="lp-financial-summary">
             <!-- 상단: 통합 투자 및 자산 KPI 요약 -->
             <div class="lp-fin-main-row">
@@ -229,9 +264,9 @@
             </div>
         </div>
 
-        <!-- 🔮 제 XXX회차 전체 회원 AI 추천번호 당첨 결과 내역 요약 박스 -->
-        <div id="lpAllMembersReviewSection" style="width: 100%; max-width: 900px; margin-bottom: 14px; background: rgba(15, 23, 42, 0.75); border: 1.5px solid rgba(167, 139, 250, 0.35); border-radius: 12px; padding: 14px 16px; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+        <!-- 🔮 제 XXX회차 전체 회원 AI 추천번호 당첨 결과 내역 요약 박스 (아코디언 접기/펼치기) -->
+        <details id="lpAllMembersReviewSection" class="lp-collapsible-section" style="width: 100%; max-width: 900px; margin-bottom: 14px; background: rgba(15, 23, 42, 0.75); border: 1.5px solid rgba(167, 139, 250, 0.35); border-radius: 12px; padding: 14px 16px; box-sizing: border-box; box-shadow: 0 4px 20px rgba(0,0,0,0.25);">
+            <summary style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-brain" style="color: #a78bfa; font-size: 1.15rem;"></i>
                     <div>
@@ -244,118 +279,88 @@
                         </div>
                     </div>
                 </div>
-                <div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.72rem; color: #a78bfa; background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.3); padding: 4px 9px; border-radius: 6px; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
+                        <span>상세보기</span> <i class="fa-solid fa-chevron-down lp-accordion-chevron"></i>
+                    </span>
+                </div>
+            </summary>
+
+            <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(167, 139, 250, 0.2);">
+                <!-- 바로가기 버튼 -->
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
                     <button type="button" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-review'), 80);" style="background: linear-gradient(135deg, rgba(167, 139, 250, 0.25), rgba(139, 92, 246, 0.25)); border: 1px solid #a78bfa; color: #ddd6fe; padding: 5px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i> 추천번호 당첨 결과 탭 바로가기
                     </button>
                 </div>
-            </div>
 
-            <!-- 전체 합계 KPI 요약 바 -->
-            <div id="lpReviewKpiBar" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                <span id="lpReviewKpiGames" style="font-weight: 700;">총 0명 회원 · 0게임</span>
-                <span id="lpReviewKpiHits" style="color: #60a5fa; font-weight: 700;">1등 0 · 2등 0 · 3등 0 · 4등 0 · 5등 0</span>
-                <span id="lpReviewKpiPrize" style="color: #34d399; font-weight: 800; font-size: 0.88rem;">총 당첨금 +0원</span>
-            </div>
+                <!-- 전체 합계 KPI 요약 바 -->
+                <div id="lpReviewKpiBar" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <span id="lpReviewKpiGames" style="font-weight: 700;">총 0명 회원 · 0게임</span>
+                    <span id="lpReviewKpiHits" style="color: #60a5fa; font-weight: 700;">1등 0 · 2등 0 · 3등 0 · 4등 0 · 5등 0</span>
+                    <span id="lpReviewKpiPrize" style="color: #34d399; font-weight: 800; font-size: 0.88rem;">총 당첨금 +0원</span>
+                </div>
 
-            <!-- ℹ️ 복기 당첨 및 실제 구매 권리 안내 문구 -->
-            <div style="margin-top: 10px; padding: 10px 14px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); border-radius: 8px; display: flex; align-items: flex-start; gap: 10px;">
-                <i class="fa-solid fa-circle-info" style="color: #c4b5fd; font-size: 0.95rem; margin-top: 2px; flex-shrink: 0;"></i>
-                <div style="font-size: 0.74rem; color: #cbd5e1; line-height: 1.55;">
-                    <strong style="color: #e9d5ff;">[안내]</strong> 본 당첨 결과 데이터는 해당 회차에 회원별로 배정된 <strong>7대 퀀트 알고리즘(회원당 70조합)의 적중 여부를 사후 검증한 통계 데이터</strong>입니다. 실제 복권 구매는 회원의 자율적 선택이며, 실구매 영수증 인증이 완료되지 않은 추천 당첨 실적은 <strong>실제 당첨금 수령 권리와 무관</strong>합니다.
+                <!-- ℹ️ 복기 당첨 및 실제 구매 권리 안내 문구 -->
+                <div style="margin-top: 10px; padding: 10px 14px; background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(167, 139, 250, 0.25); border-radius: 8px; display: flex; align-items: flex-start; gap: 10px;">
+                    <i class="fa-solid fa-circle-info" style="color: #c4b5fd; font-size: 0.95rem; margin-top: 2px; flex-shrink: 0;"></i>
+                    <div style="font-size: 0.74rem; color: #cbd5e1; line-height: 1.55;">
+                        <strong style="color: #e9d5ff;">[안내]</strong> 본 당첨 결과 데이터는 해당 회차에 회원별로 배정된 <strong>7대 퀀트 알고리즘(회원당 70조합)의 적중 여부를 사후 검증한 통계 데이터</strong>입니다. 실제 복권 구매는 회원의 자율적 선택이며, 실구매 영수증 인증이 완료되지 않은 추천 당첨 실적은 <strong>실제 당첨금 수령 권리와 무관</strong>합니다.
+                    </div>
                 </div>
             </div>
-        </div>
+        </details>
 
-        <!-- 🛡️ 실구매 당첨 데이터 100% 무결성 & 신뢰 보증 배너 -->
-        <div class="lp-integrity-guarantee-box" style="width: 100%; max-width: 900px; margin: 0 auto 16px auto; padding: 12px 18px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; box-shadow: 0 4px 15px rgba(0,0,0,0.2); box-sizing: border-box;">
-            <div style="display: flex; align-items: flex-start; gap: 12px; flex: 1; min-width: 240px;">
-                <i class="fa-solid fa-shield-halved" style="color: #10b981; font-size: 1.35rem; margin-top: 2px;"></i>
-                <div>
+        <!-- 🛡️ 실구매 당첨 데이터 100% 무결성 & 신뢰 보증 배너 (아코디언 접기/펼치기) -->
+        <details class="lp-integrity-guarantee-box lp-collapsible-section" style="width: 100%; max-width: 900px; margin: 0 auto 16px auto; padding: 12px 18px; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); box-sizing: border-box;">
+            <summary style="display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%;">
+                <div style="display: flex; align-items: center; gap: 10px; flex: 1;">
+                    <i class="fa-solid fa-shield-halved" style="color: #10b981; font-size: 1.25rem;"></i>
                     <div style="font-size: 0.85rem; font-weight: 800; color: #34d399; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span>실구매 당첨 데이터 100% 무결성 &amp; 공정성 공식 보증 (Tamper-Proof)</span>
-                        <span style="background: rgba(16,185,129,0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.68rem; padding: 1px 7px; border-radius: 4px; font-weight: 800;">데이터 조작·가공 원천 차단</span>
-                    </div>
-                    <div style="font-size: 0.76rem; color: #94a3b8; margin-top: 4px; line-height: 1.5;">
-                        본 플랫폼의 모든 당첨 이력 및 실구매 통계는 <strong>동행복권 공식 데이터 연동</strong>과 <strong>매주 토요일 20:00(추첨 마감) 이전 실물 영수증 QR코드 인증 &amp; 클라우드 전자 타임스탬프 영구 잠금(Lock)</strong>을 거친 검증된 데이터만 집계됩니다. 사후 임의 수정, 번호 끼워넣기 등 일체의 조작이나 가공이 기술적으로 불가능합니다.
+                        <span style="background: rgba(16,185,129,0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.68rem; padding: 1px 7px; border-radius: 4px; font-weight: 800;">조작·가공 원천 차단</span>
                     </div>
                 </div>
-            </div>
-            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                <span style="font-size: 0.72rem; color: #fbbf24; background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.35); padding: 4px 10px; border-radius: 6px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
-                    <i class="fa-solid fa-lock"></i> 추첨 전 잠금 완료
-                </span>
-                <span style="font-size: 0.72rem; color: #38bdf8; background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.35); padding: 4px 10px; border-radius: 6px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
-                    <i class="fa-solid fa-qrcode"></i> 영수증 QR 검증
-                </span>
-            </div>
-        </div>
-
-        <div class="lp-service-grid">
-
-            <!-- 로또 추천 서비스 -->
-
-            <div class="lp-card lp-card-lotto" id="btnGoLotto" onclick="showLotto();" role="button" tabindex="0">
-
-                <div class="lp-card-glow-lotto"></div>
-
-                <div class="lp-card-icon lp-card-icon-lotto">
-
-                    <i class="fa-solid fa-clover"></i>
-
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 0.72rem; color: #34d399; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); padding: 4px 9px; border-radius: 6px; font-weight: 800; display: inline-flex; align-items: center; gap: 5px;">
+                        <span>보증 내용</span> <i class="fa-solid fa-chevron-down lp-accordion-chevron"></i>
+                    </span>
                 </div>
-
-                <div class="lp-card-badge lp-badge-active">
-
-                    <i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> 서비스 운영중
-
+            </summary>
+            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(16, 185, 129, 0.2);">
+                <div style="font-size: 0.76rem; color: #94a3b8; line-height: 1.55;">
+                    본 플랫폼의 모든 당첨 이력 및 실구매 통계는 <strong>동행복권 공식 데이터 연동</strong>과 <strong>매주 토요일 20:00(추첨 마감) 이전 실물 영수증 QR코드 인증 &amp; 클라우드 전자 타임스탬프 영구 잠금(Lock)</strong>을 거친 검증된 데이터만 집계됩니다. 사후 임의 수정, 번호 끼워넣기 등 일체의 조작이나 가공이 기술적으로 불가능합니다.
                 </div>
-
-                <h2 class="lp-card-title">로또 추천 서비스</h2>
-
-                <p class="lp-card-desc">통계학 &amp; 게임이론 기반 AI 알고리즘으로<br>매주 최적의 로또 번호를 추천해 드립니다.</p>
-
-                <ul class="lp-card-features">
-
-                    <li><i class="fa-solid fa-check-circle"></i> AI 통계 분석 추천 10게임</li>
-
-                    <li><i class="fa-solid fa-check-circle"></i> 역대 당첨 데이터 기반 시뮬레이션</li>
-
-                    <li><i class="fa-solid fa-check-circle"></i> 구매 이력 관리 &amp; 손익 분석</li>
-
-                    <li><i class="fa-solid fa-check-circle"></i> 실시간 클라우드 데이터 동기화</li>
-
-                </ul>
-
-                <button class="lp-btn lp-btn-lotto" onclick="showLotto(); return false;">
-
-                    <i class="fa-solid fa-arrow-right"></i> 지금 이용하기
-
-                </button>
-
+                <div style="display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap;">
+                    <span style="font-size: 0.72rem; color: #fbbf24; background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.35); padding: 4px 10px; border-radius: 6px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="fa-solid fa-lock"></i> 추첨 전 잠금 완료
+                    </span>
+                    <span style="font-size: 0.72rem; color: #38bdf8; background: rgba(56,189,248,0.12); border: 1px solid rgba(56,189,248,0.35); padding: 4px 10px; border-radius: 6px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="fa-solid fa-qrcode"></i> 영수증 QR 검증
+                    </span>
+                </div>
             </div>
+        </details>
 
-            <!-- 토토/프로토 서비스 (테스트중) -->
-            <div class="lp-card lp-card-toto" id="btnGoToto" onclick="showToto(); return false;" role="button" tabindex="0" style="background: linear-gradient(145deg, rgba(25, 20, 5, 0.95) 0%, rgba(35, 24, 5, 0.9) 100%); border: 1.5px solid rgba(245, 158, 11, 0.35); box-shadow: 0 0 40px rgba(245, 158, 11, 0.08), 0 20px 60px rgba(0,0,0,0.5);">
-                <div class="lp-card-glow-stock" style="background: radial-gradient(circle at 50% 0%, rgba(251, 191, 36, 0.18) 0%, transparent 70%);"></div>
-                <div class="lp-card-icon" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24;">
-                    <i class="fa-solid fa-trophy"></i>
+        <!-- 📖 사용자 설명서 (PDF) 다운로드 배너 (하단 배치) -->
+        <div class="lp-manual-banner" style="width: 100%; max-width: 900px; margin: 0 auto 14px auto; background: linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.12)); border: 1.5px solid rgba(16, 185, 129, 0.45); border-radius: 14px; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; box-sizing: border-box; box-shadow: 0 4px 16px rgba(0,0,0,0.25);">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 250px;">
+                <div style="background: rgba(16, 185, 129, 0.25); color: #34d399; font-size: 1.35rem; width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid rgba(16, 185, 129, 0.4);">
+                    <i class="fa-solid fa-book-open"></i>
                 </div>
-                <div class="lp-card-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-weight: 800;">
-                    <i class="fa-solid fa-flask"></i> 🧪 테스트중 (Beta)
+                <div>
+                    <div style="font-size: 0.9rem; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <span>운도실력 로또 6/45 초간편 그림 사용자 설명서</span>
+                        <span style="font-size: 0.7rem; background: #10b981; color: #fff; padding: 1px 7px; border-radius: 4px; font-weight: 800;">PDF 가이드</span>
+                    </div>
+                    <div style="font-size: 0.77rem; color: #94a3b8; margin-top: 3px; line-height: 1.4;">
+                        카카오 1초 로그인부터 실구매 QR 1초 인증, 7대 알고리즘, 토요일 자동 당첨 확인까지 알기 쉽게 정리!
+                    </div>
                 </div>
-                <h2 class="lp-card-title">토토/프로토 AI 추천</h2>
-                <p class="lp-card-desc">포아송 득점 확률 &amp; 결장 Impact NLP 분석으로<br>최적의 가치 배팅(+EV) 2~4폴더 조합을 추천합니다.</p>
-                <ul class="lp-card-features">
-                    <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 포아송 xG 기반 승무패/언오버 확률 예측</li>
-                    <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 결장/부상 뉴스 NLP 전력 손실(Impact) 반영</li>
-                    <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 기대값(+EV) 가치 배팅(Value Bet) 실시간 포착</li>
-                    <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 켈리 공식 &amp; 프로토 규정 기반 3대 포트폴리오</li>
-                </ul>
-                <button class="lp-btn" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #ffffff; cursor: pointer; border: none; font-weight: 800; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);" onclick="showToto(); return false;">
-                    <i class="fa-solid fa-arrow-right"></i> 지금 이용하기 (테스트중)
-                </button>
             </div>
+            <a href="lotto_user_manual.pdf" download="로또_추천프로그램_사용자_설명서.pdf" target="_blank" onclick="window.downloadUserManual && window.downloadUserManual(event)" style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 9px 18px; border-radius: 9px; font-size: 0.84rem; font-weight: 800; cursor: pointer; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); white-space: nowrap; transition: transform 0.15s;">
+                <i class="fa-solid fa-download"></i> 설명서 PDF 다운로드
+            </a>
         </div>
 
         <!-- Landing Page Business Information Footer -->
@@ -420,7 +425,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.09.18.1208
+                                v2026.09.18.1507
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -455,15 +460,19 @@
                     <button id="btnFetchLatestDraw" class="btn-sync" style="display: inline-flex;" onclick="handleFetchLatestDrawClick()" title="동행복권 최신 당첨번호 자동 스크랩 & 동기화">
                         <i class="fa-solid fa-rotate"></i> 최신 당첨번호 수집
                     </button>
-                    <button id="btnOpenManualLedger" class="btn-sync btn-ledger" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border-color: #059669; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.25);" title="구매한 로또 조합 등록 (QR/직접입력)">
-                        <i class="fa-solid fa-cart-plus"></i> 구매 등록
+                    <button id="btnOpenManualLedger" class="btn-ledger-qr-prominent" title="실물 로또 영수증 QR코드 스캔 및 장부 등록">
+                        <i class="fa-solid fa-qrcode"></i> <span>실구매 QR 등록</span>
                     </button>
                 </div>
 
                 <div class="draw-info-badge">
-                    <div class="badge-tag"><i class="fa-solid fa-calendar-check"></i> 차기 추첨 회차</div>
+                    <div class="badge-tag"><i class="fa-solid fa-calendar-check"></i> 차기 추천 회차</div>
                     <div class="draw-number" id="nextDrawText">제 1240 회 추첨</div>
                     <div class="draw-date" id="nextDrawDate">2026. 09. 05 (토) 20:35</div>
+                    <div class="draw-countdown" id="nextDrawCountdownBadge" style="margin-top: 3px; font-size: 0.72rem; color: #fbbf24; font-weight: 800; font-family: 'JetBrains Mono', monospace; display: flex; align-items: center; justify-content: flex-end; gap: 4px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 5px; border: 1px solid rgba(251,191,36,0.25);">
+                        <i class="fa-solid fa-clock" style="font-size: 0.65rem; color: #f59e0b;"></i>
+                        <span id="nextDrawCountdownText">남은시간 계산중...</span>
+                    </div>
                 </div>
             </div>
         </header>
@@ -626,6 +635,10 @@
                             <p>동행복권 1회부터 최신 회차까지의 패턴·마르코프 전이 확률·포아송 결손 회귀를 정밀 분석하여 적중률을 극대화한 고도화 조합.</p>
                         </div>
                         <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <div id="generatorRoundCountdownBadge" style="background: rgba(139, 92, 246, 0.15); color: #c4b5fd; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.8rem; border: 1px solid rgba(167, 139, 250, 0.35); display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-clock" style="color: #fbbf24;"></i>
+                                <span><strong id="lblGeneratorTargetRound" style="color: #fbbf24;">추천회차</strong> 추첨까지 남은시간: <strong id="lblGeneratorCountdownTime" style="color: #38bdf8; font-family: 'JetBrains Mono', monospace;">계산중...</strong></span>
+                            </div>
                             <div id="latestRoundReflectedBadge" style="display: none; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.8rem; border: 1px solid rgba(16, 185, 129, 0.3);">
                                 <i class="fa-solid fa-circle-check"></i> 최신 <span id="lblReflectedRound"></span>회차 당첨번호 반영 완료
                             </div>
@@ -1378,6 +1391,9 @@
                         <p>실제 로또 영수증을 바탕으로 등록한 모든 회차의 구매 조합 내역과 실시간 당첨 결과를 통합 모니터링합니다.</p>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" onclick="if(window.openManualLedgerModal) window.openManualLedgerModal(); else if(document.getElementById('btnOpenManualLedger')) document.getElementById('btnOpenManualLedger').click();" class="btn-ledger-qr-prominent" style="padding: 8px 16px !important; font-size: 0.84rem !important;" title="실물 복권 QR코드 스캔 및 등록">
+                            <i class="fa-solid fa-qrcode"></i> <span>실구매 QR 등록</span>
+                        </button>
                         <button type="button" id="btnOpenWinningHistoryModal" onclick="window.openWinningHistoryModal && window.openWinningHistoryModal()" style="padding: 8px 16px; font-size: 0.84rem; font-weight: 700; background: #0d1322; border: 1px solid rgba(255,255,255,0.12); color: #f1f5f9; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.35); transition: all 0.2s;">
                             <i class="fa-solid fa-trophy" style="color: #fbbf24; font-size: 0.95rem;"></i> 당첨 이력 간략히 보기
                         </button>
@@ -1818,7 +1834,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.09.18.1208
+                        <i class="fa-solid fa-code-branch"></i> v2026.09.18.1507
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3260,7 +3276,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.09.18.1208';
+        window.APP_VERSION = 'v2026.09.18.1507';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -3302,7 +3318,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.09.18.1208';
+            var v = ver || window.APP_VERSION || 'v2026.09.18.1507';
             var sVer = serverVer || getHighestKnownVersion();
             var currentNum = parseVersionNum(v);
             var serverNum = parseVersionNum(sVer);
@@ -3489,7 +3505,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.18.1208';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.18.1507';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -3583,7 +3599,7 @@
         // ========================================================
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.09.18.1208')
+                navigator.serviceWorker.register('./sw.js?v=2026.09.18.1507')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -3592,7 +3608,7 @@
                             if (installingWorker) {
                                 installingWorker.onstatechange = function() {
                                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        console.log('[PWA] New version (v2026.09.18.1208) installed! Refreshing cache...');
+                                        console.log('[PWA] New version (v2026.09.18.1507) installed! Refreshing cache...');
                                         window.location.reload();
                                     }
                                 };
@@ -3659,8 +3675,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.09.18.1208"></script>
-    <script src="app_v2.js?v=2026.09.18.1208"></script>
+    <script src="data.js?v=2026.09.18.1507"></script>
+    <script src="app_v2.js?v=2026.09.18.1507"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">

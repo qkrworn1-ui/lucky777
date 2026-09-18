@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast, formatDate, getDrawDateByRound, calculateACValue, removeUndefined } from '../../../shared/utils.js';
+import { getBallColorClass, getBallHexColor, showToast, formatDate, getDrawDateByRound, getNextSaturdayDate, calculateACValue, removeUndefined } from '../../../shared/utils.js';
 import { db } from '../../../shared/db.js';
 import { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations } from '../ledger.js';
 import { computeAbsoluteTop10Combinations } from '../generator.js';
@@ -52,6 +52,9 @@ export function renderLatestDrawBanner() {
         const formattedDate = nextDrawDateStr.replace(/-/g, '. ');
         el_nextDrawDate.textContent = `${formattedDate} (토) 20:35`;
     }
+
+    // ⏱️ Start Live Countdown for Recommended Next Round Draw
+    startNextDrawCountdown(nextRound);
 
     const heroMaxRound = document.getElementById('heroMaxRound');
     if (heroMaxRound) heroMaxRound.textContent = state.latestDrawData.drwNo.toLocaleString();
@@ -165,3 +168,65 @@ export function renderLatestDrawBanner() {
         });
     }
 }
+
+let headerCountdownInterval = null;
+
+/**
+ * ⏱️ Live Countdown Timer for Recommended Draw Round (Saturday 20:35 KST)
+ */
+export function startNextDrawCountdown(nextRound) {
+    if (headerCountdownInterval) {
+        clearInterval(headerCountdownInterval);
+        headerCountdownInterval = null;
+    }
+
+    const pad = (n) => String(n).padStart(2, '0');
+
+    function update() {
+        const now = new Date();
+        const dateStr = getDrawDateByRound(nextRound);
+        let target;
+        if (dateStr) {
+            const parts = dateStr.split('-').map(Number);
+            target = new Date(parts[0], parts[1] - 1, parts[2], 20, 35, 0);
+        } else {
+            target = getNextSaturdayDate(now);
+        }
+
+        const diffMs = target.getTime() - now.getTime();
+
+        const elHeaderCount = document.getElementById('nextDrawCountdownText');
+        const elGenRound = document.getElementById('lblGeneratorTargetRound');
+        const elGenTime = document.getElementById('lblGeneratorCountdownTime');
+
+        if (elGenRound) {
+            elGenRound.textContent = `제 ${nextRound}회`;
+        }
+
+        if (diffMs <= 0) {
+            const liveText = '추첨 진행 중 (LIVE)';
+            if (elHeaderCount) elHeaderCount.textContent = liveText;
+            if (elGenTime) elGenTime.textContent = liveText;
+            return;
+        }
+
+        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+        const shortStr = `${days > 0 ? days + '일 ' : ''}${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        const longStr = `${days > 0 ? days + '일 ' : ''}${pad(hours)}시간 ${pad(minutes)}분 ${pad(seconds)}초`;
+
+        if (elHeaderCount) elHeaderCount.textContent = `남은시간 ${shortStr}`;
+        if (elGenTime) elGenTime.textContent = longStr;
+    }
+
+    update();
+    headerCountdownInterval = setInterval(update, 1000);
+}
+
+if (typeof window !== 'undefined') {
+    window.startNextDrawCountdown = startNextDrawCountdown;
+}
+

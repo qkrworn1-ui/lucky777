@@ -699,7 +699,7 @@ export function updateDrawCountdownBanner() {
                     <div style="display: flex !important; flex-direction: column !important; gap: 2px !important;">
                         <div style="display: flex !important; flex-direction: row !important; align-items: center !important; gap: 6px !important; flex-wrap: wrap !important;">
                             <span style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%) !important; color: #ffffff !important; font-size: 0.72rem !important; font-weight: 800 !important; padding: 2px 7px !important; border-radius: 6px !important; letter-spacing: -0.2px !important; white-space: nowrap !important;">제 ${targetRound}회</span>
-                            <span style="font-size: 0.88rem !important; font-weight: 800 !important; color: #f8fafc !important; letter-spacing: -0.3px !important; white-space: nowrap !important;">당첨번호 추첨까지</span>
+                            <span style="font-size: 0.88rem !important; font-weight: 800 !important; color: #f8fafc !important; letter-spacing: -0.3px !important; white-space: nowrap !important;">추천회차 추첨까지 남은시간</span>
                             ${isUrgent ? '<span style="background: rgba(245, 158, 11, 0.25) !important; border: 1px solid #f59e0b !important; color: #fbbf24 !important; font-size: 0.68rem !important; font-weight: 800 !important; padding: 1px 5px !important; border-radius: 4px !important; white-space: nowrap !important;">추첨임박</span>' : ''}
                         </div>
                         <div style="font-size: 0.73rem !important; color: #94a3b8 !important; letter-spacing: -0.2px !important; white-space: nowrap !important;">토요일 21:00 추첨 기준</div>
@@ -707,7 +707,8 @@ export function updateDrawCountdownBanner() {
                 </div>
 
                 <!-- Center: Digital Countdown -->
-                <div style="display: flex !important; align-items: center !important; justify-content: center !important; flex-shrink: 0 !important;">
+                <div style="display: flex !important; flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 2px !important; flex-shrink: 0 !important;">
+                    <span style="font-size: 0.68rem !important; color: #cbd5e1 !important; font-weight: 700 !important;">⏱️ 추첨까지 남은시간</span>
                     <div style="display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: 4px !important; background: rgba(15, 23, 42, 0.75) !important; border: 1px solid rgba(139, 92, 246, 0.35) !important; padding: 4px 10px !important; border-radius: 10px !important; white-space: nowrap !important;">
                         ${days > 0 ? `
                             <div style="display: inline-flex !important; flex-direction: row !important; align-items: baseline !important; gap: 2px !important;">

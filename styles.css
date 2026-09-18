@@ -218,6 +218,43 @@ body {
     animation: spin 0.9s linear infinite;
 }
 
+/* 📷 High-Visibility Prominent QR Registration Button */
+.btn-ledger-qr-prominent {
+    background: linear-gradient(135deg, #10b981 0%, #059669 60%, #047857 100%) !important;
+    border: 1.5px solid #34d399 !important;
+    color: #ffffff !important;
+    font-size: 0.9rem !important;
+    font-weight: 900 !important;
+    padding: 9px 18px !important;
+    border-radius: var(--radius-md) !important;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.45), 0 4px 12px rgba(0, 0, 0, 0.35) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    cursor: pointer !important;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    position: relative !important;
+}
+
+.btn-ledger-qr-prominent:hover {
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+    color: #064e3b !important;
+    transform: translateY(-2px) scale(1.03) !important;
+    box-shadow: 0 0 25px rgba(52, 211, 153, 0.65), 0 6px 16px rgba(0, 0, 0, 0.45) !important;
+}
+
+.btn-ledger-qr-prominent i.fa-qrcode {
+    color: #fde047 !important;
+    font-size: 1.15rem !important;
+    filter: drop-shadow(0 0 6px rgba(253, 224, 71, 0.6));
+    animation: qrPulse 2.2s infinite ease-in-out;
+}
+
+@keyframes qrPulse {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(253, 224, 71, 0.6)); }
+    50% { transform: scale(1.15); filter: drop-shadow(0 0 12px rgba(253, 224, 71, 0.9)); }
+}
+
 @keyframes spin {
     100% { transform: rotate(360deg); }
 }
@@ -3830,6 +3867,52 @@ html, body {
         }
 
         .lp-card { padding: 28px 24px; }
+
+        /* 📂 Landing Page Collapsible Sections Base Rules */
+        details.lp-collapsible-section {
+            display: block;
+            transition: all 0.25s ease;
+        }
+
+        details.lp-collapsible-section summary {
+            cursor: pointer;
+            list-style: none;
+            outline: none;
+            user-select: none;
+        }
+
+        details.lp-collapsible-section summary::-webkit-details-marker,
+        details.lp-collapsible-section summary::marker {
+            display: none;
+        }
+
+        .lp-accordion-chevron {
+            display: inline-block;
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        details.lp-collapsible-section[open] .lp-accordion-chevron {
+            transform: rotate(180deg);
+        }
+
+        .lp-card-actions-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+
+        .lp-card-actions-row .lp-btn {
+            margin-top: 0 !important;
+            flex: 1 1 140px;
+        }
+
+        .lp-card-actions-row .btn-ledger-qr-prominent {
+            margin-top: 0 !important;
+            flex: 1 1 140px;
+            justify-content: center;
+        }
 
         .lp-top-bar {
             position: absolute;
@@ -11299,6 +11382,52 @@ html, body {
         word-break: keep-all !important;
         overflow-wrap: break-word !important;
         line-height: 1.45 !important;
+    }
+
+    /* 📂 Landing Page Collapsible Sections & Dual Actions */
+    details.lp-collapsible-section {
+        display: block !important;
+        transition: all 0.25s ease;
+    }
+
+    details.lp-collapsible-section summary {
+        cursor: pointer !important;
+        list-style: none !important;
+        outline: none !important;
+        user-select: none !important;
+    }
+
+    details.lp-collapsible-section summary::-webkit-details-marker,
+    details.lp-collapsible-section summary::marker {
+        display: none !important;
+    }
+
+    .lp-accordion-chevron {
+        display: inline-block;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    details.lp-collapsible-section[open] .lp-accordion-chevron {
+        transform: rotate(180deg);
+    }
+
+    .lp-card-actions-row {
+        display: flex !important;
+        gap: 10px !important;
+        width: 100% !important;
+        margin-top: 14px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .lp-card-actions-row .lp-btn {
+        margin-top: 0 !important;
+        flex: 1 1 130px !important;
+    }
+
+    .lp-card-actions-row .btn-ledger-qr-prominent {
+        margin-top: 0 !important;
+        flex: 1 1 130px !important;
+        justify-content: center !important;
     }
 }
 
