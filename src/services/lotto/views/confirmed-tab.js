@@ -551,8 +551,7 @@ export async function renderConfirmedPurchasesList() {
                     const nums = getComboNumbers(combo);
                     const matches = nums.filter(n => winningSet.has(n));
                     const matchCount = matches.length;
-                    const hasBonus = nums.includes(bonus);
-
+                    const hasBonus = bonus ? nums.includes(bonus) : false;
                     if (matchCount === 6) hitsSummary[1]++;
                     else if (matchCount === 5 && hasBonus) hitsSummary[2]++;
                     else if (matchCount === 5) hitsSummary[3]++;

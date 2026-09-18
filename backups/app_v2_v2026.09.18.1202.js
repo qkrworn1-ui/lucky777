@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.1208 - BUILD_DATE: 2026-09-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.1202 - BUILD_DATE: 2026-09-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.18.1208)
+ * Lucky777 Smart Bundle (v2026.09.18.1202)
  */
 
 
@@ -35257,6 +35257,8 @@ async function updateHomeWinningTicker() {
         const latestDrawnRound = drawnRounds[0] || (state.latestDrawData?.drwNo || 1239);
         const candidateRounds = [latestDrawnRound]; // 🔒 오직 직전회차(최신 추첨 회차 1개)만 엄격히 한정!
 
+        const winningItems = [];
+
         // 마스킹 헬퍼 함수 (김**님, 이*님 등)
         function maskName(name, userId) {
             const raw = (name || userId || '').trim();
@@ -35265,10 +35267,6 @@ async function updateHomeWinningTicker() {
             if (raw.length === 2) return `${raw[0]}*님`;
             return `${raw[0]}**님`;
         }
-
-        // 🔒 회원별 실구매 당첨 집계 (한 회원이 여러 게임 당첨 시 중복 반복 노출 방지 및 정확한 건수 표기)
-        const userWinsMap = new Map();
-        let totalWinCombosCount = 0;
 
         candidateRounds.forEach(roundNum => {
             const actualDraw = (typeof getSafeActualDraw === 'function' ? getSafeActualDraw(roundNum) : history[roundNum]) || history[roundNum];
@@ -35294,6 +35292,10 @@ async function updateHomeWinningTicker() {
             } else if (state.allUsersMergedLedger && state.allUsersMergedLedger[roundNum]) {
                 state.allUsersMergedLedger[roundNum].forEach(rcpt => allReceipts.push(rcpt));
             }
+
+            // 🔒 회원별 실구매 당첨 집계 (한 회원이 여러 게임 당첨 시 중복 반복 노출 방지 및 정확한 건수 표기)
+            const userWinsMap = new Map();
+            let totalWinCombosCount = 0;
 
             allReceipts.forEach(receipt => {
                 if (!receipt || !Array.isArray(receipt.combos)) return;
@@ -35351,34 +35353,31 @@ async function updateHomeWinningTicker() {
                     }
                 });
             });
-        });
 
-        const aggregatedWinners = Array.from(userWinsMap.values());
-        // 등수 높은 순(1등 -> 5등), 상금 많은 순 정렬
-        aggregatedWinners.sort((a, b) => {
-            if (a.bestRank !== b.bestRank) return a.bestRank - b.bestRank;
-            return b.totalPrize - a.totalPrize;
-        });
-
-        aggregatedWinners.forEach(uWin => {
-            const parts = [];
-            [1, 2, 3, 4, 5].forEach(r => {
-                const cnt = uWin.ranks[r];
-                if (cnt > 0) {
-                    if (r === 1) parts.push(`1등 ${cnt}건 🎉`);
-                    else if (r === 2) parts.push(`2등 ${cnt}건 🥈`);
-                    else if (r === 3) parts.push(`3등 ${cnt}건 🥉`);
-                    else parts.push(`${r}등 ${cnt}건`);
-                }
+            const aggregatedWinners = Array.from(userWinsMap.values());
+            // 등수 높은 순(1등 -> 5등), 상금 많은 순 정렬
+            aggregatedWinners.sort((a, b) => {
+                if (a.bestRank !== b.bestRank) return a.bestRank - b.bestRank;
+                return b.totalPrize - a.totalPrize;
             });
-            uWin.rankSummaryText = parts.join(' · ') + ' 당첨';
-            uWin.prizeText = uWin.totalPrize > 0 ? `(총 ${uWin.totalPrize.toLocaleString()}원)` : '';
-        });
 
-        const shouldScroll = aggregatedWinners.length >= 3;
-        let itemsHtml = '';
+            aggregatedWinners.forEach(uWin => {
+                const parts = [];
+                [1, 2, 3, 4, 5].forEach(r => {
+                    const cnt = uWin.ranks[r];
+                    if (cnt > 0) {
+                        if (r === 1) parts.push(`1등 ${cnt}건 🎉`);
+                        else if (r === 2) parts.push(`2등 ${cnt}건 🥈`);
+                        else if (r === 3) parts.push(`3등 ${cnt}건 🥉`);
+                        else parts.push(`${r}등 ${cnt}건`);
+                    }
+                });
+                uWin.rankSummaryText = parts.join(' · ') + ' 당첨';
+                uWin.prizeText = uWin.totalPrize > 0 ? `(총 ${uWin.totalPrize.toLocaleString()}원)` : '';
+            });
 
-        if (aggregatedWinners.length > 0) {
+            const shouldScroll = aggregatedWinners.length >= 3;
+
             const renderedList = aggregatedWinners.map((item, idx) => `
                 <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 0.82rem !important; color: #f1f5f9 !important; font-weight: 600 !important; white-space: nowrap !important; flex-shrink: 0 !important;">
                     <i class="fa-solid fa-trophy" style="color: ${item.bestRank <= 3 ? '#fbbf24' : '#34d399'}; font-size: 0.82rem;"></i>
@@ -35412,7 +35411,7 @@ async function updateHomeWinningTicker() {
             itemsHtml = fallbackItem + fallbackItem;
         }
 
-        const isScrollMode = (aggregatedWinners.length >= 3) || (aggregatedWinners.length === 0);
+        const isScrollMode = (winningItems.length > 0) ? (aggregatedWinners && aggregatedWinners.length >= 3) : true;
 
         container.innerHTML = `
             <style>

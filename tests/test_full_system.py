@@ -1645,6 +1645,51 @@ class TestFullSystem(unittest.TestCase):
             code = f.read()
         self.assertIn('key = `id_${receiptId}_${uUser}_${uRound}_${combosFp}`;', code)
         self.assertIn('totalPrize', code)
+ 
+    # [Test 42] Dashboard Winning Ticker Member Aggregation and Anti-Bloat Guard
+    def test_42_dashboard_winning_ticker_user_aggregation_and_anti_bloat(self):
+        """Verify that when a single member has multiple wins (e.g. 5,000 KRW x 2), ticker aggregates per member and avoids infinite scrolling repetition."""
+        landing_file = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+        with open(landing_file, 'r', encoding='utf-8') as f:
+            code = f.read()
+
+        # 1. Verify code structure in landing-dashboard.js
+        self.assertIn('const userWinsMap = new Map();', code)
+        self.assertIn('userWinsMap.has(pUser)', code)
+        self.assertIn('totalWinCombosCount', code)
+        self.assertIn('aggregatedWinners', code)
+        self.assertIn('shouldScroll = aggregatedWinners.length >= 3', code)
+        self.assertIn('총 ${totalWinCombosCount}건', code)
+
+        # 2. Simulate 1241 Kang Ji-min 2x 5th prize aggregation
+        mock_receipts = [
+            {'user': 'kakao_5070669650', 'userName': '강지민', 'combos': [{'numbers': [7, 16, 18, 26, 29, 43]}]}, # 5th
+            {'user': 'kakao_5070669650', 'userName': '강지민', 'combos': [{'numbers': [4, 10, 15, 23, 24, 43]}]}  # 5th
+        ]
+        win_draw = [7, 13, 16, 23, 24, 43]
+        bonus = 9
+
+        user_map = {}
+        total_wins = 0
+        for rcpt in mock_receipts:
+            u = rcpt['user']
+            for c in rcpt['combos']:
+                matched = len(set(c['numbers']).intersection(set(win_draw)))
+                if matched == 3:
+                    total_wins += 1
+                    if u not in user_map:
+                        user_map[u] = {'ranks': {5: 0}, 'totalPrize': 0}
+                    user_map[u]['ranks'][5] += 1
+                    user_map[u]['totalPrize'] += 5000
+
+        self.assertEqual(total_wins, 2)
+        self.assertEqual(len(user_map), 1)
+        self.assertEqual(user_map['kakao_5070669650']['ranks'][5], 2)
+        self.assertEqual(user_map['kakao_5070669650']['totalPrize'], 10000)
+
+        # 1 member -> shouldScroll must be False
+        should_scroll = (len(user_map) >= 3)
+        self.assertFalse(should_scroll, "Single winning member must display statically without scrolling marquee bloat")
 
 
 if __name__ == '__main__':

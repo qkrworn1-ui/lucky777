@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.1208 - BUILD_DATE: 2026-09-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.17.1637 - BUILD_DATE: 2026-09-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.18.1208)
+ * Lucky777 Smart Bundle (v2026.09.17.1637)
  */
 
 
@@ -35257,6 +35257,8 @@ async function updateHomeWinningTicker() {
         const latestDrawnRound = drawnRounds[0] || (state.latestDrawData?.drwNo || 1239);
         const candidateRounds = [latestDrawnRound]; // 🔒 오직 직전회차(최신 추첨 회차 1개)만 엄격히 한정!
 
+        const winningItems = [];
+
         // 마스킹 헬퍼 함수 (김**님, 이*님 등)
         function maskName(name, userId) {
             const raw = (name || userId || '').trim();
@@ -35265,10 +35267,6 @@ async function updateHomeWinningTicker() {
             if (raw.length === 2) return `${raw[0]}*님`;
             return `${raw[0]}**님`;
         }
-
-        // 🔒 회원별 실구매 당첨 집계 (한 회원이 여러 게임 당첨 시 중복 반복 노출 방지 및 정확한 건수 표기)
-        const userWinsMap = new Map();
-        let totalWinCombosCount = 0;
 
         candidateRounds.forEach(roundNum => {
             const actualDraw = (typeof getSafeActualDraw === 'function' ? getSafeActualDraw(roundNum) : history[roundNum]) || history[roundNum];
@@ -35297,7 +35295,7 @@ async function updateHomeWinningTicker() {
 
             allReceipts.forEach(receipt => {
                 if (!receipt || !Array.isArray(receipt.combos)) return;
-                const pUser = (receipt.user || receipt.userId || '').trim().toLowerCase();
+                const pUser = (receipt.user || receipt.userId || '').trim();
                 const pName = receipt.userName || (typeof getUserRealName === 'function' ? getUserRealName(pUser) : '') || pUser;
                 const displayName = maskName(pName, pUser);
 
@@ -35309,93 +35307,66 @@ async function updateHomeWinningTicker() {
                     const hasBonus = bonus ? nums.includes(bonus) : false;
 
                     let rank = 0;
-                    let prize = 0;
+                    let rankText = '';
+                    let rankClass = '';
+                    let prizeText = '';
 
                     if (matchCount === 6) {
                         rank = 1;
-                        prize = actualDraw.rank1Prize || 2000000000;
+                        rankText = '1등 당첨 🎉';
+                        rankClass = 'rank-1';
                     } else if (matchCount === 5 && hasBonus) {
                         rank = 2;
-                        prize = actualDraw.rank2Prize || 50000000;
+                        rankText = '2등 당첨 🥈';
+                        rankClass = 'rank-2';
                     } else if (matchCount === 5) {
                         rank = 3;
-                        prize = actualDraw.rank3Prize || 1500000;
+                        rankText = '3등 당첨 🥉';
+                        rankClass = 'rank-3';
                     } else if (matchCount === 4) {
                         rank = 4;
-                        prize = actualDraw.rank4Prize || 50000;
+                        rankText = '4등 당첨';
+                        rankClass = 'rank-4';
+                        prizeText = '(50,000원)';
                     } else if (matchCount === 3) {
                         rank = 5;
-                        prize = actualDraw.rank5Prize || 5000;
+                        rankText = '5등 당첨';
+                        rankClass = 'rank-5';
+                        prizeText = '(5,000원)';
                     }
 
                     if (rank >= 1 && rank <= 5) {
-                        totalWinCombosCount++;
-                        if (!userWinsMap.has(pUser)) {
-                            userWinsMap.set(pUser, {
-                                userId: pUser,
-                                displayName,
-                                round: roundNum,
-                                ranks: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
-                                totalWins: 0,
-                                totalPrize: 0,
-                                bestRank: rank
-                            });
-                        }
-                        const uWin = userWinsMap.get(pUser);
-                        uWin.ranks[rank] = (uWin.ranks[rank] || 0) + 1;
-                        uWin.totalWins++;
-                        uWin.totalPrize += prize;
-                        if (rank < uWin.bestRank) {
-                            uWin.bestRank = rank;
-                        }
+                        winningItems.push({
+                            round: roundNum,
+                            displayName,
+                            rank,
+                            rankText,
+                            rankClass,
+                            prizeText
+                        });
                     }
                 });
             });
         });
 
-        const aggregatedWinners = Array.from(userWinsMap.values());
-        // 등수 높은 순(1등 -> 5등), 상금 많은 순 정렬
-        aggregatedWinners.sort((a, b) => {
-            if (a.bestRank !== b.bestRank) return a.bestRank - b.bestRank;
-            return b.totalPrize - a.totalPrize;
-        });
-
-        aggregatedWinners.forEach(uWin => {
-            const parts = [];
-            [1, 2, 3, 4, 5].forEach(r => {
-                const cnt = uWin.ranks[r];
-                if (cnt > 0) {
-                    if (r === 1) parts.push(`1등 ${cnt}건 🎉`);
-                    else if (r === 2) parts.push(`2등 ${cnt}건 🥈`);
-                    else if (r === 3) parts.push(`3등 ${cnt}건 🥉`);
-                    else parts.push(`${r}등 ${cnt}건`);
-                }
-            });
-            uWin.rankSummaryText = parts.join(' · ') + ' 당첨';
-            uWin.prizeText = uWin.totalPrize > 0 ? `(총 ${uWin.totalPrize.toLocaleString()}원)` : '';
-        });
-
-        const shouldScroll = aggregatedWinners.length >= 3;
+        // HTML 아이템 생성 (한 줄로 옆으로 자연스럽게 흐르는 텍스트)
         let itemsHtml = '';
+        if (winningItems.length > 0) {
+            // 등수 높은 순(1등 -> 5등) 정렬
+            winningItems.sort((a, b) => a.rank - b.rank);
 
-        if (aggregatedWinners.length > 0) {
-            const renderedList = aggregatedWinners.map((item, idx) => `
+            const renderedList = winningItems.map(item => `
                 <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 0.82rem !important; color: #f1f5f9 !important; font-weight: 600 !important; white-space: nowrap !important; flex-shrink: 0 !important;">
-                    <i class="fa-solid fa-trophy" style="color: ${item.bestRank <= 3 ? '#fbbf24' : '#34d399'}; font-size: 0.82rem;"></i>
+                    <i class="fa-solid fa-trophy" style="color: ${item.rank <= 3 ? '#fbbf24' : '#34d399'}; font-size: 0.82rem;"></i>
                     <strong style="color: #f8fafc; font-size: 0.85rem; letter-spacing: -0.2px;">${item.displayName}</strong>
-                    <span style="background: ${item.bestRank <= 3 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; border: 1px solid ${item.bestRank <= 3 ? '#f59e0b' : '#10b981'}; color: ${item.bestRank <= 3 ? '#fbbf24' : '#6ee7b7'}; font-size: 0.72rem; font-weight: 800; padding: 1px 6px; border-radius: 4px; white-space: nowrap;">${item.rankSummaryText}</span>
+                    <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; font-size: 0.72rem; font-weight: 800; padding: 1px 6px; border-radius: 4px; white-space: nowrap;">${item.rankText}</span>
                     ${item.prizeText ? `<span style="color: #94a3b8; font-size: 0.74rem;">${item.prizeText}</span>` : ''}
-                    ${(shouldScroll || idx < aggregatedWinners.length - 1) ? `<span style="color: rgba(255,255,255,0.3); margin-left: 8px;">•</span>` : ''}
+                    <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">•</span>
                 </span>
             `).join('');
 
-            if (shouldScroll) {
-                // 부드러운 무한 롤링을 위해 2벌만 복제 (과도한 4벌 복제 방지)
-                itemsHtml = renderedList + renderedList;
-            } else {
-                // 당첨 인원이 소수(1~2명)일 때는 흐르지 않고 정적으로 안정감 있게 표시
-                itemsHtml = renderedList;
-            }
+            // 끊김 없는 무한 롤링을 위해 4벌 복제
+            itemsHtml = renderedList + renderedList + renderedList + renderedList;
         } else {
             const fallbackItem = `
                 <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 0.82rem !important; color: #cbd5e1 !important; white-space: nowrap !important; flex-shrink: 0 !important;">
@@ -35409,10 +35380,8 @@ async function updateHomeWinningTicker() {
                     <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">•</span>
                 </span>
             `;
-            itemsHtml = fallbackItem + fallbackItem;
+            itemsHtml = fallbackItem + fallbackItem + fallbackItem + fallbackItem;
         }
-
-        const isScrollMode = (aggregatedWinners.length >= 3) || (aggregatedWinners.length === 0);
 
         container.innerHTML = `
             <style>
@@ -35427,10 +35396,10 @@ async function updateHomeWinningTicker() {
             <div class="lp-singleline-ticker-bar" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-confirmed-list'), 80);" title="제 ${latestDrawnRound}회 실구매 장부 당첨 내역 자세히 보기" style="display: flex !important; flex-direction: row !important; align-items: center !important; background: linear-gradient(90deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92)) !important; border: 1.5px solid rgba(16, 185, 129, 0.45) !important; border-radius: 20px !important; height: 38px !important; min-height: 38px !important; max-height: 38px !important; padding: 0 12px !important; margin: 0 0 14px 0 !important; gap: 10px !important; overflow: hidden !important; width: 100% !important; max-width: 900px !important; box-sizing: border-box !important; cursor: pointer !important; white-space: nowrap !important; box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;">
                 <div style="display: inline-flex !important; align-items: center !important; gap: 5px !important; font-size: 0.76rem !important; font-weight: 800 !important; color: #34d399 !important; white-space: nowrap !important; background: rgba(16, 185, 129, 0.2) !important; padding: 3px 9px !important; border-radius: 10px !important; border: 1px solid rgba(16, 185, 129, 0.5) !important; flex-shrink: 0 !important; z-index: 2 !important; height: 22px !important; line-height: 1 !important;">
                     <i class="fa-solid fa-bullhorn" style="color: #34d399;"></i>
-                    <span>제 ${latestDrawnRound}회 실구매 당첨${totalWinCombosCount > 0 ? ` (총 ${totalWinCombosCount}건)` : ''}</span>
+                    <span>제 ${latestDrawnRound}회 실구매 당첨</span>
                 </div>
-                <div style="flex: 1 !important; height: 100% !important; display: flex !important; align-items: center !important; overflow: hidden !important; position: relative !important; white-space: nowrap !important; ${isScrollMode ? 'mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important; -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important;' : ''}">
-                    <div class="lp-singleline-track" style="display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: ${isScrollMode ? '24px' : '14px'} !important; white-space: nowrap !important; will-change: transform !important; ${isScrollMode ? 'animation: lpSingleLineScroll 35s linear infinite !important;' : 'animation: none !important; transform: none !important;'}">
+                <div style="flex: 1 !important; height: 100% !important; display: flex !important; align-items: center !important; overflow: hidden !important; position: relative !important; white-space: nowrap !important; mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important; -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important;">
+                    <div class="lp-singleline-track" style="display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: 24px !important; white-space: nowrap !important; will-change: transform !important; animation: lpSingleLineScroll 30s linear infinite !important;">
                         ${itemsHtml}
                     </div>
                 </div>
