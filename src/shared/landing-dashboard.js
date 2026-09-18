@@ -195,7 +195,7 @@ export function updateHomeServiceCardsPermissions() {
                 badge.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 이용 권한 없음';
             }
             if (btn) {
-                btn.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 권한 요청 필요';
+                btn.innerHTML = '<i class="fa-solid fa-lock"></i> <span>🔒 권한 요청 필요</span>';
                 btn.style.opacity = '0.7';
             }
             lottoCard.style.opacity = '0.75';
@@ -208,7 +208,7 @@ export function updateHomeServiceCardsPermissions() {
                 badge.innerHTML = '<i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> 서비스 운영중';
             }
             if (btn) {
-                btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i> 지금 이용하기';
+                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>추천번호 확인</span>';
                 btn.style.opacity = '1';
             }
             lottoCard.style.opacity = '1';
@@ -227,7 +227,7 @@ export function updateHomeServiceCardsPermissions() {
                 badge.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 이용 권한 없음';
             }
             if (btn) {
-                btn.innerHTML = '<i class="fa-solid fa-lock"></i> 🔒 권한 요청 필요';
+                btn.innerHTML = '<span class="lp-desktop-text"><i class="fa-solid fa-lock"></i> 🔒 권한 요청 필요</span><span class="lp-mobile-text">🔒 권한 필요</span>';
                 btn.style.opacity = '0.7';
             }
             totoCard.style.opacity = '0.75';
@@ -240,7 +240,7 @@ export function updateHomeServiceCardsPermissions() {
                 badge.innerHTML = '<i class="fa-solid fa-flask"></i> 🧪 테스트중 (Beta)';
             }
             if (btn) {
-                btn.innerHTML = '<i class="fa-solid fa-arrow-right"></i> 지금 이용하기 (테스트중)';
+                btn.innerHTML = '<span class="lp-desktop-text"><i class="fa-solid fa-arrow-right"></i> 지금 이용하기 (테스트중)</span><span class="lp-mobile-text">분석 보기 →</span>';
                 btn.style.opacity = '1';
             }
             totoCard.style.opacity = '1';

@@ -3491,30 +3491,84 @@ html, body {
 
         }
 
-        .lp-card-stock {
+        .lp-card-stock,
+        .lp-card-toto {
 
-            background: linear-gradient(145deg, rgba(5, 12, 30, 0.95) 0%, rgba(8, 18, 40, 0.9) 100%);
+            background: linear-gradient(145deg, rgba(25, 20, 5, 0.95) 0%, rgba(35, 24, 5, 0.9) 100%);
 
             backdrop-filter: blur(20px);
 
-            border: 1.5px solid rgba(99, 102, 241, 0.2);
+            border: 1.5px solid rgba(245, 158, 11, 0.35);
 
-            box-shadow: 0 0 40px rgba(99, 102, 241, 0.06), 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
+            box-shadow: 0 0 40px rgba(245, 158, 11, 0.08), 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04);
 
-            cursor: default;
-
-            opacity: 0.75;
+            cursor: pointer;
 
         }
 
-        .lp-card-stock:hover {
+        .lp-card-stock:hover,
+        .lp-card-toto:hover {
 
-            transform: translateY(-3px);
+            transform: translateY(-8px) scale(1.02);
 
-            border-color: rgba(99, 102, 241, 0.35);
+            border-color: rgba(245, 158, 11, 0.55);
 
-            box-shadow: 0 0 50px rgba(99, 102, 241, 0.12), 0 24px 70px rgba(0,0,0,0.55);
+            box-shadow: 0 0 60px rgba(245, 158, 11, 0.2), 0 30px 80px rgba(0,0,0,0.6);
 
+        }
+
+        .lp-card-header-flex {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .lp-card-text-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .lp-card-badge-row {
+            margin-bottom: 0;
+        }
+
+        .lp-card-icon-toto {
+            background: rgba(251, 191, 36, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .lp-badge-toto {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.45);
+            font-weight: 800;
+        }
+
+        .lp-btn-toto-main {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            color: #ffffff;
+            cursor: pointer;
+            border: none;
+            font-weight: 800;
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);
+            width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .lp-mobile-inline-badge,
+        .lp-mobile-inline-badge-amber,
+        .lp-mobile-text {
+            display: none;
+        }
+
+        .lp-desktop-text {
+            display: inline;
         }
 
         .lp-card-icon {
@@ -9815,21 +9869,21 @@ html, body {
     /* 7. Landing Page Cards on Mobile */
     .lp-service-grid {
         grid-template-columns: 1fr !important;
-        gap: 14px !important;
+        gap: 8px !important;
     }
 
-    .lp-card {
-        padding: 18px 16px !important;
+    .lp-card-features {
+        display: none !important;
     }
 
     .lp-fin-stats {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 4px !important;
     }
 
     .lp-compact-win-row {
         flex-direction: column !important;
-        gap: 8px !important;
+        gap: 6px !important;
     }
 
     /* 8. Global Mobile Alignments & Overflow Safeguards */
@@ -11177,50 +11231,298 @@ html, body {
         box-sizing: border-box !important;
     }
 
+    /* 1. Header (Compact 1-line title, slim margins) */
     .lp-header {
-        margin-top: 6px !important;
-        margin-bottom: 16px !important;
+        margin-top: 2px !important;
+        margin-bottom: 8px !important;
         width: 100% !important;
     }
 
-    .lp-header h1 {
-        font-size: 2.1rem !important;
+    .lp-brand-badge {
+        padding: 2px 8px !important;
+        margin-bottom: 4px !important;
+        font-size: 0.68rem !important;
+    }
+
+    .lp-header h1,
+    .lp-header-title {
+        font-size: 1.65rem !important;
         line-height: 1.15 !important;
+        margin: 2px 0 2px 0 !important;
+        white-space: nowrap !important;
     }
 
     .lp-tagline {
-        font-size: 0.86rem !important;
+        font-size: 0.76rem !important;
         word-break: keep-all !important;
-        line-height: 1.4 !important;
-        padding: 0 8px !important;
+        line-height: 1.3 !important;
+        padding: 0 4px !important;
+        margin: 0 !important;
     }
 
-    /* 2. 티커 바 모바일 최적화 */
+    /* 2. Ticker Bar (Slim) */
     .lp-singleline-ticker-bar,
     .lp-winning-ticker-bar {
-        height: 38px !important;
+        height: 36px !important;
+        min-height: 36px !important;
         padding: 0 10px !important;
-        margin-bottom: 12px !important;
+        margin-bottom: 8px !important;
+        font-size: 0.78rem !important;
+        border-radius: 10px !important;
     }
 
-    /* 3. 자산 요약 보드 모바일 */
-    .lp-financial-summary {
-        padding: 14px 12px !important;
-        border-radius: 14px !important;
-        gap: 10px !important;
-        margin-bottom: 12px !important;
+    /* Zero duplicate countdown banners */
+    #lpDrawCountdownBanner,
+    #lpPurchaseDeadlineBanner {
+        display: none !important;
+    }
+
+    /* 3. Service Grid (Service-First Compact Hub) */
+    .lp-service-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
         width: 100% !important;
-        max-width: 100% !important;
+        margin-bottom: 10px !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Hide long desktop bullet lists on mobile */
+    .lp-card-features {
+        display: none !important;
+    }
+
+    .lp-desktop-text {
+        display: none !important;
+    }
+    .lp-mobile-text {
+        display: inline !important;
+    }
+
+    /* 4. Lotto Service (Compact Hero Card ~110px) */
+    .lp-card-lotto {
+        padding: 12px 14px 10px 14px !important;
+        border-radius: 16px !important;
+        background: linear-gradient(145deg, rgba(10, 24, 18, 0.95) 0%, rgba(8, 18, 14, 0.9) 100%) !important;
+        border: 1.5px solid rgba(16, 185, 129, 0.45) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .lp-card-lotto .lp-card-header-flex {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 10px !important;
+        width: 100% !important;
+    }
+
+    .lp-card-lotto .lp-card-icon {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        border-radius: 10px !important;
+        font-size: 1.15rem !important;
+        margin-bottom: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .lp-card-lotto .lp-card-text-group {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    .lp-card-lotto .lp-card-badge-row {
+        display: none !important;
+    }
+
+    .lp-card-lotto .lp-card-title {
+        font-size: 0.95rem !important;
+        font-weight: 800 !important;
+        margin: 0 !important;
+        line-height: 1.25 !important;
+        color: #ffffff !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+
+    .lp-mobile-inline-badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        font-size: 0.62rem !important;
+        font-weight: 900 !important;
+        padding: 1px 6px !important;
+        border-radius: 9999px !important;
+        background: #10b981 !important;
+        color: #022c22 !important;
+        letter-spacing: 0 !important;
+    }
+
+    .lp-card-lotto .lp-card-desc {
+        font-size: 0.72rem !important;
+        color: #6ee7b7 !important;
+        margin: 2px 0 0 0 !important;
+        line-height: 1.25 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+    }
+
+    .lp-card-lotto .lp-card-actions-row {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px !important;
+        width: 100% !important;
+        margin-top: 10px !important;
+    }
+
+    .lp-card-lotto .lp-card-actions-row .lp-btn,
+    .lp-card-lotto .lp-card-actions-row .btn-ledger-qr-prominent {
+        min-height: 38px !important;
+        height: 38px !important;
+        padding: 0 6px !important;
+        font-size: 0.8rem !important;
+        font-weight: 800 !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        margin: 0 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* 5. Toto Service (Sleek Horizontal Micro Card ~50px) */
+    .lp-card-toto {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 8px 12px !important;
+        border-radius: 12px !important;
+        background: rgba(15, 23, 42, 0.85) !important;
+        border: 1px solid rgba(245, 158, 11, 0.35) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+        gap: 8px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+    }
+
+    .lp-card-toto .lp-card-header-flex {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    .lp-card-toto .lp-card-icon {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        border-radius: 8px !important;
+        font-size: 0.95rem !important;
+        margin-bottom: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .lp-card-toto .lp-card-text-group {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    .lp-card-toto .lp-card-badge-row {
+        display: none !important;
+    }
+
+    .lp-card-toto .lp-card-title {
+        font-size: 0.82rem !important;
+        font-weight: 800 !important;
+        color: #fcd34d !important;
+        margin: 0 !important;
+        line-height: 1.25 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+    }
+
+    .lp-mobile-inline-badge-amber {
+        display: inline-flex !important;
+        align-items: center !important;
+        font-size: 0.58rem !important;
+        font-weight: 800 !important;
+        padding: 0 4px !important;
+        border-radius: 4px !important;
+        background: rgba(245, 158, 11, 0.2) !important;
+        color: #fbbf24 !important;
+        border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    }
+
+    .lp-card-toto .lp-card-desc {
+        font-size: 0.68rem !important;
+        color: #94a3b8 !important;
+        margin: 1px 0 0 0 !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        width: 100% !important;
+    }
+
+    .lp-card-toto .lp-card-toto-action-wrap {
+        flex-shrink: 0 !important;
+    }
+
+    .lp-card-toto .lp-btn-toto-main {
+        padding: 5px 9px !important;
+        min-height: 28px !important;
+        height: 28px !important;
+        font-size: 0.72rem !important;
+        font-weight: 800 !important;
+        border-radius: 6px !important;
+        background: rgba(217, 119, 6, 0.3) !important;
+        border: 1px solid rgba(245, 158, 11, 0.5) !important;
+        color: #fef3c7 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+    }
+
+    /* 6. Financial Board (Unified 4-column compact row) */
+    .lp-financial-summary {
+        padding: 10px 12px !important;
+        border-radius: 14px !important;
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
         height: auto !important;
         min-height: auto !important;
-        box-sizing: border-box !important;
         overflow: visible !important;
     }
 
     .lp-fin-main-row {
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 10px !important;
+        gap: 6px !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
@@ -11228,15 +11530,20 @@ html, body {
     .lp-fin-title-area {
         min-width: 0 !important;
         width: 100% !important;
-        text-align: center !important;
-        align-items: center !important;
+        text-align: left !important;
+        align-items: flex-start !important;
         box-sizing: border-box !important;
+        margin-bottom: 2px !important;
+    }
+
+    .lp-fin-label {
+        font-size: 0.68rem !important;
     }
 
     .lp-fin-title {
-        font-size: 0.92rem !important;
-        line-height: 1.4 !important;
-        text-align: center !important;
+        font-size: 0.82rem !important;
+        line-height: 1.35 !important;
+        text-align: left !important;
         white-space: normal !important;
         word-break: break-word !important;
         overflow-wrap: anywhere !important;
@@ -11246,16 +11553,20 @@ html, body {
 
     .lp-fin-stats {
         display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 4px !important;
         width: 100% !important;
+        padding: 6px 4px !important;
+        background: rgba(0, 0, 0, 0.35) !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
         box-sizing: border-box !important;
     }
 
     .lp-stat-item {
-        padding: 8px 10px !important;
-        border-radius: 10px !important;
-        background: rgba(0, 0, 0, 0.25) !important;
+        padding: 3px 2px !important;
+        border-radius: 6px !important;
+        background: transparent !important;
         text-align: center !important;
         box-sizing: border-box !important;
         width: 100% !important;
@@ -11264,29 +11575,32 @@ html, body {
     }
 
     .lp-stat-label {
-        font-size: 0.72rem !important;
-        margin-bottom: 2px !important;
+        font-size: 0.62rem !important;
+        margin-bottom: 1px !important;
+        white-space: nowrap !important;
+        color: #94a3b8 !important;
     }
 
     .lp-stat-val {
-        font-size: clamp(0.85rem, 3.2vw, 1.02rem) !important;
+        font-size: clamp(0.72rem, 2.7vw, 0.85rem) !important;
+        font-weight: 800 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
     }
 
-    /* 4. 미니 당첨 카드 (.lp-mini-win-card) */
+    /* 7. Mini Win Rows */
     .lp-compact-win-row {
         display: flex !important;
         flex-direction: column !important;
-        gap: 8px !important;
-        padding-top: 6px !important;
+        gap: 6px !important;
+        padding-top: 2px !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
 
     .lp-mini-win-card {
-        padding: 10px 12px !important;
+        padding: 8px 10px !important;
         border-radius: 10px !important;
         width: 100% !important;
         max-width: 100% !important;
@@ -11301,7 +11615,7 @@ html, body {
     }
 
     .mini-win-title {
-        font-size: 0.8rem !important;
+        font-size: 0.76rem !important;
         white-space: normal !important;
         word-break: break-word !important;
         overflow: hidden !important;
@@ -11312,41 +11626,41 @@ html, body {
     }
 
     .mini-win-sub {
-        font-size: 0.72rem !important;
+        font-size: 0.68rem !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
     }
 
     .mini-win-prize {
-        font-size: 0.92rem !important;
+        font-size: 0.82rem !important;
     }
 
     .mini-win-hits {
-        font-size: 0.72rem !important;
+        font-size: 0.68rem !important;
         max-width: 160px !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
     }
 
-    /* 5. 전체 회원 AI 추천 복기 요약 섹션 */
+    /* 8. Accordions & Integrity Banner */
     #lpAllMembersReviewSection {
-        padding: 12px 10px !important;
-        margin-bottom: 12px !important;
+        padding: 10px 12px !important;
+        margin-bottom: 8px !important;
         border-radius: 12px !important;
         width: 100% !important;
         box-sizing: border-box !important;
     }
 
     #lpReviewSectionTitle {
-        font-size: 0.86rem !important;
+        font-size: 0.82rem !important;
         line-height: 1.35 !important;
         word-break: keep-all !important;
     }
 
     #lpReviewSectionSub {
-        font-size: 0.7rem !important;
-        line-height: 1.4 !important;
+        font-size: 0.68rem !important;
+        line-height: 1.35 !important;
         word-break: keep-all !important;
     }
 
@@ -11362,34 +11676,33 @@ html, body {
     }
 
     #lpReviewKpiGames {
-        font-size: 0.74rem !important;
+        font-size: 0.72rem !important;
         color: #94a3b8 !important;
         white-space: nowrap !important;
     }
 
     #lpReviewKpiHits {
-        font-size: 0.74rem !important;
-        padding: 6px 8px !important;
+        font-size: 0.72rem !important;
+        padding: 4px 6px !important;
         background: rgba(167, 139, 250, 0.1) !important;
         border-radius: 6px !important;
         border: 1px solid rgba(167, 139, 250, 0.25) !important;
         word-break: keep-all !important;
-        line-height: 1.45 !important;
+        line-height: 1.4 !important;
     }
 
     #lpReviewKpiPrize {
-        font-size: 0.94rem !important;
+        font-size: 0.88rem !important;
         font-weight: 800 !important;
         color: #34d399 !important;
         white-space: nowrap !important;
     }
 
-    /* 6. 데이터 무결성 보증 배너 & 아코디언 카드 모바일 */
     .lp-accordion-card {
         display: block !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        margin-bottom: 14px !important;
+        margin-bottom: 8px !important;
     }
 
     .lp-accordion-header {
@@ -11409,8 +11722,8 @@ html, body {
     }
 
     .lp-integrity-guarantee-box {
-        padding: 12px 14px !important;
-        margin-bottom: 14px !important;
+        padding: 10px 12px !important;
+        margin-bottom: 8px !important;
         width: 100% !important;
         box-sizing: border-box !important;
         display: block !important;
@@ -11424,62 +11737,6 @@ html, body {
     .lp-integrity-guarantee-box div {
         word-break: keep-all !important;
         overflow-wrap: break-word !important;
-    }
-
-    /* 7. 서비스 카드 그리드 */
-    .lp-service-grid {
-        display: grid !important;
-        grid-template-columns: 1fr !important;
-        gap: 14px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-    }
-
-    .lp-card {
-        padding: 20px 16px !important;
-        border-radius: 16px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-    }
-
-    .lp-card-desc {
-        font-size: 0.82rem !important;
-        word-break: keep-all !important;
-        overflow-wrap: break-word !important;
-        line-height: 1.55 !important;
-    }
-
-    .lp-card-features li {
-        font-size: 0.76rem !important;
-        word-break: keep-all !important;
-        overflow-wrap: break-word !important;
-        line-height: 1.45 !important;
-    }
-
-    /* 📂 Landing Page Collapsible Sections & Dual Actions */
-    .lp-card-actions-row {
-        display: flex !important;
-        gap: 10px !important;
-        width: 100% !important;
-        margin-top: 14px !important;
-        flex-wrap: wrap !important;
-    }
-
-    .lp-card-actions-row .lp-btn {
-        margin-top: 0 !important;
-        flex: 1 1 130px !important;
-        min-height: 42px !important;
-        padding: 8px 12px !important;
-        font-size: 0.84rem !important;
-    }
-
-    .lp-card-actions-row .btn-ledger-qr-prominent {
-        margin-top: 0 !important;
-        flex: 1 1 130px !important;
-        justify-content: center !important;
-        min-height: 42px !important;
-        padding: 8px 12px !important;
-        font-size: 0.84rem !important;
     }
 }
 

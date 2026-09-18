@@ -5547,8 +5547,8 @@ window.startBatchWinningSend = async function() {
 
         const bannerHtml = renderBannerHtml();
         if (lpBanner) {
-            lpBanner.innerHTML = bannerHtml;
-            lpBanner.style.display = 'block';
+            lpBanner.innerHTML = '';
+            lpBanner.style.display = 'none';
         }
         if (lottoBanner) {
             lottoBanner.innerHTML = bannerHtml;
@@ -5558,7 +5558,7 @@ window.startBatchWinningSend = async function() {
         if (countdownIntervalId) clearInterval(countdownIntervalId);
         countdownIntervalId = setInterval(() => {
             const updatedHtml = renderBannerHtml();
-            if (lpBanner && lpBanner.style.display !== 'none') lpBanner.innerHTML = updatedHtml;
+            if (lpBanner) lpBanner.style.display = 'none';
             if (lottoBanner && lottoBanner.style.display !== 'none') lottoBanner.innerHTML = updatedHtml;
         }, 1000);
     }

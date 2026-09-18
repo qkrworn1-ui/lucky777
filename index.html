@@ -57,7 +57,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.09.18.1553">
+    <link rel="stylesheet" href="styles.css?v=2026.09.18.1612">
 </head>
 
 <body>
@@ -112,10 +112,10 @@
             <div class="lp-brand-badge" style="display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: center;">
                 <span><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.09.18.1553 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.09.18.1612 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
-            <h1 style="margin: 0 0 8px 0;">운도<br><span class="lp-accent">실력</span></h1>
+            <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
             <p class="lp-tagline">당신의 경제적 자유를 위한 스마트 서비스 플랫폼</p>
         </div>
 
@@ -134,14 +134,23 @@
             <!-- 1. 로또 추천 서비스 (Primary Service Card) -->
             <div class="lp-card lp-card-lotto" id="btnGoLotto" onclick="showLotto();" role="button" tabindex="0">
                 <div class="lp-card-glow-lotto"></div>
-                <div class="lp-card-icon lp-card-icon-lotto">
-                    <i class="fa-solid fa-clover"></i>
+                <div class="lp-card-header-flex">
+                    <div class="lp-card-icon lp-card-icon-lotto">
+                        <i class="fa-solid fa-clover"></i>
+                    </div>
+                    <div class="lp-card-text-group">
+                        <div class="lp-card-badge-row">
+                            <div class="lp-card-badge lp-badge-active">
+                                <i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> 서비스 운영중
+                            </div>
+                        </div>
+                        <h2 class="lp-card-title">
+                            <span>로또 추천 서비스</span>
+                            <span class="lp-mobile-inline-badge">추천</span>
+                        </h2>
+                        <p class="lp-card-desc">통계학 &amp; 게임이론 기반 AI 알고리즘 10조합 &amp; 실구매 QR</p>
+                    </div>
                 </div>
-                <div class="lp-card-badge lp-badge-active">
-                    <i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> 서비스 운영중
-                </div>
-                <h2 class="lp-card-title">로또 추천 서비스</h2>
-                <p class="lp-card-desc">통계학 &amp; 게임이론 기반 AI 알고리즘으로<br>매주 최적의 로또 번호를 추천해 드립니다.</p>
                 <ul class="lp-card-features">
                     <li><i class="fa-solid fa-check-circle"></i> AI 통계 분석 추천 10게임 즉시 확인</li>
                     <li><i class="fa-solid fa-check-circle"></i> 역대 당첨 데이터 기반 7대 퀀트 시뮬레이션</li>
@@ -150,34 +159,46 @@
                 </ul>
                 <div class="lp-card-actions-row">
                     <button class="lp-btn lp-btn-lotto" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-generator'), 80); return false;">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> 지금 이용하기
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> <span>추천번호 확인</span>
                     </button>
                     <button type="button" class="btn-ledger-qr-prominent lp-btn-qr-action" onclick="event.stopPropagation(); if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.openManualLedgerModal) window.openManualLedgerModal(); else if(document.getElementById('btnOpenManualLedger')) document.getElementById('btnOpenManualLedger').click(); }, 120); } return false;" title="실물 로또 영수증 QR 1초 등록">
-                        <i class="fa-solid fa-qrcode"></i> 실구매 QR 등록
+                        <i class="fa-solid fa-qrcode"></i> <span>실구매 QR 등록</span>
                     </button>
                 </div>
             </div>
 
             <!-- 2. 토토/프로토 서비스 (Beta Card) -->
-            <div class="lp-card lp-card-toto" id="btnGoToto" onclick="showToto(); return false;" role="button" tabindex="0" style="background: linear-gradient(145deg, rgba(25, 20, 5, 0.95) 0%, rgba(35, 24, 5, 0.9) 100%); border: 1.5px solid rgba(245, 158, 11, 0.35); box-shadow: 0 0 40px rgba(245, 158, 11, 0.08), 0 20px 60px rgba(0,0,0,0.5);">
+            <div class="lp-card lp-card-toto" id="btnGoToto" onclick="showToto(); return false;" role="button" tabindex="0">
                 <div class="lp-card-glow-stock" style="background: radial-gradient(circle at 50% 0%, rgba(251, 191, 36, 0.18) 0%, transparent 70%);"></div>
-                <div class="lp-card-icon" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24;">
-                    <i class="fa-solid fa-trophy"></i>
+                <div class="lp-card-header-flex">
+                    <div class="lp-card-icon lp-card-icon-toto" style="background: rgba(251, 191, 36, 0.15); color: #fbbf24;">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <div class="lp-card-text-group">
+                        <div class="lp-card-badge-row">
+                            <div class="lp-card-badge lp-badge-toto" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-weight: 800;">
+                                <i class="fa-solid fa-flask"></i> 🧪 테스트중 (Beta)
+                            </div>
+                        </div>
+                        <h2 class="lp-card-title">
+                            <span>토토/프로토 AI 추천</span>
+                            <span class="lp-mobile-inline-badge-amber">Beta</span>
+                        </h2>
+                        <p class="lp-card-desc">포아송 xG &amp; 결장 Impact NLP 기반 승무패 2~4폴더 추천</p>
+                    </div>
                 </div>
-                <div class="lp-card-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.45); font-weight: 800;">
-                    <i class="fa-solid fa-flask"></i> 🧪 테스트중 (Beta)
-                </div>
-                <h2 class="lp-card-title">토토/프로토 AI 추천</h2>
-                <p class="lp-card-desc">포아송 득점 확률 &amp; 결장 Impact NLP 분석으로<br>최적의 가치 배팅(+EV) 2~4폴더 조합을 추천합니다.</p>
                 <ul class="lp-card-features">
                     <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 포아송 xG 기반 승무패/언오버 확률 예측</li>
                     <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 결장/부상 뉴스 NLP 전력 손실(Impact) 반영</li>
                     <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 기대값(+EV) 가치 배팅(Value Bet) 실시간 포착</li>
                     <li><i class="fa-solid fa-check-circle" style="color: #fbbf24;"></i> 켈리 공식 &amp; 프로토 규정 기반 3대 포트폴리오</li>
                 </ul>
-                <button class="lp-btn" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); color: #ffffff; cursor: pointer; border: none; font-weight: 800; box-shadow: 0 4px 12px rgba(217, 119, 6, 0.35);" onclick="showToto(); return false;">
-                    <i class="fa-solid fa-arrow-right"></i> 지금 이용하기 (테스트중)
-                </button>
+                <div class="lp-card-toto-action-wrap">
+                    <button class="lp-btn lp-btn-toto-main" onclick="showToto(); return false;">
+                        <span class="lp-desktop-text"><i class="fa-solid fa-arrow-right"></i> 지금 이용하기 (테스트중)</span>
+                        <span class="lp-mobile-text">분석 보기 →</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -428,7 +449,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.09.18.1553
+                                v2026.09.18.1612
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1837,7 +1858,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.09.18.1553
+                        <i class="fa-solid fa-code-branch"></i> v2026.09.18.1612
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3279,7 +3300,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.09.18.1553';
+        window.APP_VERSION = 'v2026.09.18.1612';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -3321,7 +3342,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.09.18.1553';
+            var v = ver || window.APP_VERSION || 'v2026.09.18.1612';
             var sVer = serverVer || getHighestKnownVersion();
             var currentNum = parseVersionNum(v);
             var serverNum = parseVersionNum(sVer);
@@ -3508,7 +3529,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.18.1553';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.18.1612';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -3622,7 +3643,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.09.18.1553')
+                navigator.serviceWorker.register('./sw.js?v=2026.09.18.1612')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -3631,7 +3652,7 @@
                             if (installingWorker) {
                                 installingWorker.onstatechange = function() {
                                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        console.log('[PWA] New version (v2026.09.18.1553) installed! Refreshing cache...');
+                                        console.log('[PWA] New version (v2026.09.18.1612) installed! Refreshing cache...');
                                         window.location.reload();
                                     }
                                 };
@@ -3698,8 +3719,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.09.18.1553"></script>
-    <script src="app_v2.js?v=2026.09.18.1553"></script>
+    <script src="data.js?v=2026.09.18.1612"></script>
+    <script src="app_v2.js?v=2026.09.18.1612"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">
