@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.1807 - BUILD_DATE: 2026-09-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.18.1730 - BUILD_DATE: 2026-09-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.18.1807)
+ * Lucky777 Smart Bundle (v2026.09.18.1730)
  */
 
 
@@ -35302,11 +35302,6 @@ async function updateHomeReviewDashboard() {
         const elRoundBadge = document.getElementById('lpReviewRoundBadge');
         if (elRoundBadge) elRoundBadge.textContent = roundRangeLabel;
 
-        const elMobileRevRound = document.getElementById('lpReviewMobileRound');
-        if (elMobileRevRound && candidateRounds && candidateRounds[0]) {
-            elMobileRevRound.textContent = candidateRounds[0];
-        }
-
         const elKpiGames = document.getElementById('lpReviewKpiGames');
         const elKpiHits = document.getElementById('lpReviewKpiHits');
         const elKpiPrize = document.getElementById('lpReviewKpiPrize');
@@ -35523,18 +35518,16 @@ async function updateHomeWinningTicker() {
                 }
             </style>
             <div class="lp-singleline-ticker-bar" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-confirmed-list'), 80);" title="제 ${latestDrawnRound}회 실구매 장부 당첨 내역 자세히 보기" style="display: flex !important; flex-direction: row !important; align-items: center !important; background: linear-gradient(90deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92)) !important; border: 1.5px solid rgba(16, 185, 129, 0.45) !important; border-radius: 20px !important; height: 38px !important; min-height: 38px !important; max-height: 38px !important; padding: 0 12px !important; margin: 0 0 14px 0 !important; gap: 10px !important; overflow: hidden !important; width: 100% !important; max-width: 900px !important; box-sizing: border-box !important; cursor: pointer !important; white-space: nowrap !important; box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;">
-                <div class="lp-ticker-badge-pill" style="display: inline-flex !important; align-items: center !important; gap: 5px !important; font-size: 0.76rem !important; font-weight: 800 !important; color: #34d399 !important; white-space: nowrap !important; background: rgba(16, 185, 129, 0.2) !important; padding: 3px 9px !important; border-radius: 10px !important; border: 1px solid rgba(16, 185, 129, 0.5) !important; flex-shrink: 0 !important; z-index: 2 !important; height: 22px !important; line-height: 1 !important;">
-                    <i class="fa-solid fa-bullhorn lp-desktop-only" style="color: #34d399;"></i>
-                    <span class="lp-desktop-text">제 ${latestDrawnRound}회 실구매 당첨${totalWinCombosCount > 0 ? ` (총 ${totalWinCombosCount}건)` : ''}</span>
-                    <span class="lp-mobile-text">당첨속보</span>
+                <div style="display: inline-flex !important; align-items: center !important; gap: 5px !important; font-size: 0.76rem !important; font-weight: 800 !important; color: #34d399 !important; white-space: nowrap !important; background: rgba(16, 185, 129, 0.2) !important; padding: 3px 9px !important; border-radius: 10px !important; border: 1px solid rgba(16, 185, 129, 0.5) !important; flex-shrink: 0 !important; z-index: 2 !important; height: 22px !important; line-height: 1 !important;">
+                    <i class="fa-solid fa-bullhorn" style="color: #34d399;"></i>
+                    <span>제 ${latestDrawnRound}회 실구매 당첨${totalWinCombosCount > 0 ? ` (총 ${totalWinCombosCount}건)` : ''}</span>
                 </div>
                 <div style="flex: 1 !important; height: 100% !important; display: flex !important; align-items: center !important; overflow: hidden !important; position: relative !important; white-space: nowrap !important; ${isScrollMode ? 'mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important; -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important;' : ''}">
                     <div class="lp-singleline-track" style="display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: ${isScrollMode ? '24px' : '14px'} !important; white-space: nowrap !important; will-change: transform !important; ${isScrollMode ? 'animation: lpSingleLineScroll 35s linear infinite !important;' : 'animation: none !important; transform: none !important;'}">
                         ${itemsHtml}
                     </div>
                 </div>
-                <span class="lp-mobile-text lp-ticker-mobile-round" style="color: #34d399; font-weight: 800; font-size: 10px; margin-left: 6px; flex-shrink: 0;">${latestDrawnRound}회</span>
-                <i class="fa-solid fa-chevron-right lp-desktop-only" style="color: #64748b; font-size: 0.72rem; flex-shrink: 0;"></i>
+                <i class="fa-solid fa-chevron-right" style="color: #64748b; font-size: 0.72rem; flex-shrink: 0;"></i>
             </div>
         `;
     } catch(e) {
@@ -35567,7 +35560,6 @@ function getDrawRoundForSaturday21(targetDate = getNextSaturday21KST()) {
     const diff = targetDate.getTime() - firstDrawTime.getTime();
     if (diff < 0) return 1;
     const weeks = Math.round(diff / (7 * 24 * 60 * 60 * 1000));
-    return 1 + weeks;
 }
 
 /**
@@ -35575,27 +35567,22 @@ function getDrawRoundForSaturday21(targetDate = getNextSaturday21KST()) {
  */
 function updateMobileDdayBadge() {
     const el = document.getElementById('lpMobileDdayText');
+    if (!el) return;
     try {
         const now = new Date();
         const target = getNextSaturday21KST(now);
         const targetRound = getDrawRoundForSaturday21(target);
-        if (el) {
-            const diffMs = target.getTime() - now.getTime();
-            if (diffMs <= 0) {
-                el.textContent = `${targetRound}회 LIVE 추첨중`;
-            } else {
-                const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-                if (days === 0) {
-                    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    el.textContent = `${targetRound}회 D-Day (${hours}h)`;
-                } else {
-                    el.textContent = `${targetRound}회 D-${days}`;
-                }
-            }
+        const diffMs = target.getTime() - now.getTime();
+        if (diffMs <= 0) {
+            el.textContent = `${targetRound}회 LIVE 추첨중`;
+            return;
         }
-        const subtitleEl = document.getElementById('lpMobileTargetRoundText');
-        if (subtitleEl && targetRound) {
-            subtitleEl.textContent = targetRound;
+        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        if (days === 0) {
+            const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            el.textContent = `${targetRound}회 D-Day (${hours}h)`;
+        } else {
+            el.textContent = `${targetRound}회 D-${days}`;
         }
     } catch(e) {
         console.warn('[updateMobileDdayBadge error]', e);

@@ -11180,6 +11180,19 @@ html, body {
     box-sizing: border-box !important;
 }
 
+/* Default: Hide mobile-only elements on desktop */
+.lp-mobile-only,
+.lp-mobile-top-row,
+.lp-mobile-footer-links,
+.lp-mobile-text,
+.lp-fin-mobile-header,
+.lp-mobile-win-strip,
+.lp-ticker-mobile-round,
+.lp-mobile-inline-badge,
+.lp-mobile-inline-badge-amber {
+    display: none !important;
+}
+
 @media (max-width: 768px) {
     /* 1. 랜딩 페이지 컨테이너 좌우 여백 및 폭 통일 */
     #landingPage {
@@ -11208,20 +11221,32 @@ html, body {
         box-sizing: border-box !important;
     }
 
-    /* 1. Mobile One-Line Compact Top Bar (Concept 1 Service-First Hub) */
+    /* 1. Mobile One-Line Compact Top Bar (Concept 1: Service-First Compact Hub) */
     .lp-top-bar {
         position: static !important;
         width: 100% !important;
+        display: block !important;
+        padding: 0 !important;
+        margin-bottom: 6px !important;
+        box-sizing: border-box !important;
+        border: none !important;
+    }
+
+    .lp-desktop-only {
+        display: none !important;
+    }
+
+    .lp-mobile-top-row {
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        padding: 4px 6px 6px 6px !important;
-        margin-bottom: 6px !important;
-        box-sizing: border-box !important;
+        width: 100% !important;
+        padding: 4px 2px 6px 2px !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-sizing: border-box !important;
     }
 
-    .lp-mobile-header-brand {
+    .lp-mobile-brand {
         display: inline-flex !important;
         align-items: center !important;
         gap: 6px !important;
@@ -11229,144 +11254,66 @@ html, body {
         user-select: none !important;
     }
 
-    .lp-mobile-brand-icon {
-        width: 22px !important;
-        height: 22px !important;
-        border-radius: 6px !important;
+    .lp-brand-icon-7 {
+        width: 20px !important;
+        height: 20px !important;
+        border-radius: 5px !important;
         background: #10b981 !important;
         color: #020617 !important;
         font-weight: 900 !important;
+        font-size: 11px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-size: 0.78rem !important;
-        box-shadow: 0 0 8px rgba(16, 185, 129, 0.4) !important;
+        line-height: 1 !important;
     }
 
-    .lp-mobile-brand-name {
+    .lp-brand-name-text {
         font-weight: 900 !important;
-        font-size: 1.05rem !important;
-        color: #f8fafc !important;
-        letter-spacing: -0.5px !important;
-        white-space: nowrap !important;
+        font-size: 14px !important;
+        color: #ffffff !important;
+        letter-spacing: -0.3px !important;
     }
 
-    .lp-mobile-brand-name .lp-accent {
-        color: #f59e0b !important;
+    .lp-mobile-ver-tag {
+        font-size: 9px !important;
+        padding: 1px 5px !important;
+        border-radius: 4px !important;
+        background: #1e293b !important;
+        color: #94a3b8 !important;
+        font-family: monospace !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        margin-left: 2px !important;
     }
 
-    .lp-top-bar-actions {
+    .lp-mobile-dday-badge {
         display: inline-flex !important;
         align-items: center !important;
         gap: 4px !important;
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        color: #fbbf24 !important;
+        background: rgba(245, 158, 11, 0.12) !important;
+        border: 1px solid rgba(245, 158, 11, 0.28) !important;
+        padding: 2px 8px !important;
+        border-radius: 9999px !important;
+        cursor: pointer !important;
+        letter-spacing: -0.2px !important;
     }
 
-    /* Hide redundant desktop-only large header on mobile to achieve instant service-first viewport */
-    .lp-header {
-        display: none !important;
+    .lp-dday-icon {
+        font-size: 10px !important;
     }
 
-    /* 2. Live Draw Countdown Banner (Service-First Instant Exposure) */
+    /* Hide redundant desktop header and countdown banner on mobile (D-day badge takes its place) */
+    .lp-header,
     #lpDrawCountdownBanner,
-    .lp-countdown-container {
-        display: block !important;
-        margin-bottom: 6px !important;
-        width: 100% !important;
-    }
-
-    .lp-draw-countdown-banner {
-        padding: 4px 8px !important;
-        border-radius: 10px !important;
-        margin-bottom: 5px !important;
-        min-height: 34px !important;
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 4px !important;
-        flex-wrap: nowrap !important;
-        overflow: hidden !important;
-    }
-
-    .lp-draw-left {
-        gap: 5px !important;
-        flex-shrink: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-    }
-
-    .lp-draw-badge-icon {
-        width: 22px !important;
-        height: 22px !important;
-        border-radius: 6px !important;
-        font-size: 0.72rem !important;
-        flex-shrink: 0 !important;
-    }
-
-    .lp-draw-title {
-        gap: 3px !important;
-        flex-wrap: nowrap !important;
-    }
-
-    .lp-draw-round-badge {
-        font-size: 0.62rem !important;
-        padding: 1px 4px !important;
-        border-radius: 4px !important;
-    }
-
-    .lp-draw-title-text {
-        font-size: 0.73rem !important;
-        white-space: nowrap !important;
-    }
-
-    .lp-draw-urgent-badge {
-        font-size: 0.6rem !important;
-        padding: 1px 3px !important;
-    }
-
-    .lp-draw-subtitle {
-        display: none !important; /* Prevent line wrapping on mobile */
-    }
-
-    .lp-draw-timer-box {
-        flex: 1 !important;
-        display: flex !important;
-        justify-content: center !important;
-    }
-
-    .lp-draw-timer-digits {
-        padding: 2px 6px !important;
-        border-radius: 6px !important;
-        gap: 2px !important;
-    }
-
-    .lp-timer-num {
-        font-size: 0.82rem !important;
-        min-width: 14px !important;
-    }
-
-    .lp-timer-lbl {
-        font-size: 0.6rem !important;
-    }
-
-    .lp-timer-colon {
-        font-size: 0.75rem !important;
-        margin: 0 !important;
-    }
-
-    .lp-draw-action-hint {
-        padding: 2px 6px !important;
-        font-size: 0.65rem !important;
-        border-radius: 6px !important;
-        flex-shrink: 0 !important;
-    }
-
-    /* Duplicate deadline banner hidden */
+    .lp-countdown-container,
     #lpPurchaseDeadlineBanner {
         display: none !important;
     }
 
-    /* 3. Ticker Bar (Slim) */
+    /* 2. Ticker Bar (Concept 1 Slim) */
     .lp-ticker-container {
         margin-bottom: 6px !important;
         width: 100% !important;
@@ -11376,19 +11323,57 @@ html, body {
     .lp-winning-ticker-bar {
         height: 32px !important;
         min-height: 32px !important;
+        background: rgba(15, 23, 42, 0.9) !important;
+        border: 1px solid rgba(16, 185, 129, 0.35) !important;
+        border-radius: 12px !important;
         padding: 0 10px !important;
-        margin-bottom: 4px !important;
-        font-size: 0.75rem !important;
-        border-radius: 10px !important;
+        margin-bottom: 6px !important;
+        font-size: 10px !important;
+        box-sizing: border-box !important;
+    }
+
+    .lp-ticker-badge-pill {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        padding: 2px 6px !important;
+        height: 18px !important;
+        font-size: 9px !important;
+        border-radius: 4px !important;
+        background: rgba(16, 185, 129, 0.2) !important;
+        border: 1px solid rgba(16, 185, 129, 0.4) !important;
+        color: #6ee7b7 !important;
+        font-weight: 800 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .lp-ticker-mobile-round {
+        display: inline-block !important;
+        color: #34d399 !important;
+        font-weight: 800 !important;
+        font-size: 10px !important;
+        flex-shrink: 0 !important;
+        margin-left: 6px !important;
+    }
+
+    .lp-singleline-ticker-bar .fa-chevron-right {
+        display: none !important;
+    }
+
+    .lp-singleline-track > span {
+        font-size: 10px !important;
+    }
+    .lp-singleline-track strong {
+        font-size: 10px !important;
     }
 
     /* 3. Service Grid (Service-First Compact Hub) */
     .lp-service-grid {
         display: flex !important;
         flex-direction: column !important;
-        gap: 8px !important;
+        gap: 6px !important;
         width: 100% !important;
-        margin-bottom: 10px !important;
+        margin-bottom: 8px !important;
         box-sizing: border-box !important;
     }
 
@@ -11404,13 +11389,13 @@ html, body {
         display: inline !important;
     }
 
-    /* 4. Lotto Service (Compact Hero Card ~110px) */
+    /* 4. Lotto Service Hero Card (Concept 1 Green Gradient & Mint Dual Buttons) */
     .lp-card-lotto {
-        padding: 12px 14px 10px 14px !important;
+        padding: 12px !important;
         border-radius: 16px !important;
-        background: linear-gradient(145deg, rgba(10, 24, 18, 0.95) 0%, rgba(8, 18, 14, 0.9) 100%) !important;
-        border: 1.5px solid rgba(16, 185, 129, 0.45) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+        background: linear-gradient(135deg, rgba(6, 78, 59, 0.6) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(2, 6, 23, 1) 100%) !important;
+        border: 1.5px solid rgba(16, 185, 129, 0.5) !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 16px rgba(16, 185, 129, 0.12) !important;
         display: block !important;
         width: 100% !important;
         box-sizing: border-box !important;
@@ -11420,20 +11405,23 @@ html, body {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        gap: 10px !important;
+        gap: 8px !important;
         width: 100% !important;
     }
 
     .lp-card-lotto .lp-card-icon {
-        width: 38px !important;
-        height: 38px !important;
-        min-width: 38px !important;
-        border-radius: 10px !important;
-        font-size: 1.15rem !important;
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        border-radius: 8px !important;
+        font-size: 1.25rem !important;
         margin-bottom: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
     .lp-card-lotto .lp-card-text-group {
@@ -11449,8 +11437,8 @@ html, body {
     }
 
     .lp-card-lotto .lp-card-title {
-        font-size: 0.95rem !important;
-        font-weight: 800 !important;
+        font-size: 14px !important;
+        font-weight: 900 !important;
         margin: 0 !important;
         line-height: 1.25 !important;
         color: #ffffff !important;
@@ -11462,8 +11450,8 @@ html, body {
     .lp-mobile-inline-badge {
         display: inline-flex !important;
         align-items: center !important;
-        font-size: 0.62rem !important;
-        font-weight: 900 !important;
+        font-size: 9px !important;
+        font-weight: 800 !important;
         padding: 1px 6px !important;
         border-radius: 9999px !important;
         background: #10b981 !important;
@@ -11472,8 +11460,8 @@ html, body {
     }
 
     .lp-card-lotto .lp-card-desc {
-        font-size: 0.72rem !important;
-        color: #6ee7b7 !important;
+        font-size: 10px !important;
+        color: rgba(110, 231, 183, 0.8) !important;
         margin: 2px 0 0 0 !important;
         line-height: 1.25 !important;
         white-space: nowrap !important;
@@ -11485,38 +11473,55 @@ html, body {
     .lp-card-lotto .lp-card-actions-row {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
-        gap: 8px !important;
+        gap: 6px !important;
         width: 100% !important;
-        margin-top: 10px !important;
+        margin-top: 8px !important;
     }
 
-    .lp-card-lotto .lp-card-actions-row .lp-btn,
-    .lp-card-lotto .lp-card-actions-row .btn-ledger-qr-prominent {
-        min-height: 38px !important;
-        height: 38px !important;
-        padding: 0 6px !important;
-        font-size: 0.8rem !important;
-        font-weight: 800 !important;
-        border-radius: 10px !important;
+    .lp-card-lotto .lp-btn-lotto {
+        background: #34d399 !important;
+        color: #020617 !important;
+        font-weight: 900 !important;
+        font-size: 12px !important;
+        border-radius: 12px !important;
+        padding: 8px 10px !important;
+        min-height: 36px !important;
+        height: 36px !important;
+        border: none !important;
+        box-shadow: 0 2px 8px rgba(52, 211, 153, 0.25) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        gap: 5px !important;
-        margin: 0 !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
+        gap: 4px !important;
     }
 
-    /* 5. Toto Service (Sleek Horizontal Micro Card ~50px) */
+    .lp-card-lotto .btn-ledger-qr-prominent {
+        background: linear-gradient(90deg, #34d399 0%, #14b8a6 100%) !important;
+        color: #020617 !important;
+        font-weight: 900 !important;
+        font-size: 12px !important;
+        border-radius: 12px !important;
+        padding: 8px 10px !important;
+        min-height: 36px !important;
+        height: 36px !important;
+        border: 1px solid #6ee7b7 !important;
+        box-shadow: 0 2px 10px rgba(20, 184, 166, 0.3) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+    }
+
+    /* 5. Toto Service Micro Card (Concept 1 Amber Micro Card) */
     .lp-card-toto {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
         justify-content: space-between !important;
-        padding: 8px 12px !important;
+        padding: 8px 10px !important;
         border-radius: 12px !important;
-        background: rgba(15, 23, 42, 0.85) !important;
-        border: 1px solid rgba(245, 158, 11, 0.35) !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        border: 1px solid rgba(245, 158, 11, 0.3) !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
         gap: 8px !important;
         box-sizing: border-box !important;
@@ -11533,15 +11538,18 @@ html, body {
     }
 
     .lp-card-toto .lp-card-icon {
-        width: 30px !important;
-        height: 30px !important;
-        min-width: 30px !important;
-        border-radius: 8px !important;
-        font-size: 0.95rem !important;
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        border-radius: 6px !important;
+        font-size: 1rem !important;
         margin-bottom: 0 !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
     }
 
     .lp-card-toto .lp-card-text-group {
@@ -11557,7 +11565,7 @@ html, body {
     }
 
     .lp-card-toto .lp-card-title {
-        font-size: 0.82rem !important;
+        font-size: 12px !important;
         font-weight: 800 !important;
         color: #fcd34d !important;
         margin: 0 !important;
@@ -11570,17 +11578,17 @@ html, body {
     .lp-mobile-inline-badge-amber {
         display: inline-flex !important;
         align-items: center !important;
-        font-size: 0.58rem !important;
+        font-size: 8px !important;
         font-weight: 800 !important;
         padding: 0 4px !important;
-        border-radius: 4px !important;
+        border-radius: 3px !important;
         background: rgba(245, 158, 11, 0.2) !important;
         color: #fbbf24 !important;
         border: 1px solid rgba(245, 158, 11, 0.4) !important;
     }
 
     .lp-card-toto .lp-card-desc {
-        font-size: 0.68rem !important;
+        font-size: 9px !important;
         color: #94a3b8 !important;
         margin: 1px 0 0 0 !important;
         line-height: 1.2 !important;
@@ -11595,15 +11603,15 @@ html, body {
     }
 
     .lp-card-toto .lp-btn-toto-main {
-        padding: 5px 9px !important;
-        min-height: 28px !important;
-        height: 28px !important;
-        font-size: 0.72rem !important;
+        padding: 4px 10px !important;
+        min-height: 26px !important;
+        height: 26px !important;
+        font-size: 10px !important;
         font-weight: 800 !important;
-        border-radius: 6px !important;
-        background: rgba(217, 119, 6, 0.3) !important;
-        border: 1px solid rgba(245, 158, 11, 0.5) !important;
-        color: #fef3c7 !important;
+        border-radius: 8px !important;
+        background: rgba(217, 119, 6, 0.25) !important;
+        border: 1px solid rgba(245, 158, 11, 0.4) !important;
+        color: #fcd34d !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -11611,17 +11619,15 @@ html, body {
         margin: 0 !important;
     }
 
-    /* 6. Financial Board (Unified 4-column compact row) */
+    /* 6. Financial Board (Concept 1 Unified Card: Header + 4-col Grid + Strip) */
     .lp-financial-summary {
-        padding: 10px 12px !important;
-        border-radius: 14px !important;
-        gap: 8px !important;
-        margin-bottom: 10px !important;
+        padding: 12px !important;
+        border-radius: 16px !important;
+        background: #0f172a !important;
+        border: 1px solid #1e293b !important;
+        margin-bottom: 8px !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        height: auto !important;
-        min-height: auto !important;
-        overflow: visible !important;
     }
 
     .lp-fin-main-row {
@@ -11632,45 +11638,54 @@ html, body {
         box-sizing: border-box !important;
     }
 
-    .lp-fin-title-area {
-        min-width: 0 !important;
-        width: 100% !important;
-        text-align: left !important;
-        align-items: flex-start !important;
-        box-sizing: border-box !important;
-        margin-bottom: 2px !important;
+    .lp-fin-desktop-header {
+        display: none !important;
     }
 
-    .lp-fin-label {
-        font-size: 0.68rem !important;
+    .lp-fin-mobile-header {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        margin-bottom: 6px !important;
     }
 
-    .lp-fin-title {
-        font-size: 0.82rem !important;
-        line-height: 1.35 !important;
-        text-align: left !important;
-        white-space: normal !important;
-        word-break: break-word !important;
-        overflow-wrap: anywhere !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
+    .lp-fin-mobile-title {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        color: #e2e8f0 !important;
+    }
+
+    .lp-mobile-confirmed-pill {
+        display: inline-block !important;
+        font-size: 9px !important;
+        font-weight: 800 !important;
+        color: #34d399 !important;
+        background: rgba(6, 78, 59, 0.6) !important;
+        border: 1px solid rgba(16, 185, 129, 0.5) !important;
+        padding: 2px 6px !important;
+        border-radius: 4px !important;
     }
 
     .lp-fin-stats {
         display: grid !important;
         grid-template-columns: repeat(4, 1fr) !important;
-        gap: 4px !important;
+        gap: 2px !important;
         width: 100% !important;
-        padding: 6px 4px !important;
-        background: rgba(0, 0, 0, 0.35) !important;
-        border-radius: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        padding: 8px 4px !important;
+        background: rgba(2, 6, 23, 0.7) !important;
+        border-radius: 12px !important;
+        border: 1px solid rgba(30, 41, 59, 0.8) !important;
         box-sizing: border-box !important;
+        text-align: center !important;
+        margin-bottom: 6px !important;
     }
 
     .lp-stat-item {
-        padding: 3px 2px !important;
-        border-radius: 6px !important;
+        padding: 2px !important;
         background: transparent !important;
         text-align: center !important;
         box-sizing: border-box !important;
@@ -11680,93 +11695,115 @@ html, body {
     }
 
     .lp-stat-label {
-        font-size: 0.62rem !important;
-        margin-bottom: 1px !important;
+        font-size: 9px !important;
+        margin-bottom: 2px !important;
         white-space: nowrap !important;
         color: #94a3b8 !important;
     }
 
     .lp-stat-val {
-        font-size: clamp(0.72rem, 2.7vw, 0.85rem) !important;
-        font-weight: 800 !important;
+        font-size: 11px !important;
+        font-weight: 900 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
     }
 
-    /* 7. Mini Win Rows */
-    .lp-compact-win-row {
+    /* Concept 1 Mobile Recent Win Highlight Strip */
+    .lp-mobile-win-strip {
         display: flex !important;
-        flex-direction: column !important;
-        gap: 6px !important;
-        padding-top: 2px !important;
+        justify-content: space-between !important;
+        align-items: center !important;
         width: 100% !important;
-        box-sizing: border-box !important;
-    }
-
-    .lp-mini-win-card {
-        padding: 8px 10px !important;
+        background: linear-gradient(90deg, rgba(6, 78, 59, 0.35) 0%, rgba(15, 23, 42, 0.8) 100%) !important;
+        border: 1px solid rgba(16, 185, 129, 0.25) !important;
         border-radius: 10px !important;
-        width: 100% !important;
-        max-width: 100% !important;
+        padding: 6px 10px !important;
         box-sizing: border-box !important;
-        overflow: hidden !important;
+        font-size: 10px !important;
+        color: #6ee7b7 !important;
     }
 
-    .mini-win-top-row,
-    .mini-win-bottom-row {
-        width: 100% !important;
-        box-sizing: border-box !important;
-    }
-
-    .mini-win-title {
-        font-size: 0.76rem !important;
-        white-space: normal !important;
-        word-break: break-word !important;
+    .lp-win-strip-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 2 !important;
-        -webkit-box-orient: vertical !important;
-    }
-
-    .mini-win-sub {
-        font-size: 0.68rem !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-    }
-
-    .mini-win-prize {
-        font-size: 0.82rem !important;
-    }
-
-    .mini-win-hits {
-        font-size: 0.68rem !important;
-        max-width: 160px !important;
         white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
     }
 
-    /* 8. Accordions & Integrity Banner */
-    #lpAllMembersReviewSection {
-        padding: 10px 12px !important;
-        margin-bottom: 8px !important;
+    .lp-win-strip-btn {
+        background: none !important;
+        border: none !important;
+        color: #94a3b8 !important;
+        font-size: 9px !important;
+        text-decoration: underline !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* Hide redundant 3 long mini cards on mobile */
+    .lp-compact-win-row {
+        display: none !important;
+    }
+
+    /* 7. Collapsible Accordions (Concept 1 Details Styling) */
+    #lpAllMembersReviewSection,
+    .lp-integrity-guarantee-box {
         border-radius: 12px !important;
+        padding: 10px 12px !important;
+        margin-bottom: 6px !important;
+        background: rgba(15, 23, 42, 0.6) !important;
+        border: 1px solid #1e293b !important;
+        box-shadow: none !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+    }
+
+    .lp-accordion-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
         width: 100% !important;
         box-sizing: border-box !important;
+        cursor: pointer !important;
+        user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        gap: 8px !important;
     }
 
     #lpReviewSectionTitle {
-        font-size: 0.82rem !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
         line-height: 1.35 !important;
-        word-break: keep-all !important;
+        color: #cbd5e1 !important;
+        margin: 0 !important;
     }
 
-    #lpReviewSectionSub {
-        font-size: 0.68rem !important;
-        line-height: 1.35 !important;
-        word-break: keep-all !important;
+    .lp-integrity-guarantee-box .lp-accordion-header div:first-child {
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        color: #cbd5e1 !important;
+    }
+
+    .lp-accordion-right-badge {
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+    }
+
+    .lp-accordion-right-badge i {
+        color: #64748b !important;
+        font-size: 10px !important;
+    }
+
+    .lp-accordion-chevron {
+        display: inline-block !important;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
     #lpReviewKpiBar {
@@ -11803,45 +11840,35 @@ html, body {
         white-space: nowrap !important;
     }
 
-    .lp-accordion-card {
-        display: block !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        margin-bottom: 8px !important;
+    /* Hide desktop-only elements on mobile */
+    .lp-manual-banner {
+        display: none !important;
     }
 
-    .lp-accordion-header {
+    .lp-business-footer {
+        display: none !important;
+    }
+
+    /* 8. Mobile Footer Links (Concept 1 Slim) */
+    .lp-mobile-footer-links {
         display: flex !important;
+        justify-content: center !important;
         align-items: center !important;
-        justify-content: space-between !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
+        gap: 12px !important;
+        padding: 12px 0 24px 0 !important;
+        font-size: 10px !important;
+        color: #64748b !important;
+        text-align: center !important;
+    }
+
+    .lp-mobile-footer-links a {
+        color: #94a3b8 !important;
+        text-decoration: none !important;
         cursor: pointer !important;
-        user-select: none !important;
-        -webkit-tap-highlight-color: transparent !important;
     }
 
-    .lp-accordion-chevron {
-        display: inline-block !important;
-        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-    }
-
-    .lp-integrity-guarantee-box {
-        padding: 10px 12px !important;
-        margin-bottom: 8px !important;
-        width: 100% !important;
-        box-sizing: border-box !important;
-        display: block !important;
-    }
-
-    .lp-integrity-guarantee-box > div:first-child {
-        min-width: 0 !important;
-        width: 100% !important;
-    }
-
-    .lp-integrity-guarantee-box div {
-        word-break: keep-all !important;
-        overflow-wrap: break-word !important;
+    .lp-mobile-footer-links a:hover {
+        color: #ffffff !important;
     }
 }
 

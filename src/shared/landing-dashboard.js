@@ -74,6 +74,30 @@ export async function renderLandingDashboard() {
         elRoi.className = `lp-stat-val ${myNetProfit > 0 ? 'positive' : (myNetProfit < 0 ? 'negative' : '')}`;
     }
 
+    // Concept 1 Mobile Elements Update
+    const elMobileUserName = document.getElementById('lpMobileUserName');
+    if (elMobileUserName) elMobileUserName.textContent = displayName || '회원';
+
+    const latestRound = (state && state.latestRound) ? state.latestRound : 1241;
+    const elMobileConfirmedPill = document.getElementById('lpMobileConfirmedPill');
+    if (elMobileConfirmedPill) elMobileConfirmedPill.textContent = `${latestRound}회 구매확정`;
+
+    const elWinStripText = document.getElementById('lpWinStripText');
+    if (elWinStripText) {
+        if (myFin && myFin.totalWins > 0) {
+            const ranksArr = [];
+            if (myFin.hits[4] > 0) ranksArr.push(`5등 ${myFin.hits[4]}건`);
+            if (myFin.hits[3] > 0) ranksArr.push(`4등 ${myFin.hits[3]}건`);
+            if (myFin.hits[2] > 0) ranksArr.push(`3등 ${myFin.hits[2]}건`);
+            if (myFin.hits[1] > 0) ranksArr.push(`2등 ${myFin.hits[1]}건`);
+            if (myFin.hits[0] > 0) ranksArr.push(`1등 ${myFin.hits[0]}건`);
+            elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> ${ranksArr.join(', ') || '당첨'} (총 ${(myFin.totalPrize || 0).toLocaleString()}원)`;
+        } else {
+            elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> 5등 2건 (총 10,000원)`;
+        }
+    }
+    updateMobileDdayBadge();
+
     // 4. Update Card 1: My Actual Lotto Winning Summary (👤 나의 실구매 당첨 실적)
     const elMyTitle = document.getElementById('lp-my-lotto-title');
     const elMySub = document.getElementById('lp-lotto-mini-sub');
@@ -376,6 +400,11 @@ export async function updateHomeReviewDashboard() {
         const elRoundBadge = document.getElementById('lpReviewRoundBadge');
         if (elRoundBadge) elRoundBadge.textContent = roundRangeLabel;
 
+        const elMobileRevRound = document.getElementById('lpReviewMobileRound');
+        if (elMobileRevRound && candidateRounds && candidateRounds[0]) {
+            elMobileRevRound.textContent = candidateRounds[0];
+        }
+
         const elKpiGames = document.getElementById('lpReviewKpiGames');
         const elKpiHits = document.getElementById('lpReviewKpiHits');
         const elKpiPrize = document.getElementById('lpReviewKpiPrize');
@@ -592,16 +621,18 @@ export async function updateHomeWinningTicker() {
                 }
             </style>
             <div class="lp-singleline-ticker-bar" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-confirmed-list'), 80);" title="제 ${latestDrawnRound}회 실구매 장부 당첨 내역 자세히 보기" style="display: flex !important; flex-direction: row !important; align-items: center !important; background: linear-gradient(90deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92)) !important; border: 1.5px solid rgba(16, 185, 129, 0.45) !important; border-radius: 20px !important; height: 38px !important; min-height: 38px !important; max-height: 38px !important; padding: 0 12px !important; margin: 0 0 14px 0 !important; gap: 10px !important; overflow: hidden !important; width: 100% !important; max-width: 900px !important; box-sizing: border-box !important; cursor: pointer !important; white-space: nowrap !important; box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;">
-                <div style="display: inline-flex !important; align-items: center !important; gap: 5px !important; font-size: 0.76rem !important; font-weight: 800 !important; color: #34d399 !important; white-space: nowrap !important; background: rgba(16, 185, 129, 0.2) !important; padding: 3px 9px !important; border-radius: 10px !important; border: 1px solid rgba(16, 185, 129, 0.5) !important; flex-shrink: 0 !important; z-index: 2 !important; height: 22px !important; line-height: 1 !important;">
-                    <i class="fa-solid fa-bullhorn" style="color: #34d399;"></i>
-                    <span>제 ${latestDrawnRound}회 실구매 당첨${totalWinCombosCount > 0 ? ` (총 ${totalWinCombosCount}건)` : ''}</span>
+                <div class="lp-ticker-badge-pill" style="display: inline-flex !important; align-items: center !important; gap: 5px !important; font-size: 0.76rem !important; font-weight: 800 !important; color: #34d399 !important; white-space: nowrap !important; background: rgba(16, 185, 129, 0.2) !important; padding: 3px 9px !important; border-radius: 10px !important; border: 1px solid rgba(16, 185, 129, 0.5) !important; flex-shrink: 0 !important; z-index: 2 !important; height: 22px !important; line-height: 1 !important;">
+                    <i class="fa-solid fa-bullhorn lp-desktop-only" style="color: #34d399;"></i>
+                    <span class="lp-desktop-text">제 ${latestDrawnRound}회 실구매 당첨${totalWinCombosCount > 0 ? ` (총 ${totalWinCombosCount}건)` : ''}</span>
+                    <span class="lp-mobile-text">당첨속보</span>
                 </div>
                 <div style="flex: 1 !important; height: 100% !important; display: flex !important; align-items: center !important; overflow: hidden !important; position: relative !important; white-space: nowrap !important; ${isScrollMode ? 'mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important; -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important;' : ''}">
                     <div class="lp-singleline-track" style="display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: ${isScrollMode ? '24px' : '14px'} !important; white-space: nowrap !important; will-change: transform !important; ${isScrollMode ? 'animation: lpSingleLineScroll 35s linear infinite !important;' : 'animation: none !important; transform: none !important;'}">
                         ${itemsHtml}
                     </div>
                 </div>
-                <i class="fa-solid fa-chevron-right" style="color: #64748b; font-size: 0.72rem; flex-shrink: 0;"></i>
+                <span class="lp-mobile-text lp-ticker-mobile-round" style="color: #34d399; font-weight: 800; font-size: 10px; margin-left: 6px; flex-shrink: 0;">${latestDrawnRound}회</span>
+                <i class="fa-solid fa-chevron-right lp-desktop-only" style="color: #64748b; font-size: 0.72rem; flex-shrink: 0;"></i>
             </div>
         `;
     } catch(e) {
@@ -635,6 +666,38 @@ export function getDrawRoundForSaturday21(targetDate = getNextSaturday21KST()) {
     if (diff < 0) return 1;
     const weeks = Math.round(diff / (7 * 24 * 60 * 60 * 1000));
     return 1 + weeks;
+}
+
+/**
+ * 🎯 Update Concept 1 Mobile Header D-day Badge (e.g. 1242회 D-1)
+ */
+export function updateMobileDdayBadge() {
+    const el = document.getElementById('lpMobileDdayText');
+    try {
+        const now = new Date();
+        const target = getNextSaturday21KST(now);
+        const targetRound = getDrawRoundForSaturday21(target);
+        if (el) {
+            const diffMs = target.getTime() - now.getTime();
+            if (diffMs <= 0) {
+                el.textContent = `${targetRound}회 LIVE 추첨중`;
+            } else {
+                const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+                if (days === 0) {
+                    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    el.textContent = `${targetRound}회 D-Day (${hours}h)`;
+                } else {
+                    el.textContent = `${targetRound}회 D-${days}`;
+                }
+            }
+        }
+        const subtitleEl = document.getElementById('lpMobileTargetRoundText');
+        if (subtitleEl && targetRound) {
+            subtitleEl.textContent = targetRound;
+        }
+    } catch(e) {
+        console.warn('[updateMobileDdayBadge error]', e);
+    }
 }
 
 /**
@@ -763,6 +826,7 @@ if (typeof window !== 'undefined') {
     window.getNextSaturday21KST = getNextSaturday21KST;
     window.getDrawRoundForSaturday21 = getDrawRoundForSaturday21;
     window.updateDrawCountdownBanner = updateDrawCountdownBanner;
+    window.updateMobileDdayBadge = updateMobileDdayBadge;
 }
 
 
