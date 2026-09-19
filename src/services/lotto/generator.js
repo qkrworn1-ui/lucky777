@@ -231,7 +231,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
             
             if (i < 4) {
                 // Group 1: 통계적 밸런스 추종 (게임 1~4)
-                while (attempts < 20000) {
+                while (attempts < 500) {
                     attempts++;
                     let candidate = new Set();
                     while (candidate.size < 6) {
@@ -283,7 +283,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
 
             } else if (i < 7) {
                 // Group 2: 변동성 극대화 및 클러스터링 믹스 (게임 5~7)
-                while (attempts < 20000) {
+                while (attempts < 500) {
                     attempts++;
                     let candidate = new Set();
                     
@@ -420,7 +420,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
             const isOffense = (i < 5); // 전반 5게임: 공격형, 후반 5게임: 방어형
             
             const isSimulationPast = (targetRound !== null && targetRound <= maxKnownDrawnRound);
-            const maxAttempts = isSimulationPast ? 100 : 2500;
+            const maxAttempts = isSimulationPast ? 60 : 400;
             const targetEv = isSimulationPast ? 88.0 : 96.5;
 
             while (attempts < maxAttempts) {
@@ -1074,7 +1074,7 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
             let attempts = 0;
             let bestNums = null;
 
-            while (attempts < 6000) {
+            while (attempts < 300) {
                 attempts++;
                 const candidate = new Set();
 

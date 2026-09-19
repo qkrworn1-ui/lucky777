@@ -657,6 +657,9 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             loginModal.classList.add('hidden');
             loginModal.classList.remove('active');
         }
+        if (document.body) {
+            document.body.style.overflow = '';
+        }
 
         if (!window.__appUnlocked) {
             const totoPage = document.getElementById('totoPage');
@@ -753,16 +756,22 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                         }
 
                         // 🔒 Check if Mandatory Profile & E-Signature Pledge is Complete
-                        // (Exempt only root built-in master/admin ID, but enforce for all members including admin-promoted accounts)
+                        // (Exempt root built-in master/admin ID and Kakao OAuth authenticated accounts who already completed Kakao terms)
                         const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
-                        if (!isRootMaster) {
+                        const isKakaoAuth = authId.startsWith('kakao_') || uData.authProvider === 'kakao' || !!uData.kakaoAuth;
+                        if (!isRootMaster && !isKakaoAuth) {
                             const isPhoneValid = uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.length >= 10;
                             const isSigValid = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl);
                             const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2);
 
                             if (!isPhoneValid || !isSigValid || !isNameValid) {
                                 if (loginModal) {
-                                    loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important;');
+                                    loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
+                                    loginModal.classList.add('hidden');
+                                    loginModal.classList.remove('active');
+                                }
+                                if (document.body) {
+                                    document.body.style.overflow = '';
                                 }
                                 setTimeout(() => {
                                     if (typeof window.openMandatoryPledgeModal === 'function') {
@@ -905,6 +914,9 @@ export function setupAuthEvents(initFirebaseAndData) {
                                     modal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
                                     modal.classList.add('hidden');
                                     modal.classList.remove('active');
+                                }
+                                if (document.body) {
+                                    document.body.style.overflow = '';
                                 }
 
                                 // 2. Show Landing Page immediately
@@ -1801,6 +1813,10 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 if (signupModal) {
                     signupModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
                     signupModal.classList.add('hidden');
+                    signupModal.classList.remove('active');
+                }
+                if (document.body) {
+                    document.body.style.overflow = '';
                 }
                 const lpEl = document.getElementById('landingPage');
                 const acEl = document.getElementById('appContainer');
@@ -1858,6 +1874,9 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     modal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
                     modal.classList.add('hidden');
                     modal.classList.remove('active');
+                }
+                if (document.body) {
+                    document.body.style.overflow = '';
                 }
 
                 const isMasterUser = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');

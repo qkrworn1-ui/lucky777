@@ -256,6 +256,9 @@ export function clearUser70ReviewCache() {
     for (const k in _user70ReviewCache) {
         delete _user70ReviewCache[k];
     }
+    if (typeof window !== 'undefined' && typeof window.clearAlgoPerfCache === 'function') {
+        try { window.clearAlgoPerfCache(); } catch(e) {}
+    }
 }
 if (typeof window !== 'undefined') {
     window.clearUser70ReviewCache = clearUser70ReviewCache;

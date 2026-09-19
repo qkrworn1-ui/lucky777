@@ -278,6 +278,18 @@ export function maskUserDisplayName(name, userId) {
     return maskedName || maskedId || '회원**';
 }
 
+const _algoPerfCache = new Map();
+
+/**
+ * In-memory cache reset for 7 algorithms performance calculations
+ */
+export function clearAlgoPerfCache() {
+    _algoPerfCache.clear();
+}
+if (typeof window !== 'undefined') {
+    window.clearAlgoPerfCache = clearAlgoPerfCache;
+}
+
 /**
  * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 전체 회원 기본 통합)
  */
@@ -294,6 +306,12 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
     const cleanUser = String(rawUser).toLowerCase().trim();
     const isAll = (cleanUser === 'all');
     const userJoinRound = (!isAll) ? getUserJoinRound(cleanUser) : 1235;
+    const baseList = isAll ? getAllUnifiedRegisteredUsers() : [];
+
+    const cacheKey = `${fromRound}_${cleanUser}_${maxRound}_${drawnRounds.length}_${baseList.length}`;
+    if (_algoPerfCache.has(cacheKey)) {
+        return _algoPerfCache.get(cacheKey);
+    }
 
     let grandTotalGames = 0;
     let grandTotalInvest = 0;
@@ -480,7 +498,7 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
     const grandWinRate = grandTotalGames > 0 ? ((grandTotalWins / grandTotalGames) * 100).toFixed(1) : '0.0';
     const grandRoi = grandTotalInvest > 0 ? (((grandTotalPrize - grandTotalInvest) / grandTotalInvest) * 100).toFixed(1) : '0.0';
 
-    return {
+    const perfResult = {
         fromRound,
         maxRound,
         totalRoundsCount: drawnRounds.length,
@@ -494,6 +512,9 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
         grandWinRate,
         results: algoStats
     };
+
+    _algoPerfCache.set(cacheKey, perfResult);
+    return perfResult;
 }
 
 /**
