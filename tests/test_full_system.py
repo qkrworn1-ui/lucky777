@@ -1827,17 +1827,42 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("const ballTextColor = (n <= 10) ? '#0f172a' : '#ffffff';", conf_code)
 
         # 5. Verify generator-tab.js uses high contrast dark text on yellow balls
-        self.assertIn("color: ${n <= 10 ? '#0f172a' : '#ffffff'};", gen_code)
+        self.assertIn(f"color: ${{n <= 10 ? '#0f172a' : '#ffffff'}};", gen_code)
+
+    def test_48_login_freeze_bug_fixes_integrity(self):
+        """Test 48: Verify the two login-freeze bug fixes are in place.
+        
+        Bug 1 (auth-mgmt.js): userDoc.data() was never assigned to uData before use
+        → ReferenceError in background async IIFE → UI freeze on first Kakao login
+        
+        Bug 2 (main.js): visibilitychange handler did not re-run checkAuthOnLoad
+        → After Kakao popup closes, original tab didn't refresh auth state
+        """
+        auth_file = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        main_file = os.path.join(self.root_dir, 'src', 'main.js')
+
+        with open(auth_file, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        with open(main_file, 'r', encoding='utf-8') as f:
+            main_code = f.read()
+
+        # 1. Fix 1: uData must be assigned from userDoc.data() before any uData.xxx usage
+        self.assertIn('const uData = userDoc.data() || {};', auth_code,
+                      'FAIL: uData assignment (const uData = userDoc.data()) missing in checkAuthOnLoad background check')
+
+        # 2. Fix 2: visibilitychange handler must call checkAuthOnLoad when authId present
+        self.assertIn('checkAuthOnLoad(initLottoService)', main_code,
+                      'FAIL: checkAuthOnLoad call missing inside visibilitychange handler in main.js')
+
+        # 3. Fix 2: visibilitychange handler must check loginModal visibility state
+        self.assertIn('isModalVisible', main_code,
+                      'FAIL: isModalVisible check missing in visibilitychange handler')
+
+
 
 
 if __name__ == '__main__':
     unittest.main()
-
-
-
-
-
-
 
 
 

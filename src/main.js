@@ -158,6 +158,18 @@ if (typeof document !== 'undefined') {
             if (typeof renderLandingDashboard === 'function') {
                 renderLandingDashboard();
             }
+            // [Fix] 카카오 팝업 로그인 완료 후 원래 탭으로 복귀 시 인증 상태 재확인
+            // 카카오 팝업이 닫히면 visibilitychange: visible 이 발생하므로
+            // 로그인 완료된 경우 checkAuthOnLoad를 재실행해 UI를 정상화한다
+            const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
+            const loginModal = document.getElementById('loginModalOverlay');
+            const isModalVisible = loginModal && loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden');
+            if (authId && isModalVisible) {
+                // 로그인 완료됐는데 모달이 아직 보이는 경우 → 상태 재확인으로 모달 닫기
+                setTimeout(() => {
+                    try { checkAuthOnLoad(initLottoService); } catch(e) {}
+                }, 100);
+            }
         }
     });
 }

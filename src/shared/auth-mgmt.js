@@ -766,6 +766,7 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                 try {
                     const userDoc = await window.db.collection('lotto_users').doc(authId).get();
                     if (userDoc.exists) {
+                        const uData = userDoc.data() || {};
                         let freshAdmin = isUserAdmin;
                         if (uData.isAdmin === true || uData.role === 'admin' || uData.userType === 'admin') {
                             freshAdmin = true;
