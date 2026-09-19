@@ -541,7 +541,8 @@ export function renderSimulationTab(targetRound = null) {
                             } else {
                                 extraStyle = 'opacity: 0.35; filter: grayscale(35%);';
                             }
-                            return `<div class="lotto-ball sm-ball ${getBallColorClass(n)}" style="background: ${ballBg}; ${extraStyle} width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; color: #fff; font-size: 0.8rem; display: inline-block;">${n}</div>`;
+                            const textColor = n <= 10 ? '#0f172a' : '#fff';
+                            return `<div class="lotto-ball sm-ball ${getBallColorClass(n)}" style="background: ${ballBg}; ${extraStyle} width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; color: ${textColor}; font-weight: 900; font-size: 0.8rem; display: inline-block;">${n}</div>`;
                         }).join('')}
                     </div>
                 </div>
@@ -667,7 +668,8 @@ export function renderAccumulatedWins(rankFilter) {
                             hitClass = 'dim-ball';
                             hitStyle = 'opacity:0.4; filter:grayscale(25%); border:1px solid rgba(255,255,255,0.1);';
                         }
-                        return `<span class="sim-win-ball ${hitClass} ${getBallColorClass(n)}" style="width:28px; height:28px; line-height:28px; font-size:0.78rem; font-weight:900; color:#ffffff; text-align:center; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:${ballBg}; ${hitStyle} flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.4);">${n}</span>`;
+                        const textColor = n <= 10 ? '#0f172a' : '#ffffff';
+                        return `<span class="sim-win-ball ${hitClass} ${getBallColorClass(n)}" style="width:28px; height:28px; line-height:28px; font-size:0.78rem; font-weight:900; color:${textColor}; text-align:center; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:${ballBg}; ${hitStyle} flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.4);">${n}</span>`;
                     }).join('')}
                 </div>
             </div>

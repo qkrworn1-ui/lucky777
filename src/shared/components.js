@@ -1,4 +1,4 @@
-import { getBallHexColor, getBallColorClass } from './utils.js';
+import { getBallHexColor, getBallColorClass, getBallTextColor } from './utils.js';
 
 /**
  * Universal Lotto Ball HTML generator
@@ -11,6 +11,7 @@ export function createBallHtml(num, options = {}) {
 
     const bg = getBallHexColor(n);
     const colorClass = getBallColorClass(n);
+    const textColor = getBallTextColor(n);
     const size = options.size || 'normal'; // 'mini' (22px), 'small' (26px), 'normal' (34px), 'large' (40px)
     
     let sizeStyle = '';
@@ -27,7 +28,7 @@ export function createBallHtml(num, options = {}) {
         borderStyle = 'opacity: 0.4;';
     }
 
-    return `<span class="lotto-ball ${colorClass} ${options.extraClass || ''}" style="background: ${bg}; ${sizeStyle} ${borderStyle} text-align: center; border-radius: 50%; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-weight: bold;">${n}</span>`;
+    return `<span class="lotto-ball ${colorClass} ${options.extraClass || ''}" style="background: ${bg}; ${sizeStyle} ${borderStyle} text-align: center; border-radius: 50%; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; font-weight: 900;">${n}</span>`;
 }
 
 /**

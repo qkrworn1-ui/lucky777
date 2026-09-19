@@ -552,8 +552,9 @@ export function updateWinnerBar(round, drawData) {
         const sortedNumbers = [...drawData.numbers].sort((a, b) => a - b);
         sortedNumbers.forEach(n => {
             const bg = getBallColor(n);
+            const textColor = n <= 10 ? '#0f172a' : '#fff';
             ballsHtml += `
-                <div style="width:34px; height:34px; border-radius:50%; background:${bg}; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 6px rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.4);">
+                <div style="width:34px; height:34px; border-radius:50%; background:${bg}; color:${textColor}; font-weight:900; font-size:0.95rem; display:flex; align-items:center; justify-content:center; box-shadow:0 3px 6px rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.4);">
                     ${n}
                 </div>
             `;
@@ -561,10 +562,11 @@ export function updateWinnerBar(round, drawData) {
 
         if (drawData.bonus) {
             const bonusBg = getBallColor(drawData.bonus);
+            const bonusColor = drawData.bonus <= 10 ? '#0f172a' : '#fff';
             ballsHtml += `
                 <span style="color:#94a3b8; font-weight:bold; font-size:1.1rem; margin:0 4px;">+</span>
                 <div style="position:relative; display:inline-block;">
-                    <div style="width:34px; height:34px; border-radius:50%; background:${bonusBg}; color:#fff; font-weight:800; font-size:0.95rem; display:flex; align-items:center; justify-content:center; box-shadow:0 0 10px rgba(236,72,153,0.6); border:2px solid #ec4899;">
+                    <div style="width:34px; height:34px; border-radius:50%; background:${bonusBg}; color:${bonusColor}; font-weight:900; font-size:0.95rem; display:flex; align-items:center; justify-content:center; box-shadow:0 0 10px rgba(236,72,153,0.6); border:2px solid #ec4899;">
                         ${drawData.bonus}
                     </div>
                     <span style="position:absolute; bottom:-14px; left:50%; transform:translateX(-50%); font-size:0.65rem; color:#f472b6; font-weight:bold; white-space:nowrap;">보너스</span>
@@ -725,7 +727,8 @@ export function initPolygonMap() {
             if (numbersEl) {
                 numbersEl.innerHTML = picked.map(n => {
                     const ballColor = getBallColor(n);
-                    return `<div style="width:44px; height:44px; border-radius:50%; background:${ballColor}; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.05rem; color:#fff; box-shadow:0 4px 10px rgba(0,0,0,0.35); border:1.5px solid rgba(255,255,255,0.4);">${n}</div>`;
+                    const textColor = n <= 10 ? '#0f172a' : '#fff';
+                    return `<div style="width:44px; height:44px; border-radius:50%; background:${ballColor}; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:1.05rem; color:${textColor}; box-shadow:0 4px 10px rgba(0,0,0,0.35); border:1.5px solid rgba(255,255,255,0.4);">${n}</div>`;
                 }).join('');
             }
 

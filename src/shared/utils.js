@@ -110,6 +110,11 @@ export function getBallHexColor(num) {
     return '#10b981';
 }
 
+export function getBallTextColor(num) {
+    const n = parseInt(num, 10);
+    return (n <= 10) ? '#0f172a' : '#ffffff';
+}
+
 export function getNeighborMatches(numbers, PREVIOUS_DRAW) {
     const prevSet = new Set(PREVIOUS_DRAW);
     const neighbors = new Set();

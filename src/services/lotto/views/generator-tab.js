@@ -1688,7 +1688,7 @@ export function renderExtraAddonPacksSection() {
                     <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap;">
                         <span style="font-size: 0.78rem; font-weight: 800; color: ${pack.color}; min-width: 52px; font-family: monospace;">게임 ${(cIdx + 1).toString().padStart(2, ' ')}</span>
                         <div class="balls-row" style="display: inline-flex; gap: 5px; flex-shrink: 0; flex-wrap: nowrap;">
-                            ${nums.map(n => `<span class="lotto-ball ${getBallColorClass(n)}" style="width: 28px; height: 28px; line-height: 28px; font-size: 0.78rem; text-align: center; border-radius: 50%; font-weight: 700; color: #fff; background: ${getBallHexColor(n)}; flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`).join('')}
+                            ${nums.map(n => `<span class="lotto-ball ${getBallColorClass(n)}" style="width: 28px; height: 28px; line-height: 28px; font-size: 0.78rem; text-align: center; border-radius: 50%; font-weight: 900; color: ${n <= 10 ? '#0f172a' : '#ffffff'}; background: ${getBallHexColor(n)}; flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`).join('')}
                         </div>
                         <div style="min-width: 56px; flex-shrink: 0;">
                             ${purchasedTag}

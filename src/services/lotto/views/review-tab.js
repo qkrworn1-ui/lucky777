@@ -2709,9 +2709,11 @@ export function renderAdmin1235ReviewModalContent() {
         roundSummaries.forEach(rs => {
             const ballHtml = rs.winningBalls.map(n => {
                 const hex = getBallHexColor(n);
-                return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${hex}; color:#fff; font-weight:800; font-size:0.72rem; box-shadow:0 1px 4px rgba(0,0,0,0.4);">${n}</span>`;
+                const textColor = n <= 10 ? '#0f172a' : '#fff';
+                return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${hex}; color:${textColor}; font-weight:900; font-size:0.72rem; box-shadow:0 1px 4px rgba(0,0,0,0.4);">${n}</span>`;
             }).join('');
-            const bonusHtml = rs.bonusBall ? `<span style="font-size:0.7rem; color:#94a3b8; margin:0 2px;">+</span><span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${getBallHexColor(rs.bonusBall)}; color:#fff; font-weight:800; font-size:0.72rem; border:1.5px solid #fbbf24;">${rs.bonusBall}</span>` : '';
+            const bonusColor = rs.bonusBall && rs.bonusBall <= 10 ? '#0f172a' : '#fff';
+            const bonusHtml = rs.bonusBall ? `<span style="font-size:0.7rem; color:#94a3b8; margin:0 2px;">+</span><span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${getBallHexColor(rs.bonusBall)}; color:${bonusColor}; font-weight:900; font-size:0.72rem; border:1.5px solid #fbbf24;">${rs.bonusBall}</span>` : '';
 
             html += `
                 <div onclick="window.selectAdmin1235ModalSpecificRound(${rs.roundNum})" style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 6px rgba(0,0,0,0.25);" onmouseover="this.style.borderColor='#f59e0b'" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'">
@@ -2765,9 +2767,11 @@ export function renderAdmin1235ReviewModalContent() {
         // Header Draw Card
         const ballHtml = winningBalls.map(n => {
             const hex = getBallHexColor(n);
-            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:${hex}; color:#fff; font-weight:900; font-size:0.8rem; box-shadow:0 2px 6px rgba(0,0,0,0.5);">${n}</span>`;
+            const textColor = n <= 10 ? '#0f172a' : '#fff';
+            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:${hex}; color:${textColor}; font-weight:900; font-size:0.8rem; box-shadow:0 2px 6px rgba(0,0,0,0.5);">${n}</span>`;
         }).join('');
-        const bonusHtml = bonusBall ? `<span style="font-size:0.8rem; color:#94a3b8; margin:0 2px;">+</span><span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:${getBallHexColor(bonusBall)}; color:#fff; font-weight:900; font-size:0.8rem; border:2px solid #fbbf24; box-shadow:0 2px 6px rgba(0,0,0,0.5);">${bonusBall}</span>` : '';
+        const bonusColor = bonusBall && bonusBall <= 10 ? '#0f172a' : '#fff';
+        const bonusHtml = bonusBall ? `<span style="font-size:0.8rem; color:#94a3b8; margin:0 2px;">+</span><span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; background:${getBallHexColor(bonusBall)}; color:${bonusColor}; font-weight:900; font-size:0.8rem; border:2px solid #fbbf24; box-shadow:0 2px 6px rgba(0,0,0,0.5);">${bonusBall}</span>` : '';
 
         if (userVal === 'all') {
             // === ALL USERS AGGREGATION FOR SINGLE ROUND ===
@@ -2996,11 +3000,12 @@ export function renderAdmin1235ReviewModalContent() {
                         const isHit = winningSet.has(num);
                         const isBonusHit = (num === bonusBall);
                         const hex = getBallHexColor(num);
+                        const textColor = num <= 10 ? '#0f172a' : '#fff';
 
                         if (isHit) {
-                            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${hex}; color:#fff; font-weight:900; font-size:0.72rem; box-shadow:0 0 6px ${hex}; border:1.5px solid #fff;">${num}</span>`;
+                            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${hex}; color:${textColor}; font-weight:900; font-size:0.72rem; box-shadow:0 0 6px ${hex}; border:1.5px solid #fff;">${num}</span>`;
                         } else if (isBonusHit) {
-                            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${hex}; color:#fff; font-weight:900; font-size:0.72rem; border:1.5px solid #fbbf24;">${num}</span>`;
+                            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${hex}; color:${textColor}; font-weight:900; font-size:0.72rem; border:1.5px solid #fbbf24;">${num}</span>`;
                         } else {
                             return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.06); color:#64748b; font-weight:700; font-size:0.72rem; border:1px solid rgba(255,255,255,0.08);">${num}</span>`;
                         }

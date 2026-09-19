@@ -218,7 +218,8 @@ export function renderQuickViewContent() {
         const nums = getComboNumbers(combo);
         const ballsHtml = nums.map(n => {
             const bgColor = getBallHexColor(n);
-            return `<span class="lotto-ball sm-ball" style="background: ${bgColor}; width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; color: #fff; font-size: 0.78rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.35); flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
+            const textColor = n <= 10 ? '#0f172a' : '#ffffff';
+            return `<span class="lotto-ball sm-ball ${getBallColorClass(n)}" style="background: ${bgColor}; width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; color: ${textColor}; font-size: 0.78rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.35); flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
         }).join('');
 
         gridHtml += `

@@ -586,9 +586,9 @@ export async function renderConfirmedPurchasesList() {
                 <div class="confirmed-round-summary-row" style="font-size: 0.82rem; color: var(--text-secondary); margin: 0; display:inline-flex; align-items:center; gap: 6px; flex-wrap: wrap;">
                     <span style="white-space: nowrap; font-weight: 700;">당첨번호:</span>
                     <div style="display:inline-flex; align-items:center; gap: 3px; flex-wrap: wrap;">
-                        ${actualDraw.numbers.map(n => `<span style="background:${getColor(n)}; width:18px; height:18px; line-height:18px; font-size:0.7rem; border-radius:50%; text-align:center; color:#fff; font-weight:bold; display:inline-block;">${n}</span>`).join('')}
+                        ${actualDraw.numbers.map(n => `<span style="background:${getColor(n)}; width:18px; height:18px; line-height:18px; font-size:0.7rem; border-radius:50%; text-align:center; color:${n <= 10 ? '#0f172a' : '#fff'}; font-weight:900; display:inline-block;">${n}</span>`).join('')}
                         <span style="font-weight:bold; font-size:0.75rem; margin:0 2px;">+</span>
-                        <span style="background:${getColor(actualDraw.bonus)}; width:18px; height:18px; line-height:18px; font-size:0.7rem; border-radius:50%; text-align:center; color:#fff; font-weight:bold; display:inline-block;">${actualDraw.bonus}</span>
+                        <span style="background:${getColor(actualDraw.bonus)}; width:18px; height:18px; line-height:18px; font-size:0.7rem; border-radius:50%; text-align:center; color:${actualDraw.bonus <= 10 ? '#0f172a' : '#fff'}; font-weight:900; display:inline-block;">${actualDraw.bonus}</span>
                     </div>
                 </div>
             `;
@@ -944,7 +944,8 @@ export async function renderConfirmedPurchasesList() {
                                     if (actualDraw) {
                                         extraStyle = isHit ? 'border: 2.5px solid #fbbf24; font-weight: 900; box-shadow: 0 0 8px rgba(251,191,36,0.8);' : (isBonusHit ? 'border: 2.5px solid #f87171; font-weight: 900; box-shadow: 0 0 8px rgba(248,113,113,0.8);' : (hasWonReceipt && !isRowWon ? 'opacity: 0.35;' : 'opacity: 0.55;'));
                                     }
-                                    return `<span class="lotto-ball-mini" style="background: ${ballBg}; ${extraStyle} width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; font-size: 0.68rem; color: #fff; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
+                                    const ballTextColor = (n <= 10) ? '#0f172a' : '#ffffff';
+                                    return `<span class="lotto-ball-mini ${n <= 10 ? 'ball-yellow' : ''}" style="background: ${ballBg}; ${extraStyle} width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; font-size: 0.68rem; color: ${ballTextColor}; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
                                 }).join('')}
                             </div>
                             <div class="confirmed-ai-tag" style="flex-shrink: 0; white-space: nowrap;">
@@ -1484,7 +1485,8 @@ export function renderWinningHistoryModal() {
 
     const getBallBadge = (n) => {
         const bg = getBallHexColor(n);
-        return `<span style="background: ${bg}; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; color: #fff; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">${n}</span>`;
+        const textColor = n <= 10 ? '#0f172a' : '#fff';
+        return `<span style="background: ${bg}; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; color: ${textColor}; font-size: 0.72rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">${n}</span>`;
     };
 
     if (rounds.length === 0) {
@@ -1656,7 +1658,8 @@ export function renderWinningHistoryModal() {
                                                     let borderStyle = 'opacity: 0.45;';
                                                     if (isHit) borderStyle = 'border: 2px solid #fbbf24; font-weight: 800; transform: scale(1.05); box-shadow: 0 0 6px rgba(251,191,36,0.6);';
                                                     else if (isBonusHit) borderStyle = 'border: 2px solid #69c8f2; font-weight: 800; transform: scale(1.05); box-shadow: 0 0 6px rgba(105,200,242,0.6);';
-                                                    return `<span style="background: ${ballBg}; ${borderStyle} width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; font-size: 0.7rem; color: #fff; display: inline-block;">${n}</span>`;
+                                                    const textColor = n <= 10 ? '#0f172a' : '#fff';
+                                                    return `<span style="background: ${ballBg}; ${borderStyle} width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; font-size: 0.7rem; color: ${textColor}; font-weight: 900; display: inline-block;">${n}</span>`;
                                                 }).join('')}
                                             </div>
                                         </div>
@@ -1828,7 +1831,7 @@ export function renderReceiptTrashModalContent() {
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 0.74rem;">
                     <span style="min-width: 20px; font-weight: 800; color: #94a3b8; font-family: monospace;">${letter}</span>
                     <div style="display: inline-flex; gap: 4px;">
-                        ${Array.isArray(nums) ? nums.map(n => `<span style="background:${getColor(n)}; width:20px; height:20px; line-height:20px; border-radius:50%; font-size:0.68rem; font-weight:bold; color:#fff; text-align:center; display:inline-block;">${n}</span>`).join('') : ''}
+                        ${Array.isArray(nums) ? nums.map(n => `<span style="background:${getColor(n)}; width:20px; height:20px; line-height:20px; border-radius:50%; font-size:0.68rem; font-weight:900; color:${n <= 10 ? '#0f172a' : '#fff'}; text-align:center; display:inline-block;">${n}</span>`).join('') : ''}
                     </div>
                 </div>
             `;

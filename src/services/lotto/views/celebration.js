@@ -309,8 +309,9 @@ export function showCelebrationOverlay(celebrationData) {
                 extraStyle = 'opacity: 0.45; filter: grayscale(40%);';
             }
 
+            const textColor = num <= 10 ? '#0f172a' : '#fff';
             return `<div style="position:relative;display:flex;flex-direction:column;align-items:center;">` +
-                `<div style="width:34px;height:34px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;color:#fff;${extraStyle}">` +
+                `<div style="width:34px;height:34px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;color:${textColor};${extraStyle}">` +
                     `${num}` +
                 `</div>` +
                 `${label}` +

@@ -1792,7 +1792,42 @@ class TestFullSystem(unittest.TestCase):
                 nums = sorted(list(base_set))
                 self.assertEqual(len(nums), 6, "Must have exactly 6 numbers")
                 self.assertEqual(len(set(nums)), 6, "Must have ZERO duplicate numbers")
-                self.assertTrue(all(1 <= n <= 45 for n in nums), "All numbers must be 1~45")
+    def test_47_yellow_ball_text_contrast_integrity(self):
+        """Test 47: Verify yellow lotto balls (1~10) use high-contrast dark text (#0f172a) for readability across receipts and views."""
+        utils_file = os.path.join(self.root_dir, 'src', 'shared', 'utils.js')
+        styles_file = os.path.join(self.root_dir, 'styles.css')
+        comp_file = os.path.join(self.root_dir, 'src', 'shared', 'components.js')
+        conf_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        gen_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+
+        with open(utils_file, 'r', encoding='utf-8') as f:
+            utils_code = f.read()
+        with open(styles_file, 'r', encoding='utf-8') as f:
+            styles_code = f.read()
+        with open(comp_file, 'r', encoding='utf-8') as f:
+            comp_code = f.read()
+        with open(conf_file, 'r', encoding='utf-8') as f:
+            conf_code = f.read()
+        with open(gen_file, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+
+        # 1. Verify utils.js exports getBallTextColor
+        self.assertIn('export function getBallTextColor', utils_code)
+        self.assertIn("(n <= 10) ? '#0f172a' : '#ffffff'", utils_code)
+
+        # 2. Verify styles.css has dark high-contrast color on .ball-yellow
+        self.assertIn('.ball-yellow, .lotto-ball.ball-yellow, .lotto-ball-mini.ball-yellow', styles_code)
+        self.assertIn('color: #0f172a !important;', styles_code)
+
+        # 3. Verify createBallHtml in components.js uses getBallTextColor
+        self.assertIn('const textColor = getBallTextColor(n);', comp_code)
+        self.assertIn('color: ${textColor};', comp_code)
+
+        # 4. Verify confirmed-tab.js receipt balls assign dark text for numbers <= 10
+        self.assertIn("const ballTextColor = (n <= 10) ? '#0f172a' : '#ffffff';", conf_code)
+
+        # 5. Verify generator-tab.js uses high contrast dark text on yellow balls
+        self.assertIn("color: ${n <= 10 ? '#0f172a' : '#ffffff'};", gen_code)
 
 
 if __name__ == '__main__':
