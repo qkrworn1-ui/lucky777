@@ -1691,6 +1691,45 @@ class TestFullSystem(unittest.TestCase):
         should_scroll = (len(user_map) >= 3)
         self.assertFalse(should_scroll, "Single winning member must display statically without scrolling marquee bloat")
 
+    def test_43_admin_permanent_member_purchase_exemption(self):
+        """Verify that all admin accounts are recognized as permanent members with full purchase exemption."""
+        auth_file = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        with open(auth_file, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+
+        user_ctx_file = os.path.join(self.root_dir, 'src', 'shared', 'user-context.js')
+        with open(user_ctx_file, 'r', encoding='utf-8') as f:
+            user_ctx_code = f.read()
+
+        # 1. Verify isAdminUser and isPermanentUser cross-reference in auth-mgmt.js
+        self.assertIn("if (isAdminUser(authId, userData)) return true;", auth_code)
+        self.assertIn("if (isAdminUser(userId, userDocData) || isPermanentUser(userId, userDocData))", auth_code)
+        self.assertIn("if (isAdminUser(userId, userData) || isPermanentUser(userId, userData))", auth_code)
+
+        # 2. Verify all unified users ensure isPermanent=true for admins
+        self.assertIn("u.isPermanent = true;", user_ctx_code)
+        self.assertIn("u.userType = 'permanent';", user_ctx_code)
+
+    def test_44_user_switch_and_prediction_report_integrity(self):
+        """Test: Verify prediction-report.js imports and polymorphic extra pack helpers to prevent freeze on user switch."""
+        pred_report_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'prediction-report.js')
+        gen_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        
+        with open(pred_report_file, 'r', encoding='utf-8') as f:
+            pred_code = f.read()
+        with open(gen_tab_file, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+
+        # 1. Verify prediction-report imports getEffectiveUserExtraPacks from generator-tab.js
+        self.assertIn("import { compute7AlgorithmsRealStats, getEffectiveUserExtraPacks } from './generator-tab.js';", pred_code)
+        self.assertIn("getEffectiveUserExtraPacks(targetCombosUser, curUpcomingRound)", pred_code)
+
+        # 2. Verify generator-tab.js exports polymorphic getEffectiveUserExtraPacks & getUserActiveExtraPackIds
+        self.assertIn("export function getUserActiveExtraPackIds(userId, round)", gen_tab_code)
+        self.assertIn("export function getEffectiveUserExtraPacks(userId, round)", gen_tab_code)
+        self.assertIn("typeof userId === 'number'", gen_tab_code)
+        self.assertIn("typeof round === 'number'", gen_tab_code)
+
 
 if __name__ == '__main__':
     unittest.main()

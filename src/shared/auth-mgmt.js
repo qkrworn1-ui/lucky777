@@ -272,8 +272,31 @@ export async function checkUserWeeklyPurchaseStatus(userId, userDocData = null) 
     const upcomingRound = getUpcomingLottoRound();
     const latestRound = getLatestDrawnRound();
 
-    if (!userId || userId === 'master' || userId === 'admin') {
-        return { isExempt: true, isPermanent: true, hasPurchased: true, targetRound: upcomingRound, message: '관리자/마스터 계정 (면제)' };
+    if (!userId) {
+        return { isExempt: true, isPermanent: true, hasPurchased: true, targetRound: upcomingRound, targetRoundGameCount: 999, message: '마스터 계정 (면제)' };
+    }
+
+    const cleanId = String(userId).trim().toLowerCase();
+    if (cleanId === 'master' || cleanId === 'admin') {
+        return { isExempt: true, isPermanent: true, hasPurchased: true, targetRound: upcomingRound, targetRoundGameCount: 999, message: '관리자/마스터 계정 (면제)' };
+    }
+
+    // 👑 1. Fast Admin & Permanent Exemption Check (관리자 및 영구회원 즉시 면제 처리)
+    if (isAdminUser(userId, userDocData) || isPermanentUser(userId, userDocData)) {
+        setIsPermanentCache(userId, true);
+        if (isAdminUser(userId, userDocData)) setIsAdminCache(userId, true);
+        return {
+            isPermanent: true,
+            isExempt: true,
+            hasPurchased: true,
+            targetRound: upcomingRound,
+            targetRoundGameCount: 999,
+            lastPurchasedRound: 0,
+            isSuspended: false,
+            status: userDocData ? (userDocData.status === 'suspended' ? 'suspended' : 'active') : 'active',
+            suspensionReason: userDocData ? userDocData.suspensionReason : '',
+            message: isAdminUser(userId, userDocData) ? '👑 관리자 계정 (실구매 등록 및 이용 전면 면제)' : '💎 영구 사용 회원 (실구매 의무 평생 면제)'
+        };
     }
 
     const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
@@ -284,6 +307,24 @@ export async function checkUserWeeklyPurchaseStatus(userId, userDocData = null) 
             const uDoc = await firestore.collection('lotto_users').doc(userId).get();
             if (uDoc.exists) userData = uDoc.data();
         } catch(e) { console.error('[checkUserWeeklyPurchaseStatus Error]', e); }
+    }
+
+    // 👑 2. Re-check with freshly fetched userData from Firestore
+    if (isAdminUser(userId, userData) || isPermanentUser(userId, userData)) {
+        setIsPermanentCache(userId, true);
+        if (isAdminUser(userId, userData)) setIsAdminCache(userId, true);
+        return {
+            isPermanent: true,
+            isExempt: true,
+            hasPurchased: true,
+            targetRound: upcomingRound,
+            targetRoundGameCount: 999,
+            lastPurchasedRound: 0,
+            isSuspended: false,
+            status: userData ? (userData.status === 'suspended' ? 'suspended' : 'active') : 'active',
+            suspensionReason: userData ? userData.suspensionReason : '',
+            message: isAdminUser(userId, userData) ? '👑 관리자 계정 (실구매 등록 및 이용 전면 면제)' : '💎 영구 사용 회원 (실구매 의무 평생 면제)'
+        };
     }
 
     // 💎 Permanent Lifetime User Check (영구 사용 회원 권한 확인 - 실구매 등록 의무 완전 면제)
@@ -393,6 +434,14 @@ export function isAdminUser(authId, userData = null) {
             const lRole = window.localStorage.getItem(`role_${cleanId}`);
             if (lRole === 'admin') return true;
         } catch(e) {}
+    }
+    if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+        const u = window.state.allRegisteredUsersList.find(item => item && item.id && String(item.id).toLowerCase().trim() === cleanId);
+        if (u && (u.isAdmin === true || u.role === 'admin' || u.userType === 'admin')) return true;
+    }
+    if (typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) {
+        const found = DEFAULT_KNOWN_USERS.find(item => item && item.id && String(item.id).toLowerCase().trim() === cleanId);
+        if (found && (found.isAdmin === true || found.role === 'admin' || found.userType === 'admin')) return true;
     }
     return false;
 }
@@ -505,9 +554,10 @@ export function getUserRealName(authId, userData = null) {
 
 export function isPermanentUser(authId, userData = null) {
     if (!authId) return false;
-    const cleanId = authId.toLowerCase().trim();
+    const cleanId = String(authId).trim().toLowerCase();
     if (cleanId === 'master' || cleanId === 'admin') return true;
-    if (userData && (userData.isPermanent === true || userData.isPermanent === 'true' || userData.userType === 'permanent')) return true;
+    if (isAdminUser(authId, userData)) return true;
+    if (userData && (userData.isPermanent === true || userData.isPermanent === 'true' || userData.userType === 'permanent' || userData.isAdmin === true || userData.role === 'admin' || userData.userType === 'admin')) return true;
     
     // Check in-memory fast cache
     if (typeof window !== 'undefined' && window.__permUsers && window.__permUsers[cleanId] !== undefined) {
@@ -522,8 +572,13 @@ export function isPermanentUser(authId, userData = null) {
 
     // Check state registered users list
     if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
-        const u = window.state.allRegisteredUsersList.find(item => item && item.id && item.id.toLowerCase().trim() === cleanId);
-        if (u && (u.isPermanent === true || u.isPermanent === 'true' || u.userType === 'permanent')) return true;
+        const u = window.state.allRegisteredUsersList.find(item => item && item.id && String(item.id).toLowerCase().trim() === cleanId);
+        if (u && (u.isPermanent === true || u.isPermanent === 'true' || u.userType === 'permanent' || u.isAdmin === true || u.role === 'admin' || u.userType === 'admin')) return true;
+    }
+
+    if (typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) {
+        const found = DEFAULT_KNOWN_USERS.find(item => item && item.id && String(item.id).toLowerCase().trim() === cleanId);
+        if (found && (found.isPermanent === true || found.isPermanent === 'true' || found.userType === 'permanent' || found.isAdmin === true || found.role === 'admin' || found.userType === 'admin')) return true;
     }
 
     return false;
@@ -711,14 +766,16 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                 try {
                     const userDoc = await window.db.collection('lotto_users').doc(authId).get();
                     if (userDoc.exists) {
-                        const uData = userDoc.data();
                         let freshAdmin = isUserAdmin;
-                        if (uData.isAdmin === true || uData.role === 'admin') {
+                        if (uData.isAdmin === true || uData.role === 'admin' || uData.userType === 'admin') {
                             freshAdmin = true;
                             setIsAdminCache(authId, true);
                         }
-                        const isPerm = freshAdmin || !!(uData.isPermanent === true || uData.userType === 'permanent');
+                        const isPerm = freshAdmin || isPermanentUser(authId, uData) || !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent');
                         setIsPermanentCache(authId, isPerm);
+                        if (freshAdmin) {
+                            setIsAdminCache(authId, true);
+                        }
                         if (uData.realName) {
                             setUserNameCache(authId, uData.realName);
                         }
@@ -726,9 +783,19 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                             setUserCreatedCache(authId, uData.createdAt || uData.agreementDoc.createdAt);
                         }
                         setUserPermissionsCache(authId, {
-                            allowLotto: freshAdmin || uData.allowLotto !== false,
-                            allowToto: freshAdmin || uData.allowToto !== false
+                            allowLotto: freshAdmin || isPerm || uData.allowLotto !== false,
+                            allowToto: freshAdmin || isPerm || uData.allowToto !== false
                         });
+
+                        window.__currentUser = {
+                            userId: authId,
+                            realName: uData.realName || authId,
+                            role: freshAdmin ? 'admin' : (isPerm ? 'permanent' : (uData.role || 'user')),
+                            isAdmin: freshAdmin,
+                            isPermanent: isPerm,
+                            createdAt: uData.createdAt || null,
+                            authProvider: uData.authProvider || 'password'
+                        };
 
                         if (freshAdmin !== isUserAdmin) {
                             if (freshAdmin) {
@@ -742,7 +809,7 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                             }
                         }
 
-                        if (!freshAdmin) {
+                        if (!freshAdmin && !isPerm) {
                             const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
 
                             // Note: Non-purchased users are NOT suspended from logging in.

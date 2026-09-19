@@ -1322,8 +1322,36 @@ export function setupGeneratorTabEvents() {
  * Helper: Get active extra pack IDs for a specific user and round
  */
 export function getUserActiveExtraPackIds(userId, round) {
-    const effectiveUserId = (userId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest').toLowerCase().trim();
-    const curRound = round || (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240)));
+    let effectiveUserId = null;
+    let curRound = null;
+
+    if (typeof userId === 'number' || (typeof userId === 'string' && !isNaN(parseInt(userId, 10)) && !isNaN(Number(userId)))) {
+        curRound = parseInt(userId, 10);
+        effectiveUserId = round;
+    } else if (typeof round === 'number' || (typeof round === 'string' && !isNaN(parseInt(round, 10)) && !isNaN(Number(round)))) {
+        effectiveUserId = userId;
+        curRound = parseInt(round, 10);
+    } else {
+        effectiveUserId = userId;
+        curRound = round;
+    }
+
+    if (!effectiveUserId || typeof effectiveUserId !== 'string') {
+        effectiveUserId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest';
+        if (typeof effectiveUserId === 'string' && effectiveUserId.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(effectiveUserId);
+                effectiveUserId = parsed.userid || parsed.userId || effectiveUserId;
+            } catch(e) {}
+        }
+    }
+    effectiveUserId = String(effectiveUserId || 'guest').toLowerCase().trim();
+
+    if (!curRound || isNaN(curRound)) {
+        curRound = (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240)));
+    }
+    curRound = Number(curRound);
+
     const storageKey = `lotto_extra_pack_ids_${effectiveUserId}_${curRound}`;
     
     // 1. Check in-memory state
@@ -1351,8 +1379,36 @@ export function getUserActiveExtraPackIds(userId, round) {
  * ☁️ Cloud Sync: Fetch user's active extra packs from Firestore across all devices
  */
 export async function syncUserActiveExtraPacksFromCloud(userId, round) {
-    const effectiveUserId = (userId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest').toLowerCase().trim();
-    const curRound = round || (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240)));
+    let effectiveUserId = null;
+    let curRound = null;
+
+    if (typeof userId === 'number' || (typeof userId === 'string' && !isNaN(parseInt(userId, 10)) && !isNaN(Number(userId)))) {
+        curRound = parseInt(userId, 10);
+        effectiveUserId = round;
+    } else if (typeof round === 'number' || (typeof round === 'string' && !isNaN(parseInt(round, 10)) && !isNaN(Number(round)))) {
+        effectiveUserId = userId;
+        curRound = parseInt(round, 10);
+    } else {
+        effectiveUserId = userId;
+        curRound = round;
+    }
+
+    if (!effectiveUserId || typeof effectiveUserId !== 'string') {
+        effectiveUserId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest';
+        if (typeof effectiveUserId === 'string' && effectiveUserId.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(effectiveUserId);
+                effectiveUserId = parsed.userid || parsed.userId || effectiveUserId;
+            } catch(e) {}
+        }
+    }
+    effectiveUserId = String(effectiveUserId || 'guest').toLowerCase().trim();
+
+    if (!curRound || isNaN(curRound)) {
+        curRound = (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240)));
+    }
+    curRound = Number(curRound);
+
     const storageKey = `lotto_extra_pack_ids_${effectiveUserId}_${curRound}`;
     const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
 
@@ -1406,8 +1462,36 @@ export async function syncUserActiveExtraPacksFromCloud(userId, round) {
  * Helper: Save active extra pack IDs for a specific user and round to both Local and Cloud
  */
 export async function saveUserActiveExtraPackIds(userId, round, packIds) {
-    const effectiveUserId = (userId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest').toLowerCase().trim();
-    const curRound = round || (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240)));
+    let effectiveUserId = null;
+    let curRound = null;
+
+    if (typeof userId === 'number' || (typeof userId === 'string' && !isNaN(parseInt(userId, 10)) && !isNaN(Number(userId)))) {
+        curRound = parseInt(userId, 10);
+        effectiveUserId = round;
+    } else if (typeof round === 'number' || (typeof round === 'string' && !isNaN(parseInt(round, 10)) && !isNaN(Number(round)))) {
+        effectiveUserId = userId;
+        curRound = parseInt(round, 10);
+    } else {
+        effectiveUserId = userId;
+        curRound = round;
+    }
+
+    if (!effectiveUserId || typeof effectiveUserId !== 'string') {
+        effectiveUserId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest';
+        if (typeof effectiveUserId === 'string' && effectiveUserId.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(effectiveUserId);
+                effectiveUserId = parsed.userid || parsed.userId || effectiveUserId;
+            } catch(e) {}
+        }
+    }
+    effectiveUserId = String(effectiveUserId || 'guest').toLowerCase().trim();
+
+    if (!curRound || isNaN(curRound)) {
+        curRound = (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240)));
+    }
+    curRound = Number(curRound);
+
     const storageKey = `lotto_extra_pack_ids_${effectiveUserId}_${curRound}`;
     
     if (!state.userExtraPacksMap) state.userExtraPacksMap = {};
@@ -1452,10 +1536,37 @@ export async function saveUserActiveExtraPackIds(userId, round, packIds) {
  * Helper: Get full extra packs objects for a specific user and round
  */
 export function getEffectiveUserExtraPacks(userId, round) {
-    const effectiveUserId = (userId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest').toLowerCase().trim();
-    const curRound = round || (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240)));
+    let effectiveUserId = null;
+    let curRound = null;
+
+    if (typeof userId === 'number' || (typeof userId === 'string' && !isNaN(parseInt(userId, 10)) && !isNaN(Number(userId)))) {
+        curRound = parseInt(userId, 10);
+        effectiveUserId = round;
+    } else if (typeof round === 'number' || (typeof round === 'string' && !isNaN(parseInt(round, 10)) && !isNaN(Number(round)))) {
+        effectiveUserId = userId;
+        curRound = parseInt(round, 10);
+    } else {
+        effectiveUserId = userId;
+        curRound = round;
+    }
+
+    if (!effectiveUserId || typeof effectiveUserId !== 'string') {
+        effectiveUserId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest';
+        if (typeof effectiveUserId === 'string' && effectiveUserId.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(effectiveUserId);
+                effectiveUserId = parsed.userid || parsed.userId || effectiveUserId;
+            } catch(e) {}
+        }
+    }
+    effectiveUserId = String(effectiveUserId || 'guest').toLowerCase().trim();
+
+    if (!curRound || isNaN(curRound)) {
+        curRound = (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240)));
+    }
+    curRound = Number(curRound);
+
     const packIds = getUserActiveExtraPackIds(effectiveUserId, curRound);
-    
     return packIds.map(pId => generateExtraAddonPack(pId, curRound, effectiveUserId));
 }
 
@@ -1811,7 +1922,15 @@ export function changeGeneratorAdminViewingUser(userId) {
     renderTop5Combinations();
     renderExtraAddonPacksSection();
     render7AlgorithmsRealReviewSection();
-    if (typeof generatePredictionReport === 'function') generatePredictionReport();
+    // Prediction Report Modal update (if open or available)
+    const reportModal = document.getElementById('predictionReportModal');
+    if (reportModal && (reportModal.classList.contains('active') || reportModal.style.display === 'flex')) {
+        if (typeof generatePredictionReport === 'function') {
+            generatePredictionReport();
+        } else if (typeof window !== 'undefined' && typeof window.generatePredictionReport === 'function') {
+            window.generatePredictionReport();
+        }
+    }
     // If Quick View (간편보기) modal is currently open, dynamically refresh its content
     if (typeof window !== 'undefined' && typeof window.renderQuickViewContent === 'function') {
         const compactModal = document.getElementById('compactViewModal');

@@ -867,8 +867,12 @@ export function changeAlgoAdminViewingUser(userId) {
         window.reviewAdminViewingUser = userId;
     }
     renderAlgorithmsTab();
-    if (typeof render7AlgorithmsRealReviewSection === 'function') render7AlgorithmsRealReviewSection();
-    if (typeof generatePredictionReport === 'function') generatePredictionReport();
+    const reportModal = document.getElementById('predictionReportModal');
+    if (reportModal && (reportModal.classList.contains('active') || reportModal.style.display === 'flex')) {
+        if (typeof window !== 'undefined' && typeof window.generatePredictionReport === 'function') {
+            window.generatePredictionReport();
+        }
+    }
     showToast(userId === 'all' ? '🌐 전체 회원 7대 알고리즘 추천 결과 종합으로 전환되었습니다.' : `👑 [${userId}] 회원의 7대 알고리즘 추천 조합으로 전환되었습니다.`);
 }
 

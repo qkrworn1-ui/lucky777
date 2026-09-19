@@ -1,8 +1,8 @@
 import { state } from '../state.js';
 import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgmt.js';
 import { getBallColorClass, calculateACValue } from '../../../shared/utils.js';
-import { compute7AlgorithmsRealStats } from './generator-tab.js';
-import { computeAbsoluteTop10Combinations, getEffectiveUserExtraPacks } from '../generator.js';
+import { compute7AlgorithmsRealStats, getEffectiveUserExtraPacks } from './generator-tab.js';
+import { computeAbsoluteTop10Combinations } from '../generator.js';
 
 let reportFreqChartInstance = null;
 let reportBalanceChartInstance = null;
@@ -86,7 +86,7 @@ export function generatePredictionReport() {
     let extraPacks = [];
     try {
         if (typeof getEffectiveUserExtraPacks === 'function') {
-            extraPacks = getEffectiveUserExtraPacks(curUpcomingRound, targetCombosUser) || [];
+            extraPacks = getEffectiveUserExtraPacks(targetCombosUser, curUpcomingRound) || [];
         } else if (Array.isArray(state.extraPacks)) {
             extraPacks = state.extraPacks;
         }

@@ -1,9 +1,16 @@
 {
-  "version": "v2026.09.19.1326",
+  "version": "v2026.09.19.1319",
   "buildDate": "2026-09-19",
-  "description": "Fix user switch freeze and clarify dual admin-permanent permission architecture",
-  "buildTimestamp": "2026-09-19T13:26:02.978949",
+  "description": "Ensure all admin accounts are permanently exempt from weekly purchase requirements and granted permanent membership",
+  "buildTimestamp": "2026-09-19T13:19:08.613897",
   "buildHistory": [
+    {
+      "version": "v2026.09.16.1443",
+      "buildDate": "2026-09-16",
+      "buildTime": "14:43",
+      "buildTimestamp": "2026-09-16T14:43:17.522319",
+      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
+    },
     {
       "version": "v2026.09.16.1621",
       "buildDate": "2026-09-16",
@@ -346,14 +353,7 @@
       "buildTime": "13:19",
       "buildTimestamp": "2026-09-19T13:19:08.613897",
       "description": "Ensure all admin accounts are permanently exempt from weekly purchase requirements and granted permanent membership"
-    },
-    {
-      "version": "v2026.09.19.1326",
-      "buildDate": "2026-09-19",
-      "buildTime": "13:26",
-      "buildTimestamp": "2026-09-19T13:26:02.978949",
-      "description": "Fix user switch freeze and clarify dual admin-permanent permission architecture"
     }
   ],
-  "buildTime": "13:26"
+  "buildTime": "13:19"
 }

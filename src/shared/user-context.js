@@ -346,6 +346,16 @@ export const UserContextManager = {
             return true;
         });
 
+        // Ensure all admin users have permanent membership and purchase exemption privileges
+        unifiedList.forEach(u => {
+            const cleanId = String(u.id).trim().toLowerCase();
+            if (u.isAdmin || u.role === 'admin' || cleanId === 'master' || cleanId === 'admin') {
+                u.isAdmin = true;
+                u.isPermanent = true;
+                u.userType = 'permanent';
+            }
+        });
+
         // 7. Update in-memory state and localStorage cache if list has elements
         if (unifiedList.length > 0 && typeof window !== 'undefined' && window.state) {
             window.state.allRegisteredUsersList = unifiedList;
