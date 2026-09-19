@@ -137,13 +137,44 @@ export function getUserConfirmedGameCountForRound(userId = null, targetRound = n
 /**
  * 실구매 인증 완료 회원 여부 판별 (추가 5팩 및 7대 퀀트 알고리즘 이용 권한)
  * - 특정 회차(기본: 이번 주 다가오는 회차)에 본인 명의 5게임 이상 실구매 영수증(QR) 등록 시 true
- * - 마스터/관리자 계정도 실구매 QR 등록 전에는 해당 회차 실구매 미등록으로 정확히 판별
+ * - 👑 관리자가 조회 중이거나, 대상 회원이 마스터/관리자/영구회원인 경우 실구매 등록 영구 면제 (상시 true)
  * @param {string|null} userId 
  * @param {number|string|null} targetRound 
  * @returns {boolean}
  */
 export function isUserEligibleForExtraPacks(userId = null, targetRound = null) {
-    const gameCount = getUserConfirmedGameCountForRound(userId, targetRound);
+    let viewerAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    if (typeof viewerAuthId === 'string' && viewerAuthId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(viewerAuthId);
+            viewerAuthId = parsed.userid || parsed.userId || viewerAuthId;
+        } catch(e) {}
+    }
+    const cleanViewer = String(viewerAuthId).trim().toLowerCase();
+
+    // 👑 1. 관리자가 시스템을 이용 중이거나 다른 회원을 조회할 때는 관리자 권한으로 항상 100% 면제(true)
+    if (cleanViewer === 'master' || cleanViewer === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanViewer))) {
+        return true;
+    }
+
+    let targetUser = userId || viewerAuthId;
+    if (typeof targetUser === 'string' && targetUser.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(targetUser);
+            targetUser = parsed.userid || parsed.userId || targetUser;
+        } catch(e) {}
+    }
+    const cleanTarget = String(targetUser).trim().toLowerCase();
+
+    // 💎 2. 대상 회원 자체가 마스터, 관리자, 영구회원인 경우 항상 100% 면제(true)
+    if (cleanTarget === 'master' || cleanTarget === 'admin' ||
+        (typeof isAdminUser === 'function' && isAdminUser(cleanTarget)) ||
+        (typeof isPermanentUser === 'function' && isPermanentUser(cleanTarget))) {
+        return true;
+    }
+
+    // 3. 일반 회원의 경우 해당 회차 실구매 5게임 이상 등록 여부 검사
+    const gameCount = getUserConfirmedGameCountForRound(cleanTarget, targetRound);
     return gameCount >= 5;
 }
 

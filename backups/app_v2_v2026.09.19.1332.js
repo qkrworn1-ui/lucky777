@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.19.1335 - BUILD_DATE: 2026-09-19] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.19.1332 - BUILD_DATE: 2026-09-19] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.19.1335)
+ * Lucky777 Smart Bundle (v2026.09.19.1332)
  */
 
 
@@ -7334,44 +7334,29 @@ function getUserConfirmedGameCountForRound(userId = null, targetRound = null) {
 /**
  * 실구매 인증 완료 회원 여부 판별 (추가 5팩 및 7대 퀀트 알고리즘 이용 권한)
  * - 특정 회차(기본: 이번 주 다가오는 회차)에 본인 명의 5게임 이상 실구매 영수증(QR) 등록 시 true
- * - 👑 관리자가 조회 중이거나, 대상 회원이 마스터/관리자/영구회원인 경우 실구매 등록 영구 면제 (상시 true)
+ * - 👑 마스터, 관리자 및 💎 영구 회원은 실구매 등록 영구 면제 (상시 true)
  * @param {string|null} userId 
  * @param {number|string|null} targetRound 
  * @returns {boolean}
  */
 function isUserEligibleForExtraPacks(userId = null, targetRound = null) {
-    let viewerAuthId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    if (typeof viewerAuthId === 'string' && viewerAuthId.startsWith('{')) {
+    let authId = (userId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest');
+    if (typeof authId === 'string' && authId.startsWith('{')) {
         try {
-            const parsed = JSON.parse(viewerAuthId);
-            viewerAuthId = parsed.userid || parsed.userId || viewerAuthId;
+            const parsed = JSON.parse(authId);
+            authId = parsed.userid || parsed.userId || authId;
         } catch(e) {}
     }
-    const cleanViewer = String(viewerAuthId).trim().toLowerCase();
+    const cleanAuthId = String(authId).trim().toLowerCase();
 
-    // 👑 1. 관리자가 시스템을 이용 중이거나 다른 회원을 조회할 때는 관리자 권한으로 항상 100% 면제(true)
-    if (cleanViewer === 'master' || cleanViewer === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanViewer))) {
+    // 👑 1. 마스터, 관리자, 영구회원은 실구매 등록 영구 면제 (추가 5팩 상시 해제)
+    if (cleanAuthId === 'master' || cleanAuthId === 'admin' ||
+        (typeof isAdminUser === 'function' && isAdminUser(cleanAuthId)) ||
+        (typeof isPermanentUser === 'function' && isPermanentUser(cleanAuthId))) {
         return true;
     }
 
-    let targetUser = userId || viewerAuthId;
-    if (typeof targetUser === 'string' && targetUser.startsWith('{')) {
-        try {
-            const parsed = JSON.parse(targetUser);
-            targetUser = parsed.userid || parsed.userId || targetUser;
-        } catch(e) {}
-    }
-    const cleanTarget = String(targetUser).trim().toLowerCase();
-
-    // 💎 2. 대상 회원 자체가 마스터, 관리자, 영구회원인 경우 항상 100% 면제(true)
-    if (cleanTarget === 'master' || cleanTarget === 'admin' ||
-        (typeof isAdminUser === 'function' && isAdminUser(cleanTarget)) ||
-        (typeof isPermanentUser === 'function' && isPermanentUser(cleanTarget))) {
-        return true;
-    }
-
-    // 3. 일반 회원의 경우 해당 회차 실구매 5게임 이상 등록 여부 검사
-    const gameCount = getUserConfirmedGameCountForRound(cleanTarget, targetRound);
+    const gameCount = getUserConfirmedGameCountForRound(cleanAuthId, targetRound);
     return gameCount >= 5;
 }
 
@@ -19276,11 +19261,9 @@ function updateTop7AlgoUI() {
             : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
         const cleanEffUser = String(effectiveUserId || '').toLowerCase().trim();
-        const cleanAuth = String(authId || '').toLowerCase().trim();
-        const isViewerAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
-        const isTargetAdmin = (cleanEffUser === 'master' || cleanEffUser === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanEffUser)));
-        const isTargetPermanent = (typeof isPermanentUser === 'function' && isPermanentUser(cleanEffUser));
-        const isExempt = isViewerAdmin || isTargetAdmin || isTargetPermanent;
+        const isExempt = (cleanEffUser === 'master' || cleanEffUser === 'admin' ||
+            (typeof isAdminUser === 'function' && isAdminUser(cleanEffUser)) ||
+            (typeof isPermanentUser === 'function' && isPermanentUser(cleanEffUser)));
 
         const confirmedGameCount = (typeof window.getUserConfirmedGameCountForRound === 'function')
             ? window.getUserConfirmedGameCountForRound(effectiveUserId, curUpcomingRound)
@@ -19298,13 +19281,9 @@ function updateTop7AlgoUI() {
         if (statusBanner && txtStatus) {
             if (isEligible) {
                 statusBanner.className = 'purchase-status-banner verified';
-                if (isViewerAdmin && cleanEffUser !== cleanAuth && cleanEffUser !== 'master' && cleanEffUser !== 'admin') {
-                    const targetRealName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || effectiveUserId;
-                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 관리자 조회 모드 - 실구매 면제]</strong> [제 ${curUpcomingRound}회차] <strong>[${targetRealName}]</strong> 회원의 7대 퀀트 알고리즘 70게임 전수가 활성화되어 있습니다.`;
-                } else if (isTargetAdmin || cleanEffUser === 'master' || cleanEffUser === 'admin') {
-                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 최고관리자 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
-                } else if (isTargetPermanent) {
-                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-gem" style="color:#60a5fa;"></i> [💎 영구회원 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
+                if (isExempt) {
+                    const roleLabel = (cleanEffUser === 'master' || (typeof isAdminUser === 'function' && isAdminUser(cleanEffUser))) ? '👑 최고관리자' : '💎 영구회원';
+                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [${roleLabel} 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
                 } else {
                     txtStatus.innerHTML = `<strong><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> [제 ${curUpcomingRound}회차] 실구매 인증 완료!</strong> 7대 퀀트 알고리즘 70게임 전수 무료 이용이 활성화되어 있습니다.`;
                 }
@@ -19651,11 +19630,11 @@ function openBudgetOptimizerModal() {
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
-    const isEligible = isAdmin || (typeof isUserEligibleForExtraPacks === 'function'
+    const isEligible = (typeof isUserEligibleForExtraPacks === 'function')
         ? isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
         : ((typeof window !== 'undefined' && typeof window.isUserEligibleForExtraPacks === 'function')
             ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
-            : false));
+            : false);
 
     if (!isEligible) {
         const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 2조합인 V4.0 / V3.0 추천번호 20게임이 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);

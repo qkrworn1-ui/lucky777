@@ -1976,11 +1976,20 @@ export function updateTop7AlgoUI() {
             ? window.getUpcomingLottoRound()
             : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
+        const cleanEffUser = String(effectiveUserId || '').toLowerCase().trim();
+        const cleanAuth = String(authId || '').toLowerCase().trim();
+        const isViewerAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
+        const isTargetAdmin = (cleanEffUser === 'master' || cleanEffUser === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanEffUser)));
+        const isTargetPermanent = (typeof isPermanentUser === 'function' && isPermanentUser(cleanEffUser));
+        const isExempt = isViewerAdmin || isTargetAdmin || isTargetPermanent;
+
         const confirmedGameCount = (typeof window.getUserConfirmedGameCountForRound === 'function')
             ? window.getUserConfirmedGameCountForRound(effectiveUserId, curUpcomingRound)
-            : ((typeof window.isUserEligibleForExtraPacks === 'function' && window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)) ? 5 : 0);
+            : 0;
 
-        const isEligible = confirmedGameCount >= 5;
+        const isEligible = isExempt || (typeof window.isUserEligibleForExtraPacks === 'function'
+            ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
+            : (confirmedGameCount >= 5));
 
         // 1. Update Weekly Purchase Status & Inducement Banner
         const statusBanner = document.getElementById('userWeeklyPurchaseStatusBanner');
@@ -1990,7 +1999,16 @@ export function updateTop7AlgoUI() {
         if (statusBanner && txtStatus) {
             if (isEligible) {
                 statusBanner.className = 'purchase-status-banner verified';
-                txtStatus.innerHTML = `<strong><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> [제 ${curUpcomingRound}회차] 실구매 인증 완료!</strong> 7대 퀀트 알고리즘 70게임 전수 무료 이용이 활성화되어 있습니다.`;
+                if (isViewerAdmin && cleanEffUser !== cleanAuth && cleanEffUser !== 'master' && cleanEffUser !== 'admin') {
+                    const targetRealName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || effectiveUserId;
+                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 관리자 조회 모드 - 실구매 면제]</strong> [제 ${curUpcomingRound}회차] <strong>[${targetRealName}]</strong> 회원의 7대 퀀트 알고리즘 70게임 전수가 활성화되어 있습니다.`;
+                } else if (isTargetAdmin || cleanEffUser === 'master' || cleanEffUser === 'admin') {
+                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 최고관리자 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
+                } else if (isTargetPermanent) {
+                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-gem" style="color:#60a5fa;"></i> [💎 영구회원 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
+                } else {
+                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> [제 ${curUpcomingRound}회차] 실구매 인증 완료!</strong> 7대 퀀트 알고리즘 70게임 전수 무료 이용이 활성화되어 있습니다.`;
+                }
                 if (btnStatusBanner) {
                     btnStatusBanner.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
                     btnStatusBanner.style.color = '#ffffff';

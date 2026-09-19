@@ -1,9 +1,16 @@
 {
-  "version": "v2026.09.19.1335",
+  "version": "v2026.09.19.1332",
   "buildDate": "2026-09-19",
-  "description": "Fix purchase exemption for admin, permanent members, and admin viewing other user accounts",
-  "buildTimestamp": "2026-09-19T13:35:21.012801",
+  "description": "Fix master, admin, and permanent user extra packs purchase exemption in ledger and generator UI",
+  "buildTimestamp": "2026-09-19T13:32:20.051734",
   "buildHistory": [
+    {
+      "version": "v2026.09.16.1631",
+      "buildDate": "2026-09-16",
+      "buildTime": "16:31",
+      "buildTimestamp": "2026-09-16T16:31:56.972334",
+      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
+    },
     {
       "version": "v2026.09.16.1632",
       "buildDate": "2026-09-16",
@@ -346,14 +353,7 @@
       "buildTime": "13:32",
       "buildTimestamp": "2026-09-19T13:32:20.051734",
       "description": "Fix master, admin, and permanent user extra packs purchase exemption in ledger and generator UI"
-    },
-    {
-      "version": "v2026.09.19.1335",
-      "buildDate": "2026-09-19",
-      "buildTime": "13:35",
-      "buildTimestamp": "2026-09-19T13:35:21.012801",
-      "description": "Fix purchase exemption for admin, permanent members, and admin viewing other user accounts"
     }
   ],
-  "buildTime": "13:35"
+  "buildTime": "13:32"
 }

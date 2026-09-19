@@ -1730,6 +1730,27 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("typeof userId === 'number'", gen_tab_code)
         self.assertIn("typeof round === 'number'", gen_tab_code)
 
+    def test_45_master_and_admin_extra_pack_purchase_exemption(self):
+        """Test: Verify master, admin, and permanent members are 100% exempt from purchase requirements in extra packs & UI."""
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        gen_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        with open(gen_tab_file, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+
+        # 1. Verify ledger.js isUserEligibleForExtraPacks checks admin viewer and target user exemptions
+        self.assertIn("cleanViewer === 'master' || cleanViewer === 'admin'", ledger_code)
+        self.assertIn("isAdminUser(cleanViewer)", ledger_code)
+        self.assertIn("cleanTarget === 'master' || cleanTarget === 'admin'", ledger_code)
+        self.assertIn("isAdminUser(cleanTarget)", ledger_code)
+        self.assertIn("isPermanentUser(cleanTarget)", ledger_code)
+
+        # 2. Verify generator-tab.js updateTop7AlgoUI grants isExempt / isEligible
+        self.assertIn("isViewerAdmin || isTargetAdmin || isTargetPermanent", gen_tab_code)
+        self.assertIn("실구매 면제", gen_tab_code)
+
 
 if __name__ == '__main__':
     unittest.main()
