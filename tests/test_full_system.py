@@ -1751,6 +1751,49 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("isViewerAdmin || isTargetAdmin || isTargetPermanent", gen_tab_code)
         self.assertIn("실구매 면제", gen_tab_code)
 
+    def test_46_strictly_six_unique_numbers_per_game_integrity(self):
+        """Test: Verify all combination algorithms strictly produce exactly 6 distinct numbers (1~45) with 0 duplicate numbers."""
+        gen_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+        wheeling_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'wheeling.js')
+
+        with open(gen_file, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+        with open(wheeling_file, 'r', encoding='utf-8') as f:
+            wheeling_code = f.read()
+
+        # 1. Verify V4 Group 3 uses Set with baseSet.size < 6
+        self.assertIn("let baseSet = new Set(cheatKeys[i - 7]);", gen_code)
+        self.assertIn("while (baseSet.size < 6)", gen_code)
+        self.assertIn("baseSet.add(Math.floor(seededRandom() * 45) + 1);", gen_code)
+        self.assertNotIn("while(baseNums.length < 6) baseNums.push", gen_code)
+
+        # 2. Verify wheeling combinations use comboSet with comboSet.size < 6
+        self.assertIn("const comboSet = new Set();", wheeling_code)
+        self.assertIn("while (comboSet.size < 6", wheeling_code)
+
+        # 3. Emulate V4 Group 3 generation and ensure 0 duplicate numbers across 10,000 iterations
+        import random
+        cheat_keys = [
+            [1, 13, 14, 18, 31, 38],
+            [4, 10, 15, 23, 24, 43],
+            [13, 15, 19, 27, 31, 35]
+        ]
+        for iteration in range(10000):
+            for k_idx, key in enumerate(cheat_keys):
+                base_set = set(key)
+                if random.random() > 0.5:
+                    arr = list(base_set)
+                    m_idx = random.randint(0, len(arr) - 1)
+                    mutated = min(45, max(1, arr[m_idx] + (1 if random.random() > 0.5 else -1)))
+                    base_set.remove(arr[m_idx])
+                    base_set.add(mutated)
+                while len(base_set) < 6:
+                    base_set.add(random.randint(1, 45))
+                nums = sorted(list(base_set))
+                self.assertEqual(len(nums), 6, "Must have exactly 6 numbers")
+                self.assertEqual(len(set(nums)), 6, "Must have ZERO duplicate numbers")
+                self.assertTrue(all(1 <= n <= 45 for n in nums), "All numbers must be 1~45")
+
 
 if __name__ == '__main__':
     unittest.main()

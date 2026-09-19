@@ -373,14 +373,18 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                 ];
                 
                 // 약간의 랜덤성을 더하기 위해 1, 2개의 번호를 인접수로 변형
-                let baseNums = [...cheatKeys[i - 7]];
+                let baseSet = new Set(cheatKeys[i - 7]);
                 if (seededRandom() > 0.5) {
-                    let mutateIdx = Math.floor(seededRandom() * 6);
-                    baseNums[mutateIdx] = Math.min(45, Math.max(1, baseNums[mutateIdx] + (seededRandom() > 0.5 ? 1 : -1)));
+                    let arr = Array.from(baseSet);
+                    let mutateIdx = Math.floor(seededRandom() * arr.length);
+                    let mutatedVal = Math.min(45, Math.max(1, arr[mutateIdx] + (seededRandom() > 0.5 ? 1 : -1)));
+                    baseSet.delete(arr[mutateIdx]);
+                    baseSet.add(mutatedVal);
                 }
-                baseNums = Array.from(new Set(baseNums));
-                while(baseNums.length < 6) baseNums.push(Math.floor(seededRandom() * 45) + 1);
-                const nums = baseNums.sort((a,b)=>a-b);
+                while (baseSet.size < 6) {
+                    baseSet.add(Math.floor(seededRandom() * 45) + 1);
+                }
+                const nums = Array.from(baseSet).sort((a, b) => a - b);
                 
                 bestCandidateObj = { nums: nums, stats: calculateStats(nums), ac: (typeof calculateACValue === 'function' ? calculateACValue(nums) : 8) };
                 

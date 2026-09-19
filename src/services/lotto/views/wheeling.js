@@ -35,8 +35,9 @@ export function renderWheelingSelector() {
 }
 
 export function calculateWheelingCombinations(pool) {
-    const sortedPool = [...pool].sort((a, b) => a - b);
+    const sortedPool = Array.from(new Set(pool)).sort((a, b) => a - b);
     const P = sortedPool;
+    if (P.length < 6) return [];
     
     const indices = [
         [0, 1, 2, 3, 4, 5],
@@ -55,16 +56,38 @@ export function calculateWheelingCombinations(pool) {
         [3, 4, 5, 6, 7, 9]
     ];
 
-    return indices.map((line, idx) => {
-        const nums = line.map(i => P[i % P.length]);
-        const stats = calculateStats(nums);
-        return {
-            id: `W-${idx + 1}`,
-            name: `휠링 커버링 세트 #${idx + 1}`,
-            numbers: nums,
-            stats: stats
-        };
+    const results = [];
+    const seenCombos = new Set();
+
+    indices.forEach((line, idx) => {
+        const comboSet = new Set();
+        line.forEach(i => {
+            if (i < P.length) comboSet.add(P[i]);
+        });
+        let poolIdx = 0;
+        while (comboSet.size < 6 && poolIdx < P.length) {
+            comboSet.add(P[poolIdx++]);
+        }
+        let fallbackNum = 1;
+        while (comboSet.size < 6 && fallbackNum <= 45) {
+            comboSet.add(fallbackNum++);
+        }
+
+        const nums = Array.from(comboSet).sort((a, b) => a - b);
+        const comboKey = nums.join(',');
+        if (!seenCombos.has(comboKey)) {
+            seenCombos.add(comboKey);
+            const stats = calculateStats(nums);
+            results.push({
+                id: `W-${results.length + 1}`,
+                name: `휠링 커버링 세트 #${results.length + 1}`,
+                numbers: nums,
+                stats: stats
+            });
+        }
     });
+
+    return results;
 }
 
 export function renderWheelingResults() {
