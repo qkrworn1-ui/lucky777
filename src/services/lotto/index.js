@@ -372,8 +372,11 @@ export async function initLottoService(force = false) {
         }
     }, 1500);
 
-    if (typeof window.renderLandingDashboard === 'function') {
-        window.renderLandingDashboard();
+    const landingEl = document.getElementById('landingPage');
+    if (landingEl && (landingEl.classList.contains('active') || landingEl.style.display !== 'none')) {
+        if (typeof window.renderLandingDashboard === 'function') {
+            window.renderLandingDashboard();
+        }
     }
         } finally {
             _isLottoInitializing = false;
@@ -383,9 +386,15 @@ export async function initLottoService(force = false) {
     return _lottoInitPromise;
 }
 
+let _lottoTabRenderTimer = null;
+
 // Global Lotto Tab Switcher
 export function switchLottoTab(target) {
     if (!target) return;
+
+    if (typeof window !== 'undefined') {
+        window.__currentLottoTab = target;
+    }
 
     if (!window.__lottoInitialized && typeof initLottoService === 'function') {
         try { initLottoService(); } catch(e){}
@@ -413,7 +422,7 @@ export function switchLottoTab(target) {
         }
     }
 
-    // 2. Update tab buttons active state
+    // 2. Update tab buttons active state (Instant 0ms)
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(b => {
         if (b.dataset.tab === target) {
@@ -423,7 +432,7 @@ export function switchLottoTab(target) {
         }
     });
 
-    // 3. Update tab contents active state
+    // 3. Update tab contents active state (Instant 0ms)
     const tabContents = document.querySelectorAll('.tab-content');
     tabContents.forEach(c => {
         if (c.id === target) {
@@ -435,32 +444,42 @@ export function switchLottoTab(target) {
         }
     });
 
-    // 4. Safely execute tab-specific render routines
-    try {
-        if (target === 'tab-generator') {
-            if (typeof renderTop5Combinations === 'function') renderTop5Combinations(false);
-            if (typeof updateSavedCount === 'function') updateSavedCount();
-            if (typeof renderSavedList === 'function') renderSavedList();
-        } else if (target === 'tab-algorithms') {
-            if (typeof renderAlgorithmsTab === 'function') renderAlgorithmsTab();
-        } else if (target === 'tab-simulation') {
-            if (typeof populateSimRoundSelector === 'function') populateSimRoundSelector();
-            if (typeof renderSimulationTab === 'function') renderSimulationTab();
-        } else if (target === 'tab-wheeling') {
-            if (typeof renderWheelingSelector === 'function') renderWheelingSelector();
-            if (typeof renderWheelingResults === 'function') renderWheelingResults();
-        } else if (target === 'tab-verify-evolution') {
-            if (typeof renderVerificationTab === 'function') renderVerificationTab();
-        } else if (target === 'tab-dashboard') {
-            if (typeof renderDashboardCharts === 'function') renderDashboardCharts();
-        } else if (target === 'tab-review') {
-            if (typeof renderReviewTab === 'function') renderReviewTab();
-        } else if (target === 'tab-confirmed-list') {
-            if (typeof renderConfirmedPurchasesList === 'function') renderConfirmedPurchasesList();
-        }
-    } catch(err) {
-        console.error(`[Error rendering tab: ${target}]`, err);
+    // 4. Safely execute tab-specific render routines asynchronously without blocking the UI thread
+    if (_lottoTabRenderTimer) {
+        clearTimeout(_lottoTabRenderTimer);
     }
+
+    _lottoTabRenderTimer = setTimeout(() => {
+        if (typeof window !== 'undefined' && window.__currentLottoTab !== target) {
+            return; // Target changed while waiting, skip stale render
+        }
+
+        try {
+            if (target === 'tab-generator') {
+                if (typeof renderTop5Combinations === 'function') renderTop5Combinations(false);
+                if (typeof updateSavedCount === 'function') updateSavedCount();
+                if (typeof renderSavedList === 'function') renderSavedList();
+            } else if (target === 'tab-algorithms') {
+                if (typeof renderAlgorithmsTab === 'function') renderAlgorithmsTab();
+            } else if (target === 'tab-simulation') {
+                if (typeof populateSimRoundSelector === 'function') populateSimRoundSelector();
+                if (typeof renderSimulationTab === 'function') renderSimulationTab();
+            } else if (target === 'tab-wheeling') {
+                if (typeof renderWheelingSelector === 'function') renderWheelingSelector();
+                if (typeof renderWheelingResults === 'function') renderWheelingResults();
+            } else if (target === 'tab-verify-evolution') {
+                if (typeof renderVerificationTab === 'function') renderVerificationTab();
+            } else if (target === 'tab-dashboard') {
+                if (typeof renderDashboardCharts === 'function') renderDashboardCharts();
+            } else if (target === 'tab-review') {
+                if (typeof renderReviewTab === 'function') renderReviewTab();
+            } else if (target === 'tab-confirmed-list') {
+                if (typeof renderConfirmedPurchasesList === 'function') renderConfirmedPurchasesList();
+            }
+        } catch(err) {
+            console.error(`[Error rendering tab: ${target}]`, err);
+        }
+    }, 0);
 }
 
 // Setup all component event listeners

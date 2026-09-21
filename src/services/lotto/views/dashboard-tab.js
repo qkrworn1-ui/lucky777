@@ -11,6 +11,11 @@ let oddEvenChartInstance = null;
 let sumChartInstance = null;
 
 export function renderDashboardCharts() {
+    const tabDashEl = document.getElementById('tab-dashboard');
+    if (!tabDashEl || (!tabDashEl.classList.contains('active') && tabDashEl.style.display === 'none')) {
+        return;
+    }
+
     if (state.HOT_GROUP && state.HOT_GROUP.length > 0) {
         const el_topHotNum = document.getElementById('topHotNum');
         if (el_topHotNum) el_topHotNum.textContent = `${state.HOT_GROUP[0]}번`;

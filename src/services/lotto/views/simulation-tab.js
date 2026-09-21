@@ -178,6 +178,11 @@ export function populateSimRoundSelector() {
 }
 
 export function renderSimulationTab(targetRound = null) {
+    const tabSimEl = document.getElementById('tab-simulation');
+    if (!tabSimEl || (!tabSimEl.classList.contains('active') && tabSimEl.style.display === 'none')) {
+        return;
+    }
+
     const lockEl = document.getElementById('simLockOverlay');
     const normalEl = document.getElementById('simNormalContent');
     let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';

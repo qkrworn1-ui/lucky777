@@ -744,19 +744,24 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
             window.clearUser70ReviewCache();
         }
 
-        // Auto-refresh landing dashboard and tabs if loaded to ensure 100% synchronized live data
+        // Auto-refresh landing dashboard or currently active lotto tab to ensure synchronized live data
         if (typeof window !== 'undefined') {
-            if (typeof window.renderLandingDashboard === 'function' && !window.__isRenderingDashboard) {
-                try { window.renderLandingDashboard(); } catch(dashErr) {}
-            }
-            if (typeof window.renderReviewTab === 'function') {
-                try { window.renderReviewTab(); } catch(revErr) {}
-            }
-            if (typeof window.renderAlgorithmsTab === 'function') {
-                try { window.renderAlgorithmsTab(); } catch(algoErr) {}
-            }
-            if (typeof window.renderConfirmedPurchasesList === 'function') {
-                try { window.renderConfirmedPurchasesList(); } catch(confErr) {}
+            const landingPage = document.getElementById('landingPage');
+            const appContainer = document.getElementById('appContainer');
+
+            if (landingPage && (landingPage.classList.contains('active') || landingPage.style.display !== 'none')) {
+                if (typeof window.renderLandingDashboard === 'function' && !window.__isRenderingDashboard) {
+                    try { window.renderLandingDashboard(); } catch(dashErr) {}
+                }
+            } else if (appContainer && (appContainer.classList.contains('active') || appContainer.style.display !== 'none')) {
+                const curTab = window.__currentLottoTab || 'tab-generator';
+                if (curTab === 'tab-review' && typeof window.renderReviewTab === 'function') {
+                    try { window.renderReviewTab(); } catch(revErr) {}
+                } else if (curTab === 'tab-algorithms' && typeof window.renderAlgorithmsTab === 'function') {
+                    try { window.renderAlgorithmsTab(); } catch(algoErr) {}
+                } else if (curTab === 'tab-confirmed-list' && typeof window.renderConfirmedPurchasesList === 'function') {
+                    try { window.renderConfirmedPurchasesList(); } catch(confErr) {}
+                }
             }
         }
 

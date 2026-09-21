@@ -317,6 +317,27 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
         return _algoPerfCache.get(cacheKey);
     }
 
+    // High-Speed Pre-cache: compute reviews once per (user, round)
+    const reviewsCache = new Map();
+    drawnRounds.forEach(round => {
+        if (isAll) {
+            const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
+            activeUsers.forEach(u => {
+                const key = `${u.id}_${round}`;
+                if (!reviewsCache.has(key)) {
+                    reviewsCache.set(key, computeUser70RecommendationsReview(u.id, round));
+                }
+            });
+        } else {
+            if (round >= userJoinRound) {
+                const key = `${cleanUser}_${round}`;
+                if (!reviewsCache.has(key)) {
+                    reviewsCache.set(key, computeUser70RecommendationsReview(cleanUser, round));
+                }
+            }
+        }
+    });
+
     let grandTotalGames = 0;
     let grandTotalInvest = 0;
     let grandTotalPrize = 0;
@@ -347,11 +368,10 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
 
             if (isAll) {
                 // Aggregate across all active registered users for this round
-                const baseList = getAllUnifiedRegisteredUsers();
                 const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
 
                 activeUsers.forEach(u => {
-                    const rev = computeUser70RecommendationsReview(u.id, round);
+                    const rev = reviewsCache.get(`${u.id}_${round}`) || computeUser70RecommendationsReview(u.id, round);
                     if (!rev || rev.isPreJoin) return;
 
                     let evalData = null;
@@ -404,7 +424,7 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
                 });
             } else {
                 // Single target user (strictly based on computeUser70RecommendationsReview / snapshots)
-                const rev = computeUser70RecommendationsReview(cleanUser, round);
+                const rev = reviewsCache.get(`${cleanUser}_${round}`) || computeUser70RecommendationsReview(cleanUser, round);
                 if (rev && !rev.isPreJoin) {
                     let evalData = null;
                     let combos = [];
@@ -441,6 +461,7 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
                             const itemMatches = item.nums ? item.nums.filter(n => winningSet.has(n)) : [];
                             roundHits.push({
                                 user: cleanUser,
+                                userName: cleanUser,
                                 gameIdx: item.idx,
                                 comboName: item.name || `${algo.shortName} #${item.idx}`,
                                 nums: item.nums,
@@ -456,51 +477,45 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
             }
 
             roundDetails.push({
-                round: round,
-                date: draw.date || '',
-                drawNumbers: draw.numbers,
-                bonus: bonus,
-                combosCount: roundCombosCount,
-                hitCount: roundHits.length,
-                roundPrize: roundPrize,
+                round,
+                date: (draw && (draw.date || draw.drwNoDate)) ? (draw.date || draw.drwNoDate) : '',
+                drawNumbers: draw ? draw.numbers : [],
+                bonus: draw ? draw.bonus : null,
+                totalGames: roundCombosCount,
+                prize: roundPrize,
                 hits: roundHits
             });
         });
 
-        const totalWins = rankCounts[1] + rankCounts[2] + rankCounts[3] + rankCounts[4] + rankCounts[5];
-        const winRate = totalGames > 0 ? ((totalWins / totalGames) * 100).toFixed(1) : '0.0';
+        const winCount = rankCounts[1] + rankCounts[2] + rankCounts[3] + rankCounts[4] + rankCounts[5];
+        const winRate = totalGames > 0 ? ((winCount / totalGames) * 100).toFixed(1) : '0.0';
         const roi = totalInvest > 0 ? (((totalPrize - totalInvest) / totalInvest) * 100).toFixed(1) : '0.0';
 
         let topRank = null;
-        for (let k = 1; k <= 5; k++) {
-            if (rankCounts[k] > 0) {
-                topRank = k;
-                break;
-            }
-        }
+        if (rankCounts[1] > 0) topRank = '1등';
+        else if (rankCounts[2] > 0) topRank = '2등';
+        else if (rankCounts[3] > 0) topRank = '3등';
+        else if (rankCounts[4] > 0) topRank = '4등';
+        else if (rankCounts[5] > 0) topRank = '5등';
 
         return {
             ...algo,
-            color: algo.badgeColor || algo.color,
-            badgeColor: algo.badgeColor || algo.color,
-            desc: algo.corePhilosophy || algo.desc || algo.tag,
-            tag: algo.tag || algo.corePhilosophy || algo.desc,
             totalGames,
             totalInvest,
             totalPrize,
-            profit: totalPrize - totalInvest,
-            roi: parseFloat(roi),
             rankCounts,
-            totalWins,
+            totalWins: winCount,
             winRate,
+            roi,
             topRank,
-            roundDetails: roundDetails.reverse() // 최신 회차가 상단에 오도록 정렬
+            roundDetails
         };
     });
 
     const grandTotalWins = grandRankCounts[1] + grandRankCounts[2] + grandRankCounts[3] + grandRankCounts[4] + grandRankCounts[5];
+    const grandProfit = grandTotalPrize - grandTotalInvest;
+    const grandRoi = grandTotalInvest > 0 ? ((grandProfit / grandTotalInvest) * 100).toFixed(1) : '0.0';
     const grandWinRate = grandTotalGames > 0 ? ((grandTotalWins / grandTotalGames) * 100).toFixed(1) : '0.0';
-    const grandRoi = grandTotalInvest > 0 ? (((grandTotalPrize - grandTotalInvest) / grandTotalInvest) * 100).toFixed(1) : '0.0';
 
     const perfResult = {
         fromRound,
@@ -509,8 +524,8 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
         grandTotalGames,
         grandTotalInvest,
         grandTotalPrize,
-        grandProfit: grandTotalPrize - grandTotalInvest,
-        grandRoi: parseFloat(grandRoi),
+        grandProfit,
+        grandRoi,
         grandRankCounts,
         grandTotalWins,
         grandWinRate,
@@ -526,7 +541,7 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
  */
 export async function renderAlgorithmsTab(fromRound = null) {
     const container = document.getElementById('tab-algorithms');
-    if (!container) return;
+    if (!container || (!container.classList.contains('active') && container.style.display === 'none')) return;
 
     if (fromRound !== null) {
         currentAlgoStartRound = parseInt(fromRound, 10);

@@ -503,6 +503,11 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
 
 export async function renderReviewTab() {
     try {
+        const tabReviewEl = document.getElementById('tab-review');
+        if (!tabReviewEl || (!tabReviewEl.classList.contains('active') && tabReviewEl.style.display === 'none')) {
+            return;
+        }
+
         const reviewTotalCombos = document.getElementById('reviewTotalCombos');
         const reviewTotalInvest = document.getElementById('reviewTotalInvest');
         const reviewTotalPrize = document.getElementById('reviewTotalPrize');

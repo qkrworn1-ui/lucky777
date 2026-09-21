@@ -11,6 +11,11 @@ import { computeUser70RecommendationsReview, clearUser70ReviewCache } from '../s
  * and All Members AI Recommendation (70 games) Review Winning History.
  */
 export async function renderLandingDashboard() {
+    const landingEl = document.getElementById('landingPage');
+    if (landingEl && !landingEl.classList.contains('active') && landingEl.style.display === 'none') {
+        return;
+    }
+
     if (typeof window !== 'undefined') {
         if (window.__isRenderingDashboard) return;
         window.__isRenderingDashboard = true;

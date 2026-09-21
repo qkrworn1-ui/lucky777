@@ -24,6 +24,11 @@ function getMemoizedRecommendations(rnd, user) {
 }
 
 export async function renderConfirmedPurchasesList() {
+    const tabConfirmedEl = document.getElementById('tab-confirmed-list');
+    if (!tabConfirmedEl || (!tabConfirmedEl.classList.contains('active') && tabConfirmedEl.style.display === 'none')) {
+        return;
+    }
+
     const container = document.getElementById('confirmedPurchasesListContainer');
     if (!container) return;
 

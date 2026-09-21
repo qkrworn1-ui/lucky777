@@ -28,67 +28,31 @@ export function getLottoDrawDate(round) {
 }
 
 export function getHistoryData() {
-    let hist = {};
-    if (typeof LOTTO_HISTORY !== 'undefined' && typeof LOTTO_HISTORY === 'object') {
-        hist = { ...LOTTO_HISTORY };
-    }
-    if (typeof window.LOTTO_HISTORY !== 'undefined' && typeof window.LOTTO_HISTORY === 'object') {
-        hist = { ...hist, ...window.LOTTO_HISTORY };
-    }
     if (state && state.mergedHistory && Object.keys(state.mergedHistory).length > 0) {
-        hist = { ...hist, ...state.mergedHistory };
+        return state.mergedHistory;
     }
-    if (state && state.lottoExtraHistory && Object.keys(state.lottoExtraHistory).length > 0) {
-        hist = { ...hist, ...state.lottoExtraHistory };
+    if (typeof LOTTO_HISTORY !== 'undefined' && typeof LOTTO_HISTORY === 'object') {
+        return LOTTO_HISTORY;
     }
-    if (typeof window.state !== 'undefined' && window.state.mergedHistory) {
-        hist = { ...hist, ...window.state.mergedHistory };
-    }
-    if (typeof HISTORICAL_DATA !== 'undefined' && Array.isArray(HISTORICAL_DATA)) {
-        HISTORICAL_DATA.forEach(d => {
-            const r = d.round || d.drwNo;
-            if (r) {
-                hist[r] = {
-                    numbers: d.numbers || [d.drwtNo1, d.drwtNo2, d.drwtNo3, d.drwtNo4, d.drwtNo5, d.drwtNo6],
-                    bonus: d.bonus || d.bnusNo,
-                    date: d.date || d.drwNoDate || getLottoDrawDate(r)
-                };
-            }
-        });
-    }
-
-    // Ensure all entries have numbers, bonus, and accurate dates
-    Object.keys(hist).forEach(r => {
-        const roundNum = Number(r);
-        const item = hist[r];
-        if (item) {
-            if (!item.numbers && item.drwtNo1) {
-                item.numbers = [item.drwtNo1, item.drwtNo2, item.drwtNo3, item.drwtNo4, item.drwtNo5, item.drwtNo6];
-            }
-            if (!item.bonus && item.bnusNo) {
-                item.bonus = item.bnusNo;
-            }
-            if (!item.date) {
-                item.date = getLottoDrawDate(roundNum);
-            }
-        }
-    });
-
-    return hist;
+    return {};
 }
 
 export function getLatestRoundNumber() {
-    const hist = getHistoryData();
-    const rKeys = Object.keys(hist).map(Number).filter(n => !isNaN(n) && n > 0);
-    if (rKeys.length > 0) return Math.max(...rKeys);
     if (state) {
-        if (state.latestDrawData && state.latestDrawData.drwNo) return state.latestDrawData.drwNo;
         if (state.latestRoundNum) return state.latestRoundNum;
+        if (state.latestDrawData && state.latestDrawData.drwNo) return state.latestDrawData.drwNo;
+        if (state.mergedHistory) {
+            const rKeys = Object.keys(state.mergedHistory).map(Number).filter(n => !isNaN(n) && n > 0);
+            if (rKeys.length > 0) return Math.max(...rKeys);
+        }
     }
-    return 1237;
+    return 1239;
 }
 
 export function getFrequencyMap() {
+    if (state && state.HISTORICAL_FREQUENCY && Object.keys(state.HISTORICAL_FREQUENCY).length === 45) {
+        return { ...state.HISTORICAL_FREQUENCY };
+    }
     const freq = {};
     for (let n = 1; n <= 45; n++) freq[n] = 0;
     const hist = getHistoryData();

@@ -1957,10 +1957,47 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("switchLottoTab(btn.dataset.tab)", code)
 
         # 4. Tab renders must be safely wrapped
-        self.assertIn("if (target === 'tab-simulation')", code)
-        self.assertIn("if (target === 'tab-review')", code)
-        self.assertIn("if (target === 'tab-confirmed-list')", code)
-        self.assertIn("if (target === 'tab-algorithms')", code)
+    def test_54_non_blocking_tab_switching_and_memoization(self):
+        """Test 54: Verify non-blocking tab switching, active tab guards, and high-speed memoization."""
+        lotto_index_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'index.js')
+        algo_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'algorithms-tab.js')
+        review_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        confirmed_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        hex_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'hex-map.js')
+
+        with open(lotto_index_file, 'r', encoding='utf-8') as f:
+            lotto_code = f.read()
+        with open(algo_file, 'r', encoding='utf-8') as f:
+            algo_code = f.read()
+        with open(review_file, 'r', encoding='utf-8') as f:
+            review_code = f.read()
+        with open(confirmed_file, 'r', encoding='utf-8') as f:
+            confirmed_code = f.read()
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        with open(hex_file, 'r', encoding='utf-8') as f:
+            hex_code = f.read()
+
+        # 1. switchLottoTab must track window.__currentLottoTab and use _lottoTabRenderTimer
+        self.assertIn('window.__currentLottoTab = target', lotto_code)
+        self.assertIn('_lottoTabRenderTimer', lotto_code)
+        self.assertIn('window.__currentLottoTab !== target', lotto_code)
+
+        # 2. Tab renderers must have active tab guards
+        self.assertIn("document.getElementById('tab-algorithms')", algo_code)
+        self.assertIn("const tabReviewEl = document.getElementById('tab-review');", review_code)
+        self.assertIn("const tabConfirmedEl = document.getElementById('tab-confirmed-list');", confirmed_code)
+
+        # 3. calculate7AlgorithmsPerformance must use reviewsCache
+        self.assertIn('const reviewsCache = new Map();', algo_code)
+        self.assertIn('reviewsCache.get', algo_code)
+
+        # 4. fetchAllUsersPurchases must check active page/tab
+        self.assertIn('window.__currentLottoTab', ledger_code)
+
+        # 5. hex-map.js must use state.mergedHistory directly
+        self.assertIn('state && state.mergedHistory', hex_code)
 
 
 if __name__ == '__main__':

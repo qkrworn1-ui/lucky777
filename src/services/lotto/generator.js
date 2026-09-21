@@ -101,9 +101,10 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
 
     const isCurrentRound = (targetRound === null || targetRound === defaultRound);
 
+    if (!state.localComboCache) state.localComboCache = {};
     const cacheKey = `lotto_weekly_top10_${roundForSeed}_${algoVersion}_v4_${useReportLogic}${ignoreLedger ? '_noledger' : ''}_${overrideVersion || 'default'}_${effectiveUserId}`;
     
-    if (!forceRegenerate && state.localComboCache[cacheKey]) {
+    if (!forceRegenerate && state.localComboCache[cacheKey] && Array.isArray(state.localComboCache[cacheKey]) && state.localComboCache[cacheKey].length > 0) {
         return state.localComboCache[cacheKey];
     }
     
