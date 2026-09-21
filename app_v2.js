@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.21.1237 - BUILD_DATE: 2026-09-21] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.21.1303 - BUILD_DATE: 2026-09-21] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.21.1237)
+ * Lucky777 Smart Bundle (v2026.09.21.1303)
  */
 
 
@@ -21256,6 +21256,20 @@ const { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, get
 const { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } = __M_services_lotto_generator;
 const { recalculateGroups } = __M_services_lotto_statistics;
 
+const _roundUserRecCache = new Map();
+function getMemoizedRecommendations(rnd, user) {
+    const key = `${rnd}_${(user || '').toLowerCase()}`;
+    if (_roundUserRecCache.has(key)) return _roundUserRecCache.get(key);
+    const uV4 = computeAbsoluteTop10Combinations(false, rnd, 'v4', true, user) || [];
+    const uV3 = computeAbsoluteTop10Combinations(false, rnd, 'v3', true, user) || [];
+    const extraPacks = (typeof generateExtraAddonPack === 'function') 
+        ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, rnd, user)) 
+        : (state.extraPacks || []);
+    const res = { uV4, uV3, extraPacks };
+    _roundUserRecCache.set(key, res);
+    return res;
+}
+
 async function renderConfirmedPurchasesList() {
     const container = document.getElementById('confirmedPurchasesListContainer');
     if (!container) return;
@@ -21500,16 +21514,12 @@ async function renderConfirmedPurchasesList() {
                     const winningSet = actualDraw && actualDraw.numbers ? new Set(actualDraw.numbers) : null;
                     const bonus = actualDraw ? actualDraw.bonus : null;
 
-                    // Cache algorithm recommendations for this round & user to identify source
-                    const uV4 = computeAbsoluteTop10Combinations(false, round, 'v4', true, uId) || [];
-                    const uV3 = computeAbsoluteTop10Combinations(false, round, 'v3', true, uId) || [];
-                    const extraPacks = (typeof generateExtraAddonPack === 'function') 
-                        ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, round, uId)) : [];
-
                     const receipts = deduplicateReceipts(uLedger[rStr].map(syncPurchaseWithQrUrl));
                     receipts.forEach(rawReceipt => {
                         const receipt = syncPurchaseWithQrUrl(rawReceipt);
                         const combos = receipt.combos || [];
+                        const rVer = (receipt.version || rawReceipt.version || '').toLowerCase();
+
                         combos.forEach(c => {
                             totalGames++;
                             totalInvest += 1000;
@@ -21543,15 +21553,11 @@ async function renderConfirmedPurchasesList() {
                                     rankHits[rank]++;
                                     totalPrize += prize;
 
-                                    // Determine Algorithm Origin
-                                    const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
-                                    if (match.isExact) {
-                                        if (match.matchedVersion.includes('V4.0')) algoHits.v4++;
-                                        else if (match.matchedVersion.includes('V3.0')) algoHits.v3++;
-                                        else if (match.matchedVersion.includes('추가')) algoHits.extra++;
-                                    } else {
-                                        algoHits.manual++;
-                                    }
+                                    // Determine Algorithm Origin from receipt's recorded version (Instant 0ms)
+                                    if (rVer.includes('v4') || rVer.includes('4.0') || rVer.includes('행동경제')) algoHits.v4++;
+                                    else if (rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
+                                    else if (rVer.includes('추가') || rVer.includes('extra') || rVer.includes('pack')) algoHits.extra++;
+                                    else algoHits.manual++;
                                 }
                             }
                         });
@@ -22112,20 +22118,30 @@ async function renderConfirmedPurchasesList() {
                 
                 // Check if this combo matches an AI recommendation (Supported from round 1239 onwards)
                 let aiMatchTag = '';
-                if (round >= 1239) {
-                    const uV4 = computeAbsoluteTop10Combinations(false, round, 'v4', true, purchaseUser) || [];
-                    const uV3 = computeAbsoluteTop10Combinations(false, round, 'v3', true, purchaseUser) || [];
-                    const extraPacks = (typeof generateExtraAddonPack === 'function') ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, round, purchaseUser)) : (state.extraPacks || []);
-                    const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
-                    if (match.isExact) {
-                        if (match.matchedVersion.includes('추가')) {
-                            aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
-                        } else if (match.matchedVersion.includes('V4.0')) {
-                            aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                const pVer = purchase.version || '';
+                if (pVer.includes('추가')) {
+                    const packName = pVer.split(' (')[0] || pVer;
+                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${packName}</span>`;
+                } else if (pVer.includes('V4.0') || pVer.includes('4.0')) {
+                    aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> V4.0 #${cIdx+1}</span>`;
+                } else if (pVer.includes('V3.0') || pVer.includes('3.0')) {
+                    aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> V3.0 #${cIdx+1}</span>`;
+                } else if (round >= 1239) {
+                    try {
+                        const { uV4, uV3, extraPacks } = getMemoizedRecommendations(round, purchaseUser);
+                        const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
+                        if (match && match.isExact) {
+                            if (match.matchedVersion.includes('추가')) {
+                                aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('V4.0')) {
+                                aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else {
+                                aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            }
                         } else {
-                            aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            aiMatchTag = `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.6rem; color: #f87171;"></i> 수동</span>`;
                         }
-                    } else {
+                    } catch(e) {
                         aiMatchTag = `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.6rem; color: #f87171;"></i> 수동</span>`;
                     }
                 }
