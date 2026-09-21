@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.21.1659 - BUILD_DATE: 2026-09-21] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.21.1651 - BUILD_DATE: 2026-09-21] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.21.1659)
+ * Lucky777 Smart Bundle (v2026.09.21.1651)
  */
 
 
@@ -3322,22 +3322,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     setIsAdminCache(authId, true);
                     setIsPermanentCache(authId, true);
                     setUserNameCache(authId, '최고관리자');
-                    setUserPermissionsCache(authId, { allowLotto: true, allowToto: true });
                     document.body.classList.add('is-admin');
-
-                    const btnUserManagement = document.getElementById('btnUserManagement');
-                    const btnUserManagementApp = document.getElementById('btnUserManagementApp');
-                    const btnAdminSnapshotAudit = document.getElementById('btnAdminSnapshotAudit');
-                    const btnUserManagementToto = document.getElementById('btnUserManagementToto');
-                    const btnFetchLatestDraw = document.getElementById('btnFetchLatestDraw');
-                    const btnOpenManualDrawModal = document.getElementById('btnOpenManualDrawModal');
-
-                    if (btnUserManagement) btnUserManagement.style.setProperty('display', 'inline-flex', 'important');
-                    if (btnUserManagementApp) btnUserManagementApp.style.setProperty('display', 'inline-flex', 'important');
-                    if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.setProperty('display', 'inline-flex', 'important');
-                    if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'inline-flex', 'important');
-                    if (btnFetchLatestDraw) btnFetchLatestDraw.style.display = 'inline-flex';
-                    if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'inline-block';
                 }
 
                 // 2. Show landing page immediately
@@ -16805,38 +16790,6 @@ function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all')
     let grandTotalPrize = 0;
     const grandRankCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
-    // ⚡ Pre-compute / index all (user, round) reviews ONCE across all drawn rounds
-    const userReviewsMap = new Map();
-    if (isAll) {
-        const baseList = getAllUnifiedRegisteredUsers();
-        drawnRounds.forEach(round => {
-            const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
-            activeUsers.forEach(u => {
-                const key = `${u.id}_${round}`;
-                const rev = (typeof computeUser70RecommendationsReview === 'function')
-                    ? computeUser70RecommendationsReview(u.id, round)
-                    : (window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, round) : null);
-                if (rev && !rev.isPreJoin) {
-                    userReviewsMap.set(key, { user: u, rev });
-                }
-            });
-        });
-    } else {
-        drawnRounds.forEach(round => {
-            if (round >= userJoinRound) {
-                const rev = (typeof computeUser70RecommendationsReview === 'function')
-                    ? computeUser70RecommendationsReview(cleanUser, round)
-                    : (window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(cleanUser, round) : null);
-                if (rev && !rev.isPreJoin) {
-                    userReviewsMap.set(`${cleanUser}_${round}`, { 
-                        user: { id: cleanUser, name: (typeof getUserRealName === 'function' ? getUserRealName(cleanUser) : '') || cleanUser }, 
-                        rev 
-                    });
-                }
-            }
-        });
-    }
-
     const algoStats = SEVEN_ALGORITHMS_INFO.map(algo => {
         let totalGames = 0;
         let totalInvest = 0;
@@ -16861,13 +16814,13 @@ function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all')
             let roundCombosCount = 0;
 
             if (isAll) {
+                // Aggregate across all active registered users for this round
                 const baseList = getAllUnifiedRegisteredUsers();
                 const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
 
                 activeUsers.forEach(u => {
-                    const entry = userReviewsMap.get(`${u.id}_${round}`);
-                    if (!entry || !entry.rev) return;
-                    const rev = entry.rev;
+                    const rev = computeUser70RecommendationsReview(u.id, round);
+                    if (!rev || rev.isPreJoin) return;
 
                     let evalData = null;
                     let combos = [];
@@ -16918,10 +16871,9 @@ function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all')
                     });
                 });
             } else {
-                // Single target user
-                const entry = userReviewsMap.get(`${cleanUser}_${round}`);
-                if (entry && entry.rev) {
-                    const rev = entry.rev;
+                // Single target user (strictly based on computeUser70RecommendationsReview / snapshots)
+                const rev = computeUser70RecommendationsReview(cleanUser, round);
+                if (rev && !rev.isPreJoin) {
                     let evalData = null;
                     let combos = [];
                     if (algo.id === 'v4') {
@@ -36885,11 +36837,8 @@ const { SafeAuth, getUserRealName } = __M_shared_auth_mgmt;
 const { isSystemOrDummyUser } = __M_shared_utils;
 const { getAllUnifiedRegisteredUsers } = __M_shared_user_context;
 const { computeUser70RecommendationsReview, clearUser70ReviewCache } = __M_services_lotto_views_review_tab;
-const { calculate7AlgorithmsPerformance } = __M_services_lotto_views_algorithms_tab;
 
 let _renderDashboardDebounceTimer = null;
-let _landingReviewSummaryCache = null;
-let _lastLandingReviewCacheKey = '';
 
 /**
  * Update Compact Financial & Actual Winning History Summary on Landing Page
@@ -37221,77 +37170,57 @@ async function updateHomeReviewDashboard() {
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);
 
-        const userCount = (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) ? state.allRegisteredUsersList.length : 0;
-        const currentCacheKey = `${fromRound}_${maxRound}_${historyRounds.length}_${userCount}`;
-
-        let summaryData = (_lastLandingReviewCacheKey === currentCacheKey && _landingReviewSummaryCache) ? _landingReviewSummaryCache : null;
-
-        if (!summaryData) {
-            let perf = null;
-            if (typeof calculate7AlgorithmsPerformance === 'function') {
-                perf = calculate7AlgorithmsPerformance(fromRound, 'all');
-            } else if (typeof window !== 'undefined' && window.calculate7AlgorithmsPerformance) {
-                perf = window.calculate7AlgorithmsPerformance(fromRound, 'all');
-            }
-
-            let grandRank1 = 0;
-            let grandRank2 = 0;
-            let grandRank3 = 0;
-            let grandRank4 = 0;
-            let grandRank5 = 0;
-            let grandTotalPrize = 0;
-            let grandTotalGames = 0;
-            let grandTotalWins = 0;
-
-            if (perf) {
-                grandRank1 = perf.grandRankCounts ? (perf.grandRankCounts[1] || 0) : 0;
-                grandRank2 = perf.grandRankCounts ? (perf.grandRankCounts[2] || 0) : 0;
-                grandRank3 = perf.grandRankCounts ? (perf.grandRankCounts[3] || 0) : 0;
-                grandRank4 = perf.grandRankCounts ? (perf.grandRankCounts[4] || 0) : 0;
-                grandRank5 = perf.grandRankCounts ? (perf.grandRankCounts[5] || 0) : 0;
-                grandTotalPrize = perf.grandTotalPrize || 0;
-                grandTotalGames = perf.grandTotalGames || 0;
-                grandTotalWins = perf.grandTotalWins || (grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5);
-            } else {
-                const userList = getAllUnifiedRegisteredUsers();
-                const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
-
-                rounds.forEach(rnd => {
-                    userList.forEach(u => {
-                        const rev = (typeof computeUser70RecommendationsReview === 'function')
-                            ? computeUser70RecommendationsReview(u.id, rnd)
-                            : (typeof window !== 'undefined' && window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, rnd) : null);
-                        if (rev && !rev.isPreJoin) {
-                            grandTotalGames += (rev.totalGames || 70);
-                            grandTotalPrize += (rev.totalPrize || 0);
-                            if (rev.grandHits) {
-                                grandRank1 += (rev.grandHits[1] || 0);
-                                grandRank2 += (rev.grandHits[2] || 0);
-                                grandRank3 += (rev.grandHits[3] || 0);
-                                grandRank4 += (rev.grandHits[4] || 0);
-                                grandRank5 += (rev.grandHits[5] || 0);
-                            }
-                        }
-                    });
-                });
-                grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
-            }
-
-            summaryData = {
-                grandRank1,
-                grandRank2,
-                grandRank3,
-                grandRank4,
-                grandRank5,
-                grandTotalPrize,
-                grandTotalGames,
-                grandTotalWins
-            };
-            _landingReviewSummaryCache = summaryData;
-            _lastLandingReviewCacheKey = currentCacheKey;
+        let perf = null;
+        if (typeof calculate7AlgorithmsPerformance === 'function') {
+            perf = calculate7AlgorithmsPerformance(fromRound, 'all');
+        } else if (typeof window !== 'undefined' && window.calculate7AlgorithmsPerformance) {
+            perf = window.calculate7AlgorithmsPerformance(fromRound, 'all');
         }
 
-        const { grandRank1, grandRank2, grandRank3, grandRank4, grandRank5, grandTotalPrize, grandTotalGames, grandTotalWins } = summaryData;
+        let grandRank1 = 0;
+        let grandRank2 = 0;
+        let grandRank3 = 0;
+        let grandRank4 = 0;
+        let grandRank5 = 0;
+        let grandTotalPrize = 0;
+        let grandTotalGames = 0;
+        let grandTotalWins = 0;
+
+        if (perf) {
+            grandRank1 = perf.grandRankCounts ? (perf.grandRankCounts[1] || 0) : 0;
+            grandRank2 = perf.grandRankCounts ? (perf.grandRankCounts[2] || 0) : 0;
+            grandRank3 = perf.grandRankCounts ? (perf.grandRankCounts[3] || 0) : 0;
+            grandRank4 = perf.grandRankCounts ? (perf.grandRankCounts[4] || 0) : 0;
+            grandRank5 = perf.grandRankCounts ? (perf.grandRankCounts[5] || 0) : 0;
+            grandTotalPrize = perf.grandTotalPrize || 0;
+            grandTotalGames = perf.grandTotalGames || 0;
+            grandTotalWins = perf.grandTotalWins || (grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5);
+        } else {
+            // Fallback direct calculation across rounds 1235..maxRound and registered users
+            const userList = getAllUnifiedRegisteredUsers();
+
+            const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
+
+            rounds.forEach(rnd => {
+                userList.forEach(u => {
+                    const rev = (typeof computeUser70RecommendationsReview === 'function')
+                        ? computeUser70RecommendationsReview(u.id, rnd)
+                        : (typeof window !== 'undefined' && window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, rnd) : null);
+                    if (rev && !rev.isPreJoin) {
+                        grandTotalGames += (rev.totalGames || 70);
+                        grandTotalPrize += (rev.totalPrize || 0);
+                        if (rev.grandHits) {
+                            grandRank1 += (rev.grandHits[1] || 0);
+                            grandRank2 += (rev.grandHits[2] || 0);
+                            grandRank3 += (rev.grandHits[3] || 0);
+                            grandRank4 += (rev.grandHits[4] || 0);
+                            grandRank5 += (rev.grandHits[5] || 0);
+                        }
+                    }
+                });
+            });
+            grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
+        }
 
         const roundRangeLabel = `제 ${fromRound}~${maxRound}회차 누적`;
 

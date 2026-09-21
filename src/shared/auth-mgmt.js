@@ -1968,10 +1968,11 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                             await window.initLottoService();
                         }
                     } catch(ex) {}
-                    try { if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard(); } catch(ex) {}
-                    checkAuthOnLoad(initFirebaseAndData).then(function() {
-                        try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(e){}
-                    }).catch(function(err) { console.warn('[BG auth check]', err); });
+                    try {
+                        if (typeof renderLandingDashboard === 'function') {
+                            renderLandingDashboard();
+                        }
+                    } catch(ex) {}
                 }, 50);
 
             } catch (err) {
@@ -2025,7 +2026,22 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     setIsAdminCache(authId, true);
                     setIsPermanentCache(authId, true);
                     setUserNameCache(authId, '최고관리자');
+                    setUserPermissionsCache(authId, { allowLotto: true, allowToto: true });
                     document.body.classList.add('is-admin');
+
+                    const btnUserManagement = document.getElementById('btnUserManagement');
+                    const btnUserManagementApp = document.getElementById('btnUserManagementApp');
+                    const btnAdminSnapshotAudit = document.getElementById('btnAdminSnapshotAudit');
+                    const btnUserManagementToto = document.getElementById('btnUserManagementToto');
+                    const btnFetchLatestDraw = document.getElementById('btnFetchLatestDraw');
+                    const btnOpenManualDrawModal = document.getElementById('btnOpenManualDrawModal');
+
+                    if (btnUserManagement) btnUserManagement.style.setProperty('display', 'inline-flex', 'important');
+                    if (btnUserManagementApp) btnUserManagementApp.style.setProperty('display', 'inline-flex', 'important');
+                    if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.setProperty('display', 'inline-flex', 'important');
+                    if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'inline-flex', 'important');
+                    if (btnFetchLatestDraw) btnFetchLatestDraw.style.display = 'inline-flex';
+                    if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'inline-block';
                 }
 
                 // 2. Show landing page immediately
@@ -2051,7 +2067,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     setTimeout(function() { try { showToast(welcomeMsg); } catch(ex) {} }, 80);
                 }
 
-                // 4. Initialize services (non-blocking, background)
+                // 4. Initialize services (non-blocking, smooth coordinated sequence)
                 setTimeout(async function() {
                     try {
                         if (typeof initFirebaseAndData === 'function') {
@@ -2061,16 +2077,10 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                         }
                     } catch(ex) {}
                     try {
-                        if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
+                        if (typeof renderLandingDashboard === 'function') {
+                            renderLandingDashboard();
+                        }
                     } catch(ex) {}
-                    // Background auth verification (non-blocking)
-                    checkAuthOnLoad(initFirebaseAndData).then(function() {
-                        try {
-                            if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
-                        } catch(e){}
-                    }).catch(function(err) {
-                        console.warn('[Background auth check error]', err);
-                    });
                 }, 50);
             }
 

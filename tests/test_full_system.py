@@ -1962,9 +1962,62 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("if (target === 'tab-confirmed-list')", code)
         self.assertIn("if (target === 'tab-algorithms')", code)
 
+    def test_54_confirmed_tab_performance_and_fast_matching_integrity(self):
+        """Test 54: Verify confirmed tab performance optimizations, lazy chart loading, and fast O(1) recommendation matching."""
+        conf_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        with open(conf_path, 'r', encoding='utf-8') as f:
+            code = f.read()
+
+        # 1. getFastAiMatchTag must be exported and exposed on window
+        self.assertIn('export function getFastAiMatchTag', code)
+        self.assertIn('window.getFastAiMatchTag = getFastAiMatchTag', code)
+
+        # 2. renderConfirmedCharts must be exported and exposed on window
+        self.assertIn('export function renderConfirmedCharts', code)
+        self.assertIn('window.renderConfirmedCharts = renderConfirmedCharts', code)
+
+        # 3. Fast O(1) matching in loop without dead v3Map/v4Map
+        self.assertIn('getFastAiMatchTag(nums, round, purchaseUser, cIdx, purchase.version || \'\')', code)
+        self.assertNotIn('v3Map.set(toKey(arr)', code)
+        self.assertNotIn('v4Map.set(toKey(arr)', code)
+
+        # 4. toggleConfirmedStats must invoke renderConfirmedCharts lazily
+        self.assertIn('renderConfirmedCharts()', code)
+        self.assertIn('toggleConfirmedStats', code)
+
+    def test_55_superadmin_login_and_landing_dashboard_performance(self):
+        """Test 55: Verify instant superadmin UI unlock, admin controls activation, and memoized non-blocking landing review dashboard."""
+        auth_path = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        with open(auth_path, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+
+        # 1. Instant superadmin unlock must set caches and permissions immediately
+        self.assertIn("setIsAdminCache(authId, true);", auth_code)
+        self.assertIn("setIsPermanentCache(authId, true);", auth_code)
+        self.assertIn("setUserPermissionsCache(authId, { allowLotto: true, allowToto: true });", auth_code)
+        self.assertIn("document.body.classList.add('is-admin');", auth_code)
+
+        # 2. Landing dashboard must import calculate7AlgorithmsPerformance and have memoization
+        landing_path = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+        with open(landing_path, 'r', encoding='utf-8') as f:
+            landing_code = f.read()
+
+        self.assertIn("import { calculate7AlgorithmsPerformance }", landing_code)
+        self.assertIn("_landingReviewSummaryCache", landing_code)
+        self.assertIn("_lastLandingReviewCacheKey", landing_code)
+
+        # 3. Algorithms tab calculate7AlgorithmsPerformance must pre-index user reviews
+        algo_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'algorithms-tab.js')
+        with open(algo_path, 'r', encoding='utf-8') as f:
+            algo_code = f.read()
+
+        self.assertIn("const userReviewsMap = new Map();", algo_code)
+        self.assertIn("userReviewsMap.get(", algo_code)
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
