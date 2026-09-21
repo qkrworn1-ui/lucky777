@@ -134,7 +134,15 @@ window.showToto = function(pushHistory = true) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.showLotto = function(pushHistory = true) {
+window.showLotto = function(targetTabOrPushHistory = true) {
+    let pushHistory = true;
+    let initialTab = null;
+    if (typeof targetTabOrPushHistory === 'string') {
+        initialTab = targetTabOrPushHistory;
+    } else if (typeof targetTabOrPushHistory === 'boolean') {
+        pushHistory = targetTabOrPushHistory;
+    }
+
     const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
     if (authId) {
         const getPerms = typeof getUserPermissions === 'function' ? getUserPermissions : (window.getUserPermissions || (() => ({ allowLotto: true })));
@@ -154,6 +162,16 @@ window.showLotto = function(pushHistory = true) {
         }
     } catch(e) {
         console.warn('[Lotto Safe Load Exception]', e);
+    }
+
+    if (initialTab) {
+        try {
+            if (typeof window.switchTab === 'function') {
+                window.switchTab(initialTab);
+            } else if (typeof window.switchLottoTab === 'function') {
+                window.switchLottoTab(initialTab);
+            }
+        } catch(tabErr) {}
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };

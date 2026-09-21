@@ -68,10 +68,10 @@ async function _executeRenderLandingDashboard() {
     }
 
     // 1. Calculate Individual Logged-in User's Actual Lotto Financials
-    const myFin = calculateLedgerFinancials(true, 'my');
+    const myFin = calculateLedgerFinancials(false, 'my');
 
     // 2. Calculate All Registered Users' Aggregate Lotto Financials
-    const allFin = await calculateAllUsersTotalFinancials();
+    const allFin = await calculateAllUsersTotalFinancials(false);
 
     // 3. Update Header Financial Summary KPI Elements (My Portfolio)
     const elInvest = document.getElementById('lp-total-invest');

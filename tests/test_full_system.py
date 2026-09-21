@@ -2038,6 +2038,45 @@ class TestFullSystem(unittest.TestCase):
         # 5. Standalone PWA and in-app browsers must use Kakao.Auth.authorize redirect
         self.assertIn('window.Kakao.Auth.authorize({', code)
 
+    def test_57_confirmed_tab_mobile_instant_loading_and_init_idempotency(self):
+        """Test 57: Verify 0ms instant confirmed purchases tab loading, init idempotency, and recommendation snapshot indexing."""
+        lotto_idx_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'index.js')
+        conf_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        landing_file = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+        main_file = os.path.join(self.root_dir, 'src', 'main.js')
+
+        with open(lotto_idx_file, 'r', encoding='utf-8') as f:
+            lotto_idx_code = f.read()
+        with open(conf_tab_file, 'r', encoding='utf-8') as f:
+            conf_tab_code = f.read()
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        with open(landing_file, 'r', encoding='utf-8') as f:
+            landing_code = f.read()
+        with open(main_file, 'r', encoding='utf-8') as f:
+            main_code = f.read()
+
+        # 1. lotto/index.js initLottoService idempotency guard
+        self.assertIn('_activePurchasesAuthId', lotto_idx_code)
+        self.assertIn('window.__lottoInitialized && _activePurchasesAuthId === currentAuthId', lotto_idx_code)
+        self.assertIn('resetLottoServiceState', lotto_idx_code)
+
+        # 2. confirmed-tab.js snapshot matching & memoization
+        self.assertIn('getUserWeeklyRecommendationSnapshotSync', conf_tab_code)
+        self.assertIn('_adminOverviewHtmlCache', conf_tab_code)
+        self.assertIn('_adminOverviewCacheKey', conf_tab_code)
+        self.assertIn('_roundUserRecIndex', conf_tab_code)
+
+        # 3. ledger.js & landing-dashboard.js total financials memoization
+        self.assertIn('export async function calculateAllUsersTotalFinancials(forceRefresh = false)', ledger_code)
+        self.assertIn('_allUsersTotalFinCache', ledger_code)
+        self.assertIn('calculateAllUsersTotalFinancials(false)', landing_code)
+
+        # 4. main.js showLotto direct tab switching
+        self.assertIn('window.showLotto = function(targetTabOrPushHistory = true)', main_code)
+        self.assertIn('if (initialTab)', main_code)
+
 
 if __name__ == '__main__':
     unittest.main()

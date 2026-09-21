@@ -6,10 +6,12 @@ import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgm
 import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
 import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
 
-import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } from '../generator.js';
+import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 
 const _roundUserRecIndex = new Map();
+let _adminOverviewHtmlCache = '';
+let _adminOverviewCacheKey = '';
 
 /**
  * ⚡ Ultra-fast O(1) AI Recommendation Matching
@@ -37,24 +39,71 @@ export function getFastAiMatchTag(nums, round, user, comboIdx, pVer = '') {
     if (!index) {
         index = new Map();
         try {
-            const uV4 = computeAbsoluteTop10Combinations(false, round, 'v4', true, userKey) || [];
-            uV4.forEach((c, idx) => {
-                const arr = getComboNumbers(c);
-                if (arr.length === 6) {
-                    const key = arr.slice().sort((a,b) => a - b).join(',');
-                    index.set(key, { label: `V4.0 #${idx + 1}`, type: 'v4' });
+            // 1. Check synchronous recommendation snapshot first (0.0001ms instant)
+            const snap = (typeof getUserWeeklyRecommendationSnapshotSync === 'function')
+                ? getUserWeeklyRecommendationSnapshotSync(userKey, round)
+                : null;
+            if (snap) {
+                if (Array.isArray(snap.v4Combos)) {
+                    snap.v4Combos.forEach((c, idx) => {
+                        const arr = getComboNumbers(c);
+                        if (arr.length === 6) {
+                            const key = arr.slice().sort((a,b) => a - b).join(',');
+                            index.set(key, { label: `V4.0 #${idx + 1}`, type: 'v4' });
+                        }
+                    });
                 }
-            });
-            const uV3 = computeAbsoluteTop10Combinations(false, round, 'v3', true, userKey) || [];
-            uV3.forEach((c, idx) => {
-                const arr = getComboNumbers(c);
-                if (arr.length === 6) {
-                    const key = arr.slice().sort((a,b) => a - b).join(',');
-                    if (!index.has(key)) {
-                        index.set(key, { label: `V3.0 #${idx + 1}`, type: 'v3' });
-                    }
+                if (Array.isArray(snap.v3Combos)) {
+                    snap.v3Combos.forEach((c, idx) => {
+                        const arr = getComboNumbers(c);
+                        if (arr.length === 6) {
+                            const key = arr.slice().sort((a,b) => a - b).join(',');
+                            if (!index.has(key)) {
+                                index.set(key, { label: `V3.0 #${idx + 1}`, type: 'v3' });
+                            }
+                        }
+                    });
                 }
-            });
+                if (Array.isArray(snap.extraPacks)) {
+                    snap.extraPacks.forEach(pack => {
+                        if (pack && Array.isArray(pack.combos)) {
+                            pack.combos.forEach((c, idx) => {
+                                const arr = getComboNumbers(c);
+                                if (arr.length === 6) {
+                                    const key = arr.slice().sort((a,b) => a - b).join(',');
+                                    if (!index.has(key)) {
+                                        index.set(key, { label: `${pack.shortName || '추가'} #${idx + 1}`, type: 'extra' });
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
+            } else {
+                // If no snapshot, check if current upcoming round to avoid heavy history isolation in past rounds
+                const curUpcoming = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1241);
+                if (round === curUpcoming) {
+                    const uV4 = computeAbsoluteTop10Combinations(false, round, 'v4', true, userKey) || [];
+                    uV4.forEach((c, idx) => {
+                        const arr = getComboNumbers(c);
+                        if (arr.length === 6) {
+                            const key = arr.slice().sort((a,b) => a - b).join(',');
+                            index.set(key, { label: `V4.0 #${idx + 1}`, type: 'v4' });
+                        }
+                    });
+                    const uV3 = computeAbsoluteTop10Combinations(false, round, 'v3', true, userKey) || [];
+                    uV3.forEach((c, idx) => {
+                        const arr = getComboNumbers(c);
+                        if (arr.length === 6) {
+                            const key = arr.slice().sort((a,b) => a - b).join(',');
+                            if (!index.has(key)) {
+                                index.set(key, { label: `V3.0 #${idx + 1}`, type: 'v3' });
+                            }
+                        }
+                    });
+                }
+            }
+
             if (state.extraPackCache) {
                 for (let pId = 1; pId <= 5; pId++) {
                     const epKey = `extra_${pId}_${round}_${userKey}`;
@@ -347,14 +396,18 @@ export async function renderConfirmedPurchasesList() {
     // 1-1. [ADMIN ALL USERS SUMMARY TABLE] Real Purchase Winnings & Algorithm Distribution Overview (When Admin)
     let adminOverviewTableHtml = '';
     if (isAdmin) {
-        try {
-            // Compute actual purchase winning stats with algorithm breakdown for each user
-            const memberStatsList = validUnifiedUsers.map(u => {
-                const uId = u.id;
-                const cleanId = uId.toLowerCase().trim();
-                const uInfo = (state.allUsersPurchasesMap && (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId])) 
-                    ? (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId]) 
-                    : {};
+        const adminOverviewCacheKey = `${validUnifiedUsers.length}_${currentTarget}_${Object.keys(state.allUsersPurchasesMap || {}).length}`;
+        if (_adminOverviewCacheKey === adminOverviewCacheKey && _adminOverviewHtmlCache) {
+            adminOverviewTableHtml = _adminOverviewHtmlCache;
+        } else {
+            try {
+                // Compute actual purchase winning stats with algorithm breakdown for each user
+                const memberStatsList = validUnifiedUsers.map(u => {
+                    const uId = u.id;
+                    const cleanId = uId.toLowerCase().trim();
+                    const uInfo = (state.allUsersPurchasesMap && (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId])) 
+                        ? (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId]) 
+                        : {};
                 let uLedger = uInfo.ledger || {};
                 if (typeof uLedger === 'string') {
                     try { uLedger = JSON.parse(uLedger); } catch(e) { uLedger = {}; }
@@ -582,6 +635,8 @@ export async function renderConfirmedPurchasesList() {
                     ${backNavHtml}
                 </div>
             `;
+            _adminOverviewHtmlCache = adminOverviewTableHtml;
+            _adminOverviewCacheKey = adminOverviewCacheKey;
         } catch(adminErr) {
             console.warn('[ConfirmedTab AdminOverview render error]', adminErr);
         }

@@ -1951,15 +1951,23 @@ export function calculateLedgerFinancials(forceRefresh = false, explicitTarget =
     return result;
 }
 
+let _allUsersTotalFinCache = null;
+let _allUsersTotalFinCacheKey = '';
+
 /**
  * Calculate Grand Aggregate Financials & Winning Hits Across All Registered Users
  * Used for Main Landing Dashboard & Platform Global Overview
  */
-export async function calculateAllUsersTotalFinancials() {
+export async function calculateAllUsersTotalFinancials(forceRefresh = false) {
     if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger || Object.keys(state.allUsersMergedLedger).length === 0) {
         if (typeof fetchAllUsersPurchases === 'function') {
             await fetchAllUsersPurchases();
         }
+    }
+
+    const cacheKey = `${Object.keys(state.allUsersPurchasesMap || {}).length}_${Object.keys(state.allUsersMergedLedger || {}).length}`;
+    if (!forceRefresh && _allUsersTotalFinCache && _allUsersTotalFinCacheKey === cacheKey) {
+        return _allUsersTotalFinCache;
     }
 
     let totalInvest = 0;
@@ -2064,7 +2072,7 @@ export async function calculateAllUsersTotalFinancials() {
     const totalRoi = totalInvest > 0 ? ((totalPrize / totalInvest) * 100).toFixed(1) : '0.0';
     const totalWins = hits.reduce((a, b) => a + b, 0);
 
-    return {
+    const result = {
         totalInvest,
         totalPrize,
         netProfit,
@@ -2074,6 +2082,10 @@ export async function calculateAllUsersTotalFinancials() {
         hits,
         userCount: Object.keys(state.allUsersPurchasesMap || {}).length
     };
+
+    _allUsersTotalFinCache = result;
+    _allUsersTotalFinCacheKey = cacheKey;
+    return result;
 }
 
 /**
