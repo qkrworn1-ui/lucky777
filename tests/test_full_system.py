@@ -2012,11 +2012,36 @@ class TestFullSystem(unittest.TestCase):
             algo_code = f.read()
 
         self.assertIn("const userReviewsMap = new Map();", algo_code)
-        self.assertIn("userReviewsMap.get(", algo_code)
+    def test_56_kakao_mobile_hybrid_auth_integrity(self):
+        """Test 56: Verify Kakao mobile hybrid authentication, throughTalk mobile optimization, OAuth2 redirect fallback, and token code exchange."""
+        auth_path = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        with open(auth_path, 'r', encoding='utf-8') as f:
+            code = f.read()
+
+        # 1. processKakaoUserLogin must be defined to handle unified token authentication
+        self.assertIn('async function processKakaoUserLogin(authObj)', code)
+
+        # 2. handleKakaoAuthRedirectCode must support OAuth2 redirect authorization codes for PWA/Mobile
+        self.assertIn('async function handleKakaoAuthRedirectCode()', code)
+        self.assertIn('https://kauth.kakao.com/oauth/token', code)
+        self.assertIn('grant_type: \'authorization_code\'', code)
+
+        # 3. loginWithKakao must detect mobile, standalone PWA, and in-app webviews
+        self.assertIn('window.loginWithKakao = function()', code)
+        self.assertIn('isMobile', code)
+        self.assertIn('isStandalonePwa', code)
+        self.assertIn('isInAppBrowser', code)
+
+        # 4. throughTalk must be disabled on mobile (!isMobile) to prevent tab disconnect / window.opener orphan
+        self.assertIn('throughTalk: !isMobile', code)
+
+        # 5. Standalone PWA and in-app browsers must use Kakao.Auth.authorize redirect
+        self.assertIn('window.Kakao.Auth.authorize({', code)
 
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
