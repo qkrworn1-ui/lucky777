@@ -50,12 +50,19 @@ def fetch_from_dhlottery(draw_no):
             bonus = item['bnsWnNo']
             winners = item.get('rnk1WnNope', 0)
             prize = item.get('rnk1WnAmt', 0)
+            rank2_prize = item.get('rnk2WnAmt', 50000000)
+            rank3_prize = item.get('rnk3WnAmt', 1500000)
+            raw_date = str(item.get('ltRflYmd', ''))
+            date_str = f"{raw_date[:4]}-{raw_date[4:6]}-{raw_date[6:]}" if len(raw_date) == 8 else raw_date
             
             return {
                 "numbers": sorted(numbers),
                 "bonus": bonus,
                 "rank1Winners": winners,
-                "rank1Prize": prize
+                "rank1Prize": prize,
+                "rank2Prize": rank2_prize,
+                "rank3Prize": rank3_prize,
+                "date": date_str
             }
         else:
             print(f"{draw_no}회차 데이터가 아직 없거나 추첨 전입니다.")
@@ -77,8 +84,6 @@ def fetch_from_naver(draw_no):
         res = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(res.text, 'html.parser')
         
-        # 네이버 로또 당첨번호 위젯 파싱
-        # 보통 .num_box 엘리먼트 안에 당첨번호 6개와 보너스 번호 1개가 차례대로 존재함
         num_box = soup.select_one('.num_box')
         if not num_box:
             print("네이버 검색결과에서 로또 번호 영역을 찾을 수 없습니다.")
@@ -92,8 +97,6 @@ def fetch_from_naver(draw_no):
         numbers = [int(span.text) for span in spans[:6]]
         bonus = int(spans[6].text)
         
-        # 1등 당첨자수, 당첨금액 파싱 시도 (네이버 위젯 구조에 따라 다름)
-        # 네이버 위젯에서 1등 당첨금 정보가 항상 안정적으로 제공되지는 않을 수 있으므로 0으로 초기화
         winners = 0
         prize = 0
         
@@ -114,10 +117,13 @@ def fetch_from_naver(draw_no):
             
         print(f"네이버 파싱 성공! 번호: {numbers}, 보너스: {bonus}")
         return {
-            "numbers": numbers,
+            "numbers": sorted(numbers),
             "bonus": bonus,
             "rank1Winners": winners,
-            "rank1Prize": prize
+            "rank1Prize": prize,
+            "rank2Prize": 50000000,
+            "rank3Prize": 1500000,
+            "date": ""
         }
     except Exception as e:
         print(f"네이버 파싱 오류: {e}")
@@ -129,21 +135,21 @@ def update_data_js(draw_no, new_data):
         with open(DATA_JS_PATH, 'r', encoding='utf-8') as f:
             content = f.read()
             
-        # 포맷팅된 JSON 문자열 생성
-        new_entry = f'"{draw_no}":{{"numbers":{new_data["numbers"]},"bonus":{new_data["bonus"]},"rank1Winners":{new_data["rank1Winners"]},"rank1Prize":{new_data["rank1Prize"]}}}'
-        
-        # 기존 데이터를 찾아서 그 앞에 새 데이터를 끼워넣음
-        # "const lottoHistory = {" 다음에 데이터를 삽입
-        target_str = "const lottoHistory = {"
-        if target_str in content:
-            new_content = content.replace(target_str, f"{target_str}\n    {new_entry},")
+        idx = content.rfind('};')
+        if idx == -1:
+            idx = content.rfind('}')
+            
+        if idx != -1:
+            date_field = f',"date":"{new_data["date"]}"' if new_data.get("date") else ''
+            entry = f',"{draw_no}":{{"numbers":{new_data["numbers"]},"bonus":{new_data["bonus"]},"rank1Winners":{new_data["rank1Winners"]},"rank1Prize":{new_data["rank1Prize"]},"rank2Prize":{new_data.get("rank2Prize", 50000000)},"rank3Prize":{new_data.get("rank3Prize", 1500000)},"rank4Prize":50000,"rank5Prize":5000{date_field}}}'
+            new_content = content[:idx] + entry + content[idx:]
             with open(DATA_JS_PATH, 'w', encoding='utf-8') as f:
                 f.write(new_content)
             print(f"\n성공! data.js 파일이 {draw_no}회차 데이터로 업데이트 되었습니다.")
-            print(f"[{draw_no}회] 당첨번호: {new_data['numbers']} + 보너스 {new_data['bonus']}")
+            print(f"[{draw_no}회] 당첨번호: {new_data['numbers']} + 보너스 {new_data['bonus']} (1등: {new_data['rank1Prize']:,}원, {new_data['rank1Winners']}명)")
             return True
         else:
-            print("data.js에서 lottoHistory 변수를 찾을 수 없습니다.")
+            print("data.js 파일 끝 형식을 찾을 수 없습니다.")
             return False
             
     except Exception as e:

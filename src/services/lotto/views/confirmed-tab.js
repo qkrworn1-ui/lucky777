@@ -1,10 +1,11 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue, removeUndefined, copyToClipboard } from '../../../shared/utils.js';
+import { getBallColorClass, getBallHexColor, getBallTextColor, showToast, formatDate, calculateACValue, removeUndefined, copyToClipboard } from '../../../shared/utils.js';
 import { createBallHtml, renderBallRow, getRankBadge, openModal, closeModal } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgmt.js';
 import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
-import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
+import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
+
 import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 
@@ -23,9 +24,14 @@ export async function renderConfirmedPurchasesList() {
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(cleanAuthId) : (cleanAuthId === 'master' || cleanAuthId === 'admin'));
     const isMaster = (cleanAuthId === 'master');
 
-    // If Admin, prefetch all users' purchases if not yet loaded OR if merged cache was invalidated (e.g. after save)
+    // If Admin, prefetch all users' purchases in background if not yet loaded OR if merged cache was invalidated
     if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger)) {
-        await fetchAllUsersPurchases();
+        fetchAllUsersPurchases().then(() => {
+            const currentTab = document.getElementById('tab-confirmed-list');
+            if (currentTab && currentTab.classList.contains('active')) {
+                renderConfirmedPurchasesList();
+            }
+        }).catch(e => console.warn('[ConfirmedTab background fetch error]', e));
     }
 
     const currentTarget = isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId;
@@ -83,94 +89,98 @@ export async function renderConfirmedPurchasesList() {
     renderConfirmedRankSummary(hits, totalCombosCount, totalPrize, totalInvest);
 
     // Render Charts
-    const totalWins = hits.reduce((a,b) => a+b, 0);
-    if (state.confirmedPrizeChartInstance) state.confirmedPrizeChartInstance.destroy();
-    const canvasPie = document.getElementById('confirmedPrizeRatioChart');
-    if (canvasPie && typeof canvasPie.getContext === 'function' && typeof window.Chart === 'function') {
-        const ctxPie = canvasPie.getContext('2d');
-        state.confirmedPrizeChartInstance = new window.Chart(ctxPie, {
-            type: 'doughnut',
-            data: {
-                labels: ['1등', '2등', '3등', '4등', '5등'],
-                datasets: [{
-                    data: totalWins > 0 ? hits : [0, 0, 0, 0, 1],
-                    backgroundColor: ['#fbc400', '#69c8f2', '#ff7272', '#a0aec0', '#b0d840'],
-                    borderWidth: 1,
-                    borderColor: 'rgba(15,23,42,0.8)'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 9 } } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                if (totalWins === 0) return '당첨 내역 없음';
-                                const val = context.raw || 0;
-                                const pct = ((val / totalWins) * 100).toFixed(1);
-                                return `${context.label}: ${val}회 (${pct}%)`;
+    try {
+        const totalWins = hits.reduce((a,b) => a+b, 0);
+        if (state.confirmedPrizeChartInstance) state.confirmedPrizeChartInstance.destroy();
+        const canvasPie = document.getElementById('confirmedPrizeRatioChart');
+        if (canvasPie && typeof canvasPie.getContext === 'function' && typeof window.Chart === 'function') {
+            const ctxPie = canvasPie.getContext('2d');
+            state.confirmedPrizeChartInstance = new window.Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['1등', '2등', '3등', '4등', '5등'],
+                    datasets: [{
+                        data: totalWins > 0 ? hits : [0, 0, 0, 0, 1],
+                        backgroundColor: ['#fbc400', '#69c8f2', '#ff7272', '#a0aec0', '#b0d840'],
+                        borderWidth: 1,
+                        borderColor: 'rgba(15,23,42,0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 9 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (totalWins === 0) return '당첨 내역 없음';
+                                    const val = context.raw || 0;
+                                    const pct = ((val / totalWins) * 100).toFixed(1);
+                                    return `${context.label}: ${val}회 (${pct}%)`;
+                                }
                             }
                         }
-                    }
-                },
-                cutout: '60%'
-            }
-        });
-    }
-
-    if (state.confirmedTrendChartInstance) state.confirmedTrendChartInstance.destroy();
-    const canvasTrend = document.getElementById('confirmedTrendLineChart');
-    if (canvasTrend && typeof canvasTrend.getContext === 'function' && typeof window.Chart === 'function') {
-        const ctxTrend = canvasTrend.getContext('2d');
-        state.confirmedTrendChartInstance = new window.Chart(ctxTrend, {
-            type: 'line',
-            data: {
-                labels: trendLabels.length > 0 ? trendLabels : ['대기'],
-                datasets: [
-                    {
-                        label: '누적 구매금',
-                        data: trendInvest.length > 0 ? trendInvest : [0],
-                        borderColor: '#cbd5e1',
-                        borderDash: [5, 5],
-                        backgroundColor: 'transparent',
-                        borderWidth: 1.5,
-                        tension: 0.1
                     },
-                    {
-                        label: '누적 회수금(당첨금)',
-                        data: trendPrize.length > 0 ? trendPrize : [0],
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.05)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.2
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 9 } } } },
-                scales: {
-                    x: { ticks: { color: '#cbd5e1', font: { size: 8 } }, grid: { display: false } },
-                    y: { 
-                        ticks: { 
-                            color: '#cbd5e1', 
-                            font: { size: 8 },
-                            callback: function(value) { 
-                                if (value >= 10000) {
-                                    return (value / 10000).toLocaleString() + '만원'; 
+                    cutout: '60%'
+                }
+            });
+        }
+
+        if (state.confirmedTrendChartInstance) state.confirmedTrendChartInstance.destroy();
+        const canvasTrend = document.getElementById('confirmedTrendLineChart');
+        if (canvasTrend && typeof canvasTrend.getContext === 'function' && typeof window.Chart === 'function') {
+            const ctxTrend = canvasTrend.getContext('2d');
+            state.confirmedTrendChartInstance = new window.Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: trendLabels.length > 0 ? trendLabels : ['대기'],
+                    datasets: [
+                        {
+                            label: '누적 구매금',
+                            data: trendInvest.length > 0 ? trendInvest : [0],
+                            borderColor: '#cbd5e1',
+                            borderDash: [5, 5],
+                            backgroundColor: 'transparent',
+                            borderWidth: 1.5,
+                            tension: 0.1
+                        },
+                        {
+                            label: '누적 회수금(당첨금)',
+                            data: trendPrize.length > 0 ? trendPrize : [0],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 9 } } } },
+                    scales: {
+                        x: { ticks: { color: '#cbd5e1', font: { size: 8 } }, grid: { display: false } },
+                        y: { 
+                            ticks: { 
+                                color: '#cbd5e1', 
+                                font: { size: 8 },
+                                callback: function(value) { 
+                                    if (value >= 10000) {
+                                        return (value / 10000).toLocaleString() + '만원'; 
+                                    }
+                                    return value.toLocaleString() + '원';
                                 }
-                                return value.toLocaleString() + '원';
-                            }
-                        }, 
-                        grid: { color: 'rgba(255,255,255,0.05)' }
+                            }, 
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+    } catch(chartErr) {
+        console.warn('[ConfirmedTab Chart render error]', chartErr);
     }
 
     // Admin user selector dropdown HTML
@@ -210,248 +220,252 @@ export async function renderConfirmedPurchasesList() {
     // 1-1. [ADMIN ALL USERS SUMMARY TABLE] Real Purchase Winnings & Algorithm Distribution Overview (When Admin)
     let adminOverviewTableHtml = '';
     if (isAdmin) {
-        // Compute actual purchase winning stats with algorithm breakdown for each user
-        const memberStatsList = validUnifiedUsers.map(u => {
-            const uId = u.id;
-            const cleanId = uId.toLowerCase().trim();
-            const uInfo = (state.allUsersPurchasesMap && (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId])) 
-                ? (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId]) 
-                : {};
-            let uLedger = uInfo.ledger || {};
-            if (typeof uLedger === 'string') {
-                try { uLedger = JSON.parse(uLedger); } catch(e) { uLedger = {}; }
-            }
-            if (!uLedger || typeof uLedger !== 'object' || Object.keys(uLedger).length === 0) {
-                uLedger = getLedger(cleanId);
-            }
-            if (!uLedger || typeof uLedger !== 'object' || Object.keys(uLedger).length === 0) {
-                uLedger = getLedger(uId);
-            }
-            const uName = u.name || u.realName || uInfo.realName || (typeof getUserRealName === 'function' ? getUserRealName(uId) : '') || uId;
+        try {
+            // Compute actual purchase winning stats with algorithm breakdown for each user
+            const memberStatsList = validUnifiedUsers.map(u => {
+                const uId = u.id;
+                const cleanId = uId.toLowerCase().trim();
+                const uInfo = (state.allUsersPurchasesMap && (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId])) 
+                    ? (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId]) 
+                    : {};
+                let uLedger = uInfo.ledger || {};
+                if (typeof uLedger === 'string') {
+                    try { uLedger = JSON.parse(uLedger); } catch(e) { uLedger = {}; }
+                }
+                if (!uLedger || typeof uLedger !== 'object' || Object.keys(uLedger).length === 0) {
+                    uLedger = getLedger(cleanId);
+                }
+                if (!uLedger || typeof uLedger !== 'object' || Object.keys(uLedger).length === 0) {
+                    uLedger = getLedger(uId);
+                }
+                const uName = u.name || u.realName || uInfo.realName || (typeof getUserRealName === 'function' ? getUserRealName(uId) : '') || uId;
 
-            let totalGames = 0;
-            let totalInvest = 0;
-            let totalPrize = 0;
-            const rankHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-            const algoHits = { v4: 0, v3: 0, extra: 0, manual: 0 };
+                let totalGames = 0;
+                let totalInvest = 0;
+                let totalPrize = 0;
+                const rankHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                const algoHits = { v4: 0, v3: 0, extra: 0, manual: 0 };
 
-            Object.keys(uLedger).forEach(rStr => {
-                const round = parseInt(rStr);
-                if (isNaN(round) || !Array.isArray(uLedger[rStr])) return;
-                const actualDraw = getSafeActualDraw(round);
-                const winningSet = actualDraw && actualDraw.numbers ? new Set(actualDraw.numbers) : null;
-                const bonus = actualDraw ? actualDraw.bonus : null;
+                Object.keys(uLedger).forEach(rStr => {
+                    const round = parseInt(rStr);
+                    if (isNaN(round) || !Array.isArray(uLedger[rStr])) return;
+                    const actualDraw = getSafeActualDraw(round);
+                    const winningSet = actualDraw && actualDraw.numbers ? new Set(actualDraw.numbers) : null;
+                    const bonus = actualDraw ? actualDraw.bonus : null;
 
-                // Cache algorithm recommendations for this round & user to identify source
-                const uV4 = computeAbsoluteTop10Combinations(false, round, 'v4', true, uId) || [];
-                const uV3 = computeAbsoluteTop10Combinations(false, round, 'v3', true, uId) || [];
-                const extraPacks = (typeof generateExtraAddonPack === 'function') 
-                    ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, round, uId)) : [];
+                    // Cache algorithm recommendations for this round & user to identify source
+                    const uV4 = computeAbsoluteTop10Combinations(false, round, 'v4', true, uId) || [];
+                    const uV3 = computeAbsoluteTop10Combinations(false, round, 'v3', true, uId) || [];
+                    const extraPacks = (typeof generateExtraAddonPack === 'function') 
+                        ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, round, uId)) : [];
 
-                const receipts = deduplicateReceipts(uLedger[rStr].map(syncPurchaseWithQrUrl));
-                receipts.forEach(rawReceipt => {
-                    const receipt = syncPurchaseWithQrUrl(rawReceipt);
-                    const combos = receipt.combos || [];
-                    combos.forEach(c => {
-                        totalGames++;
-                        totalInvest += 1000;
-                        const nums = getComboNumbers(c);
+                    const receipts = deduplicateReceipts(uLedger[rStr].map(syncPurchaseWithQrUrl));
+                    receipts.forEach(rawReceipt => {
+                        const receipt = syncPurchaseWithQrUrl(rawReceipt);
+                        const combos = receipt.combos || [];
+                        combos.forEach(c => {
+                            totalGames++;
+                            totalInvest += 1000;
+                            const nums = getComboNumbers(c);
 
-                        let rank = 0;
-                        let prize = 0;
-                        if (winningSet) {
-                            const matches = nums.filter(n => winningSet.has(n));
-                            const matchCount = matches.length;
-                            const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
+                            let rank = 0;
+                            let prize = 0;
+                            if (winningSet) {
+                                const matches = nums.filter(n => winningSet.has(n));
+                                const matchCount = matches.length;
+                                const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
 
-                            if (matchCount === 6) {
-                                rank = 1;
-                                prize = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
-                            } else if (matchCount === 5 && hasBonus) {
-                                rank = 2;
-                                prize = actualDraw.rank2Prize || 50000000;
-                            } else if (matchCount === 5) {
-                                rank = 3;
-                                prize = actualDraw.rank3Prize || 1500000;
-                            } else if (matchCount === 4) {
-                                rank = 4;
-                                prize = 50000;
-                            } else if (matchCount === 3) {
-                                rank = 5;
-                                prize = 5000;
-                            }
+                                if (matchCount === 6) {
+                                    rank = 1;
+                                    prize = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
+                                } else if (matchCount === 5 && hasBonus) {
+                                    rank = 2;
+                                    prize = actualDraw.rank2Prize || 50000000;
+                                } else if (matchCount === 5) {
+                                    rank = 3;
+                                    prize = actualDraw.rank3Prize || 1500000;
+                                } else if (matchCount === 4) {
+                                    rank = 4;
+                                    prize = 50000;
+                                } else if (matchCount === 3) {
+                                    rank = 5;
+                                    prize = 5000;
+                                }
 
-                            if (rank >= 1 && rank <= 5) {
-                                rankHits[rank]++;
-                                totalPrize += prize;
+                                if (rank >= 1 && rank <= 5) {
+                                    rankHits[rank]++;
+                                    totalPrize += prize;
 
-                                // Determine Algorithm Origin
-                                const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
-                                if (match.isExact) {
-                                    if (match.matchedVersion.includes('V4.0')) algoHits.v4++;
-                                    else if (match.matchedVersion.includes('V3.0')) algoHits.v3++;
-                                    else if (match.matchedVersion.includes('추가')) algoHits.extra++;
-                                } else {
-                                    algoHits.manual++;
+                                    // Determine Algorithm Origin
+                                    const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
+                                    if (match.isExact) {
+                                        if (match.matchedVersion.includes('V4.0')) algoHits.v4++;
+                                        else if (match.matchedVersion.includes('V3.0')) algoHits.v3++;
+                                        else if (match.matchedVersion.includes('추가')) algoHits.extra++;
+                                    } else {
+                                        algoHits.manual++;
+                                    }
                                 }
                             }
-                        }
+                        });
                     });
                 });
+
+                const totalWins = rankHits[1] + rankHits[2] + rankHits[3] + rankHits[4] + rankHits[5];
+                const roi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
+
+                return {
+                    userId: uId,
+                    realName: uName,
+                    totalGames,
+                    totalInvest,
+                    totalPrize,
+                    rankHits,
+                    algoHits,
+                    totalWins,
+                    roi
+                };
+            }).sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins || b.totalInvest - a.totalInvest);
+
+            const grandPurchased = memberStatsList.reduce((a, b) => a + b.totalInvest, 0);
+            const grandGames = memberStatsList.reduce((a, b) => a + b.totalGames, 0);
+            const grandPrize = memberStatsList.reduce((a, b) => a + b.totalPrize, 0);
+            const grandR1 = memberStatsList.reduce((a, b) => a + b.rankHits[1], 0);
+            const grandR2 = memberStatsList.reduce((a, b) => a + b.rankHits[2], 0);
+            const grandR3 = memberStatsList.reduce((a, b) => a + b.rankHits[3], 0);
+            const grandR4 = memberStatsList.reduce((a, b) => a + b.rankHits[4], 0);
+            const grandR5 = memberStatsList.reduce((a, b) => a + b.rankHits[5], 0);
+            const grandAlgoV4 = memberStatsList.reduce((a, b) => a + b.algoHits.v4, 0);
+            const grandAlgoV3 = memberStatsList.reduce((a, b) => a + b.algoHits.v3, 0);
+            const grandAlgoExtra = memberStatsList.reduce((a, b) => a + b.algoHits.extra, 0);
+            const grandAlgoManual = memberStatsList.reduce((a, b) => a + b.algoHits.manual, 0);
+
+            let rowsHtml = '';
+            memberStatsList.forEach(m => {
+                const isCurrent = (currentTarget === m.userId) || (currentTarget === 'my' && (m.userId === 'master' || m.userId === cleanAuthId));
+                rowsHtml += `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem; background: ${isCurrent ? 'rgba(245, 158, 11, 0.12)' : 'transparent'};">
+                        <td style="padding: 8px 10px; font-weight: 700; color: #f8fafc; white-space: nowrap;">
+                            <span style="color: #fbbf24;"><i class="fa-solid fa-user"></i> ${m.userId}</span>
+                            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: normal;">${m.realName}</div>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: right; color: #cbd5e1; white-space: nowrap;">
+                            ${m.totalGames}게임<br>
+                            <span style="font-size: 0.68rem; color: #94a3b8;">(${m.totalInvest.toLocaleString()}원)</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; background: rgba(251,191,36,0.15); color: ${m.rankHits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">${m.rankHits[1]}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; background: rgba(248,113,113,0.15); color: ${m.rankHits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700;">${m.rankHits[2]}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; background: rgba(96,165,250,0.15); color: ${m.rankHits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700;">${m.rankHits[3]}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; background: rgba(52,211,153,0.15); color: ${m.rankHits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700;">${m.rankHits[4]}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${m.rankHits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${m.rankHits[5]}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap; font-size: 0.72rem;">
+                            <span title="V4.0 적중" style="color: #c4b5fd; font-weight: 700;">V4:${m.algoHits.v4}</span> ·
+                            <span title="V3.0 적중" style="color: #fbbf24; font-weight: 700;">V3:${m.algoHits.v3}</span> ·
+                            <span title="추가팩 적중" style="color: #6ee7b7; font-weight: 700;">추가:${m.algoHits.extra}</span> ·
+                            <span title="수동 적중" style="color: #94a3b8;">수동:${m.algoHits.manual}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${m.totalPrize > 0 ? '#34d399' : '#94a3b8'}; white-space: nowrap;">
+                            +${m.totalPrize.toLocaleString()}원
+                        </td>
+                        <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: ${m.roi >= 100 ? '#10b981' : (m.roi > 0 ? '#fbbf24' : '#64748b')}; white-space: nowrap;">
+                            ${m.roi.toFixed(1)}%
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <button type="button" onclick="window.changeConfirmedAdminUser && window.changeConfirmedAdminUser('${m.userId}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 4px 10px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer;">
+                                <i class="fa-solid fa-receipt"></i> 장부 보기
+                            </button>
+                        </td>
+                    </tr>
+                `;
             });
 
-            const totalWins = rankHits[1] + rankHits[2] + rankHits[3] + rankHits[4] + rankHits[5];
-            const roi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
-
-            return {
-                userId: uId,
-                realName: uName,
-                totalGames,
-                totalInvest,
-                totalPrize,
-                rankHits,
-                algoHits,
-                totalWins,
-                roi
-            };
-        }).sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins || b.totalInvest - a.totalInvest);
-
-        const grandPurchased = memberStatsList.reduce((a, b) => a + b.totalInvest, 0);
-        const grandGames = memberStatsList.reduce((a, b) => a + b.totalGames, 0);
-        const grandPrize = memberStatsList.reduce((a, b) => a + b.totalPrize, 0);
-        const grandR1 = memberStatsList.reduce((a, b) => a + b.rankHits[1], 0);
-        const grandR2 = memberStatsList.reduce((a, b) => a + b.rankHits[2], 0);
-        const grandR3 = memberStatsList.reduce((a, b) => a + b.rankHits[3], 0);
-        const grandR4 = memberStatsList.reduce((a, b) => a + b.rankHits[4], 0);
-        const grandR5 = memberStatsList.reduce((a, b) => a + b.rankHits[5], 0);
-        const grandAlgoV4 = memberStatsList.reduce((a, b) => a + b.algoHits.v4, 0);
-        const grandAlgoV3 = memberStatsList.reduce((a, b) => a + b.algoHits.v3, 0);
-        const grandAlgoExtra = memberStatsList.reduce((a, b) => a + b.algoHits.extra, 0);
-        const grandAlgoManual = memberStatsList.reduce((a, b) => a + b.algoHits.manual, 0);
-
-        let rowsHtml = '';
-        memberStatsList.forEach(m => {
-            const isCurrent = (currentTarget === m.userId) || (currentTarget === 'my' && (m.userId === 'master' || m.userId === cleanAuthId));
-            rowsHtml += `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem; background: ${isCurrent ? 'rgba(245, 158, 11, 0.12)' : 'transparent'};">
-                    <td style="padding: 8px 10px; font-weight: 700; color: #f8fafc; white-space: nowrap;">
-                        <span style="color: #fbbf24;"><i class="fa-solid fa-user"></i> ${m.userId}</span>
-                        <div style="font-size: 0.7rem; color: #94a3b8; font-weight: normal;">${m.realName}</div>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: right; color: #cbd5e1; white-space: nowrap;">
-                        ${m.totalGames}게임<br>
-                        <span style="font-size: 0.68rem; color: #94a3b8;">(${m.totalInvest.toLocaleString()}원)</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <span style="padding: 1px 5px; border-radius: 4px; background: rgba(251,191,36,0.15); color: ${m.rankHits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">${m.rankHits[1]}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <span style="padding: 1px 5px; border-radius: 4px; background: rgba(248,113,113,0.15); color: ${m.rankHits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700;">${m.rankHits[2]}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <span style="padding: 1px 5px; border-radius: 4px; background: rgba(96,165,250,0.15); color: ${m.rankHits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700;">${m.rankHits[3]}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <span style="padding: 1px 5px; border-radius: 4px; background: rgba(52,211,153,0.15); color: ${m.rankHits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700;">${m.rankHits[4]}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <span style="padding: 1px 5px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${m.rankHits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${m.rankHits[5]}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap; font-size: 0.72rem;">
-                        <span title="V4.0 적중" style="color: #c4b5fd; font-weight: 700;">V4:${m.algoHits.v4}</span> ·
-                        <span title="V3.0 적중" style="color: #fbbf24; font-weight: 700;">V3:${m.algoHits.v3}</span> ·
-                        <span title="추가팩 적중" style="color: #6ee7b7; font-weight: 700;">추가:${m.algoHits.extra}</span> ·
-                        <span title="수동 적중" style="color: #94a3b8;">수동:${m.algoHits.manual}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${m.totalPrize > 0 ? '#34d399' : '#94a3b8'}; white-space: nowrap;">
-                        +${m.totalPrize.toLocaleString()}원
-                    </td>
-                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: ${m.roi >= 100 ? '#10b981' : (m.roi > 0 ? '#fbbf24' : '#64748b')}; white-space: nowrap;">
-                        ${m.roi.toFixed(1)}%
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <button type="button" onclick="window.changeConfirmedAdminUser && window.changeConfirmedAdminUser('${m.userId}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 4px 10px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-receipt"></i> 장부 보기
+            // Add Back Navigation Button if currently viewing a single user in admin mode
+            let backNavHtml = '';
+            if (currentTarget !== 'all') {
+                backNavHtml = `
+                    <div style="margin-top: 10px; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                        <span style="font-size: 0.8rem; color: #fbbf24; font-weight: 700;">
+                            <i class="fa-solid fa-user-check"></i> 현재 👤 [${currentTarget}] 회원의 개별 구매 장부 조회 중
+                        </span>
+                        <button type="button" onclick="window.changeConfirmedAdminUser && window.changeConfirmedAdminUser('all')" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.25)); border: 1.5px solid #f59e0b; color: #fbbf24; padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                            <i class="fa-solid fa-arrow-left"></i> 전체 회원 구매목록으로 돌아가기
                         </button>
-                    </td>
-                </tr>
-            `;
-        });
+                    </div>
+                `;
+            }
 
-        // Add Back Navigation Button if currently viewing a single user in admin mode
-        let backNavHtml = '';
-        if (currentTarget !== 'all') {
-            backNavHtml = `
-                <div style="margin-top: 10px; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                    <span style="font-size: 0.8rem; color: #fbbf24; font-weight: 700;">
-                        <i class="fa-solid fa-user-check"></i> 현재 👤 [${currentTarget}] 회원의 개별 구매 장부 조회 중
-                    </span>
-                    <button type="button" onclick="window.changeConfirmedAdminUser && window.changeConfirmedAdminUser('all')" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.25)); border: 1.5px solid #f59e0b; color: #fbbf24; padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
-                        <i class="fa-solid fa-arrow-left"></i> 전체 회원 구매목록으로 돌아가기
-                    </button>
+            adminOverviewTableHtml = `
+                <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem;"></i>
+                            <h4 style="margin: 0; color: #fbbf24; font-size: 0.95rem; font-weight: 800;">
+                                [관리자 종합 현황] 전체 회원 실구매 당첨 이력 및 알고리즘별 적중 통계표
+                            </h4>
+                        </div>
+                        <div style="font-size: 0.75rem; color: #cbd5e1;">
+                            총 <strong>${memberStatsList.length}명</strong> | 실구매 <strong>${grandGames}게임</strong> (${grandPurchased.toLocaleString()}원) · 총 당첨금 <strong style="color: #34d399;">+${grandPrize.toLocaleString()}원</strong>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 780px;">
+                            <thead>
+                                <tr style="background: rgba(0,0,0,0.35); border-bottom: 1.5px solid rgba(255,255,255,0.12); font-size: 0.74rem; color: #94a3b8;">
+                                    <th style="padding: 8px 10px;">회원명 (ID)</th>
+                                    <th style="padding: 8px 10px; text-align: right;">구매 게임(금액)</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #fbbf24;">1등</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #f87171;">2등</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #60a5fa;">3등</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #34d399;">4등</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #c7d2fe;">적중 알고리즘 분포</th>
+                                    <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
+                                    <th style="padding: 8px 10px; text-align: right;">수익률</th>
+                                    <th style="padding: 8px 10px; text-align: center;">개별 장부</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                            <tfoot>
+                                <tr style="background: rgba(0,0,0,0.5); font-weight: 800; font-size: 0.8rem; border-top: 2px solid rgba(245,158,11,0.5);">
+                                    <td style="padding: 10px; color: #fbbf24;">전체 합계 (${memberStatsList.length}명)</td>
+                                    <td style="padding: 10px; text-align: right; color: #f8fafc;">${grandGames}게임 (${grandPurchased.toLocaleString()}원)</td>
+                                    <td style="padding: 10px; text-align: center; color: #fbbf24;">${grandR1}</td>
+                                    <td style="padding: 10px; text-align: center; color: #f87171;">${grandR2}</td>
+                                    <td style="padding: 10px; text-align: center; color: #60a5fa;">${grandR3}</td>
+                                    <td style="padding: 10px; text-align: center; color: #34d399;">${grandR4}</td>
+                                    <td style="padding: 10px; text-align: center; color: #a78bfa;">${grandR5}</td>
+                                    <td style="padding: 10px; text-align: center; font-size: 0.74rem;">
+                                        <span style="color: #c4b5fd;">V4:${grandAlgoV4}</span> ·
+                                        <span style="color: #fbbf24;">V3:${grandAlgoV3}</span> ·
+                                        <span style="color: #6ee7b7;">추가:${grandAlgoExtra}</span> ·
+                                        <span style="color: #94a3b8;">수동:${grandAlgoManual}</span>
+                                    </td>
+                                    <td style="padding: 10px; text-align: right; color: #34d399;">+${grandPrize.toLocaleString()}원</td>
+                                    <td style="padding: 10px; text-align: right; color: #fbbf24;">${grandPurchased > 0 ? ((grandPrize / grandPurchased) * 100).toFixed(1) : '0.0'}%</td>
+                                    <td style="padding: 10px; text-align: center; color: #64748b;">-</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    ${backNavHtml}
                 </div>
             `;
+        } catch(adminErr) {
+            console.warn('[ConfirmedTab AdminOverview render error]', adminErr);
         }
-
-        adminOverviewTableHtml = `
-            <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem;"></i>
-                        <h4 style="margin: 0; color: #fbbf24; font-size: 0.95rem; font-weight: 800;">
-                            [관리자 종합 현황] 전체 회원 실구매 당첨 이력 및 알고리즘별 적중 통계표
-                        </h4>
-                    </div>
-                    <div style="font-size: 0.75rem; color: #cbd5e1;">
-                        총 <strong>${memberStatsList.length}명</strong> | 실구매 <strong>${grandGames}게임</strong> (${grandPurchased.toLocaleString()}원) · 총 당첨금 <strong style="color: #34d399;">+${grandPrize.toLocaleString()}원</strong>
-                    </div>
-                </div>
-
-                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 780px;">
-                        <thead>
-                            <tr style="background: rgba(0,0,0,0.35); border-bottom: 1.5px solid rgba(255,255,255,0.12); font-size: 0.74rem; color: #94a3b8;">
-                                <th style="padding: 8px 10px;">회원명 (ID)</th>
-                                <th style="padding: 8px 10px; text-align: right;">구매 게임(금액)</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #fbbf24;">1등</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #f87171;">2등</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #60a5fa;">3등</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #34d399;">4등</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #c7d2fe;">적중 알고리즘 분포</th>
-                                <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
-                                <th style="padding: 8px 10px; text-align: right;">수익률</th>
-                                <th style="padding: 8px 10px; text-align: center;">개별 장부</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rowsHtml}
-                        </tbody>
-                        <tfoot>
-                            <tr style="background: rgba(0,0,0,0.5); font-weight: 800; font-size: 0.8rem; border-top: 2px solid rgba(245,158,11,0.5);">
-                                <td style="padding: 10px; color: #fbbf24;">전체 합계 (${memberStatsList.length}명)</td>
-                                <td style="padding: 10px; text-align: right; color: #f8fafc;">${grandGames}게임 (${grandPurchased.toLocaleString()}원)</td>
-                                <td style="padding: 10px; text-align: center; color: #fbbf24;">${grandR1}</td>
-                                <td style="padding: 10px; text-align: center; color: #f87171;">${grandR2}</td>
-                                <td style="padding: 10px; text-align: center; color: #60a5fa;">${grandR3}</td>
-                                <td style="padding: 10px; text-align: center; color: #34d399;">${grandR4}</td>
-                                <td style="padding: 10px; text-align: center; color: #a78bfa;">${grandR5}</td>
-                                <td style="padding: 10px; text-align: center; font-size: 0.74rem;">
-                                    <span style="color: #c4b5fd;">V4:${grandAlgoV4}</span> ·
-                                    <span style="color: #fbbf24;">V3:${grandAlgoV3}</span> ·
-                                    <span style="color: #6ee7b7;">추가:${grandAlgoExtra}</span> ·
-                                    <span style="color: #94a3b8;">수동:${grandAlgoManual}</span>
-                                </td>
-                                <td style="padding: 10px; text-align: right; color: #34d399;">+${grandPrize.toLocaleString()}원</td>
-                                <td style="padding: 10px; text-align: right; color: #fbbf24;">${grandPurchased > 0 ? ((grandPrize / grandPurchased) * 100).toFixed(1) : '0.0'}%</td>
-                                <td style="padding: 10px; text-align: center; color: #64748b;">-</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                ${backNavHtml}
-            </div>
-        `;
     }
 
     // Render admin summary table into the collapsible statistics container
@@ -1081,10 +1095,10 @@ export async function renderConfirmedPurchasesList() {
                                 </div>
                             </div>
                             <div class="confirmed-footer-btn-wrap">
-                                <a href="${finalQrUrl}" target="_blank" rel="noopener noreferrer" class="confirmed-btn-verify-qr" title="동행복권 공식 서버 실시간 당첨결과 조회">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                <button type="button" class="confirmed-btn-verify-qr" title="동행복권 공식 서버 실시간 당첨결과 조회" onclick="window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}')">
+                                    <i class="fa-solid fa-magnifying-glass-chart"></i>
                                     <span>동행복권 당첨확인</span>
-                                </a>
+                                </button>
                             </div>
                         </div>
 
@@ -1093,7 +1107,7 @@ export async function renderConfirmedPurchasesList() {
                             <div class="confirmed-qr-info-wrap">
                                 <i class="fa-solid fa-qrcode confirmed-qr-icon"></i>
                                 <span class="confirmed-qr-badge">공식 QR:</span>
-                                <a href="${finalQrUrl}" target="_blank" rel="noopener noreferrer" class="confirmed-qr-url-link" title="${finalQrUrl}">${finalQrUrl}</a>
+                                <button type="button" class="confirmed-qr-url-link" title="${finalQrUrl}" onclick="window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}')">${finalQrUrl}</button>
                             </div>
                             <button type="button" class="btn-dark-pill confirmed-qr-copy-btn" onclick="window.copyToClipboard && window.copyToClipboard('${finalQrUrl}', '🔗 동행복권 원본 QR 링크가 복사되었습니다.')" title="동행복권 공식 QR 원본 링크 클립보드 복사">
                                 <i class="fa-solid fa-copy"></i>
@@ -2057,3 +2071,389 @@ if (typeof window !== 'undefined') {
     window.toggleConfirmedStats = toggleConfirmedStats;
 }
 
+// ============================================================
+// 🎯 동행복권 당첨확인 인앱 모달 (실시간 정밀 채점 & 공식 QR 확인)
+// ============================================================
+export function openDonghangVerifyModal(url) {
+    if (!url || typeof document === 'undefined') return;
+
+    // 1. QR URL 파싱하여 회차, 게임별 번호, 일련번호 추출
+    let parsed = null;
+    try {
+        if (typeof parseDonghangLotteryQrUrl === 'function') {
+            parsed = parseDonghangLotteryQrUrl(url);
+        }
+    } catch(e) {}
+
+    const round = parsed ? parsed.round : (parseInt((url.match(/[?&]v=(\d{1,4})/i) || [])[1], 10) || 0);
+    const combos = parsed ? (parsed.combos || []) : [];
+    const serial = parsed ? (parsed.serial || '') : '';
+
+    // 2. 실제 당첨 데이터 조회
+    let actualDraw = null;
+    try {
+        if (typeof getSafeActualDraw === 'function') {
+            actualDraw = getSafeActualDraw(round);
+        }
+        if (!actualDraw && state && state.mergedHistory && state.mergedHistory[round]) {
+            actualDraw = state.mergedHistory[round];
+        }
+        if (!actualDraw && typeof LOTTO_HISTORY !== 'undefined' && LOTTO_HISTORY[round]) {
+            actualDraw = LOTTO_HISTORY[round];
+        }
+    } catch(e) {}
+
+    const hasDrawn = !!(actualDraw && Array.isArray(actualDraw.numbers) && actualDraw.numbers.length === 6);
+    const winNumsSet = hasDrawn ? new Set(actualDraw.numbers) : new Set();
+    const bonusNum = hasDrawn ? (actualDraw.bonus || 0) : 0;
+
+    const rankNames = { 1: '1등', 2: '2등', 3: '3등', 4: '4등', 5: '5등', 0: '낙첨' };
+    let totalPrize = 0;
+    let winningCount = 0;
+    let highestRank = 0;
+
+    // 게임별 채점 수행
+    const scoredCombos = combos.map((c, idx) => {
+        const letter = c.letter || ['A', 'B', 'C', 'D', 'E'][idx] || `${idx + 1}`;
+        const nums = Array.isArray(c.numbers) ? c.numbers : (Array.isArray(c) ? c : []);
+        const sortedNums = nums.slice().sort((a, b) => a - b);
+
+        if (!hasDrawn) {
+            return { letter, nums: sortedNums, matchCount: 0, bonusHit: false, rank: 0, prize: 0 };
+        }
+
+        const matchCount = sortedNums.filter(n => winNumsSet.has(n)).length;
+        const bonusHit = sortedNums.includes(bonusNum);
+
+        let rank = 0;
+        let prize = 0;
+        if (matchCount === 6) {
+            rank = 1;
+            prize = (actualDraw.prizes && actualDraw.prizes[1]) ? actualDraw.prizes[1] : 2000000000;
+        } else if (matchCount === 5 && bonusHit) {
+            rank = 2;
+            prize = (actualDraw.prizes && actualDraw.prizes[2]) ? actualDraw.prizes[2] : 50000000;
+        } else if (matchCount === 5) {
+            rank = 3;
+            prize = (actualDraw.prizes && actualDraw.prizes[3]) ? actualDraw.prizes[3] : 1500000;
+        } else if (matchCount === 4) {
+            rank = 4;
+            prize = 50000;
+        } else if (matchCount === 3) {
+            rank = 5;
+            prize = 5000;
+        }
+
+        if (rank > 0) {
+            totalPrize += prize;
+            winningCount++;
+            if (highestRank === 0 || rank < highestRank) highestRank = rank;
+        }
+
+        return { letter, nums: sortedNums, matchCount, bonusHit, rank, prize };
+    });
+
+    // 3. CSS 주입 (최초 1회)
+    if (!document.getElementById('donghang-verify-modal-style')) {
+        const style = document.createElement('style');
+        style.id = 'donghang-verify-modal-style';
+        style.textContent = `
+            #donghangVerifyModal {
+                display: none;
+                position: fixed;
+                top: 0; left: 0;
+                width: 100vw; height: 100vh;
+                background: rgba(7, 10, 20, 0.88);
+                z-index: 999999;
+                align-items: center;
+                justify-content: center;
+                padding: 14px;
+                box-sizing: border-box;
+                backdrop-filter: blur(8px);
+            }
+            #donghangVerifyModal.active { display: flex; }
+            #donghangVerifyModalBox {
+                background: linear-gradient(165deg, #0f172a 0%, #0a0f1e 100%);
+                border: 1.5px solid #334155;
+                border-radius: 18px;
+                width: 100%;
+                max-width: 540px;
+                max-height: 92vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                box-shadow: 0 25px 65px rgba(0,0,0,0.75), 0 0 30px rgba(56,189,248,0.15);
+            }
+            #donghangVerifyModalHeader {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 14px 18px;
+                background: linear-gradient(135deg, #1e3a5f, #0f172a);
+                border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+                flex-shrink: 0;
+            }
+            #donghangVerifyModalHeader .modal-title {
+                display: flex; align-items: center; gap: 8px;
+                font-size: 1rem; font-weight: 800; color: #f8fafc;
+            }
+            #donghangVerifyModalHeader .modal-title i { color: #38bdf8; font-size: 1.1rem; }
+            #donghangVerifyModalClose {
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.15);
+                border-radius: 8px;
+                color: #94a3b8;
+                width: 32px; height: 32px;
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; font-size: 1rem; transition: all 0.2s;
+            }
+            #donghangVerifyModalClose:hover { background: rgba(239,68,68,0.2); color: #f87171; border-color: #ef4444; }
+            #donghangVerifyModalBody {
+                padding: 16px;
+                overflow-y: auto;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+            #donghangVerifyModalFooter {
+                padding: 12px 18px;
+                display: flex; gap: 8px; align-items: center; justify-content: flex-end;
+                background: #0a0f1e;
+                border-top: 1px solid #1e293b;
+                flex-shrink: 0;
+            }
+            .verify-ball-mini {
+                width: 28px; height: 28px;
+                border-radius: 50%;
+                display: inline-flex; align-items: center; justify-content: center;
+                font-size: 0.82rem; font-weight: 900;
+                box-shadow: inset 0 -2px 4px rgba(0,0,0,0.35);
+                transition: transform 0.2s;
+            }
+            .verify-ball-hit {
+                border: 2px solid #fbbf24 !important;
+                box-shadow: 0 0 10px rgba(251,191,36,0.85), inset 0 -2px 4px rgba(0,0,0,0.3) !important;
+                transform: scale(1.08);
+            }
+            .verify-ball-bonus {
+                border: 2px solid #38bdf8 !important;
+                box-shadow: 0 0 10px rgba(56,189,248,0.85), inset 0 -2px 4px rgba(0,0,0,0.3) !important;
+                transform: scale(1.08);
+            }
+            .verify-ball-dim {
+                opacity: 0.45;
+            }
+        `;
+        (document.head || document.documentElement).appendChild(style);
+    }
+
+    // 4. 모달 DOM 생성 (없으면)
+    let modal = document.getElementById('donghangVerifyModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'donghangVerifyModal';
+        document.body.appendChild(modal);
+    }
+
+    // 5. 당첨번호 영역 HTML
+    let drawBannerHtml = '';
+    if (hasDrawn) {
+        const ballsHtml = actualDraw.numbers.map(n => {
+            const bg = getBallHexColor(n);
+            const tc = getBallTextColor(n);
+            return `<span class="verify-ball-mini" style="background:${bg};color:${tc};">${n}</span>`;
+        }).join('');
+        const bonusBg = getBallHexColor(bonusNum);
+        const bonusTc = getBallTextColor(bonusNum);
+
+        drawBannerHtml = `
+            <div style="background: linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(15, 23, 42, 0.7)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-bullhorn"></i> 제 ${round}회차 공식 당첨번호
+                    </span>
+                    <span style="font-size: 0.72rem; color: #94a3b8;">${actualDraw.drawDate || '공식 추첨 완료'}</span>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap;">
+                    ${ballsHtml}
+                    <span style="font-weight: 800; color: #94a3b8; margin: 0 3px; font-size: 1rem;">+</span>
+                    <span class="verify-ball-mini verify-ball-bonus" style="background:${bonusBg};color:${bonusTc};" title="보너스 번호">${bonusNum}</span>
+                </div>
+            </div>
+        `;
+    } else {
+        drawBannerHtml = `
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 12px 14px; text-align: center; color: #fbbf24; font-size: 0.84rem; font-weight: 700;">
+                <i class="fa-solid fa-hourglass-half" style="margin-right: 6px;"></i> 제 ${round}회차는 아직 추첨 전입니다 (매주 토요일 20:45 당첨 발표)
+            </div>
+        `;
+    }
+
+    // 6. 게임별 채점표 HTML
+    let gamesListHtml = '';
+    if (scoredCombos.length > 0) {
+        gamesListHtml = scoredCombos.map(g => {
+            const balls = g.nums.map(n => {
+                const bg = getBallHexColor(n);
+                const tc = getBallTextColor(n);
+                const isHit = hasDrawn && winNumsSet.has(n);
+                const isBonusHit = hasDrawn && (n === bonusNum);
+                let hitClass = '';
+                if (isHit) hitClass = 'verify-ball-hit';
+                else if (isBonusHit) hitClass = 'verify-ball-bonus';
+                else if (hasDrawn) hitClass = 'verify-ball-dim';
+
+                return `<span class="verify-ball-mini ${hitClass}" style="background:${bg};color:${tc};">${n}</span>`;
+            }).join('');
+
+            let badgeHtml = '';
+            if (hasDrawn) {
+                if (g.rank > 0) {
+                    badgeHtml = `
+                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                            <span style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.25)); border: 1px solid #10b981; color: #34d399; font-weight: 900; font-size: 0.8rem; padding: 2px 8px; border-radius: 6px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);">
+                                🎉 ${rankNames[g.rank]} 당첨
+                            </span>
+                            <span style="font-size: 0.72rem; color: #fbbf24; font-weight: 800; margin-top: 2px;">+${g.prize.toLocaleString()}원</span>
+                        </div>
+                    `;
+                } else {
+                    badgeHtml = `<span style="background: rgba(255,255,255,0.05); color: #64748b; font-size: 0.75rem; padding: 3px 8px; border-radius: 5px;">낙첨</span>`;
+                }
+            } else {
+                badgeHtml = `<span style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-size: 0.75rem; padding: 3px 8px; border-radius: 5px;">발권 등록</span>`;
+            }
+
+            return `
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 10px; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="width: 24px; height: 24px; border-radius: 6px; background: #1e293b; color: #cbd5e1; font-weight: 800; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
+                            ${g.letter}
+                        </span>
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            ${balls}
+                        </div>
+                    </div>
+                    ${badgeHtml}
+                </div>
+            `;
+        }).join('');
+    } else {
+        gamesListHtml = `<div style="text-align:center;color:#94a3b8;padding:12px;">등록된 게임 조합 정보를 불러올 수 없습니다.</div>`;
+    }
+
+    // 7. 총 당첨금 배너 HTML
+    let summaryBannerHtml = '';
+    if (hasDrawn) {
+        if (totalPrize > 0) {
+            summaryBannerHtml = `
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.25)); border: 1.5px solid #10b981; border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 16px rgba(16,185,129,0.3);">
+                    <div>
+                        <div style="font-size: 0.78rem; color: #a7f3d0; font-weight: 700;">총 ${winningCount}개 게임 당첨! (${highestRank > 0 ? rankNames[highestRank] + ' 당첨' : ''})</div>
+                        <div style="font-size: 0.72rem; color: #cbd5e1;">영수증 5게임 실구매 채점 완료</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.72rem; color: #cbd5e1;">총 당첨금</span>
+                        <div style="font-size: 1.25rem; font-weight: 900; color: #fbbf24; text-shadow: 0 0 8px rgba(251,191,36,0.5);">
+                            +${totalPrize.toLocaleString()}원
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            summaryBannerHtml = `
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 14px; text-align: center; color: #94a3b8; font-size: 0.8rem;">
+                    <i class="fa-solid fa-clover" style="color: #10b981; margin-right: 4px;"></i> 이번 영수증은 아쉽게도 낙첨되었습니다. 다음 회차의 1등 당첨을 기원합니다!
+                </div>
+            `;
+        }
+    }
+
+    // 8. 모달 전체 마크업
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(url)}`;
+
+    modal.innerHTML = `
+        <div id="donghangVerifyModalBox">
+            <div id="donghangVerifyModalHeader">
+                <div class="modal-title">
+                    <i class="fa-solid fa-ticket-simple"></i>
+                    <span>동행복권 실시간 당첨결과 조회</span>
+                </div>
+                <button type="button" id="donghangVerifyModalClose" onclick="window.closeDonghangVerifyModal && window.closeDonghangVerifyModal()" title="닫기">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div id="donghangVerifyModalBody">
+                ${drawBannerHtml}
+
+                <!-- 게임별 번호 및 당첨 판정 리스트 -->
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <div style="font-size: 0.82rem; font-weight: 800; color: #cbd5e1; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="fa-solid fa-list-check" style="color: #818cf8; margin-right: 5px;"></i> 발권 영수증 게임별 번호 (${scoredCombos.length}게임)</span>
+                        <span style="font-size: 0.72rem; color: #64748b;">일련번호: ${serial || 'TR-발권검증'}</span>
+                    </div>
+                    ${gamesListHtml}
+                </div>
+
+                ${summaryBannerHtml}
+
+                <!-- QR 원본 및 공식 사이트 검증 카드 -->
+                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 14px;">
+                    <img src="${qrImageUrl}" width="90" height="90" style="border-radius: 8px; border: 1px solid #334155; flex-shrink: 0; background: #fff;" alt="동행복권 공식 QR" onerror="this.style.display='none'" />
+                    <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1;">
+                        <div style="font-size: 0.78rem; font-weight: 800; color: #f8fafc;">
+                            <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i> 동행복권 공식 QR 데이터
+                        </div>
+                        <div style="font-size: 0.68rem; color: #64748b; word-break: break-all; line-height: 1.35; max-height: 38px; overflow: hidden;">
+                            ${url}
+                        </div>
+                        <button type="button" class="btn-dark-pill" onclick="window.copyToClipboard && window.copyToClipboard('${url}', '🔗 공식 QR 링크가 복사되었습니다.')" style="align-self: flex-start; padding: 4px 10px; font-size: 0.72rem; height: 24px;">
+                            <i class="fa-solid fa-copy"></i> 링크 복사
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="donghangVerifyModalFooter">
+                <button type="button" onclick="window.closeDonghangVerifyModal && window.closeDonghangVerifyModal()" style="padding: 9px 16px; border-radius: 8px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #cbd5e1; font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+                    닫기
+                </button>
+                <button type="button" onclick="window.open('${url}', '_blank')" style="padding: 9px 16px; border-radius: 8px; background: linear-gradient(135deg, #1e3a5f, #2563eb); border: 1px solid #38bdf8; color: #ffffff; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,99,235,0.35);">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> 동행복권 공식 사이트 새 창
+                </button>
+            </div>
+        </div>
+    `;
+
+    modal.onclick = function(e) {
+        if (e.target === modal) closeDonghangVerifyModal();
+    };
+
+    modal.classList.add('active');
+    if (document.body) document.body.style.overflow = 'hidden';
+}
+
+export function closeDonghangVerifyModal() {
+    if (typeof document === 'undefined') return;
+    const modal = document.getElementById('donghangVerifyModal');
+    if (modal) modal.classList.remove('active');
+    if (document.body) document.body.style.overflow = '';
+}
+
+if (typeof window !== 'undefined') {
+    window.openDonghangVerifyModal = openDonghangVerifyModal;
+    window.closeDonghangVerifyModal = closeDonghangVerifyModal;
+
+    if (typeof document !== 'undefined') {
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('donghangVerifyModal');
+                if (modal && modal.classList.contains('active')) {
+                    closeDonghangVerifyModal();
+                }
+            }
+        });
+    }
+}

@@ -27,8 +27,27 @@ let _activeExtraHistoryUnsub = null;
 let _activeAppStateUnsub = null;
 let _activePurchasesAuthId = null;
 
-export async function initLottoService() {
+export function resetLottoServiceState() {
+    window.__lottoInitialized = false;
+    _isLottoInitializing = false;
+    _lottoInitPromise = null;
+    if (_activePurchasesUnsub) {
+        try { _activePurchasesUnsub(); } catch(e) {}
+        _activePurchasesUnsub = null;
+    }
+    _activePurchasesAuthId = null;
+}
+
+export async function initLottoService(force = false) {
     window.initLottoService = initLottoService;
+    window.resetLottoServiceState = resetLottoServiceState;
+    const currentAuthId = (SafeAuth.get() || '').trim().toLowerCase();
+
+    // If user changed or force re-init requested, clean previous active listener
+    if (force || (_activePurchasesAuthId && _activePurchasesAuthId !== currentAuthId)) {
+        resetLottoServiceState();
+    }
+
     if (_isLottoInitializing && _lottoInitPromise) {
         return _lottoInitPromise;
     }
@@ -343,28 +362,8 @@ export async function initLottoService() {
         });
     }
 
-    // Tab buttons and component event listeners (only setup once)
-    if (!window.__lottoEventsSetup) {
-        window.__lottoEventsSetup = true;
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const target = btn.dataset.tab;
-                switchLottoTab(target);
-            });
-        });
-
-        // Initialize all components event listeners
-        setupGeneratorTabEvents();
-        setupSimulationEvents();
-        setupWheelingTab();
-        setupEvolutionButton();
-        setupPredictionReport();
-        setupQuickView();
-        setupManualLedgerModal();
-        setupManualDrawModal();
-        setupSyncEvents();
-    }
+    // Component event listeners
+    setupAllLottoEvents();
 
     // Run auto-sync in the background non-blockingly after initial render
     setTimeout(() => {
@@ -386,63 +385,119 @@ export async function initLottoService() {
 
 // Global Lotto Tab Switcher
 export function switchLottoTab(target) {
+    if (!target) return;
+
     if (!window.__lottoInitialized && typeof initLottoService === 'function') {
         try { initLottoService(); } catch(e){}
     }
 
-    const landingPage = document.getElementById('landingPage');
-    const totoPage = document.getElementById('totoPage');
-    const appContainer = document.getElementById('appContainer');
+    // 1. Ensure appContainer is active and visible with !important
+    if (typeof window._switchPage === 'function') {
+        window._switchPage('appContainer', false);
+    } else {
+        const landingPage = document.getElementById('landingPage');
+        const totoPage = document.getElementById('totoPage');
+        const appContainer = document.getElementById('appContainer');
 
-    if (landingPage) {
-        landingPage.classList.remove('active');
-        landingPage.style.display = 'none';
-    }
-    if (totoPage) {
-        totoPage.classList.remove('active');
-        totoPage.style.display = 'none';
-    }
-    if (appContainer) {
-        appContainer.classList.add('active');
-        appContainer.style.display = 'flex';
+        if (landingPage) {
+            landingPage.classList.remove('active');
+            landingPage.style.setProperty('display', 'none', 'important');
+        }
+        if (totoPage) {
+            totoPage.classList.remove('active');
+            totoPage.style.setProperty('display', 'none', 'important');
+        }
+        if (appContainer) {
+            appContainer.classList.add('active');
+            appContainer.style.setProperty('display', 'flex', 'important');
+        }
     }
 
+    // 2. Update tab buttons active state
     const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(b => {
+        if (b.dataset.tab === target) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
+        }
+    });
+
+    // 3. Update tab contents active state
     const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(c => {
+        if (c.id === target) {
+            c.classList.add('active');
+            c.style.setProperty('display', 'block', 'important');
+        } else {
+            c.classList.remove('active');
+            c.style.setProperty('display', 'none', 'important');
+        }
+    });
 
-    tabBtns.forEach(b => b.classList.remove('active'));
-    tabContents.forEach(c => c.classList.remove('active'));
+    // 4. Safely execute tab-specific render routines
+    try {
+        if (target === 'tab-generator') {
+            if (typeof renderTop5Combinations === 'function') renderTop5Combinations(false);
+            if (typeof updateSavedCount === 'function') updateSavedCount();
+            if (typeof renderSavedList === 'function') renderSavedList();
+        } else if (target === 'tab-algorithms') {
+            if (typeof renderAlgorithmsTab === 'function') renderAlgorithmsTab();
+        } else if (target === 'tab-simulation') {
+            if (typeof populateSimRoundSelector === 'function') populateSimRoundSelector();
+            if (typeof renderSimulationTab === 'function') renderSimulationTab();
+        } else if (target === 'tab-wheeling') {
+            if (typeof renderWheelingSelector === 'function') renderWheelingSelector();
+            if (typeof renderWheelingResults === 'function') renderWheelingResults();
+        } else if (target === 'tab-verify-evolution') {
+            if (typeof renderVerificationTab === 'function') renderVerificationTab();
+        } else if (target === 'tab-dashboard') {
+            if (typeof renderDashboardCharts === 'function') renderDashboardCharts();
+        } else if (target === 'tab-review') {
+            if (typeof renderReviewTab === 'function') renderReviewTab();
+        } else if (target === 'tab-confirmed-list') {
+            if (typeof renderConfirmedPurchasesList === 'function') renderConfirmedPurchasesList();
+        }
+    } catch(err) {
+        console.error(`[Error rendering tab: ${target}]`, err);
+    }
+}
 
-    const activeBtn = document.querySelector(`.tab-btn[data-tab="${target}"]`);
-    if (activeBtn) activeBtn.classList.add('active');
+// Setup all component event listeners
+export function setupAllLottoEvents() {
+    if (typeof window !== 'undefined' && window.__lottoEventsSetup) return;
+    if (typeof window !== 'undefined') window.__lottoEventsSetup = true;
 
-    const targetEl = document.getElementById(target);
-    if (targetEl) targetEl.classList.add('active');
+    try { setupGeneratorTabEvents(); } catch(e) { console.warn('[setupGeneratorTabEvents]', e); }
+    try { setupSimulationEvents(); } catch(e) { console.warn('[setupSimulationEvents]', e); }
+    try { setupWheelingTab(); } catch(e) { console.warn('[setupWheelingTab]', e); }
+    try { setupEvolutionButton(); } catch(e) { console.warn('[setupEvolutionButton]', e); }
+    try { setupPredictionReport(); } catch(e) { console.warn('[setupPredictionReport]', e); }
+    try { setupQuickView(); } catch(e) { console.warn('[setupQuickView]', e); }
+    try { setupManualLedgerModal(); } catch(e) { console.warn('[setupManualLedgerModal]', e); }
+    try { setupManualDrawModal(); } catch(e) { console.warn('[setupManualDrawModal]', e); }
+    try { setupSyncEvents(); } catch(e) { console.warn('[setupSyncEvents]', e); }
+}
 
-    if (target === 'tab-generator') {
-        renderTop5Combinations(false);
-        updateSavedCount();
-        renderSavedList();
-    } else if (target === 'tab-algorithms') {
-        renderAlgorithmsTab();
-    } else if (target === 'tab-simulation') {
-        populateSimRoundSelector();
-        renderSimulationTab();
-    } else if (target === 'tab-wheeling') {
-        renderWheelingSelector();
-        renderWheelingResults();
-    } else if (target === 'tab-verify-evolution' && document.getElementById('tab-verify-evolution')) {
-        renderVerificationTab();
-    } else if (target === 'tab-dashboard') {
-        renderDashboardCharts();
-    } else if (target === 'tab-review') {
-        renderReviewTab();
-    } else if (target === 'tab-confirmed-list') {
-        renderConfirmedPurchasesList();
+// Global robust document-level tab click delegation (handles icons, spans, dynamic buttons)
+if (typeof document !== 'undefined') {
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.tab-btn');
+        if (btn && btn.dataset && btn.dataset.tab) {
+            e.preventDefault();
+            switchLottoTab(btn.dataset.tab);
+        }
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupAllLottoEvents);
+    } else {
+        setupAllLottoEvents();
     }
 }
 
 if (typeof window !== 'undefined') {
+    window.setupAllLottoEvents = setupAllLottoEvents;
     window.switchTab = switchLottoTab;
     window.switchLottoTab = switchLottoTab;
     window.renderAlgorithmsTab = renderAlgorithmsTab;
@@ -472,4 +527,5 @@ if (typeof window !== 'undefined') {
     window.getUserPurchasesForRound = getUserPurchasesForRound;
     window.calculateLedgerFinancials = calculateLedgerFinancials;
     window.calculateAllUsersTotalFinancials = calculateAllUsersTotalFinancials;
+    window.resetLottoServiceState = resetLottoServiceState;
 }

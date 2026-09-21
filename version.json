@@ -1,107 +1,9 @@
 {
-  "version": "v2026.09.19.1452",
-  "buildDate": "2026-09-19",
-  "description": "Fix: 카카오 로그인 먹통 현상 수정 (uData ReferenceError + visibilitychange 재인증)",
-  "buildTimestamp": "2026-09-19T14:52:27.187012",
+  "version": "v2026.09.21.1237",
+  "buildDate": "2026-09-21",
+  "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료",
+  "buildTimestamp": "2026-09-21T12:37:06.713772",
   "buildHistory": [
-    {
-      "version": "v2026.09.16.1708",
-      "buildDate": "2026-09-16",
-      "buildTime": "17:08",
-      "buildTimestamp": "2026-09-16T17:08:34.361295",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.16.1717",
-      "buildDate": "2026-09-16",
-      "buildTime": "17:17",
-      "buildTimestamp": "2026-09-16T17:17:19.224779",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.16.1730",
-      "buildDate": "2026-09-16",
-      "buildTime": "17:30",
-      "buildTimestamp": "2026-09-16T17:30:15.179715",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.16.1734",
-      "buildDate": "2026-09-16",
-      "buildTime": "17:34",
-      "buildTimestamp": "2026-09-16T17:34:46.540595",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.16.1816",
-      "buildDate": "2026-09-16",
-      "buildTime": "18:16",
-      "buildTimestamp": "2026-09-16T18:16:56.253020",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.17.1409",
-      "buildDate": "2026-09-17",
-      "buildTime": "14:09",
-      "buildTimestamp": "2026-09-17T14:09:55.139967",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.17.1427",
-      "buildDate": "2026-09-17",
-      "buildTime": "14:27",
-      "buildTimestamp": "2026-09-17T14:27:50.491178",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.17.1432",
-      "buildDate": "2026-09-17",
-      "buildTime": "14:32",
-      "buildTimestamp": "2026-09-17T14:32:18.935688",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.17.1447",
-      "buildDate": "2026-09-17",
-      "buildTime": "14:47",
-      "buildTimestamp": "2026-09-17T14:47:24.644884",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.17.1451",
-      "buildDate": "2026-09-17",
-      "buildTime": "14:51",
-      "buildTimestamp": "2026-09-17T14:51:46.691283",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.17.1457",
-      "buildDate": "2026-09-17",
-      "buildTime": "14:57",
-      "buildTimestamp": "2026-09-17T14:57:32.349272",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.17.1500",
-      "buildDate": "2026-09-17",
-      "buildTime": "15:00",
-      "buildTimestamp": "2026-09-17T15:00:05.459439",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.17.1501",
-      "buildDate": "2026-09-17",
-      "buildTime": "15:01",
-      "buildTimestamp": "2026-09-17T15:01:00.873344",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.17.1509",
-      "buildDate": "2026-09-17",
-      "buildTime": "15:09",
-      "buildTimestamp": "2026-09-17T15:09:59.626378",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
     {
       "version": "v2026.09.17.1522",
       "buildDate": "2026-09-17",
@@ -353,7 +255,105 @@
       "buildTime": "14:52",
       "buildTimestamp": "2026-09-19T14:52:27.187012",
       "description": "Fix: 카카오 로그인 먹통 현상 수정 (uData ReferenceError + visibilitychange 재인증)"
+    },
+    {
+      "version": "v2026.09.21.1131",
+      "buildDate": "2026-09-21",
+      "buildTime": "11:31",
+      "buildTimestamp": "2026-09-21T11:31:33.656335",
+      "description": "Fix: 당첨확인 링크 모달 팝업으로 변경 (뒤로가기 URL 이탈 방지)"
+    },
+    {
+      "version": "v2026.09.21.1137",
+      "buildDate": "2026-09-21",
+      "buildTime": "11:37",
+      "buildTimestamp": "2026-09-21T11:37:55.868576",
+      "description": "Fix: 당첨확인 모달 IIFE DOM 가드 추가 - 탭 메뉴 먹통 버그 수정"
+    },
+    {
+      "version": "v2026.09.21.1141",
+      "buildDate": "2026-09-21",
+      "buildTime": "11:41",
+      "buildTimestamp": "2026-09-21T11:41:02.886282",
+      "description": "Fix: confirmed-tab.js 구문 오류 정상화 및 로그인/탭 기능 복구"
+    },
+    {
+      "version": "v2026.09.21.1141.18",
+      "buildDate": "2026-09-21",
+      "buildTime": "11:41",
+      "buildTimestamp": "2026-09-21T11:41:18.961239",
+      "description": "Fix: confirmed-tab.js 구문 정상화 및 test_49 추가 완료"
+    },
+    {
+      "version": "v2026.09.21.1144",
+      "buildDate": "2026-09-21",
+      "buildTime": "11:44",
+      "buildTimestamp": "2026-09-21T11:44:59.854496",
+      "description": "Feature: 동행복권 실시간 인앱 정밀 채점 및 당첨확인 모달 고도화 완료"
+    },
+    {
+      "version": "v2026.09.21.1148",
+      "buildDate": "2026-09-21",
+      "buildTime": "11:48",
+      "buildTimestamp": "2026-09-21T11:48:49.077091",
+      "description": "Feature: 스마트폰 뒤로가기 누를 시 홈 이동 후 종료 기능 구현 및 test_50 추가"
+    },
+    {
+      "version": "v2026.09.21.1152",
+      "buildDate": "2026-09-21",
+      "buildTime": "11:52",
+      "buildTimestamp": "2026-09-21T11:52:51.608380",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.21.1200",
+      "buildDate": "2026-09-21",
+      "buildTime": "12:00",
+      "buildTimestamp": "2026-09-21T12:00:56.408515",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.21.1205",
+      "buildDate": "2026-09-21",
+      "buildTime": "12:05",
+      "buildTimestamp": "2026-09-21T12:05:24.508693",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.21.1209",
+      "buildDate": "2026-09-21",
+      "buildTime": "12:09",
+      "buildTimestamp": "2026-09-21T12:09:01.615275",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.21.1209.27",
+      "buildDate": "2026-09-21",
+      "buildTime": "12:09",
+      "buildTimestamp": "2026-09-21T12:09:27.814523",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.21.1222",
+      "buildDate": "2026-09-21",
+      "buildTime": "12:22",
+      "buildTimestamp": "2026-09-21T12:22:59.361213",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.21.1223",
+      "buildDate": "2026-09-21",
+      "buildTime": "12:23",
+      "buildTimestamp": "2026-09-21T12:23:47.658693",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.21.1237",
+      "buildDate": "2026-09-21",
+      "buildTime": "12:37",
+      "buildTimestamp": "2026-09-21T12:37:06.713772",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
     }
   ],
-  "buildTime": "14:52"
+  "buildTime": "12:37"
 }

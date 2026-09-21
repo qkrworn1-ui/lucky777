@@ -1037,4 +1037,7 @@ if (typeof window !== 'undefined') {
     window.handleSaveManualLedger = handleSaveManualLedger;
     window.crossCheckCombosWithRecommendations = crossCheckCombosWithRecommendations;
     window.updateManualModalCrossCheck = updateManualModalCrossCheck;
+    window.startLottoQrScanner = startLottoQrScanner;
+    window.stopScanning = stopScanning;
+    window.stopLottoScanning = stopScanning;
 }

@@ -1,4 +1,4 @@
-import { state } from '../state.js';
+import { state, initHistory } from '../state.js';
 import { getBallColorClass, getBallHexColor, showToast, calculateACValue, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml } from '../../../shared/components.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
@@ -294,6 +294,10 @@ if (typeof window !== 'undefined') {
  * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 전체 회원 기본 통합)
  */
 export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all') {
+    if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
+        if (typeof initHistory === 'function') initHistory();
+        else if (typeof LOTTO_HISTORY !== 'undefined') state.mergedHistory = { ...LOTTO_HISTORY, ...(state.lottoExtraHistory || {}) };
+    }
     const history = state.mergedHistory || {};
     const drawnRounds = Object.keys(history)
         .map(Number)
@@ -533,11 +537,22 @@ export async function renderAlgorithmsTab(fromRound = null) {
     const cleanAuth = authId.toLowerCase();
     const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
 
-    // Ensure users and purchase ledger are loaded
-    if ((typeof window !== 'undefined' && window.db) && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
+    // Ensure users list from cache if available
+    if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) {
         try {
-            await fetchAllUsersPurchases();
+            const raw = localStorage.getItem('lotto_all_users_list_cache');
+            if (raw) state.allRegisteredUsersList = JSON.parse(raw);
         } catch(e) {}
+    }
+
+    // Trigger non-blocking background fetch if db exists and map is missing
+    if ((typeof window !== 'undefined' && window.db) && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
+        fetchAllUsersPurchases().then(() => {
+            const currentTab = document.getElementById('tab-algorithms');
+            if (currentTab && currentTab.classList.contains('active')) {
+                renderAlgorithmsTab();
+            }
+        }).catch(e => console.warn('[AlgorithmsTab background fetch error]', e));
     }
 
     // Default target user is 'all' for admin (전체 회원 통합 당첨 실적) or authId for regular member
@@ -546,7 +561,36 @@ export async function renderAlgorithmsTab(fromRound = null) {
         ? viewingUser 
         : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? 'all' : (authId || 'master')));
 
-    const perfData = calculate7AlgorithmsPerformance(currentAlgoStartRound, effectiveUserId);
+    let perfData;
+    try {
+        perfData = calculate7AlgorithmsPerformance(currentAlgoStartRound, effectiveUserId);
+    } catch(err) {
+        console.error('[calculate7AlgorithmsPerformance error]', err);
+        perfData = {
+            fromRound: currentAlgoStartRound,
+            maxRound: currentAlgoStartRound,
+            totalRoundsCount: 0,
+            grandTotalInvest: 0,
+            grandTotalPrize: 0,
+            grandProfit: 0,
+            grandRoi: 0,
+            grandRankCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+            grandTotalWins: 0,
+            grandWinRate: '0.0',
+            results: SEVEN_ALGORITHMS_INFO.map(a => ({
+                ...a,
+                totalGames: 0,
+                totalInvest: 0,
+                totalPrize: 0,
+                rankCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+                totalWins: 0,
+                winRate: '0.0',
+                roi: 0,
+                topRank: null,
+                roundDetails: []
+            }))
+        };
+    }
     const { fromRound: startR, maxRound, totalRoundsCount, grandTotalInvest, grandTotalPrize, grandProfit, grandRoi, grandRankCounts, grandTotalWins, grandWinRate, results } = perfData;
 
     // Upcoming round for real-time recommendation preview

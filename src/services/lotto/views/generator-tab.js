@@ -1207,6 +1207,54 @@ export function renderSavedList() {
     });
 }
 
+export function handleGenerateAllClick() {
+    const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
+    const isV4 = chkReportLogic ? chkReportLogic.checked : true;
+    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    
+    // Force recalculate both v3 and v4 distinctly and explicitly
+    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3');
+    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4');
+    state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
+    
+    try {
+        if (typeof saveGlobalState === 'function') {
+            saveGlobalState();
+        }
+    } catch (e) {}
+    
+    renderTop5Combinations(true);
+    showToast('이번 주 추천 번호 10게임이 새롭게 생성되었습니다.');
+}
+
+export async function handleConfirmPurchaseHeroClick() {
+    const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
+    const useV4 = chkReportLogic ? chkReportLogic.checked : false;
+    const versionStr = useV4 ? 'V4.0 행동경제학 알고리즘' : 'V3.0 하이브리드 알고리즘';
+    
+    const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
+    const rawCombos = state.fixedTop5Combinations || (useV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3) || [];
+    const currentCombos = rawCombos.length > 0 ? rawCombos.slice(0, comboCount) : [];
+    if (!currentCombos || currentCombos.length === 0) {
+        alert('구매 확정할 추천 번호 조합이 없습니다. 먼저 번호를 생성해주세요.');
+        return;
+    }
+
+    const nextRound = state.latestDrawData ? (state.latestDrawData.drwNo + 1) : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240);
+    const gameCount = currentCombos.length;
+    const receiptCount = Math.ceil(gameCount / 5);
+
+    if (confirm(`제 ${nextRound}회차 추천 번호 ${gameCount}게임을\n5게임 영수증 ${receiptCount}장 단위로 잠금하여 서버에 안전하게 자동 저장하시겠습니까?`)) {
+        await saveToLedger(nextRound, currentCombos, versionStr);
+        
+        if (typeof window.switchLottoTab === 'function') {
+            window.switchLottoTab('tab-confirmed-list');
+        } else if (typeof window.switchTab === 'function') {
+            window.switchTab('tab-confirmed-list');
+        }
+    }
+}
+
 export function setupGeneratorTabEvents() {
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
     if (chkReportLogic) {
@@ -1247,56 +1295,12 @@ export function setupGeneratorTabEvents() {
 
     const btnGenerateAll = document.getElementById('btnGenerateAll');
     if (btnGenerateAll) {
-        btnGenerateAll.addEventListener('click', () => {
-            const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-            const isV4 = chkReportLogic ? chkReportLogic.checked : true;
-            const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
-            
-            // Force recalculate both v3 and v4 distinctly and explicitly
-            state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3');
-            state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4');
-            state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
-            
-            try {
-                if (typeof saveGlobalState === 'function') {
-                    saveGlobalState();
-                }
-            } catch (e) {}
-            
-            renderTop5Combinations(true);
-            showToast('이번 주 추천 번호 10게임이 새롭게 생성되었습니다.');
-        });
+        btnGenerateAll.addEventListener('click', handleGenerateAllClick);
     }
 
     const btnConfirmPurchaseHero = document.getElementById('btnConfirmPurchaseHero');
     if (btnConfirmPurchaseHero) {
-        btnConfirmPurchaseHero.addEventListener('click', async () => {
-            const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-            const useV4 = chkReportLogic ? chkReportLogic.checked : false;
-            const versionStr = useV4 ? 'V4.0 행동경제학 알고리즘' : 'V3.0 하이브리드 알고리즘';
-            
-            const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
-            const rawCombos = state.fixedTop5Combinations || (useV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3) || [];
-            const currentCombos = rawCombos.length > 0 ? rawCombos.slice(0, comboCount) : [];
-            if (!currentCombos || currentCombos.length === 0) {
-                alert('구매 확정할 추천 번호 조합이 없습니다. 먼저 번호를 생성해주세요.');
-                return;
-            }
-
-            const nextRound = state.latestDrawData ? (state.latestDrawData.drwNo + 1) : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240);
-            const gameCount = currentCombos.length;
-            const receiptCount = Math.ceil(gameCount / 5);
-
-            if (confirm(`제 ${nextRound}회차 추천 번호 ${gameCount}게임을\n5게임 영수증 ${receiptCount}장 단위로 잠금하여 서버에 안전하게 자동 저장하시겠습니까?`)) {
-                await saveToLedger(nextRound, currentCombos, versionStr);
-                
-                if (typeof window.switchLottoTab === 'function') {
-                    window.switchLottoTab('tab-confirmed-list');
-                } else if (typeof window.switchTab === 'function') {
-                    window.switchTab('tab-confirmed-list');
-                }
-            }
-        });
+        btnConfirmPurchaseHero.addEventListener('click', handleConfirmPurchaseHeroClick);
     }
 
     const btnClearSaved = document.getElementById('btnClearSaved');
@@ -1959,6 +1963,8 @@ if (typeof window !== 'undefined') {
     window.updateTop7AlgoUI = updateTop7AlgoUI;
     window.selectGeneratorAlgo = selectGeneratorAlgo;
     window.handleGenerateAll70Games = handleGenerateAll70Games;
+    window.handleGenerateAllClick = handleGenerateAllClick;
+    window.handleConfirmPurchaseHeroClick = handleConfirmPurchaseHeroClick;
 }
 
 

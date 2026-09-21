@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.19.1452 - BUILD_DATE: 2026-09-19] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.21.1237 - BUILD_DATE: 2026-09-21] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.19.1452)
+ * Lucky777 Smart Bundle (v2026.09.21.1237)
  */
 
 
@@ -761,6 +761,19 @@ if (typeof window !== 'undefined') {
 const __M_shared_db = (function() {
     const __exports = {};
     try {
+async function reconnectFirebaseNetwork(timeoutMs = 2500) {
+    if (typeof window !== 'undefined' && window.db && typeof window.db.enableNetwork === 'function') {
+        try {
+            const enablePromise = window.db.enableNetwork();
+            const timeoutPromise = new Promise(resolve => setTimeout(resolve, timeoutMs));
+            await Promise.race([enablePromise, timeoutPromise]);
+            console.log('[Firestore] Network connection revived instantly on app wakeup');
+        } catch(e) {
+            console.warn('[Firestore Reconnect Note]', e);
+        }
+    }
+}
+
 const db = {
     getFirestore() {
         if (typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') {
@@ -789,20 +802,27 @@ const db = {
         }
         return fs.collection(name);
     },
-    async get(collection, docId) {
+    async get(collection, docId, timeoutMs = 3500) {
         const fs = this.getFirestore();
         if (!fs) return null;
         try {
-            const doc = await fs.collection(collection).doc(docId).get();
-            return doc.exists ? doc.data() : null;
-        } catch(e) { console.error('DB get error:', e); return null; }
+            const queryPromise = fs.collection(collection).doc(docId).get();
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), timeoutMs));
+            const doc = await Promise.race([queryPromise, timeoutPromise]);
+            return (doc && doc.exists) ? doc.data() : null;
+        } catch(e) { 
+            console.error('DB get error:', e); 
+            return null; 
+        }
     },
-    async set(collection, docId, data, merge = true) {
+    async set(collection, docId, data, merge = true, timeoutMs = 4000) {
         const fs = this.getFirestore();
         if (!fs) return false;
         try {
-            await fs.collection(collection).doc(docId).set(data, { merge });
-            return true;
+            const setPromise = fs.collection(collection).doc(docId).set(data, { merge });
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(false), timeoutMs));
+            const res = await Promise.race([setPromise.then(() => true), timeoutPromise]);
+            return !!res;
         } catch(e) { 
             console.error('DB set error:', e); 
             return false;
@@ -811,10 +831,20 @@ const db = {
     onSnapshot(collection, docId, callback) {
         const fs = this.getFirestore();
         if (!fs) return () => {};
-        return fs.collection(collection).doc(docId).onSnapshot(callback);
+        return fs.collection(collection).doc(docId).onSnapshot(callback, err => {
+            console.warn(`[onSnapshot note for ${collection}/${docId}]`, err);
+        });
     }
 };
 
+if (typeof window !== 'undefined') {
+    window.reconnectFirebaseNetwork = reconnectFirebaseNetwork;
+}
+
+        if (typeof reconnectFirebaseNetwork !== 'undefined') {
+            __exports.reconnectFirebaseNetwork = reconnectFirebaseNetwork;
+            if (typeof window !== 'undefined') window.reconnectFirebaseNetwork = reconnectFirebaseNetwork;
+        }
         if (typeof db !== 'undefined') {
             __exports.db = db;
             if (typeof window !== 'undefined') window.db = db;
@@ -1322,10 +1352,45 @@ const SafeAuth = {
     clear: function() { _clearRaw('lotto_auth'); }
 };
 
-function handleLogout() {
-    if (!confirm('정말로 로그아웃 하시겠습니까?')) return;
+let _isLoggingOut = false;
+
+function handleLogout(skipConfirm = false) {
+    if (_isLoggingOut) return;
+    if (!skipConfirm && !confirm('정말로 로그아웃 하시겠습니까?')) return;
+    _isLoggingOut = true;
     
-    // 1. Clear memory & Storage & Cookies
+    // 1. Reset Global Lifecycle Flags
+    if (typeof window !== 'undefined') {
+        window.__lottoInitialized = false;
+        window.__totoInitialized = false;
+        window.__appUnlocked = false;
+        window.__currentUser = null;
+        window.__permUsers = {};
+        window.__adminUsers = {};
+        window.__userNames = {};
+        window.__userCreatedMap = {};
+
+        if (typeof window.resetLottoServiceState === 'function') {
+            try { window.resetLottoServiceState(); } catch(e) {}
+        }
+        if (typeof window.resetTotoServiceState === 'function') {
+            try { window.resetTotoServiceState(); } catch(e) {}
+        }
+        if (typeof window.clearUser70ReviewCache === 'function') {
+            try { window.clearUser70ReviewCache(); } catch(e) {}
+        }
+        if (window.lottoState) {
+            window.lottoState.globalLedger = {};
+            window.lottoState.allUsersPurchasesMap = {};
+            window.lottoState.allUsersMergedLedger = null;
+            window.lottoState.ledgerFinancialsCache = null;
+            window.lottoState.allRegisteredUsersList = [];
+            window.lottoState.localComboCache = {};
+            window.lottoState.userRecommendationSnapshots = {};
+        }
+    }
+
+    // 2. Clear memory & Storage & Cookies
     const currId = SafeAuth.get();
     SafeAuth.clear();
     if (currId) {
@@ -1340,30 +1405,11 @@ function handleLogout() {
         try { window.sessionStorage.removeItem(`name_${cLower}`); } catch(e){}
         try { window.localStorage.removeItem(`name_${cLower}`); } catch(e){}
     }
-    if (typeof window !== 'undefined') {
-        window.__permUsers = {};
-        window.__adminUsers = {};
-        window.__userNames = {};
-        window.__userCreatedMap = {};
-        window.__currentUser = null;
-        if (typeof window.clearUser70ReviewCache === 'function') {
-            window.clearUser70ReviewCache();
-        }
-        if (window.lottoState) {
-            window.lottoState.globalLedger = {};
-            window.lottoState.allUsersPurchasesMap = {};
-            window.lottoState.allUsersMergedLedger = null;
-            window.lottoState.ledgerFinancialsCache = null;
-            window.lottoState.allRegisteredUsersList = [];
-            window.lottoState.localComboCache = {};
-            window.lottoState.userRecommendationSnapshots = {};
-        }
-    }
     try { window.sessionStorage.clear(); } catch(e){}
     try { window.localStorage.removeItem('lotto_auth'); } catch(e){}
     try { window.localStorage.removeItem('kakao_access_token'); } catch(e){}
 
-    // 2. Clear Kakao Auth Session if connected
+    // 3. Clear Kakao Auth Session if connected
     if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.logout === 'function') {
         try {
             window.Kakao.Auth.logout(function() {
@@ -1372,21 +1418,37 @@ function handleLogout() {
         } catch(e){}
     }
 
-    // 3. Remove early CSS preventing login modal
+    // 4. Remove early CSS preventing login modal
     const earlyCss = document.getElementById('early-auth-css');
     if (earlyCss && earlyCss.parentNode) {
         earlyCss.parentNode.removeChild(earlyCss);
     }
 
-    // 4. Force show login modal immediately, hide all app pages
+    // 5. Clean up login modal form inputs & display login modal cleanly
+    const idEl = document.getElementById('loginId');
+    if (idEl) idEl.value = '';
+    const pwEl = document.getElementById('loginPw');
+    if (pwEl) pwEl.value = '';
+    const loginError = document.getElementById('loginError');
+    if (loginError) {
+        loginError.textContent = '';
+        loginError.style.display = 'none';
+    }
+    const submitBtn = document.getElementById('btnLoginSubmit');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '시스템 접속';
+    }
+
     const loginModal = document.getElementById('loginModalOverlay');
     if (loginModal) {
-        loginModal.style.setProperty('display', 'flex', 'important');
-        loginModal.style.setProperty('visibility', 'visible', 'important');
-        loginModal.style.setProperty('opacity', '1', 'important');
-        loginModal.style.setProperty('pointer-events', 'auto', 'important');
+        loginModal.removeAttribute('style');
+        loginModal.style.cssText = 'display: flex !important; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 10, 20, 0.95); z-index: 99999; padding: 16px; box-sizing: border-box;';
+        loginModal.classList.remove('hidden');
+        loginModal.classList.add('active');
     }
-    // Hide all app pages (using correct IDs)
+
+    // 6. Hide all app pages
     ['landingPage', 'appContainer', 'totoPage', 'mainApp', 'totoApp'].forEach(function(id) {
         const el = document.getElementById(id);
         if (el) {
@@ -1395,8 +1457,29 @@ function handleLogout() {
         }
     });
 
-    // 5. Reload cleanly without hash or query
-    window.location.replace(window.location.origin + window.location.pathname);
+    if (document.body) {
+        document.body.classList.remove('is-admin');
+    }
+
+    // 7. Clear URL Hash without creating history clutter
+    try {
+        if (window.location.hash) {
+            history.replaceState(null, '', window.location.pathname || '/');
+        }
+    } catch(e) {}
+
+    // 8. Safe Cross-Platform Hard Reload (Desktop Windows & Mobile)
+    try {
+        const isFileOrNull = !window.location.origin || window.location.origin === 'null';
+        const targetUrl = isFileOrNull ? window.location.href.split('#')[0].split('?')[0] : (window.location.origin + window.location.pathname);
+        window.location.replace(targetUrl);
+    } catch(e) {
+        try { window.location.reload(); } catch(err) {}
+    }
+
+    setTimeout(() => {
+        _isLoggingOut = false;
+    }, 1000);
 }
 
 if (typeof window !== 'undefined') {
@@ -1982,19 +2065,19 @@ async function checkAuthOnLoad(initFirebaseAndData) {
             document.body.style.overflow = '';
         }
 
-        if (!window.__appUnlocked) {
-            const totoPage = document.getElementById('totoPage');
-            const isTotoActive = totoPage && (totoPage.style.display === 'block' || totoPage.classList.contains('active'));
-            const isLottoActive = appContainer && appContainer.classList.contains('active') && (!landingPage || !landingPage.classList.contains('active'));
+        window.__appUnlocked = true;
+        const totoPage = document.getElementById('totoPage');
+        const isTotoActive = totoPage && (totoPage.style.display === 'block' || totoPage.classList.contains('active'));
+        const isLottoActive = appContainer && appContainer.classList.contains('active') && (!landingPage || !landingPage.classList.contains('active'));
+        const isLandingActive = landingPage && (landingPage.style.display === 'flex' || landingPage.classList.contains('active'));
 
-            const userPerms = getUserPermissions(authId);
-            if (isTotoActive && userPerms.allowToto) {
-                _showPage('totoPage');
-            } else if (isLottoActive && userPerms.allowLotto) {
-                _showPage('appContainer');
-            } else {
-                _showPage('landingPage');
-            }
+        const userPerms = getUserPermissions(authId);
+        if (isTotoActive && userPerms.allowToto) {
+            _showPage('totoPage');
+        } else if (isLottoActive && userPerms.allowLotto) {
+            _showPage('appContainer');
+        } else if (!isLandingActive || (!isTotoActive && !isLottoActive)) {
+            _showPage('landingPage');
         }
 
         if (isUserAdmin) {
@@ -2014,11 +2097,17 @@ async function checkAuthOnLoad(initFirebaseAndData) {
             if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'none';
         }
 
-        if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) {
+        if (typeof initFirebaseAndData === 'function') {
             try {
                 initFirebaseAndData();
             } catch (err) {
                 console.error('[AUTH] Error during service init (non-blocking):', err);
+            }
+        } else if (typeof window.initLottoService === 'function') {
+            try {
+                window.initLottoService();
+            } catch (err) {
+                console.error('[AUTH] Error during lotto service init (non-blocking):', err);
             }
         }
 
@@ -2030,8 +2119,10 @@ async function checkAuthOnLoad(initFirebaseAndData) {
         if (window.db) {
             (async () => {
                 try {
-                    const userDoc = await window.db.collection('lotto_users').doc(authId).get();
-                    if (userDoc.exists) {
+                    const queryPromise = window.db.collection('lotto_users').doc(authId).get();
+                    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500));
+                    const userDoc = await Promise.race([queryPromise, timeoutPromise]);
+                    if (userDoc && userDoc.exists) {
                         const uData = userDoc.data() || {};
                         let freshAdmin = isUserAdmin;
                         if (uData.isAdmin === true || uData.role === 'admin' || uData.userType === 'admin') {
@@ -2265,7 +2356,13 @@ function setupAuthEvents(initFirebaseAndData) {
 
                                 // 3. Render Dashboard & Init Services immediately
                                 setTimeout(() => {
-                                    try { if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) initFirebaseAndData(); } catch(ex) {}
+                                    try {
+                                        if (typeof initFirebaseAndData === 'function') {
+                                            initFirebaseAndData();
+                                        } else if (typeof window.initLottoService === 'function') {
+                                            window.initLottoService();
+                                        }
+                                    } catch(ex) {}
                                     try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
                                 }, 50);
 
@@ -3160,12 +3257,18 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 if (tpEl) { tpEl.classList.remove('active'); tpEl.style.setProperty('display', 'none', 'important'); }
 
                 setTimeout(async function() {
-                    try { if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) await initFirebaseAndData(); } catch(ex) {}
+                    try {
+                        if (typeof initFirebaseAndData === 'function') {
+                            await initFirebaseAndData();
+                        } else if (typeof window.initLottoService === 'function') {
+                            await window.initLottoService();
+                        }
+                    } catch(ex) {}
                     try { if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard(); } catch(ex) {}
                     checkAuthOnLoad(initFirebaseAndData).then(function() {
                         try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(e){}
                     }).catch(function(err) { console.warn('[BG auth check]', err); });
-                }, 100);
+                }, 50);
 
             } catch (err) {
                 console.error('[Sign-up Error]', err);
@@ -3247,7 +3350,11 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 // 4. Initialize services (non-blocking, background)
                 setTimeout(async function() {
                     try {
-                        if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) await initFirebaseAndData();
+                        if (typeof initFirebaseAndData === 'function') {
+                            await initFirebaseAndData();
+                        } else if (typeof window.initLottoService === 'function') {
+                            await window.initLottoService();
+                        }
                     } catch(ex) {}
                     try {
                         if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
@@ -3260,7 +3367,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     }).catch(function(err) {
                         console.warn('[Background auth check error]', err);
                     });
-                }, 100);
+                }, 50);
             }
 
             // 1. Instant Master/Admin bypass
@@ -3414,13 +3521,14 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
     }
 
     if (btnLogout) {
-        btnLogout.addEventListener('click', () => {
+        btnLogout.onclick = (e) => {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
             if (typeof window.handleLogout === 'function') {
                 window.handleLogout();
             } else {
                 handleLogout();
             }
-        });
+        };
     }
 
     // ========================================================
@@ -6779,10 +6887,17 @@ window.startBatchWinningSend = async function() {
     function setupInactivityAutoLogout() {
         if (typeof window === 'undefined') return;
         
-        const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+        const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click', 'focus'];
         activityEvents.forEach(evt => {
             window.addEventListener(evt, resetInactivityTimer, { passive: true });
         });
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    resetInactivityTimer();
+                }
+            });
+        }
         
         resetInactivityTimer();
     }
@@ -16356,7 +16471,7 @@ if (typeof window !== 'undefined') {
 const __M_services_lotto_views_algorithms_tab = (function() {
     const __exports = {};
     try {
-const { state } = __M_services_lotto_state;
+const { state, initHistory } = __M_services_lotto_state;
 const { getBallColorClass, getBallHexColor, showToast, calculateACValue, isSystemOrDummyUser } = __M_shared_utils;
 const { createBallHtml } = __M_shared_components;
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack } = __M_services_lotto_generator;
@@ -16652,6 +16767,10 @@ if (typeof window !== 'undefined') {
  * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 전체 회원 기본 통합)
  */
 function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all') {
+    if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
+        if (typeof initHistory === 'function') initHistory();
+        else if (typeof LOTTO_HISTORY !== 'undefined') state.mergedHistory = { ...LOTTO_HISTORY, ...(state.lottoExtraHistory || {}) };
+    }
     const history = state.mergedHistory || {};
     const drawnRounds = Object.keys(history)
         .map(Number)
@@ -16891,11 +17010,22 @@ async function renderAlgorithmsTab(fromRound = null) {
     const cleanAuth = authId.toLowerCase();
     const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
 
-    // Ensure users and purchase ledger are loaded
-    if ((typeof window !== 'undefined' && window.db) && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
+    // Ensure users list from cache if available
+    if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) {
         try {
-            await fetchAllUsersPurchases();
+            const raw = SafeLocalStorage.getItem('lotto_all_users_list_cache');
+            if (raw) state.allRegisteredUsersList = JSON.parse(raw);
         } catch(e) {}
+    }
+
+    // Trigger non-blocking background fetch if db exists and map is missing
+    if ((typeof window !== 'undefined' && window.db) && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
+        fetchAllUsersPurchases().then(() => {
+            const currentTab = document.getElementById('tab-algorithms');
+            if (currentTab && currentTab.classList.contains('active')) {
+                renderAlgorithmsTab();
+            }
+        }).catch(e => console.warn('[AlgorithmsTab background fetch error]', e));
     }
 
     // Default target user is 'all' for admin (전체 회원 통합 당첨 실적) or authId for regular member
@@ -16904,7 +17034,36 @@ async function renderAlgorithmsTab(fromRound = null) {
         ? viewingUser 
         : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? 'all' : (authId || 'master')));
 
-    const perfData = calculate7AlgorithmsPerformance(currentAlgoStartRound, effectiveUserId);
+    let perfData;
+    try {
+        perfData = calculate7AlgorithmsPerformance(currentAlgoStartRound, effectiveUserId);
+    } catch(err) {
+        console.error('[calculate7AlgorithmsPerformance error]', err);
+        perfData = {
+            fromRound: currentAlgoStartRound,
+            maxRound: currentAlgoStartRound,
+            totalRoundsCount: 0,
+            grandTotalInvest: 0,
+            grandTotalPrize: 0,
+            grandProfit: 0,
+            grandRoi: 0,
+            grandRankCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+            grandTotalWins: 0,
+            grandWinRate: '0.0',
+            results: SEVEN_ALGORITHMS_INFO.map(a => ({
+                ...a,
+                totalGames: 0,
+                totalInvest: 0,
+                totalPrize: 0,
+                rankCounts: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+                totalWins: 0,
+                winRate: '0.0',
+                roi: 0,
+                topRank: null,
+                roundDetails: []
+            }))
+        };
+    }
     const { fromRound: startR, maxRound, totalRoundsCount, grandTotalInvest, grandTotalPrize, grandProfit, grandRoi, grandRankCounts, grandTotalWins, grandWinRate, results } = perfData;
 
     // Upcoming round for real-time recommendation preview
@@ -18526,6 +18685,54 @@ function renderSavedList() {
     });
 }
 
+function handleGenerateAllClick() {
+    const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
+    const isV4 = chkReportLogic ? chkReportLogic.checked : true;
+    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    
+    // Force recalculate both v3 and v4 distinctly and explicitly
+    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3');
+    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4');
+    state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
+    
+    try {
+        if (typeof saveGlobalState === 'function') {
+            saveGlobalState();
+        }
+    } catch (e) {}
+    
+    renderTop5Combinations(true);
+    showToast('이번 주 추천 번호 10게임이 새롭게 생성되었습니다.');
+}
+
+async function handleConfirmPurchaseHeroClick() {
+    const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
+    const useV4 = chkReportLogic ? chkReportLogic.checked : false;
+    const versionStr = useV4 ? 'V4.0 행동경제학 알고리즘' : 'V3.0 하이브리드 알고리즘';
+    
+    const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
+    const rawCombos = state.fixedTop5Combinations || (useV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3) || [];
+    const currentCombos = rawCombos.length > 0 ? rawCombos.slice(0, comboCount) : [];
+    if (!currentCombos || currentCombos.length === 0) {
+        alert('구매 확정할 추천 번호 조합이 없습니다. 먼저 번호를 생성해주세요.');
+        return;
+    }
+
+    const nextRound = state.latestDrawData ? (state.latestDrawData.drwNo + 1) : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240);
+    const gameCount = currentCombos.length;
+    const receiptCount = Math.ceil(gameCount / 5);
+
+    if (confirm(`제 ${nextRound}회차 추천 번호 ${gameCount}게임을\n5게임 영수증 ${receiptCount}장 단위로 잠금하여 서버에 안전하게 자동 저장하시겠습니까?`)) {
+        await saveToLedger(nextRound, currentCombos, versionStr);
+        
+        if (typeof window.switchLottoTab === 'function') {
+            window.switchLottoTab('tab-confirmed-list');
+        } else if (typeof window.switchTab === 'function') {
+            window.switchTab('tab-confirmed-list');
+        }
+    }
+}
+
 function setupGeneratorTabEvents() {
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
     if (chkReportLogic) {
@@ -18566,56 +18773,12 @@ function setupGeneratorTabEvents() {
 
     const btnGenerateAll = document.getElementById('btnGenerateAll');
     if (btnGenerateAll) {
-        btnGenerateAll.addEventListener('click', () => {
-            const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-            const isV4 = chkReportLogic ? chkReportLogic.checked : true;
-            const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
-            
-            // Force recalculate both v3 and v4 distinctly and explicitly
-            state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3');
-            state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4');
-            state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
-            
-            try {
-                if (typeof saveGlobalState === 'function') {
-                    saveGlobalState();
-                }
-            } catch (e) {}
-            
-            renderTop5Combinations(true);
-            showToast('이번 주 추천 번호 10게임이 새롭게 생성되었습니다.');
-        });
+        btnGenerateAll.addEventListener('click', handleGenerateAllClick);
     }
 
     const btnConfirmPurchaseHero = document.getElementById('btnConfirmPurchaseHero');
     if (btnConfirmPurchaseHero) {
-        btnConfirmPurchaseHero.addEventListener('click', async () => {
-            const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-            const useV4 = chkReportLogic ? chkReportLogic.checked : false;
-            const versionStr = useV4 ? 'V4.0 행동경제학 알고리즘' : 'V3.0 하이브리드 알고리즘';
-            
-            const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
-            const rawCombos = state.fixedTop5Combinations || (useV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3) || [];
-            const currentCombos = rawCombos.length > 0 ? rawCombos.slice(0, comboCount) : [];
-            if (!currentCombos || currentCombos.length === 0) {
-                alert('구매 확정할 추천 번호 조합이 없습니다. 먼저 번호를 생성해주세요.');
-                return;
-            }
-
-            const nextRound = state.latestDrawData ? (state.latestDrawData.drwNo + 1) : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240);
-            const gameCount = currentCombos.length;
-            const receiptCount = Math.ceil(gameCount / 5);
-
-            if (confirm(`제 ${nextRound}회차 추천 번호 ${gameCount}게임을\n5게임 영수증 ${receiptCount}장 단위로 잠금하여 서버에 안전하게 자동 저장하시겠습니까?`)) {
-                await saveToLedger(nextRound, currentCombos, versionStr);
-                
-                if (typeof window.switchLottoTab === 'function') {
-                    window.switchLottoTab('tab-confirmed-list');
-                } else if (typeof window.switchTab === 'function') {
-                    window.switchTab('tab-confirmed-list');
-                }
-            }
-        });
+        btnConfirmPurchaseHero.addEventListener('click', handleConfirmPurchaseHeroClick);
     }
 
     const btnClearSaved = document.getElementById('btnClearSaved');
@@ -19278,6 +19441,8 @@ if (typeof window !== 'undefined') {
     window.updateTop7AlgoUI = updateTop7AlgoUI;
     window.selectGeneratorAlgo = selectGeneratorAlgo;
     window.handleGenerateAll70Games = handleGenerateAll70Games;
+    window.handleGenerateAllClick = handleGenerateAllClick;
+    window.handleConfirmPurchaseHeroClick = handleConfirmPurchaseHeroClick;
 }
 
 
@@ -19571,6 +19736,14 @@ async function handleGenerateAll70Games() {
         if (typeof renderSavedList !== 'undefined') {
             __exports.renderSavedList = renderSavedList;
             if (typeof window !== 'undefined') window.renderSavedList = renderSavedList;
+        }
+        if (typeof handleGenerateAllClick !== 'undefined') {
+            __exports.handleGenerateAllClick = handleGenerateAllClick;
+            if (typeof window !== 'undefined') window.handleGenerateAllClick = handleGenerateAllClick;
+        }
+        if (typeof handleConfirmPurchaseHeroClick !== 'undefined') {
+            __exports.handleConfirmPurchaseHeroClick = handleConfirmPurchaseHeroClick;
+            if (typeof window !== 'undefined') window.handleConfirmPurchaseHeroClick = handleConfirmPurchaseHeroClick;
         }
         if (typeof setupGeneratorTabEvents !== 'undefined') {
             __exports.setupGeneratorTabEvents = setupGeneratorTabEvents;
@@ -21073,12 +21246,13 @@ const __M_services_lotto_views_confirmed_tab = (function() {
     const __exports = {};
     try {
 const { state } = __M_services_lotto_state;
-const { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue, removeUndefined, copyToClipboard } = __M_shared_utils;
+const { getBallColorClass, getBallHexColor, getBallTextColor, showToast, formatDate, calculateACValue, removeUndefined, copyToClipboard } = __M_shared_utils;
 const { createBallHtml, renderBallRow, getRankBadge, openModal, closeModal } = __M_shared_components;
 const { db } = __M_shared_db;
 const { SafeAuth, isAdminUser, getUserRealName } = __M_shared_auth_mgmt;
 const { getAllUnifiedRegisteredUsers } = __M_shared_user_context;
-const { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = __M_services_lotto_ledger;
+const { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = __M_services_lotto_ledger;
+
 const { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } = __M_services_lotto_generator;
 const { recalculateGroups } = __M_services_lotto_statistics;
 
@@ -21097,9 +21271,14 @@ async function renderConfirmedPurchasesList() {
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(cleanAuthId) : (cleanAuthId === 'master' || cleanAuthId === 'admin'));
     const isMaster = (cleanAuthId === 'master');
 
-    // If Admin, prefetch all users' purchases if not yet loaded OR if merged cache was invalidated (e.g. after save)
+    // If Admin, prefetch all users' purchases in background if not yet loaded OR if merged cache was invalidated
     if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger)) {
-        await fetchAllUsersPurchases();
+        fetchAllUsersPurchases().then(() => {
+            const currentTab = document.getElementById('tab-confirmed-list');
+            if (currentTab && currentTab.classList.contains('active')) {
+                renderConfirmedPurchasesList();
+            }
+        }).catch(e => console.warn('[ConfirmedTab background fetch error]', e));
     }
 
     const currentTarget = isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId;
@@ -21157,94 +21336,98 @@ async function renderConfirmedPurchasesList() {
     renderConfirmedRankSummary(hits, totalCombosCount, totalPrize, totalInvest);
 
     // Render Charts
-    const totalWins = hits.reduce((a,b) => a+b, 0);
-    if (state.confirmedPrizeChartInstance) state.confirmedPrizeChartInstance.destroy();
-    const canvasPie = document.getElementById('confirmedPrizeRatioChart');
-    if (canvasPie && typeof canvasPie.getContext === 'function' && typeof window.Chart === 'function') {
-        const ctxPie = canvasPie.getContext('2d');
-        state.confirmedPrizeChartInstance = new window.Chart(ctxPie, {
-            type: 'doughnut',
-            data: {
-                labels: ['1등', '2등', '3등', '4등', '5등'],
-                datasets: [{
-                    data: totalWins > 0 ? hits : [0, 0, 0, 0, 1],
-                    backgroundColor: ['#fbc400', '#69c8f2', '#ff7272', '#a0aec0', '#b0d840'],
-                    borderWidth: 1,
-                    borderColor: 'rgba(15,23,42,0.8)'
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 9 } } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                if (totalWins === 0) return '당첨 내역 없음';
-                                const val = context.raw || 0;
-                                const pct = ((val / totalWins) * 100).toFixed(1);
-                                return `${context.label}: ${val}회 (${pct}%)`;
+    try {
+        const totalWins = hits.reduce((a,b) => a+b, 0);
+        if (state.confirmedPrizeChartInstance) state.confirmedPrizeChartInstance.destroy();
+        const canvasPie = document.getElementById('confirmedPrizeRatioChart');
+        if (canvasPie && typeof canvasPie.getContext === 'function' && typeof window.Chart === 'function') {
+            const ctxPie = canvasPie.getContext('2d');
+            state.confirmedPrizeChartInstance = new window.Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['1등', '2등', '3등', '4등', '5등'],
+                    datasets: [{
+                        data: totalWins > 0 ? hits : [0, 0, 0, 0, 1],
+                        backgroundColor: ['#fbc400', '#69c8f2', '#ff7272', '#a0aec0', '#b0d840'],
+                        borderWidth: 1,
+                        borderColor: 'rgba(15,23,42,0.8)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 9 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    if (totalWins === 0) return '당첨 내역 없음';
+                                    const val = context.raw || 0;
+                                    const pct = ((val / totalWins) * 100).toFixed(1);
+                                    return `${context.label}: ${val}회 (${pct}%)`;
+                                }
                             }
                         }
-                    }
-                },
-                cutout: '60%'
-            }
-        });
-    }
-
-    if (state.confirmedTrendChartInstance) state.confirmedTrendChartInstance.destroy();
-    const canvasTrend = document.getElementById('confirmedTrendLineChart');
-    if (canvasTrend && typeof canvasTrend.getContext === 'function' && typeof window.Chart === 'function') {
-        const ctxTrend = canvasTrend.getContext('2d');
-        state.confirmedTrendChartInstance = new window.Chart(ctxTrend, {
-            type: 'line',
-            data: {
-                labels: trendLabels.length > 0 ? trendLabels : ['대기'],
-                datasets: [
-                    {
-                        label: '누적 구매금',
-                        data: trendInvest.length > 0 ? trendInvest : [0],
-                        borderColor: '#cbd5e1',
-                        borderDash: [5, 5],
-                        backgroundColor: 'transparent',
-                        borderWidth: 1.5,
-                        tension: 0.1
                     },
-                    {
-                        label: '누적 회수금(당첨금)',
-                        data: trendPrize.length > 0 ? trendPrize : [0],
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.05)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.2
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 9 } } } },
-                scales: {
-                    x: { ticks: { color: '#cbd5e1', font: { size: 8 } }, grid: { display: false } },
-                    y: { 
-                        ticks: { 
-                            color: '#cbd5e1', 
-                            font: { size: 8 },
-                            callback: function(value) { 
-                                if (value >= 10000) {
-                                    return (value / 10000).toLocaleString() + '만원'; 
+                    cutout: '60%'
+                }
+            });
+        }
+
+        if (state.confirmedTrendChartInstance) state.confirmedTrendChartInstance.destroy();
+        const canvasTrend = document.getElementById('confirmedTrendLineChart');
+        if (canvasTrend && typeof canvasTrend.getContext === 'function' && typeof window.Chart === 'function') {
+            const ctxTrend = canvasTrend.getContext('2d');
+            state.confirmedTrendChartInstance = new window.Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: trendLabels.length > 0 ? trendLabels : ['대기'],
+                    datasets: [
+                        {
+                            label: '누적 구매금',
+                            data: trendInvest.length > 0 ? trendInvest : [0],
+                            borderColor: '#cbd5e1',
+                            borderDash: [5, 5],
+                            backgroundColor: 'transparent',
+                            borderWidth: 1.5,
+                            tension: 0.1
+                        },
+                        {
+                            label: '누적 회수금(당첨금)',
+                            data: trendPrize.length > 0 ? trendPrize : [0],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.05)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 9 } } } },
+                    scales: {
+                        x: { ticks: { color: '#cbd5e1', font: { size: 8 } }, grid: { display: false } },
+                        y: { 
+                            ticks: { 
+                                color: '#cbd5e1', 
+                                font: { size: 8 },
+                                callback: function(value) { 
+                                    if (value >= 10000) {
+                                        return (value / 10000).toLocaleString() + '만원'; 
+                                    }
+                                    return value.toLocaleString() + '원';
                                 }
-                                return value.toLocaleString() + '원';
-                            }
-                        }, 
-                        grid: { color: 'rgba(255,255,255,0.05)' }
+                            }, 
+                            grid: { color: 'rgba(255,255,255,0.05)' }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+    } catch(chartErr) {
+        console.warn('[ConfirmedTab Chart render error]', chartErr);
     }
 
     // Admin user selector dropdown HTML
@@ -21284,248 +21467,252 @@ async function renderConfirmedPurchasesList() {
     // 1-1. [ADMIN ALL USERS SUMMARY TABLE] Real Purchase Winnings & Algorithm Distribution Overview (When Admin)
     let adminOverviewTableHtml = '';
     if (isAdmin) {
-        // Compute actual purchase winning stats with algorithm breakdown for each user
-        const memberStatsList = validUnifiedUsers.map(u => {
-            const uId = u.id;
-            const cleanId = uId.toLowerCase().trim();
-            const uInfo = (state.allUsersPurchasesMap && (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId])) 
-                ? (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId]) 
-                : {};
-            let uLedger = uInfo.ledger || {};
-            if (typeof uLedger === 'string') {
-                try { uLedger = JSON.parse(uLedger); } catch(e) { uLedger = {}; }
-            }
-            if (!uLedger || typeof uLedger !== 'object' || Object.keys(uLedger).length === 0) {
-                uLedger = getLedger(cleanId);
-            }
-            if (!uLedger || typeof uLedger !== 'object' || Object.keys(uLedger).length === 0) {
-                uLedger = getLedger(uId);
-            }
-            const uName = u.name || u.realName || uInfo.realName || (typeof getUserRealName === 'function' ? getUserRealName(uId) : '') || uId;
+        try {
+            // Compute actual purchase winning stats with algorithm breakdown for each user
+            const memberStatsList = validUnifiedUsers.map(u => {
+                const uId = u.id;
+                const cleanId = uId.toLowerCase().trim();
+                const uInfo = (state.allUsersPurchasesMap && (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId])) 
+                    ? (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId]) 
+                    : {};
+                let uLedger = uInfo.ledger || {};
+                if (typeof uLedger === 'string') {
+                    try { uLedger = JSON.parse(uLedger); } catch(e) { uLedger = {}; }
+                }
+                if (!uLedger || typeof uLedger !== 'object' || Object.keys(uLedger).length === 0) {
+                    uLedger = getLedger(cleanId);
+                }
+                if (!uLedger || typeof uLedger !== 'object' || Object.keys(uLedger).length === 0) {
+                    uLedger = getLedger(uId);
+                }
+                const uName = u.name || u.realName || uInfo.realName || (typeof getUserRealName === 'function' ? getUserRealName(uId) : '') || uId;
 
-            let totalGames = 0;
-            let totalInvest = 0;
-            let totalPrize = 0;
-            const rankHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-            const algoHits = { v4: 0, v3: 0, extra: 0, manual: 0 };
+                let totalGames = 0;
+                let totalInvest = 0;
+                let totalPrize = 0;
+                const rankHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+                const algoHits = { v4: 0, v3: 0, extra: 0, manual: 0 };
 
-            Object.keys(uLedger).forEach(rStr => {
-                const round = parseInt(rStr);
-                if (isNaN(round) || !Array.isArray(uLedger[rStr])) return;
-                const actualDraw = getSafeActualDraw(round);
-                const winningSet = actualDraw && actualDraw.numbers ? new Set(actualDraw.numbers) : null;
-                const bonus = actualDraw ? actualDraw.bonus : null;
+                Object.keys(uLedger).forEach(rStr => {
+                    const round = parseInt(rStr);
+                    if (isNaN(round) || !Array.isArray(uLedger[rStr])) return;
+                    const actualDraw = getSafeActualDraw(round);
+                    const winningSet = actualDraw && actualDraw.numbers ? new Set(actualDraw.numbers) : null;
+                    const bonus = actualDraw ? actualDraw.bonus : null;
 
-                // Cache algorithm recommendations for this round & user to identify source
-                const uV4 = computeAbsoluteTop10Combinations(false, round, 'v4', true, uId) || [];
-                const uV3 = computeAbsoluteTop10Combinations(false, round, 'v3', true, uId) || [];
-                const extraPacks = (typeof generateExtraAddonPack === 'function') 
-                    ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, round, uId)) : [];
+                    // Cache algorithm recommendations for this round & user to identify source
+                    const uV4 = computeAbsoluteTop10Combinations(false, round, 'v4', true, uId) || [];
+                    const uV3 = computeAbsoluteTop10Combinations(false, round, 'v3', true, uId) || [];
+                    const extraPacks = (typeof generateExtraAddonPack === 'function') 
+                        ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, round, uId)) : [];
 
-                const receipts = deduplicateReceipts(uLedger[rStr].map(syncPurchaseWithQrUrl));
-                receipts.forEach(rawReceipt => {
-                    const receipt = syncPurchaseWithQrUrl(rawReceipt);
-                    const combos = receipt.combos || [];
-                    combos.forEach(c => {
-                        totalGames++;
-                        totalInvest += 1000;
-                        const nums = getComboNumbers(c);
+                    const receipts = deduplicateReceipts(uLedger[rStr].map(syncPurchaseWithQrUrl));
+                    receipts.forEach(rawReceipt => {
+                        const receipt = syncPurchaseWithQrUrl(rawReceipt);
+                        const combos = receipt.combos || [];
+                        combos.forEach(c => {
+                            totalGames++;
+                            totalInvest += 1000;
+                            const nums = getComboNumbers(c);
 
-                        let rank = 0;
-                        let prize = 0;
-                        if (winningSet) {
-                            const matches = nums.filter(n => winningSet.has(n));
-                            const matchCount = matches.length;
-                            const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
+                            let rank = 0;
+                            let prize = 0;
+                            if (winningSet) {
+                                const matches = nums.filter(n => winningSet.has(n));
+                                const matchCount = matches.length;
+                                const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
 
-                            if (matchCount === 6) {
-                                rank = 1;
-                                prize = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
-                            } else if (matchCount === 5 && hasBonus) {
-                                rank = 2;
-                                prize = actualDraw.rank2Prize || 50000000;
-                            } else if (matchCount === 5) {
-                                rank = 3;
-                                prize = actualDraw.rank3Prize || 1500000;
-                            } else if (matchCount === 4) {
-                                rank = 4;
-                                prize = 50000;
-                            } else if (matchCount === 3) {
-                                rank = 5;
-                                prize = 5000;
-                            }
+                                if (matchCount === 6) {
+                                    rank = 1;
+                                    prize = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
+                                } else if (matchCount === 5 && hasBonus) {
+                                    rank = 2;
+                                    prize = actualDraw.rank2Prize || 50000000;
+                                } else if (matchCount === 5) {
+                                    rank = 3;
+                                    prize = actualDraw.rank3Prize || 1500000;
+                                } else if (matchCount === 4) {
+                                    rank = 4;
+                                    prize = 50000;
+                                } else if (matchCount === 3) {
+                                    rank = 5;
+                                    prize = 5000;
+                                }
 
-                            if (rank >= 1 && rank <= 5) {
-                                rankHits[rank]++;
-                                totalPrize += prize;
+                                if (rank >= 1 && rank <= 5) {
+                                    rankHits[rank]++;
+                                    totalPrize += prize;
 
-                                // Determine Algorithm Origin
-                                const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
-                                if (match.isExact) {
-                                    if (match.matchedVersion.includes('V4.0')) algoHits.v4++;
-                                    else if (match.matchedVersion.includes('V3.0')) algoHits.v3++;
-                                    else if (match.matchedVersion.includes('추가')) algoHits.extra++;
-                                } else {
-                                    algoHits.manual++;
+                                    // Determine Algorithm Origin
+                                    const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
+                                    if (match.isExact) {
+                                        if (match.matchedVersion.includes('V4.0')) algoHits.v4++;
+                                        else if (match.matchedVersion.includes('V3.0')) algoHits.v3++;
+                                        else if (match.matchedVersion.includes('추가')) algoHits.extra++;
+                                    } else {
+                                        algoHits.manual++;
+                                    }
                                 }
                             }
-                        }
+                        });
                     });
                 });
+
+                const totalWins = rankHits[1] + rankHits[2] + rankHits[3] + rankHits[4] + rankHits[5];
+                const roi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
+
+                return {
+                    userId: uId,
+                    realName: uName,
+                    totalGames,
+                    totalInvest,
+                    totalPrize,
+                    rankHits,
+                    algoHits,
+                    totalWins,
+                    roi
+                };
+            }).sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins || b.totalInvest - a.totalInvest);
+
+            const grandPurchased = memberStatsList.reduce((a, b) => a + b.totalInvest, 0);
+            const grandGames = memberStatsList.reduce((a, b) => a + b.totalGames, 0);
+            const grandPrize = memberStatsList.reduce((a, b) => a + b.totalPrize, 0);
+            const grandR1 = memberStatsList.reduce((a, b) => a + b.rankHits[1], 0);
+            const grandR2 = memberStatsList.reduce((a, b) => a + b.rankHits[2], 0);
+            const grandR3 = memberStatsList.reduce((a, b) => a + b.rankHits[3], 0);
+            const grandR4 = memberStatsList.reduce((a, b) => a + b.rankHits[4], 0);
+            const grandR5 = memberStatsList.reduce((a, b) => a + b.rankHits[5], 0);
+            const grandAlgoV4 = memberStatsList.reduce((a, b) => a + b.algoHits.v4, 0);
+            const grandAlgoV3 = memberStatsList.reduce((a, b) => a + b.algoHits.v3, 0);
+            const grandAlgoExtra = memberStatsList.reduce((a, b) => a + b.algoHits.extra, 0);
+            const grandAlgoManual = memberStatsList.reduce((a, b) => a + b.algoHits.manual, 0);
+
+            let rowsHtml = '';
+            memberStatsList.forEach(m => {
+                const isCurrent = (currentTarget === m.userId) || (currentTarget === 'my' && (m.userId === 'master' || m.userId === cleanAuthId));
+                rowsHtml += `
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem; background: ${isCurrent ? 'rgba(245, 158, 11, 0.12)' : 'transparent'};">
+                        <td style="padding: 8px 10px; font-weight: 700; color: #f8fafc; white-space: nowrap;">
+                            <span style="color: #fbbf24;"><i class="fa-solid fa-user"></i> ${m.userId}</span>
+                            <div style="font-size: 0.7rem; color: #94a3b8; font-weight: normal;">${m.realName}</div>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: right; color: #cbd5e1; white-space: nowrap;">
+                            ${m.totalGames}게임<br>
+                            <span style="font-size: 0.68rem; color: #94a3b8;">(${m.totalInvest.toLocaleString()}원)</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; background: rgba(251,191,36,0.15); color: ${m.rankHits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">${m.rankHits[1]}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; background: rgba(248,113,113,0.15); color: ${m.rankHits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700;">${m.rankHits[2]}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; background: rgba(96,165,250,0.15); color: ${m.rankHits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700;">${m.rankHits[3]}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; background: rgba(52,211,153,0.15); color: ${m.rankHits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700;">${m.rankHits[4]}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${m.rankHits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${m.rankHits[5]}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap; font-size: 0.72rem;">
+                            <span title="V4.0 적중" style="color: #c4b5fd; font-weight: 700;">V4:${m.algoHits.v4}</span> ·
+                            <span title="V3.0 적중" style="color: #fbbf24; font-weight: 700;">V3:${m.algoHits.v3}</span> ·
+                            <span title="추가팩 적중" style="color: #6ee7b7; font-weight: 700;">추가:${m.algoHits.extra}</span> ·
+                            <span title="수동 적중" style="color: #94a3b8;">수동:${m.algoHits.manual}</span>
+                        </td>
+                        <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${m.totalPrize > 0 ? '#34d399' : '#94a3b8'}; white-space: nowrap;">
+                            +${m.totalPrize.toLocaleString()}원
+                        </td>
+                        <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: ${m.roi >= 100 ? '#10b981' : (m.roi > 0 ? '#fbbf24' : '#64748b')}; white-space: nowrap;">
+                            ${m.roi.toFixed(1)}%
+                        </td>
+                        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+                            <button type="button" onclick="window.changeConfirmedAdminUser && window.changeConfirmedAdminUser('${m.userId}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 4px 10px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer;">
+                                <i class="fa-solid fa-receipt"></i> 장부 보기
+                            </button>
+                        </td>
+                    </tr>
+                `;
             });
 
-            const totalWins = rankHits[1] + rankHits[2] + rankHits[3] + rankHits[4] + rankHits[5];
-            const roi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
-
-            return {
-                userId: uId,
-                realName: uName,
-                totalGames,
-                totalInvest,
-                totalPrize,
-                rankHits,
-                algoHits,
-                totalWins,
-                roi
-            };
-        }).sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins || b.totalInvest - a.totalInvest);
-
-        const grandPurchased = memberStatsList.reduce((a, b) => a + b.totalInvest, 0);
-        const grandGames = memberStatsList.reduce((a, b) => a + b.totalGames, 0);
-        const grandPrize = memberStatsList.reduce((a, b) => a + b.totalPrize, 0);
-        const grandR1 = memberStatsList.reduce((a, b) => a + b.rankHits[1], 0);
-        const grandR2 = memberStatsList.reduce((a, b) => a + b.rankHits[2], 0);
-        const grandR3 = memberStatsList.reduce((a, b) => a + b.rankHits[3], 0);
-        const grandR4 = memberStatsList.reduce((a, b) => a + b.rankHits[4], 0);
-        const grandR5 = memberStatsList.reduce((a, b) => a + b.rankHits[5], 0);
-        const grandAlgoV4 = memberStatsList.reduce((a, b) => a + b.algoHits.v4, 0);
-        const grandAlgoV3 = memberStatsList.reduce((a, b) => a + b.algoHits.v3, 0);
-        const grandAlgoExtra = memberStatsList.reduce((a, b) => a + b.algoHits.extra, 0);
-        const grandAlgoManual = memberStatsList.reduce((a, b) => a + b.algoHits.manual, 0);
-
-        let rowsHtml = '';
-        memberStatsList.forEach(m => {
-            const isCurrent = (currentTarget === m.userId) || (currentTarget === 'my' && (m.userId === 'master' || m.userId === cleanAuthId));
-            rowsHtml += `
-                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.78rem; background: ${isCurrent ? 'rgba(245, 158, 11, 0.12)' : 'transparent'};">
-                    <td style="padding: 8px 10px; font-weight: 700; color: #f8fafc; white-space: nowrap;">
-                        <span style="color: #fbbf24;"><i class="fa-solid fa-user"></i> ${m.userId}</span>
-                        <div style="font-size: 0.7rem; color: #94a3b8; font-weight: normal;">${m.realName}</div>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: right; color: #cbd5e1; white-space: nowrap;">
-                        ${m.totalGames}게임<br>
-                        <span style="font-size: 0.68rem; color: #94a3b8;">(${m.totalInvest.toLocaleString()}원)</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <span style="padding: 1px 5px; border-radius: 4px; background: rgba(251,191,36,0.15); color: ${m.rankHits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">${m.rankHits[1]}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <span style="padding: 1px 5px; border-radius: 4px; background: rgba(248,113,113,0.15); color: ${m.rankHits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700;">${m.rankHits[2]}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <span style="padding: 1px 5px; border-radius: 4px; background: rgba(96,165,250,0.15); color: ${m.rankHits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700;">${m.rankHits[3]}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <span style="padding: 1px 5px; border-radius: 4px; background: rgba(52,211,153,0.15); color: ${m.rankHits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700;">${m.rankHits[4]}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <span style="padding: 1px 5px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${m.rankHits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${m.rankHits[5]}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap; font-size: 0.72rem;">
-                        <span title="V4.0 적중" style="color: #c4b5fd; font-weight: 700;">V4:${m.algoHits.v4}</span> ·
-                        <span title="V3.0 적중" style="color: #fbbf24; font-weight: 700;">V3:${m.algoHits.v3}</span> ·
-                        <span title="추가팩 적중" style="color: #6ee7b7; font-weight: 700;">추가:${m.algoHits.extra}</span> ·
-                        <span title="수동 적중" style="color: #94a3b8;">수동:${m.algoHits.manual}</span>
-                    </td>
-                    <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${m.totalPrize > 0 ? '#34d399' : '#94a3b8'}; white-space: nowrap;">
-                        +${m.totalPrize.toLocaleString()}원
-                    </td>
-                    <td style="padding: 8px 10px; text-align: right; font-weight: 700; color: ${m.roi >= 100 ? '#10b981' : (m.roi > 0 ? '#fbbf24' : '#64748b')}; white-space: nowrap;">
-                        ${m.roi.toFixed(1)}%
-                    </td>
-                    <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
-                        <button type="button" onclick="window.changeConfirmedAdminUser && window.changeConfirmedAdminUser('${m.userId}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 4px 10px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-receipt"></i> 장부 보기
+            // Add Back Navigation Button if currently viewing a single user in admin mode
+            let backNavHtml = '';
+            if (currentTarget !== 'all') {
+                backNavHtml = `
+                    <div style="margin-top: 10px; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                        <span style="font-size: 0.8rem; color: #fbbf24; font-weight: 700;">
+                            <i class="fa-solid fa-user-check"></i> 현재 👤 [${currentTarget}] 회원의 개별 구매 장부 조회 중
+                        </span>
+                        <button type="button" onclick="window.changeConfirmedAdminUser && window.changeConfirmedAdminUser('all')" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.25)); border: 1.5px solid #f59e0b; color: #fbbf24; padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                            <i class="fa-solid fa-arrow-left"></i> 전체 회원 구매목록으로 돌아가기
                         </button>
-                    </td>
-                </tr>
-            `;
-        });
+                    </div>
+                `;
+            }
 
-        // Add Back Navigation Button if currently viewing a single user in admin mode
-        let backNavHtml = '';
-        if (currentTarget !== 'all') {
-            backNavHtml = `
-                <div style="margin-top: 10px; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                    <span style="font-size: 0.8rem; color: #fbbf24; font-weight: 700;">
-                        <i class="fa-solid fa-user-check"></i> 현재 👤 [${currentTarget}] 회원의 개별 구매 장부 조회 중
-                    </span>
-                    <button type="button" onclick="window.changeConfirmedAdminUser && window.changeConfirmedAdminUser('all')" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.25)); border: 1.5px solid #f59e0b; color: #fbbf24; padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
-                        <i class="fa-solid fa-arrow-left"></i> 전체 회원 구매목록으로 돌아가기
-                    </button>
+            adminOverviewTableHtml = `
+                <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem;"></i>
+                            <h4 style="margin: 0; color: #fbbf24; font-size: 0.95rem; font-weight: 800;">
+                                [관리자 종합 현황] 전체 회원 실구매 당첨 이력 및 알고리즘별 적중 통계표
+                            </h4>
+                        </div>
+                        <div style="font-size: 0.75rem; color: #cbd5e1;">
+                            총 <strong>${memberStatsList.length}명</strong> | 실구매 <strong>${grandGames}게임</strong> (${grandPurchased.toLocaleString()}원) · 총 당첨금 <strong style="color: #34d399;">+${grandPrize.toLocaleString()}원</strong>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 780px;">
+                            <thead>
+                                <tr style="background: rgba(0,0,0,0.35); border-bottom: 1.5px solid rgba(255,255,255,0.12); font-size: 0.74rem; color: #94a3b8;">
+                                    <th style="padding: 8px 10px;">회원명 (ID)</th>
+                                    <th style="padding: 8px 10px; text-align: right;">구매 게임(금액)</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #fbbf24;">1등</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #f87171;">2등</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #60a5fa;">3등</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #34d399;">4등</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
+                                    <th style="padding: 8px 10px; text-align: center; color: #c7d2fe;">적중 알고리즘 분포</th>
+                                    <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
+                                    <th style="padding: 8px 10px; text-align: right;">수익률</th>
+                                    <th style="padding: 8px 10px; text-align: center;">개별 장부</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml}
+                            </tbody>
+                            <tfoot>
+                                <tr style="background: rgba(0,0,0,0.5); font-weight: 800; font-size: 0.8rem; border-top: 2px solid rgba(245,158,11,0.5);">
+                                    <td style="padding: 10px; color: #fbbf24;">전체 합계 (${memberStatsList.length}명)</td>
+                                    <td style="padding: 10px; text-align: right; color: #f8fafc;">${grandGames}게임 (${grandPurchased.toLocaleString()}원)</td>
+                                    <td style="padding: 10px; text-align: center; color: #fbbf24;">${grandR1}</td>
+                                    <td style="padding: 10px; text-align: center; color: #f87171;">${grandR2}</td>
+                                    <td style="padding: 10px; text-align: center; color: #60a5fa;">${grandR3}</td>
+                                    <td style="padding: 10px; text-align: center; color: #34d399;">${grandR4}</td>
+                                    <td style="padding: 10px; text-align: center; color: #a78bfa;">${grandR5}</td>
+                                    <td style="padding: 10px; text-align: center; font-size: 0.74rem;">
+                                        <span style="color: #c4b5fd;">V4:${grandAlgoV4}</span> ·
+                                        <span style="color: #fbbf24;">V3:${grandAlgoV3}</span> ·
+                                        <span style="color: #6ee7b7;">추가:${grandAlgoExtra}</span> ·
+                                        <span style="color: #94a3b8;">수동:${grandAlgoManual}</span>
+                                    </td>
+                                    <td style="padding: 10px; text-align: right; color: #34d399;">+${grandPrize.toLocaleString()}원</td>
+                                    <td style="padding: 10px; text-align: right; color: #fbbf24;">${grandPurchased > 0 ? ((grandPrize / grandPurchased) * 100).toFixed(1) : '0.0'}%</td>
+                                    <td style="padding: 10px; text-align: center; color: #64748b;">-</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    ${backNavHtml}
                 </div>
             `;
+        } catch(adminErr) {
+            console.warn('[ConfirmedTab AdminOverview render error]', adminErr);
         }
-
-        adminOverviewTableHtml = `
-            <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem;"></i>
-                        <h4 style="margin: 0; color: #fbbf24; font-size: 0.95rem; font-weight: 800;">
-                            [관리자 종합 현황] 전체 회원 실구매 당첨 이력 및 알고리즘별 적중 통계표
-                        </h4>
-                    </div>
-                    <div style="font-size: 0.75rem; color: #cbd5e1;">
-                        총 <strong>${memberStatsList.length}명</strong> | 실구매 <strong>${grandGames}게임</strong> (${grandPurchased.toLocaleString()}원) · 총 당첨금 <strong style="color: #34d399;">+${grandPrize.toLocaleString()}원</strong>
-                    </div>
-                </div>
-
-                <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 780px;">
-                        <thead>
-                            <tr style="background: rgba(0,0,0,0.35); border-bottom: 1.5px solid rgba(255,255,255,0.12); font-size: 0.74rem; color: #94a3b8;">
-                                <th style="padding: 8px 10px;">회원명 (ID)</th>
-                                <th style="padding: 8px 10px; text-align: right;">구매 게임(금액)</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #fbbf24;">1등</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #f87171;">2등</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #60a5fa;">3등</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #34d399;">4등</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #a78bfa;">5등</th>
-                                <th style="padding: 8px 10px; text-align: center; color: #c7d2fe;">적중 알고리즘 분포</th>
-                                <th style="padding: 8px 10px; text-align: right; color: #34d399;">총 당첨금</th>
-                                <th style="padding: 8px 10px; text-align: right;">수익률</th>
-                                <th style="padding: 8px 10px; text-align: center;">개별 장부</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rowsHtml}
-                        </tbody>
-                        <tfoot>
-                            <tr style="background: rgba(0,0,0,0.5); font-weight: 800; font-size: 0.8rem; border-top: 2px solid rgba(245,158,11,0.5);">
-                                <td style="padding: 10px; color: #fbbf24;">전체 합계 (${memberStatsList.length}명)</td>
-                                <td style="padding: 10px; text-align: right; color: #f8fafc;">${grandGames}게임 (${grandPurchased.toLocaleString()}원)</td>
-                                <td style="padding: 10px; text-align: center; color: #fbbf24;">${grandR1}</td>
-                                <td style="padding: 10px; text-align: center; color: #f87171;">${grandR2}</td>
-                                <td style="padding: 10px; text-align: center; color: #60a5fa;">${grandR3}</td>
-                                <td style="padding: 10px; text-align: center; color: #34d399;">${grandR4}</td>
-                                <td style="padding: 10px; text-align: center; color: #a78bfa;">${grandR5}</td>
-                                <td style="padding: 10px; text-align: center; font-size: 0.74rem;">
-                                    <span style="color: #c4b5fd;">V4:${grandAlgoV4}</span> ·
-                                    <span style="color: #fbbf24;">V3:${grandAlgoV3}</span> ·
-                                    <span style="color: #6ee7b7;">추가:${grandAlgoExtra}</span> ·
-                                    <span style="color: #94a3b8;">수동:${grandAlgoManual}</span>
-                                </td>
-                                <td style="padding: 10px; text-align: right; color: #34d399;">+${grandPrize.toLocaleString()}원</td>
-                                <td style="padding: 10px; text-align: right; color: #fbbf24;">${grandPurchased > 0 ? ((grandPrize / grandPurchased) * 100).toFixed(1) : '0.0'}%</td>
-                                <td style="padding: 10px; text-align: center; color: #64748b;">-</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                ${backNavHtml}
-            </div>
-        `;
     }
 
     // Render admin summary table into the collapsible statistics container
@@ -22155,10 +22342,10 @@ async function renderConfirmedPurchasesList() {
                                 </div>
                             </div>
                             <div class="confirmed-footer-btn-wrap">
-                                <a href="${finalQrUrl}" target="_blank" rel="noopener noreferrer" class="confirmed-btn-verify-qr" title="동행복권 공식 서버 실시간 당첨결과 조회">
-                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                <button type="button" class="confirmed-btn-verify-qr" title="동행복권 공식 서버 실시간 당첨결과 조회" onclick="window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}')">
+                                    <i class="fa-solid fa-magnifying-glass-chart"></i>
                                     <span>동행복권 당첨확인</span>
-                                </a>
+                                </button>
                             </div>
                         </div>
 
@@ -22167,7 +22354,7 @@ async function renderConfirmedPurchasesList() {
                             <div class="confirmed-qr-info-wrap">
                                 <i class="fa-solid fa-qrcode confirmed-qr-icon"></i>
                                 <span class="confirmed-qr-badge">공식 QR:</span>
-                                <a href="${finalQrUrl}" target="_blank" rel="noopener noreferrer" class="confirmed-qr-url-link" title="${finalQrUrl}">${finalQrUrl}</a>
+                                <button type="button" class="confirmed-qr-url-link" title="${finalQrUrl}" onclick="window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}')">${finalQrUrl}</button>
                             </div>
                             <button type="button" class="btn-dark-pill confirmed-qr-copy-btn" onclick="window.copyToClipboard && window.copyToClipboard('${finalQrUrl}', '🔗 동행복권 원본 QR 링크가 복사되었습니다.')" title="동행복권 공식 QR 원본 링크 클립보드 복사">
                                 <i class="fa-solid fa-copy"></i>
@@ -23131,6 +23318,392 @@ if (typeof window !== 'undefined') {
     window.toggleConfirmedStats = toggleConfirmedStats;
 }
 
+// ============================================================
+// 🎯 동행복권 당첨확인 인앱 모달 (실시간 정밀 채점 & 공식 QR 확인)
+// ============================================================
+function openDonghangVerifyModal(url) {
+    if (!url || typeof document === 'undefined') return;
+
+    // 1. QR URL 파싱하여 회차, 게임별 번호, 일련번호 추출
+    let parsed = null;
+    try {
+        if (typeof parseDonghangLotteryQrUrl === 'function') {
+            parsed = parseDonghangLotteryQrUrl(url);
+        }
+    } catch(e) {}
+
+    const round = parsed ? parsed.round : (parseInt((url.match(/[?&]v=(\d{1,4})/i) || [])[1], 10) || 0);
+    const combos = parsed ? (parsed.combos || []) : [];
+    const serial = parsed ? (parsed.serial || '') : '';
+
+    // 2. 실제 당첨 데이터 조회
+    let actualDraw = null;
+    try {
+        if (typeof getSafeActualDraw === 'function') {
+            actualDraw = getSafeActualDraw(round);
+        }
+        if (!actualDraw && state && state.mergedHistory && state.mergedHistory[round]) {
+            actualDraw = state.mergedHistory[round];
+        }
+        if (!actualDraw && typeof LOTTO_HISTORY !== 'undefined' && LOTTO_HISTORY[round]) {
+            actualDraw = LOTTO_HISTORY[round];
+        }
+    } catch(e) {}
+
+    const hasDrawn = !!(actualDraw && Array.isArray(actualDraw.numbers) && actualDraw.numbers.length === 6);
+    const winNumsSet = hasDrawn ? new Set(actualDraw.numbers) : new Set();
+    const bonusNum = hasDrawn ? (actualDraw.bonus || 0) : 0;
+
+    const rankNames = { 1: '1등', 2: '2등', 3: '3등', 4: '4등', 5: '5등', 0: '낙첨' };
+    let totalPrize = 0;
+    let winningCount = 0;
+    let highestRank = 0;
+
+    // 게임별 채점 수행
+    const scoredCombos = combos.map((c, idx) => {
+        const letter = c.letter || ['A', 'B', 'C', 'D', 'E'][idx] || `${idx + 1}`;
+        const nums = Array.isArray(c.numbers) ? c.numbers : (Array.isArray(c) ? c : []);
+        const sortedNums = nums.slice().sort((a, b) => a - b);
+
+        if (!hasDrawn) {
+            return { letter, nums: sortedNums, matchCount: 0, bonusHit: false, rank: 0, prize: 0 };
+        }
+
+        const matchCount = sortedNums.filter(n => winNumsSet.has(n)).length;
+        const bonusHit = sortedNums.includes(bonusNum);
+
+        let rank = 0;
+        let prize = 0;
+        if (matchCount === 6) {
+            rank = 1;
+            prize = (actualDraw.prizes && actualDraw.prizes[1]) ? actualDraw.prizes[1] : 2000000000;
+        } else if (matchCount === 5 && bonusHit) {
+            rank = 2;
+            prize = (actualDraw.prizes && actualDraw.prizes[2]) ? actualDraw.prizes[2] : 50000000;
+        } else if (matchCount === 5) {
+            rank = 3;
+            prize = (actualDraw.prizes && actualDraw.prizes[3]) ? actualDraw.prizes[3] : 1500000;
+        } else if (matchCount === 4) {
+            rank = 4;
+            prize = 50000;
+        } else if (matchCount === 3) {
+            rank = 5;
+            prize = 5000;
+        }
+
+        if (rank > 0) {
+            totalPrize += prize;
+            winningCount++;
+            if (highestRank === 0 || rank < highestRank) highestRank = rank;
+        }
+
+        return { letter, nums: sortedNums, matchCount, bonusHit, rank, prize };
+    });
+
+    // 3. CSS 주입 (최초 1회)
+    if (!document.getElementById('donghang-verify-modal-style')) {
+        const style = document.createElement('style');
+        style.id = 'donghang-verify-modal-style';
+        style.textContent = `
+            #donghangVerifyModal {
+                display: none;
+                position: fixed;
+                top: 0; left: 0;
+                width: 100vw; height: 100vh;
+                background: rgba(7, 10, 20, 0.88);
+                z-index: 999999;
+                align-items: center;
+                justify-content: center;
+                padding: 14px;
+                box-sizing: border-box;
+                backdrop-filter: blur(8px);
+            }
+            #donghangVerifyModal.active { display: flex; }
+            #donghangVerifyModalBox {
+                background: linear-gradient(165deg, #0f172a 0%, #0a0f1e 100%);
+                border: 1.5px solid #334155;
+                border-radius: 18px;
+                width: 100%;
+                max-width: 540px;
+                max-height: 92vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                box-shadow: 0 25px 65px rgba(0,0,0,0.75), 0 0 30px rgba(56,189,248,0.15);
+            }
+            #donghangVerifyModalHeader {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 14px 18px;
+                background: linear-gradient(135deg, #1e3a5f, #0f172a);
+                border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+                flex-shrink: 0;
+            }
+            #donghangVerifyModalHeader .modal-title {
+                display: flex; align-items: center; gap: 8px;
+                font-size: 1rem; font-weight: 800; color: #f8fafc;
+            }
+            #donghangVerifyModalHeader .modal-title i { color: #38bdf8; font-size: 1.1rem; }
+            #donghangVerifyModalClose {
+                background: rgba(255,255,255,0.08);
+                border: 1px solid rgba(255,255,255,0.15);
+                border-radius: 8px;
+                color: #94a3b8;
+                width: 32px; height: 32px;
+                display: flex; align-items: center; justify-content: center;
+                cursor: pointer; font-size: 1rem; transition: all 0.2s;
+            }
+            #donghangVerifyModalClose:hover { background: rgba(239,68,68,0.2); color: #f87171; border-color: #ef4444; }
+            #donghangVerifyModalBody {
+                padding: 16px;
+                overflow-y: auto;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                gap: 14px;
+            }
+            #donghangVerifyModalFooter {
+                padding: 12px 18px;
+                display: flex; gap: 8px; align-items: center; justify-content: flex-end;
+                background: #0a0f1e;
+                border-top: 1px solid #1e293b;
+                flex-shrink: 0;
+            }
+            .verify-ball-mini {
+                width: 28px; height: 28px;
+                border-radius: 50%;
+                display: inline-flex; align-items: center; justify-content: center;
+                font-size: 0.82rem; font-weight: 900;
+                box-shadow: inset 0 -2px 4px rgba(0,0,0,0.35);
+                transition: transform 0.2s;
+            }
+            .verify-ball-hit {
+                border: 2px solid #fbbf24 !important;
+                box-shadow: 0 0 10px rgba(251,191,36,0.85), inset 0 -2px 4px rgba(0,0,0,0.3) !important;
+                transform: scale(1.08);
+            }
+            .verify-ball-bonus {
+                border: 2px solid #38bdf8 !important;
+                box-shadow: 0 0 10px rgba(56,189,248,0.85), inset 0 -2px 4px rgba(0,0,0,0.3) !important;
+                transform: scale(1.08);
+            }
+            .verify-ball-dim {
+                opacity: 0.45;
+            }
+        `;
+        (document.head || document.documentElement).appendChild(style);
+    }
+
+    // 4. 모달 DOM 생성 (없으면)
+    let modal = document.getElementById('donghangVerifyModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'donghangVerifyModal';
+        document.body.appendChild(modal);
+    }
+
+    // 5. 당첨번호 영역 HTML
+    let drawBannerHtml = '';
+    if (hasDrawn) {
+        const ballsHtml = actualDraw.numbers.map(n => {
+            const bg = getBallHexColor(n);
+            const tc = getBallTextColor(n);
+            return `<span class="verify-ball-mini" style="background:${bg};color:${tc};">${n}</span>`;
+        }).join('');
+        const bonusBg = getBallHexColor(bonusNum);
+        const bonusTc = getBallTextColor(bonusNum);
+
+        drawBannerHtml = `
+            <div style="background: linear-gradient(135deg, rgba(30, 58, 138, 0.4), rgba(15, 23, 42, 0.7)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-bullhorn"></i> 제 ${round}회차 공식 당첨번호
+                    </span>
+                    <span style="font-size: 0.72rem; color: #94a3b8;">${actualDraw.drawDate || '공식 추첨 완료'}</span>
+                </div>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 5px; flex-wrap: wrap;">
+                    ${ballsHtml}
+                    <span style="font-weight: 800; color: #94a3b8; margin: 0 3px; font-size: 1rem;">+</span>
+                    <span class="verify-ball-mini verify-ball-bonus" style="background:${bonusBg};color:${bonusTc};" title="보너스 번호">${bonusNum}</span>
+                </div>
+            </div>
+        `;
+    } else {
+        drawBannerHtml = `
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 12px 14px; text-align: center; color: #fbbf24; font-size: 0.84rem; font-weight: 700;">
+                <i class="fa-solid fa-hourglass-half" style="margin-right: 6px;"></i> 제 ${round}회차는 아직 추첨 전입니다 (매주 토요일 20:45 당첨 발표)
+            </div>
+        `;
+    }
+
+    // 6. 게임별 채점표 HTML
+    let gamesListHtml = '';
+    if (scoredCombos.length > 0) {
+        gamesListHtml = scoredCombos.map(g => {
+            const balls = g.nums.map(n => {
+                const bg = getBallHexColor(n);
+                const tc = getBallTextColor(n);
+                const isHit = hasDrawn && winNumsSet.has(n);
+                const isBonusHit = hasDrawn && (n === bonusNum);
+                let hitClass = '';
+                if (isHit) hitClass = 'verify-ball-hit';
+                else if (isBonusHit) hitClass = 'verify-ball-bonus';
+                else if (hasDrawn) hitClass = 'verify-ball-dim';
+
+                return `<span class="verify-ball-mini ${hitClass}" style="background:${bg};color:${tc};">${n}</span>`;
+            }).join('');
+
+            let badgeHtml = '';
+            if (hasDrawn) {
+                if (g.rank > 0) {
+                    badgeHtml = `
+                        <div style="display: flex; flex-direction: column; align-items: flex-end;">
+                            <span style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.25)); border: 1px solid #10b981; color: #34d399; font-weight: 900; font-size: 0.8rem; padding: 2px 8px; border-radius: 6px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);">
+                                🎉 ${rankNames[g.rank]} 당첨
+                            </span>
+                            <span style="font-size: 0.72rem; color: #fbbf24; font-weight: 800; margin-top: 2px;">+${g.prize.toLocaleString()}원</span>
+                        </div>
+                    `;
+                } else {
+                    badgeHtml = `<span style="background: rgba(255,255,255,0.05); color: #64748b; font-size: 0.75rem; padding: 3px 8px; border-radius: 5px;">낙첨</span>`;
+                }
+            } else {
+                badgeHtml = `<span style="background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-size: 0.75rem; padding: 3px 8px; border-radius: 5px;">발권 등록</span>`;
+            }
+
+            return `
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 10px; border-radius: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="width: 24px; height: 24px; border-radius: 6px; background: #1e293b; color: #cbd5e1; font-weight: 800; font-size: 0.82rem; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1);">
+                            ${g.letter}
+                        </span>
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                            ${balls}
+                        </div>
+                    </div>
+                    ${badgeHtml}
+                </div>
+            `;
+        }).join('');
+    } else {
+        gamesListHtml = `<div style="text-align:center;color:#94a3b8;padding:12px;">등록된 게임 조합 정보를 불러올 수 없습니다.</div>`;
+    }
+
+    // 7. 총 당첨금 배너 HTML
+    let summaryBannerHtml = '';
+    if (hasDrawn) {
+        if (totalPrize > 0) {
+            summaryBannerHtml = `
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.25)); border: 1.5px solid #10b981; border-radius: 12px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 0 16px rgba(16,185,129,0.3);">
+                    <div>
+                        <div style="font-size: 0.78rem; color: #a7f3d0; font-weight: 700;">총 ${winningCount}개 게임 당첨! (${highestRank > 0 ? rankNames[highestRank] + ' 당첨' : ''})</div>
+                        <div style="font-size: 0.72rem; color: #cbd5e1;">영수증 5게임 실구매 채점 완료</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="font-size: 0.72rem; color: #cbd5e1;">총 당첨금</span>
+                        <div style="font-size: 1.25rem; font-weight: 900; color: #fbbf24; text-shadow: 0 0 8px rgba(251,191,36,0.5);">
+                            +${totalPrize.toLocaleString()}원
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            summaryBannerHtml = `
+                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 14px; text-align: center; color: #94a3b8; font-size: 0.8rem;">
+                    <i class="fa-solid fa-clover" style="color: #10b981; margin-right: 4px;"></i> 이번 영수증은 아쉽게도 낙첨되었습니다. 다음 회차의 1등 당첨을 기원합니다!
+                </div>
+            `;
+        }
+    }
+
+    // 8. 모달 전체 마크업
+    const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=130x130&data=${encodeURIComponent(url)}`;
+
+    modal.innerHTML = `
+        <div id="donghangVerifyModalBox">
+            <div id="donghangVerifyModalHeader">
+                <div class="modal-title">
+                    <i class="fa-solid fa-ticket-simple"></i>
+                    <span>동행복권 실시간 당첨결과 조회</span>
+                </div>
+                <button type="button" id="donghangVerifyModalClose" onclick="window.closeDonghangVerifyModal && window.closeDonghangVerifyModal()" title="닫기">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div id="donghangVerifyModalBody">
+                ${drawBannerHtml}
+
+                <!-- 게임별 번호 및 당첨 판정 리스트 -->
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <div style="font-size: 0.82rem; font-weight: 800; color: #cbd5e1; display: flex; align-items: center; justify-content: space-between;">
+                        <span><i class="fa-solid fa-list-check" style="color: #818cf8; margin-right: 5px;"></i> 발권 영수증 게임별 번호 (${scoredCombos.length}게임)</span>
+                        <span style="font-size: 0.72rem; color: #64748b;">일련번호: ${serial || 'TR-발권검증'}</span>
+                    </div>
+                    ${gamesListHtml}
+                </div>
+
+                ${summaryBannerHtml}
+
+                <!-- QR 원본 및 공식 사이트 검증 카드 -->
+                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 14px;">
+                    <img src="${qrImageUrl}" width="90" height="90" style="border-radius: 8px; border: 1px solid #334155; flex-shrink: 0; background: #fff;" alt="동행복권 공식 QR" onerror="this.style.display='none'" />
+                    <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1;">
+                        <div style="font-size: 0.78rem; font-weight: 800; color: #f8fafc;">
+                            <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i> 동행복권 공식 QR 데이터
+                        </div>
+                        <div style="font-size: 0.68rem; color: #64748b; word-break: break-all; line-height: 1.35; max-height: 38px; overflow: hidden;">
+                            ${url}
+                        </div>
+                        <button type="button" class="btn-dark-pill" onclick="window.copyToClipboard && window.copyToClipboard('${url}', '🔗 공식 QR 링크가 복사되었습니다.')" style="align-self: flex-start; padding: 4px 10px; font-size: 0.72rem; height: 24px;">
+                            <i class="fa-solid fa-copy"></i> 링크 복사
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="donghangVerifyModalFooter">
+                <button type="button" onclick="window.closeDonghangVerifyModal && window.closeDonghangVerifyModal()" style="padding: 9px 16px; border-radius: 8px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); color: #cbd5e1; font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+                    닫기
+                </button>
+                <button type="button" onclick="window.open('${url}', '_blank')" style="padding: 9px 16px; border-radius: 8px; background: linear-gradient(135deg, #1e3a5f, #2563eb); border: 1px solid #38bdf8; color: #ffffff; font-weight: 800; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(37,99,235,0.35);">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> 동행복권 공식 사이트 새 창
+                </button>
+            </div>
+        </div>
+    `;
+
+    modal.onclick = function(e) {
+        if (e.target === modal) closeDonghangVerifyModal();
+    };
+
+    modal.classList.add('active');
+    if (document.body) document.body.style.overflow = 'hidden';
+}
+
+function closeDonghangVerifyModal() {
+    if (typeof document === 'undefined') return;
+    const modal = document.getElementById('donghangVerifyModal');
+    if (modal) modal.classList.remove('active');
+    if (document.body) document.body.style.overflow = '';
+}
+
+if (typeof window !== 'undefined') {
+    window.openDonghangVerifyModal = openDonghangVerifyModal;
+    window.closeDonghangVerifyModal = closeDonghangVerifyModal;
+
+    if (typeof document !== 'undefined') {
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('donghangVerifyModal');
+                if (modal && modal.classList.contains('active')) {
+                    closeDonghangVerifyModal();
+                }
+            }
+        });
+    }
+}
 
         if (typeof renderConfirmedPurchasesList !== 'undefined') {
             __exports.renderConfirmedPurchasesList = renderConfirmedPurchasesList;
@@ -23179,6 +23752,14 @@ if (typeof window !== 'undefined') {
         if (typeof toggleConfirmedStats !== 'undefined') {
             __exports.toggleConfirmedStats = toggleConfirmedStats;
             if (typeof window !== 'undefined') window.toggleConfirmedStats = toggleConfirmedStats;
+        }
+        if (typeof openDonghangVerifyModal !== 'undefined') {
+            __exports.openDonghangVerifyModal = openDonghangVerifyModal;
+            if (typeof window !== 'undefined') window.openDonghangVerifyModal = openDonghangVerifyModal;
+        }
+        if (typeof closeDonghangVerifyModal !== 'undefined') {
+            __exports.closeDonghangVerifyModal = closeDonghangVerifyModal;
+            if (typeof window !== 'undefined') window.closeDonghangVerifyModal = closeDonghangVerifyModal;
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/services/lotto/views/confirmed-tab.js]:', modErr);
@@ -25509,6 +26090,9 @@ if (typeof window !== 'undefined') {
     window.handleSaveManualLedger = handleSaveManualLedger;
     window.crossCheckCombosWithRecommendations = crossCheckCombosWithRecommendations;
     window.updateManualModalCrossCheck = updateManualModalCrossCheck;
+    window.startLottoQrScanner = startLottoQrScanner;
+    window.stopScanning = stopScanning;
+    window.stopLottoScanning = stopScanning;
 }
 
         if (typeof stopScanning !== 'undefined') {
@@ -28590,8 +29174,27 @@ let _activeExtraHistoryUnsub = null;
 let _activeAppStateUnsub = null;
 let _activePurchasesAuthId = null;
 
-async function initLottoService() {
+function resetLottoServiceState() {
+    window.__lottoInitialized = false;
+    _isLottoInitializing = false;
+    _lottoInitPromise = null;
+    if (_activePurchasesUnsub) {
+        try { _activePurchasesUnsub(); } catch(e) {}
+        _activePurchasesUnsub = null;
+    }
+    _activePurchasesAuthId = null;
+}
+
+async function initLottoService(force = false) {
     window.initLottoService = initLottoService;
+    window.resetLottoServiceState = resetLottoServiceState;
+    const currentAuthId = (SafeAuth.get() || '').trim().toLowerCase();
+
+    // If user changed or force re-init requested, clean previous active listener
+    if (force || (_activePurchasesAuthId && _activePurchasesAuthId !== currentAuthId)) {
+        resetLottoServiceState();
+    }
+
     if (_isLottoInitializing && _lottoInitPromise) {
         return _lottoInitPromise;
     }
@@ -28906,28 +29509,8 @@ async function initLottoService() {
         });
     }
 
-    // Tab buttons and component event listeners (only setup once)
-    if (!window.__lottoEventsSetup) {
-        window.__lottoEventsSetup = true;
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const target = btn.dataset.tab;
-                switchLottoTab(target);
-            });
-        });
-
-        // Initialize all components event listeners
-        setupGeneratorTabEvents();
-        setupSimulationEvents();
-        setupWheelingTab();
-        setupEvolutionButton();
-        setupPredictionReport();
-        setupQuickView();
-        setupManualLedgerModal();
-        setupManualDrawModal();
-        setupSyncEvents();
-    }
+    // Component event listeners
+    setupAllLottoEvents();
 
     // Run auto-sync in the background non-blockingly after initial render
     setTimeout(() => {
@@ -28949,63 +29532,119 @@ async function initLottoService() {
 
 // Global Lotto Tab Switcher
 function switchLottoTab(target) {
+    if (!target) return;
+
     if (!window.__lottoInitialized && typeof initLottoService === 'function') {
         try { initLottoService(); } catch(e){}
     }
 
-    const landingPage = document.getElementById('landingPage');
-    const totoPage = document.getElementById('totoPage');
-    const appContainer = document.getElementById('appContainer');
+    // 1. Ensure appContainer is active and visible with !important
+    if (typeof window._switchPage === 'function') {
+        window._switchPage('appContainer', false);
+    } else {
+        const landingPage = document.getElementById('landingPage');
+        const totoPage = document.getElementById('totoPage');
+        const appContainer = document.getElementById('appContainer');
 
-    if (landingPage) {
-        landingPage.classList.remove('active');
-        landingPage.style.display = 'none';
-    }
-    if (totoPage) {
-        totoPage.classList.remove('active');
-        totoPage.style.display = 'none';
-    }
-    if (appContainer) {
-        appContainer.classList.add('active');
-        appContainer.style.display = 'flex';
+        if (landingPage) {
+            landingPage.classList.remove('active');
+            landingPage.style.setProperty('display', 'none', 'important');
+        }
+        if (totoPage) {
+            totoPage.classList.remove('active');
+            totoPage.style.setProperty('display', 'none', 'important');
+        }
+        if (appContainer) {
+            appContainer.classList.add('active');
+            appContainer.style.setProperty('display', 'flex', 'important');
+        }
     }
 
+    // 2. Update tab buttons active state
     const tabBtns = document.querySelectorAll('.tab-btn');
+    tabBtns.forEach(b => {
+        if (b.dataset.tab === target) {
+            b.classList.add('active');
+        } else {
+            b.classList.remove('active');
+        }
+    });
+
+    // 3. Update tab contents active state
     const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(c => {
+        if (c.id === target) {
+            c.classList.add('active');
+            c.style.setProperty('display', 'block', 'important');
+        } else {
+            c.classList.remove('active');
+            c.style.setProperty('display', 'none', 'important');
+        }
+    });
 
-    tabBtns.forEach(b => b.classList.remove('active'));
-    tabContents.forEach(c => c.classList.remove('active'));
+    // 4. Safely execute tab-specific render routines
+    try {
+        if (target === 'tab-generator') {
+            if (typeof renderTop5Combinations === 'function') renderTop5Combinations(false);
+            if (typeof updateSavedCount === 'function') updateSavedCount();
+            if (typeof renderSavedList === 'function') renderSavedList();
+        } else if (target === 'tab-algorithms') {
+            if (typeof renderAlgorithmsTab === 'function') renderAlgorithmsTab();
+        } else if (target === 'tab-simulation') {
+            if (typeof populateSimRoundSelector === 'function') populateSimRoundSelector();
+            if (typeof renderSimulationTab === 'function') renderSimulationTab();
+        } else if (target === 'tab-wheeling') {
+            if (typeof renderWheelingSelector === 'function') renderWheelingSelector();
+            if (typeof renderWheelingResults === 'function') renderWheelingResults();
+        } else if (target === 'tab-verify-evolution') {
+            if (typeof renderVerificationTab === 'function') renderVerificationTab();
+        } else if (target === 'tab-dashboard') {
+            if (typeof renderDashboardCharts === 'function') renderDashboardCharts();
+        } else if (target === 'tab-review') {
+            if (typeof renderReviewTab === 'function') renderReviewTab();
+        } else if (target === 'tab-confirmed-list') {
+            if (typeof renderConfirmedPurchasesList === 'function') renderConfirmedPurchasesList();
+        }
+    } catch(err) {
+        console.error(`[Error rendering tab: ${target}]`, err);
+    }
+}
 
-    const activeBtn = document.querySelector(`.tab-btn[data-tab="${target}"]`);
-    if (activeBtn) activeBtn.classList.add('active');
+// Setup all component event listeners
+function setupAllLottoEvents() {
+    if (typeof window !== 'undefined' && window.__lottoEventsSetup) return;
+    if (typeof window !== 'undefined') window.__lottoEventsSetup = true;
 
-    const targetEl = document.getElementById(target);
-    if (targetEl) targetEl.classList.add('active');
+    try { setupGeneratorTabEvents(); } catch(e) { console.warn('[setupGeneratorTabEvents]', e); }
+    try { setupSimulationEvents(); } catch(e) { console.warn('[setupSimulationEvents]', e); }
+    try { setupWheelingTab(); } catch(e) { console.warn('[setupWheelingTab]', e); }
+    try { setupEvolutionButton(); } catch(e) { console.warn('[setupEvolutionButton]', e); }
+    try { setupPredictionReport(); } catch(e) { console.warn('[setupPredictionReport]', e); }
+    try { setupQuickView(); } catch(e) { console.warn('[setupQuickView]', e); }
+    try { setupManualLedgerModal(); } catch(e) { console.warn('[setupManualLedgerModal]', e); }
+    try { setupManualDrawModal(); } catch(e) { console.warn('[setupManualDrawModal]', e); }
+    try { setupSyncEvents(); } catch(e) { console.warn('[setupSyncEvents]', e); }
+}
 
-    if (target === 'tab-generator') {
-        renderTop5Combinations(false);
-        updateSavedCount();
-        renderSavedList();
-    } else if (target === 'tab-algorithms') {
-        renderAlgorithmsTab();
-    } else if (target === 'tab-simulation') {
-        populateSimRoundSelector();
-        renderSimulationTab();
-    } else if (target === 'tab-wheeling') {
-        renderWheelingSelector();
-        renderWheelingResults();
-    } else if (target === 'tab-verify-evolution' && document.getElementById('tab-verify-evolution')) {
-        renderVerificationTab();
-    } else if (target === 'tab-dashboard') {
-        renderDashboardCharts();
-    } else if (target === 'tab-review') {
-        renderReviewTab();
-    } else if (target === 'tab-confirmed-list') {
-        renderConfirmedPurchasesList();
+// Global robust document-level tab click delegation (handles icons, spans, dynamic buttons)
+if (typeof document !== 'undefined') {
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.tab-btn');
+        if (btn && btn.dataset && btn.dataset.tab) {
+            e.preventDefault();
+            switchLottoTab(btn.dataset.tab);
+        }
+    });
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupAllLottoEvents);
+    } else {
+        setupAllLottoEvents();
     }
 }
 
 if (typeof window !== 'undefined') {
+    window.setupAllLottoEvents = setupAllLottoEvents;
     window.switchTab = switchLottoTab;
     window.switchLottoTab = switchLottoTab;
     window.renderAlgorithmsTab = renderAlgorithmsTab;
@@ -29035,8 +29674,13 @@ if (typeof window !== 'undefined') {
     window.getUserPurchasesForRound = getUserPurchasesForRound;
     window.calculateLedgerFinancials = calculateLedgerFinancials;
     window.calculateAllUsersTotalFinancials = calculateAllUsersTotalFinancials;
+    window.resetLottoServiceState = resetLottoServiceState;
 }
 
+        if (typeof resetLottoServiceState !== 'undefined') {
+            __exports.resetLottoServiceState = resetLottoServiceState;
+            if (typeof window !== 'undefined') window.resetLottoServiceState = resetLottoServiceState;
+        }
         if (typeof initLottoService !== 'undefined') {
             __exports.initLottoService = initLottoService;
             if (typeof window !== 'undefined') window.initLottoService = initLottoService;
@@ -29044,6 +29688,10 @@ if (typeof window !== 'undefined') {
         if (typeof switchLottoTab !== 'undefined') {
             __exports.switchLottoTab = switchLottoTab;
             if (typeof window !== 'undefined') window.switchLottoTab = switchLottoTab;
+        }
+        if (typeof setupAllLottoEvents !== 'undefined') {
+            __exports.setupAllLottoEvents = setupAllLottoEvents;
+            if (typeof window !== 'undefined') window.setupAllLottoEvents = setupAllLottoEvents;
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/services/lotto/index.js]:', modErr);
@@ -35306,11 +35954,17 @@ const { renderTotoDashboard } = __M_services_toto_views_toto_dashboard;
 const { getTotoState } = __M_services_toto_state;
 const { scrapeLatestTotoFixtures } = __M_services_toto_scraper;
 
+function resetTotoServiceState() {
+    window.__totoInitialized = false;
+}
+
 function initTotoService() {
     console.log('[Toto Service] Initializing Toto / Proto Sports Analytics Engine...');
     
     window.renderTotoDashboard = renderTotoDashboard;
     window.scrapeLatestTotoFixtures = scrapeLatestTotoFixtures;
+    window.resetTotoServiceState = resetTotoServiceState;
+    window.__totoInitialized = true;
     
     // Attach global showToto navigation (Active for Beta Testing)
     window.showToto = function() {
@@ -35355,6 +36009,14 @@ function initTotoService() {
     }
 }
 
+if (typeof window !== 'undefined') {
+    window.resetTotoServiceState = resetTotoServiceState;
+}
+
+        if (typeof resetTotoServiceState !== 'undefined') {
+            __exports.resetTotoServiceState = resetTotoServiceState;
+            if (typeof window !== 'undefined') window.resetTotoServiceState = resetTotoServiceState;
+        }
         if (typeof initTotoService !== 'undefined') {
             __exports.initTotoService = initTotoService;
             if (typeof window !== 'undefined') window.initTotoService = initTotoService;
@@ -36267,8 +36929,68 @@ const { checkAuthOnLoad, setupAuthEvents, SafeAuth, getUserPermissions } = __M_s
 const { initLottoService } = __M_services_lotto_index;
 const { initTotoService } = __M_services_toto_index;
 const { renderLandingDashboard } = __M_shared_landing_dashboard;
+const { showToast } = __M_shared_utils;
+const { reconnectFirebaseNetwork } = __M_shared_db;
 
-function _switchPage(show) {
+let _lastBackPressTime = 0;
+
+function _closeAnyActiveModal() {
+    // 1. Donghang verify modal
+    const donghangModal = document.getElementById('donghangVerifyModal');
+    if (donghangModal && donghangModal.classList.contains('active')) {
+        if (typeof window.closeDonghangVerifyModal === 'function') {
+            window.closeDonghangVerifyModal();
+        } else {
+            donghangModal.classList.remove('active');
+        }
+        return true;
+    }
+
+    // 2. All visible modals / overlays
+    const modalSelectors = [
+        '#agreementModalOverlay',
+        '#modalReceiptTrash',
+        '#winningHistoryModal',
+        '#modalQuickView',
+        '#modalManual',
+        '#modalManualDraw',
+        '#modalSnapshotAudit',
+        '#modalBudgetOptimizer',
+        '#userMgmtModal',
+        '#memberManageModal',
+        '#kakaoMessageConsentModal'
+    ];
+
+    const isAuth = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? !!SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? !!window.SafeAuth.get() : false);
+    if (isAuth) {
+        modalSelectors.unshift('#loginModalOverlay');
+    }
+
+    for (const sel of modalSelectors) {
+        const el = document.querySelector(sel);
+        if (el && el.style.display !== 'none' && el.style.display !== '' && !el.classList.contains('hidden')) {
+            const closeBtn = el.querySelector('.btn-close, .modal-close, [data-dismiss="modal"], .btn-close-receipt-trash, #btnCloseLoginModal, #btnCloseQuickView, .btn-close-user-mgmt');
+            if (closeBtn && typeof closeBtn.click === 'function') {
+                closeBtn.click();
+            } else {
+                el.style.display = 'none';
+                el.classList.remove('active');
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+function getCurrentActivePage() {
+    const lotto = document.getElementById('appContainer');
+    const toto = document.getElementById('totoPage');
+    if (lotto && (lotto.classList.contains('active') || lotto.style.display === 'flex' || lotto.style.display === 'block')) return 'lotto';
+    if (toto && (toto.classList.contains('active') || toto.style.display === 'flex' || toto.style.display === 'block')) return 'toto';
+    return 'landing';
+}
+
+function _switchPage(show, pushHistory = true) {
     var ids = ['landingPage', 'totoPage', 'appContainer'];
     ids.forEach(function(id) {
         var el = document.getElementById(id);
@@ -36285,11 +37007,21 @@ function _switchPage(show) {
             el.style.setProperty('display', 'none', 'important');
         }
     });
+
+    if (pushHistory && typeof history !== 'undefined' && history.pushState) {
+        try {
+            const hash = show === 'landingPage' ? '#home' : (show === 'appContainer' ? '#lotto' : '#toto');
+            const page = show === 'landingPage' ? 'landing' : (show === 'appContainer' ? 'lotto' : 'toto');
+            if (window.location.hash !== hash) {
+                history.pushState({ page: page }, '', hash);
+            }
+        } catch(e) {}
+    }
 }
 window._switchPage = _switchPage;
 
-window.showLanding = function() {
-    _switchPage('landingPage');
+window.showLanding = function(pushHistory = true) {
+    _switchPage('landingPage', pushHistory);
     try {
         if (typeof window.updateAppVersionBadges === 'function') {
             window.updateAppVersionBadges();
@@ -36305,7 +37037,7 @@ window.showLanding = function() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.showToto = function() {
+window.showToto = function(pushHistory = true) {
     const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
     if (authId) {
         const getPerms = typeof getUserPermissions === 'function' ? getUserPermissions : (window.getUserPermissions || (() => ({ allowToto: true })));
@@ -36316,7 +37048,7 @@ window.showToto = function() {
         }
     }
 
-    _switchPage('totoPage');
+    _switchPage('totoPage', pushHistory);
     try {
         if (typeof renderTotoDashboard === 'function') {
             renderTotoDashboard();
@@ -36329,7 +37061,7 @@ window.showToto = function() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-window.showLotto = function() {
+window.showLotto = function(pushHistory = true) {
     const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
     if (authId) {
         const getPerms = typeof getUserPermissions === 'function' ? getUserPermissions : (window.getUserPermissions || (() => ({ allowLotto: true })));
@@ -36340,11 +37072,11 @@ window.showLotto = function() {
         }
     }
 
-    _switchPage('appContainer');
+    _switchPage('appContainer', pushHistory);
     try {
-        if (typeof initLottoService === 'function' && !window.__lottoInitialized) {
+        if (typeof initLottoService === 'function') {
             initLottoService();
-        } else if (typeof window.initLottoService === 'function' && !window.__lottoInitialized) {
+        } else if (typeof window.initLottoService === 'function') {
             window.initLottoService();
         }
     } catch(e) {
@@ -36352,6 +37084,59 @@ window.showLotto = function() {
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
+
+function setupMobileBackNavigation() {
+    if (typeof window === 'undefined' || typeof history === 'undefined') return;
+
+    // Set initial baseline history state
+    try {
+        const curPage = getCurrentActivePage();
+        history.replaceState({ page: curPage }, '', curPage === 'landing' ? '#home' : '#' + curPage);
+    } catch(e) {}
+
+    window.addEventListener('popstate', function(e) {
+        // 1. If any modal is active, close the modal first and stay on the current page
+        if (_closeAnyActiveModal()) {
+            const cur = getCurrentActivePage();
+            try {
+                history.pushState({ page: cur }, '', cur === 'landing' ? '#home' : '#' + cur);
+            } catch(err) {}
+            return;
+        }
+
+        const curPage = getCurrentActivePage();
+
+        // 2. If in Lotto or Toto sub-page -> navigate back to Home (Landing)
+        if (curPage === 'lotto' || curPage === 'toto') {
+            window.showLanding(false);
+            try {
+                history.pushState({ page: 'landing' }, '', '#home');
+            } catch(err) {}
+            return;
+        }
+
+        // 3. If already on Home (landingPage) -> Double back to exit
+        if (curPage === 'landing') {
+            const now = Date.now();
+            if (now - _lastBackPressTime < 2000) {
+                // Exit app: do nothing to let default browser back/close occur
+                return;
+            } else {
+                _lastBackPressTime = now;
+                // Keep landing page state to prevent immediate unexpected exit on first press
+                try {
+                    history.pushState({ page: 'landing' }, '', '#home');
+                } catch(err) {}
+                const msg = "📱 '뒤로가기'를 한 번 더 누르면 앱이 종료됩니다.";
+                if (typeof showToast === 'function') {
+                    showToast(msg);
+                } else if (typeof window.showToast === 'function') {
+                    window.showToast(msg);
+                }
+            }
+        }
+    });
+}
 
 function runInit() {
     console.log('[System] Initializing decoupled independent services...');
@@ -36375,6 +37160,13 @@ function runInit() {
             window.updateAppVersionBadges();
         }
     } catch(e) {}
+
+    // Initialize Mobile Back Button Navigation Handler
+    try {
+        setupMobileBackNavigation();
+    } catch(e) {
+        console.warn('[Mobile Back Nav Init Error]', e);
+    }
 
     // 1. Initialize Toto Service (Independent Sandbox)
     setTimeout(() => {
@@ -36408,6 +37200,37 @@ function runInit() {
     }, 20);
 }
 
+function handleAppResumeAndWakeup() {
+    // 1. Immediately revive Firestore network connection (eliminates mobile sleep/background lag)
+    if (typeof reconnectFirebaseNetwork === 'function') {
+        reconnectFirebaseNetwork();
+    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
+        window.reconnectFirebaseNetwork();
+    } else if (window.db && typeof window.db.enableNetwork === 'function') {
+        try { window.db.enableNetwork(); } catch(e) {}
+    }
+
+    // 2. Render Landing UI immediately from cache (0ms instant response)
+    if (typeof renderLandingDashboard === 'function') {
+        try { renderLandingDashboard(); } catch(e) {}
+    }
+
+    // 3. Fast non-blocking version cross-check
+    if (typeof window.checkLatestBuildVersion === 'function') {
+        try { window.checkLatestBuildVersion(true); } catch(e) {}
+    }
+
+    // 4. If logged in but login modal is lingering, re-verify auth
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
+    const loginModal = document.getElementById('loginModalOverlay');
+    const isModalVisible = loginModal && loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden');
+    if (authId && isModalVisible) {
+        setTimeout(() => {
+            try { checkAuthOnLoad(initLottoService); } catch(e) {}
+        }, 50);
+    }
+}
+
 if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', runInit);
@@ -36417,26 +37240,15 @@ if (typeof document !== 'undefined') {
 
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-            if (typeof window.checkLatestBuildVersion === 'function') {
-                window.checkLatestBuildVersion(true);
-            }
-            if (typeof renderLandingDashboard === 'function') {
-                renderLandingDashboard();
-            }
-            // [Fix] 카카오 팝업 로그인 완료 후 원래 탭으로 복귀 시 인증 상태 재확인
-            // 카카오 팝업이 닫히면 visibilitychange: visible 이 발생하므로
-            // 로그인 완료된 경우 checkAuthOnLoad를 재실행해 UI를 정상화한다
-            const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
-            const loginModal = document.getElementById('loginModalOverlay');
-            const isModalVisible = loginModal && loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden');
-            if (authId && isModalVisible) {
-                // 로그인 완료됐는데 모달이 아직 보이는 경우 → 상태 재확인으로 모달 닫기
-                setTimeout(() => {
-                    try { checkAuthOnLoad(initLottoService); } catch(e) {}
-                }, 100);
-            }
+            handleAppResumeAndWakeup();
         }
     });
+
+    if (typeof window !== 'undefined') {
+        window.addEventListener('focus', handleAppResumeAndWakeup, { passive: true });
+        window.addEventListener('pageshow', handleAppResumeAndWakeup, { passive: true });
+        window.addEventListener('online', handleAppResumeAndWakeup, { passive: true });
+    }
 }
 
 

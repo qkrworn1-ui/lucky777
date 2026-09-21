@@ -1858,7 +1858,109 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('isModalVisible', main_code,
                       'FAIL: isModalVisible check missing in visibilitychange handler')
 
+    def test_49_donghang_verify_modal_integrity(self):
+        """Test 49: Verify openDonghangVerifyModal is properly defined and exposed."""
+        conf_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        with open(conf_file, 'r', encoding='utf-8') as f:
+            code = f.read()
 
+        self.assertIn('export function openDonghangVerifyModal', code)
+        self.assertIn('export function closeDonghangVerifyModal', code)
+        self.assertIn('window.openDonghangVerifyModal = openDonghangVerifyModal', code)
+        self.assertIn('window.closeDonghangVerifyModal = closeDonghangVerifyModal', code)
+    def test_50_mobile_back_navigation_integrity(self):
+        """Test 50: Verify mobile back button history and exit confirmation in main.js."""
+        main_file = os.path.join(self.root_dir, 'src', 'main.js')
+        with open(main_file, 'r', encoding='utf-8') as f:
+            code = f.read()
+
+        self.assertIn('setupMobileBackNavigation', code)
+        self.assertIn('addEventListener(\'popstate\'', code)
+        self.assertIn('_closeAnyActiveModal', code)
+        self.assertIn('history.pushState', code)
+        self.assertIn('window.showLanding(false)', code)
+
+    def test_51_logout_relogin_lifecycle_integrity(self):
+        """Test 51: Verify logout teardown and re-login initialization lifecycle."""
+        auth_file = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        lotto_index_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'index.js')
+        toto_index_file = os.path.join(self.root_dir, 'src', 'services', 'toto', 'index.js')
+        main_file = os.path.join(self.root_dir, 'src', 'main.js')
+
+        with open(auth_file, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        with open(lotto_index_file, 'r', encoding='utf-8') as f:
+            lotto_code = f.read()
+        with open(toto_index_file, 'r', encoding='utf-8') as f:
+            toto_code = f.read()
+        with open(main_file, 'r', encoding='utf-8') as f:
+            main_code = f.read()
+
+        # 1. lotto/index.js must define and export resetLottoServiceState
+        self.assertIn('export function resetLottoServiceState', lotto_code)
+        self.assertIn('window.resetLottoServiceState = resetLottoServiceState', lotto_code)
+
+        # 2. toto/index.js must define and export resetTotoServiceState
+        self.assertIn('export function resetTotoServiceState', toto_code)
+        self.assertIn('window.resetTotoServiceState = resetTotoServiceState', toto_code)
+
+        # 3. auth-mgmt.js handleLogout must reset lifecycle flags
+        self.assertIn('window.__lottoInitialized = false;', auth_code)
+        self.assertIn('window.__totoInitialized = false;', auth_code)
+        self.assertIn('window.__appUnlocked = false;', auth_code)
+        self.assertIn('resetLottoServiceState()', auth_code)
+        self.assertIn('resetTotoServiceState()', auth_code)
+
+        # 4. main.js _closeAnyActiveModal must protect login modal when unauthenticated
+        self.assertIn('isAuth', main_code)
+        self.assertIn('modalSelectors.unshift(\'#loginModalOverlay\')', main_code)
+
+    def test_52_mobile_resume_fast_reconnect_integrity(self):
+        """Test 52: Verify mobile background wake-up fast reconnect and timeout resilience."""
+        db_file = os.path.join(self.root_dir, 'src', 'shared', 'db.js')
+        main_file = os.path.join(self.root_dir, 'src', 'main.js')
+        index_file = os.path.join(self.root_dir, 'index.html')
+
+        with open(db_file, 'r', encoding='utf-8') as f:
+            db_code = f.read()
+        with open(main_file, 'r', encoding='utf-8') as f:
+            main_code = f.read()
+        with open(index_file, 'r', encoding='utf-8') as f:
+            index_code = f.read()
+
+        # 1. db.js must export reconnectFirebaseNetwork
+        self.assertIn('export async function reconnectFirebaseNetwork', db_code)
+        self.assertIn('window.reconnectFirebaseNetwork = reconnectFirebaseNetwork', db_code)
+        self.assertIn('Promise.race', db_code)
+
+        # 2. main.js must handle app resume with multiple wake-up events
+        self.assertIn('handleAppResumeAndWakeup', main_code)
+        self.assertIn('reconnectFirebaseNetwork', main_code)
+        self.assertIn('pageshow', main_code)
+        self.assertIn('online', main_code)
+
+    def test_53_lotto_tab_switching_integrity(self):
+        """Test 53: Verify switchLottoTab uses _switchPage, !important styles, and document-level click delegation."""
+        lotto_index_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'index.js')
+        with open(lotto_index_file, 'r', encoding='utf-8') as f:
+            code = f.read()
+
+        # 1. switchLottoTab must call _switchPage('appContainer', false)
+        self.assertIn("window._switchPage('appContainer', false);", code)
+
+        # 2. Tab switching must use setProperty with !important for proper display priority
+        self.assertIn("c.style.setProperty('display', 'block', 'important');", code)
+        self.assertIn("c.style.setProperty('display', 'none', 'important');", code)
+
+        # 3. Document-level tab delegation must use .closest('.tab-btn')
+        self.assertIn("e.target.closest('.tab-btn')", code)
+        self.assertIn("switchLottoTab(btn.dataset.tab)", code)
+
+        # 4. Tab renders must be safely wrapped
+        self.assertIn("if (target === 'tab-simulation')", code)
+        self.assertIn("if (target === 'tab-review')", code)
+        self.assertIn("if (target === 'tab-confirmed-list')", code)
+        self.assertIn("if (target === 'tab-algorithms')", code)
 
 
 if __name__ == '__main__':

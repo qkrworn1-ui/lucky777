@@ -56,10 +56,45 @@ export const SafeAuth = {
     clear: function() { _clearRaw('lotto_auth'); }
 };
 
-export function handleLogout() {
-    if (!confirm('정말로 로그아웃 하시겠습니까?')) return;
+let _isLoggingOut = false;
+
+export function handleLogout(skipConfirm = false) {
+    if (_isLoggingOut) return;
+    if (!skipConfirm && !confirm('정말로 로그아웃 하시겠습니까?')) return;
+    _isLoggingOut = true;
     
-    // 1. Clear memory & Storage & Cookies
+    // 1. Reset Global Lifecycle Flags
+    if (typeof window !== 'undefined') {
+        window.__lottoInitialized = false;
+        window.__totoInitialized = false;
+        window.__appUnlocked = false;
+        window.__currentUser = null;
+        window.__permUsers = {};
+        window.__adminUsers = {};
+        window.__userNames = {};
+        window.__userCreatedMap = {};
+
+        if (typeof window.resetLottoServiceState === 'function') {
+            try { window.resetLottoServiceState(); } catch(e) {}
+        }
+        if (typeof window.resetTotoServiceState === 'function') {
+            try { window.resetTotoServiceState(); } catch(e) {}
+        }
+        if (typeof window.clearUser70ReviewCache === 'function') {
+            try { window.clearUser70ReviewCache(); } catch(e) {}
+        }
+        if (window.lottoState) {
+            window.lottoState.globalLedger = {};
+            window.lottoState.allUsersPurchasesMap = {};
+            window.lottoState.allUsersMergedLedger = null;
+            window.lottoState.ledgerFinancialsCache = null;
+            window.lottoState.allRegisteredUsersList = [];
+            window.lottoState.localComboCache = {};
+            window.lottoState.userRecommendationSnapshots = {};
+        }
+    }
+
+    // 2. Clear memory & Storage & Cookies
     const currId = SafeAuth.get();
     SafeAuth.clear();
     if (currId) {
@@ -74,30 +109,11 @@ export function handleLogout() {
         try { window.sessionStorage.removeItem(`name_${cLower}`); } catch(e){}
         try { window.localStorage.removeItem(`name_${cLower}`); } catch(e){}
     }
-    if (typeof window !== 'undefined') {
-        window.__permUsers = {};
-        window.__adminUsers = {};
-        window.__userNames = {};
-        window.__userCreatedMap = {};
-        window.__currentUser = null;
-        if (typeof window.clearUser70ReviewCache === 'function') {
-            window.clearUser70ReviewCache();
-        }
-        if (window.lottoState) {
-            window.lottoState.globalLedger = {};
-            window.lottoState.allUsersPurchasesMap = {};
-            window.lottoState.allUsersMergedLedger = null;
-            window.lottoState.ledgerFinancialsCache = null;
-            window.lottoState.allRegisteredUsersList = [];
-            window.lottoState.localComboCache = {};
-            window.lottoState.userRecommendationSnapshots = {};
-        }
-    }
     try { window.sessionStorage.clear(); } catch(e){}
     try { window.localStorage.removeItem('lotto_auth'); } catch(e){}
     try { window.localStorage.removeItem('kakao_access_token'); } catch(e){}
 
-    // 2. Clear Kakao Auth Session if connected
+    // 3. Clear Kakao Auth Session if connected
     if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.logout === 'function') {
         try {
             window.Kakao.Auth.logout(function() {
@@ -106,21 +122,37 @@ export function handleLogout() {
         } catch(e){}
     }
 
-    // 3. Remove early CSS preventing login modal
+    // 4. Remove early CSS preventing login modal
     const earlyCss = document.getElementById('early-auth-css');
     if (earlyCss && earlyCss.parentNode) {
         earlyCss.parentNode.removeChild(earlyCss);
     }
 
-    // 4. Force show login modal immediately, hide all app pages
+    // 5. Clean up login modal form inputs & display login modal cleanly
+    const idEl = document.getElementById('loginId');
+    if (idEl) idEl.value = '';
+    const pwEl = document.getElementById('loginPw');
+    if (pwEl) pwEl.value = '';
+    const loginError = document.getElementById('loginError');
+    if (loginError) {
+        loginError.textContent = '';
+        loginError.style.display = 'none';
+    }
+    const submitBtn = document.getElementById('btnLoginSubmit');
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '시스템 접속';
+    }
+
     const loginModal = document.getElementById('loginModalOverlay');
     if (loginModal) {
-        loginModal.style.setProperty('display', 'flex', 'important');
-        loginModal.style.setProperty('visibility', 'visible', 'important');
-        loginModal.style.setProperty('opacity', '1', 'important');
-        loginModal.style.setProperty('pointer-events', 'auto', 'important');
+        loginModal.removeAttribute('style');
+        loginModal.style.cssText = 'display: flex !important; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 10, 20, 0.95); z-index: 99999; padding: 16px; box-sizing: border-box;';
+        loginModal.classList.remove('hidden');
+        loginModal.classList.add('active');
     }
-    // Hide all app pages (using correct IDs)
+
+    // 6. Hide all app pages
     ['landingPage', 'appContainer', 'totoPage', 'mainApp', 'totoApp'].forEach(function(id) {
         const el = document.getElementById(id);
         if (el) {
@@ -129,8 +161,29 @@ export function handleLogout() {
         }
     });
 
-    // 5. Reload cleanly without hash or query
-    window.location.replace(window.location.origin + window.location.pathname);
+    if (document.body) {
+        document.body.classList.remove('is-admin');
+    }
+
+    // 7. Clear URL Hash without creating history clutter
+    try {
+        if (window.location.hash) {
+            history.replaceState(null, '', window.location.pathname || '/');
+        }
+    } catch(e) {}
+
+    // 8. Safe Cross-Platform Hard Reload (Desktop Windows & Mobile)
+    try {
+        const isFileOrNull = !window.location.origin || window.location.origin === 'null';
+        const targetUrl = isFileOrNull ? window.location.href.split('#')[0].split('?')[0] : (window.location.origin + window.location.pathname);
+        window.location.replace(targetUrl);
+    } catch(e) {
+        try { window.location.reload(); } catch(err) {}
+    }
+
+    setTimeout(() => {
+        _isLoggingOut = false;
+    }, 1000);
 }
 
 if (typeof window !== 'undefined') {
@@ -716,19 +769,19 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             document.body.style.overflow = '';
         }
 
-        if (!window.__appUnlocked) {
-            const totoPage = document.getElementById('totoPage');
-            const isTotoActive = totoPage && (totoPage.style.display === 'block' || totoPage.classList.contains('active'));
-            const isLottoActive = appContainer && appContainer.classList.contains('active') && (!landingPage || !landingPage.classList.contains('active'));
+        window.__appUnlocked = true;
+        const totoPage = document.getElementById('totoPage');
+        const isTotoActive = totoPage && (totoPage.style.display === 'block' || totoPage.classList.contains('active'));
+        const isLottoActive = appContainer && appContainer.classList.contains('active') && (!landingPage || !landingPage.classList.contains('active'));
+        const isLandingActive = landingPage && (landingPage.style.display === 'flex' || landingPage.classList.contains('active'));
 
-            const userPerms = getUserPermissions(authId);
-            if (isTotoActive && userPerms.allowToto) {
-                _showPage('totoPage');
-            } else if (isLottoActive && userPerms.allowLotto) {
-                _showPage('appContainer');
-            } else {
-                _showPage('landingPage');
-            }
+        const userPerms = getUserPermissions(authId);
+        if (isTotoActive && userPerms.allowToto) {
+            _showPage('totoPage');
+        } else if (isLottoActive && userPerms.allowLotto) {
+            _showPage('appContainer');
+        } else if (!isLandingActive || (!isTotoActive && !isLottoActive)) {
+            _showPage('landingPage');
         }
 
         if (isUserAdmin) {
@@ -748,11 +801,17 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'none';
         }
 
-        if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) {
+        if (typeof initFirebaseAndData === 'function') {
             try {
                 initFirebaseAndData();
             } catch (err) {
                 console.error('[AUTH] Error during service init (non-blocking):', err);
+            }
+        } else if (typeof window.initLottoService === 'function') {
+            try {
+                window.initLottoService();
+            } catch (err) {
+                console.error('[AUTH] Error during lotto service init (non-blocking):', err);
             }
         }
 
@@ -764,8 +823,10 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
         if (window.db) {
             (async () => {
                 try {
-                    const userDoc = await window.db.collection('lotto_users').doc(authId).get();
-                    if (userDoc.exists) {
+                    const queryPromise = window.db.collection('lotto_users').doc(authId).get();
+                    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500));
+                    const userDoc = await Promise.race([queryPromise, timeoutPromise]);
+                    if (userDoc && userDoc.exists) {
                         const uData = userDoc.data() || {};
                         let freshAdmin = isUserAdmin;
                         if (uData.isAdmin === true || uData.role === 'admin' || uData.userType === 'admin') {
@@ -999,7 +1060,13 @@ export function setupAuthEvents(initFirebaseAndData) {
 
                                 // 3. Render Dashboard & Init Services immediately
                                 setTimeout(() => {
-                                    try { if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) initFirebaseAndData(); } catch(ex) {}
+                                    try {
+                                        if (typeof initFirebaseAndData === 'function') {
+                                            initFirebaseAndData();
+                                        } else if (typeof window.initLottoService === 'function') {
+                                            window.initLottoService();
+                                        }
+                                    } catch(ex) {}
                                     try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
                                 }, 50);
 
@@ -1894,12 +1961,18 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 if (tpEl) { tpEl.classList.remove('active'); tpEl.style.setProperty('display', 'none', 'important'); }
 
                 setTimeout(async function() {
-                    try { if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) await initFirebaseAndData(); } catch(ex) {}
+                    try {
+                        if (typeof initFirebaseAndData === 'function') {
+                            await initFirebaseAndData();
+                        } else if (typeof window.initLottoService === 'function') {
+                            await window.initLottoService();
+                        }
+                    } catch(ex) {}
                     try { if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard(); } catch(ex) {}
                     checkAuthOnLoad(initFirebaseAndData).then(function() {
                         try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(e){}
                     }).catch(function(err) { console.warn('[BG auth check]', err); });
-                }, 100);
+                }, 50);
 
             } catch (err) {
                 console.error('[Sign-up Error]', err);
@@ -1981,7 +2054,11 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                 // 4. Initialize services (non-blocking, background)
                 setTimeout(async function() {
                     try {
-                        if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) await initFirebaseAndData();
+                        if (typeof initFirebaseAndData === 'function') {
+                            await initFirebaseAndData();
+                        } else if (typeof window.initLottoService === 'function') {
+                            await window.initLottoService();
+                        }
                     } catch(ex) {}
                     try {
                         if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
@@ -1994,7 +2071,7 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
                     }).catch(function(err) {
                         console.warn('[Background auth check error]', err);
                     });
-                }, 100);
+                }, 50);
             }
 
             // 1. Instant Master/Admin bypass
@@ -2148,13 +2225,14 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
     }
 
     if (btnLogout) {
-        btnLogout.addEventListener('click', () => {
+        btnLogout.onclick = (e) => {
+            if (e) { e.preventDefault(); e.stopPropagation(); }
             if (typeof window.handleLogout === 'function') {
                 window.handleLogout();
             } else {
                 handleLogout();
             }
-        });
+        };
     }
 
     // ========================================================
@@ -5513,10 +5591,17 @@ window.startBatchWinningSend = async function() {
     function setupInactivityAutoLogout() {
         if (typeof window === 'undefined') return;
         
-        const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+        const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click', 'focus'];
         activityEvents.forEach(evt => {
             window.addEventListener(evt, resetInactivityTimer, { passive: true });
         });
+        if (typeof document !== 'undefined') {
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    resetInactivityTimer();
+                }
+            });
+        }
         
         resetInactivityTimer();
     }

@@ -2,11 +2,17 @@ import { renderTotoDashboard } from './views/toto-dashboard.js';
 import { getTotoState } from './state.js';
 import { scrapeLatestTotoFixtures } from './scraper.js';
 
+export function resetTotoServiceState() {
+    window.__totoInitialized = false;
+}
+
 export function initTotoService() {
     console.log('[Toto Service] Initializing Toto / Proto Sports Analytics Engine...');
     
     window.renderTotoDashboard = renderTotoDashboard;
     window.scrapeLatestTotoFixtures = scrapeLatestTotoFixtures;
+    window.resetTotoServiceState = resetTotoServiceState;
+    window.__totoInitialized = true;
     
     // Attach global showToto navigation (Active for Beta Testing)
     window.showToto = function() {
@@ -49,4 +55,8 @@ export function initTotoService() {
     if (totoContainer && (totoContainer.classList.contains('active') || totoContainer.style.display === 'block')) {
         renderTotoDashboard();
     }
+}
+
+if (typeof window !== 'undefined') {
+    window.resetTotoServiceState = resetTotoServiceState;
 }
