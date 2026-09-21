@@ -43,11 +43,6 @@ export async function initLottoService(force = false) {
     window.resetLottoServiceState = resetLottoServiceState;
     const currentAuthId = (SafeAuth.get() || '').trim().toLowerCase();
 
-    // If already initialized for this user and not force, return immediately (0ms instant)
-    if (!force && window.__lottoInitialized && _activePurchasesAuthId === currentAuthId) {
-        return;
-    }
-
     // If user changed or force re-init requested, clean previous active listener
     if (force || (_activePurchasesAuthId && _activePurchasesAuthId !== currentAuthId)) {
         resetLottoServiceState();
@@ -61,9 +56,7 @@ export async function initLottoService(force = false) {
     _lottoInitPromise = (async () => {
         try {
             window.__lottoInitialized = true;
-            _activePurchasesAuthId = currentAuthId;
             initHistory();
-
             try {
                 recalculateGroups();
             } catch(initErr) {

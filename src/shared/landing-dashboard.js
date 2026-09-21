@@ -4,35 +4,13 @@ import { SafeAuth, getUserRealName } from './auth-mgmt.js';
 import { isSystemOrDummyUser } from './utils.js';
 import { getAllUnifiedRegisteredUsers } from './user-context.js';
 import { computeUser70RecommendationsReview, clearUser70ReviewCache } from '../services/lotto/views/review-tab.js';
-import { calculate7AlgorithmsPerformance } from '../services/lotto/views/algorithms-tab.js';
-
-let _renderDashboardDebounceTimer = null;
-let _landingReviewSummaryCache = null;
-let _lastLandingReviewCacheKey = '';
 
 /**
  * Update Compact Financial & Actual Winning History Summary on Landing Page
  * Displays Individual User Actual Winning Record, All Users Aggregate Record,
  * and All Members AI Recommendation (70 games) Review Winning History.
  */
-export function renderLandingDashboard() {
-    if (_renderDashboardDebounceTimer) {
-        clearTimeout(_renderDashboardDebounceTimer);
-    }
-    return new Promise((resolve) => {
-        _renderDashboardDebounceTimer = setTimeout(async () => {
-            _renderDashboardDebounceTimer = null;
-            try {
-                await _executeRenderLandingDashboard();
-            } catch (err) {
-                console.warn('[Landing Dashboard Render Error]:', err);
-            }
-            resolve();
-        }, 60);
-    });
-}
-
-async function _executeRenderLandingDashboard() {
+export async function renderLandingDashboard() {
     if (typeof window !== 'undefined') {
         if (window.__isRenderingDashboard) return;
         window.__isRenderingDashboard = true;
@@ -68,10 +46,10 @@ async function _executeRenderLandingDashboard() {
     }
 
     // 1. Calculate Individual Logged-in User's Actual Lotto Financials
-    const myFin = calculateLedgerFinancials(false, 'my');
+    const myFin = calculateLedgerFinancials(true, 'my');
 
     // 2. Calculate All Registered Users' Aggregate Lotto Financials
-    const allFin = await calculateAllUsersTotalFinancials(false);
+    const allFin = await calculateAllUsersTotalFinancials();
 
     // 3. Update Header Financial Summary KPI Elements (My Portfolio)
     const elInvest = document.getElementById('lp-total-invest');
@@ -340,77 +318,57 @@ export async function updateHomeReviewDashboard() {
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);
 
-        const userCount = (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) ? state.allRegisteredUsersList.length : 0;
-        const currentCacheKey = `${fromRound}_${maxRound}_${historyRounds.length}_${userCount}`;
-
-        let summaryData = (_lastLandingReviewCacheKey === currentCacheKey && _landingReviewSummaryCache) ? _landingReviewSummaryCache : null;
-
-        if (!summaryData) {
-            let perf = null;
-            if (typeof calculate7AlgorithmsPerformance === 'function') {
-                perf = calculate7AlgorithmsPerformance(fromRound, 'all');
-            } else if (typeof window !== 'undefined' && window.calculate7AlgorithmsPerformance) {
-                perf = window.calculate7AlgorithmsPerformance(fromRound, 'all');
-            }
-
-            let grandRank1 = 0;
-            let grandRank2 = 0;
-            let grandRank3 = 0;
-            let grandRank4 = 0;
-            let grandRank5 = 0;
-            let grandTotalPrize = 0;
-            let grandTotalGames = 0;
-            let grandTotalWins = 0;
-
-            if (perf) {
-                grandRank1 = perf.grandRankCounts ? (perf.grandRankCounts[1] || 0) : 0;
-                grandRank2 = perf.grandRankCounts ? (perf.grandRankCounts[2] || 0) : 0;
-                grandRank3 = perf.grandRankCounts ? (perf.grandRankCounts[3] || 0) : 0;
-                grandRank4 = perf.grandRankCounts ? (perf.grandRankCounts[4] || 0) : 0;
-                grandRank5 = perf.grandRankCounts ? (perf.grandRankCounts[5] || 0) : 0;
-                grandTotalPrize = perf.grandTotalPrize || 0;
-                grandTotalGames = perf.grandTotalGames || 0;
-                grandTotalWins = perf.grandTotalWins || (grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5);
-            } else {
-                const userList = getAllUnifiedRegisteredUsers();
-                const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
-
-                rounds.forEach(rnd => {
-                    userList.forEach(u => {
-                        const rev = (typeof computeUser70RecommendationsReview === 'function')
-                            ? computeUser70RecommendationsReview(u.id, rnd)
-                            : (typeof window !== 'undefined' && window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, rnd) : null);
-                        if (rev && !rev.isPreJoin) {
-                            grandTotalGames += (rev.totalGames || 70);
-                            grandTotalPrize += (rev.totalPrize || 0);
-                            if (rev.grandHits) {
-                                grandRank1 += (rev.grandHits[1] || 0);
-                                grandRank2 += (rev.grandHits[2] || 0);
-                                grandRank3 += (rev.grandHits[3] || 0);
-                                grandRank4 += (rev.grandHits[4] || 0);
-                                grandRank5 += (rev.grandHits[5] || 0);
-                            }
-                        }
-                    });
-                });
-                grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
-            }
-
-            summaryData = {
-                grandRank1,
-                grandRank2,
-                grandRank3,
-                grandRank4,
-                grandRank5,
-                grandTotalPrize,
-                grandTotalGames,
-                grandTotalWins
-            };
-            _landingReviewSummaryCache = summaryData;
-            _lastLandingReviewCacheKey = currentCacheKey;
+        let perf = null;
+        if (typeof calculate7AlgorithmsPerformance === 'function') {
+            perf = calculate7AlgorithmsPerformance(fromRound, 'all');
+        } else if (typeof window !== 'undefined' && window.calculate7AlgorithmsPerformance) {
+            perf = window.calculate7AlgorithmsPerformance(fromRound, 'all');
         }
 
-        const { grandRank1, grandRank2, grandRank3, grandRank4, grandRank5, grandTotalPrize, grandTotalGames, grandTotalWins } = summaryData;
+        let grandRank1 = 0;
+        let grandRank2 = 0;
+        let grandRank3 = 0;
+        let grandRank4 = 0;
+        let grandRank5 = 0;
+        let grandTotalPrize = 0;
+        let grandTotalGames = 0;
+        let grandTotalWins = 0;
+
+        if (perf) {
+            grandRank1 = perf.grandRankCounts ? (perf.grandRankCounts[1] || 0) : 0;
+            grandRank2 = perf.grandRankCounts ? (perf.grandRankCounts[2] || 0) : 0;
+            grandRank3 = perf.grandRankCounts ? (perf.grandRankCounts[3] || 0) : 0;
+            grandRank4 = perf.grandRankCounts ? (perf.grandRankCounts[4] || 0) : 0;
+            grandRank5 = perf.grandRankCounts ? (perf.grandRankCounts[5] || 0) : 0;
+            grandTotalPrize = perf.grandTotalPrize || 0;
+            grandTotalGames = perf.grandTotalGames || 0;
+            grandTotalWins = perf.grandTotalWins || (grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5);
+        } else {
+            // Fallback direct calculation across rounds 1235..maxRound and registered users
+            const userList = getAllUnifiedRegisteredUsers();
+
+            const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
+
+            rounds.forEach(rnd => {
+                userList.forEach(u => {
+                    const rev = (typeof computeUser70RecommendationsReview === 'function')
+                        ? computeUser70RecommendationsReview(u.id, rnd)
+                        : (typeof window !== 'undefined' && window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, rnd) : null);
+                    if (rev && !rev.isPreJoin) {
+                        grandTotalGames += (rev.totalGames || 70);
+                        grandTotalPrize += (rev.totalPrize || 0);
+                        if (rev.grandHits) {
+                            grandRank1 += (rev.grandHits[1] || 0);
+                            grandRank2 += (rev.grandHits[2] || 0);
+                            grandRank3 += (rev.grandHits[3] || 0);
+                            grandRank4 += (rev.grandHits[4] || 0);
+                            grandRank5 += (rev.grandHits[5] || 0);
+                        }
+                    }
+                });
+            });
+            grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
+        }
 
         const roundRangeLabel = `제 ${fromRound}~${maxRound}회차 누적`;
 

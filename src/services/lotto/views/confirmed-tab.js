@@ -6,151 +6,26 @@ import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgm
 import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
 import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
 
-import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync } from '../generator.js';
+import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 
-const _roundUserRecIndex = new Map();
-let _adminOverviewHtmlCache = '';
-let _adminOverviewCacheKey = '';
-
-/**
- * ⚡ Ultra-fast O(1) AI Recommendation Matching
- * Eliminates heavyweight combinatorial loops (down from ~70 combos & matrix recalculations to 0.0001ms O(1) hash lookup)
- */
-export function getFastAiMatchTag(nums, round, user, comboIdx, pVer = '') {
-    const pVerStr = String(pVer || '');
-    if (pVerStr.includes('추가')) {
-        const packName = pVerStr.split(' (')[0] || pVerStr;
-        return `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${packName}</span>`;
-    }
-    if (pVerStr.includes('V4.0') || pVerStr.includes('4.0')) {
-        return `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> V4.0 #${comboIdx + 1}</span>`;
-    }
-    if (pVerStr.includes('V3.0') || pVerStr.includes('3.0')) {
-        return `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> V3.0 #${comboIdx + 1}</span>`;
-    }
-    if (round < 1239 || !Array.isArray(nums) || nums.length !== 6) {
-        return `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.6rem; color: #f87171;"></i> 수동</span>`;
-    }
-
-    const userKey = (user || '').toLowerCase().trim();
-    const cacheKey = `${round}_${userKey}`;
-    let index = _roundUserRecIndex.get(cacheKey);
-    if (!index) {
-        index = new Map();
-        try {
-            // 1. Check synchronous recommendation snapshot first (0.0001ms instant)
-            const snap = (typeof getUserWeeklyRecommendationSnapshotSync === 'function')
-                ? getUserWeeklyRecommendationSnapshotSync(userKey, round)
-                : null;
-            if (snap) {
-                if (Array.isArray(snap.v4Combos)) {
-                    snap.v4Combos.forEach((c, idx) => {
-                        const arr = getComboNumbers(c);
-                        if (arr.length === 6) {
-                            const key = arr.slice().sort((a,b) => a - b).join(',');
-                            index.set(key, { label: `V4.0 #${idx + 1}`, type: 'v4' });
-                        }
-                    });
-                }
-                if (Array.isArray(snap.v3Combos)) {
-                    snap.v3Combos.forEach((c, idx) => {
-                        const arr = getComboNumbers(c);
-                        if (arr.length === 6) {
-                            const key = arr.slice().sort((a,b) => a - b).join(',');
-                            if (!index.has(key)) {
-                                index.set(key, { label: `V3.0 #${idx + 1}`, type: 'v3' });
-                            }
-                        }
-                    });
-                }
-                if (Array.isArray(snap.extraPacks)) {
-                    snap.extraPacks.forEach(pack => {
-                        if (pack && Array.isArray(pack.combos)) {
-                            pack.combos.forEach((c, idx) => {
-                                const arr = getComboNumbers(c);
-                                if (arr.length === 6) {
-                                    const key = arr.slice().sort((a,b) => a - b).join(',');
-                                    if (!index.has(key)) {
-                                        index.set(key, { label: `${pack.shortName || '추가'} #${idx + 1}`, type: 'extra' });
-                                    }
-                                }
-                            });
-                        }
-                    });
-                }
-            } else {
-                // If no snapshot, check if current upcoming round to avoid heavy history isolation in past rounds
-                const curUpcoming = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1241);
-                if (round === curUpcoming) {
-                    const uV4 = computeAbsoluteTop10Combinations(false, round, 'v4', true, userKey) || [];
-                    uV4.forEach((c, idx) => {
-                        const arr = getComboNumbers(c);
-                        if (arr.length === 6) {
-                            const key = arr.slice().sort((a,b) => a - b).join(',');
-                            index.set(key, { label: `V4.0 #${idx + 1}`, type: 'v4' });
-                        }
-                    });
-                    const uV3 = computeAbsoluteTop10Combinations(false, round, 'v3', true, userKey) || [];
-                    uV3.forEach((c, idx) => {
-                        const arr = getComboNumbers(c);
-                        if (arr.length === 6) {
-                            const key = arr.slice().sort((a,b) => a - b).join(',');
-                            if (!index.has(key)) {
-                                index.set(key, { label: `V3.0 #${idx + 1}`, type: 'v3' });
-                            }
-                        }
-                    });
-                }
-            }
-
-            if (state.extraPackCache) {
-                for (let pId = 1; pId <= 5; pId++) {
-                    const epKey = `extra_${pId}_${round}_${userKey}`;
-                    const pack = state.extraPackCache[epKey];
-                    if (pack && Array.isArray(pack.combos)) {
-                        pack.combos.forEach((c, idx) => {
-                            const arr = getComboNumbers(c);
-                            if (arr.length === 6) {
-                                const key = arr.slice().sort((a,b) => a - b).join(',');
-                                if (!index.has(key)) {
-                                    index.set(key, { label: `${pack.shortName || '추가'} #${idx + 1}`, type: 'extra' });
-                                }
-                            }
-                        });
-                    }
-                }
-            }
-        } catch(e) {
-            console.warn('[getFastAiMatchTag indexing error]', e);
-        }
-        _roundUserRecIndex.set(cacheKey, index);
-    }
-
-    const numKey = nums.slice().sort((a,b) => a - b).join(',');
-    const match = index.get(numKey);
-    if (match) {
-        if (match.type === 'v4') {
-            return `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
-        } else if (match.type === 'v3') {
-            return `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
-        } else {
-            return `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
-        }
-    }
-
-    return `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.6rem; color: #f87171;"></i> 수동</span>`;
+const _roundUserRecCache = new Map();
+function getMemoizedRecommendations(rnd, user) {
+    const key = `${rnd}_${(user || '').toLowerCase()}`;
+    if (_roundUserRecCache.has(key)) return _roundUserRecCache.get(key);
+    const uV4 = computeAbsoluteTop10Combinations(false, rnd, 'v4', true, user) || [];
+    const uV3 = computeAbsoluteTop10Combinations(false, rnd, 'v3', true, user) || [];
+    const extraPacks = (typeof generateExtraAddonPack === 'function') 
+        ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, rnd, user)) 
+        : (state.extraPacks || []);
+    const res = { uV4, uV3, extraPacks };
+    _roundUserRecCache.set(key, res);
+    return res;
 }
 
-/**
- * 📊 Lazy & Responsive Chart.js Rendering for Confirmed Purchases Tab
- * Only executed when statistics accordion is explicitly opened, preventing 0x0 canvas thrashing and freeze.
- */
-export function renderConfirmedCharts(finData = null) {
-    const statsContent = document.getElementById('confirmedStatsCollapsibleContent');
-    if (!statsContent || statsContent.style.display === 'none') {
-        return; // Skip when hidden
-    }
+export async function renderConfirmedPurchasesList() {
+    const container = document.getElementById('confirmedPurchasesListContainer');
+    if (!container) return;
 
     let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
     if (typeof authId === 'string' && authId.startsWith('{')) {
@@ -161,17 +36,76 @@ export function renderConfirmedCharts(finData = null) {
     }
     const cleanAuthId = String(authId).toLowerCase().trim();
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(cleanAuthId) : (cleanAuthId === 'master' || cleanAuthId === 'admin'));
+    const isMaster = (cleanAuthId === 'master');
+
+    // If Admin, prefetch all users' purchases in background if not yet loaded OR if merged cache was invalidated
+    if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger)) {
+        fetchAllUsersPurchases().then(() => {
+            const currentTab = document.getElementById('tab-confirmed-list');
+            if (currentTab && currentTab.classList.contains('active')) {
+                renderConfirmedPurchasesList();
+            }
+        }).catch(e => console.warn('[ConfirmedTab background fetch error]', e));
+    }
+
     const currentTarget = isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId;
+    const ledger = getLedger(currentTarget);
 
-    const fin = finData || calculateLedgerFinancials(false, currentTarget);
-    const { hits, trendLabels, trendInvest, trendPrize } = fin;
+    // Only render actual confirmed rounds saved in ledger (e.g. 1239+)
+    const ledgerRounds = Object.keys(ledger).map(Number).filter(r => !isNaN(r) && r > 0 && Array.isArray(ledger[r]) && ledger[r].length > 0);
+    const rounds = ledgerRounds.sort((a,b) => b - a); // descending order: newest first!
 
+    // --- 💰 Financial & Chart Calculation (Optimized & Memoized) ---
+    const fin = calculateLedgerFinancials(true, currentTarget);
+    const { totalInvest, totalPrize, netProfit, totalRoi, hits, trendLabels, trendInvest, trendPrize } = fin;
+
+    // Update financial text fields
+    const elTotalInvest = document.getElementById('confirmedTotalInvest');
+    const elTotalPrize = document.getElementById('confirmedTotalPrize');
+    const elNetProfit = document.getElementById('confirmedNetProfit');
+    const elTotalRoi = document.getElementById('confirmedTotalRoi');
+
+    if (elTotalInvest) elTotalInvest.textContent = totalInvest.toLocaleString() + ' 원';
+    if (elTotalPrize) elTotalPrize.textContent = totalPrize.toLocaleString() + ' 원';
+    
+    if (elNetProfit) {
+        elNetProfit.textContent = (netProfit >= 0 ? '+' : '') + netProfit.toLocaleString() + ' 원';
+        elNetProfit.style.color = netProfit >= 0 ? '#10b981' : '#f87171';
+    }
+    
+    if (elTotalRoi) {
+        elTotalRoi.textContent = totalRoi.toFixed(1) + '%';
+        elTotalRoi.style.color = totalRoi >= 100 ? '#10b981' : (totalRoi > 0 ? '#fbbf24' : '#cbd5e1');
+    }
+
+    // Update micro glance pills on the compact toggle bar
+    const elGlanceInvest = document.getElementById('glanceConfirmedInvest');
+    const elGlancePrize = document.getElementById('glanceConfirmedPrize');
+    const elGlanceRoi = document.getElementById('glanceConfirmedRoi');
+
+    if (elGlanceInvest) {
+        elGlanceInvest.textContent = totalInvest >= 10000 
+            ? (totalInvest / 10000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + '만원' 
+            : totalInvest.toLocaleString() + '원';
+    }
+    if (elGlancePrize) {
+        elGlancePrize.textContent = totalPrize >= 10000 
+            ? (totalPrize / 10000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + '만원' 
+            : totalPrize.toLocaleString() + '원';
+    }
+    if (elGlanceRoi) {
+        elGlanceRoi.textContent = (totalRoi > 0 ? '+' : '') + totalRoi.toFixed(1) + '%';
+        elGlanceRoi.style.color = totalRoi >= 100 ? '#10b981' : (totalRoi > 0 ? '#34d399' : '#fbbf24');
+    }
+
+    // Render 1~5 rank winning summary banner on the confirmed tab
+    const totalCombosCount = totalInvest / 1000;
+    renderConfirmedRankSummary(hits, totalCombosCount, totalPrize, totalInvest);
+
+    // Render Charts
     try {
-        const totalWins = (hits || []).reduce((a, b) => a + b, 0);
-        if (state.confirmedPrizeChartInstance) {
-            state.confirmedPrizeChartInstance.destroy();
-            state.confirmedPrizeChartInstance = null;
-        }
+        const totalWins = hits.reduce((a,b) => a+b, 0);
+        if (state.confirmedPrizeChartInstance) state.confirmedPrizeChartInstance.destroy();
         const canvasPie = document.getElementById('confirmedPrizeRatioChart');
         if (canvasPie && typeof canvasPie.getContext === 'function' && typeof window.Chart === 'function') {
             const ctxPie = canvasPie.getContext('2d');
@@ -207,10 +141,7 @@ export function renderConfirmedCharts(finData = null) {
             });
         }
 
-        if (state.confirmedTrendChartInstance) {
-            state.confirmedTrendChartInstance.destroy();
-            state.confirmedTrendChartInstance = null;
-        }
+        if (state.confirmedTrendChartInstance) state.confirmedTrendChartInstance.destroy();
         const canvasTrend = document.getElementById('confirmedTrendLineChart');
         if (canvasTrend && typeof canvasTrend.getContext === 'function' && typeof window.Chart === 'function') {
             const ctxTrend = canvasTrend.getContext('2d');
@@ -265,99 +196,6 @@ export function renderConfirmedCharts(finData = null) {
     } catch(chartErr) {
         console.warn('[ConfirmedTab Chart render error]', chartErr);
     }
-}
-
-export async function renderConfirmedPurchasesList() {
-    const container = document.getElementById('confirmedPurchasesListContainer');
-    if (!container) return;
-
-    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
-    if (typeof authId === 'string' && authId.startsWith('{')) {
-        try {
-            const parsed = JSON.parse(authId);
-            authId = parsed.userid || parsed.userId || authId;
-        } catch (e) {}
-    }
-    const cleanAuthId = String(authId).toLowerCase().trim();
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(cleanAuthId) : (cleanAuthId === 'master' || cleanAuthId === 'admin'));
-    const isMaster = (cleanAuthId === 'master');
-
-    // If Admin, prefetch all users' purchases in background if not yet loaded (with debounce flag)
-    if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger)) {
-        if (!state.__fetchingAllUsersPurchases) {
-            state.__fetchingAllUsersPurchases = true;
-            fetchAllUsersPurchases().then(() => {
-                state.__fetchingAllUsersPurchases = false;
-                const currentTab = document.getElementById('tab-confirmed-list');
-                if (currentTab && currentTab.classList.contains('active')) {
-                    renderConfirmedPurchasesList();
-                }
-            }).catch(e => {
-                state.__fetchingAllUsersPurchases = false;
-                console.warn('[ConfirmedTab background fetch error]', e);
-            });
-        }
-    }
-
-    const currentTarget = isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId;
-    const ledger = getLedger(currentTarget);
-
-    // Only render actual confirmed rounds saved in ledger (e.g. 1239+)
-    const ledgerRounds = Object.keys(ledger).map(Number).filter(r => !isNaN(r) && r > 0 && Array.isArray(ledger[r]) && ledger[r].length > 0);
-    const rounds = ledgerRounds.sort((a,b) => b - a); // descending order: newest first!
-
-    // --- 💰 Financial & Chart Calculation (Optimized & Memoized) ---
-    const fin = calculateLedgerFinancials(false, currentTarget);
-    const { totalInvest, totalPrize, netProfit, totalRoi, hits, trendLabels, trendInvest, trendPrize } = fin;
-
-    // Update financial text fields
-    const elTotalInvest = document.getElementById('confirmedTotalInvest');
-    const elTotalPrize = document.getElementById('confirmedTotalPrize');
-    const elNetProfit = document.getElementById('confirmedNetProfit');
-    const elTotalRoi = document.getElementById('confirmedTotalRoi');
-
-    if (elTotalInvest) elTotalInvest.textContent = totalInvest.toLocaleString() + ' 원';
-    if (elTotalPrize) elTotalPrize.textContent = totalPrize.toLocaleString() + ' 원';
-    
-    if (elNetProfit) {
-        elNetProfit.textContent = (netProfit >= 0 ? '+' : '') + netProfit.toLocaleString() + ' 원';
-        elNetProfit.style.color = netProfit >= 0 ? '#10b981' : '#f87171';
-    }
-    
-    if (elTotalRoi) {
-        elTotalRoi.textContent = totalRoi.toFixed(1) + '%';
-        elTotalRoi.style.color = totalRoi >= 100 ? '#10b981' : (totalRoi > 0 ? '#fbbf24' : '#cbd5e1');
-    }
-
-    // Update micro glance pills on the compact toggle bar
-    const elGlanceInvest = document.getElementById('glanceConfirmedInvest');
-    const elGlancePrize = document.getElementById('glanceConfirmedPrize');
-    const elGlanceRoi = document.getElementById('glanceConfirmedRoi');
-
-    if (elGlanceInvest) {
-        elGlanceInvest.textContent = totalInvest >= 10000 
-            ? (totalInvest / 10000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + '만원' 
-            : totalInvest.toLocaleString() + '원';
-    }
-    if (elGlancePrize) {
-        elGlancePrize.textContent = totalPrize >= 10000 
-            ? (totalPrize / 10000).toLocaleString(undefined, { maximumFractionDigits: 1 }) + '만원' 
-            : totalPrize.toLocaleString() + '원';
-    }
-    if (elGlanceRoi) {
-        elGlanceRoi.textContent = (totalRoi > 0 ? '+' : '') + totalRoi.toFixed(1) + '%';
-        elGlanceRoi.style.color = totalRoi >= 100 ? '#10b981' : (totalRoi > 0 ? '#34d399' : '#fbbf24');
-    }
-
-    // Render 1~5 rank winning summary banner on the confirmed tab
-    const totalCombosCount = totalInvest / 1000;
-    renderConfirmedRankSummary(hits, totalCombosCount, totalPrize, totalInvest);
-
-    // Render Charts conditionally (only if statistics section is currently expanded)
-    const statsContent = document.getElementById('confirmedStatsCollapsibleContent');
-    if (statsContent && statsContent.style.display !== 'none' && statsContent.style.display !== '') {
-        renderConfirmedCharts(fin);
-    }
 
     // Admin user selector dropdown HTML
     let adminUserSelectHtml = '';
@@ -396,18 +234,14 @@ export async function renderConfirmedPurchasesList() {
     // 1-1. [ADMIN ALL USERS SUMMARY TABLE] Real Purchase Winnings & Algorithm Distribution Overview (When Admin)
     let adminOverviewTableHtml = '';
     if (isAdmin) {
-        const adminOverviewCacheKey = `${validUnifiedUsers.length}_${currentTarget}_${Object.keys(state.allUsersPurchasesMap || {}).length}`;
-        if (_adminOverviewCacheKey === adminOverviewCacheKey && _adminOverviewHtmlCache) {
-            adminOverviewTableHtml = _adminOverviewHtmlCache;
-        } else {
-            try {
-                // Compute actual purchase winning stats with algorithm breakdown for each user
-                const memberStatsList = validUnifiedUsers.map(u => {
-                    const uId = u.id;
-                    const cleanId = uId.toLowerCase().trim();
-                    const uInfo = (state.allUsersPurchasesMap && (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId])) 
-                        ? (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId]) 
-                        : {};
+        try {
+            // Compute actual purchase winning stats with algorithm breakdown for each user
+            const memberStatsList = validUnifiedUsers.map(u => {
+                const uId = u.id;
+                const cleanId = uId.toLowerCase().trim();
+                const uInfo = (state.allUsersPurchasesMap && (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId])) 
+                    ? (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId]) 
+                    : {};
                 let uLedger = uInfo.ledger || {};
                 if (typeof uLedger === 'string') {
                     try { uLedger = JSON.parse(uLedger); } catch(e) { uLedger = {}; }
@@ -635,8 +469,6 @@ export async function renderConfirmedPurchasesList() {
                     ${backNavHtml}
                 </div>
             `;
-            _adminOverviewHtmlCache = adminOverviewTableHtml;
-            _adminOverviewCacheKey = adminOverviewCacheKey;
         } catch(adminErr) {
             console.warn('[ConfirmedTab AdminOverview render error]', adminErr);
         }
@@ -853,6 +685,22 @@ export async function renderConfirmedPurchasesList() {
                 <div class="confirmed-round-body" style="margin-top: 10px; display: block;">
         `;
 
+        // Precompute V3 and V4 maps for this round for fast cross-checking
+        // ignoreLedger=true ensures we always compare against the AI-generated pool, never against stored purchase data
+        const v3Combos = computeAbsoluteTop10Combinations(false, round, 'v3', true) || [];
+        const v4Combos = computeAbsoluteTop10Combinations(false, round, 'v4', true) || [];
+        const toKey = (arr) => [...arr].sort((a,b) => a - b).join(',');
+        const v3Map = new Map();
+        v3Combos.forEach((c, idx) => {
+            const arr = getComboNumbers(c);
+            if (arr.length === 6) v3Map.set(toKey(arr), idx + 1);
+        });
+        const v4Map = new Map();
+        v4Combos.forEach((c, idx) => {
+            const arr = getComboNumbers(c);
+            if (arr.length === 6) v4Map.set(toKey(arr), idx + 1);
+        });
+
         purchases.forEach((rawPurchase, pIdx) => {
             const purchase = syncPurchaseWithQrUrl(rawPurchase);
             const isLocked = !!purchase.isLocked;
@@ -1021,8 +869,35 @@ export async function renderConfirmedPurchasesList() {
             purchase.combos.forEach((combo, cIdx) => {
                 const nums = getComboNumbers(combo);
                 
-                // Check if this combo matches an AI recommendation (Lightning-fast O(1) matching)
-                const aiMatchTag = getFastAiMatchTag(nums, round, purchaseUser, cIdx, purchase.version || '');
+                // Check if this combo matches an AI recommendation (Supported from round 1239 onwards)
+                let aiMatchTag = '';
+                const pVer = purchase.version || '';
+                if (pVer.includes('추가')) {
+                    const packName = pVer.split(' (')[0] || pVer;
+                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${packName}</span>`;
+                } else if (pVer.includes('V4.0') || pVer.includes('4.0')) {
+                    aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> V4.0 #${cIdx+1}</span>`;
+                } else if (pVer.includes('V3.0') || pVer.includes('3.0')) {
+                    aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> V3.0 #${cIdx+1}</span>`;
+                } else if (round >= 1239) {
+                    try {
+                        const { uV4, uV3, extraPacks } = getMemoizedRecommendations(round, purchaseUser);
+                        const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
+                        if (match && match.isExact) {
+                            if (match.matchedVersion.includes('추가')) {
+                                aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('V4.0')) {
+                                aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else {
+                                aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            }
+                        } else {
+                            aiMatchTag = `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.6rem; color: #f87171;"></i> 수동</span>`;
+                        }
+                    } catch(e) {
+                        aiMatchTag = `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.6rem; color: #f87171;"></i> 수동</span>`;
+                    }
+                }
                 
                 let resultText = "추첨 대기";
                 let rowBg = "rgba(255,255,255,0.015)";
@@ -2182,18 +2057,15 @@ export function toggleConfirmedStats(forceOpen) {
         if (icon) icon.style.transform = 'rotate(180deg)';
         if (txt) txt.textContent = '통계 접기';
 
-        // Lazy-render Chart.js on next frame once the accordion is visible
-        requestAnimationFrame(() => {
-            renderConfirmedCharts();
-            setTimeout(() => {
-                if (state.confirmedPrizeChartInstance && typeof state.confirmedPrizeChartInstance.resize === 'function') {
-                    state.confirmedPrizeChartInstance.resize();
-                }
-                if (state.confirmedTrendChartInstance && typeof state.confirmedTrendChartInstance.resize === 'function') {
-                    state.confirmedTrendChartInstance.resize();
-                }
-            }, 60);
-        });
+        // Trigger Chart.js resize so charts render with sharp, full responsive dimensions
+        setTimeout(() => {
+            if (state.confirmedPrizeChartInstance && typeof state.confirmedPrizeChartInstance.resize === 'function') {
+                state.confirmedPrizeChartInstance.resize();
+            }
+            if (state.confirmedTrendChartInstance && typeof state.confirmedTrendChartInstance.resize === 'function') {
+                state.confirmedTrendChartInstance.resize();
+            }
+        }, 60);
     } else {
         content.style.display = 'none';
         if (toggleBar) toggleBar.classList.remove('expanded');
@@ -2204,8 +2076,6 @@ export function toggleConfirmedStats(forceOpen) {
 
 if (typeof window !== 'undefined') {
     window.renderConfirmedPurchasesList = renderConfirmedPurchasesList;
-    window.renderConfirmedCharts = renderConfirmedCharts;
-    window.getFastAiMatchTag = getFastAiMatchTag;
     window.openWinningHistoryModal = openWinningHistoryModal;
     window.closeWinningHistoryModal = closeWinningHistoryModal;
     window.changeConfirmedAdminUser = changeConfirmedAdminUser;

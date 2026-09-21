@@ -299,7 +299,6 @@ FILES_TO_BUNDLE = [
     "src/services/lotto/views/draw-banner.js",
     "src/services/lotto/views/review-tab.js",
     "src/services/lotto/views/algorithms-tab.js",
-    "src/services/lotto/views/member-optimal-algo-modal.js",
     "src/services/lotto/views/generator-tab.js",
     "src/services/lotto/views/budget-optimizer-modal.js",
     "src/services/lotto/views/simulation-tab.js",

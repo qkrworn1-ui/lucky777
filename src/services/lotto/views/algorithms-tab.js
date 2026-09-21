@@ -322,38 +322,6 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
     let grandTotalPrize = 0;
     const grandRankCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
-    // ⚡ Pre-compute / index all (user, round) reviews ONCE across all drawn rounds
-    const userReviewsMap = new Map();
-    if (isAll) {
-        const baseList = getAllUnifiedRegisteredUsers();
-        drawnRounds.forEach(round => {
-            const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
-            activeUsers.forEach(u => {
-                const key = `${u.id}_${round}`;
-                const rev = (typeof computeUser70RecommendationsReview === 'function')
-                    ? computeUser70RecommendationsReview(u.id, round)
-                    : (window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, round) : null);
-                if (rev && !rev.isPreJoin) {
-                    userReviewsMap.set(key, { user: u, rev });
-                }
-            });
-        });
-    } else {
-        drawnRounds.forEach(round => {
-            if (round >= userJoinRound) {
-                const rev = (typeof computeUser70RecommendationsReview === 'function')
-                    ? computeUser70RecommendationsReview(cleanUser, round)
-                    : (window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(cleanUser, round) : null);
-                if (rev && !rev.isPreJoin) {
-                    userReviewsMap.set(`${cleanUser}_${round}`, { 
-                        user: { id: cleanUser, name: (typeof getUserRealName === 'function' ? getUserRealName(cleanUser) : '') || cleanUser }, 
-                        rev 
-                    });
-                }
-            }
-        });
-    }
-
     const algoStats = SEVEN_ALGORITHMS_INFO.map(algo => {
         let totalGames = 0;
         let totalInvest = 0;
@@ -378,13 +346,13 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
             let roundCombosCount = 0;
 
             if (isAll) {
+                // Aggregate across all active registered users for this round
                 const baseList = getAllUnifiedRegisteredUsers();
                 const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
 
                 activeUsers.forEach(u => {
-                    const entry = userReviewsMap.get(`${u.id}_${round}`);
-                    if (!entry || !entry.rev) return;
-                    const rev = entry.rev;
+                    const rev = computeUser70RecommendationsReview(u.id, round);
+                    if (!rev || rev.isPreJoin) return;
 
                     let evalData = null;
                     let combos = [];
@@ -435,10 +403,9 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
                     });
                 });
             } else {
-                // Single target user
-                const entry = userReviewsMap.get(`${cleanUser}_${round}`);
-                if (entry && entry.rev) {
-                    const rev = entry.rev;
+                // Single target user (strictly based on computeUser70RecommendationsReview / snapshots)
+                const rev = computeUser70RecommendationsReview(cleanUser, round);
+                if (rev && !rev.isPreJoin) {
                     let evalData = null;
                     let combos = [];
                     if (algo.id === 'v4') {
