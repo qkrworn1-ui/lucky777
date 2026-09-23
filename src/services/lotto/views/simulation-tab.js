@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue } from '../../../shared/utils.js';
-import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
+import { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 import { calculateStats, getNeighborMatches } from '../scoring.js';
 import { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations, getSafeActualDraw } from '../ledger.js';
@@ -121,36 +121,46 @@ export function getCombosForSimulationRound(round, config = null, customUserId =
     const cfg = config || getSelectedSimulationConfig();
     const effectiveTarget = customUserId || getEffectiveTargetUser();
     
-    if (effectiveTarget === '__ALL__') {
-        let userList = state.allRegisteredUsersList;
-        if (!userList || userList.length === 0) {
-            try {
-                const cached = localStorage.getItem('lotto_all_users_list_cache');
-                if (cached) userList = JSON.parse(cached);
-            } catch(e) {}
-        }
-        if (!userList || userList.length === 0) {
-            if (state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0) {
-                userList = Object.keys(state.allUsersPurchasesMap).map(id => ({ id, name: id }));
+    const drawnRounds = Object.keys(state.mergedHistory || {})
+        .filter(rnd => state.mergedHistory[rnd] && Array.isArray(state.mergedHistory[rnd].numbers))
+        .map(Number);
+    const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1237;
+    const wasIsolated = enterHistoryIsolation(round, maxKnownDrawnRound);
+
+    try {
+        if (effectiveTarget === '__ALL__') {
+            let userList = state.allRegisteredUsersList;
+            if (!userList || userList.length === 0) {
+                try {
+                    const cached = localStorage.getItem('lotto_all_users_list_cache');
+                    if (cached) userList = JSON.parse(cached);
+                } catch(e) {}
             }
+            if (!userList || userList.length === 0) {
+                if (state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0) {
+                    userList = Object.keys(state.allUsersPurchasesMap).map(id => ({ id, name: id }));
+                }
+            }
+            if (!userList || userList.length === 0) {
+                userList = [{ id: 'master', name: '관리자 본인' }];
+            }
+            const filteredUsers = userList.filter(u => {
+                const uId = (u.id || '').trim().toLowerCase();
+                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && uId !== 'admin' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+            });
+            const finalUsers = filteredUsers.length > 0 ? filteredUsers : [{ id: 'master', name: '관리자 본인' }];
+            
+            const allCombos = [];
+            finalUsers.forEach(u => {
+                const uCombos = getSingleUserCombosForRound(round, cfg, u.id, u.name || u.id);
+                allCombos.push(...uCombos);
+            });
+            return allCombos;
+        } else {
+            return getSingleUserCombosForRound(round, cfg, effectiveTarget);
         }
-        if (!userList || userList.length === 0) {
-            userList = [{ id: 'master', name: '관리자 본인' }];
-        }
-        const filteredUsers = userList.filter(u => {
-            const uId = (u.id || '').trim().toLowerCase();
-            return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && uId !== 'admin' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
-        });
-        const finalUsers = filteredUsers.length > 0 ? filteredUsers : [{ id: 'master', name: '관리자 본인' }];
-        
-        const allCombos = [];
-        finalUsers.forEach(u => {
-            const uCombos = getSingleUserCombosForRound(round, cfg, u.id, u.name || u.id);
-            allCombos.push(...uCombos);
-        });
-        return allCombos;
-    } else {
-        return getSingleUserCombosForRound(round, cfg, effectiveTarget);
+    } finally {
+        exitHistoryIsolation(wasIsolated);
     }
 }
 
@@ -752,8 +762,6 @@ export async function runRealHistoricalSimulation() {
     const results = [];
     let r = maxRound;
     
-    const chunkSize = 50;
-
     function getHistoricalDrawData(round) {
         const h = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(round) || (state.mergedHistory ? state.mergedHistory[round] : null)) : (state.mergedHistory ? state.mergedHistory[round] : null);
         if (h) {
@@ -768,10 +776,12 @@ export async function runRealHistoricalSimulation() {
         }
         return null;
     }
-    
+
     const effectiveTarget = getEffectiveTargetUser();
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
     const targetTitle = (effectiveTarget === '__ALL__') ? `전체 등록 회원 종합` : (effectiveTarget === authId ? '관리자 본인' : effectiveTarget);
+    
+    const chunkSize = (effectiveTarget === '__ALL__') ? 15 : 40;
 
     return new Promise((resolve) => {
         function processChunk() {

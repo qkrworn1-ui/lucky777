@@ -738,6 +738,8 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
         state.allUsersPurchasesMap = allUsersMap;
         state.allUsersMergedLedger = mergedLedger;
         _lastFetchAllUsersPurchasesTime = Date.now();
+        _allUsersFinancialsCache = null;
+        state.ledgerFinancialsCache = null;
 
         // Invalidate in-memory 70 review memo cache so fresh cloud users/snapshots are used
         if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
@@ -916,6 +918,7 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null)
     }
     state.ledgerFinancialsCache = null; // Invalidate memoized cache
     state.allUsersMergedLedger = null; // Invalidate admin merged cache so updates immediately reflect
+    _allUsersFinancialsCache = null;
     if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[authId]) {
         state.allUsersPurchasesMap[authId].ledger = protectedLedger;
     }
@@ -1957,11 +1960,18 @@ export function calculateLedgerFinancials(forceRefresh = false, explicitTarget =
     return result;
 }
 
+let _allUsersFinancialsCache = null;
+let _allUsersFinancialsCacheTime = 0;
+
 /**
  * Calculate Grand Aggregate Financials & Winning Hits Across All Registered Users
  * Used for Main Landing Dashboard & Platform Global Overview
  */
-export async function calculateAllUsersTotalFinancials() {
+export async function calculateAllUsersTotalFinancials(forceRefresh = false) {
+    if (!forceRefresh && _allUsersFinancialsCache && (Date.now() - _allUsersFinancialsCacheTime < 15000)) {
+        return _allUsersFinancialsCache;
+    }
+
     if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger || Object.keys(state.allUsersMergedLedger).length === 0) {
         if (typeof fetchAllUsersPurchases === 'function') {
             await fetchAllUsersPurchases();
@@ -2070,7 +2080,7 @@ export async function calculateAllUsersTotalFinancials() {
     const totalRoi = totalInvest > 0 ? ((totalPrize / totalInvest) * 100).toFixed(1) : '0.0';
     const totalWins = hits.reduce((a, b) => a + b, 0);
 
-    return {
+    const result = {
         totalInvest,
         totalPrize,
         netProfit,
@@ -2080,6 +2090,10 @@ export async function calculateAllUsersTotalFinancials() {
         hits,
         userCount: Object.keys(state.allUsersPurchasesMap || {}).length
     };
+
+    _allUsersFinancialsCache = result;
+    _allUsersFinancialsCacheTime = Date.now();
+    return result;
 }
 
 /**
@@ -2488,6 +2502,7 @@ export async function moveToReceiptTrash(round, pIdx, purchase, currentAuthId) {
 
     state.allUsersMergedLedger = null;
     state.ledgerFinancialsCache = null;
+    _allUsersFinancialsCache = null;
 
     return trashItem;
 }

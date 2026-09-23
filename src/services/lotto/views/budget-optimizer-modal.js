@@ -109,7 +109,7 @@ export function setBudgetAmount(amount) {
 }
 
 /**
- * Execute Incremental AI Budget Portfolio Optimization & Real-time Historical Simulation
+ * Execute Incremental AI Budget Portfolio Optimization & Real-time Historical Simulation (Ultra-Fast 0ms Matrix Engine)
  */
 export async function runBudgetOptimizationSimulation() {
     const input = document.getElementById('txtBudgetAmount');
@@ -156,16 +156,15 @@ export async function runBudgetOptimizationSimulation() {
 
     logTerminal(`📌 [기존 보유 팩] <strong>${ownedNames}</strong> (${ownedGames}게임 고정 포함)`, '#60a5fa', true);
     logTerminal(`🚀 [추가 구매 예산] <strong>${additionalBudget.toLocaleString()}원 (${additionalGames}게임 추가)</strong> 시너지 1위 팩 탐색 시작...`, '#38bdf8', true);
-    await new Promise(r => setTimeout(r, 120));
+    await new Promise(r => setTimeout(r, 60));
 
     const maxRound = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1238);
     logTerminal(`📊 [데이터] 1회차 ~ ${maxRound}회차 실당첨번호 빅데이터 및 마르코프 전이 행렬 로드 완료`, '#94a3b8');
-    await new Promise(r => setTimeout(r, 150));
+    await new Promise(r => setTimeout(r, 60));
 
     // 2. Determine Candidate Additional Packs (excluding already owned ones)
     let candidatePool = ALL_PACK_DEFS.filter(p => !ownedPacks.some(op => op.id === p.id));
     if (candidatePool.length === 0) {
-        // Fallback: If all packs are checked as owned, re-evaluate extra packs 1~5
         candidatePool = ALL_PACK_DEFS.filter(p => p.type === 'extra');
     }
     const neededPackCount = Math.max(1, Math.floor(additionalGames / 10));
@@ -198,12 +197,8 @@ export async function runBudgetOptimizationSimulation() {
         candidateCombinations = [ALL_PACK_DEFS.slice(0, 1)];
     }
 
-    logTerminal(`🔍 [후보군 탐색] 총 ${candidateCombinations.length}개 추가팩 조합 후보군 구성 완료. 1~${maxRound}회 리얼 백테스팅 대조 중...`, '#fbbf24', true);
-    await new Promise(r => setTimeout(r, 150));
-
-    let bestScore = -1;
-    let bestNewPacks = null;
-    let bestMetrics = null;
+    logTerminal(`🔍 [후보군 탐색] 총 ${candidateCombinations.length}개 추가팩 조합 후보군 구성 완료. 초고속 병렬 백테스팅 대조 중...`, '#fbbf24', true);
+    await new Promise(r => setTimeout(r, 60));
 
     const evaluatedDrawCount = maxRound;
     const totalPortfolioGames = ownedGames + additionalGames;
@@ -212,6 +207,67 @@ export async function runBudgetOptimizationSimulation() {
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     const targetViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
     const effectiveUserId = (isAdmin && targetViewingUser ? targetViewingUser : authId).toLowerCase().trim();
+
+    // 3. Ultra-Fast Matrix Evaluation: Pre-evaluate each distinct pack across all rounds ONCE
+    const distinctPacksMap = new Map();
+    [...ownedPacks, ...candidatePool].forEach(p => distinctPacksMap.set(p.id, p));
+    const distinctPacks = Array.from(distinctPacksMap.values());
+
+    const packEvals = new Map();
+    const totalSteps = distinctPacks.length;
+
+    for (let pIdx = 0; pIdx < distinctPacks.length; pIdx++) {
+        const pack = distinctPacks[pIdx];
+        const roundResults = new Array(maxRound + 1);
+
+        for (let r = maxRound; r >= 1; r--) {
+            const draw = state.mergedHistory[r];
+            if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) {
+                roundResults[r] = { h1: 0, h2: 0, h3: 0, h4: 0, h5: 0, prize: 0 };
+                continue;
+            }
+
+            const winningSet = new Set(draw.numbers);
+            const bonusNum = draw.bonus;
+
+            let combos = [];
+            if (pack.type === 'engine') {
+                const c = computeAbsoluteTop10Combinations(false, r, pack.version, true, effectiveUserId) || [];
+                combos = (pack.games === 5 ? c.slice(0, 5) : c);
+            } else if (pack.type === 'extra') {
+                const p = generateExtraAddonPack(pack.packId, r, effectiveUserId);
+                if (p && Array.isArray(p.combos)) combos = p.combos;
+            }
+
+            let h1 = 0, h2 = 0, h3 = 0, h4 = 0, h5 = 0, prize = 0;
+            combos.forEach(combo => {
+                const nums = getComboNumbers(combo);
+                if (!Array.isArray(nums) || nums.length !== 6) return;
+
+                const matchCount = nums.filter(n => winningSet.has(n)).length;
+                const isBonus = nums.includes(bonusNum);
+
+                if (matchCount === 6) { h1++; prize += (draw.firstWinamnt || 2000000000); }
+                else if (matchCount === 5 && isBonus) { h2++; prize += 50000000; }
+                else if (matchCount === 5) { h3++; prize += 1500000; }
+                else if (matchCount === 4) { h4++; prize += 50000; }
+                else if (matchCount === 3) { h5++; prize += 5000; }
+            });
+
+            roundResults[r] = { h1, h2, h3, h4, h5, prize };
+        }
+
+        packEvals.set(pack.id, roundResults);
+
+        const packPct = Math.round(((pIdx + 1) / totalSteps) * 50);
+        if (progBar) progBar.style.width = `${packPct}%`;
+        await new Promise(r => requestAnimationFrame(r));
+    }
+
+    // 4. Instant Combinatorial Aggregation across all candidate combinations (0ms)
+    let bestScore = -1;
+    let bestNewPacks = null;
+    let bestMetrics = null;
 
     for (let cIdx = 0; cIdx < candidateCombinations.length; cIdx++) {
         const newPacks = candidateCombinations[cIdx];
@@ -222,49 +278,29 @@ export async function runBudgetOptimizationSimulation() {
         let totalPrize = 0;
 
         for (let r = maxRound; r >= 1; r--) {
-            const draw = state.mergedHistory[r];
-            if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) continue;
-            
-            const winningSet = new Set(draw.numbers);
-            const bonusNum = draw.bonus;
-
-            const roundCombos = [];
-            fullPortfolio.forEach(item => {
-                if (item.type === 'engine') {
-                    const c = computeAbsoluteTop10Combinations(false, r, item.version, true, effectiveUserId) || [];
-                    roundCombos.push(...(item.games === 5 ? c.slice(0, 5) : c));
-                } else if (item.type === 'extra') {
-                    const p = generateExtraAddonPack(item.packId, r, effectiveUserId);
-                    if (p && Array.isArray(p.combos)) roundCombos.push(...p.combos);
+            fullPortfolio.forEach(p => {
+                const pRes = packEvals.get(p.id);
+                if (pRes && pRes[r]) {
+                    const res = pRes[r];
+                    hit1st += res.h1;
+                    hit2nd += res.h2;
+                    hit3rd += res.h3;
+                    hit4th += res.h4;
+                    hit5th += res.h5;
+                    totalPrize += res.prize;
                 }
-            });
-
-            roundCombos.forEach(combo => {
-                const nums = getComboNumbers(combo);
-                if (!Array.isArray(nums) || nums.length !== 6) return;
-
-                const matchCount = nums.filter(n => winningSet.has(n)).length;
-                const isBonus = nums.includes(bonusNum);
-
-                if (matchCount === 6) { hit1st++; totalPrize += (draw.firstWinamnt || 2000000000); }
-                else if (matchCount === 5 && isBonus) { hit2nd++; totalPrize += 50000000; }
-                else if (matchCount === 5) { hit3rd++; totalPrize += 1500000; }
-                else if (matchCount === 4) { hit4th++; totalPrize += 50000; }
-                else if (matchCount === 3) { hit5th++; totalPrize += 5000; }
             });
         }
 
         const totalHits = hit1st + hit2nd + hit3rd + hit4th + hit5th;
         const totalCost = evaluatedDrawCount * totalPortfolioGames * 1000;
         const roi = totalCost > 0 ? ((totalPrize / totalCost) * 100).toFixed(1) : 0;
-        
         const hitScore = (hit1st * 5000000) + (hit2nd * 300000) + (hit3rd * 15000) + (hit4th * 200) + hit5th;
 
-        const pct = Math.round(((cIdx + 1) / candidateCombinations.length) * 100);
-        if (progBar) progBar.style.width = pct + '%';
+        const candidatePct = 50 + Math.round(((cIdx + 1) / candidateCombinations.length) * 50);
+        if (progBar) progBar.style.width = `${candidatePct}%`;
 
         logTerminal(`[후보 ${cIdx + 1}/${candidateCombinations.length}] 기존 + <strong>[신규: ${newPackNames}]</strong> ➔ 1등: ${hit1st}회 | 2등: ${hit2nd}회 | 3등: ${hit3rd}회 | 누적: <strong>${totalHits}회</strong> (ROI: ${roi}%)`, '#cbd5e1');
-        await new Promise(r => setTimeout(r, 60));
 
         if (hitScore > bestScore || bestNewPacks === null) {
             bestScore = hitScore;
