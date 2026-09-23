@@ -2282,6 +2282,28 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("renderTop5Combinations(false);", index_code)
         self.assertIn("updateTop7AlgoUI();", index_code)
 
+    # [Test 64] No Forward Dependencies & Safe Module Isolation
+    def test_64_no_forward_dependencies_and_safe_bundling(self):
+        bundle_file = os.path.join(self.root_dir, 'bundle.py')
+        gen_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        index_html_file = os.path.join(self.root_dir, 'index.html')
+
+        with open(bundle_file, 'r', encoding='utf-8') as f:
+            bundle_code = f.read()
+        with open(gen_tab_file, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+        with open(index_html_file, 'r', encoding='utf-8') as f:
+            index_html_code = f.read()
+
+        # 1. generator-tab.js must not have unused forward import to quick-view.js
+        self.assertNotIn("import { openCompactView, renderQuickViewContent } from './quick-view.js';", gen_tab_code)
+
+        # 2. bundle.py repl_import must have safe typeof check for target_mod
+        self.assertIn("typeof {target_mod} !== 'undefined'", bundle_code)
+
+        # 3. index.html must not default to unverified warning
+        self.assertNotIn("[이번 주 실구매 인증]</strong> 아직 이번 주 실구매 영수증(QR)이 등록되지 않았습니다.", index_html_code)
+
 
 if __name__ == '__main__':
     unittest.main()

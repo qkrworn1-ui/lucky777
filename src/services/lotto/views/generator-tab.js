@@ -7,7 +7,6 @@ import { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPerman
 import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
 import { getComboNumbers, getLedger, getHistoricalTop10Combinations, saveToLedger } from '../ledger.js';
 import { calculate7AlgorithmsPerformance } from './algorithms-tab.js';
-import { openCompactView, renderQuickViewContent } from './quick-view.js';
 
 let currentAlgoReviewStartRound = 1235;
 let algoAccordionStateMap = {};

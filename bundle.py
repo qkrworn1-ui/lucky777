@@ -299,7 +299,7 @@ def bundle_core(version):
             # Strip export keywords
             content = re.sub(r'\bexport\s+(async\s+function|function|const|let|class)\b', r'\1', content)
             
-            # Replace imports: import { a, b as c } from './utils.js' -> const { a, b: c } = __M_shared_utils;
+            # Replace imports: import { a, b as c } from './utils.js' -> const { a, b: c } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
             def repl_import(m):
                 vars_part = m.group(1)
                 path_part = m.group(2)
@@ -307,7 +307,7 @@ def bundle_core(version):
                 target_mod = get_mod_slug(resolved_path)
                 # Replace ' as ' with ': ' for destructuring
                 clean_vars = re.sub(r'\b([a-zA-Z0-9_]+)\s+as\s+([a-zA-Z0-9_]+)\b', r'\1: \2', vars_part)
-                return f"const {{{clean_vars}}} = {target_mod};"
+                return f"const {{{clean_vars}}} = (typeof {target_mod} !== 'undefined' ? {target_mod} : {{}});"
                 
             content = re.sub(r'import\s+\{([^}]+)\}\s+from\s+[\'"]([^\'"]+)[\'"];?', repl_import, content)
             

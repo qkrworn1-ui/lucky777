@@ -1,23 +1,9 @@
 {
-  "version": "v2026.09.24.0247.58",
+  "version": "v2026.09.24.0300.44",
   "buildDate": "2026-09-24",
-  "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료",
-  "buildTimestamp": "2026-09-24T02:47:58.404095",
+  "description": "Resolve generator-tab forward import crash and improve initial banner state",
+  "buildTimestamp": "2026-09-24T03:00:44.031775",
   "buildHistory": [
-    {
-      "version": "v2026.09.23.1736.53",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:36",
-      "buildTimestamp": "2026-09-23T17:36:53.927129",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1737",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:37",
-      "buildTimestamp": "2026-09-23T17:37:25.023022",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.23.1737.54",
       "buildDate": "2026-09-23",
@@ -353,7 +339,21 @@
       "buildTime": "02:47",
       "buildTimestamp": "2026-09-24T02:47:58.404095",
       "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.24.0300",
+      "buildDate": "2026-09-24",
+      "buildTime": "03:00",
+      "buildTimestamp": "2026-09-24T03:00:05.104102",
+      "description": "Fix generator-tab module isolation error and enhance safe import destructuring"
+    },
+    {
+      "version": "v2026.09.24.0300.44",
+      "buildDate": "2026-09-24",
+      "buildTime": "03:00",
+      "buildTimestamp": "2026-09-24T03:00:44.031775",
+      "description": "Resolve generator-tab forward import crash and improve initial banner state"
     }
   ],
-  "buildTime": "02:47"
+  "buildTime": "03:00"
 }
