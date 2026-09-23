@@ -2089,6 +2089,25 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('computeAbsoluteTop10Combinations(true, curUpcomingRound, \'v3\', true, effectiveUserId)', gen_tab_code)
         self.assertIn('computeAbsoluteTop10Combinations(true, curUpcomingRound, \'v4\', true, effectiveUserId)', gen_tab_code)
 
+    def test_58_two_track_cross_check_and_version_comparison(self):
+        """Test 58: Verify 2-Track (Firebase + Hosting) cross-check detects higher Firebase versions properly."""
+        html_file = os.path.join(self.root_dir, 'index.html')
+        with open(html_file, 'r', encoding='utf-8') as f:
+            html_code = f.read()
+
+        # 1. index.html must have compareVersions helper function
+        self.assertIn('function compareVersions(vA, vB)', html_code)
+
+        # 2. getHighestKnownVersion must check both HOSTING and FIREBASE versions against current
+        self.assertIn('function getHighestKnownVersion()', html_code)
+        self.assertIn('window.FIREBASE_LATEST_VERSION', html_code)
+        self.assertIn('compareVersions(window.FIREBASE_LATEST_VERSION, highest)', html_code)
+        self.assertIn('compareVersions(window.HOSTING_LATEST_VERSION, highest)', html_code)
+
+        # 3. forceReloadCache must cache-bust with query timestamp
+        self.assertIn('forceReloadCache', html_code)
+        self.assertIn('targetUrl', html_code)
+
 
 if __name__ == '__main__':
     unittest.main()
