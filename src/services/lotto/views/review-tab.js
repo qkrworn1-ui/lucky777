@@ -750,7 +750,7 @@ export function selectSpecificReviewRound(roundNum) {
 /**
  * 📊 1235회차부터 최신회차까지 전회차 누적 추천 당첨 결과 렌더링
  */
-export function renderAllRoundsReviewDetail() {
+export async function renderAllRoundsReviewDetail() {
     const reviewMatchingContainer = document.getElementById('reviewMatchingContainer');
     if (!reviewMatchingContainer) return;
 
@@ -844,7 +844,10 @@ export function renderAllRoundsReviewDetail() {
             .map(Number);
         const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1237;
 
-        validRounds.forEach(rnd => {
+        let _rCnt = 0;
+        for (const rnd of validRounds) {
+            _rCnt++;
+            if (_rCnt % 2 === 0) await new Promise(res => setTimeout(res, 0));
             const wasIsolated = enterHistoryIsolation(rnd, maxKnownDrawnRound);
             try {
                 const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
@@ -855,9 +858,12 @@ export function renderAllRoundsReviewDetail() {
                 let rGames = 0, rPrize = 0;
                 let rHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
-                activeUsersForRound.forEach(u => {
+                let _uCnt = 0;
+                for (const u of activeUsersForRound) {
+                    _uCnt++;
+                    if (_uCnt % 5 === 0) await new Promise(res => setTimeout(res, 0));
                     const uRev = computeUser70RecommendationsReview(u.id, rnd);
-                if (uRev.isPreJoin) return;
+                if (uRev.isPreJoin) continue;
 
                 rGames += uRev.totalGames;
                 rPrize += uRev.totalPrize;
@@ -900,7 +906,7 @@ export function renderAllRoundsReviewDetail() {
                     mAgg.totalWins += uRev.totalWins;
                     for (let k = 1; k <= 5; k++) mAgg.hits[k] += uRev.grandHits[k];
                 }
-            });
+            }
 
             const rInvest = rGames * 1000;
             const rRoi = rInvest > 0 ? (rPrize / rInvest) * 100 : 0;
@@ -928,7 +934,7 @@ export function renderAllRoundsReviewDetail() {
         } finally {
             exitHistoryIsolation(wasIsolated);
         }
-    });
+    }
 
         // Calculate member totals and real purchases
         baseList.forEach(u => {
@@ -946,7 +952,8 @@ export function renderAllRoundsReviewDetail() {
                     userLedger = (typeof getLedger === 'function') ? getLedger(cleanUId) : {};
                 }
                 let realPurchasedRnds = 0, realPurchasedGms = 0;
-                validRounds.forEach(r => {
+                for (let r of validRounds) {
+                    await new Promise(_res => setTimeout(_res, 0));
                     const rawRList = (userLedger && userLedger[r]) ? userLedger[r] : [];
                     const rReceipts = (typeof deduplicateReceipts === 'function') 
                         ? deduplicateReceipts(rawRList.map(syncPurchaseWithQrUrl))
@@ -955,7 +962,7 @@ export function renderAllRoundsReviewDetail() {
                         realPurchasedRnds++;
                         realPurchasedGms += rReceipts.reduce((acc, cur) => acc + (cur && Array.isArray(cur.combos) ? cur.combos.length : 0), 0);
                     }
-                });
+                }
                 mAgg.realPurchasedRounds = realPurchasedRnds;
                 mAgg.realPurchasedGames = realPurchasedGms;
                 adminMemberSummaryList.push(mAgg);
@@ -969,12 +976,13 @@ export function renderAllRoundsReviewDetail() {
 
     } else {
         // --- 2. SINGLE USER AGGREGATION (Regular User or Admin viewing specific user) ---
-        validRounds.forEach(rnd => {
+        for (let rnd of validRounds) {
+            await new Promise(_res => setTimeout(_res, 0));
             const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
             const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
             const uRev = computeUser70RecommendationsReview(effectiveUserId, rnd);
 
-            if (uRev.isPreJoin) return;
+            if (uRev.isPreJoin) continue;
 
             // Accumulate
             dispHits[1] += uRev.grandHits[1];
@@ -1763,7 +1771,7 @@ export function renderAllRoundsReviewDetail() {
     }
 }
 
-export function renderReviewDetail(r) {
+export async function renderReviewDetail(r) {
     if (r === 'all_rounds' || String(r) === 'all_rounds') {
         return renderAllRoundsReviewDetail();
     }
@@ -1812,14 +1820,19 @@ export function renderReviewDetail(r) {
             return roundNum >= uJoinRound;
         });
 
-        membersEvalList = activeUsers.map(u => {
+        membersEvalList = [];
+        let _uCnt = 0;
+        for (const u of activeUsers) {
+            _uCnt++;
+            if (_uCnt % 5 === 0) await new Promise(res => setTimeout(res, 0));
             const uRev = computeUser70RecommendationsReview(u.id, roundNum);
-            return {
+            membersEvalList.push({
                 userId: u.id,
                 realName: u.name || u.id,
                 ...uRev
-            };
-        }).sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins);
+            });
+        }
+        membersEvalList.sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins);
 
         grandRank1 = membersEvalList.reduce((acc, cur) => acc + cur.grandHits[1], 0);
         grandRank2 = membersEvalList.reduce((acc, cur) => acc + cur.grandHits[2], 0);
@@ -2532,7 +2545,7 @@ window.setAdmin1235ModalFilter = function(filterKey) {
 /**
  * 🎨 1235회차 모달 본문 콘텐츠 렌더링
  */
-export function renderAdmin1235ReviewModalContent() {
+export async function renderAdmin1235ReviewModalContent() {
     const body = document.getElementById('admin1235ModalBody');
     if (!body) return;
 
@@ -2587,7 +2600,8 @@ export function renderAdmin1235ReviewModalContent() {
             };
         });
 
-        validRounds.forEach(rnd => {
+        for (let rnd of validRounds) {
+            await new Promise(_res => setTimeout(_res, 0));
             const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
             const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
             const winningBalls = actualDraw && actualDraw.numbers ? actualDraw.numbers : [];
@@ -2599,7 +2613,8 @@ export function renderAdmin1235ReviewModalContent() {
             if (userVal === 'all') {
                 const activeUsers = baseList.filter(u => rnd >= getUserJoinRound(u.id));
                 const targetUsers = activeUsers;
-                targetUsers.forEach(u => {
+                for (let u of targetUsers) {
+                    await new Promise(_res => setTimeout(_res, 0));
                     const uRev = computeUser70RecommendationsReview(u.id, rnd);
                     rGames += uRev.totalGames;
                     rPrize += uRev.totalPrize;
@@ -2613,7 +2628,7 @@ export function renderAdmin1235ReviewModalContent() {
                         mAgg.totalWins += uRev.totalWins;
                         for (let k = 1; k <= 5; k++) mAgg.hits[k] += uRev.grandHits[k];
                     }
-                });
+                }
             } else {
                 const uRev = computeUser70RecommendationsReview(userVal, rnd);
                 rGames = uRev.totalGames;
@@ -2641,7 +2656,7 @@ export function renderAdmin1235ReviewModalContent() {
                 wins: rWins,
                 hits: rHits
             });
-        });
+        }
 
         const totalInvest = totalCombos * 1000;
         const totalRoi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
@@ -3150,19 +3165,21 @@ export async function shareAdmin1235ReviewToKakao() {
         let hits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
         const roundLines = [];
 
-        validRounds.forEach(rnd => {
+        for (let rnd of validRounds) {
+            await new Promise(_res => setTimeout(_res, 0));
             let rGames = 0, rPrize = 0;
             let rHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
             if (userVal === 'all') {
                 const activeUsers = baseList.filter(u => rnd >= getUserJoinRound(u.id));
                 const targetUsers = activeUsers;
-                targetUsers.forEach(u => {
+                for (let u of targetUsers) {
+                    await new Promise(_res => setTimeout(_res, 0));
                     const uRev = computeUser70RecommendationsReview(u.id, rnd);
                     rGames += uRev.totalGames;
                     rPrize += uRev.totalPrize;
                     for (let k = 1; k <= 5; k++) rHits[k] += uRev.grandHits[k];
-                });
+                }
             } else {
                 const uRev = computeUser70RecommendationsReview(userVal, rnd);
                 rGames = uRev.totalGames;
@@ -3203,7 +3220,8 @@ ${roundLines.slice(0, 6).join('\n')}
         if (userVal === 'all') {
             const activeUsers = baseList.filter(u => targetRound >= getUserJoinRound(u.id));
             const targetUsers = activeUsers;
-            targetUsers.forEach(u => {
+            for (let u of targetUsers) {
+                    await new Promise(_res => setTimeout(_res, 0));
                 const uRev = computeUser70RecommendationsReview(u.id, targetRound);
                 rGames += uRev.totalGames;
                 rPrize += uRev.totalPrize;
@@ -3527,19 +3545,21 @@ export async function copyAdmin1235ReviewText() {
         let hits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
         const roundLines = [];
 
-        validRounds.forEach(rnd => {
+        for (let rnd of validRounds) {
+            await new Promise(_res => setTimeout(_res, 0));
             let rGames = 0, rPrize = 0;
             let rHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
 
             if (userVal === 'all') {
                 const activeUsers = baseList.filter(u => rnd >= getUserJoinRound(u.id));
                 const targetUsers = activeUsers;
-                targetUsers.forEach(u => {
+                for (let u of targetUsers) {
+                    await new Promise(_res => setTimeout(_res, 0));
                     const uRev = computeUser70RecommendationsReview(u.id, rnd);
                     rGames += uRev.totalGames;
                     rPrize += uRev.totalPrize;
                     for (let k = 1; k <= 5; k++) rHits[k] += uRev.grandHits[k];
-                });
+                }
             } else {
                 const uRev = computeUser70RecommendationsReview(userVal, rnd);
                 rGames = uRev.totalGames;
@@ -3579,7 +3599,8 @@ ${roundLines.join('\n')}
         if (userVal === 'all') {
             const activeUsers = baseList.filter(u => targetRound >= getUserJoinRound(u.id));
             const targetUsers = activeUsers;
-            targetUsers.forEach(u => {
+            for (let u of targetUsers) {
+                    await new Promise(_res => setTimeout(_res, 0));
                 const uRev = computeUser70RecommendationsReview(u.id, targetRound);
                 rGames += uRev.totalGames;
                 rPrize += uRev.totalPrize;
