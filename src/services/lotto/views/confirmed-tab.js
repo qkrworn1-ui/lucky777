@@ -241,7 +241,11 @@ export async function renderConfirmedPurchasesList() {
     if (isAdmin) {
         try {
             // Compute actual purchase winning stats with algorithm breakdown for each user
-            const memberStatsList = validUnifiedUsers.map(u => {
+            const memberStatsList = [];
+            let _uCntConfirmed = 0;
+            for (const u of validUnifiedUsers) {
+                _uCntConfirmed++;
+                if (_uCntConfirmed % 5 === 0) await new Promise(r => setTimeout(r, 0));
                 const uId = u.id;
                 const cleanId = uId.toLowerCase().trim();
                 const uInfo = (state.allUsersPurchasesMap && (state.allUsersPurchasesMap[cleanId] || state.allUsersPurchasesMap[uId])) 
@@ -265,9 +269,14 @@ export async function renderConfirmedPurchasesList() {
                 const rankHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
                 const algoHits = { v4: 0, v3: 0, extra: 0, manual: 0 };
 
-                Object.keys(uLedger).forEach(rStr => {
+                const roundsKeys = Object.keys(uLedger);
+                let _rCntConfirmed = 0;
+                for (const rStr of roundsKeys) {
+                    _rCntConfirmed++;
+                    if (_rCntConfirmed % 3 === 0) await new Promise(r => setTimeout(r, 0));
+                    
                     const round = parseInt(rStr);
-                    if (isNaN(round) || !Array.isArray(uLedger[rStr])) return;
+                    if (isNaN(round) || !Array.isArray(uLedger[rStr])) continue;
                     const actualDraw = getSafeActualDraw(round);
                     const winningSet = actualDraw && actualDraw.numbers ? new Set(actualDraw.numbers) : null;
                     const bonus = actualDraw ? actualDraw.bonus : null;
@@ -320,12 +329,12 @@ export async function renderConfirmedPurchasesList() {
                             }
                         });
                     });
-                });
+                }
 
                 const totalWins = rankHits[1] + rankHits[2] + rankHits[3] + rankHits[4] + rankHits[5];
                 const roi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
 
-                return {
+                memberStatsList.push({
                     userId: uId,
                     realName: uName,
                     totalGames,
@@ -335,8 +344,9 @@ export async function renderConfirmedPurchasesList() {
                     algoHits,
                     totalWins,
                     roi
-                };
-            }).sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins || b.totalInvest - a.totalInvest);
+                });
+            }
+            memberStatsList.sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins || b.totalInvest - a.totalInvest);
 
             const grandPurchased = memberStatsList.reduce((a, b) => a + b.totalInvest, 0);
             const grandGames = memberStatsList.reduce((a, b) => a + b.totalGames, 0);
