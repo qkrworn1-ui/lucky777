@@ -15,15 +15,17 @@ export function getEffectiveGeneratorUserId(customUserId = null) {
         return customUserId.trim().toLowerCase();
     }
     const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(authId)));
+    const cleanAuth = authId.trim().toLowerCase();
+    const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
     const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) 
         ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) 
         : null;
     if (isAdmin) {
-        if (viewingUser && viewingUser !== 'all') return viewingUser.trim().toLowerCase();
-        return 'all';
+        if (viewingUser === 'all') return 'all';
+        if (viewingUser && typeof viewingUser === 'string' && viewingUser.trim()) return viewingUser.trim().toLowerCase();
+        return cleanAuth; // Default to Admin's own account!
     }
-    return authId.trim().toLowerCase();
+    return cleanAuth;
 }
 
 export function getUserRoundSeed(userId, round, algoId = 'default') {

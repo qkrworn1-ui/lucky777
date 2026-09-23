@@ -80,11 +80,11 @@ export async function render7AlgorithmsRealReviewSection() {
     }
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
     
-    // 🔒 해당 사용자의 고유 추천번호 당첨 결과 기본 표시 (관리자 기본값은 'all' 전체 회원 종합)
+    // 🔒 해당 사용자의 고유 추천번호 당첨 결과 기본 표시 (관리자 기본값은 관리자 본인 계정)
     const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) : null;
     const effectiveUserId = (isAdmin && viewingUser && viewingUser !== 'all') 
         ? viewingUser 
-        : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? 'all' : (authId || 'master')));
+        : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? authId : (authId || 'master')));
 
     const realName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || '';
     let displayName = realName;
@@ -547,8 +547,8 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
 
         if (isAdmin && adminBarContainer) {
             const userList = state.allRegisteredUsersList || [];
-            let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 종합 실적</option>`;
-            userOptions += `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
+            let userOptions = `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
+            userOptions += `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 종합 실적</option>`;
             userList.forEach(u => {
                 if (u.id !== authId) {
                     userOptions += `<option value="${u.id}" ${effectiveUserId === u.id ? 'selected' : ''}>👤 ${u.id} (${u.name}${u.phone ? ` / ${u.phone}` : ''})</option>`;
@@ -618,10 +618,20 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         let allCombos;
         if (isV4) {
             allCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
+            if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
+                allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
+            }
             state.fixedTop5Combinations_v4 = allCombos;
         } else {
             allCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
+            if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
+                allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
+            }
             state.fixedTop5Combinations_v3 = allCombos;
+        }
+
+        if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
+            allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, isV4 ? 'v4' : 'v3', true, effectiveUserId);
         }
 
         // 🔒 차기 회차에 대해 사용자별 7대 알고리즘 영구 불변 스냅샷 자동 생성/보존 (Write-Once)
@@ -630,7 +640,9 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         }
 
         state.fixedTop5Combinations = allCombos;
-        const activeCombinations = (Array.isArray(allCombos) ? allCombos : []).slice(0, comboCount);
+        const activeCombinations = (Array.isArray(allCombos) && allCombos.length > 0) 
+            ? allCombos.slice(0, comboCount) 
+            : computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId).slice(0, comboCount);
 
         activeCombinations.forEach((comboObj, index) => {
             const numbers = Array.isArray(comboObj.numbers) ? comboObj.numbers : [];
@@ -880,6 +892,20 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
 
     } catch (err) {
         console.error('Error in renderTop5Combinations:', err);
+        const container = document.getElementById('combinationsContainer');
+        if (container) {
+            container.innerHTML = `
+                <div style="background: rgba(239, 68, 68, 0.12); border: 1.5px solid rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 16px; text-align: center; color: #fca5a5; margin: 12px 0;">
+                    <div style="font-size: 0.95rem; font-weight: 800; margin-bottom: 6px; color: #f87171;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> 이번 주 추천 번호 표시 중 일시적 오류가 발생했습니다.
+                    </div>
+                    <p style="font-size: 0.78rem; color: #cbd5e1; margin-bottom: 12px;">아래 버튼을 터치하시면 회원님의 고유 AI 추천 10조합을 즉시 새로고침합니다.</p>
+                    <button type="button" onclick="window.handleGenerateAllClick && window.handleGenerateAllClick()" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: #fff; font-weight: 800; font-size: 0.84rem; border: none; padding: 8px 18px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);">
+                        <i class="fa-solid fa-rotate"></i> 1초 번호 다시 불러오기
+                    </button>
+                </div>
+            `;
+        }
     }
 }
 
@@ -1611,9 +1637,7 @@ export function renderExtraAddonPacksSection() {
     const headerActions = document.getElementById('extraPacksHeaderActions');
     if (!listEl) return;
 
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
+    const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
@@ -1783,9 +1807,7 @@ export async function handleToggleSpecificExtraPack(packId) {
     const pIdx = parseInt(packId);
     if (isNaN(pIdx) || pIdx < 1 || pIdx > 5) return;
 
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
+    const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
@@ -1838,9 +1860,7 @@ export async function handleToggleSpecificExtraPack(packId) {
  */
 export function handleRemoveSingleExtraPack(packId) {
     const pIdx = parseInt(packId);
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
+    const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
@@ -1860,9 +1880,7 @@ export function handleRemoveSingleExtraPack(packId) {
  * Handle Generate All 5 Extra Packs at once (50 Games Total) (User-Isolated)
  */
 export function handleGenerateAllExtraPacks() {
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
+    const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
@@ -1888,9 +1906,7 @@ export function handleGenerateAllExtraPacks() {
  * Handle Add Extra Booster Pack (Sequential Fallback)
  */
 export async function handleAddExtraPack() {
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
+    const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
@@ -1911,9 +1927,7 @@ export async function handleAddExtraPack() {
  * Handle Clear All Extra Booster Packs (User-Isolated)
  */
 export function handleClearExtraPacks() {
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
+    const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
@@ -2008,7 +2022,7 @@ export function updateTop7AlgoUI() {
     try {
         const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
         const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-        const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
+        const effectiveUserId = getEffectiveGeneratorUserId();
         const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
             ? window.getUpcomingLottoRound()
             : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));

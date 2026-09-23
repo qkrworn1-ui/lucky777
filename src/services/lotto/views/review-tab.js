@@ -6,7 +6,7 @@ import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync, saveUserWeeklyRecommendationSnapshot, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
 
-let reviewAdminViewingUser = 'all'; // 'all' or specific userId
+let reviewAdminViewingUser = null; // null (defaults to authId) or 'all' or specific userId
 let activeReviewFilter = 'all'; // 'all' | 'v4' | 'v3' | 'extra_1' ... 'extra_5'
 
 /**
@@ -584,8 +584,8 @@ export async function renderReviewTab() {
             if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
                 reviewAdminViewingUser = window.selectedAdminViewingUser;
             } else if (!reviewAdminViewingUser) {
-                reviewAdminViewingUser = 'all';
-                if (typeof window !== 'undefined') window.selectedAdminViewingUser = 'all';
+                reviewAdminViewingUser = authId;
+                if (typeof window !== 'undefined') window.selectedAdminViewingUser = authId;
             }
             if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
                 fetchAllUsersPurchases().catch(() => {});
@@ -623,8 +623,8 @@ export async function renderReviewTab() {
             }
 
             const registeredUsers = getAllUnifiedRegisteredUsers();
-            let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 당첨 결과 종합</option>`;
-            userOptionsHtml += `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
+            let userOptionsHtml = `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
+            userOptionsHtml += `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 당첨 결과 종합</option>`;
 
             registeredUsers.forEach(u => {
                 const uClean = (u.id || '').toLowerCase().trim();
@@ -767,7 +767,7 @@ export async function renderAllRoundsReviewDetail() {
     if (!isAdmin) {
         reviewAdminViewingUser = authId;
     }
-    const isAllUsers = (isAdmin && (!reviewAdminViewingUser || reviewAdminViewingUser === 'all'));
+    const isAllUsers = (isAdmin && reviewAdminViewingUser === 'all');
     const effectiveUserId = (isAdmin && reviewAdminViewingUser && reviewAdminViewingUser !== 'all') ? reviewAdminViewingUser : authId;
 
     const historyRounds = Object.keys(state.mergedHistory || {})
@@ -1799,7 +1799,7 @@ export async function renderReviewDetail(r) {
     if (!isAdmin) {
         reviewAdminViewingUser = authId;
     }
-    const isAllUsers = (isAdmin && (!reviewAdminViewingUser || reviewAdminViewingUser === 'all'));
+    const isAllUsers = (isAdmin && reviewAdminViewingUser === 'all');
     const effectiveUserId = (isAdmin && reviewAdminViewingUser && reviewAdminViewingUser !== 'all') ? reviewAdminViewingUser : authId;
 
     const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(roundNum) || (state.mergedHistory ? state.mergedHistory[roundNum] : null)) : (state.mergedHistory ? state.mergedHistory[roundNum] : null);

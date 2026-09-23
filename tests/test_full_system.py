@@ -2142,6 +2142,117 @@ class TestFullSystem(unittest.TestCase):
         # 4. main.js switches to tab-generator when showLotto is invoked
         self.assertIn("switchLottoTab('tab-generator')", main_code)
 
+    def test_60_mobile_generator_layout_and_guaranteed_render(self):
+        """Verify combinationsContainer is positioned at the top of tab-generator for mobile visibility, and rendering is guaranteed."""
+        index_file = os.path.join(self.root_dir, 'index.html')
+        gen_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        lotto_idx_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'index.js')
+
+        with open(index_file, 'r', encoding='utf-8') as f:
+            index_code = f.read()
+        with open(gen_tab_file, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+        with open(lotto_idx_file, 'r', encoding='utf-8') as f:
+            lotto_idx_code = f.read()
+
+        # 1. In index.html, combinationsContainer is placed before extraPacksSection and algoRealReviewSection
+        combo_pos = index_code.find('id="combinationsContainer"')
+        extra_pos = index_code.find('id="extraPacksSection"')
+        review_pos = index_code.find('id="algoRealReviewSection"')
+
+        self.assertTrue(combo_pos > 0, "combinationsContainer must exist in index.html")
+        self.assertTrue(extra_pos > 0, "extraPacksSection must exist in index.html")
+        self.assertTrue(review_pos > 0, "algoRealReviewSection must exist in index.html")
+        self.assertTrue(combo_pos < extra_pos, "combinationsContainer must be placed before extraPacksSection for instant mobile viewing")
+        self.assertTrue(extra_pos < review_pos, "extraPacksSection must be placed before algoRealReviewSection")
+
+        # 2. generator-tab.js has defensive fallback for non-empty combinations
+        self.assertIn('computeAbsoluteTop10Combinations(true, curUpcomingRound, isV4 ? \'v4\' : \'v3\', true, effectiveUserId)', gen_tab_code)
+        self.assertIn('1초 번호 다시 불러오기', gen_tab_code)
+
+        # 3. lotto/index.js executes immediate synchronous render on tab-generator switch
+        self.assertIn("target === 'tab-generator' && typeof renderTop5Combinations === 'function'", lotto_idx_code)
+
+    def test_61_admin_self_default_and_user_isolation(self):
+        """Test 61: Verify Admin defaults to personal account (authId) across all tabs, and regular users are strictly isolated."""
+        gen_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+        gen_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        rev_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        algo_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'algorithms-tab.js')
+        conf_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+
+        with open(gen_file, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+        with open(gen_tab_file, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+        with open(rev_tab_file, 'r', encoding='utf-8') as f:
+            rev_tab_code = f.read()
+        with open(algo_tab_file, 'r', encoding='utf-8') as f:
+            algo_tab_code = f.read()
+        with open(conf_tab_file, 'r', encoding='utf-8') as f:
+            conf_tab_code = f.read()
+
+        # 1. generator.js getEffectiveGeneratorUserId defaults admin to cleanAuth
+        self.assertIn("return cleanAuth;", gen_code)
+
+        # 2. generator-tab.js: Admin options put '관리자 본인' first & real review section defaults to authId
+        self.assertIn("👑 관리자 본인 (${authId})", gen_tab_code)
+        self.assertIn("isAdmin ? authId : (authId || 'master')", gen_tab_code)
+
+        # 3. review-tab.js: Admin options put '관리자 본인' first & reviewAdminViewingUser defaults to authId
+        self.assertIn("👑 관리자 본인 (${authId})", rev_tab_code)
+        self.assertIn("const isAllUsers = (isAdmin && reviewAdminViewingUser === 'all');", rev_tab_code)
+        self.assertIn("reviewAdminViewingUser = authId;", rev_tab_code)
+
+        # 4. algorithms-tab.js: effectiveUserId fallback is authId and '관리자 본인' is first option
+        self.assertIn("👑 관리자 본인 (${authId})", algo_tab_code)
+        self.assertIn("? 'all' : (authId || 'master'))", algo_tab_code)
+
+        # 5. confirmed-tab.js: currentTarget defaults to 'my' and '내 계정 구매내역' is first option
+        self.assertIn("const currentTarget = isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId;", conf_tab_code)
+        self.assertIn("👤 [내 계정 구매내역 (${cleanAuthId})]", conf_tab_code)
+        self.assertIn("!isAdmin && currentTarget !== 'all'", conf_tab_code)
+
+    def test_62_user_snapshots_and_multitab_integrity(self):
+        """Test 62: Verify snapshot storage, synchronization, and multi-tab immutable evaluation integrity."""
+        gen_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        rev_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        algo_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'algorithms-tab.js')
+        conf_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+
+        with open(gen_file, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        with open(rev_tab_file, 'r', encoding='utf-8') as f:
+            rev_tab_code = f.read()
+        with open(algo_tab_file, 'r', encoding='utf-8') as f:
+            algo_tab_code = f.read()
+        with open(conf_tab_file, 'r', encoding='utf-8') as f:
+            conf_tab_code = f.read()
+
+        # 1. generator.js exports saveUserWeeklyRecommendationSnapshot and getUserWeeklyRecommendationSnapshotSync
+        self.assertIn("export async function saveUserWeeklyRecommendationSnapshot", gen_code)
+        self.assertIn("export function getUserWeeklyRecommendationSnapshotSync", gen_code)
+        self.assertIn("lotto_rec_snapshot_", gen_code)
+
+        # 2. ledger.js preloads recommendationSnapshots into state.userRecommendationSnapshots
+        self.assertIn("if (d.recommendationSnapshots && typeof d.recommendationSnapshots === 'object')", ledger_code)
+        self.assertIn("if (data.recommendationSnapshots && typeof data.recommendationSnapshots === 'object')", ledger_code)
+        self.assertIn("state.userRecommendationSnapshots[`${userId}_${parseInt(rKey, 10)}`] = snapData;", ledger_code)
+
+        # 3. review-tab.js computeUser70RecommendationsReview checks snapshot first
+        self.assertIn("snapshot = getUserWeeklyRecommendationSnapshotSync(cleanUser, roundNum);", rev_tab_code)
+        self.assertIn("if (snapshot && snapshot.v4Combos && snapshot.v3Combos && snapshot.extraPacks)", rev_tab_code)
+
+        # 4. confirmed-tab.js getMemoizedRecommendations checks snapshot first
+        self.assertIn("snapshot = getUserWeeklyRecommendationSnapshotSync(user, rnd);", conf_tab_code)
+        self.assertIn("if (snapshot && snapshot.v4Combos && snapshot.v3Combos && snapshot.extraPacks)", conf_tab_code)
+
+        # 5. algorithms-tab.js uses reviewsCache / computeUser70RecommendationsReview for evaluation
+        self.assertIn("computeUser70RecommendationsReview", algo_tab_code)
+
 
 if __name__ == '__main__':
     unittest.main()

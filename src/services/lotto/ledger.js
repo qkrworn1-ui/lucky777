@@ -1088,6 +1088,15 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                 if (isSystemOrDummyUser(userId)) continue;
                 
                 const data = doc.data() || {};
+                if (data.recommendationSnapshots && typeof data.recommendationSnapshots === 'object') {
+                    if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                    for (const rKey in data.recommendationSnapshots) {
+                        const snapData = data.recommendationSnapshots[rKey];
+                        if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
+                            state.userRecommendationSnapshots[`${userId}_${parseInt(rKey, 10)}`] = snapData;
+                        }
+                    }
+                }
                 let rawUserLedger = data.ledger || {};
                 if (typeof rawUserLedger === 'string') {
                     try { rawUserLedger = JSON.parse(rawUserLedger); } catch(e) { rawUserLedger = {}; }

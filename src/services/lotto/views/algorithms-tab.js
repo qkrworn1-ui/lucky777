@@ -595,11 +595,11 @@ export async function renderAlgorithmsTab(fromRound = null) {
         }).catch(e => console.warn('[AlgorithmsTab background fetch error]', e));
     }
 
-    // Default target user is 'all' for admin (전체 회원 통합 당첨 실적) or authId for regular member
+    // Default target user is authId for admin/regular member, or 'all' if explicitly chosen
     const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.algoAdminViewingUser)) ? (window.selectedAdminViewingUser || window.algoAdminViewingUser) : null;
     const effectiveUserId = (isAdmin && viewingUser && viewingUser !== 'all') 
         ? viewingUser 
-        : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? 'all' : (authId || 'master')));
+        : ((isAdmin && viewingUser === 'all') ? 'all' : (authId || 'master'));
 
     let perfData;
     try {
@@ -639,8 +639,8 @@ export async function renderAlgorithmsTab(fromRound = null) {
     // Admin User Selector HTML
     let adminUserSelectHtml = '';
     if (isAdmin) {
-        let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 당첨 결과</option>`;
-        userOptions += `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
+        let userOptions = `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
+        userOptions += `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 당첨 결과</option>`;
         
         const userList = getAllUnifiedRegisteredUsers();
         userList.forEach(u => {

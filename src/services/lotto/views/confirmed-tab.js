@@ -6,18 +6,31 @@ import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgm
 import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
 import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
 
-import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack } from '../generator.js';
+import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 
 const _roundUserRecCache = new Map();
 function getMemoizedRecommendations(rnd, user) {
     const key = `${rnd}_${(user || '').toLowerCase()}`;
     if (_roundUserRecCache.has(key)) return _roundUserRecCache.get(key);
-    const uV4 = computeAbsoluteTop10Combinations(false, rnd, 'v4', true, user) || [];
-    const uV3 = computeAbsoluteTop10Combinations(false, rnd, 'v3', true, user) || [];
-    const extraPacks = (typeof generateExtraAddonPack === 'function') 
-        ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, rnd, user)) 
-        : (state.extraPacks || []);
+
+    let snapshot = null;
+    if (typeof getUserWeeklyRecommendationSnapshotSync === 'function') {
+        snapshot = getUserWeeklyRecommendationSnapshotSync(user, rnd);
+    }
+
+    let uV4, uV3, extraPacks;
+    if (snapshot && snapshot.v4Combos && snapshot.v3Combos && snapshot.extraPacks) {
+        uV4 = snapshot.v4Combos;
+        uV3 = snapshot.v3Combos;
+        extraPacks = [1, 2, 3, 4, 5].map(pId => snapshot.extraPacks[pId] || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] });
+    } else {
+        uV4 = computeAbsoluteTop10Combinations(false, rnd, 'v4', true, user) || [];
+        uV3 = computeAbsoluteTop10Combinations(false, rnd, 'v3', true, user) || [];
+        extraPacks = (typeof generateExtraAddonPack === 'function') 
+            ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, rnd, user)) 
+            : (state.extraPacks || []);
+    }
     const res = { uV4, uV3, extraPacks };
     _roundUserRecCache.set(key, res);
     return res;
@@ -211,8 +224,8 @@ export async function renderConfirmedPurchasesList() {
     });
 
     if (isAdmin) {
-        let optionsHtml = `<option value="all" ${currentTarget === 'all' ? 'selected' : ''}>👥 [전체 회원 통합 보기 (${validUnifiedUsers.length}명)]</option>`;
-        optionsHtml += `<option value="my" ${currentTarget === 'my' ? 'selected' : ''}>👤 [내 계정 구매내역 (${cleanAuthId})]</option>`;
+        let optionsHtml = `<option value="my" ${currentTarget === 'my' ? 'selected' : ''}>👤 [내 계정 구매내역 (${cleanAuthId})]</option>`;
+        optionsHtml += `<option value="all" ${currentTarget === 'all' ? 'selected' : ''}>👥 [전체 회원 통합 보기 (${validUnifiedUsers.length}명)]</option>`;
         
         validUnifiedUsers.forEach(u => {
             const uId = u.id;
