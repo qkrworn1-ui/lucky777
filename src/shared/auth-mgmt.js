@@ -114,11 +114,17 @@ export function handleLogout(skipConfirm = false) {
     try { window.localStorage.removeItem('kakao_access_token'); } catch(e){}
 
     // 3. Clear Kakao Auth Session if connected
-    if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.logout === 'function') {
+    if (window.Kakao && window.Kakao.Auth) {
         try {
-            window.Kakao.Auth.logout(function() {
-                console.log('[Kakao] Logged out successfully');
-            });
+            // Force reset local token to prevent silent login failures
+            if (typeof window.Kakao.Auth.setAccessToken === 'function') {
+                window.Kakao.Auth.setAccessToken(null);
+            }
+            if (typeof window.Kakao.Auth.logout === 'function') {
+                window.Kakao.Auth.logout(function() {
+                    console.log('[Kakao] Logged out successfully');
+                });
+            }
         } catch(e){}
     }
 
@@ -1004,6 +1010,15 @@ export function setupAuthEvents(initFirebaseAndData) {
 
         // 1. Mobile & Desktop Hybrid Login
         try {
+            if (window.Kakao && window.Kakao.Auth) {
+                try {
+                    // Force clear any stale token to ensure login popup triggers
+                    if (typeof window.Kakao.Auth.setAccessToken === 'function') {
+                        window.Kakao.Auth.setAccessToken(null);
+                    }
+                } catch(e) {}
+            }
+
             if (window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
                 window.Kakao.Auth.login({
                     scope: 'profile_nickname,profile_image,talk_message',

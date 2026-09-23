@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.23.1629 - BUILD_DATE: 2026-09-23] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.23.1643 - BUILD_DATE: 2026-09-23] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.23.1629)
+ * Lucky777 Smart Bundle (v2026.09.23.1643)
  */
 
 
@@ -1461,11 +1461,17 @@ function handleLogout(skipConfirm = false) {
     try { window.localStorage.removeItem('kakao_access_token'); } catch(e){}
 
     // 3. Clear Kakao Auth Session if connected
-    if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.logout === 'function') {
+    if (window.Kakao && window.Kakao.Auth) {
         try {
-            window.Kakao.Auth.logout(function() {
-                console.log('[Kakao] Logged out successfully');
-            });
+            // Force reset local token to prevent silent login failures
+            if (typeof window.Kakao.Auth.setAccessToken === 'function') {
+                window.Kakao.Auth.setAccessToken(null);
+            }
+            if (typeof window.Kakao.Auth.logout === 'function') {
+                window.Kakao.Auth.logout(function() {
+                    console.log('[Kakao] Logged out successfully');
+                });
+            }
         } catch(e){}
     }
 
@@ -2351,6 +2357,15 @@ function setupAuthEvents(initFirebaseAndData) {
 
         // 1. Mobile & Desktop Hybrid Login
         try {
+            if (window.Kakao && window.Kakao.Auth) {
+                try {
+                    // Force clear any stale token to ensure login popup triggers
+                    if (typeof window.Kakao.Auth.setAccessToken === 'function') {
+                        window.Kakao.Auth.setAccessToken(null);
+                    }
+                } catch(e) {}
+            }
+
             if (window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
                 window.Kakao.Auth.login({
                     scope: 'profile_nickname,profile_image,talk_message',
@@ -23818,7 +23833,9 @@ function openDonghangVerifyModal(url) {
 
                 <!-- QR 원본 및 공식 사이트 검증 카드 -->
                 <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 14px;">
-                    <img src="${qrImageUrl}" width="90" height="90" loading="lazy" decoding="async" style="border-radius: 8px; border: 1px solid #334155; flex-shrink: 0; background: #fff;" alt="동행복권 공식 QR" onerror="this.style.display='none'" />
+                    <div style="width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.2); flex-shrink: 0;">
+                        <i class="fa-solid fa-qrcode" style="font-size: 2.5rem; color: #94a3b8;"></i>
+                    </div>
                     <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1;">
                         <div style="font-size: 0.78rem; font-weight: 800; color: #f8fafc;">
                             <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i> 동행복권 공식 QR 데이터
@@ -23852,12 +23869,14 @@ function openDonghangVerifyModal(url) {
     modal.style.display = 'flex';
     if (document.body) document.body.style.overflow = 'hidden';
 
-    // Mobile back navigation history push
+    // Mobile back navigation history push (Deferred to prevent rendering block)
     if (typeof history !== 'undefined' && history.pushState) {
-        try {
-            history.pushState({ modal: 'donghangVerify' }, '', window.location.hash);
-            modal._historyPushed = true;
-        } catch(e) {}
+        setTimeout(() => {
+            try {
+                history.pushState({ modal: 'donghangVerify' }, '', window.location.hash);
+                modal._historyPushed = true;
+            } catch(e) {}
+        }, 10);
     }
 }
 

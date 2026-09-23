@@ -2353,7 +2353,9 @@ export function openDonghangVerifyModal(url) {
 
                 <!-- QR 원본 및 공식 사이트 검증 카드 -->
                 <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 14px;">
-                    <img src="${qrImageUrl}" width="90" height="90" loading="lazy" decoding="async" style="border-radius: 8px; border: 1px solid #334155; flex-shrink: 0; background: #fff;" alt="동행복권 공식 QR" onerror="this.style.display='none'" />
+                    <div style="width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.2); flex-shrink: 0;">
+                        <i class="fa-solid fa-qrcode" style="font-size: 2.5rem; color: #94a3b8;"></i>
+                    </div>
                     <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1;">
                         <div style="font-size: 0.78rem; font-weight: 800; color: #f8fafc;">
                             <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i> 동행복권 공식 QR 데이터
@@ -2387,12 +2389,14 @@ export function openDonghangVerifyModal(url) {
     modal.style.display = 'flex';
     if (document.body) document.body.style.overflow = 'hidden';
 
-    // Mobile back navigation history push
+    // Mobile back navigation history push (Deferred to prevent rendering block)
     if (typeof history !== 'undefined' && history.pushState) {
-        try {
-            history.pushState({ modal: 'donghangVerify' }, '', window.location.hash);
-            modal._historyPushed = true;
-        } catch(e) {}
+        setTimeout(() => {
+            try {
+                history.pushState({ modal: 'donghangVerify' }, '', window.location.hash);
+                modal._historyPushed = true;
+            } catch(e) {}
+        }, 10);
     }
 }
 
