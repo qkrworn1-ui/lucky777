@@ -1204,6 +1204,38 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                 }
             }
 
+            // Distribute master's official/scanned receipts to actual users
+            if (allUsersMap['master'] && allUsersMap['master'].ledger) {
+                const mLedger = allUsersMap['master'].ledger;
+                for (const r in mLedger) {
+                    const roundNum = parseInt(r, 10);
+                    mLedger[r].forEach(receipt => {
+                        const pUser = (receipt.user || receipt.userId || '').trim().toLowerCase();
+                        if (pUser && pUser !== 'master' && pUser !== 'admin') {
+                            if (!allUsersMap[pUser]) {
+                                allUsersMap[pUser] = {
+                                    userId: pUser,
+                                    realName: userNames[pUser] || pUser,
+                                    createdAt: null,
+                                    ledger: {}
+                                };
+                            }
+                            if (!allUsersMap[pUser].ledger[roundNum]) {
+                                allUsersMap[pUser].ledger[roundNum] = [];
+                            }
+                            allUsersMap[pUser].ledger[roundNum].push(receipt);
+                        }
+                    });
+                }
+                
+                for (const uId in allUsersMap) {
+                    if (uId === 'master' || uId === 'admin') continue;
+                    for (const r in allUsersMap[uId].ledger) {
+                        allUsersMap[uId].ledger[r] = deduplicateReceipts(allUsersMap[uId].ledger[r]);
+                    }
+                }
+            }
+
             state.allUsersPurchasesMap = allUsersMap;
             state.allUsersMergedLedger = mergedLedger;
             _lastFetchAllUsersPurchasesTime = Date.now();

@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.23.1843.50 - BUILD_DATE: 2026-09-23] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.23.1852 - BUILD_DATE: 2026-09-23] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.23.1843.50)
+ * Lucky777 Smart Bundle (v2026.09.23.1852)
  */
 
 
@@ -8588,6 +8588,38 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                     mergedLedger[roundNum] = deduplicateReceipts(mergedLedger[roundNum]);
                     if (roundNum === 1239) {
                         mergedLedger[1239] = normalizeMaster1239Order(mergedLedger[1239]);
+                    }
+                }
+            }
+
+            // Distribute master's official/scanned receipts to actual users
+            if (allUsersMap['master'] && allUsersMap['master'].ledger) {
+                const mLedger = allUsersMap['master'].ledger;
+                for (const r in mLedger) {
+                    const roundNum = parseInt(r, 10);
+                    mLedger[r].forEach(receipt => {
+                        const pUser = (receipt.user || receipt.userId || '').trim().toLowerCase();
+                        if (pUser && pUser !== 'master' && pUser !== 'admin') {
+                            if (!allUsersMap[pUser]) {
+                                allUsersMap[pUser] = {
+                                    userId: pUser,
+                                    realName: userNames[pUser] || pUser,
+                                    createdAt: null,
+                                    ledger: {}
+                                };
+                            }
+                            if (!allUsersMap[pUser].ledger[roundNum]) {
+                                allUsersMap[pUser].ledger[roundNum] = [];
+                            }
+                            allUsersMap[pUser].ledger[roundNum].push(receipt);
+                        }
+                    });
+                }
+                
+                for (const uId in allUsersMap) {
+                    if (uId === 'master' || uId === 'admin') continue;
+                    for (const r in allUsersMap[uId].ledger) {
+                        allUsersMap[uId].ledger[r] = deduplicateReceipts(allUsersMap[uId].ledger[r]);
                     }
                 }
             }
