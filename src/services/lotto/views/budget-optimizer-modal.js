@@ -221,6 +221,7 @@ export async function runBudgetOptimizationSimulation() {
         const roundResults = new Array(maxRound + 1);
 
         for (let r = maxRound; r >= 1; r--) {
+            if (r % 100 === 0) await new Promise(res => setTimeout(res, 0));
             const draw = state.mergedHistory[r];
             if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) {
                 roundResults[r] = { h1: 0, h2: 0, h3: 0, h4: 0, h5: 0, prize: 0 };

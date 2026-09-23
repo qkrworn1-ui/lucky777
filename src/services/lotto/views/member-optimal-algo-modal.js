@@ -31,7 +31,7 @@ function computeAlgoFitnessScore(algo) {
 /**
  * 회원 1인에 대한 7대 알고리즘 전수 분석 및 최적 알고리즘 진단
  */
-export function diagnoseMemberOptimalAlgorithms(userObj) {
+export async function diagnoseMemberOptimalAlgorithms(userObj) {
     const rawId = (userObj.id || '').trim();
     const cleanId = rawId.toLowerCase();
     const userName = userObj.name || userObj.realName || cleanId;
@@ -40,7 +40,7 @@ export function diagnoseMemberOptimalAlgorithms(userObj) {
     const joinRound = getUserJoinRound(cleanId);
     
     // Calculate performance across all 7 algorithms from joinRound
-    const perfData = calculate7AlgorithmsPerformance(joinRound, cleanId);
+    const perfData = await calculate7AlgorithmsPerformance(joinRound, cleanId);
     const algos = (perfData.results || []).map(a => {
         const score = computeAlgoFitnessScore(a);
         return {
@@ -186,7 +186,13 @@ export async function analyzeAllMembersOptimalAlgorithms(forceRefresh = false) {
         validUsers.push({ id: 'master', name: '관리자', isPermanent: true, userType: 'permanent' });
     }
 
-    const diagnoses = validUsers.map(u => diagnoseMemberOptimalAlgorithms(u));
+    const diagnoses = [];
+    let _uCnt = 0;
+    for (const u of validUsers) {
+        _uCnt++;
+        if (_uCnt % 3 === 0) await new Promise(r => setTimeout(r, 0));
+        diagnoses.push(await diagnoseMemberOptimalAlgorithms(u));
+    }
     memberDiagnosisCache = diagnoses;
     return diagnoses;
 }

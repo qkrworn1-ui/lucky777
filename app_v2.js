@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.23.1828 - BUILD_DATE: 2026-09-23] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.23.1843.50 - BUILD_DATE: 2026-09-23] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.23.1828)
+ * Lucky777 Smart Bundle (v2026.09.23.1843.50)
  */
 
 
@@ -22321,6 +22321,7 @@ async function runBudgetOptimizationSimulation() {
         const roundResults = new Array(maxRound + 1);
 
         for (let r = maxRound; r >= 1; r--) {
+            if (r % 100 === 0) await new Promise(res => setTimeout(res, 0));
             const draw = state.mergedHistory[r];
             if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) {
                 roundResults[r] = { h1: 0, h2: 0, h3: 0, h4: 0, h5: 0, prize: 0 };
