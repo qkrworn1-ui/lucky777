@@ -2108,6 +2108,40 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('forceReloadCache', html_code)
         self.assertIn('targetUrl', html_code)
 
+    def test_59_kakao_user_generator_parity_and_mobile_display(self):
+        """Test 59: Verify generator combo completeness, defensive fallbacks, and mobile display parity."""
+        gen_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+        gen_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        styles_file = os.path.join(self.root_dir, 'styles.css')
+        main_file = os.path.join(self.root_dir, 'src', 'main.js')
+
+        with open(gen_file, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+        with open(gen_tab_file, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+        with open(styles_file, 'r', encoding='utf-8') as f:
+            styles_code = f.read()
+        with open(main_file, 'r', encoding='utf-8') as f:
+            main_code = f.read()
+
+        # 1. generator.js defines targetBenefit in V4 combinations
+        self.assertIn("targetBenefit: '소액 당첨(4·5등) 확률 방어 및 기댓값 안정화'", gen_code)
+        self.assertIn("targetBenefit: '1등 당첨 시 고액 독식(셰어링 방어) 및 변동성 극대화'", gen_code)
+        self.assertIn("targetBenefit: '역대 당첨 백데이터 다중 교집합 기반 기계적 적중 밀도 극대화'", gen_code)
+
+        # 2. generator-tab.js has safe defensive fallbacks for strat and stats
+        self.assertIn('const strat = comboObj.meta || {', gen_tab_code)
+        self.assertIn('const stats = comboObj.stats || {', gen_tab_code)
+        self.assertIn('safeProbPct', gen_tab_code)
+        self.assertIn('safeBiasPct', gen_tab_code)
+
+        # 3. styles.css ensures combo-detail-section is block by default
+        self.assertIn('.combo-detail-section {\n    display: block;', styles_code)
+        self.assertIn('.combo-card.is-compact', styles_code)
+
+        # 4. main.js switches to tab-generator when showLotto is invoked
+        self.assertIn("switchLottoTab('tab-generator')", main_code)
+
 
 if __name__ == '__main__':
     unittest.main()

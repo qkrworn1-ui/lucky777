@@ -149,9 +149,13 @@ window.showLotto = function(pushHistory = true) {
 
     _switchPage('appContainer', pushHistory);
     try {
-        if (typeof initLottoService === 'function') {
+        if (typeof switchLottoTab === 'function') {
+            switchLottoTab('tab-generator');
+        } else if (typeof window !== 'undefined' && typeof window.switchLottoTab === 'function') {
+            window.switchLottoTab('tab-generator');
+        } else if (typeof initLottoService === 'function') {
             initLottoService();
-        } else if (typeof window.initLottoService === 'function') {
+        } else if (typeof window !== 'undefined' && typeof window.initLottoService === 'function') {
             window.initLottoService();
         }
     } catch(e) {

@@ -298,6 +298,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                         desc: '장기적인 기댓값 안정을 위해 가장 보편적인 1등 출현 패턴을 정밀하게 모방하여 4,5등 당첨 확률을 높입니다.',
                         lawName: '그룹 1: 통계적 밸런스 추종 (게임 1~4)',
                         probRationale: '역대 당첨 번호의 약 80%가 포함되는 거시적 정규분포 구역에 번호를 배치합니다.',
+                        targetBenefit: '소액 당첨(4·5등) 확률 방어 및 기댓값 안정화',
                         numReasons: bestCandidateObj.nums.map(n => `${n}번: 웜 넘버(Warm Number) 풀 기반 통계적 안정성 배치`)
                     }
                 });
@@ -376,6 +377,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                         desc: '대중이 기피하는 연번 및 콜드 넘버를 고의로 배치하여 당첨 시 독식(당첨금 극대화) 확률을 비약적으로 끌어올립니다.',
                         lawName: '그룹 2: 변동성 극대화 및 클러스터링 (게임 5~7)',
                         probRationale: '기댓값 붕괴(당첨금 셰어링)를 수리적으로 방어하기 위해 설계된 역발상적 군집 회피 모델입니다.',
+                        targetBenefit: '1등 당첨 시 고액 독식(셰어링 방어) 및 변동성 극대화',
                         numReasons: bestCandidateObj.nums.map(n => {
                             if (coldNumbers.includes(n)) return `${n}번: 대중 기피 하위 10개 콜드 넘버 (다수 당첨 방어용)`;
                             if (hotNumbers.includes(n)) return `${n}번: 최상위 핫 넘버 (모멘텀 유지용)`;
@@ -423,6 +425,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                         desc: '미래 예측을 포기하고 과거 1~1234회 전체 당첨 번호들과 가장 많이 교차 충돌하도록 기계적으로 깎아낸 조합입니다.',
                         lawName: '그룹 3: 역사적 과적합 (게임 8~10)',
                         probRationale: '수백만 번의 역산 시뮬레이션을 통해 찾아낸, 훈련 데이터 상 당첨 횟수가 극단적으로 높은 기하학적 교집합 배열입니다.',
+                        targetBenefit: '역대 당첨 백데이터 다중 교집합 기반 기계적 적중 밀도 극대화',
                         numReasons: bestCandidateObj.nums.map(n => `${n}번: 역대 다수 당첨 충돌 교집합(Clique) 앵커 번호`)
                     }
                 });
@@ -640,12 +643,15 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
         generated.sort((a, b) => b.historicalHitScore - a.historicalHitScore);
         
         generated.forEach((combo, idx) => {
+            const benefitName = (combo.meta && combo.meta.targetBenefit) ? combo.meta.targetBenefit : ((combo.meta && combo.meta.name) ? combo.meta.name : (combo.name || 'AI 추천'));
             combo.id = `TOP ${idx + 1}`;
-            combo.name = `TOP ${idx + 1}: ${combo.meta.targetBenefit}`;
-            combo.meta.rankBadge = `TOP ${idx + 1}`;
-            combo.meta.rankClass = `top-${(idx % 5) + 1}-badge`;
-            combo.meta.name = `TOP ${idx + 1}: ${combo.meta.targetBenefit}`;
-            combo.meta.tag = `${combo.meta.tag} | 적중 스코어: ${combo.historicalHitScore}`;
+            combo.name = `TOP ${idx + 1}: ${benefitName}`;
+            if (combo.meta) {
+                combo.meta.rankBadge = `TOP ${idx + 1}`;
+                combo.meta.rankClass = `top-${(idx % 5) + 1}-badge`;
+                combo.meta.name = combo.name;
+                combo.meta.tag = `${combo.meta.tag || 'AI 퀀트'} | 적중 스코어: ${combo.historicalHitScore || 0}`;
+            }
         });
     }
     } finally {

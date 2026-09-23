@@ -580,15 +580,15 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         const container = document.getElementById('combinationsContainer');
         if (!container) return;
         container.innerHTML = `
-            <!-- 📱 스마트폰/반응형 최적화: 10조합 컴팩트 뷰 & 전체 토글 툴바 -->
+            <!-- 📱 10조합 뷰 모드 툴바 -->
             <div class="combo-view-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 8px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; flex-wrap: wrap; gap: 8px;">
                 <span style="font-size: 0.78rem; color: #cbd5e1; display: inline-flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-mobile-screen-button" style="color: #38bdf8;"></i>
-                    <span>스마트폰 최적화: <strong>컴팩트 요약 뷰 적용 중</strong></span>
-                    <span style="font-size: 0.68rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px;">스크롤 75% 압축</span>
+                    <i class="fa-solid fa-sparkles" style="color: #fbbf24;"></i>
+                    <span>이번 주 AI 추천 조합: <strong>총 10게임 배정 완료</strong></span>
+                    <span style="font-size: 0.68rem; color: #34d399; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 1px 6px; border-radius: 4px; font-weight: 700;">실시간 배정됨</span>
                 </span>
                 <button type="button" id="btnToggleAllComboDetails" style="background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.4); color: #fbbf24; font-size: 0.74rem; font-weight: 800; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
-                    <i class="fa-solid fa-layer-group"></i> <span id="lblToggleAllText">전체 10게임 상세 펼치기</span>
+                    <i class="fa-solid fa-compress"></i> <span id="lblToggleAllText">컴팩트 요약 보기</span>
                 </button>
             </div>
         `;
@@ -610,7 +610,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         watermarkEl.setAttribute('aria-hidden', 'true');
         watermarkEl.innerHTML = Array(16).fill(0).map(() => `
             <div class="forensic-watermark-item">
-                <span>LUCKY777 · ${effectiveUserId.toUpperCase()} · 제${curUpcomingRound}회 · 보안배정</span>
+                <span>LUCKY777 · ${String(effectiveUserId || 'guest').toUpperCase()} · 제${curUpcomingRound}회 · 보안배정</span>
             </div>
         `).join('');
         container.appendChild(watermarkEl);
@@ -630,23 +630,45 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         }
 
         state.fixedTop5Combinations = allCombos;
-        const activeCombinations = allCombos.slice(0, comboCount);
+        const activeCombinations = (Array.isArray(allCombos) ? allCombos : []).slice(0, comboCount);
 
         activeCombinations.forEach((comboObj, index) => {
-            const strat = comboObj.meta;
-            const numbers = comboObj.numbers;
-            const stats = comboObj.stats || { evScore: 70, oddEvenRatio: '3:3', sum: 135, highCount: 0, neighborCount: 0 };
+            const numbers = Array.isArray(comboObj.numbers) ? comboObj.numbers : [];
+            const strat = comboObj.meta || {
+                rankBadge: `TOP ${index + 1}`,
+                rankClass: 'top-1-badge',
+                badgeClass: 'strategy-a',
+                name: comboObj.name || `추천 조합 #${index + 1}`,
+                tag: 'AI 퀀트 앙상블',
+                desc: '확률 모델 기반 추천 번호',
+                lawName: 'AI 퀀트 모델',
+                probRationale: '과거 당첨 통계 기반 추천',
+                numReasons: ['통계 모델 기반 추출'],
+                targetBenefit: '당첨 확률 극대화'
+            };
+            const stats = comboObj.stats || {
+                evScore: 70,
+                oddEvenRatio: '3:3',
+                sum: numbers.reduce((a, b) => a + b, 0) || 135,
+                highCount: numbers.filter(n => n >= 32).length || 0,
+                neighborCount: 0,
+                binomialWaveIndex: 89,
+                payoutMultiplier: '1.00',
+                probBalanceScore: 32,
+                biasAvoidanceScore: 22
+            };
             const winData = getEnsembleWinningHistory(comboObj, index);
             const isPurchased = isComboPurchasedInConfirmedLedger(numbers, curUpcomingRound);
 
             const cardEl = document.createElement('div');
             cardEl.className = 'combo-card';
+            cardEl.setAttribute('data-combo-idx', String(index));
             if (isPurchased) {
                 cardEl.style.borderColor = 'rgba(16, 185, 129, 0.6)';
                 cardEl.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.15)';
             }
 
-            const isSaved = state.savedCombinations.some(s => s.numbers.join(',') === numbers.join(','));
+            const isSaved = (state.savedCombinations || []).some(s => s.numbers && s.numbers.join(',') === numbers.join(','));
 
             const purchasedBadgeHtml = isPurchased ? `
                 <span class="badge-purchased-tag" style="background: rgba(16, 185, 129, 0.2); border: 1.5px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 7px; border-radius: 6px; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.35); vertical-align: middle;">
@@ -656,15 +678,15 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
 
             // Build winning history badge & panel HTML
             let winHistoryHtml = '';
-            if (winData.hasWins) {
-                const rankPills = Object.entries(winData.rankCounts)
+            if (winData && winData.hasWins) {
+                const rankPills = Object.entries(winData.rankCounts || {})
                     .filter(([_, cnt]) => cnt > 0)
                     .map(([r, cnt]) => {
                         const color = r === '1' ? '#fbbf24' : r === '2' ? '#60a5fa' : r === '3' ? '#fb923c' : r === '4' ? '#4ade80' : '#cbd5e1';
                         return `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:12px;background:rgba(255,255,255,0.08);border:1px solid ${color};color:${color};font-size:0.75rem;font-weight:700;">${r}등: ${cnt}회</span>`;
                     }).join('');
 
-                const recentWinsStr = winData.winningHistory.slice(0, 3)
+                const recentWinsStr = (winData.winningHistory || []).slice(0, 3)
                     .map(w => `<strong style="color:#fbbf24;">${w.round}회(${w.rankLabel})</strong>`)
                     .join(', ');
 
@@ -677,7 +699,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                                 <span style="font-size: 0.72rem; padding: 1px 6px; border-radius: 10px; background: rgba(245,158,11,0.25); color: #fef08a;">최고 ${winData.topRank}등</span>
                             </div>
                             <div style="font-size: 0.8rem; font-weight: 800; color: #34d399;">
-                                누적 당첨금: +${winData.totalPrize.toLocaleString()}원
+                                누적 당첨금: +${(winData.totalPrize || 0).toLocaleString()}원
                             </div>
                         </div>
                         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-size: 0.76rem; color: #cbd5e1;">
@@ -693,14 +715,19 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
             } else {
                 winHistoryHtml = `
                     <div style="background: rgba(0, 0, 0, 0.25); border: 1px dashed rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 6px 12px; margin-top: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #94a3b8;">
-                        <span><i class="fa-solid fa-chart-pie" style="color: #60a5fa;"></i> 실구매 분석 데이터: <strong>${winData.totalPurchasedRounds > 0 ? `누적 ${winData.totalPurchasedRounds}회차 추적` : '이번 회차 신규 포트폴리오'}</strong></span>
+                        <span><i class="fa-solid fa-chart-pie" style="color: #60a5fa;"></i> 실구매 분석 데이터: <strong>${(winData && winData.totalPurchasedRounds > 0) ? `누적 ${winData.totalPurchasedRounds}회차 추적` : '이번 회차 신규 포트폴리오'}</strong></span>
                         <span style="color: #cbd5e1;">🎯 1~3등 당첨 타겟</span>
                     </div>
                 `;
             }
 
+            const safeProbPct = typeof stats.probBalanceScore === 'number' ? (stats.probBalanceScore / 50 * 100).toFixed(0) : '60';
+            const safeBiasPct = typeof stats.biasAvoidanceScore === 'number' ? (stats.biasAvoidanceScore / 50 * 100).toFixed(0) : '50';
+            const safeWaveIndex = stats.binomialWaveIndex !== undefined ? stats.binomialWaveIndex : 89;
+            const safePayoutMult = stats.payoutMultiplier !== undefined ? stats.payoutMultiplier : '1.00';
+
             cardEl.innerHTML = `
-                <!-- 📱 모바일 컴팩트 요약 행 (기본 보임 → 클릭 시 상세 펼침) -->
+                <!-- 📱 모바일 컴팩트 요약 행 (컴팩트 모드 활성화 시 표시) -->
                 <div class="combo-compact-row" data-index="${index}">
                     <div class="combo-compact-left">
                         <span class="combo-compact-num">#${index + 1}</span>
@@ -710,22 +737,22 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                         ${isPurchased ? `<span class="combo-compact-purchased"><i class="fa-solid fa-circle-check"></i></span>` : ''}
                     </div>
                     <div class="combo-compact-right">
-                        <span class="combo-compact-name">${strat.name}</span>
+                        <span class="combo-compact-name">${strat.name || `조합 #${index + 1}`}</span>
                         <i class="fa-solid fa-chevron-down combo-expand-arrow"></i>
                     </div>
                 </div>
-                <!-- 📂 상세 내용 (모바일 기본 접힘 / 데스크탑 항상 보임) -->
+                <!-- 📂 상세 내용 (기본 항상 표시) -->
                 <div class="combo-detail-section">
                 <div class="combo-header">
                     <div class="combo-title-group">
-                        <span class="rank-badge ${strat.rankClass}">${strat.rankBadge}</span>
+                        <span class="rank-badge ${strat.rankClass || 'top-1-badge'}">${strat.rankBadge || `TOP ${index + 1}`}</span>
                         <div class="combo-title-text-wrap">
                             <div class="combo-name">
-                                <span class="combo-name-title">${strat.name}</span>
-                                <span class="chart-tag">${strat.tag}</span>
+                                <span class="combo-name-title">${strat.name || `추천 조합 #${index + 1}`}</span>
+                                <span class="chart-tag">${strat.tag || 'AI 퀀트'}</span>
                                 ${purchasedBadgeHtml}
                             </div>
-                            <div class="combo-desc">${strat.desc}</div>
+                            <div class="combo-desc">${strat.desc || 'AI 퀀트 확률 모델 추천 번호'}</div>
                         </div>
                     </div>
                     <div class="combo-actions">
@@ -742,11 +769,11 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                         `).join('')}
                     </div>
                     <div class="combo-stats">
-                        <div class="stat-pill"><i class="fa-solid fa-scale-unbalanced-flip"></i> 홀짝 <strong>${stats.oddEvenRatio}</strong></div>
-                        <div class="stat-pill"><i class="fa-solid fa-calculator"></i> 번호합 <strong>${stats.sum}</strong></div>
-                        <div class="stat-pill"><i class="fa-solid fa-arrow-up-1-9"></i> 고번대 <strong>${stats.highCount}개</strong></div>
-                        <div class="stat-pill"><i class="fa-solid fa-code-compare"></i> 이웃수(±1) <strong>${stats.neighborCount}개</strong></div>
-                        <div class="stat-pill ev-score"><i class="fa-solid fa-shield-halved"></i> EV지수 <strong>${stats.evScore}점</strong></div>
+                        <div class="stat-pill"><i class="fa-solid fa-scale-unbalanced-flip"></i> 홀짝 <strong>${stats.oddEvenRatio || '3:3'}</strong></div>
+                        <div class="stat-pill"><i class="fa-solid fa-calculator"></i> 번호합 <strong>${stats.sum || 135}</strong></div>
+                        <div class="stat-pill"><i class="fa-solid fa-arrow-up-1-9"></i> 고번대 <strong>${stats.highCount || 0}개</strong></div>
+                        <div class="stat-pill"><i class="fa-solid fa-code-compare"></i> 이웃수(±1) <strong>${stats.neighborCount || 0}개</strong></div>
+                        <div class="stat-pill ev-score"><i class="fa-solid fa-shield-halved"></i> EV지수 <strong>${stats.evScore || 70}점</strong></div>
                     </div>
                     ${winHistoryHtml}
                 </div>
@@ -763,24 +790,24 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                     </span>
                 </button>
 
-                <!-- 📂 접이식 상세 퀀트 분석 서랍 (기본 접힘: 스마트폰 스크롤 75% 압축) -->
+                <!-- 📂 접이식 상세 퀀트 분석 서랍 (기본 접힘) -->
                 <div class="combo-deep-details-drawer" id="comboDeepDetails-${index}" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.1);">
                     <!-- EV Metric Panel -->
                     <div class="ev-metric-panel">
                         <div class="ev-panel-header">
-                            <div class="ev-main-badge"><i class="fa-solid fa-chart-line-up"></i> 산정 기대가치 (EV Index): <strong>${stats.evScore}점</strong> / 100점</div>
-                            <div class="ev-payout-badge"><i class="fa-solid fa-wave-square"></i> 이항 모멘텀 지수: <strong>${stats.binomialWaveIndex}pt</strong> | 독점 수령: <strong>${stats.payoutMultiplier}배</strong></div>
+                            <div class="ev-main-badge"><i class="fa-solid fa-chart-line-up"></i> 산정 기대가치 (EV Index): <strong>${stats.evScore || 70}점</strong> / 100점</div>
+                            <div class="ev-payout-badge"><i class="fa-solid fa-wave-square"></i> 이항 모멘텀 지수: <strong>${safeWaveIndex}pt</strong> | 독점 수령: <strong>${safePayoutMult}배</strong></div>
                         </div>
                         <div class="ev-breakdown-row">
                             <div class="ev-bar-item">
                                 <span class="ev-bar-label">통계적 출현 수렴도</span>
-                                <div class="ev-bar-track"><div class="ev-bar-fill" style="width: ${(stats.probBalanceScore / 50 * 100).toFixed(0)}%;"></div></div>
-                                <span class="ev-bar-val">${stats.probBalanceScore} / 50pt</span>
+                                <div class="ev-bar-track"><div class="ev-bar-fill" style="width: ${safeProbPct}%;"></div></div>
+                                <span class="ev-bar-val">${stats.probBalanceScore || 32} / 50pt</span>
                             </div>
                             <div class="ev-bar-item">
                                 <span class="ev-bar-label">인지편향 회피 (독점율)</span>
-                                <div class="ev-bar-track"><div class="ev-bar-fill gold-fill" style="width: ${(stats.biasAvoidanceScore / 50 * 100).toFixed(0)}%;"></div></div>
-                                <span class="ev-bar-val">${stats.biasAvoidanceScore} / 50pt</span>
+                                <div class="ev-bar-track"><div class="ev-bar-fill gold-fill" style="width: ${safeBiasPct}%;"></div></div>
+                                <span class="ev-bar-val">${stats.biasAvoidanceScore || 22} / 50pt</span>
                             </div>
                         </div>
                     </div>
@@ -814,13 +841,13 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                         <div class="rationale-header" data-index="${index}">
                             <div class="rationale-title">
                                 <i class="fa-solid fa-square-root-variable"></i>
-                                <span>역대 1~1,234회 전수 분석 확률적 추천 이유 (상세)</span>
-                                <span class="law-tag">${strat.lawName}</span>
+                                <span>역대 전수 분석 확률적 추천 이유 (상세)</span>
+                                <span class="law-tag">${strat.lawName || 'AI 퀀트 전략'}</span>
                             </div>
                             <button class="rationale-toggle-btn"><i class="fa-solid fa-chevron-down"></i></button>
                         </div>
                         <div class="rationale-content" id="rationaleContent-${index}">
-                            <p class="rationale-text"><i class="fa-solid fa-circle-info"></i> ${strat.probRationale}</p>
+                            <p class="rationale-text"><i class="fa-solid fa-circle-info"></i> ${strat.probRationale || '과거 당첨 통계 기반 추천'}</p>
                             
                             <div style="margin: 8px 0; padding-left: 4px;">
                                 <strong style="font-size:0.78rem; color:var(--primary-light);"><i class="fa-solid fa-list-check"></i> 번호별 상세 추출 근거:</strong>
@@ -830,7 +857,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                             </div>
 
                             <div class="rationale-benefit">
-                                <i class="fa-solid fa-bullseye"></i> <strong>기대 목표:</strong> ${strat.targetBenefit}
+                                <i class="fa-solid fa-bullseye"></i> <strong>기대 목표:</strong> ${strat.targetBenefit || '당첨 기댓값 극대화'}
                             </div>
                         </div>
                     </div>
@@ -1005,70 +1032,41 @@ export function attachCardEvents() {
         });
     });
 
-    // ⚡ Master Toggle All Combinations Details (전체 10게임 펼치기/접기)
+    // ⚡ Master Toggle All Combinations (전체 10게임 컴팩트 요약 ↔ 상세 카드 전환)
     const btnToggleAll = document.getElementById('btnToggleAllComboDetails');
     if (btnToggleAll) {
         btnToggleAll.onclick = function() {
-            const allDrawers = document.querySelectorAll('.combo-deep-details-drawer');
-            const allBtns = document.querySelectorAll('.btn-toggle-combo-details');
             const allCards = document.querySelectorAll('#combinationsContainer .combo-card');
             const lblAll = document.getElementById('lblToggleAllText');
-            if (allDrawers.length === 0 && allCards.length === 0) return;
+            const iconAll = btnToggleAll.querySelector('i');
+            if (allCards.length === 0) return;
 
-            // 모바일: 컴팩트 카드 확장 상태 기준으로 판단
-            const isMobile = window.innerWidth <= 768;
-            let hasClosed;
-            if (isMobile) {
-                hasClosed = Array.from(allCards).some(c => !c.classList.contains('combo-card-expanded'));
-            } else {
-                hasClosed = Array.from(allDrawers).some(d => d.style.display === 'none' || !d.style.display);
-            }
-            const targetState = hasClosed ? 'block' : 'none';
+            const isAnyFull = Array.from(allCards).some(c => !c.classList.contains('is-compact'));
 
-            // 모바일: 컴팩트 카드 expand/collapse
-            if (isMobile) {
-                allCards.forEach((card, cIdx) => {
-                    const row = card.querySelector('.combo-compact-row');
-                    const arrow = row ? row.querySelector('.combo-expand-arrow') : null;
-                    if (targetState === 'block') {
-                        card.classList.add('combo-card-expanded');
-                        if (arrow) arrow.style.transform = 'rotate(180deg)';
-                    } else {
-                        card.classList.remove('combo-card-expanded');
-                        if (arrow) arrow.style.transform = 'rotate(0deg)';
-                    }
+            if (isAnyFull) {
+                // Switch all to compact view
+                allCards.forEach(c => {
+                    c.classList.add('is-compact');
+                    c.classList.remove('combo-card-expanded');
+                    const arrow = c.querySelector('.combo-expand-arrow');
+                    if (arrow) arrow.style.transform = 'rotate(0deg)';
                 });
-            }
-
-            allDrawers.forEach((drawer, dIdx) => {
-                drawer.style.display = targetState;
-                const btn = allBtns[dIdx];
-                if (btn) {
-                    const lbl = btn.querySelector('.lbl-toggle');
-                    const arrow = btn.querySelector('.toggle-arrow');
-                    if (targetState === 'block') {
-                        if (lbl) lbl.textContent = '상세 분석 접기';
-                        if (arrow) arrow.style.transform = 'rotate(180deg)';
-                        btn.style.background = 'rgba(251, 191, 36, 0.08)';
-                        btn.style.borderColor = 'rgba(251, 191, 36, 0.4)';
-                    } else {
-                        if (lbl) lbl.textContent = '상세 분석 보기';
-                        if (arrow) arrow.style.transform = 'rotate(0deg)';
-                        btn.style.background = 'rgba(255, 255, 255, 0.03)';
-                        btn.style.borderColor = 'rgba(255, 255, 255, 0.18)';
-                    }
-                }
-            });
-
-            if (lblAll) {
-                lblAll.textContent = targetState === 'block' ? '전체 10게임 상세 접기' : '전체 10게임 상세 펼치기';
-            }
-
-            if (targetState === 'block') {
-                const combos = state.fixedTop5Combinations || [];
-                setTimeout(() => {
-                    combos.forEach((c, idx) => renderSingleComboChart(idx, c));
-                }, 40);
+                if (lblAll) lblAll.textContent = '전체 10게임 상세 펼치기';
+                if (iconAll) iconAll.className = 'fa-solid fa-layer-group';
+                btnToggleAll.style.background = 'rgba(56, 189, 248, 0.12)';
+                btnToggleAll.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+                btnToggleAll.style.color = '#38bdf8';
+            } else {
+                // Switch all to full cards view
+                allCards.forEach(c => {
+                    c.classList.remove('is-compact');
+                    c.classList.remove('combo-card-expanded');
+                });
+                if (lblAll) lblAll.textContent = '컴팩트 요약 보기';
+                if (iconAll) iconAll.className = 'fa-solid fa-compress';
+                btnToggleAll.style.background = 'rgba(251, 191, 36, 0.12)';
+                btnToggleAll.style.borderColor = 'rgba(251, 191, 36, 0.4)';
+                btnToggleAll.style.color = '#fbbf24';
             }
         };
     }

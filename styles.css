@@ -12325,12 +12325,12 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 
 /* ==========================================================================
-   📱 모바일 추천번호 컴팩트 뷰 (많은 조합을 한 화면에!)
+   📱 모바일 추천번호 컴팩트 뷰 (토글 지원)
    ========================================================================== */
 
-/* 컴팩트 요약 행 — 항상 표시 */
+/* 컴팩트 요약 행 — 컴팩트 모드일 때만 표시 */
 .combo-compact-row {
-    display: none; /* 데스크탑에서는 숨김 */
+    display: none;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
@@ -12349,10 +12349,10 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 
 .combo-compact-num {
-    font-size: 0.7rem;
+    font-size: 0.72rem;
     font-weight: 800;
     color: #64748b;
-    min-width: 22px;
+    min-width: 24px;
     flex-shrink: 0;
 }
 
@@ -12407,47 +12407,84 @@ body.is-admin .btn-snapshot-audit-compact {
     flex-shrink: 0;
 }
 
-/* 상세 내용 섹션 */
+/* 상세 내용 섹션 — 기본 항상 표시 */
 .combo-detail-section {
-    /* 데스크탑: 항상 표시 */
+    display: block;
+}
+
+/* 컴팩트 뷰 활성화 시 (.is-compact) */
+.combo-card.is-compact {
+    padding: 8px 12px !important;
+}
+
+.combo-card.is-compact .combo-compact-row {
+    display: flex;
+}
+
+.combo-card.is-compact .combo-detail-section {
+    display: none;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255,255,255,0.08);
+    animation: comboSlideDown 0.2s ease;
+}
+
+/* 컴팩트 뷰에서 개별 펼침 */
+.combo-card.is-compact.combo-card-expanded .combo-detail-section {
+    display: block;
+}
+
+.combo-card.is-compact.combo-card-expanded .combo-compact-row {
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 /* ==========================================
-   모바일 전용 (≤768px): 컴팩트 뷰 활성화
+   모바일 전용 (≤768px): 기본 전체 카드 최적화
    ========================================== */
 @media (max-width: 768px) {
-    /* 카드 기본 상태: 컴팩트 행만 보이도록 */
-    .combo-compact-row {
-        display: flex;
-    }
-
-    .combo-detail-section {
-        display: none;
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px dashed rgba(255,255,255,0.08);
-        animation: comboSlideDown 0.2s ease;
-    }
-
-    /* 펼쳐진 카드 */
-    .combo-card-expanded .combo-detail-section {
-        display: block;
-    }
-
-    .combo-card-expanded .combo-compact-row {
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-        padding-bottom: 8px;
-        margin-bottom: 4px;
-    }
-
-    /* 컴팩트 카드 패딩 줄이기 */
     .combo-card {
-        padding: 8px 10px !important;
+        padding: 14px 14px !important;
+        border-radius: 12px;
     }
 
-    /* 카드 사이 간격 줄이기 */
     #combinationsContainer .combo-card + .combo-card {
-        margin-top: 6px;
+        margin-top: 10px;
+    }
+
+    .combo-header {
+        padding-bottom: 8px;
+        margin-bottom: 10px;
+    }
+
+    .combo-name-title {
+        font-size: 0.92rem;
+    }
+
+    .combo-desc {
+        font-size: 0.72rem;
+    }
+
+    .combo-body .balls-row {
+        gap: 6px;
+        justify-content: space-between;
+    }
+
+    .combo-body .lotto-ball {
+        width: 36px;
+        height: 36px;
+        font-size: 0.92rem;
+    }
+
+    .combo-stats {
+        gap: 4px;
+        margin-top: 8px;
+    }
+
+    .stat-pill {
+        font-size: 0.7rem;
+        padding: 3px 7px;
     }
 }
 
