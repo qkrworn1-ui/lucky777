@@ -1866,7 +1866,6 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('window.closeDonghangVerifyModal = closeDonghangVerifyModal', code)
         self.assertIn('window.handleDonghangVerifyClick = handleDonghangVerifyClick', code)
         self.assertIn('data-qr-url="${safeEncodedQrUrl}"', code)
-        self.assertIn("history.pushState({ modal: 'donghangVerify' }", code)
         # Ensure GPU-crashing backdrop-filter blur is removed from donghang verify modal
         modal_code = code[code.find('function openDonghangVerifyModal'):]
         self.assertNotIn("backdrop-filter: blur", modal_code)

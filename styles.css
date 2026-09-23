@@ -16479,3 +16479,139 @@ body.is-admin .btn-snapshot-audit-compact {
 .verify-ball-dim {
     opacity: 0.45;
 }
+
+/* ==========================================================
+   QR PURCHASE REGISTRATION MODAL MODERN UI / UX
+   ========================================================== */
+@keyframes qrScanLaser {
+    0% { top: 8%; opacity: 0.8; }
+    50% { top: 92%; opacity: 1; }
+    100% { top: 8%; opacity: 0.8; }
+}
+
+.qr-scanner-laser {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #10b981 20%, #34d399 50%, #10b981 80%, transparent);
+    box-shadow: 0 0 14px #34d399, 0 0 6px #10b981;
+    animation: qrScanLaser 2.4s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.qr-viewfinder-target {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    border: 1px dashed rgba(52, 211, 153, 0.4);
+    border-radius: 14px;
+    pointer-events: none;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+}
+
+.qr-bracket-tl {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    width: 24px;
+    height: 24px;
+    border-top: 3.5px solid #34d399;
+    border-left: 3.5px solid #34d399;
+    border-top-left-radius: 8px;
+}
+.qr-bracket-tr {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 24px;
+    height: 24px;
+    border-top: 3.5px solid #34d399;
+    border-right: 3.5px solid #34d399;
+    border-top-right-radius: 8px;
+}
+.qr-bracket-bl {
+    position: absolute;
+    bottom: -2px;
+    left: -2px;
+    width: 24px;
+    height: 24px;
+    border-bottom: 3.5px solid #34d399;
+    border-left: 3.5px solid #34d399;
+    border-bottom-left-radius: 8px;
+}
+.qr-bracket-br {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 24px;
+    height: 24px;
+    border-bottom: 3.5px solid #34d399;
+    border-right: 3.5px solid #34d399;
+    border-bottom-right-radius: 8px;
+}
+
+.ball-mini {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-weight: 800;
+    font-size: 0.76rem;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    flex-shrink: 0;
+    font-family: inherit;
+}
+.ball-mini.ball-yellow { background: linear-gradient(135deg, #fcd34d, #f59e0b); color: #0f172a; border: 1px solid #fef08a; }
+.ball-mini.ball-blue   { background: linear-gradient(135deg, #60a5fa, #2563eb); color: #ffffff; border: 1px solid #93c5fd; }
+.ball-mini.ball-red    { background: linear-gradient(135deg, #f87171, #dc2626); color: #ffffff; border: 1px solid #fca5a5; }
+.ball-mini.ball-gray   { background: linear-gradient(135deg, #94a3b8, #475569); color: #ffffff; border: 1px solid #cbd5e1; }
+.ball-mini.ball-green  { background: linear-gradient(135deg, #34d399, #059669); color: #ffffff; border: 1px solid #6ee7b7; }
+
+.digital-receipt-card {
+    background: #020617;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.receipt-game-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 8px;
+}
+
+.receipt-game-badge {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: rgba(30, 41, 59, 0.9);
+    color: #e2e8f0;
+    font-weight: 900;
+    font-size: 0.72rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+

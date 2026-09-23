@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { showToast, getDrawDateByRound } from '../../../shared/utils.js';
+import { showToast, getDrawDateByRound, getBallColorClass } from '../../../shared/utils.js';
 import { getLedger, saveToLedger, parseDonghangLotteryQrUrl, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
 import { SafeAuth, getUserRealName, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { renderReviewTab, renderReviewDetail } from './review-tab.js';
@@ -52,6 +52,91 @@ export function syncLedgerDateGuide(roundVal) {
 }
 
 /**
+ * 🧾 Renders Visual Digital Lotto Receipt Card with games A~E and ball badges
+ */
+export function renderDigitalReceiptCard(round, parsedCombos, check, serial) {
+    const previewContainer = document.getElementById('qrScannedReceiptPreview');
+    const gamesList = document.getElementById('receiptGamesList');
+    const roundTag = document.getElementById('cardRoundTag');
+    const dateTag = document.getElementById('cardDrawDateTag');
+    const serialTag = document.getElementById('cardSerialTag');
+    const totalAmountTag = document.getElementById('cardTotalAmountTag');
+    const subtitleTag = document.getElementById('receiptSummarySubtitle');
+    const saveBtnText = document.getElementById('btnSaveManualLedgerText');
+    const qrScannerContainer = document.getElementById('qrScannerContainer');
+
+    if (!previewContainer || !gamesList) return;
+
+    if (!Array.isArray(parsedCombos) || parsedCombos.length === 0) {
+        previewContainer.style.display = 'none';
+        if (saveBtnText) saveBtnText.textContent = '실구매 등록하기';
+        return;
+    }
+
+    // Hide camera viewfinder when receipt is rendered
+    if (qrScannerContainer) {
+        qrScannerContainer.style.display = 'none';
+    }
+
+    const drawDate = getDrawDateByRound(round);
+    if (roundTag) roundTag.textContent = `제 ${round}회`;
+    if (dateTag) dateTag.textContent = drawDate ? `추첨일: ${drawDate} (토)` : `추첨일: 미정`;
+    
+    // Format Serial
+    const rawSerial = String(serial || `${String(round).padStart(4, '0')}00000014142041`);
+    const formattedSerial = rawSerial.length > 8 
+        ? `TR-${rawSerial.substring(0, 4)}-${rawSerial.substring(rawSerial.length - 8)}`
+        : `TR-${rawSerial}`;
+    if (serialTag) serialTag.textContent = formattedSerial;
+
+    const gameLetters = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+
+    const gamesHtml = parsedCombos.map((combo, idx) => {
+        const letter = gameLetters[idx] || String(idx + 1);
+        const matchDetail = (check && check.matchDetails) ? check.matchDetails[idx] : null;
+
+        let badgeHtml = '';
+        if (matchDetail && matchDetail.isExact) {
+            if (matchDetail.matchedVersion.includes('추가')) {
+                badgeHtml = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #a7f3d0; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
+            } else if (matchDetail.matchedVersion.includes('V4.0')) {
+                badgeHtml = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
+            } else {
+                badgeHtml = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fef08a; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
+            }
+        } else {
+            badgeHtml = `<span style="background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.6rem;"></i> 수동</span>`;
+        }
+
+        const ballsHtml = combo.map(n => {
+            const colorClass = (typeof getBallColorClass === 'function') ? getBallColorClass(n) : 'ball-yellow';
+            return `<span class="ball-mini ${colorClass}">${n}</span>`;
+        }).join('');
+
+        return `
+            <div class="receipt-game-row">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                    <span class="receipt-game-badge">${letter}</span>
+                    <div style="display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto;">
+                        ${ballsHtml}
+                    </div>
+                </div>
+                ${badgeHtml}
+            </div>
+        `;
+    }).join('');
+
+    gamesList.innerHTML = gamesHtml;
+
+    const totalAmount = parsedCombos.length * 1000;
+    if (totalAmountTag) totalAmountTag.textContent = `${totalAmount.toLocaleString()} 원`;
+    if (subtitleTag) subtitleTag.textContent = `${parsedCombos.length}개 게임 (${totalAmount.toLocaleString()}원) · AI 추천 일치 확인`;
+    if (saveBtnText) saveBtnText.textContent = `실구매 등록하기 (+${totalAmount.toLocaleString()}원)`;
+
+    previewContainer.style.display = 'flex';
+}
+
+/**
  * Updates the modal UI with real-time AI version detection
  */
 export function updateManualModalCrossCheck() {
@@ -59,14 +144,16 @@ export function updateManualModalCrossCheck() {
     const combosInput = document.getElementById('manualLedgerCombos');
     const versionSelect = document.getElementById('manualLedgerVersion');
     const resultBox = document.getElementById('manualLedgerAiCheckResult');
+    const previewContainer = document.getElementById('qrScannedReceiptPreview');
 
-    if (!roundInput || !combosInput || !versionSelect || !resultBox) return;
+    if (!roundInput || !combosInput || !versionSelect) return;
 
     const round = parseInt(roundInput.value.trim());
     const text = combosInput.value.trim();
 
     if (!round || isNaN(round) || !text) {
-        resultBox.style.display = 'none';
+        if (resultBox) resultBox.style.display = 'none';
+        if (previewContainer) previewContainer.style.display = 'none';
         return;
     }
 
@@ -75,12 +162,13 @@ export function updateManualModalCrossCheck() {
     lines.forEach(l => {
         const nums = l.replace(/,/g, ' ').split(/\s+/).map(Number).filter(n => !isNaN(n) && n >= 1 && n <= 45);
         if (nums.length === 6) {
-            parsedCombos.push(nums);
+            parsedCombos.push(nums.sort((a,b) => a - b));
         }
     });
 
     if (parsedCombos.length === 0) {
-        resultBox.style.display = 'none';
+        if (resultBox) resultBox.style.display = 'none';
+        if (previewContainer) previewContainer.style.display = 'none';
         return;
     }
 
@@ -95,6 +183,9 @@ export function updateManualModalCrossCheck() {
 
     // Auto-select detected version in dropdown
     versionSelect.value = check.detectedVersion;
+
+    const serial = combosInput.dataset.qrSerial || `${String(round).padStart(4, '0')}00000014142041`;
+    renderDigitalReceiptCard(round, parsedCombos, check, serial);
 
     // Badges HTML for each game (1개라도 틀리면 수동입력)
     const pillsHtml = check.matchDetails.map((d, i) => {
@@ -112,102 +203,104 @@ export function updateManualModalCrossCheck() {
     }).join('');
 
     // Render feedback notice
-    resultBox.style.display = 'block';
-    if (check.extraMatchCount > 0 && check.extraMatchCount >= check.v4MatchCount && check.extraMatchCount >= check.v3MatchCount) {
-        resultBox.style.background = 'linear-gradient(135deg, rgba(16,185,129,0.18), rgba(5,150,105,0.18))';
-        resultBox.style.border = '1px solid rgba(16,185,129,0.45)';
-        resultBox.style.color = '#a7f3d0';
-        resultBox.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-rocket" style="color: #34d399; font-size: 1.1rem;"></i>
-                    <div>
-                        <span style="color:#6ee7b7; font-weight:800;">🚀 AI 크로스체크: ${check.detectedVersion} 감지</span>
-                        <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
-                            ${check.summaryMessage}
+    if (resultBox) {
+        resultBox.style.display = 'block';
+        if (check.extraMatchCount > 0 && check.extraMatchCount >= check.v4MatchCount && check.extraMatchCount >= check.v3MatchCount) {
+            resultBox.style.background = 'linear-gradient(135deg, rgba(16,185,129,0.18), rgba(5,150,105,0.18))';
+            resultBox.style.border = '1px solid rgba(16,185,129,0.45)';
+            resultBox.style.color = '#a7f3d0';
+            resultBox.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-rocket" style="color: #34d399; font-size: 1.1rem;"></i>
+                        <div>
+                            <span style="color:#6ee7b7; font-weight:800;">🚀 AI 크로스체크: ${check.detectedVersion} 감지</span>
+                            <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
+                                ${check.summaryMessage}
+                            </div>
                         </div>
                     </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1);">
+                        ${pillsHtml}
+                    </div>
                 </div>
-                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1);">
-                    ${pillsHtml}
-                </div>
-            </div>
-        `;
-    } else if (check.v4MatchCount > 0 && check.v4MatchCount >= check.v3MatchCount) {
-        resultBox.style.background = 'linear-gradient(135deg, rgba(139,92,246,0.18), rgba(99,102,241,0.18))';
-        resultBox.style.border = '1px solid rgba(139,92,246,0.45)';
-        resultBox.style.color = '#ddd6fe';
-        resultBox.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-brain" style="color: #a78bfa; font-size: 1.1rem;"></i>
-                    <div>
-                        <span style="color:#c4b5fd; font-weight:800;">🧠 AI 크로스체크: V4.0 행동경제학 포트폴리오 감지</span>
-                        <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
-                            ${check.summaryMessage}
+            `;
+        } else if (check.v4MatchCount > 0 && check.v4MatchCount >= check.v3MatchCount) {
+            resultBox.style.background = 'linear-gradient(135deg, rgba(139,92,246,0.18), rgba(99,102,241,0.18))';
+            resultBox.style.border = '1px solid rgba(139,92,246,0.45)';
+            resultBox.style.color = '#ddd6fe';
+            resultBox.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-brain" style="color: #a78bfa; font-size: 1.1rem;"></i>
+                        <div>
+                            <span style="color:#c4b5fd; font-weight:800;">🧠 AI 크로스체크: V4.0 행동경제학 포트폴리오 감지</span>
+                            <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
+                                ${check.summaryMessage}
+                            </div>
                         </div>
                     </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1);">
+                        ${pillsHtml}
+                    </div>
                 </div>
-                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1);">
-                    ${pillsHtml}
-                </div>
-            </div>
-        `;
-    } else if (check.v3MatchCount > 0) {
-        resultBox.style.background = 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.18))';
-        resultBox.style.border = '1px solid rgba(245,158,11,0.45)';
-        resultBox.style.color = '#fef08a';
-        resultBox.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:6px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-bolt" style="color: #fbbf24; font-size: 1.1rem;"></i>
-                    <div>
-                        <span style="color:#fde047; font-weight:800;">⚡ AI 크로스체크: V3.0 하이브리드 알고리즘 감지</span>
-                        <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
-                            ${check.summaryMessage}
+            `;
+        } else if (check.v3MatchCount > 0) {
+            resultBox.style.background = 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.18))';
+            resultBox.style.border = '1px solid rgba(245,158,11,0.45)';
+            resultBox.style.color = '#fef08a';
+            resultBox.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-bolt" style="color: #fbbf24; font-size: 1.1rem;"></i>
+                        <div>
+                            <span style="color:#fde047; font-weight:800;">⚡ AI 크로스체크: V3.0 하이브리드 알고리즘 감지</span>
+                            <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
+                                ${check.summaryMessage}
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1);">
-                    ${pillsHtml}
-                </div>
-            </div>
-        `;
-    } else if (check.isLegacyRound) {
-        resultBox.style.background = 'rgba(148, 163, 184, 0.12)';
-        resultBox.style.border = '1px solid rgba(148, 163, 184, 0.3)';
-        resultBox.style.color = '#cbd5e1';
-        resultBox.innerHTML = `
-            <div style="display:flex; align-items:center; gap:8px;">
-                <i class="fa-solid fa-clock-rotate-left" style="color: #94a3b8; font-size: 1rem;"></i>
-                <div>
-                    <span style="font-weight:700;">📝 과거 회차 직접 등록</span>
-                    <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">
-                        ${check.summaryMessage}
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1);">
+                        ${pillsHtml}
                     </div>
                 </div>
-            </div>
-        `;
-    } else {
-        resultBox.style.background = 'rgba(148, 163, 184, 0.12)';
-        resultBox.style.border = '1px solid rgba(148, 163, 184, 0.3)';
-        resultBox.style.color = '#cbd5e1';
-        resultBox.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:6px;">
+            `;
+        } else if (check.isLegacyRound) {
+            resultBox.style.background = 'rgba(148, 163, 184, 0.12)';
+            resultBox.style.border = '1px solid rgba(148, 163, 184, 0.3)';
+            resultBox.style.color = '#cbd5e1';
+            resultBox.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <i class="fa-solid fa-pen-nib" style="color: #94a3b8; font-size: 1rem;"></i>
+                    <i class="fa-solid fa-clock-rotate-left" style="color: #94a3b8; font-size: 1rem;"></i>
                     <div>
-                        <span style="font-weight:700;">📝 수동입력 구매</span>
+                        <span style="font-weight:700;">📝 과거 회차 직접 등록</span>
                         <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">
                             ${check.summaryMessage}
                         </div>
                     </div>
                 </div>
-                <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1);">
-                    ${pillsHtml}
+            `;
+        } else {
+            resultBox.style.background = 'rgba(148, 163, 184, 0.12)';
+            resultBox.style.border = '1px solid rgba(148, 163, 184, 0.3)';
+            resultBox.style.color = '#cbd5e1';
+            resultBox.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-pen-nib" style="color: #94a3b8; font-size: 1rem;"></i>
+                        <div>
+                            <span style="font-weight:700;">📝 수동입력 구매</span>
+                            <div style="font-size:0.75rem; color:#94a3b8; margin-top:2px;">
+                                ${check.summaryMessage}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-top:4px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1);">
+                        ${pillsHtml}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
     }
 }
 
@@ -374,6 +467,10 @@ export async function startLottoQrScanner() {
 
     const qrScannerContainer = document.getElementById('qrScannerContainer');
     const qrReader = document.getElementById('qrReader');
+    const previewContainer = document.getElementById('qrScannedReceiptPreview');
+    if (previewContainer) {
+        previewContainer.style.display = 'none';
+    }
     if (!qrReader) {
         isStartingScanner = false;
         return;
@@ -942,6 +1039,14 @@ export function openManualLedgerModal() {
             combosInput.dataset.qrRawUrl = '';
             combosInput.dataset.qrSerial = '';
         }
+        const previewContainer = document.getElementById('qrScannedReceiptPreview');
+        if (previewContainer) {
+            previewContainer.style.display = 'none';
+        }
+        const saveBtnText = document.getElementById('btnSaveManualLedgerText');
+        if (saveBtnText) {
+            saveBtnText.textContent = '실구매 등록하기';
+        }
         // 👑 [Master / 관리자 전용] 대리 QR구매등록 회원 선택기 동적 렌더링
         let currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '').toLowerCase().trim();
         if (!currentAuthId && typeof window !== 'undefined') {
@@ -1037,6 +1142,7 @@ if (typeof window !== 'undefined') {
     window.handleSaveManualLedger = handleSaveManualLedger;
     window.crossCheckCombosWithRecommendations = crossCheckCombosWithRecommendations;
     window.updateManualModalCrossCheck = updateManualModalCrossCheck;
+    window.renderDigitalReceiptCard = renderDigitalReceiptCard;
     window.startLottoQrScanner = startLottoQrScanner;
     window.stopScanning = stopScanning;
     window.stopLottoScanning = stopScanning;

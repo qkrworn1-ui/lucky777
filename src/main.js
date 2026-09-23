@@ -12,7 +12,7 @@ function _closeAnyActiveModal() {
     const donghangModal = document.getElementById('donghangVerifyModal');
     if (donghangModal && (donghangModal.classList.contains('active') || donghangModal.style.display === 'flex')) {
         if (typeof window.closeDonghangVerifyModal === 'function') {
-            window.closeDonghangVerifyModal(true);
+            window.closeDonghangVerifyModal();
         } else {
             donghangModal.classList.remove('active');
             donghangModal.style.display = 'none';

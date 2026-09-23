@@ -2398,36 +2398,15 @@ export function openDonghangVerifyModal(url) {
     modal.classList.add('active');
     modal.style.display = 'flex';
     if (document.body) document.body.style.overflow = 'hidden';
-
-    // Mobile back navigation history push (Deferred to prevent rendering block)
-    if (typeof history !== 'undefined' && history.pushState) {
-        setTimeout(() => {
-            try {
-                history.pushState({ modal: 'donghangVerify' }, '', window.location.hash);
-                modal._historyPushed = true;
-            } catch(e) {}
-        }, 10);
-    }
 }
 
-export function closeDonghangVerifyModal(fromPopState = false) {
+export function closeDonghangVerifyModal() {
     if (typeof document === 'undefined') return;
     const modal = document.getElementById('donghangVerifyModal');
     if (!modal) return;
     modal.classList.remove('active');
     modal.style.display = 'none';
     if (document.body) document.body.style.overflow = '';
-
-    if (!fromPopState && modal._historyPushed) {
-        modal._historyPushed = false;
-        try {
-            if (history.state && history.state.modal === 'donghangVerify') {
-                history.back();
-            }
-        } catch(e) {}
-    } else {
-        modal._historyPushed = false;
-    }
 }
 
 export function handleDonghangVerifyClick(btn) {
