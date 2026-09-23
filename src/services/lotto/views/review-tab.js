@@ -266,8 +266,13 @@ export function clearUser70ReviewCache() {
         }
         keysToRemove.forEach(k => localStorage.removeItem(k));
     } catch(e) {}
-    if (typeof window !== 'undefined' && typeof window.clearAlgoPerfCache === 'function') {
-        try { window.clearAlgoPerfCache(); } catch(e) {}
+    if (typeof window !== 'undefined') {
+        if (typeof window.clearAlgoPerfCache === 'function') {
+            try { window.clearAlgoPerfCache(); } catch(e) {}
+        }
+        if (typeof window.clearHomeReviewDashboardCache === 'function') {
+            try { window.clearHomeReviewDashboardCache(); } catch(e) {}
+        }
     }
 }
 if (typeof window !== 'undefined') {

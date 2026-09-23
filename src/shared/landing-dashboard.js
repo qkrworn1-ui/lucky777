@@ -50,13 +50,19 @@ export async function renderLandingDashboard() {
         else displayName = authId;
     }
 
-    // 1. Calculate Individual Logged-in User's Actual Lotto Financials
+    // 0. Update Service Cards Access Permission Badges & Counters IMMEDIATELY (0ms perception)
+    updateHomeServiceCardsPermissions();
+    updateMobileDdayBadge();
+    updateDrawCountdownBanner();
+
+    if (typeof window.updatePurchaseDeadlineCountdowns === 'function') {
+        try { window.updatePurchaseDeadlineCountdowns(); } catch(e){}
+    }
+
+    // 1. Calculate Individual Logged-in User's Actual Lotto Financials (Synchronous 0ms)
     const myFin = calculateLedgerFinancials(true, 'my');
 
-    // 2. Calculate All Registered Users' Aggregate Lotto Financials
-    const allFin = await calculateAllUsersTotalFinancials();
-
-    // 3. Update Header Financial Summary KPI Elements (My Portfolio)
+    // Update Header Financial Summary KPI Elements (My Portfolio)
     const elInvest = document.getElementById('lp-total-invest');
     const elPrize = document.getElementById('lp-total-prize');
     const elProfit = document.getElementById('lp-total-profit');
@@ -105,7 +111,6 @@ export async function renderLandingDashboard() {
             elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> 5등 2건 (총 10,000원)`;
         }
     }
-    updateMobileDdayBadge();
 
     // 4. Update Card 1: My Actual Lotto Winning Summary (👤 나의 실구매 당첨 실적)
     const elMyTitle = document.getElementById('lp-my-lotto-title');
@@ -147,57 +152,47 @@ export async function renderLandingDashboard() {
         }
     }
 
-    // 5. Update Card 2: All Users Actual Lotto Winning Summary (🌐 전체 회원 실구매 실적)
-    const elAllSub = document.getElementById('lp-toto-mini-sub');
-    const elAllPrize = document.getElementById('lp-toto-mini-prize');
-    const elAllHits = document.getElementById('lp-toto-mini-hits');
+    // 5. Non-Blocking Concurrent Background Computations: All Users Aggregate + Review Dashboard + Ticker
+    Promise.allSettled([
+        calculateAllUsersTotalFinancials().then(allFin => {
+            const elAllSub = document.getElementById('lp-toto-mini-sub');
+            const elAllPrize = document.getElementById('lp-toto-mini-prize');
+            const elAllHits = document.getElementById('lp-toto-mini-hits');
 
-    if (elAllSub) {
-        elAllSub.textContent = allFin.totalCombos > 0 
-            ? `총 ${allFin.totalCombos.toLocaleString()}게임 (${allFin.totalInvest.toLocaleString()}원)`
-            : '0게임 (0원)';
-    }
-    if (elAllPrize) {
-        elAllPrize.textContent = `총 당첨 ${allFin.totalPrize.toLocaleString()}원`;
-        elAllPrize.style.color = allFin.totalPrize > 0 ? '#fbbf24' : '#cbd5e1';
-    }
-    if (elAllHits) {
-        if (allFin.totalCombos > 0) {
-            if (allFin.totalWins > 0) {
-                const ranksArr = [];
-                if (allFin.hits[0] > 0) ranksArr.push(`1등 ${allFin.hits[0]}`);
-                if (allFin.hits[1] > 0) ranksArr.push(`2등 ${allFin.hits[1]}`);
-                if (allFin.hits[2] > 0) ranksArr.push(`3등 ${allFin.hits[2]}`);
-                if (allFin.hits[3] > 0) ranksArr.push(`4등 ${allFin.hits[3]}`);
-                if (allFin.hits[4] > 0) ranksArr.push(`5등 ${allFin.hits[4]}`);
-                elAllHits.textContent = `전체 ${allFin.totalWins}건 적중 (${ranksArr.join(', ')})`;
-                elAllHits.style.color = '#38bdf8';
-            } else {
-                elAllHits.textContent = '당첨 내역 없음';
-                elAllHits.style.color = '#94a3b8';
+            if (elAllSub) {
+                elAllSub.textContent = allFin.totalCombos > 0 
+                    ? `총 ${allFin.totalCombos.toLocaleString()}게임 (${allFin.totalInvest.toLocaleString()}원)`
+                    : '0게임 (0원)';
             }
-        } else {
-            elAllHits.textContent = '등록된 실구매 내역 없음';
-            elAllHits.style.color = '#64748b';
-        }
-    }
+            if (elAllPrize) {
+                elAllPrize.textContent = `총 당첨 ${allFin.totalPrize.toLocaleString()}원`;
+                elAllPrize.style.color = allFin.totalPrize > 0 ? '#fbbf24' : '#cbd5e1';
+            }
+            if (elAllHits) {
+                if (allFin.totalCombos > 0) {
+                    if (allFin.totalWins > 0) {
+                        const ranksArr = [];
+                        if (allFin.hits[0] > 0) ranksArr.push(`1등 ${allFin.hits[0]}`);
+                        if (allFin.hits[1] > 0) ranksArr.push(`2등 ${allFin.hits[1]}`);
+                        if (allFin.hits[2] > 0) ranksArr.push(`3등 ${allFin.hits[2]}`);
+                        if (allFin.hits[3] > 0) ranksArr.push(`4등 ${allFin.hits[3]}`);
+                        if (allFin.hits[4] > 0) ranksArr.push(`5등 ${allFin.hits[4]}`);
+                        elAllHits.textContent = `전체 ${allFin.totalWins}건 적중 (${ranksArr.join(', ')})`;
+                        elAllHits.style.color = '#38bdf8';
+                    } else {
+                        elAllHits.textContent = '당첨 내역 없음';
+                        elAllHits.style.color = '#94a3b8';
+                    }
+                } else {
+                    elAllHits.textContent = '등록된 실구매 내역 없음';
+                    elAllHits.style.color = '#64748b';
+                }
+            }
+        }),
+        updateHomeReviewDashboard(),
+        updateHomeWinningTicker()
+    ]).catch(e => console.warn('[Landing BG Compute Note]', e));
 
-    // 6. Update All Members AI Recommendation Review Dashboard (🔮 전체 회원 추천 당첨 결과 실적)
-    await updateHomeReviewDashboard();
-
-    // 7. Update Real-Purchase Winning Ticker Bar (🏆 실구매 영수증 기반 당첨 속보)
-    await updateHomeWinningTicker();
-
-    // 8. Update Weekly Purchase Deadline Countdown Banner
-    if (typeof window.updatePurchaseDeadlineCountdowns === 'function') {
-        try { window.updatePurchaseDeadlineCountdowns(); } catch(e){}
-    }
-
-    // 9. Update Saturday 21:00 Lotto Winning Draw Countdown Banner (🎯 당첨번호 추첨 카운트다운)
-    updateDrawCountdownBanner();
-
-    // 10. Update Service Cards Access Permission Badges
-    updateHomeServiceCardsPermissions();
     } finally {
         if (typeof window !== 'undefined') {
             window.__isRenderingDashboard = false;
@@ -281,34 +276,25 @@ export function updateHomeServiceCardsPermissions() {
     }
 }
 
+let _homeReviewDashboardCache = null;
+let _homeReviewDashboardCacheTime = 0;
+
+export function clearHomeReviewDashboardCache() {
+    _homeReviewDashboardCache = null;
+    _homeReviewDashboardCacheTime = 0;
+}
+if (typeof window !== 'undefined') {
+    window.clearHomeReviewDashboardCache = clearHomeReviewDashboardCache;
+}
+
 /**
  * 🔮 Calculate & Render All Registered Members' AI Recommendation (70 Games) Review History on Home Screen
  */
-export async function updateHomeReviewDashboard() {
+export async function updateHomeReviewDashboard(forceRefresh = false) {
     try {
         if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
             if (typeof initHistory === 'function') initHistory();
             else if (typeof LOTTO_HISTORY !== 'undefined') state.mergedHistory = { ...LOTTO_HISTORY };
-        }
-
-        // 1. Synchronously pre-load cached users list if in-memory list is empty
-        if (!state.allRegisteredUsersList || !Array.isArray(state.allRegisteredUsersList) || state.allRegisteredUsersList.length === 0) {
-            try {
-                const raw = localStorage.getItem('lotto_all_users_list_cache');
-                if (raw) {
-                    const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        state.allRegisteredUsersList = parsed;
-                    }
-                }
-            } catch(e) {}
-        }
-
-        // 2. Asynchronously fetch full users and purchases from Firestore if not yet loaded
-        if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0 || !state.allUsersPurchasesMap) {
-            if (typeof fetchAllUsersPurchases === 'function') {
-                await fetchAllUsersPurchases();
-            }
         }
 
         const history = state.mergedHistory || {};
@@ -323,59 +309,109 @@ export async function updateHomeReviewDashboard() {
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);
 
-        let perf = null;
-        if (typeof calculate7AlgorithmsPerformance === 'function') {
-            perf = calculate7AlgorithmsPerformance(fromRound, 'all');
-        } else if (typeof window !== 'undefined' && window.calculate7AlgorithmsPerformance) {
-            perf = window.calculate7AlgorithmsPerformance(fromRound, 'all');
-        }
+        const roundRangeLabel = `제 ${fromRound}~${maxRound}회차 누적`;
 
-        let grandRank1 = 0;
-        let grandRank2 = 0;
-        let grandRank3 = 0;
-        let grandRank4 = 0;
-        let grandRank5 = 0;
-        let grandTotalPrize = 0;
-        let grandTotalGames = 0;
-        let grandTotalWins = 0;
-
-        if (perf) {
-            grandRank1 = perf.grandRankCounts ? (perf.grandRankCounts[1] || 0) : 0;
-            grandRank2 = perf.grandRankCounts ? (perf.grandRankCounts[2] || 0) : 0;
-            grandRank3 = perf.grandRankCounts ? (perf.grandRankCounts[3] || 0) : 0;
-            grandRank4 = perf.grandRankCounts ? (perf.grandRankCounts[4] || 0) : 0;
-            grandRank5 = perf.grandRankCounts ? (perf.grandRankCounts[5] || 0) : 0;
-            grandTotalPrize = perf.grandTotalPrize || 0;
-            grandTotalGames = perf.grandTotalGames || 0;
-            grandTotalWins = perf.grandTotalWins || (grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5);
+        let summaryData = null;
+        if (!forceRefresh && _homeReviewDashboardCache && (Date.now() - _homeReviewDashboardCacheTime < 25000) && _homeReviewDashboardCache.maxRound === maxRound) {
+            summaryData = _homeReviewDashboardCache;
         } else {
-            // Fallback direct calculation across rounds 1235..maxRound and registered users
-            const userList = getAllUnifiedRegisteredUsers();
-
-            const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
-
-            rounds.forEach(rnd => {
-                userList.forEach(u => {
-                    const rev = (typeof computeUser70RecommendationsReview === 'function')
-                        ? computeUser70RecommendationsReview(u.id, rnd)
-                        : (typeof window !== 'undefined' && window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, rnd) : null);
-                    if (rev && !rev.isPreJoin) {
-                        grandTotalGames += (rev.totalGames || 70);
-                        grandTotalPrize += (rev.totalPrize || 0);
-                        if (rev.grandHits) {
-                            grandRank1 += (rev.grandHits[1] || 0);
-                            grandRank2 += (rev.grandHits[2] || 0);
-                            grandRank3 += (rev.grandHits[3] || 0);
-                            grandRank4 += (rev.grandHits[4] || 0);
-                            grandRank5 += (rev.grandHits[5] || 0);
+            // 1. Synchronously pre-load cached users list if in-memory list is empty
+            if (!state.allRegisteredUsersList || !Array.isArray(state.allRegisteredUsersList) || state.allRegisteredUsersList.length === 0) {
+                try {
+                    const raw = localStorage.getItem('lotto_all_users_list_cache');
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            state.allRegisteredUsersList = parsed;
                         }
                     }
+                } catch(e) {}
+            }
+
+            // 2. Asynchronously fetch full users and purchases from Firestore if not yet loaded
+            if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0 || !state.allUsersPurchasesMap) {
+                if (typeof fetchAllUsersPurchases === 'function') {
+                    await fetchAllUsersPurchases();
+                }
+            }
+
+            let perf = null;
+            if (typeof calculate7AlgorithmsPerformance === 'function') {
+                perf = calculate7AlgorithmsPerformance(fromRound, 'all');
+            } else if (typeof window !== 'undefined' && window.calculate7AlgorithmsPerformance) {
+                perf = window.calculate7AlgorithmsPerformance(fromRound, 'all');
+            }
+
+            let grandRank1 = 0;
+            let grandRank2 = 0;
+            let grandRank3 = 0;
+            let grandRank4 = 0;
+            let grandRank5 = 0;
+            let grandTotalPrize = 0;
+            let grandTotalGames = 0;
+            let grandTotalWins = 0;
+
+            if (perf) {
+                grandRank1 = perf.grandRankCounts ? (perf.grandRankCounts[1] || 0) : 0;
+                grandRank2 = perf.grandRankCounts ? (perf.grandRankCounts[2] || 0) : 0;
+                grandRank3 = perf.grandRankCounts ? (perf.grandRankCounts[3] || 0) : 0;
+                grandRank4 = perf.grandRankCounts ? (perf.grandRankCounts[4] || 0) : 0;
+                grandRank5 = perf.grandRankCounts ? (perf.grandRankCounts[5] || 0) : 0;
+                grandTotalPrize = perf.grandTotalPrize || 0;
+                grandTotalGames = perf.grandTotalGames || 0;
+                grandTotalWins = perf.grandTotalWins || (grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5);
+            } else {
+                // Fallback direct calculation across rounds 1235..maxRound and registered users
+                const userList = getAllUnifiedRegisteredUsers();
+
+                const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
+
+                rounds.forEach(rnd => {
+                    userList.forEach(u => {
+                        const rev = (typeof computeUser70RecommendationsReview === 'function')
+                            ? computeUser70RecommendationsReview(u.id, rnd)
+                            : (typeof window !== 'undefined' && window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, rnd) : null);
+                        if (rev && !rev.isPreJoin) {
+                            grandTotalGames += (rev.totalGames || 70);
+                            grandTotalPrize += (rev.totalPrize || 0);
+                            if (rev.grandHits) {
+                                grandRank1 += (rev.grandHits[1] || 0);
+                                grandRank2 += (rev.grandHits[2] || 0);
+                                grandRank3 += (rev.grandHits[3] || 0);
+                                grandRank4 += (rev.grandHits[4] || 0);
+                                grandRank5 += (rev.grandHits[5] || 0);
+                            }
+                        }
+                    });
                 });
-            });
-            grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
+                grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
+            }
+
+            summaryData = {
+                maxRound,
+                grandRank1,
+                grandRank2,
+                grandRank3,
+                grandRank4,
+                grandRank5,
+                grandTotalPrize,
+                grandTotalGames,
+                grandTotalWins
+            };
+            _homeReviewDashboardCache = summaryData;
+            _homeReviewDashboardCacheTime = Date.now();
         }
 
-        const roundRangeLabel = `제 ${fromRound}~${maxRound}회차 누적`;
+        const {
+            grandRank1,
+            grandRank2,
+            grandRank3,
+            grandRank4,
+            grandRank5,
+            grandTotalPrize,
+            grandTotalGames,
+            grandTotalWins
+        } = summaryData;
 
         // 1. Update Card 3: All Members AI Recommended Review (🔮 전체 회원 추천 당첨 결과)
         const elRevSub = document.getElementById('lp-review-mini-sub');
