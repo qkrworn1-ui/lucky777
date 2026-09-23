@@ -848,6 +848,9 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
         if (typeof window.renderLandingDashboard === 'function') {
             try { window.renderLandingDashboard(); } catch(e) {}
         }
+        if (typeof window.updateTop7AlgoUI === 'function') {
+            try { window.updateTop7AlgoUI(); } catch(e) {}
+        }
 
         // 2. Background Security Check: Check if active user has been suspended or is admin (Non-blocking)
         if (window.db) {
@@ -898,6 +901,9 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                                 if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'inline-flex', 'important');
                                 if (btnFetchLatestDraw) btnFetchLatestDraw.style.display = 'inline-flex';
                                 if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'inline-block';
+                            }
+                            if (typeof window.updateTop7AlgoUI === 'function') {
+                                try { window.updateTop7AlgoUI(); } catch(e) {}
                             }
                         }
 

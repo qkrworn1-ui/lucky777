@@ -2253,6 +2253,35 @@ class TestFullSystem(unittest.TestCase):
         # 5. algorithms-tab.js uses reviewsCache / computeUser70RecommendationsReview for evaluation
         self.assertIn("computeUser70RecommendationsReview", algo_tab_code)
 
+    # [Test 63] Generator 10 Combinations & Admin Exemption Banner Integrity
+    def test_63_generator_10combos_and_admin_banner_integrity(self):
+        gen_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        index_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'index.js')
+
+        with open(gen_tab_file, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        with open(index_file, 'r', encoding='utf-8') as f:
+            index_code = f.read()
+
+        # 1. isUserEligibleForExtraPacks in ledger.js must have valid gameCount logic
+        self.assertIn("const gameCount = getUserConfirmedGameCountForRound(cleanTarget, targetRound);", ledger_code)
+        self.assertIn("return gameCount >= 5;", ledger_code)
+
+        # 2. generator-tab.js must have solid fallback ensuring activeCombinations always has 10 combos
+        self.assertIn("computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId)", gen_tab_code)
+        self.assertIn("updateTop7AlgoUI();", gen_tab_code)
+
+        # 3. updateTop7AlgoUI must grant verified banner and admin title to admin/master
+        self.assertIn("👑 최고관리자 실구매 면제", gen_tab_code)
+        self.assertIn("purchase-status-banner verified", gen_tab_code)
+
+        # 4. lotto index.js must perform early baseline generation & render
+        self.assertIn("renderTop5Combinations(false);", index_code)
+        self.assertIn("updateTop7AlgoUI();", index_code)
+
 
 if __name__ == '__main__':
     unittest.main()

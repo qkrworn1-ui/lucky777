@@ -1,30 +1,9 @@
 {
-  "version": "v2026.09.24.0224",
+  "version": "v2026.09.24.0247.58",
   "buildDate": "2026-09-24",
   "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료",
-  "buildTimestamp": "2026-09-24T02:24:00.357125",
+  "buildTimestamp": "2026-09-24T02:47:58.404095",
   "buildHistory": [
-    {
-      "version": "v2026.09.23.1735",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:35",
-      "buildTimestamp": "2026-09-23T17:35:01.220427",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1736",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:36",
-      "buildTimestamp": "2026-09-23T17:36:00.291276",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1736.27",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:36",
-      "buildTimestamp": "2026-09-23T17:36:27.215480",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.23.1736.53",
       "buildDate": "2026-09-23",
@@ -353,7 +332,28 @@
       "buildTime": "02:24",
       "buildTimestamp": "2026-09-24T02:24:00.357125",
       "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.24.0240",
+      "buildDate": "2026-09-24",
+      "buildTime": "02:40",
+      "buildTimestamp": "2026-09-24T02:40:31.372441",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.24.0247",
+      "buildDate": "2026-09-24",
+      "buildTime": "02:47",
+      "buildTimestamp": "2026-09-24T02:47:30.262377",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.24.0247.58",
+      "buildDate": "2026-09-24",
+      "buildTime": "02:47",
+      "buildTimestamp": "2026-09-24T02:47:58.404095",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
     }
   ],
-  "buildTime": "02:24"
+  "buildTime": "02:47"
 }

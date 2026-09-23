@@ -63,6 +63,39 @@ export async function initLottoService(force = false) {
                 console.error('[INIT] Early init error (non-fatal):', initErr);
             }
 
+            // Restore preference for V4 algorithm checkbox (Default: TRUE for V4.0)
+            const chkReportLogicEarly = document.getElementById('chkUseV4ReportLogic');
+            if (chkReportLogicEarly) {
+                const savedPref = localStorage.getItem('lotto_pref_v4');
+                if (savedPref !== null) {
+                    chkReportLogicEarly.checked = (savedPref === 'true');
+                } else {
+                    chkReportLogicEarly.checked = true;
+                    localStorage.setItem('lotto_pref_v4', 'true');
+                }
+            }
+
+            // ⚡ Immediate baseline synchronous generation & rendering (Zero waiting time for 10 combos & admin banner)
+            try {
+                const earlyUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243);
+                if (!state.fixedTop5Combinations_v3 || state.fixedTop5Combinations_v3.length === 0) {
+                    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(false, earlyUpcomingRound, 'v3');
+                }
+                if (!state.fixedTop5Combinations_v4 || state.fixedTop5Combinations_v4.length === 0) {
+                    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(false, earlyUpcomingRound, 'v4');
+                }
+                const useV4Early = chkReportLogicEarly ? chkReportLogicEarly.checked : true;
+                state.fixedTop5Combinations = useV4Early ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
+
+                renderLatestDrawBanner();
+                renderTop5Combinations(false);
+                updateTop7AlgoUI();
+                updateSavedCount();
+                renderSavedList();
+            } catch (earlyErr) {
+                console.warn('[Early Lotto Render Warning]', earlyErr);
+            }
+
             const statusIndicator = document.getElementById('serverStatusIndicator');
             const statusText = document.getElementById('serverStatusText');
 
@@ -348,6 +381,7 @@ export async function initLottoService(force = false) {
 
     renderLatestDrawBanner();
     renderTop5Combinations(false);
+    updateTop7AlgoUI();
     updateSavedCount();
     renderSavedList();
 

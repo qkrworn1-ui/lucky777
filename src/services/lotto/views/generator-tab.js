@@ -653,10 +653,20 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
             saveUserWeeklyRecommendationSnapshot(effectiveUserId, curUpcomingRound).catch(e => console.warn('[Auto Snapshot Error]', e));
         }
 
+        if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
+            allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, isV4 ? 'v4' : 'v3', true, effectiveUserId);
+        }
+
         state.fixedTop5Combinations = allCombos;
-        const activeCombinations = (Array.isArray(allCombos) && allCombos.length > 0) 
+        let activeCombinations = (Array.isArray(allCombos) && allCombos.length > 0) 
             ? allCombos.slice(0, comboCount) 
             : computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId).slice(0, comboCount);
+
+        if (!activeCombinations || activeCombinations.length === 0) {
+            allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
+            state.fixedTop5Combinations = allCombos;
+            activeCombinations = allCombos.slice(0, comboCount);
+        }
 
         activeCombinations.forEach((comboObj, index) => {
             const numbers = Array.isArray(comboObj.numbers) ? comboObj.numbers : [];
@@ -899,10 +909,10 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
             }, 600);
         }
 
-        attachCardEvents();
-        renderAllComboCharts(activeCombinations);
-        renderExtraAddonPacksSection();
-        updateTop7AlgoUI();
+        try { attachCardEvents(); } catch(e) { console.warn('[attachCardEvents Error]', e); }
+        try { renderAllComboCharts(activeCombinations); } catch(e) {}
+        try { renderExtraAddonPacksSection(); } catch(e) { console.warn('[renderExtraAddonPacksSection Error]', e); }
+        try { updateTop7AlgoUI(); } catch(e) { console.warn('[updateTop7AlgoUI Error]', e); }
 
     } catch (err) {
         console.error('Error in renderTop5Combinations:', err);
@@ -920,6 +930,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                 </div>
             `;
         }
+        try { updateTop7AlgoUI(); } catch(e) {}
     }
 }
 
@@ -2074,7 +2085,7 @@ export function updateTop7AlgoUI() {
                 if (isViewerAdmin && cleanEffUser !== cleanAuth && cleanEffUser !== 'master' && cleanEffUser !== 'admin') {
                     const targetRealName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || effectiveUserId;
                     txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 관리자 조회 모드 - 실구매 면제]</strong> [제 ${curUpcomingRound}회차] <strong>[${targetRealName}]</strong> 회원의 7대 퀀트 알고리즘 70게임 전수가 활성화되어 있습니다.`;
-                } else if (isTargetAdmin || cleanEffUser === 'master' || cleanEffUser === 'admin') {
+                } else if (isViewerAdmin || isTargetAdmin || cleanEffUser === 'master' || cleanEffUser === 'admin' || cleanAuth === 'master' || cleanAuth === 'admin') {
                     txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 최고관리자 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
                 } else if (isTargetPermanent) {
                     txtStatus.innerHTML = `<strong><i class="fa-solid fa-gem" style="color:#60a5fa;"></i> [💎 영구회원 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;

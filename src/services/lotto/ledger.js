@@ -348,10 +348,14 @@ export function isUserEligibleForExtraPacks(userId = null, targetRound = null) {
 
 
 
-    // 3. ???? ????????? ???? ???? ??????5???? ???? ???? ???? ????    const gameCount = getUserConfirmedGameCountForRound(cleanTarget, targetRound);
-
-    return gameCount >= 5;
-
+    // 3. 주간 실구매 확정 게임수 계산 (최소 5게임 이상 구매 시 100% 혜택 부여)
+    try {
+        const gameCount = getUserConfirmedGameCountForRound(cleanTarget, targetRound);
+        return gameCount >= 5;
+    } catch(e) {
+        console.warn('[isUserEligibleForExtraPacks Error]', e);
+        return false;
+    }
 }
 
 

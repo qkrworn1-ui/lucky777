@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.24.0224 - BUILD_DATE: 2026-09-24] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.24.0247.58 - BUILD_DATE: 2026-09-24] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.24.0224)
+ * Lucky777 Smart Bundle (v2026.09.24.0247.58)
  */
 
 
@@ -2195,6 +2195,9 @@ async function checkAuthOnLoad(initFirebaseAndData) {
         if (typeof window.renderLandingDashboard === 'function') {
             try { window.renderLandingDashboard(); } catch(e) {}
         }
+        if (typeof window.updateTop7AlgoUI === 'function') {
+            try { window.updateTop7AlgoUI(); } catch(e) {}
+        }
 
         // 2. Background Security Check: Check if active user has been suspended or is admin (Non-blocking)
         if (window.db) {
@@ -2245,6 +2248,9 @@ async function checkAuthOnLoad(initFirebaseAndData) {
                                 if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'inline-flex', 'important');
                                 if (btnFetchLatestDraw) btnFetchLatestDraw.style.display = 'inline-flex';
                                 if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'inline-block';
+                            }
+                            if (typeof window.updateTop7AlgoUI === 'function') {
+                                try { window.updateTop7AlgoUI(); } catch(e) {}
                             }
                         }
 
@@ -7759,10 +7765,14 @@ function isUserEligibleForExtraPacks(userId = null, targetRound = null) {
 
 
 
-    // 3. ???? ????????? ???? ???? ??????5???? ???? ???? ???? ????    const gameCount = getUserConfirmedGameCountForRound(cleanTarget, targetRound);
-
-    return gameCount >= 5;
-
+    // 3. 주간 실구매 확정 게임수 계산 (최소 5게임 이상 구매 시 100% 혜택 부여)
+    try {
+        const gameCount = getUserConfirmedGameCountForRound(cleanTarget, targetRound);
+        return gameCount >= 5;
+    } catch(e) {
+        console.warn('[isUserEligibleForExtraPacks Error]', e);
+        return false;
+    }
 }
 
 
@@ -20549,10 +20559,20 @@ async function renderTop5Combinations(isRollingAnimation = false) {
             saveUserWeeklyRecommendationSnapshot(effectiveUserId, curUpcomingRound).catch(e => console.warn('[Auto Snapshot Error]', e));
         }
 
+        if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
+            allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, isV4 ? 'v4' : 'v3', true, effectiveUserId);
+        }
+
         state.fixedTop5Combinations = allCombos;
-        const activeCombinations = (Array.isArray(allCombos) && allCombos.length > 0) 
+        let activeCombinations = (Array.isArray(allCombos) && allCombos.length > 0) 
             ? allCombos.slice(0, comboCount) 
             : computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId).slice(0, comboCount);
+
+        if (!activeCombinations || activeCombinations.length === 0) {
+            allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
+            state.fixedTop5Combinations = allCombos;
+            activeCombinations = allCombos.slice(0, comboCount);
+        }
 
         activeCombinations.forEach((comboObj, index) => {
             const numbers = Array.isArray(comboObj.numbers) ? comboObj.numbers : [];
@@ -20795,10 +20815,10 @@ async function renderTop5Combinations(isRollingAnimation = false) {
             }, 600);
         }
 
-        attachCardEvents();
-        renderAllComboCharts(activeCombinations);
-        renderExtraAddonPacksSection();
-        updateTop7AlgoUI();
+        try { attachCardEvents(); } catch(e) { console.warn('[attachCardEvents Error]', e); }
+        try { renderAllComboCharts(activeCombinations); } catch(e) {}
+        try { renderExtraAddonPacksSection(); } catch(e) { console.warn('[renderExtraAddonPacksSection Error]', e); }
+        try { updateTop7AlgoUI(); } catch(e) { console.warn('[updateTop7AlgoUI Error]', e); }
 
     } catch (err) {
         console.error('Error in renderTop5Combinations:', err);
@@ -20816,6 +20836,7 @@ async function renderTop5Combinations(isRollingAnimation = false) {
                 </div>
             `;
         }
+        try { updateTop7AlgoUI(); } catch(e) {}
     }
 }
 
@@ -21970,7 +21991,7 @@ function updateTop7AlgoUI() {
                 if (isViewerAdmin && cleanEffUser !== cleanAuth && cleanEffUser !== 'master' && cleanEffUser !== 'admin') {
                     const targetRealName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || effectiveUserId;
                     txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 관리자 조회 모드 - 실구매 면제]</strong> [제 ${curUpcomingRound}회차] <strong>[${targetRealName}]</strong> 회원의 7대 퀀트 알고리즘 70게임 전수가 활성화되어 있습니다.`;
-                } else if (isTargetAdmin || cleanEffUser === 'master' || cleanEffUser === 'admin') {
+                } else if (isViewerAdmin || isTargetAdmin || cleanEffUser === 'master' || cleanEffUser === 'admin' || cleanAuth === 'master' || cleanAuth === 'admin') {
                     txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 최고관리자 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
                 } else if (isTargetPermanent) {
                     txtStatus.innerHTML = `<strong><i class="fa-solid fa-gem" style="color:#60a5fa;"></i> [💎 영구회원 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
@@ -31823,6 +31844,39 @@ async function initLottoService(force = false) {
                 console.error('[INIT] Early init error (non-fatal):', initErr);
             }
 
+            // Restore preference for V4 algorithm checkbox (Default: TRUE for V4.0)
+            const chkReportLogicEarly = document.getElementById('chkUseV4ReportLogic');
+            if (chkReportLogicEarly) {
+                const savedPref = SafeLocalStorage.getItem('lotto_pref_v4');
+                if (savedPref !== null) {
+                    chkReportLogicEarly.checked = (savedPref === 'true');
+                } else {
+                    chkReportLogicEarly.checked = true;
+                    SafeLocalStorage.setItem('lotto_pref_v4', 'true');
+                }
+            }
+
+            // ⚡ Immediate baseline synchronous generation & rendering (Zero waiting time for 10 combos & admin banner)
+            try {
+                const earlyUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243);
+                if (!state.fixedTop5Combinations_v3 || state.fixedTop5Combinations_v3.length === 0) {
+                    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(false, earlyUpcomingRound, 'v3');
+                }
+                if (!state.fixedTop5Combinations_v4 || state.fixedTop5Combinations_v4.length === 0) {
+                    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(false, earlyUpcomingRound, 'v4');
+                }
+                const useV4Early = chkReportLogicEarly ? chkReportLogicEarly.checked : true;
+                state.fixedTop5Combinations = useV4Early ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
+
+                renderLatestDrawBanner();
+                renderTop5Combinations(false);
+                updateTop7AlgoUI();
+                updateSavedCount();
+                renderSavedList();
+            } catch (earlyErr) {
+                console.warn('[Early Lotto Render Warning]', earlyErr);
+            }
+
             const statusIndicator = document.getElementById('serverStatusIndicator');
             const statusText = document.getElementById('serverStatusText');
 
@@ -32108,6 +32162,7 @@ async function initLottoService(force = false) {
 
     renderLatestDrawBanner();
     renderTop5Combinations(false);
+    updateTop7AlgoUI();
     updateSavedCount();
     renderSavedList();
 
