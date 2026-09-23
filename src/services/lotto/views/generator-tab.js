@@ -15,7 +15,7 @@ let generatorAdminViewingUser = null;
  * 1235회차부터 최신 회차까지 7대 알고리즘의 100% 무결점 실데이터 전수 복기 채점 집계
  * (복기 리포트와 100% 동일한 calculate7AlgorithmsPerformance 엔진 기반 실시간 연동)
  */
-export function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = null) {
+export async function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = null) {
     let rawUser = targetUserId;
     if (!rawUser) {
         let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
@@ -28,10 +28,10 @@ export function compute7AlgorithmsRealStats(fromRound = 1235, targetUserId = nul
         rawUser = authId || 'master';
     }
     if (typeof calculate7AlgorithmsPerformance === 'function') {
-        return calculate7AlgorithmsPerformance(fromRound, rawUser);
+        return await calculate7AlgorithmsPerformance(fromRound, rawUser);
     }
     if (typeof window !== 'undefined' && window.calculate7AlgorithmsPerformance) {
-        return window.calculate7AlgorithmsPerformance(fromRound, rawUser);
+        return await window.calculate7AlgorithmsPerformance(fromRound, rawUser);
     }
     return {
         fromRound,
@@ -66,7 +66,7 @@ function formatPrizeCompact(prize) {
  * 추천번호생성기 화면에 역대 7개 알고리즘 실데이터 누적 복기 리포트 렌더링
  * (해당 사용자의 고유 추천번호 당첨 결과 기본 표시)
  */
-export function render7AlgorithmsRealReviewSection() {
+export async function render7AlgorithmsRealReviewSection() {
     const container = document.getElementById('algoRealReviewSection');
     if (!container) return;
 
@@ -94,8 +94,8 @@ export function render7AlgorithmsRealReviewSection() {
         else displayName = effectiveUserId;
     }
 
-    const data = compute7AlgorithmsRealStats(currentAlgoReviewStartRound, effectiveUserId);
-    const { fromRound, maxRound, totalRoundsCount, results, grandTotalGames, grandTotalPrize, grandRankCounts, grandTotalWins, grandWinRate, grandRoi } = data;
+    const data = await compute7AlgorithmsRealStats(currentAlgoReviewStartRound, effectiveUserId);
+    const { fromRound, maxRound, totalRoundsCount, results, grandTotalGames, grandTotalPrize, grandRankCounts, grandTotalWins, grandWinRate, grandRoi } = data || {};
 
     if (totalRoundsCount === 0) {
         container.innerHTML = `
@@ -293,7 +293,7 @@ export function render7AlgorithmsRealReviewSection() {
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 12px;">
                     <div>
                         <span style="font-size: 0.7rem; color: #94a3b8;">누적 총 당첨금</span>
-                        <div style="font-size: 0.95rem; font-weight: 800; color: #34d399;">+${grandTotalPrize.toLocaleString()}원</div>
+                        <div style="font-size: 0.95rem; font-weight: 800; color: #34d399;">+${(grandTotalPrize || 0).toLocaleString()}원</div>
                     </div>
                     <div>
                         <span style="font-size: 0.7rem; color: #94a3b8;">총 적중 횟수 (적중률)</span>

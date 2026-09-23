@@ -905,7 +905,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; text-align: center;">
                         <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px;">
                             <span style="font-size: 0.7rem; color: #94a3b8; display: block;">누적 총 당첨금</span>
-                            <strong style="font-size: 1.1rem; color: #34d399; font-weight: 900;">+${grandTotalPrize.toLocaleString()}원</strong>
+                            <strong style="font-size: 1.1rem; color: #34d399; font-weight: 900;">+${(grandTotalPrize || 0).toLocaleString()}원</strong>
                         </div>
                         <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px;">
                             <span style="font-size: 0.7rem; color: #94a3b8; display: block;">총 적중 횟수 (적중률)</span>

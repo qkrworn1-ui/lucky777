@@ -962,6 +962,7 @@ export function setupAuthEvents(initFirebaseAndData) {
     const btnLogout = document.getElementById('btnLogout');
     const btnUserManagement = document.getElementById('btnUserManagement');
     const btnUserManagementApp = document.getElementById('btnUserManagementApp');
+    const btnAdminSnapshotAudit = document.getElementById('btnAdminSnapshotAudit');
     const userMgmtModal = document.getElementById('userMgmtModal');
     const btnCloseUserMgmtModal = document.getElementById('btnCloseUserMgmtModal');
     const addUserForm = document.getElementById('addUserForm');

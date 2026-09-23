@@ -594,7 +594,7 @@ export async function renderReviewTab() {
 
         const validSelectedRound = updateReviewRoundSelector();
 
-        if (reviewRoundSelector) {
+        if (reviewRoundSelector && reviewRoundSelector.parentNode) {
             const newSelector = reviewRoundSelector.cloneNode(true);
             reviewRoundSelector.parentNode.replaceChild(newSelector, reviewRoundSelector);
 
@@ -937,7 +937,7 @@ export async function renderAllRoundsReviewDetail() {
     }
 
         // Calculate member totals and real purchases
-        baseList.forEach(u => {
+        for (const u of baseList) {
             const mAgg = memberAggMap[u.id];
             if (mAgg) {
                 mAgg.totalInvest = mAgg.totalGames * 1000;
@@ -967,7 +967,7 @@ export async function renderAllRoundsReviewDetail() {
                 mAgg.realPurchasedGames = realPurchasedGms;
                 adminMemberSummaryList.push(mAgg);
             }
-        });
+        }
 
         adminMemberSummaryList.sort((a, b) => b.totalPrize - a.totalPrize || b.totalWins - a.totalWins || b.totalGames - a.totalGames);
 
@@ -1036,7 +1036,7 @@ export async function renderAllRoundsReviewDetail() {
                 v3Wins: uRev.v3Eval.totalWins,
                 realPurchasedGames: realGames
             });
-        });
+        }
 
         dispInvest = dispCombos * 1000;
         dispRoi = dispInvest > 0 ? (dispPrize / dispInvest) * 100 : 0;
@@ -3193,7 +3193,7 @@ export async function shareAdmin1235ReviewToKakao() {
             
             const wins = rHits[1] + rHits[2] + rHits[3] + rHits[4] + rHits[5];
             roundLines.push(`• 제 ${rnd}회: 적중 ${wins}건 (+${rPrize.toLocaleString()}원)`);
-        });
+        }
 
         const totalInvest = totalCombos * 1000;
         const totalRoi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
@@ -3226,7 +3226,7 @@ ${roundLines.slice(0, 6).join('\n')}
                 rGames += uRev.totalGames;
                 rPrize += uRev.totalPrize;
                 for (let k = 1; k <= 5; k++) rHits[k] += uRev.grandHits[k];
-            });
+            }
         } else {
             const uRev = computeUser70RecommendationsReview(userVal, targetRound);
             rGames = uRev.totalGames;
@@ -3572,7 +3572,7 @@ export async function copyAdmin1235ReviewText() {
             for (let k = 1; k <= 5; k++) hits[k] += rHits[k];
             const wins = rHits[1] + rHits[2] + rHits[3] + rHits[4] + rHits[5];
             roundLines.push(`• 제 ${rnd}회: 적중 ${wins}건 (+${rPrize.toLocaleString()}원)`);
-        });
+        }
 
         const totalInvest = totalCombos * 1000;
         const totalRoi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
@@ -3605,7 +3605,7 @@ ${roundLines.join('\n')}
                 rGames += uRev.totalGames;
                 rPrize += uRev.totalPrize;
                 for (let k = 1; k <= 5; k++) rHits[k] += uRev.grandHits[k];
-            });
+            }
         } else {
             const uRev = computeUser70RecommendationsReview(userVal, targetRound);
             rGames = uRev.totalGames;
