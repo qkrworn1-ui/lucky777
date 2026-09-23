@@ -127,23 +127,70 @@ export function getNeighborMatches(numbers, PREVIOUS_DRAW) {
     return matches;
 }
 
-export function showToast(message) {
+export function hideToast(immediate = false) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    if (window._toastTimeout) { clearTimeout(window._toastTimeout); window._toastTimeout = null; }
+    if (window._toastHideTimeout) { clearTimeout(window._toastHideTimeout); window._toastHideTimeout = null; }
+    
+    toast.style.pointerEvents = 'none';
+    toast.classList.remove('toast-active');
+    toast.classList.add('toast-hidden');
+    toast.style.display = 'none';
+    toast.style.opacity = '0';
+    toast.style.visibility = 'hidden';
+    toast.style.animation = 'none';
+}
+if (typeof window !== 'undefined') {
+    window.hideToast = hideToast;
+    window.showToast = showToast;
+}
+
+export function showToast(message, durationOrType = 2000) {
+    if (!message) return;
     let toast = document.getElementById('toast');
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'toast';
-        toast.style.cssText = 'position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.95); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); padding: 12px 24px; border-radius: 30px; font-size: 0.9rem; font-weight: 700; z-index: 2147483647; box-shadow: 0 10px 25px rgba(0,0,0,0.8); transition: opacity 0.3s ease; pointer-events: none; text-align: center; max-width: 90vw;';
         document.body.appendChild(toast);
     }
-    toast.textContent = message;
-    toast.style.display = 'block';
-    toast.style.opacity = '1';
+    
+    if (window._toastTimeout) { clearTimeout(window._toastTimeout); window._toastTimeout = null; }
+    if (window._toastHideTimeout) { clearTimeout(window._toastHideTimeout); window._toastHideTimeout = null; }
 
-    if (window._toastTimeout) clearTimeout(window._toastTimeout);
+    toast.classList.remove('toast-hidden', 'toast-active');
+    toast.title = '클릭하면 닫힙니다';
+    toast.onclick = function(e) {
+        if (e) { e.stopPropagation(); }
+        hideToast(true);
+    };
+
+    let durationMs = 2000;
+    if (typeof durationOrType === 'number' && durationOrType > 0) {
+        durationMs = durationOrType;
+    } else if (durationOrType === 'error') {
+        durationMs = 3500;
+    }
+
+    toast.innerHTML = `<span style="flex:1;">${message}</span><span style="opacity:0.75; font-size:1.25rem; line-height:1; padding-left:6px; cursor:pointer;" title="닫기">&times;</span>`;
+    
+    // Reset animation
+    toast.style.pointerEvents = 'auto';
+    toast.style.display = 'flex';
+    toast.style.opacity = '';
+    toast.style.visibility = '';
+    toast.style.animation = 'none';
+    void toast.offsetWidth; // Force reflow
+
+    // Apply GPU-composited keyframe animation (runs independently of JS thread)
+    const animSec = (durationMs / 1000).toFixed(2);
+    toast.style.animation = `toastAutoDismiss ${animSec}s cubic-bezier(0.16, 1, 0.3, 1) forwards`;
+    toast.classList.add('toast-active');
+
+    // JS Fallback & State cleanup
     window._toastTimeout = setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => { toast.style.display = 'none'; }, 300);
-    }, 2400);
+        hideToast(true);
+    }, durationMs + 80);
 }
 
 export async function shareLottoApp(customData = {}) {

@@ -10,11 +10,13 @@ let _lastBackPressTime = 0;
 function _closeAnyActiveModal() {
     // 1. Donghang verify modal
     const donghangModal = document.getElementById('donghangVerifyModal');
-    if (donghangModal && donghangModal.classList.contains('active')) {
+    if (donghangModal && (donghangModal.classList.contains('active') || donghangModal.style.display === 'flex')) {
         if (typeof window.closeDonghangVerifyModal === 'function') {
-            window.closeDonghangVerifyModal();
+            window.closeDonghangVerifyModal(true);
         } else {
             donghangModal.classList.remove('active');
+            donghangModal.style.display = 'none';
+            if (document.body) document.body.style.overflow = '';
         }
         return true;
     }

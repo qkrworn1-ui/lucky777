@@ -285,6 +285,14 @@ const _algoPerfCache = new Map();
  */
 export function clearAlgoPerfCache() {
     _algoPerfCache.clear();
+    try {
+        const keysToRemove = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+            const k = sessionStorage.key(i);
+            if (k && k.startsWith('algo_perf_v2_')) keysToRemove.push(k);
+        }
+        keysToRemove.forEach(k => sessionStorage.removeItem(k));
+    } catch(e) {}
 }
 if (typeof window !== 'undefined') {
     window.clearAlgoPerfCache = clearAlgoPerfCache;
@@ -316,6 +324,17 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
     if (_algoPerfCache.has(cacheKey)) {
         return _algoPerfCache.get(cacheKey);
     }
+
+    try {
+        const sessionCached = sessionStorage.getItem(`algo_perf_v2_${cacheKey}`);
+        if (sessionCached) {
+            const parsed = JSON.parse(sessionCached);
+            if (parsed && typeof parsed === 'object' && parsed.fromRound === fromRound && parsed.maxRound === maxRound) {
+                _algoPerfCache.set(cacheKey, parsed);
+                return parsed;
+            }
+        }
+    } catch(e) {}
 
     // High-Speed Pre-cache: compute reviews once per (user, round)
     const reviewsCache = new Map();
@@ -533,6 +552,9 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
     };
 
     _algoPerfCache.set(cacheKey, perfResult);
+    try {
+        sessionStorage.setItem(`algo_perf_v2_${cacheKey}`, JSON.stringify(perfResult));
+    } catch(e) {}
     return perfResult;
 }
 

@@ -1859,15 +1859,28 @@ class TestFullSystem(unittest.TestCase):
                       'FAIL: isModalVisible check missing in visibilitychange handler')
 
     def test_49_donghang_verify_modal_integrity(self):
-        """Test 49: Verify openDonghangVerifyModal is properly defined and exposed."""
+        """Test 49: Verify openDonghangVerifyModal is properly defined, mobile-safe, and exposed."""
         conf_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
         with open(conf_file, 'r', encoding='utf-8') as f:
             code = f.read()
 
         self.assertIn('export function openDonghangVerifyModal', code)
         self.assertIn('export function closeDonghangVerifyModal', code)
+        self.assertIn('export function handleDonghangVerifyClick', code)
         self.assertIn('window.openDonghangVerifyModal = openDonghangVerifyModal', code)
         self.assertIn('window.closeDonghangVerifyModal = closeDonghangVerifyModal', code)
+        self.assertIn('window.handleDonghangVerifyClick = handleDonghangVerifyClick', code)
+        self.assertIn('data-qr-url="${safeEncodedQrUrl}"', code)
+        self.assertIn("history.pushState({ modal: 'donghangVerify' }", code)
+        # Ensure GPU-crashing backdrop-filter blur is removed from donghang verify modal
+        modal_code = code[code.find('function openDonghangVerifyModal'):]
+        self.assertNotIn("backdrop-filter: blur", modal_code)
+
+        # Ensure Round 1242 is present in STATIC_DRAWS in ledger.js
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        self.assertIn('1242: { numbers: [2, 4, 10, 16, 31, 41]', ledger_code)
     def test_50_mobile_back_navigation_integrity(self):
         """Test 50: Verify mobile back button history and exit confirmation in main.js."""
         main_file = os.path.join(self.root_dir, 'src', 'main.js')
@@ -1998,6 +2011,56 @@ class TestFullSystem(unittest.TestCase):
 
         # 5. hex-map.js must use state.mergedHistory directly
         self.assertIn('state && state.mergedHistory', hex_code)
+
+    def test_55_persistent_caching_and_history_isolation(self):
+        """Test 55: Verify localStorage/sessionStorage caching and history isolation wrapping."""
+        algo_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'algorithms-tab.js')
+        review_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        generator_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+
+        with open(algo_file, 'r', encoding='utf-8') as f:
+            algo_code = f.read()
+        with open(review_file, 'r', encoding='utf-8') as f:
+            review_code = f.read()
+        with open(generator_file, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+
+        # 1. review-tab.js must have localStorage review cache & history isolation imports
+        self.assertIn('lotto_review_v2_', review_code)
+        self.assertIn('enterHistoryIsolation', review_code)
+        self.assertIn('exitHistoryIsolation', review_code)
+
+        # 2. algorithms-tab.js must have sessionStorage algo_perf caching
+        self.assertIn('algo_perf_v2_', algo_code)
+        self.assertIn('_algoPerfCache', algo_code)
+
+        # 3. generator.js must have enterHistoryIsolation & exitHistoryIsolation
+        self.assertIn('export function enterHistoryIsolation', gen_code)
+        self.assertIn('export function exitHistoryIsolation', gen_code)
+
+    def test_56_toast_gpu_dismiss_and_generator_defer(self):
+        """Test 56: Verify GPU-composited toast dismiss keyframes and generator tab non-blocking defer."""
+        utils_file = os.path.join(self.root_dir, 'src', 'shared', 'utils.js')
+        gen_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        styles_file = os.path.join(self.root_dir, 'styles.css')
+
+        with open(utils_file, 'r', encoding='utf-8') as f:
+            utils_code = f.read()
+        with open(gen_tab_file, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+        with open(styles_file, 'r', encoding='utf-8') as f:
+            styles_code = f.read()
+
+        # 1. utils.js must use toastAutoDismiss animation & hideToast
+        self.assertIn('toastAutoDismiss', utils_code)
+        self.assertIn('hideToast', utils_code)
+
+        # 2. styles.css must define @keyframes toastAutoDismiss
+        self.assertIn('@keyframes toastAutoDismiss', styles_code)
+
+        # 3. generator-tab.js must defer render7AlgorithmsRealReviewSection
+        self.assertIn('render7AlgorithmsRealReviewSection', gen_tab_code)
+        self.assertIn('setTimeout', gen_tab_code)
 
 
 if __name__ == '__main__':

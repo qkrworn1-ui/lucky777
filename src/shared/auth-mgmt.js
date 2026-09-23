@@ -2048,36 +2048,33 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
                 // 3. Toast welcome message
                 if (welcomeMsg) {
-                    setTimeout(function() { try { showToast(welcomeMsg); } catch(ex) {} }, 80);
+                    setTimeout(function() { try { showToast(welcomeMsg, 2000); } catch(ex) {} }, 80);
                 }
 
-                // 4. Initialize services (non-blocking, background)
+                // 4. Initialize services (non-blocking, background - slight delay keeps UI thread smooth)
                 setTimeout(async function() {
                     try {
-                        if (typeof initFirebaseAndData === 'function') {
+                        if (typeof checkAuthOnLoad === 'function') {
+                            await checkAuthOnLoad(initFirebaseAndData);
+                        } else if (typeof initFirebaseAndData === 'function') {
                             await initFirebaseAndData();
+                            if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
                         } else if (typeof window.initLottoService === 'function') {
                             await window.initLottoService();
+                            if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
                         }
-                    } catch(ex) {}
-                    try {
-                        if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
-                    } catch(ex) {}
-                    // Background auth verification (non-blocking)
-                    checkAuthOnLoad(initFirebaseAndData).then(function() {
-                        try {
-                            if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
-                        } catch(e){}
-                    }).catch(function(err) {
-                        console.warn('[Background auth check error]', err);
-                    });
-                }, 50);
+                    } catch(ex) {
+                        console.warn('[Background auth check error]', ex);
+                    }
+                }, 180);
             }
 
             // 1. Instant Master/Admin bypass
             if ((idLower === 'master' && (pw === '0338' || pw === '' || pw === 'master')) || 
                 (idLower === 'admin' && (pw === '0338' || pw === 'admin' || pw === '')) ||
                 (rawId === '' && (pw === '0338' || pw === 'master'))) {
+                if (idEl) idEl.value = '';
+                if (pwEl) pwEl.value = '';
                 unlockUIImmediately('master', '🔑 최고관리자 계정으로 접속했습니다.');
                 return false;
             }

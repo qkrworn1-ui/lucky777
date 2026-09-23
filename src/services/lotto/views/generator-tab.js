@@ -494,7 +494,13 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
             : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? 'all' : authId));
 
         if (typeof render7AlgorithmsRealReviewSection === 'function') {
-            render7AlgorithmsRealReviewSection();
+            setTimeout(() => {
+                try {
+                    render7AlgorithmsRealReviewSection();
+                } catch(e) {
+                    console.warn('[render7AlgorithmsRealReviewSection deferred error]', e);
+                }
+            }, 50);
         }
 
         // Ensure user list is loaded for admin dropdown

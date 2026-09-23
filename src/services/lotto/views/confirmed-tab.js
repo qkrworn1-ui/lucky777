@@ -998,6 +998,7 @@ export async function renderConfirmedPurchasesList() {
             const scannedAt = qrMeta && qrMeta.qrScannedAt ? formatDate(qrMeta.qrScannedAt) : (purchase.timestamp ? formatDate(purchase.timestamp) : '-');
 
             const finalQrUrl = buildDonghangLotteryQrUrl(round, purchase.combos, serial, rawUrl);
+            const safeEncodedQrUrl = encodeURIComponent(finalQrUrl || '');
 
             const cardBorderStyle = hasWonReceipt ? `1.5px solid ${themeBorder}` : '1px solid rgba(255,255,255,0.08)';
             const cardBgStyle = hasWonReceipt ? `linear-gradient(180deg, ${themeDarkBg} 0%, #0a0f1d 100%)` : '#0a0f1d';
@@ -1116,7 +1117,7 @@ export async function renderConfirmedPurchasesList() {
                                 </div>
                             </div>
                             <div class="confirmed-footer-btn-wrap">
-                                <button type="button" class="confirmed-btn-verify-qr" title="동행복권 공식 서버 실시간 당첨결과 조회" onclick="window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}')">
+                                <button type="button" class="confirmed-btn-verify-qr" title="동행복권 공식 서버 실시간 당첨결과 조회" data-qr-url="${safeEncodedQrUrl}" onclick="window.handleDonghangVerifyClick ? window.handleDonghangVerifyClick(this) : (window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}'))">
                                     <i class="fa-solid fa-magnifying-glass-chart"></i>
                                     <span>동행복권 당첨확인</span>
                                 </button>
@@ -1128,9 +1129,9 @@ export async function renderConfirmedPurchasesList() {
                             <div class="confirmed-qr-info-wrap">
                                 <i class="fa-solid fa-qrcode confirmed-qr-icon"></i>
                                 <span class="confirmed-qr-badge">공식 QR:</span>
-                                <button type="button" class="confirmed-qr-url-link" title="${finalQrUrl}" onclick="window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}')">${finalQrUrl}</button>
+                                <button type="button" class="confirmed-qr-url-link" title="${finalQrUrl}" data-qr-url="${safeEncodedQrUrl}" onclick="window.handleDonghangVerifyClick ? window.handleDonghangVerifyClick(this) : (window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}'))">${finalQrUrl}</button>
                             </div>
-                            <button type="button" class="btn-dark-pill confirmed-qr-copy-btn" onclick="window.copyToClipboard && window.copyToClipboard('${finalQrUrl}', '🔗 동행복권 원본 QR 링크가 복사되었습니다.')" title="동행복권 공식 QR 원본 링크 클립보드 복사">
+                            <button type="button" class="btn-dark-pill confirmed-qr-copy-btn" data-qr-url="${safeEncodedQrUrl}" onclick="window.copyToClipboard && window.copyToClipboard(decodeURIComponent(this.getAttribute('data-qr-url') || '${finalQrUrl}'), '🔗 동행복권 원본 QR 링크가 복사되었습니다.')" title="동행복권 공식 QR 원본 링크 클립보드 복사">
                                 <i class="fa-solid fa-copy"></i>
                                 <span>복사</span>
                             </button>
@@ -2095,6 +2096,28 @@ if (typeof window !== 'undefined') {
 // ============================================================
 // 🎯 동행복권 당첨확인 인앱 모달 (실시간 정밀 채점 & 공식 QR 확인)
 // ============================================================
+
+function extractDrawPrize(draw, rank, fallback) {
+    if (!draw) return fallback;
+    const rankKey = `rank${rank}Prize`;
+    if (typeof draw[rankKey] === 'number' && draw[rankKey] > 0) return draw[rankKey];
+    if (draw.prizes && draw.prizes[rank]) {
+        const item = draw.prizes[rank];
+        if (typeof item === 'object' && item !== null) {
+            const p = Number(item.prize);
+            if (!isNaN(p) && p > 0) return p;
+        } else if (typeof item === 'number' && item > 0) {
+            return item;
+        } else if (typeof item === 'string') {
+            const p = parseInt(item.replace(/[^\d]/g, ''), 10);
+            if (!isNaN(p) && p > 0) return p;
+        }
+    }
+    if (rank === 4) return 50000;
+    if (rank === 5) return 5000;
+    return fallback;
+}
+
 export function openDonghangVerifyModal(url) {
     if (!url || typeof document === 'undefined') return;
 
@@ -2150,13 +2173,13 @@ export function openDonghangVerifyModal(url) {
         let prize = 0;
         if (matchCount === 6) {
             rank = 1;
-            prize = (actualDraw.prizes && actualDraw.prizes[1]) ? actualDraw.prizes[1] : 2000000000;
+            prize = extractDrawPrize(actualDraw, 1, 2000000000);
         } else if (matchCount === 5 && bonusHit) {
             rank = 2;
-            prize = (actualDraw.prizes && actualDraw.prizes[2]) ? actualDraw.prizes[2] : 50000000;
+            prize = extractDrawPrize(actualDraw, 2, 50000000);
         } else if (matchCount === 5) {
             rank = 3;
-            prize = (actualDraw.prizes && actualDraw.prizes[3]) ? actualDraw.prizes[3] : 1500000;
+            prize = extractDrawPrize(actualDraw, 3, 1500000);
         } else if (matchCount === 4) {
             rank = 4;
             prize = 50000;
@@ -2174,7 +2197,7 @@ export function openDonghangVerifyModal(url) {
         return { letter, nums: sortedNums, matchCount, bonusHit, rank, prize };
     });
 
-    // 3. CSS 주입 (최초 1회)
+    // 3. CSS 주입 (최초 1회 - 모바일 GPU 과부하 유발하는 backdrop blur 제거 및 안전한 고대비 테마)
     if (!document.getElementById('donghang-verify-modal-style')) {
         const style = document.createElement('style');
         style.id = 'donghang-verify-modal-style';
@@ -2182,63 +2205,73 @@ export function openDonghangVerifyModal(url) {
             #donghangVerifyModal {
                 display: none;
                 position: fixed;
-                top: 0; left: 0;
+                top: 0; left: 0; right: 0; bottom: 0;
                 width: 100vw; height: 100vh;
-                background: rgba(7, 10, 20, 0.88);
+                height: 100dvh; max-height: 100dvh;
+                background: rgba(7, 10, 20, 0.95);
                 z-index: 999999;
                 align-items: center;
                 justify-content: center;
-                padding: 14px;
+                padding: 12px;
                 box-sizing: border-box;
-                backdrop-filter: blur(8px);
+                overscroll-behavior: contain;
+                touch-action: pan-y;
             }
-            #donghangVerifyModal.active { display: flex; }
+            #donghangVerifyModal.active { display: flex !important; }
             #donghangVerifyModalBox {
                 background: linear-gradient(165deg, #0f172a 0%, #0a0f1e 100%);
                 border: 1.5px solid #334155;
-                border-radius: 18px;
+                border-radius: 16px;
                 width: 100%;
-                max-width: 540px;
-                max-height: 92vh;
+                max-width: 520px;
+                max-height: 86vh;
+                max-height: 86dvh;
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
-                box-shadow: 0 25px 65px rgba(0,0,0,0.75), 0 0 30px rgba(56,189,248,0.15);
+                box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 25px rgba(56,189,248,0.15);
+                margin: auto;
             }
             #donghangVerifyModalHeader {
                 display: flex;
                 align-items: center;
                 justify-content: space-between;
-                padding: 14px 18px;
+                padding: 12px 16px;
                 background: linear-gradient(135deg, #1e3a5f, #0f172a);
                 border-bottom: 1px solid rgba(56, 189, 248, 0.25);
                 flex-shrink: 0;
             }
             #donghangVerifyModalHeader .modal-title {
                 display: flex; align-items: center; gap: 8px;
-                font-size: 1rem; font-weight: 800; color: #f8fafc;
+                font-size: 0.95rem; font-weight: 800; color: #f8fafc;
             }
-            #donghangVerifyModalHeader .modal-title i { color: #38bdf8; font-size: 1.1rem; }
+            #donghangVerifyModalHeader .modal-title i { color: #38bdf8; font-size: 1.05rem; }
             #donghangVerifyModalClose {
                 background: rgba(255,255,255,0.08);
                 border: 1px solid rgba(255,255,255,0.15);
                 border-radius: 8px;
                 color: #94a3b8;
-                width: 32px; height: 32px;
+                width: 36px; height: 36px;
+                min-width: 36px; min-height: 36px;
                 display: flex; align-items: center; justify-content: center;
-                cursor: pointer; font-size: 1rem; transition: all 0.2s;
+                cursor: pointer; font-size: 1.1rem; transition: all 0.2s;
             }
-            #donghangVerifyModalClose:hover { background: rgba(239,68,68,0.2); color: #f87171; border-color: #ef4444; }
+            #donghangVerifyModalClose:hover, #donghangVerifyModalClose:active {
+                background: rgba(239,68,68,0.2); color: #f87171; border-color: #ef4444;
+            }
             #donghangVerifyModalBody {
-                padding: 16px;
+                padding: 14px;
                 overflow-y: auto;
-                flex: 1;
+                -webkit-overflow-scrolling: touch;
+                flex: 1 1 auto;
+                min-height: 0;
                 display: flex;
                 flex-direction: column;
-                gap: 14px;
+                gap: 12px;
+                overscroll-behavior: contain;
             }
             #donghangVerifyModalFooter {
-                padding: 12px 18px;
+                padding: 11px 16px;
                 display: flex; gap: 8px; align-items: center; justify-content: flex-end;
                 background: #0a0f1e;
                 border-top: 1px solid #1e293b;
@@ -2336,7 +2369,7 @@ export function openDonghangVerifyModal(url) {
                             <span style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(5, 150, 105, 0.25)); border: 1px solid #10b981; color: #34d399; font-weight: 900; font-size: 0.8rem; padding: 2px 8px; border-radius: 6px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);">
                                 🎉 ${rankNames[g.rank]} 당첨
                             </span>
-                            <span style="font-size: 0.72rem; color: #fbbf24; font-weight: 800; margin-top: 2px;">+${g.prize.toLocaleString()}원</span>
+                            <span style="font-size: 0.72rem; color: #fbbf24; font-weight: 800; margin-top: 2px;">+${Number(g.prize || 0).toLocaleString()}원</span>
                         </div>
                     `;
                 } else {
@@ -2377,7 +2410,7 @@ export function openDonghangVerifyModal(url) {
                     <div style="text-align: right;">
                         <span style="font-size: 0.72rem; color: #cbd5e1;">총 당첨금</span>
                         <div style="font-size: 1.25rem; font-weight: 900; color: #fbbf24; text-shadow: 0 0 8px rgba(251,191,36,0.5);">
-                            +${totalPrize.toLocaleString()}원
+                            +${Number(totalPrize).toLocaleString()}원
                         </div>
                     </div>
                 </div>
@@ -2422,7 +2455,7 @@ export function openDonghangVerifyModal(url) {
 
                 <!-- QR 원본 및 공식 사이트 검증 카드 -->
                 <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 14px;">
-                    <img src="${qrImageUrl}" width="90" height="90" style="border-radius: 8px; border: 1px solid #334155; flex-shrink: 0; background: #fff;" alt="동행복권 공식 QR" onerror="this.style.display='none'" />
+                    <img src="${qrImageUrl}" width="90" height="90" loading="lazy" decoding="async" style="border-radius: 8px; border: 1px solid #334155; flex-shrink: 0; background: #fff;" alt="동행복권 공식 QR" onerror="this.style.display='none'" />
                     <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1;">
                         <div style="font-size: 0.78rem; font-weight: 800; color: #f8fafc;">
                             <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i> 동행복권 공식 QR 데이터
@@ -2453,25 +2486,57 @@ export function openDonghangVerifyModal(url) {
     };
 
     modal.classList.add('active');
+    modal.style.display = 'flex';
     if (document.body) document.body.style.overflow = 'hidden';
+
+    // Mobile back navigation history push
+    if (typeof history !== 'undefined' && history.pushState) {
+        try {
+            history.pushState({ modal: 'donghangVerify' }, '', window.location.hash);
+            modal._historyPushed = true;
+        } catch(e) {}
+    }
 }
 
-export function closeDonghangVerifyModal() {
+export function closeDonghangVerifyModal(fromPopState = false) {
     if (typeof document === 'undefined') return;
     const modal = document.getElementById('donghangVerifyModal');
-    if (modal) modal.classList.remove('active');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.style.display = 'none';
     if (document.body) document.body.style.overflow = '';
+
+    if (!fromPopState && modal._historyPushed) {
+        modal._historyPushed = false;
+        try {
+            if (history.state && history.state.modal === 'donghangVerify') {
+                history.back();
+            }
+        } catch(e) {}
+    } else {
+        modal._historyPushed = false;
+    }
+}
+
+export function handleDonghangVerifyClick(btn) {
+    if (!btn) return;
+    const raw = btn.getAttribute('data-qr-url') || '';
+    const url = raw ? decodeURIComponent(raw) : (btn.getAttribute('title') || '');
+    if (url && typeof openDonghangVerifyModal === 'function') {
+        openDonghangVerifyModal(url);
+    }
 }
 
 if (typeof window !== 'undefined') {
     window.openDonghangVerifyModal = openDonghangVerifyModal;
     window.closeDonghangVerifyModal = closeDonghangVerifyModal;
+    window.handleDonghangVerifyClick = handleDonghangVerifyClick;
 
     if (typeof document !== 'undefined') {
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 const modal = document.getElementById('donghangVerifyModal');
-                if (modal && modal.classList.contains('active')) {
+                if (modal && (modal.classList.contains('active') || modal.style.display === 'flex')) {
                     closeDonghangVerifyModal();
                 }
             }

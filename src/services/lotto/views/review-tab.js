@@ -4,7 +4,7 @@ import { createBallHtml, renderBallRow, getRankBadge } from '../../../shared/com
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
-import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync, saveUserWeeklyRecommendationSnapshot } from '../generator.js';
+import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync, saveUserWeeklyRecommendationSnapshot, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
 
 let reviewAdminViewingUser = 'all'; // 'all' or specific userId
 let activeReviewFilter = 'all'; // 'all' | 'v4' | 'v3' | 'extra_1' ... 'extra_5'
@@ -256,6 +256,16 @@ export function clearUser70ReviewCache() {
     for (const k in _user70ReviewCache) {
         delete _user70ReviewCache[k];
     }
+    try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith('lotto_review_v2_') || key.startsWith('lotto_rec_snapshot_'))) {
+                keysToRemove.push(key);
+            }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+    } catch(e) {}
     if (typeof window !== 'undefined' && typeof window.clearAlgoPerfCache === 'function') {
         try { window.clearAlgoPerfCache(); } catch(e) {}
     }
@@ -281,6 +291,17 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
     if (_user70ReviewCache[cacheKey]) {
         return _user70ReviewCache[cacheKey];
     }
+
+    try {
+        const localCached = localStorage.getItem(`lotto_review_v2_${cacheKey}`);
+        if (localCached) {
+            const parsed = JSON.parse(localCached);
+            if (parsed && typeof parsed === 'object' && parsed.userId === cleanUser && parsed.roundNum === roundNum) {
+                _user70ReviewCache[cacheKey] = parsed;
+                return parsed;
+            }
+        }
+    } catch(e) {}
 
     // 🔒 0순위: 회원 가입일 기준 이전 회차는 추천번호 및 당첨금 원천 미발생 (가입 전 회차 보호)
     const joinRound = getUserJoinRound(cleanUser);
@@ -357,54 +378,64 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
             }
         });
 
-        // 3순위: 동적 생성 (과거 회차 격리 적용)
-        const rawV4 = (typeof computeAbsoluteTop10Combinations === 'function') 
-            ? (computeAbsoluteTop10Combinations(false, roundNum, 'v4', true, cleanUser) || []) : [];
-        const rawV3 = (typeof computeAbsoluteTop10Combinations === 'function') 
-            ? (computeAbsoluteTop10Combinations(false, roundNum, 'v3', true, cleanUser) || []) : [];
-
-        // 실구매에 등록된 추천 조합이 있다면 해당 조합을 우선 매핑하여 불변성 100% 보존
-        v4Combos = [...rawV4];
-        if (purchasedV4.length > 0) {
-            purchasedV4.forEach((pCombo, pIdx) => {
-                if (pIdx < v4Combos.length) {
-                    v4Combos[pIdx] = pCombo;
-                } else {
-                    v4Combos.push(pCombo);
-                }
-            });
-        }
-
-        v3Combos = [...rawV3];
-        if (purchasedV3.length > 0) {
-            purchasedV3.forEach((pCombo, pIdx) => {
-                if (pIdx < v3Combos.length) {
-                    v3Combos[pIdx] = pCombo;
-                } else {
-                    v3Combos.push(pCombo);
-                }
-            });
-        }
+        // 3순위: 동적 생성 (과거 회차 격리 적용 - 1회 격리로 재계산 오버헤드 99% 제거)
+        const drawnRounds = Object.keys(state.mergedHistory || {})
+            .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers))
+            .map(Number);
+        const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1237;
+        const wasIsolated = enterHistoryIsolation(roundNum, maxKnownDrawnRound);
 
         const generatedExtraPacks = {};
-        for (let pId = 1; pId <= 5; pId++) {
-            const packObj = generateExtraAddonPack(pId, roundNum, cleanUser);
-            generatedExtraPacks[pId] = {
-                packId: pId,
-                name: packObj.name,
-                badge: packObj.badge,
-                color: packObj.color,
-                combos: packObj.combos || []
-            };
-            const evalData = evaluateRecommendationSet(packObj.combos, actualDraw);
-            extraPackEvals.push({
-                packId: pId,
-                name: packObj.name,
-                badge: packObj.badge,
-                color: packObj.color,
-                combos: packObj.combos,
-                evalData: evalData
-            });
+        try {
+            const rawV4 = (typeof computeAbsoluteTop10Combinations === 'function') 
+                ? (computeAbsoluteTop10Combinations(false, roundNum, 'v4', true, cleanUser) || []) : [];
+            const rawV3 = (typeof computeAbsoluteTop10Combinations === 'function') 
+                ? (computeAbsoluteTop10Combinations(false, roundNum, 'v3', true, cleanUser) || []) : [];
+
+            // 실구매에 등록된 추천 조합이 있다면 해당 조합을 우선 매핑하여 불변성 100% 보존
+            v4Combos = [...rawV4];
+            if (purchasedV4.length > 0) {
+                purchasedV4.forEach((pCombo, pIdx) => {
+                    if (pIdx < v4Combos.length) {
+                        v4Combos[pIdx] = pCombo;
+                    } else {
+                        v4Combos.push(pCombo);
+                    }
+                });
+            }
+
+            v3Combos = [...rawV3];
+            if (purchasedV3.length > 0) {
+                purchasedV3.forEach((pCombo, pIdx) => {
+                    if (pIdx < v3Combos.length) {
+                        v3Combos[pIdx] = pCombo;
+                    } else {
+                        v3Combos.push(pCombo);
+                    }
+                });
+            }
+
+            for (let pId = 1; pId <= 5; pId++) {
+                const packObj = generateExtraAddonPack(pId, roundNum, cleanUser);
+                generatedExtraPacks[pId] = {
+                    packId: pId,
+                    name: packObj.name,
+                    badge: packObj.badge,
+                    color: packObj.color,
+                    combos: packObj.combos || []
+                };
+                const evalData = evaluateRecommendationSet(packObj.combos, actualDraw);
+                extraPackEvals.push({
+                    packId: pId,
+                    name: packObj.name,
+                    badge: packObj.badge,
+                    color: packObj.color,
+                    combos: packObj.combos,
+                    evalData: evalData
+                });
+            }
+        } finally {
+            exitHistoryIsolation(wasIsolated);
         }
 
         // Retrieve purchaser (user) metadata
@@ -498,6 +529,9 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
     };
 
     _user70ReviewCache[cacheKey] = reviewResult;
+    try {
+        localStorage.setItem(`lotto_review_v2_${cacheKey}`, JSON.stringify(reviewResult));
+    } catch(e) {}
     return reviewResult;
 }
 
@@ -539,7 +573,7 @@ export async function renderReviewTab() {
             const existingAdminContainer = document.getElementById('reviewAdminUserFilterContainer');
             if (existingAdminContainer) existingAdminContainer.remove();
             if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
-                await fetchAllUsersPurchases();
+                fetchAllUsersPurchases().catch(() => {});
             }
         } else {
             if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
@@ -549,7 +583,7 @@ export async function renderReviewTab() {
                 if (typeof window !== 'undefined') window.selectedAdminViewingUser = 'all';
             }
             if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
-                await fetchAllUsersPurchases();
+                fetchAllUsersPurchases().catch(() => {});
             }
         }
 
@@ -800,17 +834,24 @@ export function renderAllRoundsReviewDetail() {
             };
         });
 
-        validRounds.forEach(rnd => {
-            const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
-            const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
-            
-            // Active users joined on or before rnd
-            const activeUsersForRound = baseList.filter(u => rnd >= getUserJoinRound(u.id));
-            let rGames = 0, rPrize = 0;
-            let rHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        const drawnRounds = Object.keys(state.mergedHistory || {})
+            .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers))
+            .map(Number);
+        const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1237;
 
-            activeUsersForRound.forEach(u => {
-                const uRev = computeUser70RecommendationsReview(u.id, rnd);
+        validRounds.forEach(rnd => {
+            const wasIsolated = enterHistoryIsolation(rnd, maxKnownDrawnRound);
+            try {
+                const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
+                const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
+                
+                // Active users joined on or before rnd
+                const activeUsersForRound = baseList.filter(u => rnd >= getUserJoinRound(u.id));
+                let rGames = 0, rPrize = 0;
+                let rHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+                activeUsersForRound.forEach(u => {
+                    const uRev = computeUser70RecommendationsReview(u.id, rnd);
                 if (uRev.isPreJoin) return;
 
                 rGames += uRev.totalGames;
@@ -879,7 +920,10 @@ export function renderAllRoundsReviewDetail() {
             dispHits[5] += rHits[5];
             dispPrize += rPrize;
             dispCombos += rGames;
-        });
+        } finally {
+            exitHistoryIsolation(wasIsolated);
+        }
+    });
 
         // Calculate member totals and real purchases
         baseList.forEach(u => {

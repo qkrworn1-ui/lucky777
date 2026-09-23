@@ -449,37 +449,72 @@ export function switchLottoTab(target) {
         clearTimeout(_lottoTabRenderTimer);
     }
 
-    _lottoTabRenderTimer = setTimeout(() => {
-        if (typeof window !== 'undefined' && window.__currentLottoTab !== target) {
-            return; // Target changed while waiting, skip stale render
-        }
+    if (typeof requestAnimationFrame !== 'undefined') {
+        requestAnimationFrame(() => {
+            _lottoTabRenderTimer = setTimeout(() => {
+                if (typeof window !== 'undefined' && window.__currentLottoTab !== target) {
+                    return; // Target changed while waiting, skip stale render
+                }
 
-        try {
-            if (target === 'tab-generator') {
-                if (typeof renderTop5Combinations === 'function') renderTop5Combinations(false);
-                if (typeof updateSavedCount === 'function') updateSavedCount();
-                if (typeof renderSavedList === 'function') renderSavedList();
-            } else if (target === 'tab-algorithms') {
-                if (typeof renderAlgorithmsTab === 'function') renderAlgorithmsTab();
-            } else if (target === 'tab-simulation') {
-                if (typeof populateSimRoundSelector === 'function') populateSimRoundSelector();
-                if (typeof renderSimulationTab === 'function') renderSimulationTab();
-            } else if (target === 'tab-wheeling') {
-                if (typeof renderWheelingSelector === 'function') renderWheelingSelector();
-                if (typeof renderWheelingResults === 'function') renderWheelingResults();
-            } else if (target === 'tab-verify-evolution') {
-                if (typeof renderVerificationTab === 'function') renderVerificationTab();
-            } else if (target === 'tab-dashboard') {
-                if (typeof renderDashboardCharts === 'function') renderDashboardCharts();
-            } else if (target === 'tab-review') {
-                if (typeof renderReviewTab === 'function') renderReviewTab();
-            } else if (target === 'tab-confirmed-list') {
-                if (typeof renderConfirmedPurchasesList === 'function') renderConfirmedPurchasesList();
+                try {
+                    if (target === 'tab-generator') {
+                        if (typeof renderTop5Combinations === 'function') renderTop5Combinations(false);
+                        if (typeof updateSavedCount === 'function') updateSavedCount();
+                        if (typeof renderSavedList === 'function') renderSavedList();
+                    } else if (target === 'tab-algorithms') {
+                        if (typeof renderAlgorithmsTab === 'function') renderAlgorithmsTab();
+                    } else if (target === 'tab-simulation') {
+                        if (typeof populateSimRoundSelector === 'function') populateSimRoundSelector();
+                        if (typeof renderSimulationTab === 'function') renderSimulationTab();
+                    } else if (target === 'tab-wheeling') {
+                        if (typeof renderWheelingSelector === 'function') renderWheelingSelector();
+                        if (typeof renderWheelingResults === 'function') renderWheelingResults();
+                    } else if (target === 'tab-verify-evolution') {
+                        if (typeof renderVerificationTab === 'function') renderVerificationTab();
+                    } else if (target === 'tab-dashboard') {
+                        if (typeof renderDashboardCharts === 'function') renderDashboardCharts();
+                    } else if (target === 'tab-review') {
+                        if (typeof renderReviewTab === 'function') renderReviewTab();
+                    } else if (target === 'tab-confirmed-list') {
+                        if (typeof renderConfirmedPurchasesList === 'function') renderConfirmedPurchasesList();
+                    }
+                } catch(err) {
+                    console.error(`[Error rendering tab: ${target}]`, err);
+                }
+            }, 30);
+        });
+    } else {
+        _lottoTabRenderTimer = setTimeout(() => {
+            if (typeof window !== 'undefined' && window.__currentLottoTab !== target) {
+                return;
             }
-        } catch(err) {
-            console.error(`[Error rendering tab: ${target}]`, err);
-        }
-    }, 0);
+            try {
+                if (target === 'tab-generator') {
+                    if (typeof renderTop5Combinations === 'function') renderTop5Combinations(false);
+                    if (typeof updateSavedCount === 'function') updateSavedCount();
+                    if (typeof renderSavedList === 'function') renderSavedList();
+                } else if (target === 'tab-algorithms') {
+                    if (typeof renderAlgorithmsTab === 'function') renderAlgorithmsTab();
+                } else if (target === 'tab-simulation') {
+                    if (typeof populateSimRoundSelector === 'function') populateSimRoundSelector();
+                    if (typeof renderSimulationTab === 'function') renderSimulationTab();
+                } else if (target === 'tab-wheeling') {
+                    if (typeof renderWheelingSelector === 'function') renderWheelingSelector();
+                    if (typeof renderWheelingResults === 'function') renderWheelingResults();
+                } else if (target === 'tab-verify-evolution') {
+                    if (typeof renderVerificationTab === 'function') renderVerificationTab();
+                } else if (target === 'tab-dashboard') {
+                    if (typeof renderDashboardCharts === 'function') renderDashboardCharts();
+                } else if (target === 'tab-review') {
+                    if (typeof renderReviewTab === 'function') renderReviewTab();
+                } else if (target === 'tab-confirmed-list') {
+                    if (typeof renderConfirmedPurchasesList === 'function') renderConfirmedPurchasesList();
+                }
+            } catch(err) {
+                console.error(`[Error rendering tab: ${target}]`, err);
+            }
+        }, 30);
+    }
 }
 
 // Setup all component event listeners
