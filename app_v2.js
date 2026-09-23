@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.24.0047 - BUILD_DATE: 2026-09-24] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.24.0103.52 - BUILD_DATE: 2026-09-24] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.24.0047)
+ * Lucky777 Smart Bundle (v2026.09.24.0103.52)
  */
 
 
@@ -13252,8 +13252,28 @@ const { calculateStats } = __M_services_lotto_scoring;
 const { calculateACValue, isSystemOrDummyUser } = __M_shared_utils;
 const { getLedger, getHistoricalTop10Combinations: getHistCombo } = __M_services_lotto_ledger;
 const { recalculateGroups } = __M_services_lotto_statistics;
-const { SafeAuth, getUserRealName } = __M_shared_auth_mgmt;
+const { SafeAuth, getUserRealName, getUpcomingLottoRound, isAdminUser } = __M_shared_auth_mgmt;
 const { db } = __M_shared_db;
+
+/**
+ * 🔒 Canonical Effective User ID Resolver for Generator & Quick View
+ * Ensures 100% deterministic RNG parity across all tabs, modals, and user roles.
+ */
+function getEffectiveGeneratorUserId(customUserId = null) {
+    if (customUserId && typeof customUserId === 'string' && customUserId.trim()) {
+        return customUserId.trim().toLowerCase();
+    }
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    const isAdmin = (authId === 'master' || authId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(authId)));
+    const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) 
+        ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) 
+        : null;
+    if (isAdmin) {
+        if (viewingUser && viewingUser !== 'all') return viewingUser.trim().toLowerCase();
+        return 'all';
+    }
+    return authId.trim().toLowerCase();
+}
 
 function getUserRoundSeed(userId, round, algoId = 'default') {
     const cleanUser = (userId || 'guest').toLowerCase().trim();
@@ -13322,11 +13342,11 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
         .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers))
         .map(Number);
     const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1237;
-    const defaultRound = maxKnownDrawnRound + 1;
+    const defaultRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (maxKnownDrawnRound + 1)));
     const roundForSeed = targetRound || defaultRound;
     const algoVersion = "v4.0";
 
-    const effectiveUserId = (customUserId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
 
     // Determine version: explicit override takes HIGHEST priority (device-agnostic)
     let useReportLogic;
@@ -14111,8 +14131,8 @@ function crossCheckCombosWithRecommendations(round, rawCombosList, targetUserId 
  */
 function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId = null) {
     const pIdx = Math.max(1, Math.min(5, parseInt(packIndex, 10) || 1));
-    const curUpcomingRound = targetRound || (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239));
-    const effectiveUserId = (customUserId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+    const curUpcomingRound = targetRound || (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
     
     if (!state.extraPackCache) state.extraPackCache = {};
     const cacheKey = `extra_${pIdx}_${curUpcomingRound}_${effectiveUserId}`;
@@ -14716,6 +14736,7 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
 }
 
 if (typeof window !== 'undefined') {
+    window.getEffectiveGeneratorUserId = getEffectiveGeneratorUserId;
     window.computeAbsoluteTop10Combinations = computeAbsoluteTop10Combinations;
     window.findBestRecommendationMatch = findBestRecommendationMatch;
     window.crossCheckCombosWithRecommendations = crossCheckCombosWithRecommendations;
@@ -14724,6 +14745,10 @@ if (typeof window !== 'undefined') {
     window.getUserWeeklyRecommendationSnapshotSync = getUserWeeklyRecommendationSnapshotSync;
 }
 
+        if (typeof getEffectiveGeneratorUserId !== 'undefined') {
+            __exports.getEffectiveGeneratorUserId = getEffectiveGeneratorUserId;
+            if (typeof window !== 'undefined') window.getEffectiveGeneratorUserId = getEffectiveGeneratorUserId;
+        }
         if (typeof getUserRoundSeed !== 'undefined') {
             __exports.getUserRoundSeed = getUserRoundSeed;
             if (typeof window !== 'undefined') window.getUserRoundSeed = getUserRoundSeed;
@@ -19811,11 +19836,12 @@ const __M_services_lotto_views_generator_tab = (function() {
 const { state, saveGlobalState } = __M_services_lotto_state;
 const { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } = __M_shared_utils;
 const { createBallHtml } = __M_shared_components;
-const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot } = __M_services_lotto_generator;
+const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getEffectiveGeneratorUserId } = __M_services_lotto_generator;
 const { db } = __M_shared_db;
-const { SafeAuth, isAdminUser, getUserRealName } = __M_shared_auth_mgmt;
+const { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound } = __M_shared_auth_mgmt;
 const { getComboNumbers, getLedger, getHistoricalTop10Combinations, saveToLedger } = __M_services_lotto_ledger;
 const { calculate7AlgorithmsPerformance } = __M_services_lotto_views_algorithms_tab;
+const { openCompactView, renderQuickViewContent } = __M_services_lotto_views_quick_view;
 
 let currentAlgoReviewStartRound = 1235;
 let algoAccordionStateMap = {};
@@ -20299,9 +20325,7 @@ async function renderTop5Combinations(isRollingAnimation = false) {
         const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
         const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
         const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) : null;
-        const effectiveUserId = (isAdmin && viewingUser && viewingUser !== 'all') 
-            ? viewingUser 
-            : ((isAdmin && viewingUser === 'all') ? 'all' : (isAdmin ? 'all' : authId));
+        const effectiveUserId = getEffectiveGeneratorUserId();
 
         if (typeof render7AlgorithmsRealReviewSection === 'function') {
             setTimeout(() => {
@@ -20411,7 +20435,7 @@ async function renderTop5Combinations(isRollingAnimation = false) {
         const el_heroComboCountText = document.getElementById('heroComboCountText');
         if (el_heroComboCountText) el_heroComboCountText.textContent = `${comboCount}세트`;
 
-        const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+        const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
         const isV4 = chkReportLogic ? chkReportLogic.checked : (SafeLocalStorage.getItem('lotto_pref_v4') !== 'false');
 
@@ -20429,8 +20453,10 @@ async function renderTop5Combinations(isRollingAnimation = false) {
         let allCombos;
         if (isV4) {
             allCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
+            state.fixedTop5Combinations_v4 = allCombos;
         } else {
             allCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
+            state.fixedTop5Combinations_v3 = allCombos;
         }
 
         // 🔒 차기 회차에 대해 사용자별 7대 알고리즘 영구 불변 스냅샷 자동 생성/보존 (Write-Once)
@@ -20962,7 +20988,7 @@ function renderSavedList() {
         return;
     }
 
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
 
     container.innerHTML = state.savedCombinations.map((item, idx) => {
         const nums = getComboNumbers(item);
@@ -21026,11 +21052,12 @@ function renderSavedList() {
 function handleGenerateAllClick() {
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
     const isV4 = chkReportLogic ? chkReportLogic.checked : true;
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
+    const effectiveUserId = getEffectiveGeneratorUserId();
     
-    // Force recalculate both v3 and v4 distinctly and explicitly
-    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3');
-    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4');
+    // Force recalculate both v3 and v4 distinctly and explicitly for the current effective user & round
+    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
+    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
     state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
     
     try {
@@ -21040,6 +21067,16 @@ function handleGenerateAllClick() {
     } catch (e) {}
     
     renderTop5Combinations(true);
+
+    const compactModal = document.getElementById('compactViewModal');
+    if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+        if (typeof renderQuickViewContent === 'function') {
+            renderQuickViewContent();
+        } else if (typeof window !== 'undefined' && typeof window.renderQuickViewContent === 'function') {
+            window.renderQuickViewContent();
+        }
+    }
+
     showToast('이번 주 추천 번호 10게임이 새롭게 생성되었습니다.');
 }
 
@@ -21056,7 +21093,7 @@ async function handleConfirmPurchaseHeroClick() {
         return;
     }
 
-    const nextRound = state.latestDrawData ? (state.latestDrawData.drwNo + 1) : ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1240);
+    const nextRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
     const gameCount = currentCombos.length;
     const receiptCount = Math.ceil(gameCount / 5);
 
@@ -21083,15 +21120,17 @@ function setupGeneratorTabEvents() {
             const isV4 = chkReportLogic.checked;
             SafeLocalStorage.setItem('lotto_pref_v4', isV4 ? 'true' : 'false');
             
-            const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+            const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
+            const effectiveUserId = getEffectiveGeneratorUserId();
+
             if (isV4) {
                 if (!state.fixedTop5Combinations_v4 || state.fixedTop5Combinations_v4.length === 0) {
-                    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4');
+                    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
                 }
                 state.fixedTop5Combinations = state.fixedTop5Combinations_v4;
             } else {
                 if (!state.fixedTop5Combinations_v3 || state.fixedTop5Combinations_v3.length === 0) {
-                    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3');
+                    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
                 }
                 state.fixedTop5Combinations = state.fixedTop5Combinations_v3;
             }
@@ -21105,6 +21144,16 @@ function setupGeneratorTabEvents() {
             renderTop5Combinations(false);
             updateSavedCount();
             renderSavedList();
+
+            const compactModal = document.getElementById('compactViewModal');
+            if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+                if (typeof openCompactView === 'function') {
+                    openCompactView(isV4 ? 'v4' : 'v3');
+                } else if (typeof window !== 'undefined' && typeof window.openCompactView === 'function') {
+                    window.openCompactView(isV4 ? 'v4' : 'v3');
+                }
+            }
+
             showToast(isV4 ? '🧠 [V4.0 행동경제학 포트폴리오] 10게임이 적용되었습니다.' : '⚡ [V3.0 하이브리드 알고리즘] 10게임이 적용되었습니다.');
         };
     }
@@ -21730,10 +21779,8 @@ function changeGeneratorAdminViewingUser(userId) {
         window.algoAdminViewingUser = userId;
         window.reviewAdminViewingUser = userId;
     }
-    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
-        ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
-    const targetCombosUser = (userId === 'all') ? 'master' : userId;
+    const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function' ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
+    const targetCombosUser = getEffectiveGeneratorUserId(userId);
     
     // Recalculate deterministic recommendations for selected user
     state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, targetCombosUser);
@@ -21752,7 +21799,12 @@ function changeGeneratorAdminViewingUser(userId) {
         }
     }
     // If Quick View (간편보기) modal is currently open, dynamically refresh its content
-    if (typeof window !== 'undefined' && typeof window.renderQuickViewContent === 'function') {
+    if (typeof renderQuickViewContent === 'function') {
+        const compactModal = document.getElementById('compactViewModal');
+        if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+            renderQuickViewContent();
+        }
+    } else if (typeof window !== 'undefined' && typeof window.renderQuickViewContent === 'function') {
         const compactModal = document.getElementById('compactViewModal');
         if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
             window.renderQuickViewContent();
@@ -21920,19 +21972,22 @@ function updateTop7AlgoUI() {
  * @param {'v4'|'v3'|'extra1'|'extra2'|'extra3'|'extra4'|'extra5'} algoId
  */
 async function selectGeneratorAlgo(algoId) {
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const effectiveUserId = getEffectiveGeneratorUserId();
+    const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function' ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
 
     // V4.0 Selected
     if (algoId === 'v4') {
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
         if (chkReportLogic) chkReportLogic.checked = true;
         SafeLocalStorage.setItem('lotto_pref_v4', 'true');
-        state.fixedTop5Combinations = state.fixedTop5Combinations_v4 || computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
+        state.fixedTop5Combinations = state.fixedTop5Combinations_v4 || computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
         renderTop5Combinations(true);
         updateTop7AlgoUI();
+        const compactModal = document.getElementById('compactViewModal');
+        if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+            if (typeof openCompactView === 'function') openCompactView('v4');
+            else if (typeof window !== 'undefined' && window.openCompactView) window.openCompactView('v4');
+        }
         showToast('🧠 V4.0 행동경제학 포트폴리오 (10게임)가 선택되었습니다.');
         return;
     }
@@ -21942,9 +21997,14 @@ async function selectGeneratorAlgo(algoId) {
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
         if (chkReportLogic) chkReportLogic.checked = false;
         SafeLocalStorage.setItem('lotto_pref_v4', 'false');
-        state.fixedTop5Combinations = state.fixedTop5Combinations_v3 || computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
+        state.fixedTop5Combinations = state.fixedTop5Combinations_v3 || computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
         renderTop5Combinations(true);
         updateTop7AlgoUI();
+        const compactModal = document.getElementById('compactViewModal');
+        if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+            if (typeof openCompactView === 'function') openCompactView('v3');
+            else if (typeof window !== 'undefined' && window.openCompactView) window.openCompactView('v3');
+        }
         showToast('⚡ V3.0 하이브리드 알고리즘 (10게임)이 선택되었습니다.');
         return;
     }
@@ -21952,9 +22012,7 @@ async function selectGeneratorAlgo(algoId) {
     // Extra Packs (extra1 ~ extra5)
     if (algoId.startsWith('extra')) {
         const packNum = parseInt(algoId.replace('extra', ''));
-        const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
-            ? window.getUpcomingLottoRound()
-            : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function' ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
 
         const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
             ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
@@ -21981,12 +22039,8 @@ async function selectGeneratorAlgo(algoId) {
  * ⚡ Generate All 7 Algorithms (70 Games Total: V4 + V3 + Extra 1~5)
  */
 async function handleGenerateAll70Games() {
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-    const effectiveUserId = (isAdmin && generatorAdminViewingUser) ? generatorAdminViewingUser : authId;
-    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
-        ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+    const effectiveUserId = getEffectiveGeneratorUserId();
+    const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function' ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
 
     // 1. Force compute both V3 and V4 (20 Games)
     state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
@@ -22614,12 +22668,12 @@ function applyOptimizedCombinationToApp() {
         const chkReport = document.getElementById('chkUseV4ReportLogic');
         if (chkReport) chkReport.checked = true;
         SafeLocalStorage.setItem('lotto_pref_v4', 'true');
-        state.fixedTop5Combinations = state.fixedTop5Combinations_v4 || computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
+        state.fixedTop5Combinations = state.fixedTop5Combinations_v4 || computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
     } else if (v3Selected) {
         const chkReport = document.getElementById('chkUseV4ReportLogic');
         if (chkReport) chkReport.checked = false;
         SafeLocalStorage.setItem('lotto_pref_v4', 'false');
-        state.fixedTop5Combinations = state.fixedTop5Combinations_v3 || computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
+        state.fixedTop5Combinations = state.fixedTop5Combinations_v3 || computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
     }
 
     // 3. Close modal
@@ -27099,34 +27153,30 @@ const __M_services_lotto_views_quick_view = (function() {
     const __exports = {};
     try {
 const { state } = __M_services_lotto_state;
-const { getBallHexColor, showToast } = __M_shared_utils;
+const { getBallHexColor, getBallColorClass, showToast } = __M_shared_utils;
 const { SafeAuth, isAdminUser, getUpcomingLottoRound } = __M_shared_auth_mgmt;
 const { getComboNumbers } = __M_services_lotto_ledger;
-const { computeAbsoluteTop10Combinations, generateExtraAddonPack } = __M_services_lotto_generator;
+const { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId } = __M_services_lotto_generator;
 
-let currentQuickAlgo = 'v3'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
+let currentQuickAlgo = 'v4'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
 
 /**
  * Fetch combinations based on selected algorithm (v3.0 / v4.0 / extra_1~5 / all)
- * Strictly personalized for the logged-in user and current upcoming round.
+ * Strictly synchronized with the main screen generator and personalized for user/round.
  */
 function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
-    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(authId)));
-    const adminViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
-
-    const effectiveUserId = (customUserId || 
-        (isAdmin && adminViewingUser ? adminViewingUser : null) || 
-        authId).trim().toLowerCase();
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
 
     const targetRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : 
         ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 
-        (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1240))));
+        (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243))));
 
     const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
     if (algo === 'v3') {
-        const v3Combos = computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || [];
+        const v3Combos = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10)
+            ? state.fixedTop5Combinations_v3
+            : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
         return {
             versionLabel: 'V3.0 하이브리드',
             badgeColor: '#3b82f6',
@@ -27135,7 +27185,9 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             targetRound
         };
     } else if (algo === 'v4') {
-        const v4Combos = computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || [];
+        const v4Combos = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10)
+            ? state.fixedTop5Combinations_v4
+            : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
         return {
             versionLabel: 'V4.0 행동경제학',
             badgeColor: '#10b981',
@@ -27158,8 +27210,12 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
         };
     } else {
         // 'all' -> Combines V3 + V4 + all active Extra Packs (20 to 70 combinations)
-        const v3Combos = computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || [];
-        const v4Combos = computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || [];
+        const v3Combos = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10)
+            ? state.fixedTop5Combinations_v3
+            : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
+        const v4Combos = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10)
+            ? state.fixedTop5Combinations_v4
+            : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
 
         const allCombos = [
             ...v3Combos.map((c, i) => ({ ...c, customLabel: `V3-${alphabet[i] || (i + 1)}`, groupTag: 'V3.0 하이브리드 (10조합)' })),
@@ -27203,12 +27259,12 @@ function openCompactView(algo = null) {
     if (algo) {
         currentQuickAlgo = algo;
     } else {
-        // Default: If active extra packs exist, keep current or default to 'all' / 'v4'
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-        if (chkReportLogic && chkReportLogic.checked) {
-            currentQuickAlgo = 'v4';
+        if (chkReportLogic) {
+            currentQuickAlgo = chkReportLogic.checked ? 'v4' : 'v3';
         } else {
-            currentQuickAlgo = 'v3';
+            const pref = SafeLocalStorage.getItem('lotto_pref_v4');
+            currentQuickAlgo = (pref === 'false') ? 'v3' : 'v4';
         }
     }
 

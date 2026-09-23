@@ -1,32 +1,28 @@
 import { state } from '../state.js';
-import { getBallHexColor, showToast } from '../../../shared/utils.js';
+import { getBallHexColor, getBallColorClass, showToast } from '../../../shared/utils.js';
 import { SafeAuth, isAdminUser, getUpcomingLottoRound } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers } from '../ledger.js';
-import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
+import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId } from '../generator.js';
 
-let currentQuickAlgo = 'v3'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
+let currentQuickAlgo = 'v4'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
 
 /**
  * Fetch combinations based on selected algorithm (v3.0 / v4.0 / extra_1~5 / all)
- * Strictly personalized for the logged-in user and current upcoming round.
+ * Strictly synchronized with the main screen generator and personalized for user/round.
  */
 export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
-    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const isAdmin = (authId === 'master' || authId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(authId)));
-    const adminViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
-
-    const effectiveUserId = (customUserId || 
-        (isAdmin && adminViewingUser ? adminViewingUser : null) || 
-        authId).trim().toLowerCase();
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
 
     const targetRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : 
         ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 
-        (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1240))));
+        (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243))));
 
     const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
     if (algo === 'v3') {
-        const v3Combos = computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || [];
+        const v3Combos = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10)
+            ? state.fixedTop5Combinations_v3
+            : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
         return {
             versionLabel: 'V3.0 하이브리드',
             badgeColor: '#3b82f6',
@@ -35,7 +31,9 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             targetRound
         };
     } else if (algo === 'v4') {
-        const v4Combos = computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || [];
+        const v4Combos = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10)
+            ? state.fixedTop5Combinations_v4
+            : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
         return {
             versionLabel: 'V4.0 행동경제학',
             badgeColor: '#10b981',
@@ -58,8 +56,12 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
         };
     } else {
         // 'all' -> Combines V3 + V4 + all active Extra Packs (20 to 70 combinations)
-        const v3Combos = computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || [];
-        const v4Combos = computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || [];
+        const v3Combos = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10)
+            ? state.fixedTop5Combinations_v3
+            : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
+        const v4Combos = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10)
+            ? state.fixedTop5Combinations_v4
+            : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
 
         const allCombos = [
             ...v3Combos.map((c, i) => ({ ...c, customLabel: `V3-${alphabet[i] || (i + 1)}`, groupTag: 'V3.0 하이브리드 (10조합)' })),
@@ -103,12 +105,12 @@ export function openCompactView(algo = null) {
     if (algo) {
         currentQuickAlgo = algo;
     } else {
-        // Default: If active extra packs exist, keep current or default to 'all' / 'v4'
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-        if (chkReportLogic && chkReportLogic.checked) {
-            currentQuickAlgo = 'v4';
+        if (chkReportLogic) {
+            currentQuickAlgo = chkReportLogic.checked ? 'v4' : 'v3';
         } else {
-            currentQuickAlgo = 'v3';
+            const pref = localStorage.getItem('lotto_pref_v4');
+            currentQuickAlgo = (pref === 'false') ? 'v3' : 'v4';
         }
     }
 

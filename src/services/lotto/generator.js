@@ -3,8 +3,28 @@ import { calculateStats } from './scoring.js';
 import { calculateACValue, isSystemOrDummyUser } from '../../shared/utils.js';
 import { getLedger, getHistoricalTop10Combinations as getHistCombo } from './ledger.js';
 import { recalculateGroups } from './statistics.js';
-import { SafeAuth, getUserRealName } from '../../shared/auth-mgmt.js';
+import { SafeAuth, getUserRealName, getUpcomingLottoRound, isAdminUser } from '../../shared/auth-mgmt.js';
 import { db } from '../../shared/db.js';
+
+/**
+ * 🔒 Canonical Effective User ID Resolver for Generator & Quick View
+ * Ensures 100% deterministic RNG parity across all tabs, modals, and user roles.
+ */
+export function getEffectiveGeneratorUserId(customUserId = null) {
+    if (customUserId && typeof customUserId === 'string' && customUserId.trim()) {
+        return customUserId.trim().toLowerCase();
+    }
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    const isAdmin = (authId === 'master' || authId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(authId)));
+    const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) 
+        ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) 
+        : null;
+    if (isAdmin) {
+        if (viewingUser && viewingUser !== 'all') return viewingUser.trim().toLowerCase();
+        return 'all';
+    }
+    return authId.trim().toLowerCase();
+}
 
 export function getUserRoundSeed(userId, round, algoId = 'default') {
     const cleanUser = (userId || 'guest').toLowerCase().trim();
@@ -73,11 +93,11 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
         .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers))
         .map(Number);
     const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1237;
-    const defaultRound = maxKnownDrawnRound + 1;
+    const defaultRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (maxKnownDrawnRound + 1)));
     const roundForSeed = targetRound || defaultRound;
     const algoVersion = "v4.0";
 
-    const effectiveUserId = (customUserId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
 
     // Determine version: explicit override takes HIGHEST priority (device-agnostic)
     let useReportLogic;
@@ -862,8 +882,8 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
  */
 export function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId = null) {
     const pIdx = Math.max(1, Math.min(5, parseInt(packIndex, 10) || 1));
-    const curUpcomingRound = targetRound || (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239));
-    const effectiveUserId = (customUserId || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest').toLowerCase().trim();
+    const curUpcomingRound = targetRound || (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
     
     if (!state.extraPackCache) state.extraPackCache = {};
     const cacheKey = `extra_${pIdx}_${curUpcomingRound}_${effectiveUserId}`;
@@ -1467,6 +1487,7 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
 }
 
 if (typeof window !== 'undefined') {
+    window.getEffectiveGeneratorUserId = getEffectiveGeneratorUserId;
     window.computeAbsoluteTop10Combinations = computeAbsoluteTop10Combinations;
     window.findBestRecommendationMatch = findBestRecommendationMatch;
     window.crossCheckCombosWithRecommendations = crossCheckCombosWithRecommendations;

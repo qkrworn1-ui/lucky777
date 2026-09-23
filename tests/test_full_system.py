@@ -2056,6 +2056,39 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('render7AlgorithmsRealReviewSection', gen_tab_code)
         self.assertIn('setTimeout', gen_tab_code)
 
+    def test_57_quick_view_and_generator_recommendations_parity(self):
+        """Test 57: Verify 100% number parity between main generator tab and quick-view modal."""
+        gen_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+        gen_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        quick_view_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'quick-view.js')
+
+        with open(gen_file, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+        with open(gen_tab_file, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+        with open(quick_view_file, 'r', encoding='utf-8') as f:
+            quick_code = f.read()
+
+        # 1. generator.js exports canonical getEffectiveGeneratorUserId
+        self.assertIn('export function getEffectiveGeneratorUserId', gen_code)
+        self.assertIn('getEffectiveGeneratorUserId(customUserId)', gen_code)
+
+        # 2. generator-tab.js imports and uses getEffectiveGeneratorUserId & getUpcomingLottoRound
+        self.assertIn('getEffectiveGeneratorUserId', gen_tab_code)
+        self.assertIn('getUpcomingLottoRound', gen_tab_code)
+
+        # 3. quick-view.js imports and uses getEffectiveGeneratorUserId & getUpcomingLottoRound
+        self.assertIn('getEffectiveGeneratorUserId', quick_code)
+        self.assertIn('getUpcomingLottoRound', quick_code)
+
+        # 4. quick-view.js syncs with state.fixedTop5Combinations_v3 and state.fixedTop5Combinations_v4
+        self.assertIn('state.fixedTop5Combinations_v3', quick_code)
+        self.assertIn('state.fixedTop5Combinations_v4', quick_code)
+
+        # 5. generator-tab.js handleGenerateAllClick passes effectiveUserId to computeAbsoluteTop10Combinations
+        self.assertIn('computeAbsoluteTop10Combinations(true, curUpcomingRound, \'v3\', true, effectiveUserId)', gen_tab_code)
+        self.assertIn('computeAbsoluteTop10Combinations(true, curUpcomingRound, \'v4\', true, effectiveUserId)', gen_tab_code)
+
 
 if __name__ == '__main__':
     unittest.main()
