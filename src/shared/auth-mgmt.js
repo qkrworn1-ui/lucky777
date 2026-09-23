@@ -43,7 +43,7 @@ export const SafeAuth = {
         if (typeof raw === 'string' && raw.startsWith('{')) {
             try {
                 var obj = JSON.parse(raw);
-                if (obj && obj.userId) return obj.userId;
+                if (obj && (obj.userId || obj.userid || obj.id)) return obj.userId || obj.userid || obj.id;
             } catch(e) {}
         }
         return raw;
@@ -481,7 +481,14 @@ export async function checkUserWeeklyPurchaseStatus(userId, userDocData = null) 
 
 export function isAdminUser(authId, userData = null) {
     if (!authId) return false;
-    const cleanId = String(authId).trim().toLowerCase();
+    let cleanId = String(authId).trim();
+    if (cleanId.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanId);
+            cleanId = p.userId || p.userid || p.id || cleanId;
+        } catch(e) {}
+    }
+    cleanId = cleanId.toLowerCase().trim();
     if (cleanId === 'master' || cleanId === 'admin') return true;
     if (userData && (userData.role === 'admin' || userData.isAdmin === true || userData.userType === 'admin')) {
         setIsAdminCache(cleanId, true);
@@ -578,7 +585,14 @@ export function setUserCreatedCache(authId, createdAt) {
 
 export function getUserRealName(authId, userData = null) {
     if (!authId) return '';
-    const cleanId = authId.toLowerCase().trim();
+    let cleanId = String(authId).trim();
+    if (cleanId.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanId);
+            cleanId = p.userId || p.userid || p.id || cleanId;
+        } catch(e) {}
+    }
+    cleanId = cleanId.toLowerCase().trim();
     if (cleanId === 'master' || cleanId === 'admin') {
         return (window.__userNames && window.__userNames[cleanId]) || '최고관리자';
     }
@@ -615,9 +629,17 @@ export function getUserRealName(authId, userData = null) {
 
 export function isPermanentUser(authId, userData = null) {
     if (!authId) return false;
-    const cleanId = String(authId).trim().toLowerCase();
-    if (cleanId === 'master' || cleanId === 'admin') return true;
     if (isAdminUser(authId, userData)) return true;
+    let cleanId = String(authId).trim();
+    if (cleanId.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanId);
+            cleanId = p.userId || p.userid || p.id || cleanId;
+        } catch(e) {}
+    }
+    cleanId = cleanId.toLowerCase().trim();
+    if (cleanId === 'master' || cleanId === 'admin') return true;
+    if (isAdminUser(cleanId, userData)) return true;
     if (userData && (userData.isPermanent === true || userData.isPermanent === 'true' || userData.userType === 'permanent' || userData.isAdmin === true || userData.role === 'admin' || userData.userType === 'admin')) return true;
     
     // Check in-memory fast cache

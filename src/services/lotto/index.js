@@ -4,7 +4,7 @@ import { db } from '../../shared/db.js';
 import { showToast } from '../../shared/utils.js';
 import { updateDebugMonitor, SafeAuth } from '../../shared/auth-mgmt.js';
 import { renderLatestDrawBanner } from './views/draw-banner.js';
-import { renderTop5Combinations, updateSavedCount, renderSavedList, setupGeneratorTabEvents } from './views/generator-tab.js';
+import { renderTop5Combinations, updateSavedCount, renderSavedList, setupGeneratorTabEvents, updateTop7AlgoUI } from './views/generator-tab.js';
 import { populateSimRoundSelector, renderSimulationTab, setupSimulationEvents } from './views/simulation-tab.js';
 import { renderWheelingSelector, renderWheelingResults, setupWheelingTab } from './views/wheeling.js';
 import { renderVerificationTab, setupEvolutionButton } from './views/verification.js';
@@ -447,6 +447,9 @@ export function switchLottoTab(target) {
     // 4. Safely execute tab-specific render routines asynchronously without blocking the UI thread
     if (target === 'tab-generator' && typeof renderTop5Combinations === 'function') {
         try { renderTop5Combinations(false); } catch(e){}
+        if (typeof updateTop7AlgoUI === 'function') {
+            try { updateTop7AlgoUI(); } catch(e){}
+        }
     }
 
     if (_lottoTabRenderTimer) {
@@ -463,6 +466,7 @@ export function switchLottoTab(target) {
                 try {
                     if (target === 'tab-generator') {
                         if (typeof renderTop5Combinations === 'function') renderTop5Combinations(false);
+                        if (typeof updateTop7AlgoUI === 'function') updateTop7AlgoUI();
                         if (typeof updateSavedCount === 'function') updateSavedCount();
                         if (typeof renderSavedList === 'function') renderSavedList();
                     } else if (target === 'tab-algorithms') {

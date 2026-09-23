@@ -12,17 +12,39 @@ import { db } from '../../shared/db.js';
  */
 export function getEffectiveGeneratorUserId(customUserId = null) {
     if (customUserId && typeof customUserId === 'string' && customUserId.trim()) {
-        return customUserId.trim().toLowerCase();
+        let cId = customUserId.trim();
+        if (cId.startsWith('{')) {
+            try {
+                const p = JSON.parse(cId);
+                cId = p.userId || p.userid || p.id || cId;
+            } catch(e) {}
+        }
+        return cId.trim().toLowerCase();
     }
-    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-    const cleanAuth = authId.trim().toLowerCase();
+    let authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const p = JSON.parse(authId);
+            authId = p.userId || p.userid || p.id || authId;
+        } catch(e) {}
+    }
+    const cleanAuth = String(authId || '').trim().toLowerCase();
     const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
     const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) 
         ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) 
         : null;
     if (isAdmin) {
         if (viewingUser === 'all') return 'all';
-        if (viewingUser && typeof viewingUser === 'string' && viewingUser.trim()) return viewingUser.trim().toLowerCase();
+        if (viewingUser && typeof viewingUser === 'string' && viewingUser.trim()) {
+            let vId = viewingUser.trim();
+            if (vId.startsWith('{')) {
+                try {
+                    const p = JSON.parse(vId);
+                    vId = p.userId || p.userid || p.id || vId;
+                } catch(e) {}
+            }
+            return vId.trim().toLowerCase();
+        }
         return cleanAuth; // Default to Admin's own account!
     }
     return cleanAuth;

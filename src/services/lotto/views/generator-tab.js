@@ -3,7 +3,8 @@ import { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } fr
 import { createBallHtml } from '../../../shared/components.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getEffectiveGeneratorUserId } from '../generator.js';
 import { db } from '../../../shared/db.js';
-import { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound } from '../../../shared/auth-mgmt.js';
+import { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPermanentUser } from '../../../shared/auth-mgmt.js';
+import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
 import { getComboNumbers, getLedger, getHistoricalTop10Combinations, saveToLedger } from '../ledger.js';
 import { calculate7AlgorithmsPerformance } from './algorithms-tab.js';
 import { openCompactView, renderQuickViewContent } from './quick-view.js';
@@ -487,8 +488,16 @@ export function isComboPurchasedInConfirmedLedger(nums, targetRound = null) {
 
 export async function renderTop5Combinations(isRollingAnimation = false) {
     try {
-        const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-        const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
+        let rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        if (typeof rawAuth === 'string' && rawAuth.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(rawAuth);
+                rawAuth = parsed.userid || parsed.userId || parsed.id || rawAuth;
+            } catch(e) {}
+        }
+        const authId = (rawAuth || '').trim();
+        const cleanAuth = authId.toLowerCase();
+        const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
         const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.generatorAdminViewingUser)) ? (window.selectedAdminViewingUser || window.generatorAdminViewingUser) : null;
         const effectiveUserId = getEffectiveGeneratorUserId();
 
@@ -502,32 +511,34 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
             }, 50);
         }
 
-        // Ensure user list is loaded for admin dropdown
-        if (isAdmin && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) && window.db) {
-            try {
-                const uSnap = await window.db.collection('lotto_users').get();
-                state.allRegisteredUsersList = [];
-                uSnap.forEach(d => {
-                    const uId = d.id.trim().toLowerCase();
-                    if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'sample' || uId === 'hms' || uId === 'admin') return;
-                    const uData = d.data() || {};
-                    if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') return;
-                    const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
-                    if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
-                        window.setIsPermanentCache(d.id, isPerm);
-                    }
-                    state.allRegisteredUsersList.push({
-                        id: d.id,
-                        name: uData.realName || d.id,
-                        realName: uData.realName || d.id,
-                        phone: uData.phoneNumber || '',
-                        isAdmin: !!(uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin'),
-                        isPermanent: isPerm,
-                        userType: uData.userType || (isPerm ? 'permanent' : 'regular'),
-                        createdAt: uData.createdAt || null
+        // Non-blocking background fetch of user list for admin dropdown
+        if (isAdmin && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) && (window.db || db)) {
+            const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+            if (firestore) {
+                firestore.collection('lotto_users').get().then(uSnap => {
+                    state.allRegisteredUsersList = [];
+                    uSnap.forEach(d => {
+                        const uId = d.id.trim().toLowerCase();
+                        if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'user_alpha' || uId === 'user_beta' || uId === 'sample' || uId === 'hms' || uId === 'admin') return;
+                        const uData = d.data() || {};
+                        if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') return;
+                        const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
+                        if (typeof window !== 'undefined' && typeof window.setIsPermanentCache === 'function') {
+                            window.setIsPermanentCache(d.id, isPerm);
+                        }
+                        state.allRegisteredUsersList.push({
+                            id: d.id,
+                            name: uData.realName || d.id,
+                            realName: uData.realName || d.id,
+                            phone: uData.phoneNumber || '',
+                            isAdmin: !!(uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin'),
+                            isPermanent: isPerm,
+                            userType: uData.userType || (isPerm ? 'permanent' : 'regular'),
+                            createdAt: uData.createdAt || null
+                        });
                     });
-                });
-            } catch(e) {}
+                }).catch(e => console.warn('[Background lotto_users fetch]', e));
+            }
         }
 
         // Admin User Selector Injection for Generator View
@@ -546,12 +557,15 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         })();
 
         if (isAdmin && adminBarContainer) {
-            const userList = state.allRegisteredUsersList || [];
+            const userList = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0)
+                ? state.allRegisteredUsersList
+                : getAllUnifiedRegisteredUsers();
             let userOptions = `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
             userOptions += `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 종합 실적</option>`;
             userList.forEach(u => {
-                if (u.id !== authId) {
-                    userOptions += `<option value="${u.id}" ${effectiveUserId === u.id ? 'selected' : ''}>👤 ${u.id} (${u.name}${u.phone ? ` / ${u.phone}` : ''})</option>`;
+                if ((u.id || '').toLowerCase().trim() !== cleanAuth) {
+                    const uName = u.name || u.realName || u.id;
+                    userOptions += `<option value="${u.id}" ${effectiveUserId.toLowerCase() === (u.id || '').toLowerCase().trim() ? 'selected' : ''}>👤 ${u.id} (${uName}${u.phone ? ` / ${u.phone}` : ''})</option>`;
                 }
             });
 
@@ -2020,15 +2034,22 @@ if (typeof window !== 'undefined') {
  */
 export function updateTop7AlgoUI() {
     try {
-        const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
-        const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
+        let rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        if (typeof rawAuth === 'string' && rawAuth.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(rawAuth);
+                rawAuth = parsed.userid || parsed.userId || parsed.id || rawAuth;
+            } catch(e) {}
+        }
+        const authId = (rawAuth || '').trim();
+        const cleanAuth = authId.toLowerCase();
+        const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
         const effectiveUserId = getEffectiveGeneratorUserId();
         const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
             ? window.getUpcomingLottoRound()
             : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
 
         const cleanEffUser = String(effectiveUserId || '').toLowerCase().trim();
-        const cleanAuth = String(authId || '').toLowerCase().trim();
         const isViewerAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
         const isTargetAdmin = (cleanEffUser === 'master' || cleanEffUser === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanEffUser)));
         const isTargetPermanent = (typeof isPermanentUser === 'function' && isPermanentUser(cleanEffUser));
