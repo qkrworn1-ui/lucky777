@@ -1,240 +1,9 @@
 {
-  "version": "v2026.09.23.1643",
+  "version": "v2026.09.23.1802.38",
   "buildDate": "2026-09-23",
   "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료",
-  "buildTimestamp": "2026-09-23T16:43:04.333745",
+  "buildTimestamp": "2026-09-23T18:02:38.241535",
   "buildHistory": [
-    {
-      "version": "v2026.09.18.2229",
-      "buildDate": "2026-09-18",
-      "buildTime": "22:29",
-      "buildTimestamp": "2026-09-18T22:29:25.562133",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.18.2252",
-      "buildDate": "2026-09-18",
-      "buildTime": "22:52",
-      "buildTimestamp": "2026-09-18T22:52:51.120079",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.18.2256",
-      "buildDate": "2026-09-18",
-      "buildTime": "22:56",
-      "buildTimestamp": "2026-09-18T22:56:42.354421",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.18.2315",
-      "buildDate": "2026-09-18",
-      "buildTime": "23:15",
-      "buildTimestamp": "2026-09-18T23:15:38.475644",
-      "description": "Official production release with datetime versioning, 1-command rollback, and buildHistory snapshots"
-    },
-    {
-      "version": "v2026.09.19.1226",
-      "buildDate": "2026-09-19",
-      "buildTime": "12:26",
-      "buildTimestamp": "2026-09-19T12:26:57.890974",
-      "description": "Fix login freeze by optimizing algorithm review caching, loop bounds, and auth flow"
-    },
-    {
-      "version": "v2026.09.19.1319",
-      "buildDate": "2026-09-19",
-      "buildTime": "13:19",
-      "buildTimestamp": "2026-09-19T13:19:08.613897",
-      "description": "Ensure all admin accounts are permanently exempt from weekly purchase requirements and granted permanent membership"
-    },
-    {
-      "version": "v2026.09.19.1326",
-      "buildDate": "2026-09-19",
-      "buildTime": "13:26",
-      "buildTimestamp": "2026-09-19T13:26:02.978949",
-      "description": "Fix user switch freeze and clarify dual admin-permanent permission architecture"
-    },
-    {
-      "version": "v2026.09.19.1332",
-      "buildDate": "2026-09-19",
-      "buildTime": "13:32",
-      "buildTimestamp": "2026-09-19T13:32:20.051734",
-      "description": "Fix master, admin, and permanent user extra packs purchase exemption in ledger and generator UI"
-    },
-    {
-      "version": "v2026.09.19.1335",
-      "buildDate": "2026-09-19",
-      "buildTime": "13:35",
-      "buildTimestamp": "2026-09-19T13:35:21.012801",
-      "description": "Fix purchase exemption for admin, permanent members, and admin viewing other user accounts"
-    },
-    {
-      "version": "v2026.09.19.1348",
-      "buildDate": "2026-09-19",
-      "buildTime": "13:48",
-      "buildTimestamp": "2026-09-19T13:48:19.884709",
-      "description": "Enforce strict zero-duplicate 6-number guarantee across all generation engines and wheeling"
-    },
-    {
-      "version": "v2026.09.19.1431",
-      "buildDate": "2026-09-19",
-      "buildTime": "14:31",
-      "buildTimestamp": "2026-09-19T14:31:14.112370",
-      "description": "Improve yellow lotto ball text contrast and readability with bold dark typography"
-    },
-    {
-      "version": "v2026.09.19.1452",
-      "buildDate": "2026-09-19",
-      "buildTime": "14:52",
-      "buildTimestamp": "2026-09-19T14:52:27.187012",
-      "description": "Fix: 카카오 로그인 먹통 현상 수정 (uData ReferenceError + visibilitychange 재인증)"
-    },
-    {
-      "version": "v2026.09.21.1131",
-      "buildDate": "2026-09-21",
-      "buildTime": "11:31",
-      "buildTimestamp": "2026-09-21T11:31:33.656335",
-      "description": "Fix: 당첨확인 링크 모달 팝업으로 변경 (뒤로가기 URL 이탈 방지)"
-    },
-    {
-      "version": "v2026.09.21.1137",
-      "buildDate": "2026-09-21",
-      "buildTime": "11:37",
-      "buildTimestamp": "2026-09-21T11:37:55.868576",
-      "description": "Fix: 당첨확인 모달 IIFE DOM 가드 추가 - 탭 메뉴 먹통 버그 수정"
-    },
-    {
-      "version": "v2026.09.21.1141",
-      "buildDate": "2026-09-21",
-      "buildTime": "11:41",
-      "buildTimestamp": "2026-09-21T11:41:02.886282",
-      "description": "Fix: confirmed-tab.js 구문 오류 정상화 및 로그인/탭 기능 복구"
-    },
-    {
-      "version": "v2026.09.21.1141.18",
-      "buildDate": "2026-09-21",
-      "buildTime": "11:41",
-      "buildTimestamp": "2026-09-21T11:41:18.961239",
-      "description": "Fix: confirmed-tab.js 구문 정상화 및 test_49 추가 완료"
-    },
-    {
-      "version": "v2026.09.21.1144",
-      "buildDate": "2026-09-21",
-      "buildTime": "11:44",
-      "buildTimestamp": "2026-09-21T11:44:59.854496",
-      "description": "Feature: 동행복권 실시간 인앱 정밀 채점 및 당첨확인 모달 고도화 완료"
-    },
-    {
-      "version": "v2026.09.21.1148",
-      "buildDate": "2026-09-21",
-      "buildTime": "11:48",
-      "buildTimestamp": "2026-09-21T11:48:49.077091",
-      "description": "Feature: 스마트폰 뒤로가기 누를 시 홈 이동 후 종료 기능 구현 및 test_50 추가"
-    },
-    {
-      "version": "v2026.09.21.1152",
-      "buildDate": "2026-09-21",
-      "buildTime": "11:52",
-      "buildTimestamp": "2026-09-21T11:52:51.608380",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.21.1200",
-      "buildDate": "2026-09-21",
-      "buildTime": "12:00",
-      "buildTimestamp": "2026-09-21T12:00:56.408515",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.21.1205",
-      "buildDate": "2026-09-21",
-      "buildTime": "12:05",
-      "buildTimestamp": "2026-09-21T12:05:24.508693",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.21.1209",
-      "buildDate": "2026-09-21",
-      "buildTime": "12:09",
-      "buildTimestamp": "2026-09-21T12:09:01.615275",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.21.1209.27",
-      "buildDate": "2026-09-21",
-      "buildTime": "12:09",
-      "buildTimestamp": "2026-09-21T12:09:27.814523",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.21.1222",
-      "buildDate": "2026-09-21",
-      "buildTime": "12:22",
-      "buildTimestamp": "2026-09-21T12:22:59.361213",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.21.1223",
-      "buildDate": "2026-09-21",
-      "buildTime": "12:23",
-      "buildTimestamp": "2026-09-21T12:23:47.658693",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.21.1237",
-      "buildDate": "2026-09-21",
-      "buildTime": "12:37",
-      "buildTimestamp": "2026-09-21T12:37:06.713772",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.21.1303",
-      "buildDate": "2026-09-21",
-      "buildTime": "13:03",
-      "buildTimestamp": "2026-09-21T13:03:19.631568",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.21.1752",
-      "buildDate": "2026-09-21",
-      "buildTime": "17:52",
-      "buildTimestamp": "2026-09-21T17:52:33.358696",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.21.1808",
-      "buildDate": "2026-09-21",
-      "buildTime": "18:08",
-      "buildTimestamp": "2026-09-21T18:08:49.214893",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1234",
-      "buildDate": "2026-09-23",
-      "buildTime": "12:34",
-      "buildTimestamp": "2026-09-23T12:34:47.887584",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1237",
-      "buildDate": "2026-09-23",
-      "buildTime": "12:37",
-      "buildTimestamp": "2026-09-23T12:37:51.633068",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1322",
-      "buildDate": "2026-09-23",
-      "buildTime": "13:22",
-      "buildTimestamp": "2026-09-23T13:22:51.271852",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1344",
-      "buildDate": "2026-09-23",
-      "buildTime": "13:44",
-      "buildTimestamp": "2026-09-23T13:44:11.550414",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.23.1358",
       "buildDate": "2026-09-23",
@@ -353,7 +122,238 @@
       "buildTime": "16:43",
       "buildTimestamp": "2026-09-23T16:43:04.333745",
       "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1654",
+      "buildDate": "2026-09-23",
+      "buildTime": "16:54",
+      "buildTimestamp": "2026-09-23T16:54:35.613446",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1706",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:06",
+      "buildTimestamp": "2026-09-23T17:06:44.147504",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1706.58",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:06",
+      "buildTimestamp": "2026-09-23T17:06:58.061850",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1707",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:07",
+      "buildTimestamp": "2026-09-23T17:07:18.974355",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1716",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:16",
+      "buildTimestamp": "2026-09-23T17:16:22.593487",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1720",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:20",
+      "buildTimestamp": "2026-09-23T17:20:51.625335",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1724",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:24",
+      "buildTimestamp": "2026-09-23T17:24:57.334558",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1725",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:25",
+      "buildTimestamp": "2026-09-23T17:25:04.086486",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1726",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:26",
+      "buildTimestamp": "2026-09-23T17:26:57.041413",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1727",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:27",
+      "buildTimestamp": "2026-09-23T17:27:45.461526",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1730",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:30",
+      "buildTimestamp": "2026-09-23T17:30:28.104851",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1730.41",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:30",
+      "buildTimestamp": "2026-09-23T17:30:41.155342",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1732",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:32",
+      "buildTimestamp": "2026-09-23T17:32:57.423614",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1733",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:33",
+      "buildTimestamp": "2026-09-23T17:33:30.014822",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1734",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:34",
+      "buildTimestamp": "2026-09-23T17:34:04.676310",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1734.23",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:34",
+      "buildTimestamp": "2026-09-23T17:34:23.513817",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1734.40",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:34",
+      "buildTimestamp": "2026-09-23T17:34:40.672437",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1735",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:35",
+      "buildTimestamp": "2026-09-23T17:35:01.220427",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1736",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:36",
+      "buildTimestamp": "2026-09-23T17:36:00.291276",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1736.27",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:36",
+      "buildTimestamp": "2026-09-23T17:36:27.215480",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1736.53",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:36",
+      "buildTimestamp": "2026-09-23T17:36:53.927129",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1737",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:37",
+      "buildTimestamp": "2026-09-23T17:37:25.023022",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1737.54",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:37",
+      "buildTimestamp": "2026-09-23T17:37:54.398069",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1738",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:38",
+      "buildTimestamp": "2026-09-23T17:38:11.294784",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1740",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:40",
+      "buildTimestamp": "2026-09-23T17:40:03.069626",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1740.29",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:40",
+      "buildTimestamp": "2026-09-23T17:40:29.859187",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1740.47",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:40",
+      "buildTimestamp": "2026-09-23T17:40:47.640596",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1747",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:47",
+      "buildTimestamp": "2026-09-23T17:47:03.307698",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1748",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:48",
+      "buildTimestamp": "2026-09-23T17:48:49.929736",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1756",
+      "buildDate": "2026-09-23",
+      "buildTime": "17:56",
+      "buildTimestamp": "2026-09-23T17:56:30.747042",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1800",
+      "buildDate": "2026-09-23",
+      "buildTime": "18:00",
+      "buildTimestamp": "2026-09-23T18:00:11.778422",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1802",
+      "buildDate": "2026-09-23",
+      "buildTime": "18:02",
+      "buildTimestamp": "2026-09-23T18:02:18.359998",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
+    },
+    {
+      "version": "v2026.09.23.1802.38",
+      "buildDate": "2026-09-23",
+      "buildTime": "18:02",
+      "buildTimestamp": "2026-09-23T18:02:38.241535",
+      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
     }
   ],
-  "buildTime": "16:43"
+  "buildTime": "18:02"
 }

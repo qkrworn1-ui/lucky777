@@ -1,0 +1,612 @@
+export function calculateLedgerFinancials(forceRefresh = false, explicitTarget = null) {
+
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'guest';
+
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+
+        try {
+
+            const parsed = JSON.parse(authId);
+
+            authId = parsed.userid || parsed.userId || authId;
+
+        } catch (e) {}
+
+    }
+
+    const cleanAuthId = String(authId).toLowerCase().trim();
+
+    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(cleanAuthId) : (cleanAuthId === 'master' || cleanAuthId === 'admin'));
+
+    const target = explicitTarget || (isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId);
+
+    const cleanTarget = String(target).toLowerCase().trim();
+
+
+
+    const cacheKey = `${cleanAuthId}_${cleanTarget}`;
+
+    if (!forceRefresh && state.ledgerFinancialsCache && state.ledgerFinancialsCache._key === cacheKey && state.ledgerFinancialsCache._valid) {
+
+        return state.ledgerFinancialsCache;
+
+    }
+
+
+
+    const ledger = getLedger(cleanTarget);
+
+
+
+    let totalInvest = 0;
+
+    let totalPrize = 0;
+
+    let totalCombos = 0;
+
+    let hits = [0, 0, 0, 0, 0]; // 1~5 ranks
+
+
+
+    const trendLabels = [];
+
+    const trendInvest = [];
+
+    const trendPrize = [];
+
+    let cumInvest = 0;
+
+    let cumPrize = 0;
+
+
+
+    const roundBreakdown = {};
+
+
+
+    const ledgerRounds = Object.keys(ledger || {}).map(Number).filter(r => !isNaN(r) && r > 0 && Array.isArray(ledger[r]) && ledger[r].length > 0);
+
+    const chronoRounds = Array.from(new Set(ledgerRounds)).sort((a, b) => a - b);
+
+    chronoRounds.forEach(round => {
+
+        const actualDraw = getSafeActualDraw(round);
+
+        let purchases = ledger[round] || [];
+
+        if (!isAdmin && cleanTarget !== 'all') {
+
+            purchases = purchases.filter(p => {
+
+                const pUser = (p.user || p.userId || '').trim().toLowerCase();
+
+                return pUser === cleanAuthId;
+
+            });
+
+        }
+
+        const flatCombos = [];
+
+        purchases.forEach(p => {
+
+            if (p.combos && Array.isArray(p.combos)) {
+
+
+
+
+
+
+
+
+
+    chronoRounds.forEach(round => {
+
+        const actualDraw = getSafeActualDraw(round);
+
+        let purchases = ledger[round] || [];
+
+
+
+        if (!isAdmin && cleanTarget !== 'all') {
+
+                return pUser === cleanAuthId;
+
+                const pUser = (p.user || p.userId || '').trim().toLowerCase();
+
+
+
+            });
+
+        }
+
+
+
+        
+
+
+
+        const flatCombos = [];
+
+        purchases.forEach(p => {
+
+            if (p.combos && Array.isArray(p.combos)) {
+
+                flatCombos.push(...p.combos);
+
+            }
+
+        });
+
+
+
+        const roundInvest = flatCombos.length * 1000;
+
+        let roundPrize = 0;
+
+        let roundHits = [0, 0, 0, 0, 0, 0];
+
+        const winningCombos = [];
+
+
+
+        if (actualDraw && actualDraw.numbers) {
+
+            const winningSet = new Set(actualDraw.numbers);
+
+            const bonus = actualDraw.bonus;
+
+
+
+            const p1 = (actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000);
+
+            const p2 = (actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000));
+
+            const p3 = (actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000));
+
+            const p4 = (actualDraw.rank4Prize || 50000);
+
+            const p5 = (actualDraw.rank5Prize || 5000);
+
+
+
+            flatCombos.forEach((combo, cIdx) => {
+
+                const nums = getComboNumbers(combo);
+
+                const matches = nums.filter(n => winningSet.has(n));
+
+                const matchCount = matches.length;
+
+                const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
+
+
+
+                let rank = 0;
+
+                let prize = 0;
+
+
+
+                if (matchCount === 6) { rank = 1; prize = p1; hits[0]++; }
+
+                else if (matchCount === 5 && hasBonus) { rank = 2; prize = p2; hits[1]++; }
+
+                else if (matchCount === 5) { rank = 3; prize = p3; hits[2]++; }
+
+                else if (matchCount === 4) { rank = 4; prize = p4; hits[3]++; }
+
+                else if (matchCount === 3) { rank = 5; prize = p5; hits[4]++; }
+
+                else { roundHits[0]++; }
+
+
+
+                if (rank > 0) {
+
+                    roundHits[rank]++;
+
+                    roundPrize += prize;
+
+                    winningCombos.push({
+
+                        cIdx: cIdx + 1,
+
+                        nums: nums,
+
+                        rank: rank,
+
+                        prize: prize,
+
+                        matches: matches,
+
+                        hasBonus: hasBonus
+
+                    });
+
+                }
+
+            });
+
+        }
+
+
+
+        totalInvest += roundInvest;
+
+        totalPrize += roundPrize;
+
+        totalCombos += flatCombos.length;
+
+
+
+        cumInvest += roundInvest;
+
+        cumPrize += roundPrize;
+
+
+
+        trendLabels.push(`${round}??);
+
+        trendInvest.push(cumInvest);
+
+        trendPrize.push(cumPrize);
+
+
+
+        roundBreakdown[round] = {
+
+            round,
+
+            actualDraw,
+
+            invest: roundInvest,
+
+            prize: roundPrize,
+
+            combosCount: flatCombos.length,
+
+            roi: roundInvest > 0 ? (roundPrize / roundInvest) * 100 : 0,
+
+            roundHits,
+
+            winningCombos
+
+        };
+
+    });
+
+
+
+    const netProfit = totalPrize - totalInvest;
+
+    const totalRoi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
+
+    const totalWins = hits.reduce((a, b) => a + b, 0);
+
+    const winRate = totalCombos > 0 ? ((totalWins / totalCombos) * 100).toFixed(1) : '0.0';
+
+
+
+    const result = {
+
+        _valid: true,
+
+        _key: cacheKey,
+
+        totalInvest,
+
+        totalPrize,
+
+        netProfit,
+
+        totalRoi,
+
+        totalCombos,
+
+        totalWins,
+
+        winRate,
+
+        hits,
+
+        trendLabels,
+
+        trendInvest,
+
+        trendPrize,
+
+        roundBreakdown
+
+    };
+
+
+
+    state.ledgerFinancialsCache = result;
+
+    return result;
+
+}
+
+
+
+let _allUsersFinancialsCache = null;
+
+let _allUsersFinancialsCacheTime = 0;
+
+
+
+/**
+
+ * Calculate Grand Aggregate Financials & Winning Hits Across All Registered Users
+
+ * Used for Main Landing Dashboard & Platform Global Overview
+
+ */
+
+export async function calculateAllUsersTotalFinancials(forceRefresh = false) {
+
+    if (!forceRefresh && _allUsersFinancialsCache && (Date.now() - _allUsersFinancialsCacheTime < 15000)) {
+
+        return _allUsersFinancialsCache;
+
+    }
+
+
+
+    if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger || Object.keys(state.allUsersMergedLedger).length === 0) {
+
+        if (typeof fetchAllUsersPurchases === 'function') {
+
+            await fetchAllUsersPurchases();
+
+        }
+
+    }
+
+
+
+    let totalInvest = 0;
+
+    let totalPrize = 0;
+
+    let totalCombos = 0;
+
+    let hits = [0, 0, 0, 0, 0]; // 1~5 ranks
+
+
+
+    // ??? Priority 1: Aggregate directly across every registered user's clean ledger to eliminate any risk of cross-user collision
+
+    if (state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0) {
+
+        for (const uId in state.allUsersPurchasesMap) {
+
+            const uData = state.allUsersPurchasesMap[uId];
+
+            if (!uData || !uData.ledger) continue;
+
+            const uLedger = uData.ledger;
+
+
+
+            for (const r in uLedger) {
+
+                const round = parseInt(r, 10);
+
+                if (isNaN(round) || round <= 0 || !Array.isArray(uLedger[r])) continue;
+
+
+
+                const actualDraw = getSafeActualDraw(round);
+
+                const receipts = deduplicateReceipts((uLedger[round] || []).map(syncPurchaseWithQrUrl));
+
+
+
+                const flatCombos = [];
+
+                receipts.forEach(p => {
+
+                    if (p.combos && Array.isArray(p.combos)) {
+
+                        flatCombos.push(...p.combos);
+
+                    }
+
+                });
+
+
+
+                totalInvest += flatCombos.length * 1000;
+
+                totalCombos += flatCombos.length;
+
+
+
+                if (actualDraw && actualDraw.numbers) {
+
+                    const winningSet = new Set(actualDraw.numbers);
+
+                    const bonus = actualDraw.bonus;
+
+
+
+                    const p1 = (actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000);
+
+                    const p2 = (actualDraw.rank2Prize || 50000000);
+
+                    const p3 = (actualDraw.rank3Prize || 1500000);
+
+                    const p4 = (actualDraw.rank4Prize || 50000);
+
+                    const p5 = (actualDraw.rank5Prize || 5000);
+
+
+
+                    flatCombos.forEach(combo => {
+
+                        const nums = getComboNumbers(combo);
+
+                        const matches = nums.filter(n => winningSet.has(n));
+
+                        const matchCount = matches.length;
+
+                        const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
+
+
+
+                        if (matchCount === 6) { hits[0]++; totalPrize += p1; }
+
+                        else if (matchCount === 5 && hasBonus) { hits[1]++; totalPrize += p2; }
+
+                        else if (matchCount === 5) { hits[2]++; totalPrize += p3; }
+
+                        else if (matchCount === 4) { hits[3]++; totalPrize += p4; }
+
+                        else if (matchCount === 3) { hits[4]++; totalPrize += p5; }
+
+                    });
+
+                }
+
+            }
+
+        }
+
+    } else {
+
+        const mergedLedger = state.allUsersMergedLedger || {};
+
+        const rounds = Object.keys(mergedLedger).map(Number).filter(r => !isNaN(r) && r > 0 && Array.isArray(mergedLedger[r]));
+
+
+
+        rounds.forEach(round => {
+
+            const actualDraw = getSafeActualDraw(round);
+
+            const receipts = deduplicateReceipts((mergedLedger[round] || []).map(syncPurchaseWithQrUrl));
+
+
+
+            const flatCombos = [];
+
+            receipts.forEach(p => {
+
+                if (p.combos && Array.isArray(p.combos)) {
+
+                    flatCombos.push(...p.combos);
+
+                }
+
+            });
+
+
+
+            totalInvest += flatCombos.length * 1000;
+
+            totalCombos += flatCombos.length;
+
+
+
+            if (actualDraw && actualDraw.numbers) {
+
+                const winningSet = new Set(actualDraw.numbers);
+
+                const bonus = actualDraw.bonus;
+
+
+
+                const p1 = (actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000);
+
+                const p2 = (actualDraw.rank2Prize || 50000000);
+
+                const p3 = (actualDraw.rank3Prize || 1500000);
+
+                const p4 = (actualDraw.rank4Prize || 50000);
+
+                const p5 = (actualDraw.rank5Prize || 5000);
+
+
+
+                flatCombos.forEach(combo => {
+
+                    const nums = getComboNumbers(combo);
+
+                    const matches = nums.filter(n => winningSet.has(n));
+
+                    const matchCount = matches.length;
+
+                    const hasBonus = bonus !== undefined && bonus !== null ? nums.includes(bonus) : false;
+
+
+
+                    if (matchCount === 6) { hits[0]++; totalPrize += p1; }
+
+                    else if (matchCount === 5 && hasBonus) { hits[1]++; totalPrize += p2; }
+
+                    else if (matchCount === 5) { hits[2]++; totalPrize += p3; }
+
+                    else if (matchCount === 4) { hits[3]++; totalPrize += p4; }
+
+                    else if (matchCount === 3) { hits[4]++; totalPrize += p5; }
+
+                });
+
+            }
+
+        });
+
+    }
+
+
+
+    const netProfit = totalPrize - totalInvest;
+
+    const totalRoi = totalInvest > 0 ? ((totalPrize / totalInvest) * 100).toFixed(1) : '0.0';
+
+    const totalWins = hits.reduce((a, b) => a + b, 0);
+
+
+
+    const result = {
+
+        totalInvest,
+
+        totalPrize,
+
+        netProfit,
+
+        totalRoi,
+
+        totalCombos,
+
+        totalWins,
+
+        hits,
+
+        userCount: Object.keys(state.allUsersPurchasesMap || {}).length
+
+    };
+
+
+
+    _allUsersFinancialsCache = result;
+
+    _allUsersFinancialsCacheTime = Date.now();
+
+    return result;
+
+}
+
+
+
+/**
+
+ * ??? Export Unified Immutable Archive (Recommendation Snapshots + Confirmed Purchases) to Standalone JSON File
+
+ * Embedded with SHA-256 integrity hash signature and complete purchaser & algorithm metadata.
+
+ */
+

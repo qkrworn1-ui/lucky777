@@ -301,7 +301,7 @@ if (typeof window !== 'undefined') {
 /**
  * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 전체 회원 기본 통합)
  */
-export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all') {
+export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all') {
     if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
         if (typeof initHistory === 'function') initHistory();
         else if (typeof LOTTO_HISTORY !== 'undefined') state.mergedHistory = { ...LOTTO_HISTORY, ...(state.lottoExtraHistory || {}) };
@@ -338,15 +338,18 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
 
     // High-Speed Pre-cache: compute reviews once per (user, round)
     const reviewsCache = new Map();
-    drawnRounds.forEach(round => {
+    for (const round of drawnRounds) {
         if (isAll) {
             const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
-            activeUsers.forEach(u => {
+            let _uCount1 = 0;
+            for (const u of activeUsers) {
+                _uCount1++;
+                if (_uCount1 % 5 === 0) await new Promise(r => setTimeout(r, 0));
                 const key = `${u.id}_${round}`;
                 if (!reviewsCache.has(key)) {
                     reviewsCache.set(key, computeUser70RecommendationsReview(u.id, round));
                 }
-            });
+            }
         } else {
             if (round >= userJoinRound) {
                 const key = `${cleanUser}_${round}`;
@@ -355,7 +358,7 @@ export function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId =
                 }
             }
         }
-    });
+    }
 
     let grandTotalGames = 0;
     let grandTotalInvest = 0;
@@ -600,7 +603,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
 
     let perfData;
     try {
-        perfData = calculate7AlgorithmsPerformance(currentAlgoStartRound, effectiveUserId);
+        perfData = await calculate7AlgorithmsPerformance(currentAlgoStartRound, effectiveUserId);
     } catch(err) {
         console.error('[calculate7AlgorithmsPerformance error]', err);
         perfData = {

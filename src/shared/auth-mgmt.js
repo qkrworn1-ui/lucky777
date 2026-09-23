@@ -178,11 +178,13 @@ export function handleLogout(skipConfirm = false) {
         }
     } catch(e) {}
 
-    // 8. Safe Cross-Platform Hard Reload (Desktop Windows & Mobile)
+    // 8. Guaranteed Hard Reload (Fixes Kakao SDK Zombie State)
     try {
-        const isFileOrNull = !window.location.origin || window.location.origin === 'null';
-        const targetUrl = isFileOrNull ? window.location.href.split('#')[0].split('?')[0] : (window.location.origin + window.location.pathname);
-        window.location.replace(targetUrl);
+        // Appending a dummy timestamp ensures mobile WebViews do an actual hard reload
+        // instead of ignoring the replace() call if the URL is identical.
+        const ts = new Date().getTime();
+        const base = window.location.href.split('#')[0].split('?')[0];
+        window.location.replace(base + '?logout=' + ts);
     } catch(e) {
         try { window.location.reload(); } catch(err) {}
     }

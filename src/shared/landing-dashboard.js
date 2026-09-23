@@ -337,9 +337,9 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
 
             let perf = null;
             if (typeof calculate7AlgorithmsPerformance === 'function') {
-                perf = calculate7AlgorithmsPerformance(fromRound, 'all');
+                perf = await calculate7AlgorithmsPerformance(fromRound, 'all');
             } else if (typeof window !== 'undefined' && window.calculate7AlgorithmsPerformance) {
-                perf = window.calculate7AlgorithmsPerformance(fromRound, 'all');
+                perf = await window.calculate7AlgorithmsPerformance(fromRound, 'all');
             }
 
             let grandRank1 = 0;
