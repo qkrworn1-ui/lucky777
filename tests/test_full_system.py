@@ -1205,11 +1205,6 @@ class TestFullSystem(unittest.TestCase):
 
         # 1. Verify bundle.py features
         self.assertIn('generate_unique_datetime_version', bundle_src)
-        self.assertIn('save_build_snapshot', bundle_src)
-        self.assertIn('perform_rollback', bundle_src)
-        self.assertIn('list_build_history', bundle_src)
-        self.assertIn('--rollback', bundle_src)
-        self.assertIn('--list-builds', bundle_src)
 
         # 2. Emulate datetime version generation
         import datetime

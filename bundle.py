@@ -3,7 +3,6 @@ import re
 import json
 import sys
 import unittest
-import shutil
 import datetime
 import urllib.request
 
@@ -14,7 +13,6 @@ if sys.platform == 'win32':
     except Exception:
         pass
 
-BACKUP_DIR = "backups"
 
 def push_version_to_firestore(version, build_date):
     print(f"[*] [FIREBASE] Pushing build version {version} to Firestore...")
@@ -173,77 +171,6 @@ def sync_version_assets(auto_bump=True, explicit_version=None, build_desc=""):
 
     return version
 
-
-def save_build_snapshot(version):
-    """
-    Saves snapshot of app_v2.js and version.json to backups/ directory.
-    Maintains the latest 50 build snapshots.
-    """
-    if not os.path.exists(BACKUP_DIR):
-        os.makedirs(BACKUP_DIR, exist_ok=True)
-        
-    if os.path.exists('app_v2.js'):
-        backup_js = os.path.join(BACKUP_DIR, f"app_v2_{version}.js")
-        shutil.copy2('app_v2.js', backup_js)
-        print(f"  [+] Backup snapshot saved: {backup_js}")
-        
-    if os.path.exists('version.json'):
-        backup_json = os.path.join(BACKUP_DIR, f"version_{version}.json")
-        shutil.copy2('version.json', backup_json)
-        
-    # Rotate backups - keep latest 5
-    try:
-        js_files = [os.path.join(BACKUP_DIR, f) for f in os.listdir(BACKUP_DIR) if f.startswith('app_v2_') and f.endswith('.js')]
-        js_files.sort(key=os.path.getmtime)
-        if len(js_files) > 5:
-            for old_f in js_files[:-5]:
-                os.remove(old_f)
-                old_meta = old_f.replace('app_v2_', 'version_').replace('.js', '.json')
-                if os.path.exists(old_meta):
-                    os.remove(old_meta)
-    except Exception as e:
-        print(f"  [!] Backup rotation note: {e}")
-
-
-def list_build_history():
-    """
-    Prints a formatted table of all builds recorded in version.json and backups/.
-    """
-    if not os.path.exists('version.json'):
-        print("[!] No version.json file found.")
-        return
-        
-    with open('version.json', 'r', encoding='utf-8') as f:
-        vdata = json.load(f)
-        
-    current_ver = vdata.get('version', 'unknown')
-    history = vdata.get('buildHistory', [])
-    
-    print("=" * 80)
-    print(f" 📜 Lucky777 빌드 이력 및 롤백 가능 목록 (현재 버전: {current_ver})")
-    print("=" * 80)
-    print(f"{'순번':<4} | {'버전 (Version)':<26} | {'빌드 일시':<18} | {'스냅샷':<6} | {'설명'}")
-    print("-" * 80)
-    
-    if not history:
-        has_snap = "O" if os.path.exists(os.path.join(BACKUP_DIR, f"app_v2_{current_ver}.js")) else "X"
-        print(f" 1   | {current_ver:<26} | {vdata.get('buildDate','')} {vdata.get('buildTime','')} | {has_snap:<6} | {vdata.get('description','Current build')}")
-    else:
-        for idx, h in enumerate(reversed(history), 1):
-            ver = h.get('version', '')
-            bdate = f"{h.get('buildDate', '')} {h.get('buildTime', '')}".strip()
-            desc = h.get('description', '')
-            snap_path = os.path.join(BACKUP_DIR, f"app_v2_{ver}.js")
-            has_snap = "O" if os.path.exists(snap_path) else "X"
-            is_active = " (현재)" if ver == current_ver else ""
-            ver_display = f"{ver}{is_active}"
-            print(f"{idx:<4} | {ver_display:<26} | {bdate:<18} | {has_snap:<6} | {desc}")
-
-    print("=" * 80)
-    print(" 💡 원하는 과거 버전으로 롤백하려면 아래 명령을 실행하세요:")
-    print("    python bundle.py --rollback <버전번호>")
-    print("    (예: python bundle.py --rollback v2026.09.14.2335)")
-    print("=" * 80)
 
 
 def verify_version_crosscheck(expected_version):
@@ -423,65 +350,11 @@ def bundle_core(version):
         out.write("\n".join(final_output))
 
 
-def perform_rollback(target_version):
-    """
-    Rolls back the application to a specific past version:
-    1. Restores app_v2.js from backups/ if available, or rebuilds with target_version
-    2. Synchronizes version.json, index.html, sw.js to target_version
-    3. Cross-checks build integrity
-    4. Pushes the rollback version to Firebase Firestore
-    """
-    clean_target = target_version.strip()
-    if not clean_target.startswith('v') and not clean_target.isdigit():
-        clean_target = f"v{clean_target}"
-    elif clean_target.isdigit():
-        clean_target = f"v{clean_target}"
-
-    print("=" * 80)
-    print(f" ⏪ [ROLLBACK] Lucky777 버전 롤백 시작: {clean_target}")
-    print("=" * 80)
-
-    # 1. Check if backup exists
-    backup_js = os.path.join(BACKUP_DIR, f"app_v2_{clean_target}.js")
-    
-    # 2. Sync version assets (index.html, sw.js, version.json)
-    build_desc = f"Rollback to {clean_target}"
-    sync_version_assets(auto_bump=False, explicit_version=clean_target, build_desc=build_desc)
-
-    # 3. Restore app_v2.js
-    if os.path.exists(backup_js):
-        print(f"[*] [RESTORE] Restoring app_v2.js from snapshot: {backup_js}...")
-        shutil.copy2(backup_js, 'app_v2.js')
-    else:
-        print(f"[*] [REBUILD] Backup snapshot not found. Regenerating bundle directly for version {clean_target}...")
-        bundle_core(clean_target)
-
-    # 4. Save snapshot of active state
-    save_build_snapshot(clean_target)
-
-    # 5. Cross-check
-    verify_version_crosscheck(clean_target)
-
-    # 6. Push to Firestore
-    with open('version.json', 'r', encoding='utf-8') as f:
-        vdata = json.load(f)
-    build_date = vdata.get('buildDate', datetime.date.today().isoformat())
-    push_version_to_firestore(clean_target, build_date)
-
-    print("\n" + "=" * 80)
-    print(f" [✅ ROLLBACK COMPLETE] 성공적으로 {clean_target} 버전으로 롤백되었습니다!")
-    print(" Firestore 실시간 알림이 전송되어 모든 접속 기기에서 롤백 버전이 즉시 반영됩니다.")
-    print(" 이제 변경사항을 Git에 push하시면 배포가 완료됩니다:")
-    print(f"    git add . && git commit -m \"Rollback to {clean_target}\" && git push")
-    print("=" * 80 + "\n")
-
-
 def clean_and_bundle(custom_desc=None, explicit_version=None):
     version = sync_version_assets(explicit_version=explicit_version, build_desc=custom_desc)
     run_preflight_tests()
     print(f"[*] Starting smart bundling process for [{version}]...")
     bundle_core(version)
-    save_build_snapshot(version)
     verify_version_crosscheck(version)
     build_date = datetime.date.today().isoformat()
     push_version_to_firestore(version, build_date)
@@ -491,22 +364,6 @@ def clean_and_bundle(custom_desc=None, explicit_version=None):
 if __name__ == "__main__":
     args = sys.argv[1:]
     
-    if '--list-builds' in args or '-l' in args:
-        list_build_history()
-        sys.exit(0)
-        
-    if '--rollback' in args or '-r' in args:
-        flag = '--rollback' if '--rollback' in args else '-r'
-        idx = args.index(flag)
-        if idx + 1 < len(args):
-            target_v = args[idx + 1]
-            perform_rollback(target_v)
-            sys.exit(0)
-        else:
-            print("[!] Error: Please specify target version to rollback. Example: python bundle.py --rollback v2026.09.14.2335")
-            list_build_history()
-            sys.exit(1)
-            
     desc = None
     if '--desc' in args or '-m' in args:
         flag = '--desc' if '--desc' in args else '-m'
