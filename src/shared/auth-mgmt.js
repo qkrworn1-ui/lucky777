@@ -1238,30 +1238,6 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
     }
 }
 
-export function setupAuthEvents(initFirebaseAndData) {
-    const loginForm = document.getElementById('loginForm');
-    const signupForm = document.getElementById('signupForm');
-    const loginError = document.getElementById('loginError');
-    const signupError = document.getElementById('signupError');
-    const btnLogout = document.getElementById('btnLogout');
-    const btnUserManagement = document.getElementById('btnUserManagement');
-    const btnUserManagementApp = document.getElementById('btnUserManagementApp');
-    const btnAdminSnapshotAudit = document.getElementById('btnAdminSnapshotAudit');
-    const userMgmtModal = document.getElementById('userMgmtModal');
-    const btnCloseUserMgmtModal = document.getElementById('btnCloseUserMgmtModal');
-    const addUserForm = document.getElementById('addUserForm');
-
-    window.checkAuthOnLoad = () => checkAuthOnLoad(initFirebaseAndData);
-
-    // ========================================================
-    // 💬 Kakao 1-Sec Instant Login & Authentication Controller
-    // ========================================================
-    initKakaoSdk();
-
-    window.loginWithKakao = loginWithKakao;
-    window.initKakaoSdk = initKakaoSdk;
-}
-
 export const KAKAO_JS_KEY = 'c40e8adc700a6f1c1e62b6aa3fa0c60a';
 
 export function initKakaoSdk() {
@@ -1578,6 +1554,7 @@ export function loginWithKakao() {
 
 if (typeof window !== 'undefined') {
     window.loginWithKakao = loginWithKakao;
+    window._loginWithKakaoImpl = loginWithKakao;
     window.initKakaoSdk = initKakaoSdk;
     window.KAKAO_JS_KEY = KAKAO_JS_KEY;
 }
@@ -1848,6 +1825,51 @@ window.sendTotoKakaoMessage = function(title, picks, odds) {
 
     window.sendKakaoCustomMessage(template);
 };
+
+// Immediate top-level fallback for tab switcher
+window.switchAuthTab = function(mode) {
+    const tabLogin = document.getElementById('tabAuthLogin');
+    const tabSignup = document.getElementById('tabAuthSignup');
+    const viewLogin = document.getElementById('viewAuthLogin');
+    const viewSignup = document.getElementById('viewAuthSignup');
+    const loginError = document.getElementById('loginError');
+    const signupError = document.getElementById('signupError');
+
+    if (loginError) loginError.style.display = 'none';
+    if (signupError) signupError.style.display = 'none';
+
+    if (mode === 'signup') {
+        if (tabLogin) { tabLogin.classList.remove('active'); tabLogin.style.background = 'transparent'; tabLogin.style.color = '#94a3b8'; }
+        if (tabSignup) { tabSignup.classList.add('active'); tabSignup.style.background = 'linear-gradient(135deg, #3b82f6, #2563eb)'; tabSignup.style.color = '#fff'; }
+        if (viewLogin) viewLogin.style.display = 'none';
+        if (viewSignup) {
+            viewSignup.style.display = 'block';
+            setTimeout(() => {
+                if (typeof window.initSignaturePad === 'function') window.initSignaturePad();
+            }, 80);
+        }
+    } else {
+        if (tabSignup) { tabSignup.classList.remove('active'); tabSignup.style.background = 'transparent'; tabSignup.style.color = '#94a3b8'; }
+        if (tabLogin) { tabLogin.classList.add('active'); tabLogin.style.background = 'linear-gradient(135deg, #fbbf24, #f59e0b)'; tabLogin.style.color = '#0f172a'; }
+        if (viewSignup) viewSignup.style.display = 'none';
+        if (viewLogin) viewLogin.style.display = 'block';
+    }
+};
+
+export function setupAuthEvents(initFirebaseAndData) {
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const loginError = document.getElementById('loginError');
+    const signupError = document.getElementById('signupError');
+    const btnLogout = document.getElementById('btnLogout');
+    const btnUserManagement = document.getElementById('btnUserManagement');
+    const btnUserManagementApp = document.getElementById('btnUserManagementApp');
+    const btnAdminSnapshotAudit = document.getElementById('btnAdminSnapshotAudit');
+    const userMgmtModal = document.getElementById('userMgmtModal');
+    const btnCloseUserMgmtModal = document.getElementById('btnCloseUserMgmtModal');
+    const addUserForm = document.getElementById('addUserForm');
+
+    window.checkAuthOnLoad = () => checkAuthOnLoad(initFirebaseAndData);
 
     // ========================================================
     // Tab Switcher: [로그인] ⟷ [회원가입]

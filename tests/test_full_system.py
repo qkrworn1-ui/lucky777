@@ -2445,6 +2445,26 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('hasToken', auth_code)
 
 
+    # [Test 70] Auth Modal Events and Tab Switch Integrity Test
+    def test_70_auth_modal_events_and_tab_switch_integrity(self):
+        with open('index.html', 'r', encoding='utf-8') as f:
+            index_code = f.read()
+        with open('src/shared/auth-mgmt.js', 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+
+        # 1. switchAuthTab defined both at top level fallback and in setupAuthEvents
+        self.assertIn('window.switchAuthTab = function(mode)', auth_code)
+        self.assertIn('function switchAuthTab(mode)', index_code)
+        self.assertIn('window.switchAuthTab = switchAuthTab;', index_code)
+
+        # 2. setupAuthEvents correctly defined and exported
+        self.assertIn('export function setupAuthEvents(initFirebaseAndData)', auth_code)
+
+        # 3. Kakao login click handlers and fallback
+        self.assertIn('onclick="window.loginWithKakao && window.loginWithKakao()"', index_code)
+        self.assertIn('window._loginWithKakaoImpl = loginWithKakao;', auth_code)
+
+
 if __name__ == '__main__':
     unittest.main()
 
