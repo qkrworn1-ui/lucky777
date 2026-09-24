@@ -2763,68 +2763,56 @@ html, body {
         display: none !important;
     }
 
-    /* Header Compact Stack */
+    /* ── Header Smart Responsive Stack (시안 A: 3단 최적 분할) ── */
     .app-header {
-        padding: 12px 14px !important;
+        padding: 10px 12px !important;
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 10px !important;
+        gap: 8px !important;
         border-radius: 14px !important;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;
     }
 
+    /* 1행: 로고(좌) ↔ 사용자 프로필 칩 + 액션버튼(우) 가로 1행 좌우대칭 배치 */
     .header-top-row {
         display: flex !important;
+        flex-direction: row !important;
         justify-content: space-between !important;
         align-items: center !important;
         width: 100% !important;
-        gap: 8px !important;
-    }
-
-    .logo-area {
-        flex: 1 !important;
-        min-width: 0 !important;
-        gap: 8px !important;
-    }
-
-    .header-top-row {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        width: 100% !important;
-        gap: 8px !important;
+        gap: 6px !important;
     }
 
     .logo-area {
         display: flex !important;
         align-items: center !important;
-        gap: 8px !important;
-        width: 100% !important;
-    }
-
-    .logo-icon {
-        font-size: 1.3rem !important;
-        flex-shrink: 0 !important;
+        gap: 6px !important;
+        flex: 0 1 auto !important;
+        min-width: 0 !important;
     }
 
     .logo-emblem {
-        width: 36px !important;
-        height: 36px !important;
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
         border-radius: 8px !important;
     }
 
     .logo-num-badge {
-        font-size: 0.7rem !important;
+        font-size: 0.65rem !important;
     }
 
     .logo-text h1 {
-        font-size: 1.1rem !important;
-        line-height: 1.2 !important;
+        font-size: 0.95rem !important;
+        line-height: 1.1 !important;
+        margin: 0 !important;
+        font-weight: 900 !important;
+        white-space: nowrap !important;
     }
 
-    .logo-text .subtitle {
-        font-size: 0.6rem !important;
-    }
-
+    .logo-text .subtitle,
     .subtitle-ai {
         display: none !important;
     }
@@ -2832,29 +2820,53 @@ html, body {
     .header-top-right {
         display: flex !important;
         align-items: center !important;
-        justify-content: flex-start !important;
-        gap: 6px !important;
-        width: 100% !important;
-        flex-wrap: wrap !important;
+        justify-content: flex-end !important;
+        gap: 4px !important;
+        flex: 1 0 auto !important;
+        flex-wrap: nowrap !important;
     }
 
+    /* 1행 내 사용자 칩 컴팩트화 */
+    .header-top-right .header-user-chip {
+        padding: 2px 7px 2px 3px !important;
+        border-radius: 14px !important;
+        gap: 5px !important;
+    }
+    .header-top-right .user-chip-avatar {
+        width: 22px !important;
+        height: 22px !important;
+        font-size: 0.68rem !important;
+    }
+    .header-top-right .user-chip-name {
+        font-size: 0.74rem !important;
+        font-weight: 800 !important;
+    }
+    .header-top-right .user-chip-id {
+        display: none !important;
+    }
+    .header-top-right .user-chip-role-tag {
+        font-size: 0.58rem !important;
+        padding: 1px 3px !important;
+    }
+    .header-top-right #serverStatusBadge {
+        display: none !important;
+    }
+
+    /* 1행 액션 버튼 컴팩트화 */
     .btn-home-compact,
     .btn-user-mgmt-compact,
+    .btn-snapshot-audit-compact,
     .btn-logout-compact {
-        padding: 5px 8px !important;
-        font-size: 0.72rem !important;
-        border-radius: 6px !important;
-        min-height: 30px !important;
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        padding: 0 !important;
+        font-size: 0.76rem !important;
+        border-radius: 7px !important;
         display: inline-flex !important;
         align-items: center !important;
-        gap: 3px !important;
-        font-weight: 600 !important;
-        cursor: pointer !important;
-    }
-
-    .status-badge {
-        font-size: 0.68rem !important;
-        padding: 4px 7px !important;
+        justify-content: center !important;
     }
 
     .header-right-group {
@@ -2864,44 +2876,80 @@ html, body {
         gap: 6px !important;
     }
 
+    /* 2행: 핵심 액션 버튼 풀-위드 3열 그리드 */
     .header-btn-row {
-        display: flex !important;
+        display: grid !important;
+        grid-template-columns: 1.5fr 1.1fr 0.8fr !important;
         width: 100% !important;
-        gap: 6px !important;
+        gap: 5px !important;
+        align-items: stretch !important;
     }
 
-    .header-btn-row .btn-sync {
-        flex: 1 !important;
-        justify-content: center !important;
-        padding: 8px 10px !important;
-        font-size: 0.78rem !important;
-        min-height: 36px !important;
+    .header-btn-row #btnOpenManualLedger {
+        order: 1 !important;
+        min-height: 38px !important;
+        padding: 0 8px !important;
+        font-size: 0.8rem !important;
+        font-weight: 800 !important;
         border-radius: 8px !important;
+        justify-content: center !important;
         white-space: nowrap !important;
     }
 
+    .header-btn-row #btnFetchLatestDraw {
+        order: 2 !important;
+        min-height: 38px !important;
+        padding: 0 6px !important;
+        font-size: 0.74rem !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    .header-btn-row a.btn-sync {
+        order: 3 !important;
+        min-height: 38px !important;
+        padding: 0 6px !important;
+        font-size: 0.74rem !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* 3행: 차기 추천 회차 D-day 카운트다운 바 */
     .draw-info-badge {
         width: 100% !important;
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
-        padding: 6px 12px !important;
+        padding: 6px 10px !important;
         border-radius: 8px !important;
         box-sizing: border-box !important;
-        text-align: left !important;
+        background: rgba(0, 0, 0, 0.4) !important;
+        border: 1px solid rgba(251, 191, 36, 0.2) !important;
     }
 
     .draw-info-badge .badge-tag {
-        font-size: 0.68rem !important;
+        display: none !important;
     }
 
     .draw-info-badge .draw-number {
-        font-size: 0.88rem !important;
+        font-size: 0.84rem !important;
         font-weight: 800 !important;
+        color: #ffffff !important;
     }
 
     .draw-info-badge .draw-date {
-        font-size: 0.68rem !important;
+        font-size: 0.65rem !important;
+        color: #94a3b8 !important;
+    }
+
+    .draw-info-badge #nextDrawCountdownBadge {
+        margin-top: 0 !important;
+        font-size: 0.72rem !important;
+        padding: 2px 6px !important;
     }
 
     /* Latest Draw Result Banner */

@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.24.1220",
+  "version": "v2026.09.24.1232",
   "buildDate": "2026-09-24",
-  "description": "Add logged in user profile display to app header, landing top bar, and dashboard",
-  "buildTimestamp": "2026-09-24T12:20:55.333662",
+  "description": "Optimize mobile top header responsive layout and align components neatly across all device sizes",
+  "buildTimestamp": "2026-09-24T12:32:37.309917",
   "buildHistory": [
-    {
-      "version": "v2026.09.23.1748",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:48",
-      "buildTimestamp": "2026-09-23T17:48:49.929736",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.23.1756",
       "buildDate": "2026-09-23",
@@ -353,7 +346,14 @@
       "buildTime": "12:20",
       "buildTimestamp": "2026-09-24T12:20:55.333662",
       "description": "Add logged in user profile display to app header, landing top bar, and dashboard"
+    },
+    {
+      "version": "v2026.09.24.1232",
+      "buildDate": "2026-09-24",
+      "buildTime": "12:32",
+      "buildTimestamp": "2026-09-24T12:32:37.309917",
+      "description": "Optimize mobile top header responsive layout and align components neatly across all device sizes"
     }
   ],
-  "buildTime": "12:20"
+  "buildTime": "12:32"
 }
