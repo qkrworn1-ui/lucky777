@@ -2318,9 +2318,9 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("export function getPackFromSnapshot(extraPacks, pId)", rev_tab_code)
         self.assertIn("extraPacks.find(p => p && (Number(p.packId) === pId", rev_tab_code)
 
-        # 2. algorithms-tab.js calculate7AlgorithmsPerformance handles candidate users from snapshots & registered users
+        # 2. algorithms-tab.js calculate7AlgorithmsPerformance handles candidate users from unified registered users & reviews
         self.assertIn("export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all')", algo_tab_code)
-        self.assertIn("state.userRecommendationSnapshots", algo_tab_code)
+        self.assertIn("getAllUnifiedRegisteredUsers()", algo_tab_code)
         self.assertIn("reviewsCache.set(key, computeUser70RecommendationsReview(uId, round))", algo_tab_code)
 
         # 3. algorithms-tab.js extracts all 7 algorithms & aggregates grand totals

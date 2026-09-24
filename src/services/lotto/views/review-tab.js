@@ -703,7 +703,7 @@ export function updateReviewRoundSelector(selectedRound = null) {
         .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1242;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -734,8 +734,8 @@ export function updateReviewRoundSelector(selectedRound = null) {
 
     let optionsHtml = `<option value="all_rounds" ${validSelected === 'all_rounds' ? 'selected' : ''} style="font-weight:800; color:#fbbf24; background:#1e293b;">📊 [전체 회차 조회] ${minReviewRound}회 ~ ${effectiveMax}회 누적 종합 성과</option>`;
     for (let r = effectiveMax; r >= minReviewRound; r--) {
-        const drawInfo = state.mergedHistory && state.mergedHistory[r] ? state.mergedHistory[r] : null;
-        const dateStr = drawInfo && drawInfo.date ? ` (${drawInfo.date})` : '';
+        const drawInfo = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(r) || (state.mergedHistory && state.mergedHistory[r] ? state.mergedHistory[r] : null)) : (state.mergedHistory && state.mergedHistory[r] ? state.mergedHistory[r] : null);
+        const dateStr = drawInfo && (drawInfo.date || drawInfo.drwNoDate) ? ` (${drawInfo.date || drawInfo.drwNoDate})` : '';
         const isSelected = (r === validSelected);
         optionsHtml += `<option value="${r}" ${isSelected ? 'selected' : ''}>제 ${r}회차${dateStr}</option>`;
     }
@@ -802,7 +802,7 @@ export async function renderAllRoundsReviewDetail() {
         .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1242;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -813,7 +813,8 @@ export async function renderAllRoundsReviewDetail() {
     // List of drawn rounds from latest down to minTargetRound
     const validRounds = [];
     for (let rnd = latestDrawnRound; rnd >= minTargetRound; rnd--) {
-        if (state.mergedHistory && state.mergedHistory[rnd] && state.mergedHistory[rnd].numbers?.length === 6) {
+        const d = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
+        if (d && Array.isArray(d.numbers) && d.numbers.length === 6) {
             validRounds.push(rnd);
         }
     }

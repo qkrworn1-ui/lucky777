@@ -307,12 +307,6 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
         else if (typeof LOTTO_HISTORY !== 'undefined') state.mergedHistory = { ...LOTTO_HISTORY, ...(state.lottoExtraHistory || {}) };
     }
     const history = state.mergedHistory || {};
-    const drawnRounds = Object.keys(history)
-        .map(Number)
-        .filter(r => !isNaN(r) && r >= fromRound && history[r] && Array.isArray(history[r].numbers) && history[r].numbers.length === 6)
-        .sort((a, b) => a - b);
-
-    const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : fromRound;
 
     const rawUser = targetUserId || 'all';
     const cleanUser = String(rawUser).toLowerCase().trim();
@@ -327,7 +321,21 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
 
     const baseList = isAll ? getAllUnifiedRegisteredUsers() : [];
 
-    // 전수 검증 대상 사용자 ID 수집 (서버 스냅샷 보유자 + 전체 등록 회원)
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1242;
+    const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
+        ? Math.max(state.latestDrawData.drwNo, fallbackLatest)
+        : (state.latestRoundNum || fallbackLatest);
+
+    const drawnRounds = [];
+    for (let r = fromRound; r <= Math.max(fromRound, latestDrawnRound); r++) {
+        const d = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(r) || history[r]) : history[r];
+        if (d && Array.isArray(d.numbers) && d.numbers.length === 6) {
+            drawnRounds.push(r);
+        }
+    }
+    const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : fromRound;
+
+    // 전수 검증 대상 사용자 ID 수집 (전체 등록 회원 목록과 100% 동기화)
     const allUserIdsSet = new Set();
     if (isAll) {
         baseList.forEach(u => {
@@ -339,17 +347,6 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
             state.allRegisteredUsersList.forEach(u => {
                 if (u && u.id && !isSystemOrDummyUser(u.id)) {
                     allUserIdsSet.add(String(u.id).toLowerCase().trim());
-                }
-            });
-        }
-        if (state.userRecommendationSnapshots && typeof state.userRecommendationSnapshots === 'object') {
-            Object.keys(state.userRecommendationSnapshots).forEach(k => {
-                const parts = k.split('_');
-                if (parts.length >= 2) {
-                    const uId = parts.slice(0, parts.length - 1).join('_').toLowerCase().trim();
-                    if (uId && !isSystemOrDummyUser(uId)) {
-                        allUserIdsSet.add(uId);
-                    }
                 }
             });
         }
