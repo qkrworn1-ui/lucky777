@@ -1,7 +1,7 @@
 import { db } from './db.js';
 import { showToast } from './utils.js';
 import { hashPassword, checkPasswordStrength } from './crypto-utils.js';
-import { DEFAULT_KNOWN_USERS, getAllUnifiedRegisteredUsers } from './user-context.js';
+import { DEFAULT_KNOWN_USERS, getAllUnifiedRegisteredUsers, UserContextManager } from './user-context.js';
 
 // Safe Multi-Storage Auth Helper (sessionStorage + localStorage + Cookie + memory fallback)
 const memoryAuthStore = { id: null };
@@ -752,6 +752,262 @@ if (typeof window !== 'undefined') {
     window.checkUserProgramPermissions = checkUserProgramPermissions;
 }
 
+/**
+ * 👤 updateLoggedInUserHeaderUI: Update all logged-in user header chips and dashboard welcome card across the app
+ */
+export function updateLoggedInUserHeaderUI(targetAuthId = null) {
+    let authId = targetAuthId || SafeAuth.get();
+    if (!authId) return;
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authId);
+            authId = parsed.userId || parsed.userid || parsed.id || authId;
+        } catch(e) {}
+    }
+    const cleanId = String(authId).trim().toLowerCase();
+    const realName = (typeof getUserRealName === 'function' ? getUserRealName(authId) : '') || '';
+    
+    let displayName = realName;
+    if (!displayName) {
+        if (cleanId === 'master') displayName = '최고관리자';
+        else if (cleanId.startsWith('kakao_')) displayName = `카카오회원(${cleanId.slice(-4)})`;
+        else displayName = authId;
+    }
+
+    const isAdmin = (typeof isAdminUser === 'function') ? isAdminUser(authId) : (cleanId === 'master');
+    const isPerm = (typeof isPermanentUser === 'function') ? isPermanentUser(authId) : false;
+    const isKakao = cleanId.startsWith('kakao_');
+
+    let roleTag = '일반회원';
+    let roleBadge = '⭐ 일반회원';
+    let roleClass = 'user-chip-member';
+    let avatarIcon = '<i class="fa-solid fa-user"></i>';
+    let avatarBadgeBg = 'rgba(59, 130, 246, 0.2)';
+    let avatarBadgeColor = '#60a5fa';
+
+    if (isAdmin) {
+        roleTag = '최고관리자';
+        roleBadge = '👑 최고관리자';
+        roleClass = 'user-chip-admin';
+        avatarIcon = '<i class="fa-solid fa-crown"></i>';
+        avatarBadgeBg = 'rgba(245, 158, 11, 0.25)';
+        avatarBadgeColor = '#fbbf24';
+    } else if (isKakao) {
+        roleTag = '카카오회원';
+        roleBadge = isPerm ? '💬 카카오 정회원' : '💬 카카오회원';
+        roleClass = 'user-chip-kakao';
+        avatarIcon = '<i class="fa-solid fa-comment"></i>';
+        avatarBadgeBg = 'rgba(168, 85, 247, 0.25)';
+        avatarBadgeColor = '#c084fc';
+    } else if (isPerm) {
+        roleTag = '영구인증';
+        roleBadge = '⭐ 영구정회원';
+        roleClass = 'user-chip-member';
+        avatarIcon = '<i class="fa-solid fa-star"></i>';
+        avatarBadgeBg = 'rgba(16, 185, 129, 0.25)';
+        avatarBadgeColor = '#34d399';
+    }
+
+    let joinRound = 1235;
+    if (typeof UserContextManager !== 'undefined' && UserContextManager.getUserJoinRound) {
+        joinRound = UserContextManager.getUserJoinRound(cleanId);
+    } else if (typeof window !== 'undefined' && window.getUserJoinRound) {
+        joinRound = window.getUserJoinRound(cleanId);
+    }
+
+    const targetRound = (typeof getUpcomingLottoRound === 'function') ? getUpcomingLottoRound() : 1242;
+
+    let hasVerified = false;
+    let verifiedText = '실구매 미인증';
+    if (isAdmin) {
+        hasVerified = true;
+        verifiedText = '👑 최고관리자 실구매 면제 (전체 개방)';
+    } else {
+        const gameCount = (typeof window.getUserConfirmedGameCountForRound === 'function') ? window.getUserConfirmedGameCountForRound(cleanId, targetRound) : 0;
+        if (gameCount >= 5) {
+            hasVerified = true;
+            verifiedText = `✅ ${targetRound}회 실구매 ${gameCount}게임 인증완료`;
+        } else if (gameCount > 0) {
+            verifiedText = `⚠️ ${targetRound}회 실구매 ${gameCount}게임 등록 (${5 - gameCount}게임 부족)`;
+        } else {
+            verifiedText = `❌ ${targetRound}회 실구매 영수증 미등록`;
+        }
+    }
+
+    // 1. Render/Update Header User Chip innerHTML
+    const chipHtml = `
+        <div class="user-chip-avatar" style="background: ${avatarBadgeBg}; color: ${avatarBadgeColor};">
+            ${avatarIcon}
+        </div>
+        <div class="user-chip-info">
+            <div class="user-chip-top">
+                <span class="user-chip-role-tag ${isAdmin ? 'tag-admin' : (isKakao ? 'tag-kakao' : 'tag-member')}">${roleTag}</span>
+                <span class="user-chip-name">${displayName}</span>
+            </div>
+            <div class="user-chip-id">${cleanId}</div>
+        </div>
+        <i class="fa-solid fa-chevron-down user-chip-arrow"></i>
+    `;
+
+    // Apply to App Header Chip
+    const appChip = document.getElementById('appHeaderUserChip');
+    if (appChip) {
+        appChip.className = `header-user-chip ${roleClass}`;
+        appChip.innerHTML = chipHtml;
+        appChip.style.display = 'inline-flex';
+        appChip.onclick = (e) => { e.stopPropagation(); toggleUserProfilePopover(appChip); };
+    }
+
+    // Apply to Landing Page Header Chip (Desktop)
+    const lpChip = document.getElementById('lpHeaderUserChip');
+    if (lpChip) {
+        lpChip.className = `header-user-chip ${roleClass}`;
+        lpChip.innerHTML = chipHtml;
+        lpChip.style.display = 'inline-flex';
+        lpChip.onclick = (e) => { e.stopPropagation(); toggleUserProfilePopover(lpChip); };
+    }
+
+    // Apply to Landing Page Mobile Header Chip
+    const lpMobileChip = document.getElementById('lpMobileUserChip');
+    if (lpMobileChip) {
+        lpMobileChip.className = `lp-mobile-user-badge ${roleClass}`;
+        lpMobileChip.innerHTML = `
+            <span class="lp-mobile-user-avatar" style="color: ${avatarBadgeColor};">${avatarIcon}</span>
+            <span class="lp-mobile-user-name">${displayName}</span>
+            <span class="lp-mobile-role-tag">${roleTag}</span>
+        `;
+        lpMobileChip.style.display = 'inline-flex';
+        lpMobileChip.onclick = (e) => { e.stopPropagation(); toggleUserProfilePopover(lpMobileChip); };
+    }
+
+    // Apply to Toto Header Chip (if present)
+    const totoChip = document.getElementById('totoHeaderUserChip');
+    if (totoChip) {
+        totoChip.className = `header-user-chip ${roleClass}`;
+        totoChip.innerHTML = chipHtml;
+        totoChip.style.display = 'inline-flex';
+        totoChip.onclick = (e) => { e.stopPropagation(); toggleUserProfilePopover(totoChip); };
+    }
+
+    // 2. Update User Profile Popover Modal/Dropdown
+    const popover = document.getElementById('userProfilePopover');
+    if (popover) {
+        const pAvatar = popover.querySelector('#popoverUserAvatar');
+        const pName = popover.querySelector('#popoverUserName');
+        const pId = popover.querySelector('#popoverUserId');
+        const pRoleBadge = popover.querySelector('#popoverUserRoleBadge');
+        const pJoinRound = popover.querySelector('#popoverUserJoinRound');
+        const pQrStatus = popover.querySelector('#popoverUserQrStatus');
+        const pAdminBtn = popover.querySelector('#popoverUserAdminBtn');
+
+        if (pAvatar) { pAvatar.innerHTML = avatarIcon; pAvatar.style.background = avatarBadgeBg; pAvatar.style.color = avatarBadgeColor; }
+        if (pName) pName.textContent = displayName;
+        if (pId) pId.textContent = cleanId;
+        if (pRoleBadge) {
+            pRoleBadge.textContent = roleBadge;
+            pRoleBadge.className = `popover-role-badge ${isAdmin ? 'badge-admin' : (isKakao ? 'badge-kakao' : 'badge-member')}`;
+        }
+        if (pJoinRound) pJoinRound.textContent = `제 ${joinRound} 회 ~`;
+        if (pQrStatus) {
+            pQrStatus.innerHTML = verifiedText;
+            pQrStatus.className = `popover-qr-val ${hasVerified ? 'text-verified' : 'text-unverified'}`;
+        }
+        if (pAdminBtn) {
+            pAdminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+        }
+    }
+
+    // 3. Update Dashboard Welcome Card (on tab-dashboard)
+    const dashCard = document.getElementById('dashboardUserWelcomeCard');
+    if (dashCard) {
+        const dAvatar = dashCard.querySelector('#dashWelcomeAvatar');
+        const dName = dashCard.querySelector('#dashWelcomeUserName');
+        const dRole = dashCard.querySelector('#dashWelcomeRoleBadge');
+        const dJoin = dashCard.querySelector('#dashWelcomeJoinBadge');
+        const dQrStatus = dashCard.querySelector('#dashWelcomeQrStatus');
+        const dInvest = dashCard.querySelector('#dashWelcomeTotalInvest');
+        const dPrize = dashCard.querySelector('#dashWelcomeTotalPrize');
+        const dProfit = dashCard.querySelector('#dashWelcomeTotalProfit');
+        const dRoi = dashCard.querySelector('#dashWelcomeTotalRoi');
+
+        if (dAvatar) {
+            dAvatar.innerHTML = isAdmin ? '<i class="fa-solid fa-crown"></i>' : (isKakao ? '<i class="fa-solid fa-shield-cat"></i>' : '<i class="fa-solid fa-user-check"></i>');
+            dAvatar.className = `dash-welcome-avatar-icon ${isAdmin ? 'avatar-admin' : (isKakao ? 'avatar-kakao' : 'avatar-member')}`;
+        }
+        if (dName) dName.textContent = displayName;
+        if (dRole) {
+            dRole.textContent = roleBadge;
+            dRole.className = `dash-welcome-badge ${isAdmin ? 'badge-admin' : (isKakao ? 'badge-kakao' : 'badge-member')}`;
+        }
+        if (dJoin) dJoin.textContent = `제 ${joinRound}회 가입`;
+        if (dQrStatus) {
+            dQrStatus.innerHTML = `<i class="fa-solid ${hasVerified ? 'fa-circle-check' : 'fa-triangle-exclamation'}"></i> ${verifiedText}`;
+            dQrStatus.className = `dash-welcome-status-pill ${hasVerified ? 'status-verified' : 'status-unverified'}`;
+        }
+
+        // Calculate personal financials if ledger is available
+        if (typeof window.calculateLedgerFinancials === 'function') {
+            const myFin = window.calculateLedgerFinancials(true, 'my');
+            const totalInvest = myFin.totalInvest || 0;
+            const totalPrize = myFin.totalPrize || 0;
+            const netProfit = totalPrize - totalInvest;
+            const roi = totalInvest > 0 ? ((netProfit / totalInvest) * 100).toFixed(1) : '0.0';
+
+            if (dInvest) dInvest.textContent = `${totalInvest.toLocaleString()} 원`;
+            if (dPrize) dPrize.textContent = `${totalPrize.toLocaleString()} 원`;
+            if (dProfit) {
+                dProfit.textContent = `${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString()} 원`;
+                dProfit.className = `dash-welcome-kpi-val ${netProfit > 0 ? 'text-positive' : (netProfit < 0 ? 'text-negative' : '')}`;
+            }
+            if (dRoi) {
+                dRoi.textContent = `${netProfit >= 0 ? '+' : ''}${roi}%`;
+                dRoi.className = `dash-welcome-kpi-val ${netProfit > 0 ? 'text-positive' : (netProfit < 0 ? 'text-negative' : '')}`;
+            }
+        }
+    }
+}
+
+export function toggleUserProfilePopover(anchorEl = null) {
+    const popover = document.getElementById('userProfilePopover');
+    if (!popover) return;
+    
+    const isShown = popover.classList.contains('active') && popover.style.display !== 'none';
+    if (isShown) {
+        popover.classList.remove('active');
+        popover.style.display = 'none';
+        return;
+    }
+
+    if (anchorEl) {
+        const rect = anchorEl.getBoundingClientRect();
+        const popWidth = 290;
+        let left = rect.right - popWidth;
+        if (left < 10) left = 10;
+        if (left + popWidth > window.innerWidth - 10) left = window.innerWidth - popWidth - 10;
+        
+        popover.style.top = `${rect.bottom + 8}px`;
+        popover.style.left = `${left}px`;
+    }
+
+    popover.style.display = 'block';
+    popover.classList.add('active');
+}
+
+if (typeof window !== 'undefined') {
+    window.updateLoggedInUserHeaderUI = updateLoggedInUserHeaderUI;
+    window.toggleUserProfilePopover = toggleUserProfilePopover;
+
+    window.addEventListener('click', (e) => {
+        const popover = document.getElementById('userProfilePopover');
+        if (popover && popover.classList.contains('active')) {
+            if (!popover.contains(e.target) && !e.target.closest('.header-user-chip') && !e.target.closest('.lp-mobile-user-badge')) {
+                popover.classList.remove('active');
+                popover.style.display = 'none';
+            }
+        }
+    });
+}
+
 export async function checkAuthOnLoad(initFirebaseAndData) {
     updateDebugMonitor({});
     const authId = SafeAuth.get();
@@ -830,6 +1086,8 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'none', 'important');
             if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'none';
         }
+
+        updateLoggedInUserHeaderUI(authId);
 
         if (typeof initFirebaseAndData === 'function') {
             try {

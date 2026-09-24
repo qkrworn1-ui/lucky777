@@ -16652,3 +16652,455 @@ body.is-admin .btn-snapshot-audit-compact {
     flex-shrink: 0;
 }
 
+/* ==========================================================================
+   👤 Logged-in User Header Chip & Profile Popover & Dashboard Welcome Card
+   ========================================================================== */
+
+.header-user-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 10px 3px 4px;
+    border-radius: 20px;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.header-user-chip:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.1);
+}
+
+.header-user-chip.user-chip-admin {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.45);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.18);
+}
+
+.header-user-chip.user-chip-member {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.45);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.18);
+}
+
+.header-user-chip.user-chip-kakao {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%);
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    box-shadow: 0 0 12px rgba(168, 85, 247, 0.18);
+}
+
+.user-chip-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 900;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.user-chip-info {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+    line-height: 1.15;
+}
+
+.user-chip-top {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.user-chip-role-tag {
+    font-size: 0.62rem;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.user-chip-role-tag.tag-admin {
+    background: rgba(245, 158, 11, 0.25);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.user-chip-role-tag.tag-member {
+    background: rgba(59, 130, 246, 0.25);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.user-chip-role-tag.tag-kakao {
+    background: rgba(168, 85, 247, 0.25);
+    color: #d8b4fe;
+    border: 1px solid rgba(168, 85, 247, 0.4);
+}
+
+.user-chip-name {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+}
+
+.user-chip-id {
+    font-size: 0.65rem;
+    color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.user-chip-arrow {
+    font-size: 0.6rem;
+    color: #94a3b8;
+    margin-left: 2px;
+}
+
+/* Landing Mobile User Badge */
+.lp-mobile-user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.74rem;
+    font-weight: 800;
+}
+.lp-mobile-user-name {
+    color: #ffffff;
+}
+.lp-mobile-role-tag {
+    font-size: 0.6rem;
+    color: #fbbf24;
+    background: rgba(0,0,0,0.3);
+    padding: 1px 4px;
+    border-radius: 4px;
+}
+
+/* User Profile Popover Dropdown */
+.user-profile-popover {
+    position: fixed;
+    z-index: 10000;
+    width: 290px;
+    background: rgba(15, 23, 42, 0.96);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(99, 102, 241, 0.15);
+    padding: 16px;
+    animation: popoverFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popoverFadeIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.popover-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.popover-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.popover-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 900;
+    flex-shrink: 0;
+}
+
+.popover-user-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.popover-name-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.popover-name-row strong {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.popover-role-badge {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 10px;
+}
+.popover-role-badge.badge-admin { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+.popover-role-badge.badge-member { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+.popover-role-badge.badge-kakao { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+.popover-user-id {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.popover-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.popover-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+}
+
+.popover-lbl {
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.popover-val {
+    color: #f1f5f9;
+    font-weight: 700;
+}
+
+.popover-qr-val.text-verified {
+    color: #34d399;
+    font-weight: 700;
+}
+.popover-qr-val.text-unverified {
+    color: #f87171;
+    font-weight: 700;
+}
+
+.popover-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.btn-popover-action {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.06);
+    color: #cbd5e1;
+    transition: all 0.2s ease;
+}
+
+.btn-popover-action:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.btn-popover-admin {
+    background: rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+}
+.btn-popover-admin:hover {
+    background: rgba(245, 158, 11, 0.3);
+    color: #ffffff;
+}
+
+.btn-popover-logout {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.35);
+    color: #fca5a5;
+    flex: 0 0 auto;
+}
+.btn-popover-logout:hover {
+    background: rgba(239, 68, 68, 0.25);
+    color: #ffffff;
+}
+
+/* ==========================================================================
+   ✨ Dashboard User Welcome Card
+   ========================================================================== */
+
+.dashboard-user-welcome-card {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%);
+    border: 1.5px solid rgba(245, 158, 11, 0.3);
+    border-radius: 16px;
+    padding: 16px 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.dash-welcome-flex {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.dash-welcome-user-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.dash-welcome-avatar-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    font-weight: 900;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dash-welcome-avatar-icon.avatar-admin {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #0f172a;
+}
+.dash-welcome-avatar-icon.avatar-member {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: #ffffff;
+}
+.dash-welcome-avatar-icon.avatar-kakao {
+    background: linear-gradient(135deg, #a855f7, #7e22ce);
+    color: #ffffff;
+}
+
+.dash-welcome-text-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.dash-welcome-name-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.dash-welcome-title {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: #ffffff;
+    margin: 0;
+}
+
+.dash-welcome-badge {
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+.dash-welcome-badge.badge-admin { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); }
+.dash-welcome-badge.badge-member { background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.4); }
+.dash-welcome-badge.badge-kakao { background: rgba(168, 85, 247, 0.2); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.4); }
+
+.dash-welcome-join-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dash-welcome-status-pill {
+    font-size: 0.78rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.dash-welcome-status-pill.status-verified { color: #34d399; }
+.dash-welcome-status-pill.status-unverified { color: #f87171; }
+
+.dash-welcome-kpi-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 8px 16px;
+}
+
+.dash-welcome-kpi-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.dash-welcome-kpi-lbl {
+    font-size: 0.68rem;
+    color: #94a3b8;
+}
+
+.dash-welcome-kpi-val {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #ffffff;
+    font-family: 'JetBrains Mono', monospace;
+}
+.dash-welcome-kpi-val.text-positive { color: #34d399; }
+.dash-welcome-kpi-val.text-negative { color: #f87171; }
+
+.dash-welcome-kpi-divider {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 640px) {
+    .header-user-chip .user-chip-id {
+        display: none;
+    }
+    .header-user-chip {
+        padding: 3px 6px;
+    }
+    .dash-welcome-kpi-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+

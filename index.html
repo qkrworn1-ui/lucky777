@@ -57,7 +57,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.09.24.1204">
+    <link rel="stylesheet" href="styles.css?v=2026.09.24.1220">
 </head>
 
 <body>
@@ -93,17 +93,21 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.09.18.1707
+                        v2026.09.24.1204
                     </span>
                 </div>
-                <div class="lp-mobile-dday-badge" id="lpMobileDdayBadge" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-generator'), 80); }" title="추천번호 생성 바로가기">
-                    <span class="lp-dday-icon">🎯</span>
-                    <span class="lp-dday-text" id="lpMobileDdayText">1242회 D-1</span>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <div id="lpMobileUserChip" class="lp-mobile-user-badge user-chip-member" style="display: none;" title="내 계정 정보"></div>
+                    <div class="lp-mobile-dday-badge" id="lpMobileDdayBadge" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-generator'), 80); }" title="추천번호 생성 바로가기">
+                        <span class="lp-dday-icon">🎯</span>
+                        <span class="lp-dday-text" id="lpMobileDdayText">1242회 D-1</span>
+                    </div>
                 </div>
             </div>
 
             <!-- Desktop-only Top Actions -->
             <div class="lp-top-bar-actions lp-desktop-only">
+                <div id="lpHeaderUserChip" class="header-user-chip user-chip-member" style="display: none;" title="내 계정 정보 확인"></div>
                 <button id="btnLandingOpenQr" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.openManualLedgerModal) window.openManualLedgerModal(); else if(document.getElementById('btnOpenManualLedger')) document.getElementById('btnOpenManualLedger').click(); }, 120); }" class="btn-ledger-qr-prominent lp-top-qr-btn" title="실물 로또 영수증 QR 등록 바로가기">
                     <i class="fa-solid fa-qrcode"></i> <span>실구매 QR 등록</span>
                 </button>
@@ -130,7 +134,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.09.24.1204 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.09.24.1220 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -507,7 +511,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.09.24.1204
+                                v2026.09.24.1220
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -515,6 +519,7 @@
                 </div>
 
                 <div class="header-top-right">
+                    <div id="appHeaderUserChip" class="header-user-chip user-chip-member" style="display: none;" title="내 계정 정보 확인"></div>
                     <div id="serverStatusBadge" class="status-badge" style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid #334155; color: #cbd5e1;">
                         <span id="serverStatusIndicator" style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;"></span>
                         <span id="serverStatusText">DB 연결됨</span>
@@ -1610,6 +1615,49 @@
                     </div>
                 </div>
 
+                <!-- ✨ 로그인 사용자 맞춤형 웰컴 & 실구매 현황 배너 -->
+                <div id="dashboardUserWelcomeCard" class="dashboard-user-welcome-card" style="margin-bottom: 20px;">
+                    <div class="dash-welcome-flex">
+                        <div class="dash-welcome-user-info">
+                            <div id="dashWelcomeAvatar" class="dash-welcome-avatar-icon avatar-admin">
+                                <i class="fa-solid fa-crown"></i>
+                            </div>
+                            <div class="dash-welcome-text-group">
+                                <div class="dash-welcome-name-row">
+                                    <h3 class="dash-welcome-title"><span id="dashWelcomeUserName">회원</span> 님, 환영합니다!</h3>
+                                    <span id="dashWelcomeRoleBadge" class="dash-welcome-badge badge-admin">👑 최고관리자</span>
+                                    <span id="dashWelcomeJoinBadge" class="dash-welcome-join-tag">제 1235회 가입</span>
+                                </div>
+                                <div id="dashWelcomeQrStatus" class="dash-welcome-status-pill status-verified">
+                                    <i class="fa-solid fa-circle-check"></i> 👑 최고관리자 실구매 면제 (전체 개방)
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dash-welcome-kpi-group">
+                            <div class="dash-welcome-kpi-item">
+                                <span class="dash-welcome-kpi-lbl">내 누적 당첨금</span>
+                                <span id="dashWelcomeTotalPrize" class="dash-welcome-kpi-val text-positive">0 원</span>
+                            </div>
+                            <div class="dash-welcome-kpi-divider"></div>
+                            <div class="dash-welcome-kpi-item">
+                                <span class="dash-welcome-kpi-lbl">내 누적 투자금</span>
+                                <span id="dashWelcomeTotalInvest" class="dash-welcome-kpi-val">0 원</span>
+                            </div>
+                            <div class="dash-welcome-kpi-divider"></div>
+                            <div class="dash-welcome-kpi-item">
+                                <span class="dash-welcome-kpi-lbl">내 누적 손익</span>
+                                <span id="dashWelcomeTotalProfit" class="dash-welcome-kpi-val text-positive">+0 원</span>
+                            </div>
+                            <div class="dash-welcome-kpi-divider"></div>
+                            <div class="dash-welcome-kpi-item">
+                                <span class="dash-welcome-kpi-lbl">수익률 (ROI)</span>
+                                <span id="dashWelcomeTotalRoi" class="dash-welcome-kpi-val text-positive">+0.0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="dashboard-header">
 
                     <h2><i class="fa-solid fa-chart-bar"></i> 역대 추첨 데이터 전수 분석 대시보드</h2>
@@ -1916,7 +1964,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.09.24.1204
+                        <i class="fa-solid fa-code-branch"></i> v2026.09.24.1220
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3433,7 +3481,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.09.24.1204';
+        window.APP_VERSION = 'v2026.09.24.1220';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -3485,7 +3533,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.09.24.1204';
+            var v = ver || window.APP_VERSION || 'v2026.09.24.1220';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -3671,7 +3719,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.24.1204';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.24.1220';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -3791,7 +3839,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.09.24.1204')
+                navigator.serviceWorker.register('./sw.js?v=2026.09.24.1220')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -3800,7 +3848,7 @@
                             if (installingWorker) {
                                 installingWorker.onstatechange = function() {
                                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        console.log('[PWA] New version (v2026.09.24.1204) installed! Refreshing cache...');
+                                        console.log('[PWA] New version (v2026.09.24.1220) installed! Refreshing cache...');
                                         window.location.reload();
                                     }
                                 };
@@ -3867,8 +3915,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.09.24.1204"></script>
-    <script src="app_v2.js?v=2026.09.24.1204"></script>
+    <script src="data.js?v=2026.09.24.1220"></script>
+    <script src="app_v2.js?v=2026.09.24.1220"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">
@@ -3955,6 +4003,47 @@
                         닫기
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 👤 Global User Profile Popover Dropdown / Modal -->
+    <div id="userProfilePopover" class="user-profile-popover" style="display: none;">
+        <div class="popover-inner">
+            <div class="popover-header">
+                <div id="popoverUserAvatar" class="popover-avatar">
+                    <i class="fa-solid fa-crown"></i>
+                </div>
+                <div class="popover-user-meta">
+                    <div class="popover-name-row">
+                        <strong id="popoverUserName">회원</strong>
+                        <span id="popoverUserRoleBadge" class="popover-role-badge badge-admin">👑 최고관리자</span>
+                    </div>
+                    <div id="popoverUserId" class="popover-user-id">master</div>
+                </div>
+            </div>
+
+            <div class="popover-details">
+                <div class="popover-row">
+                    <span class="popover-lbl"><i class="fa-solid fa-calendar-plus"></i> 가입 시작 회차</span>
+                    <span id="popoverUserJoinRound" class="popover-val">제 1235 회 ~</span>
+                </div>
+                <div class="popover-row">
+                    <span class="popover-lbl"><i class="fa-solid fa-receipt"></i> 주간 실구매</span>
+                    <span id="popoverUserQrStatus" class="popover-qr-val text-verified">👑 면제 (인증완료)</span>
+                </div>
+            </div>
+
+            <div class="popover-actions">
+                <button type="button" class="btn-popover-action" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.switchTab) window.switchTab('tab-confirmed'); }, 100); } window.toggleUserProfilePopover && window.toggleUserProfilePopover();">
+                    <i class="fa-solid fa-receipt"></i> <span>구매확정 장부</span>
+                </button>
+                <button type="button" id="popoverUserAdminBtn" class="btn-popover-action btn-popover-admin" style="display: none;" onclick="window.openUserManagement && window.openUserManagement(); window.toggleUserProfilePopover && window.toggleUserProfilePopover();">
+                    <i class="fa-solid fa-users-gear"></i> <span>회원 관리</span>
+                </button>
+                <button type="button" class="btn-popover-action btn-popover-logout" onclick="handleLogout()">
+                    <i class="fa-solid fa-right-from-bracket"></i> <span>로그아웃</span>
+                </button>
             </div>
         </div>
     </div>

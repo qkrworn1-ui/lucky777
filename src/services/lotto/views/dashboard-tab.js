@@ -4,6 +4,7 @@ import { computeAbsoluteTop10Combinations } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 import { calculateStats, getNeighborMatches } from '../scoring.js';
 import { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations } from '../ledger.js';
+import { updateLoggedInUserHeaderUI } from '../../../shared/auth-mgmt.js';
 import { db } from '../../../shared/db.js';
 
 let freqChartInstance = null;
@@ -14,6 +15,12 @@ export function renderDashboardCharts() {
     const tabDashEl = document.getElementById('tab-dashboard');
     if (!tabDashEl || (!tabDashEl.classList.contains('active') && tabDashEl.style.display === 'none')) {
         return;
+    }
+
+    if (typeof updateLoggedInUserHeaderUI === 'function') {
+        try { updateLoggedInUserHeaderUI(); } catch(e) {}
+    } else if (typeof window.updateLoggedInUserHeaderUI === 'function') {
+        try { window.updateLoggedInUserHeaderUI(); } catch(e) {}
     }
 
     if (state.HOT_GROUP && state.HOT_GROUP.length > 0) {

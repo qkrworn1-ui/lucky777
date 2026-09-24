@@ -1,6 +1,6 @@
 import { state } from '../services/lotto/state.js';
 import { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUsersPurchases, getSafeActualDraw } from '../services/lotto/ledger.js';
-import { SafeAuth, getUserRealName } from './auth-mgmt.js';
+import { SafeAuth, getUserRealName, updateLoggedInUserHeaderUI } from './auth-mgmt.js';
 import { isSystemOrDummyUser } from './utils.js';
 import { getAllUnifiedRegisteredUsers } from './user-context.js';
 import { computeUser70RecommendationsReview, clearUser70ReviewCache } from '../services/lotto/views/review-tab.js';
@@ -51,6 +51,7 @@ export async function renderLandingDashboard() {
     }
 
     // 0. Update Service Cards Access Permission Badges & Counters IMMEDIATELY (0ms perception)
+    updateLoggedInUserHeaderUI(authId);
     updateHomeServiceCardsPermissions();
     updateMobileDdayBadge();
     updateDrawCountdownBanner();

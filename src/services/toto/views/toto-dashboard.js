@@ -101,6 +101,7 @@ export function renderTotoDashboard() {
                 </div>
             </div>
             <div class="toto-header-actions">
+                <div id="totoHeaderUserChip" class="header-user-chip user-chip-member" style="display: none;" title="내 계정 정보 확인"></div>
                 <button onclick="window.scrapeLatestTotoFixtures && window.scrapeLatestTotoFixtures()" class="btn-toto-sync" title="최신 경기 일정 &amp; 해외 배당 실시간 동기화">
                     <i class="fa-solid fa-satellite-dish"></i> <span>실시간 동기화</span>
                 </button>

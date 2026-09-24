@@ -2355,9 +2355,52 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("export function calculateLedgerFinancials", ledger_code)
         self.assertIn("const actualDraw = getSafeActualDraw(round);", ledger_code)
 
+    # [Test 67] Logged-in User Display in App Header & Dashboard Integrity
+    def test_67_logged_in_user_display_header_and_dashboard_integrity(self):
+        index_file = os.path.join(self.root_dir, 'index.html')
+        auth_file = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        styles_file = os.path.join(self.root_dir, 'styles.css')
+        dash_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'dashboard-tab.js')
+        landing_file = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+
+        with open(index_file, 'r', encoding='utf-8') as f:
+            index_code = f.read()
+        with open(auth_file, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        with open(styles_file, 'r', encoding='utf-8') as f:
+            styles_code = f.read()
+        with open(dash_file, 'r', encoding='utf-8') as f:
+            dash_code = f.read()
+        with open(landing_file, 'r', encoding='utf-8') as f:
+            landing_code = f.read()
+
+        # 1. index.html contains all user chip & dashboard welcome card elements
+        self.assertIn('id="appHeaderUserChip"', index_code)
+        self.assertIn('id="lpHeaderUserChip"', index_code)
+        self.assertIn('id="lpMobileUserChip"', index_code)
+        self.assertIn('id="dashboardUserWelcomeCard"', index_code)
+        self.assertIn('id="userProfilePopover"', index_code)
+
+        # 2. auth-mgmt.js defines updateLoggedInUserHeaderUI and toggleUserProfilePopover
+        self.assertIn("export function updateLoggedInUserHeaderUI", auth_code)
+        self.assertIn("export function toggleUserProfilePopover", auth_code)
+        self.assertIn("window.updateLoggedInUserHeaderUI = updateLoggedInUserHeaderUI;", auth_code)
+        self.assertIn("window.toggleUserProfilePopover = toggleUserProfilePopover;", auth_code)
+
+        # 3. styles.css contains glassmorphism styling for chips and welcome card
+        self.assertIn(".header-user-chip", styles_code)
+        self.assertIn(".user-chip-admin", styles_code)
+        self.assertIn(".user-profile-popover", styles_code)
+        self.assertIn(".dashboard-user-welcome-card", styles_code)
+
+        # 4. dashboard-tab.js and landing-dashboard.js call updateLoggedInUserHeaderUI
+        self.assertIn("updateLoggedInUserHeaderUI", dash_code)
+        self.assertIn("updateLoggedInUserHeaderUI", landing_code)
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 

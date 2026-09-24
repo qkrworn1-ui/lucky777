@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.24.1204",
+  "version": "v2026.09.24.1220",
   "buildDate": "2026-09-24",
-  "description": "Unify all members winning prize calculation between algorithm intro and review tabs",
-  "buildTimestamp": "2026-09-24T12:04:21.076264",
+  "description": "Add logged in user profile display to app header, landing top bar, and dashboard",
+  "buildTimestamp": "2026-09-24T12:20:55.333662",
   "buildHistory": [
-    {
-      "version": "v2026.09.23.1747",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:47",
-      "buildTimestamp": "2026-09-23T17:47:03.307698",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.23.1748",
       "buildDate": "2026-09-23",
@@ -353,7 +346,14 @@
       "buildTime": "12:04",
       "buildTimestamp": "2026-09-24T12:04:21.076264",
       "description": "Unify all members winning prize calculation between algorithm intro and review tabs"
+    },
+    {
+      "version": "v2026.09.24.1220",
+      "buildDate": "2026-09-24",
+      "buildTime": "12:20",
+      "buildTimestamp": "2026-09-24T12:20:55.333662",
+      "description": "Add logged in user profile display to app header, landing top bar, and dashboard"
     }
   ],
-  "buildTime": "12:04"
+  "buildTime": "12:20"
 }
