@@ -1,23 +1,9 @@
 {
-  "version": "v2026.09.24.1336.57",
+  "version": "v2026.09.24.1354",
   "buildDate": "2026-09-24",
-  "description": "Add test 68 and bundle all changes",
-  "buildTimestamp": "2026-09-24T13:36:57.753119",
+  "description": "Add atomic click debounce and rate limit recovery for Kakao login",
+  "buildTimestamp": "2026-09-24T13:54:14.214861",
   "buildHistory": [
-    {
-      "version": "v2026.09.23.1843",
-      "buildDate": "2026-09-23",
-      "buildTime": "18:43",
-      "buildTimestamp": "2026-09-23T18:43:21.927999",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1843.50",
-      "buildDate": "2026-09-23",
-      "buildTime": "18:43",
-      "buildTimestamp": "2026-09-23T18:43:50.793792",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.23.1852",
       "buildDate": "2026-09-23",
@@ -353,7 +339,21 @@
       "buildTime": "13:36",
       "buildTimestamp": "2026-09-24T13:36:57.753119",
       "description": "Add test 68 and bundle all changes"
+    },
+    {
+      "version": "v2026.09.24.1351",
+      "buildDate": "2026-09-24",
+      "buildTime": "13:51",
+      "buildTimestamp": "2026-09-24T13:51:57.965393",
+      "description": "Fix Kakao login and logout lifecycle"
+    },
+    {
+      "version": "v2026.09.24.1354",
+      "buildDate": "2026-09-24",
+      "buildTime": "13:54",
+      "buildTimestamp": "2026-09-24T13:54:14.214861",
+      "description": "Add atomic click debounce and rate limit recovery for Kakao login"
     }
   ],
-  "buildTime": "13:36"
+  "buildTime": "13:54"
 }

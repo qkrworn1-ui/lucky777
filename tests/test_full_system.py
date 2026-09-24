@@ -2424,8 +2424,30 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('setupSnapshotAuditEvents', lotto_index_code)
 
 
+    # [Test 69] Kakao Login and Logout Integrity Test
+    def test_69_kakao_login_and_logout_integrity(self):
+        with open('index.html', 'r', encoding='utf-8') as f:
+            index_code = f.read()
+        with open('src/shared/auth-mgmt.js', 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+
+        # 1. loginWithKakao defined and exported at module top level
+        self.assertIn('export function loginWithKakao', auth_code)
+        self.assertIn('export function initKakaoSdk', auth_code)
+        self.assertIn('window.loginWithKakao = loginWithKakao;', auth_code)
+
+        # 2. index.html has bootstrap fallback
+        self.assertIn('function loginWithKakao', index_code)
+        self.assertIn('window.loginWithKakao = loginWithKakao', index_code)
+
+        # 3. handleLogout safely resets Kakao without crashing on null token
+        self.assertIn('window.history.replaceState', auth_code)
+        self.assertIn('hasToken', auth_code)
+
+
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
