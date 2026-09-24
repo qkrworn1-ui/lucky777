@@ -2304,9 +2304,61 @@ class TestFullSystem(unittest.TestCase):
         # 3. index.html must not default to unverified warning
         self.assertNotIn("[이번 주 실구매 인증]</strong> 아직 이번 주 실구매 영수증(QR)이 등록되지 않았습니다.", index_html_code)
 
+    # [Test 65] 7 Algorithms Performance Server Snapshots Calculation
+    def test_65_algorithms_performance_server_snapshots_calculation(self):
+        rev_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        algo_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'algorithms-tab.js')
+
+        with open(rev_tab_file, 'r', encoding='utf-8') as f:
+            rev_tab_code = f.read()
+        with open(algo_tab_file, 'r', encoding='utf-8') as f:
+            algo_tab_code = f.read()
+
+        # 1. review-tab.js has robust getPackFromSnapshot helper
+        self.assertIn("export function getPackFromSnapshot(extraPacks, pId)", rev_tab_code)
+        self.assertIn("extraPacks.find(p => p && (Number(p.packId) === pId", rev_tab_code)
+
+        # 2. algorithms-tab.js calculate7AlgorithmsPerformance handles candidate users from snapshots & registered users
+        self.assertIn("export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all')", algo_tab_code)
+        self.assertIn("state.userRecommendationSnapshots", algo_tab_code)
+        self.assertIn("reviewsCache.set(key, computeUser70RecommendationsReview(uId, round))", algo_tab_code)
+
+        # 3. algorithms-tab.js extracts all 7 algorithms & aggregates grand totals
+        self.assertIn("algo.id === 'v4'", algo_tab_code)
+        self.assertIn("algo.id === 'v3'", algo_tab_code)
+        self.assertIn("algo.id.startsWith('extra')", algo_tab_code)
+        # 4. computeUser70RecommendationsReview & calculate7AlgorithmsPerformance strictly exclude pre-join rounds
+        self.assertIn("const joinRound = getUserJoinRound(cleanUser);", rev_tab_code)
+        self.assertIn("if (roundNum < joinRound)", rev_tab_code)
+        self.assertIn("isPreJoin: true,", rev_tab_code)
+        self.assertIn("if (!rev || rev.isPreJoin) return;", algo_tab_code)
+
+    # [Test 66] Confirmed Purchases Server Receipts & Winning Prize Calculation Integrity
+    def test_66_confirmed_purchases_server_receipts_winnings_integrity(self):
+        conf_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+
+        with open(conf_tab_file, 'r', encoding='utf-8') as f:
+            conf_tab_code = f.read()
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+
+        # 1. confirmed-tab.js uses getPackFromSnapshot in getMemoizedRecommendations
+        self.assertIn("import { getPackFromSnapshot } from './review-tab.js';", conf_tab_code)
+        self.assertIn("extraPacks = [1, 2, 3, 4, 5].map(pId => getPackFromSnapshot(snapshot.extraPacks, pId)", conf_tab_code)
+
+        # 2. confirmed-tab.js correctly computes actual winning prizes using dynamic actual draw data
+        self.assertIn("actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000)", conf_tab_code)
+        self.assertIn("actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000)", conf_tab_code)
+
+        # 3. ledger.js calculateLedgerFinancials correctly calculates financials based on safe actual draw
+        self.assertIn("export function calculateLedgerFinancials", ledger_code)
+        self.assertIn("const actualDraw = getSafeActualDraw(round);", ledger_code)
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 

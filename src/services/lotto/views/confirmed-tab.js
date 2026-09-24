@@ -7,6 +7,7 @@ import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
 import { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
 
 import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync } from '../generator.js';
+import { getPackFromSnapshot } from './review-tab.js';
 import { recalculateGroups } from '../statistics.js';
 
 const _roundUserRecCache = new Map();
@@ -23,7 +24,7 @@ function getMemoizedRecommendations(rnd, user) {
     if (snapshot && snapshot.v4Combos && snapshot.v3Combos && snapshot.extraPacks) {
         uV4 = snapshot.v4Combos;
         uV3 = snapshot.v3Combos;
-        extraPacks = [1, 2, 3, 4, 5].map(pId => snapshot.extraPacks[pId] || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] });
+        extraPacks = [1, 2, 3, 4, 5].map(pId => getPackFromSnapshot(snapshot.extraPacks, pId) || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] });
     } else {
         uV4 = computeAbsoluteTop10Combinations(false, rnd, 'v4', true, user) || [];
         uV3 = computeAbsoluteTop10Combinations(false, rnd, 'v3', true, user) || [];
@@ -317,16 +318,16 @@ export async function renderConfirmedPurchasesList() {
                                     prize = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
                                 } else if (matchCount === 5 && hasBonus) {
                                     rank = 2;
-                                    prize = actualDraw.rank2Prize || 50000000;
+                                    prize = actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000);
                                 } else if (matchCount === 5) {
                                     rank = 3;
-                                    prize = actualDraw.rank3Prize || 1500000;
+                                    prize = actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000);
                                 } else if (matchCount === 4) {
                                     rank = 4;
-                                    prize = 50000;
+                                    prize = actualDraw.rank4Prize || 50000;
                                 } else if (matchCount === 3) {
                                     rank = 5;
-                                    prize = 5000;
+                                    prize = actualDraw.rank5Prize || 5000;
                                 }
 
                                 if (rank >= 1 && rank <= 5) {
@@ -774,10 +775,10 @@ export async function renderConfirmedPurchasesList() {
                 const winningSet = new Set(actualDraw.numbers);
                 const bonus = actualDraw.bonus;
                 const p1 = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
-                const p2 = actualDraw.rank2Prize || 50000000;
-                const p3 = actualDraw.rank3Prize || 1500000;
-                const p4 = 50000;
-                const p5 = 5000;
+                const p2 = actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000);
+                const p3 = actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000);
+                const p4 = actualDraw.rank4Prize || 50000;
+                const p5 = actualDraw.rank5Prize || 5000;
 
                 purchase.combos.forEach((c, cIdx) => {
                     const nums = getComboNumbers(c);
@@ -947,8 +948,8 @@ export async function renderConfirmedPurchasesList() {
                     const matchCount = matches.length;
                     const hasBonus = bonus ? nums.includes(bonus) : false;
                     const p1 = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
-                    const p2 = actualDraw.rank2Prize || 50000000;
-                    const p3 = actualDraw.rank3Prize || 1500000;
+                    const p2 = actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000);
+                    const p3 = actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000);
 
                     if (matchCount === 6) {
                         isRowWon = true;

@@ -299,7 +299,7 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 전체 회원 기본 통합)
+ * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 서버 스냅샷 기반 정확한 전수 집계)
  */
 export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all') {
     if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
@@ -317,10 +317,49 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
     const rawUser = targetUserId || 'all';
     const cleanUser = String(rawUser).toLowerCase().trim();
     const isAll = (cleanUser === 'all');
-    const userJoinRound = (!isAll) ? getUserJoinRound(cleanUser) : 1235;
+
+    // 🔒 서버 스냅샷 및 전체 회원 목록 동기화 확인
+    if (typeof fetchAllUsersPurchases === 'function' && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
+        try {
+            await fetchAllUsersPurchases();
+        } catch(e) {}
+    }
+
     const baseList = isAll ? getAllUnifiedRegisteredUsers() : [];
 
-    const cacheKey = `${fromRound}_${cleanUser}_${maxRound}_${drawnRounds.length}_${baseList.length}`;
+    // 전수 검증 대상 사용자 ID 수집 (서버 스냅샷 보유자 + 전체 등록 회원)
+    const allUserIdsSet = new Set();
+    if (isAll) {
+        baseList.forEach(u => {
+            if (u && u.id && !isSystemOrDummyUser(u.id)) {
+                allUserIdsSet.add(String(u.id).toLowerCase().trim());
+            }
+        });
+        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+            state.allRegisteredUsersList.forEach(u => {
+                if (u && u.id && !isSystemOrDummyUser(u.id)) {
+                    allUserIdsSet.add(String(u.id).toLowerCase().trim());
+                }
+            });
+        }
+        if (state.userRecommendationSnapshots && typeof state.userRecommendationSnapshots === 'object') {
+            Object.keys(state.userRecommendationSnapshots).forEach(k => {
+                const parts = k.split('_');
+                if (parts.length >= 2) {
+                    const uId = parts.slice(0, parts.length - 1).join('_').toLowerCase().trim();
+                    if (uId && !isSystemOrDummyUser(uId)) {
+                        allUserIdsSet.add(uId);
+                    }
+                }
+            });
+        }
+    } else {
+        allUserIdsSet.add(cleanUser);
+    }
+
+    const candidateUsers = Array.from(allUserIdsSet);
+
+    const cacheKey = `${fromRound}_${cleanUser}_${maxRound}_${drawnRounds.length}_${candidateUsers.length}`;
     if (_algoPerfCache.has(cacheKey)) {
         return _algoPerfCache.get(cacheKey);
     }
@@ -339,32 +378,15 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
     // High-Speed Pre-cache: compute reviews once per (user, round)
     const reviewsCache = new Map();
     for (const round of drawnRounds) {
-        if (isAll) {
-            const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
-            let _uCount1 = 0;
-            for (const u of activeUsers) {
-                _uCount1++;
-                if (_uCount1 % 5 === 0) await new Promise(r => setTimeout(r, 0));
-                const key = `${u.id}_${round}`;
-                if (!reviewsCache.has(key)) {
-                    reviewsCache.set(key, computeUser70RecommendationsReview(u.id, round));
-                }
-            }
-        } else {
-            if (round >= userJoinRound) {
-                const key = `${cleanUser}_${round}`;
-                if (!reviewsCache.has(key)) {
-                    reviewsCache.set(key, computeUser70RecommendationsReview(cleanUser, round));
-                }
+        for (const uId of candidateUsers) {
+            const key = `${uId}_${round}`;
+            if (!reviewsCache.has(key)) {
+                reviewsCache.set(key, computeUser70RecommendationsReview(uId, round));
             }
         }
     }
 
-    let grandTotalGames = 0;
-    let grandTotalInvest = 0;
-    let grandTotalPrize = 0;
-    const grandRankCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-
+    // 7대 알고리즘별 실데이터 누적 실적 및 당첨금 전수 계산
     const algoStats = SEVEN_ALGORITHMS_INFO.map(algo => {
         let totalGames = 0;
         let totalInvest = 0;
@@ -379,124 +401,58 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
             const winningSet = new Set(draw.numbers);
             const bonus = draw.bonus;
 
-            // If single user and before join round, skip completely
-            if (!isAll && round < userJoinRound) {
-                return;
-            }
-
             let roundPrize = 0;
             const roundHits = [];
             let roundCombosCount = 0;
 
-            if (isAll) {
-                // Aggregate across all active registered users for this round
-                const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
+            candidateUsers.forEach(uId => {
+                const rev = reviewsCache.get(`${uId}_${round}`) || computeUser70RecommendationsReview(uId, round);
+                if (!rev || rev.isPreJoin) return;
 
-                activeUsers.forEach(u => {
-                    const rev = reviewsCache.get(`${u.id}_${round}`) || computeUser70RecommendationsReview(u.id, round);
-                    if (!rev || rev.isPreJoin) return;
+                let evalData = null;
+                let combos = [];
+                if (algo.id === 'v4') {
+                    evalData = rev.v4Eval;
+                    combos = rev.v4Combos || [];
+                } else if (algo.id === 'v3') {
+                    evalData = rev.v3Eval;
+                    combos = rev.v3Combos || [];
+                } else if (algo.id.startsWith('extra')) {
+                    const pId = parseInt(algo.id.replace('extra', ''), 10);
+                    const pack = (rev.extraPackEvals || []).find(p => p && Number(p.packId) === pId);
+                    evalData = pack ? pack.evalData : null;
+                    combos = pack ? (pack.combos || []) : [];
+                }
 
-                    let evalData = null;
-                    let combos = [];
-                    if (algo.id === 'v4') {
-                        evalData = rev.v4Eval;
-                        combos = rev.v4Combos || [];
-                    } else if (algo.id === 'v3') {
-                        evalData = rev.v3Eval;
-                        combos = rev.v3Combos || [];
-                    } else if (algo.id.startsWith('extra')) {
-                        const pId = parseInt(algo.id.replace('extra', ''), 10);
-                        const pack = (rev.extraPackEvals || []).find(p => p.packId === pId);
-                        evalData = pack ? pack.evalData : null;
-                        combos = pack ? pack.combos || [] : [];
-                    }
+                if (!evalData || !Array.isArray(combos) || combos.length === 0) return;
 
-                    if (!evalData) return;
+                roundCombosCount += combos.length;
+                totalGames += combos.length;
+                totalInvest += combos.length * 1000;
 
-                    roundCombosCount += combos.length;
-                    totalGames += combos.length;
-                    totalInvest += combos.length * 1000;
-                    grandTotalGames += combos.length;
-                    grandTotalInvest += combos.length * 1000;
+                for (let rk = 1; rk <= 5; rk++) {
+                    const count = (evalData.hits && evalData.hits[rk]) || 0;
+                    rankCounts[rk] += count;
+                }
+                totalPrize += (evalData.totalPrize || 0);
+                roundPrize += (evalData.totalPrize || 0);
 
-                    for (let rk = 1; rk <= 5; rk++) {
-                        const count = evalData.hits[rk] || 0;
-                        rankCounts[rk] += count;
-                        grandRankCounts[rk] += count;
-                    }
-                    totalPrize += evalData.totalPrize;
-                    roundPrize += evalData.totalPrize;
-                    grandTotalPrize += evalData.totalPrize;
-
-                    (evalData.items || []).filter(item => item.rank >= 1 && item.rank <= 5).forEach(item => {
-                        const itemMatches = item.nums ? item.nums.filter(n => winningSet.has(n)) : [];
-                        roundHits.push({
-                            user: u.id,
-                            userName: u.name || u.id,
-                            gameIdx: item.idx,
-                            comboName: item.name || `${algo.shortName} #${item.idx}`,
-                            nums: item.nums,
-                            matchedNums: itemMatches,
-                            hasBonus: item.hasBonus,
-                            rank: item.rank,
-                            rankLabel: `${item.rank}등`,
-                            prize: item.prize
-                        });
+                (evalData.items || []).filter(item => item.rank >= 1 && item.rank <= 5).forEach(item => {
+                    const itemMatches = item.nums ? item.nums.filter(n => winningSet.has(n)) : [];
+                    roundHits.push({
+                        user: uId,
+                        userName: uId,
+                        gameIdx: item.idx,
+                        comboName: item.name || `${algo.shortName} #${item.idx}`,
+                        nums: item.nums,
+                        matchedNums: itemMatches,
+                        hasBonus: item.hasBonus,
+                        rank: item.rank,
+                        rankLabel: `${item.rank}등`,
+                        prize: item.prize
                     });
                 });
-            } else {
-                // Single target user (strictly based on computeUser70RecommendationsReview / snapshots)
-                const rev = reviewsCache.get(`${cleanUser}_${round}`) || computeUser70RecommendationsReview(cleanUser, round);
-                if (rev && !rev.isPreJoin) {
-                    let evalData = null;
-                    let combos = [];
-                    if (algo.id === 'v4') {
-                        evalData = rev.v4Eval;
-                        combos = rev.v4Combos || [];
-                    } else if (algo.id === 'v3') {
-                        evalData = rev.v3Eval;
-                        combos = rev.v3Combos || [];
-                    } else if (algo.id.startsWith('extra')) {
-                        const pId = parseInt(algo.id.replace('extra', ''), 10);
-                        const pack = (rev.extraPackEvals || []).find(p => p.packId === pId);
-                        evalData = pack ? pack.evalData : null;
-                        combos = pack ? pack.combos || [] : [];
-                    }
-
-                    if (evalData) {
-                        roundCombosCount = combos.length;
-                        totalGames += combos.length;
-                        totalInvest += combos.length * 1000;
-                        grandTotalGames += combos.length;
-                        grandTotalInvest += combos.length * 1000;
-
-                        for (let rk = 1; rk <= 5; rk++) {
-                            const count = evalData.hits[rk] || 0;
-                            rankCounts[rk] += count;
-                            grandRankCounts[rk] += count;
-                        }
-                        totalPrize += evalData.totalPrize;
-                        roundPrize += evalData.totalPrize;
-                        grandTotalPrize += evalData.totalPrize;
-
-                        (evalData.items || []).filter(item => item.rank >= 1 && item.rank <= 5).forEach(item => {
-                            const itemMatches = item.nums ? item.nums.filter(n => winningSet.has(n)) : [];
-                            roundHits.push({
-                                user: cleanUser,
-                                userName: cleanUser,
-                                gameIdx: item.idx,
-                                comboName: item.name || `${algo.shortName} #${item.idx}`,
-                                nums: item.nums,
-                                matchedNums: itemMatches,
-                                hasBonus: item.hasBonus,
-                                rank: item.rank,
-                                rankLabel: `${item.rank}등`,
-                                prize: item.prize
-                            });
-                        });
-                    }
-                }
-            }
+            });
 
             roundDetails.push({
                 round,
@@ -514,11 +470,11 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
         const roi = totalInvest > 0 ? (((totalPrize - totalInvest) / totalInvest) * 100).toFixed(1) : '0.0';
 
         let topRank = null;
-        if (rankCounts[1] > 0) topRank = '1등';
-        else if (rankCounts[2] > 0) topRank = '2등';
-        else if (rankCounts[3] > 0) topRank = '3등';
-        else if (rankCounts[4] > 0) topRank = '4등';
-        else if (rankCounts[5] > 0) topRank = '5등';
+        if (rankCounts[1] > 0) topRank = 1;
+        else if (rankCounts[2] > 0) topRank = 2;
+        else if (rankCounts[3] > 0) topRank = 3;
+        else if (rankCounts[4] > 0) topRank = 4;
+        else if (rankCounts[5] > 0) topRank = 5;
 
         return {
             ...algo,
@@ -534,6 +490,13 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
         };
     });
 
+    const grandTotalGames = algoStats.reduce((sum, a) => sum + (a.totalGames || 0), 0);
+    const grandTotalInvest = algoStats.reduce((sum, a) => sum + (a.totalInvest || 0), 0);
+    const grandTotalPrize = algoStats.reduce((sum, a) => sum + (a.totalPrize || 0), 0);
+    const grandRankCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (let rk = 1; rk <= 5; rk++) {
+        grandRankCounts[rk] = algoStats.reduce((sum, a) => sum + ((a.rankCounts && a.rankCounts[rk]) || 0), 0);
+    }
     const grandTotalWins = grandRankCounts[1] + grandRankCounts[2] + grandRankCounts[3] + grandRankCounts[4] + grandRankCounts[5];
     const grandProfit = grandTotalPrize - grandTotalInvest;
     const grandRoi = grandTotalInvest > 0 ? ((grandProfit / grandTotalInvest) * 100).toFixed(1) : '0.0';
@@ -595,11 +558,11 @@ export async function renderAlgorithmsTab(fromRound = null) {
         }).catch(e => console.warn('[AlgorithmsTab background fetch error]', e));
     }
 
-    // Default target user is authId for admin/regular member, or 'all' if explicitly chosen
-    const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.algoAdminViewingUser)) ? (window.selectedAdminViewingUser || window.algoAdminViewingUser) : null;
+    // Default target user is 'all' for full overview, or specific viewingUser if chosen
+    const viewingUser = (typeof window !== 'undefined' && window.algoAdminViewingUser) ? window.algoAdminViewingUser : (algoAdminViewingUser || 'all');
     const effectiveUserId = (isAdmin && viewingUser && viewingUser !== 'all') 
         ? viewingUser 
-        : ((isAdmin && viewingUser === 'all') ? 'all' : (authId || 'master'));
+        : (isAdmin && algoAdminViewingUser === 'all' ? 'all' : (authId || 'master'));
 
     let perfData;
     try {
@@ -639,8 +602,8 @@ export async function renderAlgorithmsTab(fromRound = null) {
     // Admin User Selector HTML
     let adminUserSelectHtml = '';
     if (isAdmin) {
-        let userOptions = `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
-        userOptions += `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 당첨 결과</option>`;
+        let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 당첨 결과 (기본)</option>`;
+        userOptions += `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
         
         const userList = getAllUnifiedRegisteredUsers();
         userList.forEach(u => {

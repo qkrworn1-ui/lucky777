@@ -48,7 +48,7 @@ export function evaluateRecommendationSet(combos, actualDraw) {
                 hits[1]++;
             } else if (matchCount === 5 && hasBonus) {
                 rank = 2;
-                prize = actualDraw.rank2Prize || 50000000;
+                prize = actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000);
                 resultText = "🥈 2등 당첨!";
                 resultColor = "#f87171";
                 cardBorder = "2px solid #f87171";
@@ -56,7 +56,7 @@ export function evaluateRecommendationSet(combos, actualDraw) {
                 hits[2]++;
             } else if (matchCount === 5) {
                 rank = 3;
-                prize = actualDraw.rank3Prize || 1500000;
+                prize = actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000);
                 resultText = "🥉 3등 당첨!";
                 resultColor = "#60a5fa";
                 cardBorder = "2px solid #60a5fa";
@@ -280,6 +280,24 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * Safely extracts extra pack metadata and combinations from snapshot extraPacks (handles Array, Object, numeric/string keys)
+ */
+export function getPackFromSnapshot(extraPacks, pId) {
+    if (!extraPacks) return null;
+    if (Array.isArray(extraPacks)) {
+        const byId = extraPacks.find(p => p && (Number(p.packId) === pId || p.id === `extra${pId}` || p.id === `extra_${pId}`));
+        if (byId) return byId;
+        if (extraPacks.length === 5 && extraPacks[pId - 1]) return extraPacks[pId - 1];
+        if (extraPacks.length >= 6 && extraPacks[pId]) return extraPacks[pId];
+        return extraPacks[pId - 1] || null;
+    }
+    if (typeof extraPacks === 'object') {
+        return extraPacks[pId] || extraPacks[String(pId)] || extraPacks[`extra${pId}`] || extraPacks[`extra_${pId}`] || extraPacks[`extraPack${pId}`] || null;
+    }
+    return null;
+}
+
+/**
  * Computes all 70 recommended combinations and evaluates winnings for a specific user and round
  * Memoized for 100x ultra-fast execution when switching users and rounds.
  */
@@ -301,14 +319,14 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         const localCached = localStorage.getItem(`lotto_review_v2_${cacheKey}`);
         if (localCached) {
             const parsed = JSON.parse(localCached);
-            if (parsed && typeof parsed === 'object' && parsed.userId === cleanUser && parsed.roundNum === roundNum) {
+            if (parsed && typeof parsed === 'object' && parsed.userId === cleanUser && parsed.roundNum === roundNum && parsed.v4Combos && parsed.v3Combos && parsed.extraPackEvals && parsed.extraPackEvals.length === 5) {
                 _user70ReviewCache[cacheKey] = parsed;
                 return parsed;
             }
         }
     } catch(e) {}
 
-    // 🔒 0순위: 회원 가입일 기준 이전 회차는 추천번호 및 당첨금 원천 미발생 (가입 전 회차 보호)
+    // 🔒 0순위: 회원 가입일(joinRound) 이전 회차는 100% 집계 배제 및 isPreJoin 반환 (1235회차부터 가입일 이전 데이터 원천 차단)
     const joinRound = getUserJoinRound(cleanUser);
     if (roundNum < joinRound) {
         const emptyResult = {
@@ -321,7 +339,14 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
             v4Eval: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 },
             v3Combos: [],
             v3Eval: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 },
-            extraPackEvals: [],
+            extraPackEvals: [1, 2, 3, 4, 5].map(pId => ({
+                packId: pId,
+                name: `추가팩 ${pId}`,
+                badge: `EXTRA ${pId}`,
+                color: '#38bdf8',
+                combos: [],
+                evalData: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 }
+            })),
             grandHits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
             totalPrize: 0,
             totalWins: 0,
@@ -335,7 +360,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
 
     const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(roundNum) || (state.mergedHistory ? state.mergedHistory[roundNum] : null)) : (state.mergedHistory ? state.mergedHistory[roundNum] : null);
 
-    // 🔒 1순위: 영구 박제된 불변 스냅샷(Immutable Snapshot)이 존재하는지 확인!
+    // 🔒 1순위: 영구 박제된 불변 서버 스냅샷(Immutable Server Snapshot) 확인 (최우선 진실의 원천)
     let snapshot = null;
     if (typeof getUserWeeklyRecommendationSnapshotSync === 'function') {
         snapshot = getUserWeeklyRecommendationSnapshotSync(cleanUser, roundNum);
@@ -346,22 +371,24 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
     const extraPackEvals = [];
 
     if (snapshot && snapshot.v4Combos && snapshot.v3Combos && snapshot.extraPacks) {
-        // 🛡️ 스냅샷 원본 100% 그대로 로드 (재계산 절대 금지 - 완전 불변성 보장)
-        v4Combos = snapshot.v4Combos;
-        v3Combos = snapshot.v3Combos;
+        // 🛡️ 서버 스냅샷 원본 100% 그대로 로드 (가입 이후 회차에 존재하는 스냅샷을 100% 신뢰하여 채점)
+        v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
+        v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
         for (let pId = 1; pId <= 5; pId++) {
-            const packObj = snapshot.extraPacks[pId] || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] };
-            const evalData = evaluateRecommendationSet(packObj.combos, actualDraw);
+            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId) || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] };
+            const pCombos = (packObj && Array.isArray(packObj.combos)) ? packObj.combos : (Array.isArray(packObj) ? packObj : []);
+            const evalData = evaluateRecommendationSet(pCombos, actualDraw);
             extraPackEvals.push({
                 packId: pId,
-                name: packObj.name,
-                badge: packObj.badge,
-                color: packObj.color,
-                combos: packObj.combos,
+                name: packObj.name || `추가팩 ${pId}`,
+                badge: packObj.badge || `EXTRA ${pId}`,
+                color: packObj.color || '#38bdf8',
+                combos: pCombos,
                 evalData: evalData
             });
         }
     } else {
+
         // 🔍 2순위: 회원의 실제 구매 확정 내역(lotto_purchases)에 등록된 추천 조합이 있는지 검사 (불변 실데이터 최우선)
         let purchasedV4 = [];
         let purchasedV3 = [];

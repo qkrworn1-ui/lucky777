@@ -1,37 +1,9 @@
 {
-  "version": "v2026.09.24.0300.44",
+  "version": "v2026.09.24.1154",
   "buildDate": "2026-09-24",
-  "description": "Resolve generator-tab forward import crash and improve initial banner state",
-  "buildTimestamp": "2026-09-24T03:00:44.031775",
+  "description": "Verify actual winning numbers matching across recommendations and confirmed purchases",
+  "buildTimestamp": "2026-09-24T11:54:26.230292",
   "buildHistory": [
-    {
-      "version": "v2026.09.23.1737.54",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:37",
-      "buildTimestamp": "2026-09-23T17:37:54.398069",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1738",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:38",
-      "buildTimestamp": "2026-09-23T17:38:11.294784",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1740",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:40",
-      "buildTimestamp": "2026-09-23T17:40:03.069626",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.23.1740.29",
-      "buildDate": "2026-09-23",
-      "buildTime": "17:40",
-      "buildTimestamp": "2026-09-23T17:40:29.859187",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.23.1740.47",
       "buildDate": "2026-09-23",
@@ -353,7 +325,35 @@
       "buildTime": "03:00",
       "buildTimestamp": "2026-09-24T03:00:44.031775",
       "description": "Resolve generator-tab forward import crash and improve initial banner state"
+    },
+    {
+      "version": "v2026.09.24.1142",
+      "buildDate": "2026-09-24",
+      "buildTime": "11:42",
+      "buildTimestamp": "2026-09-24T11:42:59.710150",
+      "description": "Calculate 7 algorithms performance strictly based on server snapshots"
+    },
+    {
+      "version": "v2026.09.24.1147",
+      "buildDate": "2026-09-24",
+      "buildTime": "11:47",
+      "buildTimestamp": "2026-09-24T11:47:36.006888",
+      "description": "Strictly exclude pre-join rounds from user aggregation starting 1235"
+    },
+    {
+      "version": "v2026.09.24.1152",
+      "buildDate": "2026-09-24",
+      "buildTime": "11:52",
+      "buildTimestamp": "2026-09-24T11:52:04.601558",
+      "description": "Verify and calculate confirmed purchases based on actual server receipts"
+    },
+    {
+      "version": "v2026.09.24.1154",
+      "buildDate": "2026-09-24",
+      "buildTime": "11:54",
+      "buildTimestamp": "2026-09-24T11:54:26.230292",
+      "description": "Verify actual winning numbers matching across recommendations and confirmed purchases"
     }
   ],
-  "buildTime": "03:00"
+  "buildTime": "11:54"
 }

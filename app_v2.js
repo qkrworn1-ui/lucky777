@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.24.0300.44 - BUILD_DATE: 2026-09-24] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.24.1154 - BUILD_DATE: 2026-09-24] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.24.0300.44)
+ * Lucky777 Smart Bundle (v2026.09.24.1154)
  */
 
 
@@ -15173,7 +15173,7 @@ function evaluateRecommendationSet(combos, actualDraw) {
                 hits[1]++;
             } else if (matchCount === 5 && hasBonus) {
                 rank = 2;
-                prize = actualDraw.rank2Prize || 50000000;
+                prize = actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000);
                 resultText = "🥈 2등 당첨!";
                 resultColor = "#f87171";
                 cardBorder = "2px solid #f87171";
@@ -15181,7 +15181,7 @@ function evaluateRecommendationSet(combos, actualDraw) {
                 hits[2]++;
             } else if (matchCount === 5) {
                 rank = 3;
-                prize = actualDraw.rank3Prize || 1500000;
+                prize = actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000);
                 resultText = "🥉 3등 당첨!";
                 resultColor = "#60a5fa";
                 cardBorder = "2px solid #60a5fa";
@@ -15405,6 +15405,24 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * Safely extracts extra pack metadata and combinations from snapshot extraPacks (handles Array, Object, numeric/string keys)
+ */
+function getPackFromSnapshot(extraPacks, pId) {
+    if (!extraPacks) return null;
+    if (Array.isArray(extraPacks)) {
+        const byId = extraPacks.find(p => p && (Number(p.packId) === pId || p.id === `extra${pId}` || p.id === `extra_${pId}`));
+        if (byId) return byId;
+        if (extraPacks.length === 5 && extraPacks[pId - 1]) return extraPacks[pId - 1];
+        if (extraPacks.length >= 6 && extraPacks[pId]) return extraPacks[pId];
+        return extraPacks[pId - 1] || null;
+    }
+    if (typeof extraPacks === 'object') {
+        return extraPacks[pId] || extraPacks[String(pId)] || extraPacks[`extra${pId}`] || extraPacks[`extra_${pId}`] || extraPacks[`extraPack${pId}`] || null;
+    }
+    return null;
+}
+
+/**
  * Computes all 70 recommended combinations and evaluates winnings for a specific user and round
  * Memoized for 100x ultra-fast execution when switching users and rounds.
  */
@@ -15426,14 +15444,14 @@ function computeUser70RecommendationsReview(userId, roundNum) {
         const localCached = SafeLocalStorage.getItem(`lotto_review_v2_${cacheKey}`);
         if (localCached) {
             const parsed = JSON.parse(localCached);
-            if (parsed && typeof parsed === 'object' && parsed.userId === cleanUser && parsed.roundNum === roundNum) {
+            if (parsed && typeof parsed === 'object' && parsed.userId === cleanUser && parsed.roundNum === roundNum && parsed.v4Combos && parsed.v3Combos && parsed.extraPackEvals && parsed.extraPackEvals.length === 5) {
                 _user70ReviewCache[cacheKey] = parsed;
                 return parsed;
             }
         }
     } catch(e) {}
 
-    // 🔒 0순위: 회원 가입일 기준 이전 회차는 추천번호 및 당첨금 원천 미발생 (가입 전 회차 보호)
+    // 🔒 0순위: 회원 가입일(joinRound) 이전 회차는 100% 집계 배제 및 isPreJoin 반환 (1235회차부터 가입일 이전 데이터 원천 차단)
     const joinRound = getUserJoinRound(cleanUser);
     if (roundNum < joinRound) {
         const emptyResult = {
@@ -15446,7 +15464,14 @@ function computeUser70RecommendationsReview(userId, roundNum) {
             v4Eval: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 },
             v3Combos: [],
             v3Eval: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 },
-            extraPackEvals: [],
+            extraPackEvals: [1, 2, 3, 4, 5].map(pId => ({
+                packId: pId,
+                name: `추가팩 ${pId}`,
+                badge: `EXTRA ${pId}`,
+                color: '#38bdf8',
+                combos: [],
+                evalData: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 }
+            })),
             grandHits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
             totalPrize: 0,
             totalWins: 0,
@@ -15460,7 +15485,7 @@ function computeUser70RecommendationsReview(userId, roundNum) {
 
     const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(roundNum) || (state.mergedHistory ? state.mergedHistory[roundNum] : null)) : (state.mergedHistory ? state.mergedHistory[roundNum] : null);
 
-    // 🔒 1순위: 영구 박제된 불변 스냅샷(Immutable Snapshot)이 존재하는지 확인!
+    // 🔒 1순위: 영구 박제된 불변 서버 스냅샷(Immutable Server Snapshot) 확인 (최우선 진실의 원천)
     let snapshot = null;
     if (typeof getUserWeeklyRecommendationSnapshotSync === 'function') {
         snapshot = getUserWeeklyRecommendationSnapshotSync(cleanUser, roundNum);
@@ -15471,22 +15496,24 @@ function computeUser70RecommendationsReview(userId, roundNum) {
     const extraPackEvals = [];
 
     if (snapshot && snapshot.v4Combos && snapshot.v3Combos && snapshot.extraPacks) {
-        // 🛡️ 스냅샷 원본 100% 그대로 로드 (재계산 절대 금지 - 완전 불변성 보장)
-        v4Combos = snapshot.v4Combos;
-        v3Combos = snapshot.v3Combos;
+        // 🛡️ 서버 스냅샷 원본 100% 그대로 로드 (가입 이후 회차에 존재하는 스냅샷을 100% 신뢰하여 채점)
+        v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
+        v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
         for (let pId = 1; pId <= 5; pId++) {
-            const packObj = snapshot.extraPacks[pId] || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] };
-            const evalData = evaluateRecommendationSet(packObj.combos, actualDraw);
+            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId) || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] };
+            const pCombos = (packObj && Array.isArray(packObj.combos)) ? packObj.combos : (Array.isArray(packObj) ? packObj : []);
+            const evalData = evaluateRecommendationSet(pCombos, actualDraw);
             extraPackEvals.push({
                 packId: pId,
-                name: packObj.name,
-                badge: packObj.badge,
-                color: packObj.color,
-                combos: packObj.combos,
+                name: packObj.name || `추가팩 ${pId}`,
+                badge: packObj.badge || `EXTRA ${pId}`,
+                color: packObj.color || '#38bdf8',
+                combos: pCombos,
                 evalData: evalData
             });
         }
     } else {
+
         // 🔍 2순위: 회원의 실제 구매 확정 내역(lotto_purchases)에 등록된 추천 조합이 있는지 검사 (불변 실데이터 최우선)
         let purchasedV4 = [];
         let purchasedV3 = [];
@@ -18798,6 +18825,10 @@ if (typeof window !== 'undefined') {
             __exports.clearUser70ReviewCache = clearUser70ReviewCache;
             if (typeof window !== 'undefined') window.clearUser70ReviewCache = clearUser70ReviewCache;
         }
+        if (typeof getPackFromSnapshot !== 'undefined') {
+            __exports.getPackFromSnapshot = getPackFromSnapshot;
+            if (typeof window !== 'undefined') window.getPackFromSnapshot = getPackFromSnapshot;
+        }
         if (typeof computeUser70RecommendationsReview !== 'undefined') {
             __exports.computeUser70RecommendationsReview = computeUser70RecommendationsReview;
             if (typeof window !== 'undefined') window.computeUser70RecommendationsReview = computeUser70RecommendationsReview;
@@ -19160,7 +19191,7 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 전체 회원 기본 통합)
+ * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 서버 스냅샷 기반 정확한 전수 집계)
  */
 async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all') {
     if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
@@ -19178,10 +19209,49 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
     const rawUser = targetUserId || 'all';
     const cleanUser = String(rawUser).toLowerCase().trim();
     const isAll = (cleanUser === 'all');
-    const userJoinRound = (!isAll) ? getUserJoinRound(cleanUser) : 1235;
+
+    // 🔒 서버 스냅샷 및 전체 회원 목록 동기화 확인
+    if (typeof fetchAllUsersPurchases === 'function' && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0)) {
+        try {
+            await fetchAllUsersPurchases();
+        } catch(e) {}
+    }
+
     const baseList = isAll ? getAllUnifiedRegisteredUsers() : [];
 
-    const cacheKey = `${fromRound}_${cleanUser}_${maxRound}_${drawnRounds.length}_${baseList.length}`;
+    // 전수 검증 대상 사용자 ID 수집 (서버 스냅샷 보유자 + 전체 등록 회원)
+    const allUserIdsSet = new Set();
+    if (isAll) {
+        baseList.forEach(u => {
+            if (u && u.id && !isSystemOrDummyUser(u.id)) {
+                allUserIdsSet.add(String(u.id).toLowerCase().trim());
+            }
+        });
+        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+            state.allRegisteredUsersList.forEach(u => {
+                if (u && u.id && !isSystemOrDummyUser(u.id)) {
+                    allUserIdsSet.add(String(u.id).toLowerCase().trim());
+                }
+            });
+        }
+        if (state.userRecommendationSnapshots && typeof state.userRecommendationSnapshots === 'object') {
+            Object.keys(state.userRecommendationSnapshots).forEach(k => {
+                const parts = k.split('_');
+                if (parts.length >= 2) {
+                    const uId = parts.slice(0, parts.length - 1).join('_').toLowerCase().trim();
+                    if (uId && !isSystemOrDummyUser(uId)) {
+                        allUserIdsSet.add(uId);
+                    }
+                }
+            });
+        }
+    } else {
+        allUserIdsSet.add(cleanUser);
+    }
+
+    const candidateUsers = Array.from(allUserIdsSet);
+
+    const cacheKey = `${fromRound}_${cleanUser}_${maxRound}_${drawnRounds.length}_${candidateUsers.length}`;
     if (_algoPerfCache.has(cacheKey)) {
         return _algoPerfCache.get(cacheKey);
     }
@@ -19200,32 +19270,15 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
     // High-Speed Pre-cache: compute reviews once per (user, round)
     const reviewsCache = new Map();
     for (const round of drawnRounds) {
-        if (isAll) {
-            const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
-            let _uCount1 = 0;
-            for (const u of activeUsers) {
-                _uCount1++;
-                if (_uCount1 % 5 === 0) await new Promise(r => setTimeout(r, 0));
-                const key = `${u.id}_${round}`;
-                if (!reviewsCache.has(key)) {
-                    reviewsCache.set(key, computeUser70RecommendationsReview(u.id, round));
-                }
-            }
-        } else {
-            if (round >= userJoinRound) {
-                const key = `${cleanUser}_${round}`;
-                if (!reviewsCache.has(key)) {
-                    reviewsCache.set(key, computeUser70RecommendationsReview(cleanUser, round));
-                }
+        for (const uId of candidateUsers) {
+            const key = `${uId}_${round}`;
+            if (!reviewsCache.has(key)) {
+                reviewsCache.set(key, computeUser70RecommendationsReview(uId, round));
             }
         }
     }
 
-    let grandTotalGames = 0;
-    let grandTotalInvest = 0;
-    let grandTotalPrize = 0;
-    const grandRankCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-
+    // 7대 알고리즘별 실데이터 누적 실적 및 당첨금 전수 계산
     const algoStats = SEVEN_ALGORITHMS_INFO.map(algo => {
         let totalGames = 0;
         let totalInvest = 0;
@@ -19240,124 +19293,58 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
             const winningSet = new Set(draw.numbers);
             const bonus = draw.bonus;
 
-            // If single user and before join round, skip completely
-            if (!isAll && round < userJoinRound) {
-                return;
-            }
-
             let roundPrize = 0;
             const roundHits = [];
             let roundCombosCount = 0;
 
-            if (isAll) {
-                // Aggregate across all active registered users for this round
-                const activeUsers = baseList.filter(u => round >= getUserJoinRound(u.id));
+            candidateUsers.forEach(uId => {
+                const rev = reviewsCache.get(`${uId}_${round}`) || computeUser70RecommendationsReview(uId, round);
+                if (!rev || rev.isPreJoin) return;
 
-                activeUsers.forEach(u => {
-                    const rev = reviewsCache.get(`${u.id}_${round}`) || computeUser70RecommendationsReview(u.id, round);
-                    if (!rev || rev.isPreJoin) return;
+                let evalData = null;
+                let combos = [];
+                if (algo.id === 'v4') {
+                    evalData = rev.v4Eval;
+                    combos = rev.v4Combos || [];
+                } else if (algo.id === 'v3') {
+                    evalData = rev.v3Eval;
+                    combos = rev.v3Combos || [];
+                } else if (algo.id.startsWith('extra')) {
+                    const pId = parseInt(algo.id.replace('extra', ''), 10);
+                    const pack = (rev.extraPackEvals || []).find(p => p && Number(p.packId) === pId);
+                    evalData = pack ? pack.evalData : null;
+                    combos = pack ? (pack.combos || []) : [];
+                }
 
-                    let evalData = null;
-                    let combos = [];
-                    if (algo.id === 'v4') {
-                        evalData = rev.v4Eval;
-                        combos = rev.v4Combos || [];
-                    } else if (algo.id === 'v3') {
-                        evalData = rev.v3Eval;
-                        combos = rev.v3Combos || [];
-                    } else if (algo.id.startsWith('extra')) {
-                        const pId = parseInt(algo.id.replace('extra', ''), 10);
-                        const pack = (rev.extraPackEvals || []).find(p => p.packId === pId);
-                        evalData = pack ? pack.evalData : null;
-                        combos = pack ? pack.combos || [] : [];
-                    }
+                if (!evalData || !Array.isArray(combos) || combos.length === 0) return;
 
-                    if (!evalData) return;
+                roundCombosCount += combos.length;
+                totalGames += combos.length;
+                totalInvest += combos.length * 1000;
 
-                    roundCombosCount += combos.length;
-                    totalGames += combos.length;
-                    totalInvest += combos.length * 1000;
-                    grandTotalGames += combos.length;
-                    grandTotalInvest += combos.length * 1000;
+                for (let rk = 1; rk <= 5; rk++) {
+                    const count = (evalData.hits && evalData.hits[rk]) || 0;
+                    rankCounts[rk] += count;
+                }
+                totalPrize += (evalData.totalPrize || 0);
+                roundPrize += (evalData.totalPrize || 0);
 
-                    for (let rk = 1; rk <= 5; rk++) {
-                        const count = evalData.hits[rk] || 0;
-                        rankCounts[rk] += count;
-                        grandRankCounts[rk] += count;
-                    }
-                    totalPrize += evalData.totalPrize;
-                    roundPrize += evalData.totalPrize;
-                    grandTotalPrize += evalData.totalPrize;
-
-                    (evalData.items || []).filter(item => item.rank >= 1 && item.rank <= 5).forEach(item => {
-                        const itemMatches = item.nums ? item.nums.filter(n => winningSet.has(n)) : [];
-                        roundHits.push({
-                            user: u.id,
-                            userName: u.name || u.id,
-                            gameIdx: item.idx,
-                            comboName: item.name || `${algo.shortName} #${item.idx}`,
-                            nums: item.nums,
-                            matchedNums: itemMatches,
-                            hasBonus: item.hasBonus,
-                            rank: item.rank,
-                            rankLabel: `${item.rank}등`,
-                            prize: item.prize
-                        });
+                (evalData.items || []).filter(item => item.rank >= 1 && item.rank <= 5).forEach(item => {
+                    const itemMatches = item.nums ? item.nums.filter(n => winningSet.has(n)) : [];
+                    roundHits.push({
+                        user: uId,
+                        userName: uId,
+                        gameIdx: item.idx,
+                        comboName: item.name || `${algo.shortName} #${item.idx}`,
+                        nums: item.nums,
+                        matchedNums: itemMatches,
+                        hasBonus: item.hasBonus,
+                        rank: item.rank,
+                        rankLabel: `${item.rank}등`,
+                        prize: item.prize
                     });
                 });
-            } else {
-                // Single target user (strictly based on computeUser70RecommendationsReview / snapshots)
-                const rev = reviewsCache.get(`${cleanUser}_${round}`) || computeUser70RecommendationsReview(cleanUser, round);
-                if (rev && !rev.isPreJoin) {
-                    let evalData = null;
-                    let combos = [];
-                    if (algo.id === 'v4') {
-                        evalData = rev.v4Eval;
-                        combos = rev.v4Combos || [];
-                    } else if (algo.id === 'v3') {
-                        evalData = rev.v3Eval;
-                        combos = rev.v3Combos || [];
-                    } else if (algo.id.startsWith('extra')) {
-                        const pId = parseInt(algo.id.replace('extra', ''), 10);
-                        const pack = (rev.extraPackEvals || []).find(p => p.packId === pId);
-                        evalData = pack ? pack.evalData : null;
-                        combos = pack ? pack.combos || [] : [];
-                    }
-
-                    if (evalData) {
-                        roundCombosCount = combos.length;
-                        totalGames += combos.length;
-                        totalInvest += combos.length * 1000;
-                        grandTotalGames += combos.length;
-                        grandTotalInvest += combos.length * 1000;
-
-                        for (let rk = 1; rk <= 5; rk++) {
-                            const count = evalData.hits[rk] || 0;
-                            rankCounts[rk] += count;
-                            grandRankCounts[rk] += count;
-                        }
-                        totalPrize += evalData.totalPrize;
-                        roundPrize += evalData.totalPrize;
-                        grandTotalPrize += evalData.totalPrize;
-
-                        (evalData.items || []).filter(item => item.rank >= 1 && item.rank <= 5).forEach(item => {
-                            const itemMatches = item.nums ? item.nums.filter(n => winningSet.has(n)) : [];
-                            roundHits.push({
-                                user: cleanUser,
-                                userName: cleanUser,
-                                gameIdx: item.idx,
-                                comboName: item.name || `${algo.shortName} #${item.idx}`,
-                                nums: item.nums,
-                                matchedNums: itemMatches,
-                                hasBonus: item.hasBonus,
-                                rank: item.rank,
-                                rankLabel: `${item.rank}등`,
-                                prize: item.prize
-                            });
-                        });
-                    }
-                }
-            }
+            });
 
             roundDetails.push({
                 round,
@@ -19375,11 +19362,11 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
         const roi = totalInvest > 0 ? (((totalPrize - totalInvest) / totalInvest) * 100).toFixed(1) : '0.0';
 
         let topRank = null;
-        if (rankCounts[1] > 0) topRank = '1등';
-        else if (rankCounts[2] > 0) topRank = '2등';
-        else if (rankCounts[3] > 0) topRank = '3등';
-        else if (rankCounts[4] > 0) topRank = '4등';
-        else if (rankCounts[5] > 0) topRank = '5등';
+        if (rankCounts[1] > 0) topRank = 1;
+        else if (rankCounts[2] > 0) topRank = 2;
+        else if (rankCounts[3] > 0) topRank = 3;
+        else if (rankCounts[4] > 0) topRank = 4;
+        else if (rankCounts[5] > 0) topRank = 5;
 
         return {
             ...algo,
@@ -19395,6 +19382,13 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
         };
     });
 
+    const grandTotalGames = algoStats.reduce((sum, a) => sum + (a.totalGames || 0), 0);
+    const grandTotalInvest = algoStats.reduce((sum, a) => sum + (a.totalInvest || 0), 0);
+    const grandTotalPrize = algoStats.reduce((sum, a) => sum + (a.totalPrize || 0), 0);
+    const grandRankCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    for (let rk = 1; rk <= 5; rk++) {
+        grandRankCounts[rk] = algoStats.reduce((sum, a) => sum + ((a.rankCounts && a.rankCounts[rk]) || 0), 0);
+    }
     const grandTotalWins = grandRankCounts[1] + grandRankCounts[2] + grandRankCounts[3] + grandRankCounts[4] + grandRankCounts[5];
     const grandProfit = grandTotalPrize - grandTotalInvest;
     const grandRoi = grandTotalInvest > 0 ? ((grandProfit / grandTotalInvest) * 100).toFixed(1) : '0.0';
@@ -19456,11 +19450,11 @@ async function renderAlgorithmsTab(fromRound = null) {
         }).catch(e => console.warn('[AlgorithmsTab background fetch error]', e));
     }
 
-    // Default target user is authId for admin/regular member, or 'all' if explicitly chosen
-    const viewingUser = (typeof window !== 'undefined' && (window.selectedAdminViewingUser || window.algoAdminViewingUser)) ? (window.selectedAdminViewingUser || window.algoAdminViewingUser) : null;
+    // Default target user is 'all' for full overview, or specific viewingUser if chosen
+    const viewingUser = (typeof window !== 'undefined' && window.algoAdminViewingUser) ? window.algoAdminViewingUser : (algoAdminViewingUser || 'all');
     const effectiveUserId = (isAdmin && viewingUser && viewingUser !== 'all') 
         ? viewingUser 
-        : ((isAdmin && viewingUser === 'all') ? 'all' : (authId || 'master'));
+        : (isAdmin && algoAdminViewingUser === 'all' ? 'all' : (authId || 'master'));
 
     let perfData;
     try {
@@ -19500,8 +19494,8 @@ async function renderAlgorithmsTab(fromRound = null) {
     // Admin User Selector HTML
     let adminUserSelectHtml = '';
     if (isAdmin) {
-        let userOptions = `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
-        userOptions += `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 당첨 결과</option>`;
+        let userOptions = `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 종합 당첨 결과 (기본)</option>`;
+        userOptions += `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
         
         const userList = getAllUnifiedRegisteredUsers();
         userList.forEach(u => {
@@ -23812,6 +23806,7 @@ const { getAllUnifiedRegisteredUsers } = (typeof __M_shared_user_context !== 'un
 const { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 
 const { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { getPackFromSnapshot } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
 const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
 
 const _roundUserRecCache = new Map();
@@ -23828,7 +23823,7 @@ function getMemoizedRecommendations(rnd, user) {
     if (snapshot && snapshot.v4Combos && snapshot.v3Combos && snapshot.extraPacks) {
         uV4 = snapshot.v4Combos;
         uV3 = snapshot.v3Combos;
-        extraPacks = [1, 2, 3, 4, 5].map(pId => snapshot.extraPacks[pId] || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] });
+        extraPacks = [1, 2, 3, 4, 5].map(pId => getPackFromSnapshot(snapshot.extraPacks, pId) || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] });
     } else {
         uV4 = computeAbsoluteTop10Combinations(false, rnd, 'v4', true, user) || [];
         uV3 = computeAbsoluteTop10Combinations(false, rnd, 'v3', true, user) || [];
@@ -24122,16 +24117,16 @@ async function renderConfirmedPurchasesList() {
                                     prize = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
                                 } else if (matchCount === 5 && hasBonus) {
                                     rank = 2;
-                                    prize = actualDraw.rank2Prize || 50000000;
+                                    prize = actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000);
                                 } else if (matchCount === 5) {
                                     rank = 3;
-                                    prize = actualDraw.rank3Prize || 1500000;
+                                    prize = actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000);
                                 } else if (matchCount === 4) {
                                     rank = 4;
-                                    prize = 50000;
+                                    prize = actualDraw.rank4Prize || 50000;
                                 } else if (matchCount === 3) {
                                     rank = 5;
-                                    prize = 5000;
+                                    prize = actualDraw.rank5Prize || 5000;
                                 }
 
                                 if (rank >= 1 && rank <= 5) {
@@ -24579,10 +24574,10 @@ async function renderConfirmedPurchasesList() {
                 const winningSet = new Set(actualDraw.numbers);
                 const bonus = actualDraw.bonus;
                 const p1 = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
-                const p2 = actualDraw.rank2Prize || 50000000;
-                const p3 = actualDraw.rank3Prize || 1500000;
-                const p4 = 50000;
-                const p5 = 5000;
+                const p2 = actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000);
+                const p3 = actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000);
+                const p4 = actualDraw.rank4Prize || 50000;
+                const p5 = actualDraw.rank5Prize || 5000;
 
                 purchase.combos.forEach((c, cIdx) => {
                     const nums = getComboNumbers(c);
@@ -24752,8 +24747,8 @@ async function renderConfirmedPurchasesList() {
                     const matchCount = matches.length;
                     const hasBonus = bonus ? nums.includes(bonus) : false;
                     const p1 = actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
-                    const p2 = actualDraw.rank2Prize || 50000000;
-                    const p3 = actualDraw.rank3Prize || 1500000;
+                    const p2 = actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000);
+                    const p3 = actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000);
 
                     if (matchCount === 6) {
                         isRowWon = true;
