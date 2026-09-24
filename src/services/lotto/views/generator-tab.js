@@ -1688,20 +1688,20 @@ export function renderExtraAddonPacksSection() {
         if (headerActions) headerActions.style.display = 'none';
         if (lblCount) lblCount.textContent = `🔒 실구매 인증 잠김 (0 / 5팩)`;
         listEl.innerHTML = `
-            <div style="text-align: center; padding: 32px 20px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1.5px solid rgba(251,191,36,0.35); border-radius: 14px; box-shadow: 0 8px 25px rgba(0,0,0,0.4);">
-                <div style="width: 58px; height: 58px; margin: 0 auto 14px; border-radius: 50%; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.5); display: flex; align-items: center; justify-content: center;">
-                    <i class="fa-solid fa-lock" style="font-size: 1.6rem; color: #fbbf24;"></i>
+            <div class="extra-packs-locked-banner">
+                <div class="locked-icon-wrap">
+                    <i class="fa-solid fa-lock"></i>
                 </div>
-                <div style="font-size: 1.12rem; font-weight: 800; color: #f8fafc; margin-bottom: 6px;">
+                <div class="locked-title">
                     🔒 실구매 인증 회원 전용 [추가 5팩 50게임]
                 </div>
-                <p style="color: #cbd5e1; font-size: 0.84rem; line-height: 1.55; margin-bottom: 18px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                <p class="locked-desc">
                     기본 20게임(V4.0 + V3.0)은 상시 무료로 열람 가능하며,<br>
                     <strong style="color: #fbbf24;">추가 1~5팩(전수 커버리지, 초고배당 EV 등 50게임)</strong>은<br>
                     <strong>매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원</strong>님께 무료로 잠금 해제됩니다.
                 </p>
-                <button type="button" onclick="if(window.openManualLedgerModal) { window.openManualLedgerModal(); } else if(window.switchLottoTab) { window.switchLottoTab('tab-confirmed-list'); }" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #000; font-weight: 800; font-size: 0.88rem; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(251,191,36,0.35);">
-                    <i class="fa-solid fa-qrcode"></i> 이번 주 실구매 영수증(QR) 등록하고 추가 5팩 잠금 해제
+                <button type="button" onclick="if(window.openManualLedgerModal) { window.openManualLedgerModal(); } else if(window.switchLottoTab) { window.switchLottoTab('tab-confirmed-list'); }" class="btn-locked-qr">
+                    <i class="fa-solid fa-qrcode"></i> 실구매 QR 등록하고 추가 5팩 잠금 해제
                 </button>
             </div>
         `;
@@ -1743,10 +1743,10 @@ export function renderExtraAddonPacksSection() {
 
     if (packCount === 0) {
         listEl.innerHTML = `
-            <div style="text-align: center; padding: 28px 16px; background: rgba(15,23,42,0.5); border: 1px dashed rgba(251,191,36,0.25); border-radius: 12px; color: #94a3b8;">
-                <i class="fa-solid fa-wand-magic-sparkles" style="font-size: 2rem; color: #fbbf24; margin-bottom: 10px; display: block;"></i>
-                <div style="font-size: 0.95rem; font-weight: 800; color: #f8fafc;">[${effectiveUserId}] 회원에게 발급된 추가팩이 없습니다.</div>
-                <div style="font-size: 0.8rem; margin-top: 6px; color: #94a3b8; line-height: 1.5;">
+            <div class="extra-packs-empty-banner">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <div class="empty-title">[${effectiveUserId}] 회원에게 발급된 추가팩이 없습니다.</div>
+                <div class="empty-sub">
                     상단의 <strong style="color: #34d399;">[추가 1~5]</strong> 버튼 중 원하는 전략을 클릭하시거나,<br>
                     <strong style="color: #fbbf24;">[1~5 전체 생성]</strong> 버튼을 누르시면 [${effectiveUserId}] 회원 고유의 10게임 조합이 즉시 발급됩니다.
                 </div>
@@ -1765,70 +1765,84 @@ export function renderExtraAddonPacksSection() {
             if (isPurchased) purchasedGamesCount++;
 
             const purchasedTag = isPurchased ? `
-                <span class="badge-purchased-tag" style="background: rgba(16, 185, 129, 0.25); border: 1.5px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 1px 7px; border-radius: 4px; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.35);">
-                    <i class="fa-solid fa-circle-check"></i> 구매
-                </span>
+                <span class="combo-compact-purchased"><i class="fa-solid fa-circle-check"></i> 구매</span>
             ` : '';
 
             return `
-                <div class="extra-combo-row" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 8px 12px; background: rgba(15, 23, 42, 0.7); border: 1px solid ${isPurchased ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255,255,255,0.06)'}; border-radius: 8px;">
-                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap;">
-                        <span style="font-size: 0.78rem; font-weight: 800; color: ${pack.color}; min-width: 52px; font-family: monospace;">게임 ${(cIdx + 1).toString().padStart(2, ' ')}</span>
-                        <div class="balls-row" style="display: inline-flex; gap: 5px; flex-shrink: 0; flex-wrap: nowrap;">
-                            ${nums.map(n => `<span class="lotto-ball ${getBallColorClass(n)}" style="width: 28px; height: 28px; line-height: 28px; font-size: 0.78rem; text-align: center; border-radius: 50%; font-weight: 900; color: ${n <= 10 ? '#0f172a' : '#ffffff'}; background: ${getBallHexColor(n)}; flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`).join('')}
+                <div class="extra-combo-row ${isPurchased ? 'is-purchased' : ''}">
+                    <div class="extra-combo-left">
+                        <span class="extra-combo-num" style="color: ${pack.color};">#${(cIdx + 1).toString().padStart(2, '0')}</span>
+                        <div class="extra-combo-balls">
+                            ${nums.map(n => `<span class="lotto-ball lotto-ball-xs ${getBallColorClass(n)}" style="color: ${n <= 10 ? '#0f172a' : '#ffffff'};">${n}</span>`).join('')}
                         </div>
-                        <div style="min-width: 56px; flex-shrink: 0;">
-                            ${purchasedTag}
-                        </div>
+                        ${purchasedTag}
                     </div>
-                    <div style="display: flex; align-items: center; gap: 10px; font-size: 0.75rem; color: #94a3b8; margin-left: auto;">
-                        <span>합 <strong>${stats.sum}</strong></span>
-                        <span>AC <strong>${ac}</strong></span>
-                        <span>홀짝 <strong>${stats.oddEvenRatio}</strong></span>
-                        <span style="color: ${pack.color}; font-weight: 700; font-size: 0.72rem;">${(combo.meta && combo.meta.tag) ? combo.meta.tag.split('|')[0].trim() : '퀀트 7대 필터 통과'}</span>
+                    <div class="extra-combo-right">
+                        <span class="extra-combo-stat-pill">합 <strong>${stats.sum}</strong></span>
+                        <span class="extra-combo-stat-pill">AC <strong>${ac}</strong></span>
+                        <span class="extra-combo-stat-pill">홀짝 <strong>${stats.oddEvenRatio}</strong></span>
+                        <span class="extra-combo-tag" style="color: ${pack.color};">${(combo.meta && combo.meta.tag) ? combo.meta.tag.split('|')[0].trim() : '퀀트'}</span>
                     </div>
                 </div>
             `;
         }).join('');
 
         const packPurchasedBadge = purchasedGamesCount > 0 ? `
-            <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.25);">
-                <i class="fa-solid fa-circle-check"></i> ${purchasedGamesCount === pack.combos.length ? '10게임 전수 구매완료' : `${purchasedGamesCount}게임 구매완료`}
+            <span class="extra-pack-purchased-badge">
+                <i class="fa-solid fa-circle-check"></i> ${purchasedGamesCount === pack.combos.length ? '10게임 전수 구매' : `${purchasedGamesCount}G 구매`}
             </span>
         ` : '';
 
         return `
-            <div id="extra-pack-card-${pack.packId}" class="extra-pack-card" style="background: rgba(15, 23, 42, 0.85); border: 1.5px solid ${purchasedGamesCount > 0 ? 'rgba(16, 185, 129, 0.7)' : pack.color}; border-radius: 12px; padding: 16px; box-shadow: ${purchasedGamesCount > 0 ? '0 4px 20px rgba(16, 185, 129, 0.2)' : '0 4px 16px rgba(0,0,0,0.3)'}; transition: all 0.3s ease;">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span style="background: ${pack.color}25; border: 1px solid ${pack.color}; color: ${pack.color}; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 800;">
+            <div id="extra-pack-card-${pack.packId}" class="extra-pack-card" style="border-left: 4px solid ${pack.color};">
+                <div class="extra-pack-header-row" onclick="window.toggleExtraPackCollapse && window.toggleExtraPackCollapse(${pack.packId})">
+                    <div class="extra-pack-header-left">
+                        <span class="extra-pack-badge" style="background: ${pack.color}25; border: 1px solid ${pack.color}; color: ${pack.color};">
                             ${pack.badge}
                         </span>
-                        <h4 style="margin: 0; color: #fff; font-size: 1rem; font-weight: 800;">
-                            ${pack.name} (10게임)
-                        </h4>
-                        ${packPurchasedBadge}
-                        <span style="font-size: 0.72rem; color: #fbbf24; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); padding: 1px 6px; border-radius: 4px; font-weight: 700;">
-                            👤 ${effectiveUserId}
+                        <span class="extra-pack-title">
+                            ${pack.name} <span class="extra-pack-count-tag">(10게임)</span>
                         </span>
+                        ${packPurchasedBadge}
+                        <span class="extra-pack-user-tag">👤 ${effectiveUserId}</span>
                     </div>
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                        <button type="button" onclick="window.handleRemoveSingleExtraPack && window.handleRemoveSingleExtraPack(${pack.packId})" class="btn-secondary" style="padding: 6px 10px; font-size: 0.75rem; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; cursor: pointer;" title="이 팩 삭제">
+                    <div class="extra-pack-header-right" onclick="event.stopPropagation()">
+                        <button type="button" onclick="window.toggleExtraPackCollapse && window.toggleExtraPackCollapse(${pack.packId})" class="btn-extra-pack-collapse" id="btnPackCollapse_${pack.packId}" title="팩 목록 접기/펼치기">
+                            <i class="fa-solid fa-chevron-up" id="iconPackCollapse_${pack.packId}"></i>
+                        </button>
+                        <button type="button" onclick="window.handleRemoveSingleExtraPack && window.handleRemoveSingleExtraPack(${pack.packId})" class="btn-extra-pack-delete" title="이 팩 삭제">
                             <i class="fa-solid fa-xmark"></i> 삭제
                         </button>
                     </div>
                 </div>
 
-                <p style="margin: 0 0 12px 0; color: #94a3b8; font-size: 0.78rem; line-height: 1.5;">
+                <div class="extra-pack-desc">
                     💡 <strong>상호보완 설계:</strong> ${pack.desc}
-                </p>
+                </div>
 
-                <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div class="extra-combos-container" id="extraPackBody-${pack.packId}">
                     ${combosHtml}
                 </div>
             </div>
         `;
     }).join('');
+}
+
+export function toggleExtraPackCollapse(packId) {
+    const bodyEl = document.getElementById(`extraPackBody-${packId}`);
+    const iconEl = document.getElementById(`iconPackCollapse_${packId}`);
+    if (!bodyEl) return;
+    const isHidden = bodyEl.style.display === 'none';
+    if (isHidden) {
+        bodyEl.style.display = 'flex';
+        if (iconEl) iconEl.className = 'fa-solid fa-chevron-up';
+    } else {
+        bodyEl.style.display = 'none';
+        if (iconEl) iconEl.className = 'fa-solid fa-chevron-down';
+    }
+}
+if (typeof window !== 'undefined') {
+    window.toggleExtraPackCollapse = toggleExtraPackCollapse;
 }
 
 /**
