@@ -1105,11 +1105,11 @@ export async function renderAllRoundsReviewDetail() {
     if (reviewTotalInvest) reviewTotalInvest.textContent = `${dispInvest.toLocaleString()} 원`;
     if (reviewTotalPrize) reviewTotalPrize.textContent = `${dispPrize.toLocaleString()} 원`;
 
-    if (reviewHit1) reviewHit1.textContent = `${dispHits[1]} 회`;
-    if (reviewHit2) reviewHit2.textContent = `${dispHits[2]} 회`;
-    if (reviewHit3) reviewHit3.textContent = `${dispHits[3]} 회`;
-    if (reviewHit4) reviewHit4.textContent = `${dispHits[4]} 회`;
-    if (reviewHit5) reviewHit5.textContent = `${dispHits[5]} 회`;
+    if (reviewHit1) reviewHit1.textContent = `${dispHits[1]}`;
+    if (reviewHit2) reviewHit2.textContent = `${dispHits[2]}`;
+    if (reviewHit3) reviewHit3.textContent = `${dispHits[3]}`;
+    if (reviewHit4) reviewHit4.textContent = `${dispHits[4]}`;
+    if (reviewHit5) reviewHit5.textContent = `${dispHits[5]}`;
 
     if (reviewTotalRoi) {
         reviewTotalRoi.textContent = `${dispRoi.toFixed(1)}%`;
@@ -1168,20 +1168,20 @@ export async function renderAllRoundsReviewDetail() {
     html += `
         <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1.5px solid rgba(251, 191, 36, 0.45); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.25);">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span style="font-size: 1.1rem; font-weight: 900; color: #fbbf24; white-space: nowrap;">
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; flex: 1 1 auto;">
+                    <span style="font-size: clamp(0.95rem, 3.8vw, 1.1rem); font-weight: 900; color: #fbbf24; word-break: keep-all; overflow-wrap: break-word; line-height: 1.35;">
                         <i class="fa-solid fa-chart-pie"></i> ${minTargetRound}회 ~ ${latestDrawnRound}회 전회차 누적 추천 당첨 결과
                     </span>
-                    <span style="font-size: 0.78rem; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px; border-radius: 12px; font-weight: 700;">
+                    <span style="font-size: 0.78rem; color: #38bdf8; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px; border-radius: 12px; font-weight: 700; white-space: nowrap;">
                         총 ${validRounds.length}개 회차 전수 집계
                     </span>
-                    ${isAdmin ? (isAllUsers ? `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">🌐 전체 회원 누적 성과 종합 모드</span>` : `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">👤 [${effectiveUserId}] 회원 전회차 누적</span>`) : `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;"><i class="fa-solid fa-user-check"></i> 나의 전회차 맞춤 추천 누적 성과</span>`}
+                    ${isAdmin ? (isAllUsers ? `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; word-break: keep-all;">🌐 전체 회원 누적 성과 종합 모드</span>` : `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; word-break: keep-all;">👤 [${effectiveUserId}] 회원 전회차 누적</span>`) : `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; word-break: keep-all;"><i class="fa-solid fa-user-check"></i> 나의 전회차 맞춤 추천 누적 성과</span>`}
                 </div>
-                <div style="font-size: 0.85rem; color: #cbd5e1;">
+                <div style="font-size: 0.85rem; color: #cbd5e1; word-break: keep-all;">
                     누적 당첨 총액: <strong style="color: #34d399; font-size: 1.05rem;">+${dispPrize.toLocaleString()}원</strong> <span style="font-size: 0.8rem; color: ${dispRoi >= 100 ? '#10b981' : '#fbbf24'}; font-weight: 800;">(수익률 ${dispRoi.toFixed(1)}%)</span>
                 </div>
             </div>
-            <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); word-break: keep-all; overflow-wrap: break-word;">
                 <i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 4px;"></i>
                 <strong>안내:</strong> ${minTargetRound}회부터 최근 회차(${latestDrawnRound}회)까지 각 회차별 확정 추천번호(70게임)와 동행복권 공식 추첨번호를 1:1 전수 대조하여 누적 적중 및 당첨 성과를 종합 분석한 리포트입니다. 특정 회차의 상세 당첨 결과를 확인하시려면 표의 <strong>[상세 결과]</strong> 버튼이나 상단 회차 선택기를 이용하세요.
             </div>
@@ -1193,10 +1193,10 @@ export async function renderAllRoundsReviewDetail() {
         html += `
             <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 10px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.82rem; padding: 3px 8px; border-radius: 6px; font-weight: 800;">
+                    <span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.82rem; padding: 3px 8px; border-radius: 6px; font-weight: 800; word-break: keep-all;">
                         <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 전회차 누적 결과 조회 중
                     </span>
-                    <span style="font-size: 0.78rem; color: #cbd5e1;">
+                    <span style="font-size: 0.78rem; color: #cbd5e1; word-break: keep-all;">
                         (총 <strong>${dispHits[1] + dispHits[2] + dispHits[3] + dispHits[4] + dispHits[5]}게임</strong> 적중 · 누적 당첨금 <strong style="color: #34d399;">+${dispPrize.toLocaleString()}원</strong>)
                     </span>
                 </div>
@@ -1264,14 +1264,14 @@ export async function renderAllRoundsReviewDetail() {
         algoCardsHtml += `
             <div style="background: rgba(0,0,0,0.3); border: 1.5px solid ${pack.color}50; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; opacity: ${cardOpacity}; transition: all 0.2s; box-sizing: border-box; width: 100%; max-width: 100%;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
-                    <div style="font-size: 0.82rem; font-weight: 800; color: ${pack.color}; display: flex; align-items: center; gap: 6px;">
+                    <div style="font-size: 0.82rem; font-weight: 800; color: ${pack.color}; display: flex; align-items: center; gap: 6px; word-break: keep-all;">
                         <i class="fa-solid fa-cubes"></i> ${pack.name}
                     </div>
                     <div style="display: flex; align-items: center; gap: 4px;">
                         <span style="font-size: 0.7rem; background: ${rankBadgeBg}; color: ${rankBadgeColor}; border: 1px solid ${rankBadgeBorder}; padding: 1px 7px; border-radius: 6px; font-weight: 800; white-space: nowrap;">
                             ${rankIcon}${rank}위
                         </span>
-                        <span style="font-size: 0.68rem; background: ${pack.color}25; color: ${pack.color}; border: 1px solid ${pack.color}40; padding: 1px 6px; border-radius: 6px; font-weight: 700;">
+                        <span style="font-size: 0.68rem; background: ${pack.color}25; color: ${pack.color}; border: 1px solid ${pack.color}40; padding: 1px 6px; border-radius: 6px; font-weight: 700; white-space: nowrap;">
                             ${pack.badge}
                         </span>
                     </div>
@@ -1280,12 +1280,12 @@ export async function renderAllRoundsReviewDetail() {
                     <span>누적 추천: <strong>${aData.games.toLocaleString()}게임</strong></span>
                     <span style="color: #38bdf8;">총 적중: <strong>${aData.wins}회</strong></span>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; text-align: center; margin-bottom: 8px; font-size: 0.68rem; box-sizing: border-box;">
-                    <div style="background: rgba(251,191,36,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700; white-space: nowrap;">1등: ${aData.hits[1]}</div>
-                    <div style="background: rgba(248,113,113,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700; white-space: nowrap;">2등: ${aData.hits[2]}</div>
-                    <div style="background: rgba(96,165,250,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700; white-space: nowrap;">3등: ${aData.hits[3]}</div>
-                    <div style="background: rgba(52,211,153,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700; white-space: nowrap;">4등: ${aData.hits[4]}</div>
-                    <div style="background: rgba(167,139,250,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700; white-space: nowrap;">5등: ${aData.hits[5]}</div>
+                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; text-align: center; margin-bottom: 8px; font-size: clamp(0.62rem, 1.8vw, 0.68rem); box-sizing: border-box;">
+                    <div style="background: rgba(251,191,36,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700; white-space: nowrap;">1등:${aData.hits[1]}</div>
+                    <div style="background: rgba(248,113,113,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700; white-space: nowrap;">2등:${aData.hits[2]}</div>
+                    <div style="background: rgba(96,165,250,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700; white-space: nowrap;">3등:${aData.hits[3]}</div>
+                    <div style="background: rgba(52,211,153,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700; white-space: nowrap;">4등:${aData.hits[4]}</div>
+                    <div style="background: rgba(167,139,250,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700; white-space: nowrap;">5등:${aData.hits[5]}</div>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; font-size: 0.74rem;">
                     <span style="color: #94a3b8;">당첨금: <strong style="color: #34d399;">+${aData.prize.toLocaleString()}원</strong></span>
@@ -1298,19 +1298,19 @@ export async function renderAllRoundsReviewDetail() {
     html += `
         <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 12px; margin-bottom: 20px; box-sizing: border-box; width: 100%; max-width: 100%; overflow: hidden;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-layer-group" style="color: #38bdf8; font-size: 1rem;"></i>
-                    <h4 style="margin: 0; color: #f8fafc; font-size: 0.92rem; font-weight: 800;">
-                        7대 알고리즘별 전회차 (1235회 ~ ${latestDrawnRound}회) 누적 성과 요약 & 등수별 당첨 순위
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
+                    <i class="fa-solid fa-layer-group" style="color: #38bdf8; font-size: 1rem; flex-shrink: 0;"></i>
+                    <h4 style="margin: 0; color: #f8fafc; font-size: 0.92rem; font-weight: 800; word-break: keep-all; overflow-wrap: break-word; line-height: 1.35;">
+                        7대 알고리즘별 전회차 (${minTargetRound}회 ~ ${latestDrawnRound}회) 누적 성과 요약 & 등수별 당첨 순위
                     </h4>
                 </div>
-                <span style="font-size: 0.74rem; color: #94a3b8;">
+                <span style="font-size: 0.74rem; color: #94a3b8; white-space: nowrap;">
                     ${isAllUsers ? '전체 회원 합산 통계' : `[${effectiveUserId}] 회원 배정 통계`}
                 </span>
             </div>
 
             <!-- 🏆 알고리즘별 종합 순위 빠른 요약 바 -->
-            <div style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; -webkit-overflow-scrolling: touch; width: 100%; max-width: 100%; box-sizing: border-box;">
+            <div class="review-algo-rank-bar" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; -webkit-overflow-scrolling: touch; width: 100%; max-width: 100%; box-sizing: border-box; scrollbar-width: thin;">
                 ${rankedAlgos.map((item, idx) => {
                     const rankNum = idx + 1;
                     let rankBg = 'rgba(255,255,255,0.05)';
@@ -1348,11 +1348,11 @@ export async function renderAllRoundsReviewDetail() {
             <!-- 📊 알고리즘별 등수별(1~5등) 누적 당첨 횟수 및 순위 비교 막대 그래프 -->
             <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 8px; margin-bottom: 16px; box-sizing: border-box; width: 100%; max-width: 100%; overflow: hidden;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; padding: 0 4px;">
-                    <div style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-chart-column" style="color: #38bdf8;"></i> 알고리즘별 등수별(1~5등) 누적 당첨 실적 막대 그래프
+                    <div style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 6px; word-break: keep-all; overflow-wrap: break-word; line-height: 1.35;">
+                        <i class="fa-solid fa-chart-column" style="color: #38bdf8; flex-shrink: 0;"></i> <span>알고리즘별 등수별(1~5등) 누적 당첨 실적 막대 그래프</span>
                     </div>
-                    <div style="font-size: 0.7rem; color: #94a3b8;">
-                        * 1235회~${latestDrawnRound}회 7대 알고리즘별 1등~5등 누적 적중 횟수 비교
+                    <div style="font-size: 0.7rem; color: #94a3b8; word-break: keep-all;">
+                        * ${minTargetRound}회~${latestDrawnRound}회 7대 알고리즘별 1등~5등 누적 적중 횟수 비교
                     </div>
                 </div>
                 <div style="height: 240px; position: relative; width: 100%; max-width: 100%; box-sizing: border-box;">
@@ -1918,11 +1918,11 @@ export async function renderReviewDetail(r) {
     if (reviewTotalInvest) reviewTotalInvest.textContent = `${dispInvest.toLocaleString()} 원`;
     if (reviewTotalPrize) reviewTotalPrize.textContent = `${dispPrize.toLocaleString()} 원`;
     
-    if (reviewHit1) reviewHit1.textContent = `${dispHits[1]} 회`;
-    if (reviewHit2) reviewHit2.textContent = `${dispHits[2]} 회`;
-    if (reviewHit3) reviewHit3.textContent = `${dispHits[3]} 회`;
-    if (reviewHit4) reviewHit4.textContent = `${dispHits[4]} 회`;
-    if (reviewHit5) reviewHit5.textContent = `${dispHits[5]} 회`;
+    if (reviewHit1) reviewHit1.textContent = `${dispHits[1]}`;
+    if (reviewHit2) reviewHit2.textContent = `${dispHits[2]}`;
+    if (reviewHit3) reviewHit3.textContent = `${dispHits[3]}`;
+    if (reviewHit4) reviewHit4.textContent = `${dispHits[4]}`;
+    if (reviewHit5) reviewHit5.textContent = `${dispHits[5]}`;
 
     if (reviewTotalRoi) {
         reviewTotalRoi.textContent = `${dispRoi.toFixed(1)}%`;
@@ -1984,17 +1984,17 @@ export async function renderReviewDetail(r) {
         html += `
             <div style="background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 14px 16px; margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span style="font-size: 1.05rem; font-weight: 800; color: #fbbf24; white-space: nowrap;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; flex: 1 1 auto;">
+                        <span style="font-size: clamp(0.95rem, 3.8vw, 1.05rem); font-weight: 800; color: #fbbf24; word-break: keep-all; overflow-wrap: break-word; line-height: 1.35;">
                             <i class="fa-solid fa-trophy"></i> 제 ${roundNum}회 공식 당첨결과
                         </span>
                         <span style="font-size: 0.78rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
                             ${actualDraw.date || actualDraw.drwNoDate || '추첨 완료'}
                         </span>
-                        ${isAdmin ? (isAllUsers ? `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">🌐 전체 회원 AI 추천번호 당첨 결과 종합 모드</span>` : `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;">👤 [${effectiveUserId}] 회원 추천 당첨 결과</span>`) : `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;"><i class="fa-solid fa-user-check"></i> 나의 맞춤 추천 당첨 결과</span>`}
+                        ${isAdmin ? (isAllUsers ? `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #60a5fa; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; word-break: keep-all;">🌐 전체 회원 AI 추천번호 당첨 결과 종합 모드</span>` : `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; word-break: keep-all;">👤 [${effectiveUserId}] 회원 추천 당첨 결과</span>`) : `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; word-break: keep-all;"><i class="fa-solid fa-user-check"></i> 나의 맞춤 추천 당첨 결과</span>`}
                     </div>
                     ${prize1Str ? `
-                        <div style="font-size: 0.85rem; color: #cbd5e1; white-space: nowrap;">
+                        <div style="font-size: 0.85rem; color: #cbd5e1; word-break: keep-all;">
                             1등 당첨금: <strong style="color: #34d399; font-size: 0.95rem;">${prize1Str}</strong>${winners1Str}
                         </div>
                     ` : ''}
@@ -2011,8 +2011,8 @@ export async function renderReviewDetail(r) {
                     </div>
                 </div>
                 <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 7px 12px; margin-top: 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-                    <span style="font-size: 0.74rem; color: #cbd5e1; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-shield-check" style="color: #34d399;"></i>
+                    <span style="font-size: 0.74rem; color: #cbd5e1; display: flex; align-items: center; gap: 6px; word-break: keep-all; overflow-wrap: break-word;">
+                        <i class="fa-solid fa-shield-check" style="color: #34d399; flex-shrink: 0;"></i>
                         <strong>알고리즘 추천 당첨 검증 무결성 및 개인 맞춤 배정 원리:</strong> 본 당첨 대조 내역은 해당 회차 추첨 전 회원 고유 ID 시드로 확정된 7개 팩(70게임) 조합과 동행복권 공식 결과를 1:1 대조한 것입니다. 회원마다 고유한 맞춤 조합이 배정되므로 회원별 당첨 결과가 서로 다르게 산출되며, 사후 변경이나 조작이 불가능한 불변 데이터입니다.
                     </span>
                     <span style="font-size: 0.68rem; color: #34d399; font-weight: bold; background: rgba(16,185,129,0.15); padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(16,185,129,0.25); white-space: nowrap;">
@@ -2028,10 +2028,10 @@ export async function renderReviewDetail(r) {
         html += `
             <div style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 10px; padding: 10px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.82rem; padding: 3px 8px; border-radius: 6px; font-weight: 800;">
+                    <span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: 0.82rem; padding: 3px 8px; border-radius: 6px; font-weight: 800; word-break: keep-all;">
                         <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 배정 추천번호 결과 조회 중
                     </span>
-                    <span style="font-size: 0.78rem; color: #cbd5e1;">
+                    <span style="font-size: 0.78rem; color: #cbd5e1; word-break: keep-all;">
                         (70게임 중 <strong>${grandHits[1] + grandHits[2] + grandHits[3] + grandHits[4] + grandHits[5]}게임</strong> 적중 · 당첨금 <strong style="color: #34d399;">+${totalPrize.toLocaleString()}원</strong>)
                     </span>
                 </div>
@@ -2095,17 +2095,17 @@ export async function renderReviewDetail(r) {
         html += `
             <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem;"></i>
-                        <h4 style="margin: 0; color: #fbbf24; font-size: 0.95rem; font-weight: 800;">
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
+                        <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem; flex-shrink: 0;"></i>
+                        <h4 style="margin: 0; color: #fbbf24; font-size: 0.95rem; font-weight: 800; word-break: keep-all; overflow-wrap: break-word;">
                             [관리자 종합 현황] 제 ${roundNum}회 회원별 AI 추천번호(70게임) 적중 성과표
                         </h4>
                     </div>
-                    <div style="font-size: 0.75rem; color: #cbd5e1;">
+                    <div style="font-size: 0.75rem; color: #cbd5e1; word-break: keep-all;">
                         총 회원 <strong>${membersEvalList.length}명</strong> | 전체 추천 <strong>${grandTotalGames}게임</strong> (+${grandTotalPrize.toLocaleString()}원 적중)
                     </div>
                 </div>
-                <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 12px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 12px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); word-break: keep-all; overflow-wrap: break-word;">
                     <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> <strong>안내:</strong> 본 성과표는 회원이 실제로 로또방에서 구매한 영수증 내역이 아니며, 각 회원에게 배정된 <strong>AI 추천 70게임 조합이 공식 추첨 결과와 대조되어 몇 게임이나 적중했는지를 측정한 시뮬레이션 당첨 대조 데이터</strong>입니다.
                 </div>
 
@@ -2149,8 +2149,8 @@ export async function renderReviewDetail(r) {
 
         html += `
             <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
-                <span style="font-size: 0.78rem; color: #93c5fd; display: flex; align-items: center; gap: 6px;">
-                    <i class="fa-solid fa-circle-info" style="color: #60a5fa;"></i>
+                <span style="font-size: 0.78rem; color: #93c5fd; display: flex; align-items: center; gap: 6px; word-break: keep-all; overflow-wrap: break-word;">
+                    <i class="fa-solid fa-circle-info" style="color: #60a5fa; flex-shrink: 0;"></i>
                     <strong>알림:</strong> 회원마다 고유한 70게임이 맞춤 배정되어 당첨 내역이 다릅니다. 아래 조합 카드는 관리자 계정(${effectiveUserId}) 기준 대표 예시이며, 각 회원의 개별 추천 70게임을 상세 확인하시려면 상단 표의 <strong>[70게임 결과]</strong> 버튼을 클릭하세요.
                 </span>
             </div>
@@ -2164,10 +2164,10 @@ export async function renderReviewDetail(r) {
                 <div style="font-size: 2.2rem; color: #fbbf24; margin-bottom: 10px;">
                     <i class="fa-solid fa-calendar-xmark"></i>
                 </div>
-                <h4 style="margin: 0 0 8px 0; color: #f8fafc; font-size: 1.05rem; font-weight: 800;">
+                <h4 style="margin: 0 0 8px 0; color: #f8fafc; font-size: 1.05rem; font-weight: 800; word-break: keep-all;">
                     제 ${roundNum}회는 [${effectiveUserId}] 회원의 가입 이전 회차입니다.
                 </h4>
-                <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5;">
+                <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; word-break: keep-all;">
                     회원님의 최초 참여 회차는 <strong>제 ${userReview.joinRound}회</strong>부터입니다.<br>
                     가입 이전 회차에는 추천번호 및 당첨 데이터가 생성되지 않습니다.
                 </p>
@@ -2177,11 +2177,11 @@ export async function renderReviewDetail(r) {
         // 3. View Filter Buttons (V3, V4, and Extra Packs 1~5)
         html += `
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; font-weight: 800; color: #f8fafc;">
-                <i class="fa-solid fa-cubes-stacked" style="color: #60a5fa;"></i> 
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; font-weight: 800; color: #f8fafc; word-break: keep-all;">
+                <i class="fa-solid fa-cubes-stacked" style="color: #60a5fa; flex-shrink: 0;"></i> 
                 ${isAllUsers ? `전체 통합 7대 알고리즘 추천 70게임 당첨 결과` : `[${(typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || (effectiveUserId === 'master' ? '최고관리자' : effectiveUserId)}] 회원 배정 7대 알고리즘 70게임 당첨 결과`}
             </div>
-            <div style="display: gap: 6px; flex-wrap: wrap; align-items: center;">
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                 <button type="button" class="btn-filter-review ${activeReviewFilter === 'all' ? 'active' : ''}" onclick="window.setReviewViewFilter('all')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'all' ? '#fbbf24' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'all' ? 'linear-gradient(135deg, rgba(245,158,11,0.35), rgba(217,119,6,0.35))' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'all' ? '#fbbf24' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
                     전체 (70)
                 </button>
@@ -2218,24 +2218,24 @@ export async function renderReviewDetail(r) {
         let sectionHtml = `
             <div style="margin-bottom: 16px; background: rgba(0,0,0,0.25); border: 1px solid ${borderColor}; border-radius: 10px; padding: 12px 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
-                    <h4 style="margin: 0; color: ${badgeColor}; font-size: 0.92rem; display: flex; align-items: center; gap: 8px;">
+                    <h4 style="margin: 0; color: ${badgeColor}; font-size: 0.92rem; display: flex; align-items: center; gap: 8px; word-break: keep-all;">
                         ${title}
                     </h4>
-                    <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 2px 8px; border-radius: 10px; font-size: 0.74rem; font-weight: 700; border: 1px solid ${borderColor};">
+                    <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 2px 8px; border-radius: 10px; font-size: 0.74rem; font-weight: 700; border: 1px solid ${borderColor}; white-space: nowrap;">
                         ${badgeText}
                     </span>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 8px;">
         `;
 
         evalData.items.forEach(item => {
             sectionHtml += `
                 <div style="background: ${item.resultBg}; border: ${item.cardBorder}; border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-size: 0.8rem; color: #cbd5e1; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px;" title="${item.name}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px;">
+                        <span style="font-size: 0.8rem; color: #cbd5e1; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1 1 auto; min-width: 0;" title="${item.name}">
                             #${item.idx} ${item.name}
                         </span>
-                        <strong style="color: ${item.resultColor}; font-size: 0.86rem; white-space: nowrap;">${item.resultText}</strong>
+                        <strong style="color: ${item.resultColor}; font-size: 0.86rem; white-space: nowrap; flex-shrink: 0;">${item.resultText}</strong>
                     </div>
                     <div style="display: flex; gap: 5px; flex-wrap: nowrap; align-items: center; overflow-x: auto; padding: 2px 0;">
                         ${item.nums.map(n => {

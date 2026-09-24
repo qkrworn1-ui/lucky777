@@ -746,12 +746,12 @@ export async function renderAlgorithmsTab(fromRound = null) {
                 </div>
 
                 <!-- Rank Breakdown Mini Badges -->
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: 0.72rem; background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px;">
-                    <span style="color: ${algo.rankCounts[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">1등: <strong>${algo.rankCounts[1]}회</strong></span>
-                    <span style="color: ${algo.rankCounts[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700;">2등: <strong>${algo.rankCounts[2]}회</strong></span>
-                    <span style="color: ${algo.rankCounts[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700;">3등: <strong>${algo.rankCounts[3]}회</strong></span>
-                    <span style="color: ${algo.rankCounts[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700;">4등: <strong>${algo.rankCounts[4]}회</strong></span>
-                    <span style="color: ${algo.rankCounts[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">5등: <strong>${algo.rankCounts[5]}회</strong></span>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: clamp(0.65rem, 1.8vw, 0.72rem); background: rgba(255,255,255,0.03); border-radius: 6px; padding: 6px 8px; flex-wrap: wrap;">
+                    <span style="color: ${algo.rankCounts[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700; white-space: nowrap;">1등: <strong>${algo.rankCounts[1]}회</strong></span>
+                    <span style="color: ${algo.rankCounts[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700; white-space: nowrap;">2등: <strong>${algo.rankCounts[2]}회</strong></span>
+                    <span style="color: ${algo.rankCounts[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700; white-space: nowrap;">3등: <strong>${algo.rankCounts[3]}회</strong></span>
+                    <span style="color: ${algo.rankCounts[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700; white-space: nowrap;">4등: <strong>${algo.rankCounts[4]}회</strong></span>
+                    <span style="color: ${algo.rankCounts[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700; white-space: nowrap;">5등: <strong>${algo.rankCounts[5]}회</strong></span>
                 </div>
             </div>
         `;
@@ -766,18 +766,18 @@ export async function renderAlgorithmsTab(fromRound = null) {
                 <div style="position: absolute; right: -20px; top: -20px; font-size: 8rem; color: rgba(99, 102, 241, 0.05); pointer-events: none;">
                     <i class="fa-solid fa-cubes-stacked"></i>
                 </div>
-                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
                     <span style="background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 3px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 900; letter-spacing: 0.5px;">
                         <i class="fa-solid fa-brain"></i> QUANT &amp; AI ENGINE
                     </span>
-                    <span style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 700;">
+                    <span style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 700; word-break: keep-all;">
                         7대 알고리즘 분산 추천 &amp; 실데이터 누적 당첨 실적
                     </span>
                 </div>
-                <h2 style="margin: 0 0 8px 0; font-size: 1.45rem; font-weight: 900; color: #f8fafc; letter-spacing: -0.5px;">
+                <h2 style="margin: 0 0 8px 0; font-size: clamp(1.15rem, 4vw, 1.45rem); font-weight: 900; color: #f8fafc; letter-spacing: -0.5px; word-break: keep-all; overflow-wrap: break-word;">
                     로또 6/45 <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 AI 알고리즘</span> 정밀 해설 &amp; 실적
                 </h2>
-                <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; max-width: 800px;">
+                <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; max-width: 800px; word-break: keep-all; overflow-wrap: break-word;">
                     단순한 무작위 번호 생성이 아닙니다. 행동경제학적 마킹 심리 회피, 마르코프 전이 확률, 직교 전수 커버리지, 휠링 하모닉 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
                 </p>
             </div>
@@ -788,19 +788,19 @@ export async function renderAlgorithmsTab(fromRound = null) {
             <!-- SECTION 1: 7대 알고리즘 조합 원리 상세 해설 -->
             <section class="algo-guide-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="width: 4px; height: 18px; background: #6366f1; border-radius: 2px; display: inline-block;"></span>
-                        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #f8fafc;">
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
+                        <span style="width: 4px; height: 18px; background: #6366f1; border-radius: 2px; display: inline-block; flex-shrink: 0;"></span>
+                        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #f8fafc; word-break: keep-all; overflow-wrap: break-word;">
                             1. 7대 알고리즘별 번호 조합 메커니즘
                         </h3>
                     </div>
-                    <span style="font-size: 0.75rem; color: #94a3b8;">
+                    <span style="font-size: 0.75rem; color: #94a3b8; white-space: nowrap;">
                         <i class="fa-solid fa-circle-info" style="color: #60a5fa;"></i> 알고리즘별 10게임 맞춤형 조합 원리
                     </span>
                 </div>
 
                 <!-- 7 Algorithms Grid -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px;">
                     ${algoIntroCardsHtml}
                 </div>
             </section>
@@ -808,16 +808,16 @@ export async function renderAlgorithmsTab(fromRound = null) {
             <!-- SECTION 2: 추천번호 당첨 결과 기반 실데이터 누적 실적 대시보드 -->
             <section class="algo-performance-section" style="margin-top: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="width: 4px; height: 18px; background: #fbbf24; border-radius: 2px; display: inline-block;"></span>
-                        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #f8fafc;">
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
+                        <span style="width: 4px; height: 18px; background: #fbbf24; border-radius: 2px; display: inline-block; flex-shrink: 0;"></span>
+                        <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #f8fafc; word-break: keep-all; overflow-wrap: break-word;">
                             2. 추천번호 당첨 결과 기반 7대 알고리즘 전체 회원 누적 당첨 실적 (전체 회원 통합)
                         </h3>
                     </div>
                     
                     <!-- 회차 범위 셀렉터 -->
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <label for="algoReviewStartRoundSelect" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700;">집계 시작 회차:</label>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <label for="algoReviewStartRoundSelect" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; white-space: nowrap;">집계 시작 회차:</label>
                         <select id="algoReviewStartRoundSelect" onchange="window.changeAlgoReviewStartRound && window.changeAlgoReviewStartRound(this.value)" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
                             <option value="1235" ${currentAlgoStartRound === 1235 ? 'selected' : ''}>제 1235회부터 누적 (실제 발급 이력)</option>
                             <option value="1230" ${currentAlgoStartRound === 1230 ? 'selected' : ''}>제 1230회부터 누적</option>
@@ -835,14 +835,14 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 2px;">
                         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                            <span style="background: #10b981; color: #0f172a; font-size: 0.7rem; font-weight: 900; padding: 2px 7px; border-radius: 6px; letter-spacing: 0.3px;">
+                            <span style="background: #10b981; color: #0f172a; font-size: 0.7rem; font-weight: 900; padding: 2px 7px; border-radius: 6px; letter-spacing: 0.3px; white-space: nowrap;">
                                 100% 무결점 실데이터 검증
                             </span>
-                            <span style="font-size: 0.85rem; font-weight: 800; color: #f8fafc;">
+                            <span style="font-size: 0.85rem; font-weight: 800; color: #f8fafc; word-break: keep-all;">
                                 제 1235회차부터 전체 회원 실제 추천번호 기반 7대 알고리즘별 당첨 내역 (${effectiveUserId === 'all' ? '전체 회원 통합 전수 집계' : `${maskUserDisplayName(effectiveUserId, effectiveUserId)} 회원`})
                             </span>
                         </div>
-                        <p style="margin: 0; font-size: 0.77rem; color: #cbd5e1; line-height: 1.45;">
+                        <p style="margin: 0; font-size: 0.77rem; color: #cbd5e1; line-height: 1.45; word-break: keep-all; overflow-wrap: break-word;">
                             본 누적 당첨 내역은 <strong style="color: #34d399;">제 1235회차부터 매주 등록된 전체 회원들에게 실제로 생성·발급된 7대 알고리즘 추천번호(각 10게임)의 영구 박제 스냅샷</strong>을 동행복권 공식 추첨 결과와 1:1로 전수 대조하여 채점한 <strong style="color: #fbbf24;">100% 실제 전수 적중 실적 데이터</strong>입니다.
                         </p>
                     </div>
@@ -851,11 +851,11 @@ export async function renderAlgorithmsTab(fromRound = null) {
                 <!-- Grand Summary KPI Card -->
                 <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 14px; padding: 14px 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 14px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 900;">
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 900; white-space: nowrap;">
                                 <i class="fa-solid fa-trophy"></i> 7대 알고리즘 통합 실적 요약
                             </span>
-                            <span style="font-size: 0.8rem; font-weight: 800; color: #f8fafc;">
+                            <span style="font-size: 0.8rem; font-weight: 800; color: #f8fafc; word-break: keep-all;">
                                 제 ${startR}~${maxRound}회 (${totalRoundsCount}회차 실제 추천번호 전수 집계)
                             </span>
                         </div>
@@ -878,18 +878,18 @@ export async function renderAlgorithmsTab(fromRound = null) {
                         <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px;">
                             <span style="font-size: 0.7rem; color: #94a3b8; display: block;">1~5등 등급별 적중</span>
                             <div style="display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; margin-top: 3px;">
-                                <span style="font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; background: rgba(251,191,36,0.25); color: #fbbf24; font-weight: 800;">1등:${grandRankCounts[1]}</span>
-                                <span style="font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; background: rgba(248,113,113,0.25); color: #f87171; font-weight: 800;">2등:${grandRankCounts[2]}</span>
-                                <span style="font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; background: rgba(96,165,250,0.25); color: #60a5fa; font-weight: 800;">3등:${grandRankCounts[3]}</span>
-                                <span style="font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; background: rgba(52,211,153,0.25); color: #34d399; font-weight: 800;">4등:${grandRankCounts[4]}</span>
-                                <span style="font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; background: rgba(167,139,250,0.25); color: #a78bfa; font-weight: 800;">5등:${grandRankCounts[5]}</span>
+                                <span style="font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; background: rgba(251,191,36,0.25); color: #fbbf24; font-weight: 800; white-space: nowrap;">1등:${grandRankCounts[1]}</span>
+                                <span style="font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; background: rgba(248,113,113,0.25); color: #f87171; font-weight: 800; white-space: nowrap;">2등:${grandRankCounts[2]}</span>
+                                <span style="font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; background: rgba(96,165,250,0.25); color: #60a5fa; font-weight: 800; white-space: nowrap;">3등:${grandRankCounts[3]}</span>
+                                <span style="font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; background: rgba(52,211,153,0.25); color: #34d399; font-weight: 800; white-space: nowrap;">4등:${grandRankCounts[4]}</span>
+                                <span style="font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; background: rgba(167,139,250,0.25); color: #a78bfa; font-weight: 800; white-space: nowrap;">5등:${grandRankCounts[5]}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 7 Algorithms Performance Cards Grid -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 12px;">
                     ${algoPerfCardsHtml}
                 </div>
             </section>

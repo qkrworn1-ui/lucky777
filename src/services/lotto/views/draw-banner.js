@@ -198,15 +198,23 @@ export function startNextDrawCountdown(nextRound) {
         const elHeaderCount = document.getElementById('nextDrawCountdownText');
         const elGenRound = document.getElementById('lblGeneratorTargetRound');
         const elGenTime = document.getElementById('lblGeneratorCountdownTime');
+        const elMobileRound = document.getElementById('lblMobileHeaderRound');
+        const elMobileDday = document.getElementById('lblMobileHeaderDday');
+        const elMobileCount = document.getElementById('lblMobileHeaderCountdown');
 
         if (elGenRound) {
             elGenRound.textContent = `제 ${nextRound}회`;
+        }
+        if (elMobileRound) {
+            elMobileRound.textContent = `${nextRound}회`;
         }
 
         if (diffMs <= 0) {
             const liveText = '추첨 진행 중 (LIVE)';
             if (elHeaderCount) elHeaderCount.textContent = liveText;
             if (elGenTime) elGenTime.textContent = liveText;
+            if (elMobileDday) elMobileDday.textContent = 'LIVE';
+            if (elMobileCount) elMobileCount.textContent = '추첨중';
             return;
         }
 
@@ -220,6 +228,8 @@ export function startNextDrawCountdown(nextRound) {
 
         if (elHeaderCount) elHeaderCount.textContent = `남은시간 ${shortStr}`;
         if (elGenTime) elGenTime.textContent = longStr;
+        if (elMobileDday) elMobileDday.textContent = days > 0 ? `D-${days}` : 'D-DAY';
+        if (elMobileCount) elMobileCount.textContent = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
     }
 
     update();
