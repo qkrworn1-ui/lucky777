@@ -16,6 +16,7 @@ import { setupPredictionReport } from './views/prediction-report.js';
 import { setupQuickView } from './views/quick-view.js';
 import { setupManualLedgerModal, updateManualModalCrossCheck } from './views/manual-modal.js';
 import { setupManualDrawModal } from './views/manual-draw-modal.js';
+import { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } from './views/snapshot-audit-modal.js';
 import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
 import { computeAbsoluteTop10Combinations } from './generator.js';
 import { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from './ledger.js';
@@ -572,6 +573,7 @@ export function setupAllLottoEvents() {
     try { setupQuickView(); } catch(e) { console.warn('[setupQuickView]', e); }
     try { setupManualLedgerModal(); } catch(e) { console.warn('[setupManualLedgerModal]', e); }
     try { setupManualDrawModal(); } catch(e) { console.warn('[setupManualDrawModal]', e); }
+    try { setupSnapshotAuditEvents(); } catch(e) { console.warn('[setupSnapshotAuditEvents]', e); }
     try { setupSyncEvents(); } catch(e) { console.warn('[setupSyncEvents]', e); }
 }
 
@@ -624,4 +626,8 @@ if (typeof window !== 'undefined') {
     window.calculateLedgerFinancials = calculateLedgerFinancials;
     window.calculateAllUsersTotalFinancials = calculateAllUsersTotalFinancials;
     window.resetLottoServiceState = resetLottoServiceState;
+    window.openSnapshotAuditModal = openSnapshotAuditModal;
+    window.closeSnapshotAuditModal = closeSnapshotAuditModal;
+    window.setupSnapshotAuditEvents = setupSnapshotAuditEvents;
+    window.renderSnapshotAuditView = renderSnapshotAuditView;
 }

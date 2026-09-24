@@ -2397,9 +2397,36 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("updateLoggedInUserHeaderUI", dash_code)
         self.assertIn("updateLoggedInUserHeaderUI", landing_code)
 
+    # [Test 68] Latest Draw Banner Click Trigger and Snapshot Audit Modal Binding
+    def test_68_draw_banner_and_snapshot_audit_modal_integration(self):
+        with open('index.html', 'r', encoding='utf-8') as f:
+            index_code = f.read()
+        with open('src/services/lotto/views/draw-banner.js', 'r', encoding='utf-8') as f:
+            banner_code = f.read()
+        with open('src/services/lotto/views/snapshot-audit-modal.js', 'r', encoding='utf-8') as f:
+            audit_code = f.read()
+        with open('src/services/lotto/index.js', 'r', encoding='utf-8') as f:
+            lotto_index_code = f.read()
+
+        # 1. Latest Draw Banner Clickability
+        self.assertIn('onclick="window.handleFetchLatestDrawClick && window.handleFetchLatestDrawClick()"', index_code)
+        self.assertIn('ballsContainer.onclick', banner_code)
+        self.assertIn('handleFetchLatestDrawClick', banner_code)
+
+        # 2. Snapshot Audit Modal definition and export
+        self.assertIn('export async function openSnapshotAuditModal', audit_code)
+        self.assertIn('export function closeSnapshotAuditModal', audit_code)
+        self.assertIn('window.openSnapshotAuditModal = openSnapshotAuditModal;', audit_code)
+        self.assertIn('window.closeSnapshotAuditModal = closeSnapshotAuditModal;', audit_code)
+
+        # 3. Snapshot Audit Modal imported in lotto service index
+        self.assertIn('openSnapshotAuditModal', lotto_index_code)
+        self.assertIn('setupSnapshotAuditEvents', lotto_index_code)
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 

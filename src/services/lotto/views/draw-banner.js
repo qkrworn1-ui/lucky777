@@ -75,6 +75,38 @@ export function renderLatestDrawBanner() {
         `;
 
         ballsContainer.innerHTML = mainBallsHTML + bonusBallHTML;
+        ballsContainer.style.cursor = 'pointer';
+        ballsContainer.title = '클릭 시 동행복권 최신 당첨번호 자동 스크랩 & 동기화';
+        ballsContainer.onclick = function(e) {
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            if (typeof window.handleFetchLatestDrawClick === 'function') {
+                window.handleFetchLatestDrawClick();
+            }
+        };
+    }
+
+    const bannerCenter = document.querySelector('.latest-draw-banner .banner-center');
+    if (bannerCenter) {
+        bannerCenter.style.cursor = 'pointer';
+        bannerCenter.title = '클릭 시 동행복권 최신 당첨번호 자동 스크랩 & 동기화';
+        bannerCenter.onclick = function(e) {
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            if (typeof window.handleFetchLatestDrawClick === 'function') {
+                window.handleFetchLatestDrawClick();
+            }
+        };
+    }
+
+    const latestTitle = document.querySelector('.latest-draw-banner .latest-title');
+    if (latestTitle) {
+        latestTitle.style.cursor = 'pointer';
+        latestTitle.title = '클릭 시 동행복권 최신 당첨번호 자동 스크랩 & 동기화';
+        latestTitle.onclick = function(e) {
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            if (typeof window.handleFetchLatestDrawClick === 'function') {
+                window.handleFetchLatestDrawClick();
+            }
+        };
     }
 
     const el_latestPrizeAmount = document.getElementById('latestPrizeAmount');

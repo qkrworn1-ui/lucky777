@@ -102,30 +102,36 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
 
     // 1. Try Firestore SDK first if initialized
     let sdkSuccess = false;
-    if (typeof window !== 'undefined' && window.db && typeof window.db.collection === 'function') {
+    const fs = (typeof window !== 'undefined' && window.db && typeof window.db.getFirestore === 'function') 
+        ? window.db.getFirestore() 
+        : ((typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') ? firebase.firestore() : null);
+
+    if (fs && typeof fs.collection === 'function') {
         try {
             const [pSnap, uSnap] = await Promise.all([
-                window.db.collection('lotto_purchases').get(),
-                window.db.collection('lotto_users').get()
+                fs.collection('lotto_purchases').get(),
+                fs.collection('lotto_users').get()
             ]);
-            purchasesDocs = pSnap.docs.map(d => ({
-                id: d.id,
-                data: d.data(),
-                updateTime: d.updateTime ? d.updateTime.toDate().toISOString() : new Date().toISOString()
-            }));
-            usersDocs = uSnap.docs.map(d => ({
-                id: d.id,
-                data: d.data(),
-                updateTime: d.updateTime ? d.updateTime.toDate().toISOString() : new Date().toISOString()
-            }));
-            sdkSuccess = true;
+            if (pSnap && pSnap.docs && (pSnap.docs.length > 0 || (uSnap && uSnap.docs && uSnap.docs.length > 0))) {
+                purchasesDocs = (pSnap.docs || []).map(d => ({
+                    id: d.id,
+                    data: typeof d.data === 'function' ? d.data() : d.data,
+                    updateTime: d.updateTime ? d.updateTime.toDate().toISOString() : ((d.data && d.data.updatedAt) || new Date().toISOString())
+                }));
+                usersDocs = (uSnap.docs || []).map(d => ({
+                    id: d.id,
+                    data: typeof d.data === 'function' ? d.data() : d.data,
+                    updateTime: d.updateTime ? d.updateTime.toDate().toISOString() : ((d.data && d.data.updatedAt) || new Date().toISOString())
+                }));
+                sdkSuccess = true;
+            }
         } catch (sdkErr) {
             console.warn('[SnapshotAudit] Firestore SDK fetch failed, falling back to REST:', sdkErr);
         }
     }
 
     // 2. Fallback to REST API
-    if (!sdkSuccess) {
+    if (!sdkSuccess || (purchasesDocs.length === 0 && usersDocs.length === 0)) {
         try {
             const pUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/lotto_purchases?key=${apiKey}`;
             const uUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/lotto_users?key=${apiKey}`;
@@ -170,15 +176,47 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
         };
     });
 
+    // Merge registered users from state if available
+    if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+        window.state.allRegisteredUsersList.forEach(u => {
+            if (u && u.id && !usersMap[u.id]) {
+                usersMap[u.id] = {
+                    id: u.id,
+                    realName: u.realName || u.name || u.id,
+                    userType: u.userType || (u.isPermanent ? 'permanent' : 'regular'),
+                    isAdmin: !!(u.isAdmin || u.id === 'master' || u.id === 'admin'),
+                    isPermanent: !!(u.isPermanent || u.userType === 'permanent'),
+                    createdAt: u.createdAt || '2026-08-01T00:00:00Z',
+                    docUpdateTime: ''
+                };
+            }
+        });
+    }
+
     // Process Purchases & Snapshots
     const processedUsers = [];
     const allRoundsSet = new Set([1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242]);
 
-    for (const pDoc of purchasesDocs) {
-        const uid = pDoc.id;
-        if (uid === 'app_latest_version') continue;
+    const purchasesMap = {};
+    purchasesDocs.forEach(p => {
+        if (p.id && p.id !== 'app_latest_version') {
+            purchasesMap[p.id] = p;
+        }
+    });
 
+    const allUserIds = Array.from(new Set([
+        ...purchasesDocs.map(p => p.id).filter(id => id && id !== 'app_latest_version'),
+        ...Object.keys(usersMap).filter(id => id && id !== 'app_latest_version')
+    ]));
+
+    // If still empty, add fallback master/admin
+    if (allUserIds.length === 0) {
+        allUserIds.push('master');
+    }
+
+    for (const uid of allUserIds) {
         const uMeta = usersMap[uid] || {};
+        const pDoc = purchasesMap[uid] || {};
         const pData = pDoc.data || {};
 
         const rawLedger = pData.ledger;
@@ -237,6 +275,7 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
             const isPreJoin = round < user.joinRound;
             const rawReceipts = (user.ledger && (user.ledger[String(round)] || user.ledger[round])) || [];
             const receipts = Array.isArray(rawReceipts) ? rawReceipts : (rawReceipts && typeof rawReceipts === 'object' ? Object.values(rawReceipts) : []);
+            const snap = (user.recommendationSnapshots && (user.recommendationSnapshots[String(round)] || user.recommendationSnapshots[round])) || null;
 
             // 1. Recommendation snapshot analysis
             let recStatus = 'missing';
@@ -386,15 +425,27 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
  * 모달 열기
  */
 export async function openSnapshotAuditModal(targetUserId = null) {
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+    if (typeof authId === 'object' && authId !== null) {
+        authId = authId.userId || authId.userid || authId.id || '';
+    }
+    let cleanId = String(authId).trim();
+    if (cleanId.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanId);
+            cleanId = p.userId || p.userid || p.id || cleanId;
+        } catch(e) {}
+    }
+    cleanId = cleanId.toLowerCase().trim();
+    const isAdmin = (cleanId === 'master' || cleanId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanId)));
     if (!isAdmin) {
+        const warnMsg = '⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.';
         if (typeof alert === 'function') {
-            alert('⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.');
+            alert(warnMsg);
         } else if (typeof window !== 'undefined' && typeof window.alert === 'function') {
-            window.alert('⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.');
+            window.alert(warnMsg);
         } else {
-            console.warn('⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.');
+            console.warn(warnMsg);
         }
         return;
     }
@@ -406,6 +457,7 @@ export async function openSnapshotAuditModal(targetUserId = null) {
     }
 
     modal.style.display = 'flex';
+    modal.classList.remove('hidden');
     if (targetUserId) {
         __auditFilter.user = targetUserId;
         const userSelect = document.getElementById('auditFilterUserSelect');
@@ -420,7 +472,10 @@ export async function openSnapshotAuditModal(targetUserId = null) {
  */
 export function closeSnapshotAuditModal() {
     const modal = document.getElementById('snapshotAuditModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
 }
 
 /**
@@ -980,18 +1035,49 @@ export function setupSnapshotAuditEvents() {
     if (btnCloseDetail && typeof btnCloseDetail.addEventListener === 'function') {
         btnCloseDetail.addEventListener('click', () => {
             const m = document.getElementById('snapshotDetailSubModal');
-            if (m) m.style.display = 'none';
+            if (m) {
+                m.style.display = 'none';
+                m.classList.add('hidden');
+            }
         });
     }
 
-    // Global expose
+    // Expose within setup
     if (typeof window !== 'undefined') {
         window.openSnapshotAuditModal = openSnapshotAuditModal;
         window.closeSnapshotAuditModal = closeSnapshotAuditModal;
         window.openSnapshotDetail = openSnapshotDetail;
+        window.closeSnapshotDetailSubModal = () => {
+            const m = document.getElementById('snapshotDetailSubModal');
+            if (m) {
+                m.style.display = 'none';
+                m.classList.add('hidden');
+            }
+        };
         window.refreshSnapshotAuditData = () => renderSnapshotAuditView(true);
         window.runSnapshotIntegrityDiagnostic = runSnapshotIntegrityDiagnostic;
+        window.fetchSnapshotAuditData = fetchSnapshotAuditData;
+        window.renderSnapshotAuditView = renderSnapshotAuditView;
     }
+}
+
+// Immediate Top-Level Expose for instant availability
+if (typeof window !== 'undefined') {
+    window.openSnapshotAuditModal = openSnapshotAuditModal;
+    window.closeSnapshotAuditModal = closeSnapshotAuditModal;
+    window.openSnapshotDetail = openSnapshotDetail;
+    window.closeSnapshotDetailSubModal = () => {
+        const m = document.getElementById('snapshotDetailSubModal');
+        if (m) {
+            m.style.display = 'none';
+            m.classList.add('hidden');
+        }
+    };
+    window.refreshSnapshotAuditData = () => renderSnapshotAuditView(true);
+    window.runSnapshotIntegrityDiagnostic = runSnapshotIntegrityDiagnostic;
+    window.fetchSnapshotAuditData = fetchSnapshotAuditData;
+    window.renderSnapshotAuditView = renderSnapshotAuditView;
+    window.setupSnapshotAuditEvents = setupSnapshotAuditEvents;
 }
 
 if (typeof document !== 'undefined') {

@@ -340,10 +340,20 @@ body {
     font-size: 1.05rem;
     font-weight: 800;
     color: #fff;
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.latest-title:hover {
+    opacity: 0.9;
 }
 
 .latest-title span {
     color: var(--accent-gold);
+}
+
+.banner-center {
+    cursor: pointer;
 }
 
 .latest-balls-row {
@@ -351,6 +361,16 @@ body {
     align-items: center;
     gap: 8px;
     flex-wrap: nowrap;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.latest-balls-row:hover {
+    filter: brightness(1.15);
+}
+
+.latest-balls-row:active {
+    transform: scale(0.98);
 }
 
 .plus-symbol {

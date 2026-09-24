@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.24.1321 - BUILD_DATE: 2026-09-24] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.24.1336.57 - BUILD_DATE: 2026-09-24] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.24.1321)
+ * Lucky777 Smart Bundle (v2026.09.24.1336.57)
  */
 
 
@@ -15220,6 +15220,38 @@ function renderLatestDrawBanner() {
         `;
 
         ballsContainer.innerHTML = mainBallsHTML + bonusBallHTML;
+        ballsContainer.style.cursor = 'pointer';
+        ballsContainer.title = '클릭 시 동행복권 최신 당첨번호 자동 스크랩 & 동기화';
+        ballsContainer.onclick = function(e) {
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            if (typeof window.handleFetchLatestDrawClick === 'function') {
+                window.handleFetchLatestDrawClick();
+            }
+        };
+    }
+
+    const bannerCenter = document.querySelector('.latest-draw-banner .banner-center');
+    if (bannerCenter) {
+        bannerCenter.style.cursor = 'pointer';
+        bannerCenter.title = '클릭 시 동행복권 최신 당첨번호 자동 스크랩 & 동기화';
+        bannerCenter.onclick = function(e) {
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            if (typeof window.handleFetchLatestDrawClick === 'function') {
+                window.handleFetchLatestDrawClick();
+            }
+        };
+    }
+
+    const latestTitle = document.querySelector('.latest-draw-banner .latest-title');
+    if (latestTitle) {
+        latestTitle.style.cursor = 'pointer';
+        latestTitle.title = '클릭 시 동행복권 최신 당첨번호 자동 스크랩 & 동기화';
+        latestTitle.onclick = function(e) {
+            if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
+            if (typeof window.handleFetchLatestDrawClick === 'function') {
+                window.handleFetchLatestDrawClick();
+            }
+        };
     }
 
     const el_latestPrizeAmount = document.getElementById('latestPrizeAmount');
@@ -30000,30 +30032,36 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
 
     // 1. Try Firestore SDK first if initialized
     let sdkSuccess = false;
-    if (typeof window !== 'undefined' && window.db && typeof window.db.collection === 'function') {
+    const fs = (typeof window !== 'undefined' && window.db && typeof window.db.getFirestore === 'function') 
+        ? window.db.getFirestore() 
+        : ((typeof firebase !== 'undefined' && typeof firebase.firestore === 'function') ? firebase.firestore() : null);
+
+    if (fs && typeof fs.collection === 'function') {
         try {
             const [pSnap, uSnap] = await Promise.all([
-                window.db.collection('lotto_purchases').get(),
-                window.db.collection('lotto_users').get()
+                fs.collection('lotto_purchases').get(),
+                fs.collection('lotto_users').get()
             ]);
-            purchasesDocs = pSnap.docs.map(d => ({
-                id: d.id,
-                data: d.data(),
-                updateTime: d.updateTime ? d.updateTime.toDate().toISOString() : new Date().toISOString()
-            }));
-            usersDocs = uSnap.docs.map(d => ({
-                id: d.id,
-                data: d.data(),
-                updateTime: d.updateTime ? d.updateTime.toDate().toISOString() : new Date().toISOString()
-            }));
-            sdkSuccess = true;
+            if (pSnap && pSnap.docs && (pSnap.docs.length > 0 || (uSnap && uSnap.docs && uSnap.docs.length > 0))) {
+                purchasesDocs = (pSnap.docs || []).map(d => ({
+                    id: d.id,
+                    data: typeof d.data === 'function' ? d.data() : d.data,
+                    updateTime: d.updateTime ? d.updateTime.toDate().toISOString() : ((d.data && d.data.updatedAt) || new Date().toISOString())
+                }));
+                usersDocs = (uSnap.docs || []).map(d => ({
+                    id: d.id,
+                    data: typeof d.data === 'function' ? d.data() : d.data,
+                    updateTime: d.updateTime ? d.updateTime.toDate().toISOString() : ((d.data && d.data.updatedAt) || new Date().toISOString())
+                }));
+                sdkSuccess = true;
+            }
         } catch (sdkErr) {
             console.warn('[SnapshotAudit] Firestore SDK fetch failed, falling back to REST:', sdkErr);
         }
     }
 
     // 2. Fallback to REST API
-    if (!sdkSuccess) {
+    if (!sdkSuccess || (purchasesDocs.length === 0 && usersDocs.length === 0)) {
         try {
             const pUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/lotto_purchases?key=${apiKey}`;
             const uUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/lotto_users?key=${apiKey}`;
@@ -30068,15 +30106,47 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
         };
     });
 
+    // Merge registered users from state if available
+    if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+        window.state.allRegisteredUsersList.forEach(u => {
+            if (u && u.id && !usersMap[u.id]) {
+                usersMap[u.id] = {
+                    id: u.id,
+                    realName: u.realName || u.name || u.id,
+                    userType: u.userType || (u.isPermanent ? 'permanent' : 'regular'),
+                    isAdmin: !!(u.isAdmin || u.id === 'master' || u.id === 'admin'),
+                    isPermanent: !!(u.isPermanent || u.userType === 'permanent'),
+                    createdAt: u.createdAt || '2026-08-01T00:00:00Z',
+                    docUpdateTime: ''
+                };
+            }
+        });
+    }
+
     // Process Purchases & Snapshots
     const processedUsers = [];
     const allRoundsSet = new Set([1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242]);
 
-    for (const pDoc of purchasesDocs) {
-        const uid = pDoc.id;
-        if (uid === 'app_latest_version') continue;
+    const purchasesMap = {};
+    purchasesDocs.forEach(p => {
+        if (p.id && p.id !== 'app_latest_version') {
+            purchasesMap[p.id] = p;
+        }
+    });
 
+    const allUserIds = Array.from(new Set([
+        ...purchasesDocs.map(p => p.id).filter(id => id && id !== 'app_latest_version'),
+        ...Object.keys(usersMap).filter(id => id && id !== 'app_latest_version')
+    ]));
+
+    // If still empty, add fallback master/admin
+    if (allUserIds.length === 0) {
+        allUserIds.push('master');
+    }
+
+    for (const uid of allUserIds) {
         const uMeta = usersMap[uid] || {};
+        const pDoc = purchasesMap[uid] || {};
         const pData = pDoc.data || {};
 
         const rawLedger = pData.ledger;
@@ -30135,6 +30205,7 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
             const isPreJoin = round < user.joinRound;
             const rawReceipts = (user.ledger && (user.ledger[String(round)] || user.ledger[round])) || [];
             const receipts = Array.isArray(rawReceipts) ? rawReceipts : (rawReceipts && typeof rawReceipts === 'object' ? Object.values(rawReceipts) : []);
+            const snap = (user.recommendationSnapshots && (user.recommendationSnapshots[String(round)] || user.recommendationSnapshots[round])) || null;
 
             // 1. Recommendation snapshot analysis
             let recStatus = 'missing';
@@ -30284,15 +30355,27 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
  * 모달 열기
  */
 async function openSnapshotAuditModal(targetUserId = null) {
-    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
-    const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
+    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
+    if (typeof authId === 'object' && authId !== null) {
+        authId = authId.userId || authId.userid || authId.id || '';
+    }
+    let cleanId = String(authId).trim();
+    if (cleanId.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanId);
+            cleanId = p.userId || p.userid || p.id || cleanId;
+        } catch(e) {}
+    }
+    cleanId = cleanId.toLowerCase().trim();
+    const isAdmin = (cleanId === 'master' || cleanId === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanId)));
     if (!isAdmin) {
+        const warnMsg = '⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.';
         if (typeof alert === 'function') {
-            alert('⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.');
+            alert(warnMsg);
         } else if (typeof window !== 'undefined' && typeof window.alert === 'function') {
-            window.alert('⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.');
+            window.alert(warnMsg);
         } else {
-            console.warn('⚠️ 관리자(Admin/Master) 계정만 접근할 수 있는 메뉴입니다.');
+            console.warn(warnMsg);
         }
         return;
     }
@@ -30304,6 +30387,7 @@ async function openSnapshotAuditModal(targetUserId = null) {
     }
 
     modal.style.display = 'flex';
+    modal.classList.remove('hidden');
     if (targetUserId) {
         __auditFilter.user = targetUserId;
         const userSelect = document.getElementById('auditFilterUserSelect');
@@ -30318,7 +30402,10 @@ async function openSnapshotAuditModal(targetUserId = null) {
  */
 function closeSnapshotAuditModal() {
     const modal = document.getElementById('snapshotAuditModal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
 }
 
 /**
@@ -30878,18 +30965,49 @@ function setupSnapshotAuditEvents() {
     if (btnCloseDetail && typeof btnCloseDetail.addEventListener === 'function') {
         btnCloseDetail.addEventListener('click', () => {
             const m = document.getElementById('snapshotDetailSubModal');
-            if (m) m.style.display = 'none';
+            if (m) {
+                m.style.display = 'none';
+                m.classList.add('hidden');
+            }
         });
     }
 
-    // Global expose
+    // Expose within setup
     if (typeof window !== 'undefined') {
         window.openSnapshotAuditModal = openSnapshotAuditModal;
         window.closeSnapshotAuditModal = closeSnapshotAuditModal;
         window.openSnapshotDetail = openSnapshotDetail;
+        window.closeSnapshotDetailSubModal = () => {
+            const m = document.getElementById('snapshotDetailSubModal');
+            if (m) {
+                m.style.display = 'none';
+                m.classList.add('hidden');
+            }
+        };
         window.refreshSnapshotAuditData = () => renderSnapshotAuditView(true);
         window.runSnapshotIntegrityDiagnostic = runSnapshotIntegrityDiagnostic;
+        window.fetchSnapshotAuditData = fetchSnapshotAuditData;
+        window.renderSnapshotAuditView = renderSnapshotAuditView;
     }
+}
+
+// Immediate Top-Level Expose for instant availability
+if (typeof window !== 'undefined') {
+    window.openSnapshotAuditModal = openSnapshotAuditModal;
+    window.closeSnapshotAuditModal = closeSnapshotAuditModal;
+    window.openSnapshotDetail = openSnapshotDetail;
+    window.closeSnapshotDetailSubModal = () => {
+        const m = document.getElementById('snapshotDetailSubModal');
+        if (m) {
+            m.style.display = 'none';
+            m.classList.add('hidden');
+        }
+    };
+    window.refreshSnapshotAuditData = () => renderSnapshotAuditView(true);
+    window.runSnapshotIntegrityDiagnostic = runSnapshotIntegrityDiagnostic;
+    window.fetchSnapshotAuditData = fetchSnapshotAuditData;
+    window.renderSnapshotAuditView = renderSnapshotAuditView;
+    window.setupSnapshotAuditEvents = setupSnapshotAuditEvents;
 }
 
 if (typeof document !== 'undefined') {
@@ -32101,6 +32219,7 @@ const { setupPredictionReport } = (typeof __M_services_lotto_views_prediction_re
 const { setupQuickView } = (typeof __M_services_lotto_views_quick_view !== 'undefined' ? __M_services_lotto_views_quick_view : {});
 const { setupManualLedgerModal, updateManualModalCrossCheck } = (typeof __M_services_lotto_views_manual_modal !== 'undefined' ? __M_services_lotto_views_manual_modal : {});
 const { setupManualDrawModal } = (typeof __M_services_lotto_views_manual_draw_modal !== 'undefined' ? __M_services_lotto_views_manual_draw_modal : {});
+const { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } = (typeof __M_services_lotto_views_snapshot_audit_modal !== 'undefined' ? __M_services_lotto_views_snapshot_audit_modal : {});
 const { autoSyncMissingDraws, setupSyncEvents } = (typeof __M_services_lotto_views_sync !== 'undefined' ? __M_services_lotto_views_sync : {});
 const { computeAbsoluteTop10Combinations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
@@ -32657,6 +32776,7 @@ function setupAllLottoEvents() {
     try { setupQuickView(); } catch(e) { console.warn('[setupQuickView]', e); }
     try { setupManualLedgerModal(); } catch(e) { console.warn('[setupManualLedgerModal]', e); }
     try { setupManualDrawModal(); } catch(e) { console.warn('[setupManualDrawModal]', e); }
+    try { setupSnapshotAuditEvents(); } catch(e) { console.warn('[setupSnapshotAuditEvents]', e); }
     try { setupSyncEvents(); } catch(e) { console.warn('[setupSyncEvents]', e); }
 }
 
@@ -32709,6 +32829,10 @@ if (typeof window !== 'undefined') {
     window.calculateLedgerFinancials = calculateLedgerFinancials;
     window.calculateAllUsersTotalFinancials = calculateAllUsersTotalFinancials;
     window.resetLottoServiceState = resetLottoServiceState;
+    window.openSnapshotAuditModal = openSnapshotAuditModal;
+    window.closeSnapshotAuditModal = closeSnapshotAuditModal;
+    window.setupSnapshotAuditEvents = setupSnapshotAuditEvents;
+    window.renderSnapshotAuditView = renderSnapshotAuditView;
 }
 
         if (typeof resetLottoServiceState !== 'undefined') {
