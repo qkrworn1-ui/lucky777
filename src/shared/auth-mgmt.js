@@ -912,8 +912,12 @@ export function updateLoggedInUserHeaderUI(targetAuthId = null) {
             pQrStatus.innerHTML = verifiedText;
             pQrStatus.className = `popover-qr-val ${hasVerified ? 'text-verified' : 'text-unverified'}`;
         }
+        const pSnapshotBtn = popover.querySelector('#popoverSnapshotAuditBtn');
         if (pAdminBtn) {
             pAdminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+        }
+        if (pSnapshotBtn) {
+            pSnapshotBtn.style.display = isAdmin ? 'inline-flex' : 'none';
         }
     }
 
@@ -1072,18 +1076,18 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
 
         if (isUserAdmin) {
             document.body.classList.add('is-admin');
-            if (btnUserManagement) btnUserManagement.style.setProperty('display', 'inline-flex', 'important');
-            if (btnUserManagementApp) btnUserManagementApp.style.setProperty('display', 'inline-flex', 'important');
-            if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.setProperty('display', 'inline-flex', 'important');
-            if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'inline-flex', 'important');
+            if (btnUserManagement) btnUserManagement.style.display = 'inline-flex';
+            if (btnUserManagementApp) btnUserManagementApp.style.display = 'inline-flex';
+            if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.display = 'inline-flex';
+            if (btnUserManagementToto) btnUserManagementToto.style.display = 'inline-flex';
             if (btnFetchLatestDraw) btnFetchLatestDraw.style.display = 'inline-flex';
             if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'inline-block';
         } else {
             document.body.classList.remove('is-admin');
-            if (btnUserManagement) btnUserManagement.style.setProperty('display', 'none', 'important');
-            if (btnUserManagementApp) btnUserManagementApp.style.setProperty('display', 'none', 'important');
-            if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.setProperty('display', 'none', 'important');
-            if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'none', 'important');
+            if (btnUserManagement) btnUserManagement.style.display = 'none';
+            if (btnUserManagementApp) btnUserManagementApp.style.display = 'none';
+            if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.display = 'none';
+            if (btnUserManagementToto) btnUserManagementToto.style.display = 'none';
             if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'none';
         }
 

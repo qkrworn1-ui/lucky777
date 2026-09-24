@@ -2957,11 +2957,8 @@ html, body {
         color: #022c22 !important;
     }
 
-    /* Header Compact Action Icons */
-    .btn-home-compact,
-    .btn-user-mgmt-compact,
-    .btn-snapshot-audit-compact,
-    .btn-logout-compact {
+    /* Header Compact Action Icons on Mobile */
+    .btn-home-compact {
         width: 26px !important;
         height: 26px !important;
         min-width: 26px !important;
@@ -2978,6 +2975,15 @@ html, body {
         flex-shrink: 0 !important;
     }
 
+    /* On Mobile, admin buttons and standalone logout are hidden from the top bar to prevent clutter; accessible via User Profile Popover */
+    .btn-user-mgmt-compact,
+    .btn-snapshot-audit-compact,
+    .btn-logout-compact,
+    #btnUserManagementApp,
+    #btnAdminSnapshotAudit {
+        display: none !important;
+    }
+
     .header-top-right #serverStatusBadge {
         display: none !important;
     }
@@ -2986,67 +2992,215 @@ html, body {
         display: none !important;
     }
 
-    /* Latest Draw Result Banner */
+    /* ── [Option A] Ultra-Slim 1-Row Latest Draw Result Bar (Height ~42px~46px) ── */
     .latest-draw-banner {
-        padding: 12px 14px !important;
-        border-radius: 14px !important;
-        margin-bottom: 6px !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 8px !important;
+        padding: 5px 8px !important;
+        border-radius: 11px !important;
+        margin-bottom: 4px !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 4px !important;
+        background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(30, 41, 59, 0.95) 100%) !important;
+        border: 1px solid rgba(251, 191, 36, 0.28) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35) !important;
+        min-height: 42px !important;
     }
 
     .banner-left {
-        flex-direction: column !important;
-        align-items: flex-start !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
         gap: 4px !important;
+        flex-shrink: 0 !important;
     }
 
     .banner-tag {
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        width: 100% !important;
-        gap: 6px !important;
-        flex-wrap: wrap !important;
-        font-size: 0.72rem !important;
+        display: none !important;
     }
 
     .latest-title {
-        font-size: 0.95rem !important;
+        font-size: 0.76rem !important;
+        font-weight: 900 !important;
+        color: #fbbf24 !important;
+        white-space: nowrap !important;
+        margin: 0 !important;
+    }
+
+    .latest-title #latestDrawDateText {
+        display: none !important;
+    }
+
+    .banner-center {
+        display: flex !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
     }
 
     .latest-balls-row {
-        gap: 4px !important;
+        display: flex !important;
+        gap: 2px !important;
         justify-content: center !important;
-        margin: 2px 0 !important;
+        margin: 0 !important;
         flex-wrap: nowrap !important;
-        width: 100% !important;
+        width: auto !important;
     }
 
     .lotto-ball.sm-ball {
-        width: clamp(28px, 7.8vw, 36px) !important;
-        height: clamp(28px, 7.8vw, 36px) !important;
-        line-height: clamp(28px, 7.8vw, 36px) !important;
-        font-size: clamp(0.75rem, 2.2vw, 0.92rem) !important;
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        min-height: 20px !important;
+        line-height: 20px !important;
+        font-size: 0.62rem !important;
+        font-weight: 800 !important;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.5) !important;
         flex-shrink: 0 !important;
+        margin: 0 !important;
+    }
+
+    .plus-symbol {
+        font-size: 0.62rem !important;
+        font-weight: 900 !important;
+        color: #64748b !important;
+        margin: 0 1px !important;
+        line-height: 1 !important;
     }
 
     .banner-right {
         display: flex !important;
-        justify-content: space-between !important;
+        flex-direction: row !important;
         align-items: center !important;
-        border-top: 1px dashed rgba(255, 255, 255, 0.08) !important;
-        padding-top: 6px !important;
-        flex-wrap: wrap !important;
+        justify-content: flex-end !important;
+        gap: 3px !important;
+        border-top: none !important;
+        padding-top: 0 !important;
+        margin: 0 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .prize-info {
+        display: flex !important;
+        align-items: center !important;
+        margin: 0 !important;
+    }
+
+    .prize-label {
+        display: none !important;
     }
 
     .prize-amount {
-        font-size: 0.95rem !important;
+        font-size: 0.78rem !important;
+        font-weight: 900 !important;
+        color: #34d399 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+        white-space: nowrap !important;
     }
 
     .prize-sub {
-        font-size: 0.7rem !important;
+        display: none !important;
+    }
+
+    #btnTogglePrizeDetails {
+        font-size: 0.62rem !important;
+        padding: 2px 4px !important;
+        background: rgba(30, 41, 59, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 5px !important;
+        color: #cbd5e1 !important;
+        margin: 0 !important;
+        white-space: nowrap !important;
+    }
+
+    #latestDrawPrizeDetails {
+        width: 100% !important;
+        flex-basis: 100% !important;
+        margin-top: 6px !important;
+        padding-top: 6px !important;
+        font-size: 0.72rem !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* ── Mobile Purchase Deadline / Admin Banner Slimming ── */
+    #lottoPurchaseDeadlineBanner {
+        margin: 4px 0 6px 0 !important;
+    }
+    #lottoPurchaseDeadlineBanner > div {
+        padding: 5px 10px !important;
+        border-radius: 9px !important;
+        font-size: 0.72rem !important;
+        gap: 4px !important;
+    }
+
+    /* ── Mobile Hero Section Compactness ── */
+    .generator-hero {
+        padding: 10px 12px !important;
+        gap: 8px !important;
+    }
+    .generator-hero .hero-left h2 {
+        font-size: 0.88rem !important;
+        line-height: 1.25 !important;
+    }
+    .generator-hero .hero-left p {
+        display: none !important;
+    }
+    #generatorRoundCountdownBadge {
+        display: none !important;
+    }
+
+    @media (max-width: 340px) {
+        .app-header {
+            padding: 4px 6px !important;
+        }
+        .logo-emblem {
+            width: 24px !important;
+            height: 24px !important;
+            min-width: 24px !important;
+        }
+        .logo-text h1 {
+            font-size: 0.76rem !important;
+        }
+        .mobile-header-countdown {
+            font-size: 0.56rem !important;
+        }
+        .header-top-right .header-user-chip {
+            padding: 1px 4px !important;
+            max-width: 65px !important;
+        }
+        .header-top-right .user-chip-name {
+            font-size: 0.62rem !important;
+            max-width: 38px !important;
+        }
+        .btn-mobile-header-qr {
+            padding: 3px 5px !important;
+            font-size: 0.62rem !important;
+        }
+        .btn-mobile-header-qr span {
+            display: none !important;
+        }
+        .btn-home-compact {
+            width: 22px !important;
+            height: 22px !important;
+            min-width: 22px !important;
+            min-height: 22px !important;
+            font-size: 0.65rem !important;
+        }
+        .lotto-ball.sm-ball {
+            width: 18px !important;
+            height: 18px !important;
+            min-width: 18px !important;
+            min-height: 18px !important;
+            line-height: 18px !important;
+            font-size: 0.58rem !important;
+        }
+        .latest-title {
+            font-size: 0.7rem !important;
+        }
+        .prize-amount {
+            font-size: 0.72rem !important;
+        }
     }
 
     /* Tab Navigation - Smooth Horizontal Scroll with Ambient Glow */
@@ -12403,7 +12557,7 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 
 /* ==========================================================================
-   📱 모바일 추천번호 컴팩트 뷰 (토글 지원)
+   📱 모바일 추천번호 [1안]: 초슬림 1열 컴팩트 리스트 뷰 (48px)
    ========================================================================== */
 
 /* 컴팩트 요약 행 — 컴팩트 모드일 때만 표시 */
@@ -12412,7 +12566,7 @@ body.is-admin .btn-snapshot-audit-compact {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 6px 2px;
+    padding: 3px 2px;
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -12422,66 +12576,107 @@ body.is-admin .btn-snapshot-audit-compact {
     display: flex;
     align-items: center;
     gap: 6px;
-    flex: 1;
     min-width: 0;
-}
-
-.combo-compact-num {
-    font-size: 0.72rem;
-    font-weight: 800;
-    color: #64748b;
-    min-width: 24px;
     flex-shrink: 0;
 }
 
+.combo-compact-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.combo-compact-num.num-gold {
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+    color: #0f172a;
+    font-weight: 900;
+    box-shadow: 0 1px 6px rgba(245, 158, 11, 0.4);
+}
+
 .combo-compact-balls {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 3px;
     flex-wrap: nowrap;
+    flex-shrink: 0;
 }
 
-/* 초소형 볼 (컴팩트 행 전용) */
+/* 초소형 22px 로또 볼 (컴팩트 행 전용) */
 .lotto-ball-xs {
-    width: 26px !important;
-    height: 26px !important;
-    font-size: 0.62rem !important;
-    font-weight: 700 !important;
+    width: 22px !important;
+    height: 22px !important;
+    line-height: 22px !important;
+    font-size: 0.68rem !important;
+    font-weight: 900 !important;
     border-radius: 50% !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.4) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 .combo-compact-purchased {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.45);
     color: #34d399;
-    font-size: 0.75rem;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
     flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.25);
 }
 
 .combo-compact-right {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     flex-shrink: 0;
-    max-width: 38%;
+}
+
+.combo-compact-ev {
+    font-size: 0.7rem;
+    color: #fbbf24;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    padding: 1px 5px;
+    border-radius: 5px;
+    white-space: nowrap;
+}
+.combo-compact-ev strong {
+    font-weight: 900;
 }
 
 .combo-compact-name {
-    font-size: 0.67rem;
+    font-size: 0.68rem;
     font-weight: 700;
     color: #94a3b8;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 90px;
 }
 
 .combo-expand-arrow {
     color: #64748b;
-    font-size: 0.65rem;
-    transition: transform 0.25s ease;
+    font-size: 0.7rem;
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     flex-shrink: 0;
 }
 
@@ -12490,32 +12685,50 @@ body.is-admin .btn-snapshot-audit-compact {
     display: block;
 }
 
-/* 컴팩트 뷰 활성화 시 (.is-compact) */
+/* 🌟 컴팩트 뷰 활성화 시 (.is-compact) - 48px 슬림 카드 */
 .combo-card.is-compact {
-    padding: 8px 12px !important;
+    padding: 8px 10px !important;
+    border-radius: 12px !important;
+    min-height: 44px !important;
+    margin-bottom: 6px !important;
+}
+
+#combinationsContainer .combo-card.is-compact + .combo-card.is-compact {
+    margin-top: 0 !important;
 }
 
 .combo-card.is-compact .combo-compact-row {
-    display: flex;
+    display: flex !important;
 }
 
 .combo-card.is-compact .combo-detail-section {
     display: none;
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px dashed rgba(255,255,255,0.08);
-    animation: comboSlideDown 0.2s ease;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    animation: comboSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* 컴팩트 뷰에서 개별 펼침 */
+.combo-card.is-compact.combo-card-expanded {
+    padding: 12px 12px 16px 12px !important;
+    border-color: rgba(251, 191, 36, 0.4) !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+}
+
 .combo-card.is-compact.combo-card-expanded .combo-detail-section {
-    display: block;
+    display: block !important;
 }
 
 .combo-card.is-compact.combo-card-expanded .combo-compact-row {
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    padding-bottom: 8px;
-    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 6px;
+    margin-bottom: 6px;
+}
+
+.combo-card.is-compact.combo-card-expanded .combo-expand-arrow {
+    transform: rotate(180deg);
+    color: #fbbf24;
 }
 
 /* ==========================================
@@ -12563,6 +12776,44 @@ body.is-admin .btn-snapshot-audit-compact {
     .stat-pill {
         font-size: 0.7rem;
         padding: 3px 7px;
+    }
+}
+
+@media (max-width: 480px) {
+    .combo-compact-name {
+        display: none;
+    }
+}
+
+@media (max-width: 360px) {
+    /* 겔럭시 폴드 접힌 화면 (320px~340px) 최적화 */
+    .combo-card.is-compact {
+        padding: 6px 8px !important;
+    }
+    .combo-compact-left {
+        gap: 4px;
+    }
+    .combo-compact-num {
+        width: 19px;
+        height: 19px;
+        font-size: 0.65rem;
+    }
+    .combo-compact-balls {
+        gap: 2px;
+    }
+    .lotto-ball-xs {
+        width: 20px !important;
+        height: 20px !important;
+        line-height: 20px !important;
+        font-size: 0.62rem !important;
+    }
+    .combo-compact-ev {
+        font-size: 0.65rem;
+        padding: 1px 4px;
+    }
+    .combo-compact-purchased {
+        font-size: 0.6rem;
+        padding: 1px 3px;
     }
 }
 

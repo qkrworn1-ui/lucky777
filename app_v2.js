@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.24.1256 - BUILD_DATE: 2026-09-24] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.24.1313 - BUILD_DATE: 2026-09-24] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.24.1256)
+ * Lucky777 Smart Bundle (v2026.09.24.1313)
  */
 
 
@@ -2259,8 +2259,12 @@ function updateLoggedInUserHeaderUI(targetAuthId = null) {
             pQrStatus.innerHTML = verifiedText;
             pQrStatus.className = `popover-qr-val ${hasVerified ? 'text-verified' : 'text-unverified'}`;
         }
+        const pSnapshotBtn = popover.querySelector('#popoverSnapshotAuditBtn');
         if (pAdminBtn) {
             pAdminBtn.style.display = isAdmin ? 'inline-flex' : 'none';
+        }
+        if (pSnapshotBtn) {
+            pSnapshotBtn.style.display = isAdmin ? 'inline-flex' : 'none';
         }
     }
 
@@ -2419,18 +2423,18 @@ async function checkAuthOnLoad(initFirebaseAndData) {
 
         if (isUserAdmin) {
             document.body.classList.add('is-admin');
-            if (btnUserManagement) btnUserManagement.style.setProperty('display', 'inline-flex', 'important');
-            if (btnUserManagementApp) btnUserManagementApp.style.setProperty('display', 'inline-flex', 'important');
-            if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.setProperty('display', 'inline-flex', 'important');
-            if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'inline-flex', 'important');
+            if (btnUserManagement) btnUserManagement.style.display = 'inline-flex';
+            if (btnUserManagementApp) btnUserManagementApp.style.display = 'inline-flex';
+            if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.display = 'inline-flex';
+            if (btnUserManagementToto) btnUserManagementToto.style.display = 'inline-flex';
             if (btnFetchLatestDraw) btnFetchLatestDraw.style.display = 'inline-flex';
             if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'inline-block';
         } else {
             document.body.classList.remove('is-admin');
-            if (btnUserManagement) btnUserManagement.style.setProperty('display', 'none', 'important');
-            if (btnUserManagementApp) btnUserManagementApp.style.setProperty('display', 'none', 'important');
-            if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.setProperty('display', 'none', 'important');
-            if (btnUserManagementToto) btnUserManagementToto.style.setProperty('display', 'none', 'important');
+            if (btnUserManagement) btnUserManagement.style.display = 'none';
+            if (btnUserManagementApp) btnUserManagementApp.style.display = 'none';
+            if (btnAdminSnapshotAudit) btnAdminSnapshotAudit.style.display = 'none';
+            if (btnUserManagementToto) btnUserManagementToto.style.display = 'none';
             if (btnOpenManualDrawModal) btnOpenManualDrawModal.style.display = 'none';
         }
 
@@ -20774,8 +20778,8 @@ async function renderTop5Combinations(isRollingAnimation = false) {
                     <span>이번 주 AI 추천 조합: <strong>총 10게임 배정 완료</strong></span>
                     <span style="font-size: 0.68rem; color: #34d399; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); padding: 1px 6px; border-radius: 4px; font-weight: 700;">실시간 배정됨</span>
                 </span>
-                <button type="button" id="btnToggleAllComboDetails" style="background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.4); color: #fbbf24; font-size: 0.74rem; font-weight: 800; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
-                    <i class="fa-solid fa-compress"></i> <span id="lblToggleAllText">컴팩트 요약 보기</span>
+                <button type="button" id="btnToggleAllComboDetails" style="background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-size: 0.74rem; font-weight: 800; padding: 4px 10px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
+                    <i class="fa-solid fa-layer-group"></i> <span id="lblToggleAllText">전체 10게임 상세 펼치기</span>
                 </button>
             </div>
         `;
@@ -20870,7 +20874,7 @@ async function renderTop5Combinations(isRollingAnimation = false) {
             const isPurchased = isComboPurchasedInConfirmedLedger(numbers, curUpcomingRound);
 
             const cardEl = document.createElement('div');
-            cardEl.className = 'combo-card';
+            cardEl.className = 'combo-card is-compact';
             cardEl.setAttribute('data-combo-idx', String(index));
             if (isPurchased) {
                 cardEl.style.borderColor = 'rgba(16, 185, 129, 0.6)';
@@ -20936,16 +20940,17 @@ async function renderTop5Combinations(isRollingAnimation = false) {
             const safePayoutMult = stats.payoutMultiplier !== undefined ? stats.payoutMultiplier : '1.00';
 
             cardEl.innerHTML = `
-                <!-- 📱 모바일 컴팩트 요약 행 (컴팩트 모드 활성화 시 표시) -->
+                <!-- 📱 모바일 컴팩트 요약 행 (1안: 48px 슬림 1열 리스트) -->
                 <div class="combo-compact-row" data-index="${index}">
                     <div class="combo-compact-left">
-                        <span class="combo-compact-num">#${index + 1}</span>
+                        <span class="combo-compact-num ${index < 3 ? 'num-gold' : ''}">#${(index + 1).toString().padStart(2, '0')}</span>
                         <div class="combo-compact-balls">
-                            ${numbers.map(n => `<div class="lotto-ball lotto-ball-xs ${getBallColorClass(n)}">${n}</div>`).join('')}
+                            ${numbers.map(n => `<span class="lotto-ball lotto-ball-xs ${getBallColorClass(n)}">${n}</span>`).join('')}
                         </div>
-                        ${isPurchased ? `<span class="combo-compact-purchased"><i class="fa-solid fa-circle-check"></i></span>` : ''}
+                        ${isPurchased ? `<span class="combo-compact-purchased"><i class="fa-solid fa-circle-check"></i> 구매</span>` : ''}
                     </div>
                     <div class="combo-compact-right">
+                        <span class="combo-compact-ev">EV <strong>${stats.evScore || 70}</strong></span>
                         <span class="combo-compact-name">${strat.name || `조합 #${index + 1}`}</span>
                         <i class="fa-solid fa-chevron-down combo-expand-arrow"></i>
                     </div>
@@ -21265,7 +21270,7 @@ function attachCardEvents() {
             const iconAll = btnToggleAll.querySelector('i');
             if (allCards.length === 0) return;
 
-            const isAnyFull = Array.from(allCards).some(c => !c.classList.contains('is-compact'));
+            const isAnyFull = Array.from(allCards).some(c => !c.classList.contains('is-compact') || c.classList.contains('combo-card-expanded'));
 
             if (isAnyFull) {
                 // Switch all to compact view
@@ -21282,9 +21287,15 @@ function attachCardEvents() {
                 btnToggleAll.style.color = '#38bdf8';
             } else {
                 // Switch all to full cards view
-                allCards.forEach(c => {
+                allCards.forEach((c, idx) => {
                     c.classList.remove('is-compact');
-                    c.classList.remove('combo-card-expanded');
+                    c.classList.add('combo-card-expanded');
+                    const arrow = c.querySelector('.combo-expand-arrow');
+                    if (arrow) arrow.style.transform = 'rotate(180deg)';
+                    const combos = state.fixedTop5Combinations || [];
+                    if (combos[idx]) {
+                        setTimeout(() => renderSingleComboChart(idx, combos[idx]), 30);
+                    }
                 });
                 if (lblAll) lblAll.textContent = '컴팩트 요약 보기';
                 if (iconAll) iconAll.className = 'fa-solid fa-compress';
