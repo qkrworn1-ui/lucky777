@@ -595,6 +595,7 @@ if (typeof document !== 'undefined') {
 }
 
 if (typeof window !== 'undefined') {
+    window.initLottoService = initLottoService;
     window.setupAllLottoEvents = setupAllLottoEvents;
     window.switchTab = switchLottoTab;
     window.switchLottoTab = switchLottoTab;

@@ -4,7 +4,7 @@ import { createBallHtml, renderBallRow, getRankBadge } from '../../../shared/com
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
-import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync, saveUserWeeklyRecommendationSnapshot, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
+import { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
 
 let reviewAdminViewingUser = null; // null (defaults to authId) or 'all' or specific userId
 let activeReviewFilter = 'all'; // 'all' | 'v4' | 'v3' | 'extra_1' ... 'extra_5'

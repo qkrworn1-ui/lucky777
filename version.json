@@ -1,23 +1,9 @@
 {
-  "version": "v2026.09.25.1533",
+  "version": "v2026.09.25.1549",
   "buildDate": "2026-09-25",
-  "description": "Fix Kakao pure popup auth, eliminate SW login reload, and auto-navigate to dashboard",
-  "buildTimestamp": "2026-09-25T15:33:57.683343",
+  "description": "Fix SyntaxError identifier collision and add navigation fallbacks",
+  "buildTimestamp": "2026-09-25T15:49:27.885476",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0103",
-      "buildDate": "2026-09-24",
-      "buildTime": "01:03",
-      "buildTimestamp": "2026-09-24T01:03:28.299736",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.24.0103.52",
-      "buildDate": "2026-09-24",
-      "buildTime": "01:03",
-      "buildTimestamp": "2026-09-24T01:03:52.766086",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0125",
       "buildDate": "2026-09-24",
@@ -353,7 +339,21 @@
       "buildTime": "15:33",
       "buildTimestamp": "2026-09-25T15:33:57.683343",
       "description": "Fix Kakao pure popup auth, eliminate SW login reload, and auto-navigate to dashboard"
+    },
+    {
+      "version": "v2026.09.25.1547",
+      "buildDate": "2026-09-25",
+      "buildTime": "15:47",
+      "buildTimestamp": "2026-09-25T15:47:36.637166",
+      "description": "Fix SyntaxError identifier collision in review-tab.js"
+    },
+    {
+      "version": "v2026.09.25.1549",
+      "buildDate": "2026-09-25",
+      "buildTime": "15:49",
+      "buildTimestamp": "2026-09-25T15:49:27.885476",
+      "description": "Fix SyntaxError identifier collision and add navigation fallbacks"
     }
   ],
-  "buildTime": "15:33"
+  "buildTime": "15:49"
 }

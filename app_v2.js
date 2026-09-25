@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1533 - BUILD_DATE: 2026-09-25] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1549 - BUILD_DATE: 2026-09-25] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.25.1533)
+ * Lucky777 Smart Bundle (v2026.09.25.1549)
  */
 
 
@@ -16110,7 +16110,7 @@ const { createBallHtml, renderBallRow, getRankBadge } = (typeof __M_shared_compo
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
-const { computeAbsoluteTop10Combinations, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync, saveUserWeeklyRecommendationSnapshot, enterHistoryIsolation, exitHistoryIsolation } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 
 let reviewAdminViewingUser = null; // null (defaults to authId) or 'all' or specific userId
 let activeReviewFilter = 'all'; // 'all' | 'v4' | 'v3' | 'extra_1' ... 'extra_5'
@@ -33579,6 +33579,7 @@ if (typeof document !== 'undefined') {
 }
 
 if (typeof window !== 'undefined') {
+    window.initLottoService = initLottoService;
     window.setupAllLottoEvents = setupAllLottoEvents;
     window.switchTab = switchLottoTab;
     window.switchLottoTab = switchLottoTab;

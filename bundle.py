@@ -290,6 +290,23 @@ def bundle_core(version):
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
             
+            # Check for import-declaration collisions that cause SyntaxError
+            imports = re.findall(r'import\s+\{([^}]+)\}\s+from', content)
+            imported_names = set()
+            for imp in imports:
+                for item in imp.split(','):
+                    item = item.strip()
+                    if not item: continue
+                    if ' as ' in item:
+                        imported_names.add(item.split(' as ')[1].strip())
+                    else:
+                        imported_names.add(item.strip())
+            local_decls = re.findall(r'(?:export\s+)?(?:async\s+)?(?:function|const|let|class)\s+([a-zA-Z0-9_]+)', content)
+            collisions = [d for d in local_decls if d in imported_names]
+            if collisions:
+                print(f"[!] [FATAL BUNDLE COLLISION] in {file_path}: {collisions}")
+                sys.exit(1)
+
             # Module name from canonical path
             mod_name = get_mod_slug(file_path)
             

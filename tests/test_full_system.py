@@ -2567,6 +2567,35 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('if (!isUserInActiveFlow())', index_code)
         self.assertNotIn('if (!isUserInActiveFlow()) {\n                    window.location.reload();', index_code)
 
+    # [Test 75] Zero Duplicate Import Identifier Collisions (SyntaxError Prevention)
+    def test_75_no_duplicate_import_identifier_collisions(self):
+        import glob
+        import re
+        src_files = glob.glob(os.path.join(self.root_dir, 'src', '**', '*.js'), recursive=True)
+        collisions = []
+
+        for fpath in src_files:
+            with open(fpath, 'r', encoding='utf-8') as f:
+                content = f.read()
+
+            imports = re.findall(r'import\s+\{([^}]+)\}\s+from', content)
+            imported_names = set()
+            for imp in imports:
+                for item in imp.split(','):
+                    item = item.strip()
+                    if not item: continue
+                    if ' as ' in item:
+                        imported_names.add(item.split(' as ')[1].strip())
+                    else:
+                        imported_names.add(item.strip())
+
+            local_decls = re.findall(r'(?:export\s+)?(?:async\s+)?(?:function|const|let|class)\s+([a-zA-Z0-9_]+)', content)
+            for decl in local_decls:
+                if decl in imported_names:
+                    collisions.append((os.path.basename(fpath), decl))
+
+        self.assertEqual(collisions, [], f"Duplicate import and declaration collisions found: {collisions}")
+
 
 if __name__ == '__main__':
     unittest.main()
