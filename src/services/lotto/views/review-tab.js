@@ -298,6 +298,84 @@ export function getPackFromSnapshot(extraPacks, pId) {
 }
 
 /**
+ * 🔒 Retrieves a user's weekly recommendation snapshot from in-memory state, localStorage, or preloaded Firestore purchases map
+ */
+export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
+    if (!userId || !roundNum) return null;
+    const cleanUser = String(userId).toLowerCase().trim();
+    const cacheKey = `${cleanUser}_${roundNum}`;
+    const rKey = String(roundNum);
+
+    // 1. In-memory state snapshots
+    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cacheKey]) {
+        return state.userRecommendationSnapshots[cacheKey];
+    }
+    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
+        return state.userRecommendationSnapshots[rKey];
+    }
+
+    // 2. LocalStorage cache
+    try {
+        const raw = localStorage.getItem(`lotto_rec_snapshot_${cacheKey}`);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && (parsed.v4Combos || parsed.v3Combos)) return parsed;
+        }
+    } catch(e) {}
+
+    // 3. state.allUsersPurchasesMap
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
+        const pDoc = state.allUsersPurchasesMap[cleanUser];
+        if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
+            return pDoc.recommendationSnapshots[rKey];
+        }
+    }
+
+    return null;
+}
+if (typeof window !== 'undefined') {
+    window.getUserWeeklyRecommendationSnapshotSync = getUserWeeklyRecommendationSnapshotSync;
+}
+
+/**
+ * 🔒 Asynchronously persists a user's immutable weekly recommendation snapshot to Firestore
+ */
+export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotData) {
+    if (!userId || !roundNum || !snapshotData) return;
+    const cleanUser = String(userId).toLowerCase().trim();
+    const rKey = String(roundNum);
+
+    const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+    if (!firestore) return;
+
+    try {
+        // 1. Save in lotto_purchases
+        await firestore.collection('lotto_purchases').doc(cleanUser).set({
+            userId: cleanUser,
+            realName: snapshotData.realName || cleanUser,
+            recommendationSnapshots: {
+                [rKey]: snapshotData
+            },
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        // 2. Also save in lotto_users if user doc exists
+        firestore.collection('lotto_users').doc(cleanUser).set({
+            recommendationSnapshots: {
+                [rKey]: snapshotData
+            },
+            updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+
+    } catch (e) {
+        console.warn('[saveUserWeeklyRecommendationSnapshot Error]', e);
+    }
+}
+if (typeof window !== 'undefined') {
+    window.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;
+}
+
+/**
  * Computes all 70 recommended combinations and evaluates winnings for a specific user and round
  * Memoized for 100x ultra-fast execution when switching users and rounds.
  */

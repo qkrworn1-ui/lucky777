@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1118 - BUILD_DATE: 2026-09-25] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1151 - BUILD_DATE: 2026-09-25] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.25.1118)
+ * Lucky777 Smart Bundle (v2026.09.25.1151)
  */
 
 
@@ -16164,6 +16164,84 @@ function getPackFromSnapshot(extraPacks, pId) {
 }
 
 /**
+ * 🔒 Retrieves a user's weekly recommendation snapshot from in-memory state, SafeLocalStorage, or preloaded Firestore purchases map
+ */
+function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
+    if (!userId || !roundNum) return null;
+    const cleanUser = String(userId).toLowerCase().trim();
+    const cacheKey = `${cleanUser}_${roundNum}`;
+    const rKey = String(roundNum);
+
+    // 1. In-memory state snapshots
+    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cacheKey]) {
+        return state.userRecommendationSnapshots[cacheKey];
+    }
+    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
+        return state.userRecommendationSnapshots[rKey];
+    }
+
+    // 2. LocalStorage cache
+    try {
+        const raw = SafeLocalStorage.getItem(`lotto_rec_snapshot_${cacheKey}`);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && (parsed.v4Combos || parsed.v3Combos)) return parsed;
+        }
+    } catch(e) {}
+
+    // 3. state.allUsersPurchasesMap
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
+        const pDoc = state.allUsersPurchasesMap[cleanUser];
+        if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
+            return pDoc.recommendationSnapshots[rKey];
+        }
+    }
+
+    return null;
+}
+if (typeof window !== 'undefined') {
+    window.getUserWeeklyRecommendationSnapshotSync = getUserWeeklyRecommendationSnapshotSync;
+}
+
+/**
+ * 🔒 Asynchronously persists a user's immutable weekly recommendation snapshot to Firestore
+ */
+async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotData) {
+    if (!userId || !roundNum || !snapshotData) return;
+    const cleanUser = String(userId).toLowerCase().trim();
+    const rKey = String(roundNum);
+
+    const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+    if (!firestore) return;
+
+    try {
+        // 1. Save in lotto_purchases
+        await firestore.collection('lotto_purchases').doc(cleanUser).set({
+            userId: cleanUser,
+            realName: snapshotData.realName || cleanUser,
+            recommendationSnapshots: {
+                [rKey]: snapshotData
+            },
+            updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        // 2. Also save in lotto_users if user doc exists
+        firestore.collection('lotto_users').doc(cleanUser).set({
+            recommendationSnapshots: {
+                [rKey]: snapshotData
+            },
+            updatedAt: new Date().toISOString()
+        }, { merge: true }).catch(() => {});
+
+    } catch (e) {
+        console.warn('[saveUserWeeklyRecommendationSnapshot Error]', e);
+    }
+}
+if (typeof window !== 'undefined') {
+    window.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;
+}
+
+/**
  * Computes all 70 recommended combinations and evaluates winnings for a specific user and round
  * Memoized for 100x ultra-fast execution when switching users and rounds.
  */
@@ -19564,6 +19642,14 @@ if (typeof window !== 'undefined') {
         if (typeof getPackFromSnapshot !== 'undefined') {
             __exports.getPackFromSnapshot = getPackFromSnapshot;
             if (typeof window !== 'undefined') window.getPackFromSnapshot = getPackFromSnapshot;
+        }
+        if (typeof getUserWeeklyRecommendationSnapshotSync !== 'undefined') {
+            __exports.getUserWeeklyRecommendationSnapshotSync = getUserWeeklyRecommendationSnapshotSync;
+            if (typeof window !== 'undefined') window.getUserWeeklyRecommendationSnapshotSync = getUserWeeklyRecommendationSnapshotSync;
+        }
+        if (typeof saveUserWeeklyRecommendationSnapshot !== 'undefined') {
+            __exports.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;
+            if (typeof window !== 'undefined') window.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;
         }
         if (typeof computeUser70RecommendationsReview !== 'undefined') {
             __exports.computeUser70RecommendationsReview = computeUser70RecommendationsReview;
