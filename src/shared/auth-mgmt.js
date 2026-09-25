@@ -1181,9 +1181,10 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                         }
 
                         // 🔒 Check if Mandatory Profile & E-Signature Pledge is Complete
-                        // (Exempt only root built-in master/admin accounts and admin-role users)
+                        // (Exempt root master/admin, admin roles, permanent users, and Kakao quick-auth users)
                         const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
-                        const isUserAdminAcc = isRootMaster || freshAdmin;
+                        const isKakaoAuthUser = authId.startsWith('kakao_') || uData.authProvider === 'kakao' || !!(uData.kakaoAuth);
+                        const isUserAdminAcc = isRootMaster || freshAdmin || isPerm || isKakaoAuthUser;
 
                         if (!isUserAdminAcc) {
                             const isPhoneValid = !!(uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.replace(/[^0-9]/g, '').length >= 10);
@@ -1191,27 +1192,10 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                             const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2 && !uData.realName.startsWith('카카오_') && !uData.realName.startsWith('kakao_'));
 
                             if (!isPhoneValid || !isSigValid || !isNameValid) {
-                                // Block and hide all underlying main app pages
-                                const pages = ['landingPage', 'totoPage', 'appContainer'];
-                                pages.forEach(pId => {
-                                    const pEl = document.getElementById(pId);
-                                    if (pEl) {
-                                        pEl.classList.remove('active');
-                                        pEl.style.setProperty('display', 'none', 'important');
-                                    }
-                                });
-                                if (loginModal) {
-                                    loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
-                                    loginModal.classList.add('hidden');
-                                    loginModal.classList.remove('active');
-                                }
-                                if (document.body) {
-                                    document.body.style.overflow = 'hidden';
-                                }
                                 if (typeof window.openMandatoryPledgeModal === 'function') {
                                     window.openMandatoryPledgeModal(authId, uData);
+                                    return; // Prompt user to complete profile
                                 }
-                                return; // Halt service access until pledge is submitted
                             }
                         }
 
@@ -1348,9 +1332,10 @@ export function loginWithKakao() {
 
     const doKakaoLogin = (useFallback = false) => {
         try {
+            const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
             const loginOptions = {
                 persistAccessToken: true,
-                throughTalk: false, // Standard web popup/modal login ensures zero session drop across all platforms
+                throughTalk: isMobile, // Use KakaoTalk app fast auth on mobile, web modal on desktop
                 success: function(authObj) {
                     window.Kakao.API.request({
                         url: '/v2/user/me',
@@ -2530,9 +2515,20 @@ export function setupAuthEvents(initFirebaseAndData) {
                 }
 
                 const docRef = firestore.collection('lotto_users').doc(rawId);
-                const userDoc = await docRef.get();
+                const queryPromise = docRef.get();
+                const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('TIMEOUT'), 4500));
+                const userDoc = await Promise.race([queryPromise, timeoutPromise]);
 
-                if (!userDoc.exists) {
+                if (userDoc === 'TIMEOUT') {
+                    if (typeof window.reconnectFirebaseNetwork === 'function') window.reconnectFirebaseNetwork();
+                    if (loginError) { 
+                        loginError.textContent = "서버 통신 지연이 발생했습니다. 1~2초 후 다시 접속을 눌러주세요."; 
+                        loginError.style.display = 'block'; 
+                    }
+                    return false;
+                }
+
+                if (!userDoc || !userDoc.exists) {
                     if (loginError) { loginError.textContent = "아이디 또는 비밀번호가 일치하지 않습니다."; loginError.style.display = 'block'; }
                     return false;
                 }

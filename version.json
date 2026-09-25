@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.25.1151",
+  "version": "v2026.09.25.1220",
   "buildDate": "2026-09-25",
-  "description": "Verify and ensure snapshot persistence across all users",
-  "buildTimestamp": "2026-09-25T11:51:07.390136",
+  "description": "Fix login gate lockout and enhance mobile auth resilience",
+  "buildTimestamp": "2026-09-25T12:20:14.978555",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0019",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:19",
-      "buildTimestamp": "2026-09-24T00:19:23.413711",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0021",
       "buildDate": "2026-09-24",
@@ -353,7 +346,14 @@
       "buildTime": "11:51",
       "buildTimestamp": "2026-09-25T11:51:07.390136",
       "description": "Verify and ensure snapshot persistence across all users"
+    },
+    {
+      "version": "v2026.09.25.1220",
+      "buildDate": "2026-09-25",
+      "buildTime": "12:20",
+      "buildTimestamp": "2026-09-25T12:20:14.978555",
+      "description": "Fix login gate lockout and enhance mobile auth resilience"
     }
   ],
-  "buildTime": "11:51"
+  "buildTime": "12:20"
 }

@@ -266,8 +266,8 @@ function runInit() {
     // 2. Initialize Lotto Service & Auth (Independent Sandbox)
     setTimeout(() => {
         try {
-            checkAuthOnLoad(initLottoService);
             setupAuthEvents(initLottoService);
+            checkAuthOnLoad(initLottoService);
         } catch(e) {
             console.error('[Lotto Auth/Service Init Error - Isolated]:', e);
         }
