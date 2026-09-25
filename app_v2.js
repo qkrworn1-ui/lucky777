@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1512 - BUILD_DATE: 2026-09-25] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1533 - BUILD_DATE: 2026-09-25] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.25.1512)
+ * Lucky777 Smart Bundle (v2026.09.25.1533)
  */
 
 
@@ -2716,6 +2716,15 @@ function processKakaoLoginSuccess(res, authObj = {}) {
         const nowIso = now.toISOString();
 
         console.log('[Kakao] Login successful for user:', customUserId, nickname);
+        window.__justLoggedIn = true;
+
+        // Clean any ?code=, ?logout=, ?error= query params immediately
+        try {
+            if (typeof window !== 'undefined' && window.location && (window.location.search.includes('code=') || window.location.search.includes('logout=') || window.location.search.includes('error='))) {
+                const cleanUrl = window.location.origin + window.location.pathname + (window.location.hash || '#home');
+                window.history.replaceState(null, '', cleanUrl);
+            }
+        } catch(e) {}
 
         // 1. Instant Session Unlock (Multi-storage persistence)
         SafeAuth.set(customUserId);
@@ -2741,13 +2750,21 @@ function processKakaoLoginSuccess(res, authObj = {}) {
             authProvider: 'kakao'
         };
 
-        // 2. Hide Login Modal immediately
+        // 2. Hide Login Modal immediately & enforce permanent head CSS
         const modal = document.getElementById('loginModalOverlay');
         if (modal) {
             modal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
             modal.classList.add('hidden');
             modal.classList.remove('active');
         }
+        try {
+            if (!document.getElementById('early-auth-css')) {
+                const earlyStyle = document.createElement('style');
+                earlyStyle.id = 'early-auth-css';
+                earlyStyle.textContent = '#loginModalOverlay { display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important; }';
+                document.head.appendChild(earlyStyle);
+            }
+        } catch(e) {}
         if (document.body) {
             document.body.style.overflow = '';
         }
@@ -3033,7 +3050,7 @@ function loginWithKakao(e) {
     try {
         const loginOptions = {
             persistAccessToken: true,
-            throughTalk: true,
+            throughTalk: false,
             success: function(authObj) {
                 console.log('[Kakao] Auth token granted, requesting profile...');
                 window.Kakao.API.request({
@@ -3138,7 +3155,10 @@ window.showKakaoMessageConsentModal = function(callback) {
 
     modal.querySelector('#btnCancelKakaoConsent').onclick = function() {
         modal.style.display = 'none';
-        try { sessionStorage.setItem('kakao_consent_dismissed', 'true'); } catch(e){}
+        try {
+            sessionStorage.setItem('kakao_consent_dismissed', 'true');
+            localStorage.setItem('kakao_consent_dismissed', 'true');
+        } catch(e){}
     };
 
     modal.querySelector('#btnAcceptKakaoConsent').onclick = function() {
@@ -3185,8 +3205,11 @@ window.showKakaoMessageConsentModal = function(callback) {
 window.checkAndPromptKakaoScope = function(scopeName) {
     scopeName = scopeName || 'talk_message';
     try {
-        if (sessionStorage.getItem('kakao_consent_dismissed') === 'true') return;
+        if (localStorage.getItem('kakao_consent_dismissed') === 'true' || sessionStorage.getItem('kakao_consent_dismissed') === 'true') return;
     } catch(e){}
+
+    // Never auto-pop modal immediately during or right after login
+    if (window.__justLoggedIn) return;
 
     // 🔒 [안전 가드] 카카오 소셜 로그인 사용자(kakao_*)가 아니거나 기존 일반 아이디(ID/PW) 로그인 사용자는 팝업을 띄우지 않음
     const currUser = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;

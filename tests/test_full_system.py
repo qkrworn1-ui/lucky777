@@ -2542,6 +2542,31 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("AuthStateMachine.setState(AuthState.IDLE", auth_code)
         self.assertIn("SafeAuth.clear();", auth_code)
 
+    # [Test 74] Kakao Pure Popup Mode and Anti-Flicker Protection Integrity Test
+    def test_74_kakao_popup_integrity_and_anti_flicker_protection(self):
+        with open('src/shared/auth-mgmt.js', 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        with open('index.html', 'r', encoding='utf-8') as f:
+            index_code = f.read()
+
+        # 1. Verify throughTalk: false in auth-mgmt.js and index.html (Pure Popup, no CORS redirect)
+        self.assertIn('throughTalk: false', auth_code)
+        self.assertIn('throughTalk: false', index_code)
+        self.assertNotIn('throughTalk: true', auth_code)
+        self.assertNotIn('throughTalk: true', index_code)
+
+        # 2. Verify Early Auth Session Guard in head of index.html
+        self.assertIn('early-auth-css', index_code)
+        self.assertIn('#loginModalOverlay { display: none !important;', index_code)
+
+        # 3. Verify __justLoggedIn flag prevents scope interruption and SW disruption
+        self.assertIn('window.__justLoggedIn = true;', auth_code)
+        self.assertIn('window.__justLoggedIn', index_code)
+
+        # 4. Verify SW does not force reload on active flow
+        self.assertIn('if (!isUserInActiveFlow())', index_code)
+        self.assertNotIn('if (!isUserInActiveFlow()) {\n                    window.location.reload();', index_code)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.25.1512",
+  "version": "v2026.09.25.1533",
   "buildDate": "2026-09-25",
-  "description": "Fix user gesture token preservation, head eager Kakao SDK init, and throughTalk mobile direct authentication",
-  "buildTimestamp": "2026-09-25T15:12:24.010400",
+  "description": "Fix Kakao pure popup auth, eliminate SW login reload, and auto-navigate to dashboard",
+  "buildTimestamp": "2026-09-25T15:33:57.683343",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0047",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:47",
-      "buildTimestamp": "2026-09-24T00:47:00.203384",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0103",
       "buildDate": "2026-09-24",
@@ -353,7 +346,14 @@
       "buildTime": "15:12",
       "buildTimestamp": "2026-09-25T15:12:24.010400",
       "description": "Fix user gesture token preservation, head eager Kakao SDK init, and throughTalk mobile direct authentication"
+    },
+    {
+      "version": "v2026.09.25.1533",
+      "buildDate": "2026-09-25",
+      "buildTime": "15:33",
+      "buildTimestamp": "2026-09-25T15:33:57.683343",
+      "description": "Fix Kakao pure popup auth, eliminate SW login reload, and auto-navigate to dashboard"
     }
   ],
-  "buildTime": "15:12"
+  "buildTime": "15:33"
 }
