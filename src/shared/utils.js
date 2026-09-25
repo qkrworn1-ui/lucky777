@@ -193,12 +193,12 @@ export function showToast(message, durationOrType = 2000) {
     }, durationMs + 80);
 }
 
-export async function shareLottoApp(customData = {}) {
-    const shareTitle = customData.title || '운도실력 777 | AI 로또 6/45 퀀트 추천 플랫폼';
-    const shareText = customData.text || '🍀 [운도실력 777] 빅데이터 & AI 퀀트 알고리즘 기반 로또 6/45 추천 서비스!\n매주 최적의 번호 조합을 확인해보세요.';
+export async function shareProgramApp(customData = {}) {
+    const shareTitle = customData.title || '운도실력 777 | AI 로또 7대 알고리즘 & 토토/프로토 분석 플랫폼';
+    const shareText = customData.text || '🍀 [운도실력 777] 빅데이터 & AI 퀀트 알고리즘 기반 로또 7대 알고리즘 & 토토/프로토 적중 분석 플랫폼!\n지금 바로 이번 주 추천 번호와 AI 적중 분석을 무료로 확인해보세요.';
     const shareUrl = customData.url || (window.location.origin ? (window.location.origin + window.location.pathname) : window.location.href.split('#')[0]);
 
-    // 1. 스마트폰 Web Share API 지원 시 네이티브 공유창 호출 (카카오톡, 문자메시지, 인스타그램, 페이스북, 링크복사 등)
+    // 1. 스마트폰 Web Share API (모바일 최우선 네이티브 공유창: 카카오톡, 문자메시지, 인스타그램, 페이스북, 링크복사 등)
     if (navigator.share) {
         try {
             await navigator.share({
@@ -210,21 +210,52 @@ export async function shareLottoApp(customData = {}) {
             return;
         } catch (err) {
             if (err.name === 'AbortError') {
-                // 사용자가 공유창에서 취소 선택
-                return;
+                return; // 사용자가 공유창에서 닫기/취소 선택
             }
-            console.warn('[Web Share API Error - Fallback to Clipboard]:', err);
+            console.warn('[Web Share API Error - Fallback to Kakao/Clipboard]:', err);
         }
     }
 
-    // 2. PC 또는 미지원 브라우저 클립보드 복사 Fallback
+    // 2. 카카오 SDK 연동 시 카카오톡 공유창 열기 시도
+    if (window.Kakao && window.Kakao.isInitialized && window.Kakao.isInitialized() && window.Kakao.Share && typeof window.Kakao.Share.sendDefault === 'function') {
+        try {
+            window.Kakao.Share.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: shareTitle,
+                    description: shareText,
+                    imageUrl: 'https://lucky777-lottery.web.app/icon-512.png',
+                    link: {
+                        mobileWebUrl: shareUrl,
+                        webUrl: shareUrl
+                    }
+                },
+                buttons: [
+                    {
+                        title: '운도실력 바로가기',
+                        link: {
+                            mobileWebUrl: shareUrl,
+                            webUrl: shareUrl
+                        }
+                    }
+                ]
+            });
+            showToast('💬 카카오톡 공유창이 열렸습니다!');
+            return;
+        } catch (kErr) {
+            console.warn('[Kakao Share Fallback]:', kErr);
+        }
+    }
+
+    // 3. PC 또는 미지원 브라우저 클립보드 복사 Fallback
     try {
+        const fullShareContent = `${shareTitle}\n${shareText}\n\n👉 바로가기: ${shareUrl}`;
         if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(shareUrl);
-            showToast('🔗 서비스 링크가 복사되었습니다! 카카오톡이나 메시지에 붙여넣어 공유하세요.');
+            await navigator.clipboard.writeText(fullShareContent);
+            showToast('🔗 서비스 링크가 복사되었습니다! 카카오톡이나 SNS에 붙여넣어 공유하세요.');
         } else {
             const textArea = document.createElement('textarea');
-            textArea.value = shareUrl;
+            textArea.value = fullShareContent;
             textArea.style.position = 'fixed';
             textArea.style.opacity = '0';
             document.body.appendChild(textArea);
@@ -238,7 +269,10 @@ export async function shareLottoApp(customData = {}) {
         prompt('아래 링크를 복사하여 공유하세요:', shareUrl);
     }
 }
-window.shareLottoApp = shareLottoApp;
+
+export const shareLottoApp = shareProgramApp;
+window.shareProgramApp = shareProgramApp;
+window.shareLottoApp = shareProgramApp;
 
 /**
  * 범용 클립보드 텍스트 복사 유틸리티

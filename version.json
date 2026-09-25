@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.25.1928",
+  "version": "v2026.09.25.1940",
   "buildDate": "2026-09-25",
-  "description": "Enhance snapshot audit with round 1242 and exact combo matching",
-  "buildTimestamp": "2026-09-25T19:28:28.227963",
+  "description": "Add smartphone program share button to home screen bottom",
+  "buildTimestamp": "2026-09-25T19:40:14.388940",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0207",
-      "buildDate": "2026-09-24",
-      "buildTime": "02:07",
-      "buildTimestamp": "2026-09-24T02:07:31.015979",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0211",
       "buildDate": "2026-09-24",
@@ -353,7 +346,14 @@
       "buildTime": "19:28",
       "buildTimestamp": "2026-09-25T19:28:28.227963",
       "description": "Enhance snapshot audit with round 1242 and exact combo matching"
+    },
+    {
+      "version": "v2026.09.25.1940",
+      "buildDate": "2026-09-25",
+      "buildTime": "19:40",
+      "buildTimestamp": "2026-09-25T19:40:14.388940",
+      "description": "Add smartphone program share button to home screen bottom"
     }
   ],
-  "buildTime": "19:28"
+  "buildTime": "19:40"
 }
