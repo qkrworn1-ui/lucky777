@@ -57,7 +57,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.09.25.1035">
+    <link rel="stylesheet" href="styles.css?v=2026.09.25.1051">
 </head>
 
 <body>
@@ -134,7 +134,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.09.25.1035 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.09.25.1051 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -511,7 +511,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.09.25.1035
+                                v2026.09.25.1051
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1974,7 +1974,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.09.25.1035
+                        <i class="fa-solid fa-code-branch"></i> v2026.09.25.1051
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -2274,7 +2274,7 @@
                     <button type="button" onclick="window.autoSuspendAllNonPurchasers && window.autoSuspendAllNonPurchasers()" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#0f172a; border:none; padding:6px 10px; border-radius:7px; font-size:0.76rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(245,158,11,0.3);">
                         <i class="fa-solid fa-bolt"></i> 미구매 자동정지
                     </button>
-                    <button type="button" onclick="window.loadUserList && window.loadUserList()" style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); padding:6px 10px; border-radius:7px; font-size:0.76rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                    <button type="button" onclick="window.loadUserList && window.loadUserList(true)" style="background:rgba(255,255,255,0.08); color:#cbd5e1; border:1px solid rgba(255,255,255,0.15); padding:6px 10px; border-radius:7px; font-size:0.76rem; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
                         <i class="fa-solid fa-rotate-right"></i> 새로고침
                     </button>
                 </div>
@@ -2375,13 +2375,164 @@
                 </div>
             </div>
 
-            <!-- Maximized Registered Users List (Dominates screen space) -->
-            <div style="flex-grow: 1; overflow-y: auto; padding-right: 4px; display:flex; flex-direction:column; min-height: 250px;">
-                <div id="userListContainer" class="user-list-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(360px, 1fr)); gap:12px; flex-grow:1; align-items:stretch;">
-                    <div style="text-align:center; padding: 30px; color:#64748b; font-size: 0.9rem;">
+            <!-- Maximized High-Density Registered Users List (Mobile-Optimized) -->
+            <div style="flex-grow: 1; overflow-y: auto; padding-right: 2px; display:flex; flex-direction:column; min-height: 250px; background:rgba(15,23,42,0.6); border-radius:10px; border:1px solid rgba(255,255,255,0.06);">
+                <div id="userListContainer" style="display:flex; flex-direction:column; divide-y:1px solid rgba(255,255,255,0.06); width:100%;">
+                    <div style="text-align:center; padding: 30px; color:#64748b; font-size: 0.88rem;">
                         <i class="fa-solid fa-spinner fa-spin"></i> 데이터를 불러오는 중...
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- 🗂️ 회원 상세 관리 & 권한 수정 슬라이드 드로어 (Slide-Up / Slide-Over Drawer) -->
+        <div id="userDetailDrawerBackdrop" onclick="window.closeUserDetailDrawer && window.closeUserDetailDrawer(event)" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:100002; display:none; justify-content:flex-end; align-items:flex-end; box-sizing:border-box; backdrop-filter:blur(4px);">
+            <div id="userDetailDrawerPanel" onclick="event.stopPropagation()" style="width:100%; max-width:480px; max-height:92vh; height:92vh; background:#0f172a; border-left:1.5px solid rgba(59,130,246,0.4); border-top:1.5px solid rgba(59,130,246,0.4); border-radius:18px 18px 0 0; color:#fff; display:flex; flex-direction:column; box-shadow:0 -10px 40px rgba(0,0,0,0.9); overflow:hidden; box-sizing:border-box;">
+                
+                <!-- Drawer Header -->
+                <div style="padding:14px 16px; border-bottom:1px solid rgba(255,255,255,0.08); background:#090d16; display:flex; align-items:center; justify-content:space-between; flex-shrink:0;">
+                    <div style="display:flex; align-items:center; gap:10px; min-width:0;">
+                        <div id="drawerAvatarBadge" style="width:38px; height:38px; border-radius:10px; background:#fbbf24; color:#0f172a; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:900; flex-shrink:0;">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div style="min-width:0;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <h3 id="drawerUserIdTitle" style="margin:0; font-size:0.95rem; font-weight:900; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">userId</h3>
+                                <span id="drawerStatusChip" style="font-size:0.68rem; padding:1px 6px; border-radius:4px; font-weight:800; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); white-space:nowrap;">정상</span>
+                            </div>
+                            <div id="drawerSubTitle" style="font-size:0.75rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:2px;">실명 · 연락처</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="window.closeUserDetailDrawer && window.closeUserDetailDrawer()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:1.2rem; cursor:pointer; display:flex; align-items:center; justify-content:center;">&times;</button>
+                </div>
+
+                <!-- Drawer Body Form (Scrollable) -->
+                <div style="flex:1; overflow-y:auto; padding:14px 16px; display:flex; flex-direction:column; gap:14px; font-size:0.82rem; box-sizing:border-box;">
+                    
+                    <!-- 1. 기본 정보 수정 -->
+                    <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:10px;">
+                        <div style="font-weight:800; color:#fbbf24; font-size:0.85rem; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:6px;">
+                            <span><i class="fa-solid fa-id-card"></i> 기본 프로필 수정</span>
+                            <span id="drawerAuthProviderText" style="font-size:0.72rem; color:#94a3b8; font-weight:normal;">일반 가입</span>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                            <div>
+                                <label style="display:block; font-size:0.72rem; color:#94a3b8; font-weight:700; margin-bottom:3px;">회원 실명</label>
+                                <input type="text" id="detailRealName" style="width:100%; height:34px; padding:0 8px; background:#090d16; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.82rem; outline:none; box-sizing:border-box;">
+                            </div>
+                            <div>
+                                <label style="display:block; font-size:0.72rem; color:#94a3b8; font-weight:700; margin-bottom:3px;">휴대폰 번호</label>
+                                <input type="text" id="detailPhone" style="width:100%; height:34px; padding:0 8px; background:#090d16; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.82rem; outline:none; box-sizing:border-box;">
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display:block; font-size:0.72rem; color:#94a3b8; font-weight:700; margin-bottom:3px;">계정 상태 설정</label>
+                            <select id="detailStatusSelect" style="width:100%; height:34px; padding:0 8px; background:#090d16; border:1px solid #334155; color:#fff; border-radius:6px; font-size:0.82rem; outline:none; cursor:pointer; box-sizing:border-box;">
+                                <option value="active">🟢 정상 활성 상태 (Active)</option>
+                                <option value="suspended_nopurchase">🟡 주간 미구매 일시정지 (Suspended)</option>
+                                <option value="suspended">🔴 관리자 수동 정지 (Manual)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 2. 권한 원클릭 토글 (Lotto, Toto, Perm, Admin) -->
+                    <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                        <div style="font-weight:800; color:#fbbf24; font-size:0.85rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:6px;">
+                            <i class="fa-solid fa-sliders"></i> 서비스 권한 및 면제 설정
+                        </div>
+
+                        <label style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:7px; border:1px solid rgba(255,255,255,0.05); cursor:pointer;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:1rem;">🍀</span>
+                                <div>
+                                    <div style="font-weight:800; color:#e2e8f0; font-size:0.8rem;">로또 퀀트 서비스 허용</div>
+                                    <div style="font-size:0.7rem; color:#64748b;">추천번호 발급 및 시뮬레이터 접근</div>
+                                </div>
+                            </div>
+                            <input type="checkbox" id="detailToggleAllowLotto" style="accent-color:#10b981; width:17px; height:17px; cursor:pointer;">
+                        </label>
+
+                        <label style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:7px; border:1px solid rgba(255,255,255,0.05); cursor:pointer;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:1rem;">🏆</span>
+                                <div>
+                                    <div style="font-weight:800; color:#e2e8f0; font-size:0.8rem;">토토 승부예측 허용</div>
+                                    <div style="font-size:0.7rem; color:#64748b;">축구 승무패 및 프로토 승부예측 탭</div>
+                                </div>
+                            </div>
+                            <input type="checkbox" id="detailToggleAllowToto" style="accent-color:#f59e0b; width:17px; height:17px; cursor:pointer;">
+                        </label>
+
+                        <label style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:7px; border:1px solid rgba(255,255,255,0.05); cursor:pointer;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:1rem;">💎</span>
+                                <div>
+                                    <div style="font-weight:800; color:#38bdf8; font-size:0.8rem;">영구 사용 회원 (평생 면제)</div>
+                                    <div style="font-size:0.7rem; color:#64748b;">주간 5게임 실구매 등록 의무 전면 면제</div>
+                                </div>
+                            </div>
+                            <input type="checkbox" id="detailTogglePermanent" style="accent-color:#38bdf8; width:17px; height:17px; cursor:pointer;">
+                        </label>
+
+                        <label style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:7px; border:1px solid rgba(255,255,255,0.05); cursor:pointer;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:1rem; color:#fbbf24;"><i class="fa-solid fa-crown"></i></span>
+                                <div>
+                                    <div style="font-weight:800; color:#fbbf24; font-size:0.8rem;">운영 관리자(Admin) 권한 부여</div>
+                                    <div style="font-size:0.7rem; color:#64748b;">사용자 관리 및 추첨 관리자 메뉴 접근</div>
+                                </div>
+                            </div>
+                            <input type="checkbox" id="detailToggleAdmin" style="accent-color:#fbbf24; width:17px; height:17px; cursor:pointer;">
+                        </label>
+                    </div>
+
+                    <!-- 3. 빠른 도구 (서약서 열람, 스냅샷, 비밀번호 초기화) -->
+                    <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
+                        <div style="font-weight:800; color:#fbbf24; font-size:0.85rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:6px;">
+                            <i class="fa-solid fa-bolt"></i> 빠른 도구 및 서약서
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                            <button type="button" id="btnDrawerAgreementDoc" style="padding:8px; background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); color:#fbbf24; border-radius:6px; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+                                <i class="fa-solid fa-file-signature"></i> 전자 서약서 열람
+                            </button>
+                            <button type="button" id="btnDrawerSnapshotAudit" style="padding:8px; background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.45); color:#34d399; border-radius:6px; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
+                                <i class="fa-solid fa-server"></i> 스냅샷 확인
+                            </button>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.35); padding:8px 10px; border-radius:6px; border:1px solid rgba(255,255,255,0.05); margin-top:2px;">
+                            <div>
+                                <div style="font-weight:700; color:#e2e8f0; font-size:0.78rem;">비밀번호 초기화</div>
+                                <div style="font-size:0.68rem; color:#64748b;">임시 비밀번호(0000)로 세팅</div>
+                            </div>
+                            <button type="button" id="btnDrawerResetPw" style="padding:4px 10px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#fff; border-radius:5px; font-size:0.72rem; font-weight:700; cursor:pointer;">
+                                초기화
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 4. 위험 구역 (삭제 / 휴지통) -->
+                    <div style="background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.3); border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="font-weight:800; color:#f87171; font-size:0.78rem;"><i class="fa-solid fa-trash-can"></i> 계정 삭제</div>
+                            <div style="font-size:0.68rem; color:#94a3b8;">휴지통으로 이동 후 접근 차단</div>
+                        </div>
+                        <button type="button" id="btnDrawerDeleteUser" style="padding:6px 10px; background:rgba(239,68,68,0.25); border:1px solid #ef4444; color:#fff; border-radius:6px; font-size:0.74rem; font-weight:800; cursor:pointer;">
+                            휴지통 이동
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- Drawer Footer Actions -->
+                <div style="padding:10px 16px; border-top:1px solid rgba(255,255,255,0.08); background:#090d16; display:flex; gap:8px; flex-shrink:0;">
+                    <button type="button" onclick="window.closeUserDetailDrawer && window.closeUserDetailDrawer()" style="flex:1; height:38px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; border-radius:8px; font-size:0.82rem; font-weight:800; cursor:pointer;">
+                        닫기
+                    </button>
+                    <button type="button" id="btnSaveUserDetail" onclick="window.saveUserDetail && window.saveUserDetail()" style="flex:1; height:38px; background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border:none; color:#0f172a; border-radius:8px; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; box-shadow:0 3px 10px rgba(245,158,11,0.35);">
+                        <i class="fa-solid fa-check"></i> 변경사항 저장
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -3535,7 +3686,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.09.25.1035';
+        window.APP_VERSION = 'v2026.09.25.1051';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -3587,7 +3738,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.09.25.1035';
+            var v = ver || window.APP_VERSION || 'v2026.09.25.1051';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -3773,7 +3924,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.25.1035';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.25.1051';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -3893,7 +4044,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.09.25.1035')
+                navigator.serviceWorker.register('./sw.js?v=2026.09.25.1051')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -3902,7 +4053,7 @@
                             if (installingWorker) {
                                 installingWorker.onstatechange = function() {
                                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        console.log('[PWA] New version (v2026.09.25.1035) installed! Refreshing cache...');
+                                        console.log('[PWA] New version (v2026.09.25.1051) installed! Refreshing cache...');
                                         window.location.reload();
                                     }
                                 };
@@ -3969,8 +4120,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.09.25.1035"></script>
-    <script src="app_v2.js?v=2026.09.25.1035"></script>
+    <script src="data.js?v=2026.09.25.1051"></script>
+    <script src="app_v2.js?v=2026.09.25.1051"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">

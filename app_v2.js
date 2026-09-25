@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1035 - BUILD_DATE: 2026-09-25] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1051 - BUILD_DATE: 2026-09-25] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.25.1035)
+ * Lucky777 Smart Bundle (v2026.09.25.1051)
  */
 
 
@@ -4175,17 +4175,17 @@ function setupAuthEvents(initFirebaseAndData) {
         if (!usersList || usersList.length === 0) {
             if (isTrashMode) {
                 userListContainer.innerHTML = `
-                <div style="text-align:center; padding: 40px 20px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:12px; border:1px dashed rgba(255,255,255,0.1);">
-                    <i class="fa-solid fa-trash-can-arrow-up" style="font-size:2rem; color:#64748b; margin-bottom:10px; display:block;"></i>
-                    <div style="font-size:0.92rem; font-weight:700; color:#cbd5e1;">휴지통이 비어 있습니다.</div>
-                    <div style="font-size:0.76rem; color:#64748b; margin-top:4px;">현재 삭제된 회원 계정이 없습니다.</div>
+                <div style="text-align:center; padding: 36px 16px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:10px; border:1px dashed rgba(255,255,255,0.1);">
+                    <i class="fa-solid fa-trash-can-arrow-up" style="font-size:1.8rem; color:#64748b; margin-bottom:8px; display:block;"></i>
+                    <div style="font-size:0.88rem; font-weight:700; color:#cbd5e1;">휴지통이 비어 있습니다.</div>
+                    <div style="font-size:0.74rem; color:#64748b; margin-top:3px;">현재 삭제된 회원 계정이 없습니다.</div>
                 </div>`;
             } else {
                 userListContainer.innerHTML = `
-                <div style="text-align:center; padding: 40px 20px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:12px; border:1px dashed rgba(255,255,255,0.1);">
-                    <i class="fa-solid fa-user-slash" style="font-size:2rem; color:#64748b; margin-bottom:10px; display:block;"></i>
-                    <div style="font-size:0.92rem; font-weight:700; color:#cbd5e1;">조건에 맞는 회원이 없습니다.</div>
-                    ${isFiltered ? '<button type="button" onclick="document.getElementById(\'inputSearchUserList\').value=\'\'; window.setUserFilterTab(\'all\');" style="margin-top:10px; background:rgba(59,130,246,0.2); border:1px solid #3b82f6; color:#93c5fd; padding:5px 12px; border-radius:6px; font-size:0.78rem; font-weight:700; cursor:pointer;">필터 초기화</button>' : ''}
+                <div style="text-align:center; padding: 36px 16px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:10px; border:1px dashed rgba(255,255,255,0.1);">
+                    <i class="fa-solid fa-user-slash" style="font-size:1.8rem; color:#64748b; margin-bottom:8px; display:block;"></i>
+                    <div style="font-size:0.88rem; font-weight:700; color:#cbd5e1;">조건에 맞는 회원이 없습니다.</div>
+                    ${isFiltered ? '<button type="button" onclick="document.getElementById(\'inputSearchUserList\').value=\'\'; window.setUserFilterTab(\'all\');" style="margin-top:8px; background:rgba(59,130,246,0.2); border:1px solid #3b82f6; color:#93c5fd; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; cursor:pointer;">필터 초기화</button>' : ''}
                 </div>`;
             }
             return;
@@ -4196,13 +4196,12 @@ function setupAuthEvents(initFirebaseAndData) {
 
         if (isTrashMode) {
             html += `
-            <div style="grid-column: 1 / -1; background:rgba(239, 68, 68, 0.12); border:1px solid rgba(239, 68, 68, 0.35); padding:10px 14px; border-radius:10px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:4px; box-sizing:border-box;">
-                <div style="font-size:0.85rem; color:#fca5a5; font-weight:800; display:flex; align-items:center; gap:6px;">
-                    <i class="fa-solid fa-trash-can"></i> 휴지통에 보관된 회원 (${usersList.length}명)
-                    <span style="font-size:0.75rem; color:#94a3b8; font-weight:normal;">(언제든 복구하거나 DB에서 완전 영구 삭제할 수 있습니다)</span>
+            <div style="background:rgba(239, 68, 68, 0.12); border-bottom:1px solid rgba(239, 68, 68, 0.35); padding:8px 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; box-sizing:border-box;">
+                <div style="font-size:0.8rem; color:#fca5a5; font-weight:800; display:flex; align-items:center; gap:6px;">
+                    <i class="fa-solid fa-trash-can"></i> 휴지통 보관 (${usersList.length}명)
                 </div>
-                <button type="button" onclick="window.emptyUserTrash && window.emptyUserTrash()" style="background:rgba(239,68,68,0.25); border:1px solid #ef4444; color:#fff; padding:6px 14px; border-radius:7px; font-size:0.78rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.2s;">
-                    <i class="fa-solid fa-fire"></i> 휴지통 전체 비우기
+                <button type="button" onclick="window.emptyUserTrash && window.emptyUserTrash()" style="background:rgba(239,68,68,0.25); border:1px solid #ef4444; color:#fff; padding:4px 10px; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                    <i class="fa-solid fa-fire"></i> 전체 비우기
                 </button>
             </div>`;
 
@@ -4210,55 +4209,26 @@ function setupAuthEvents(initFirebaseAndData) {
                 const { userId, data } = item;
                 const safeUserId = encodeURIComponent(userId);
                 const realName = data.realName && data.realName !== userId ? `(${data.realName})` : '';
-                const joinDate = data.createdAt ? data.createdAt.slice(0, 10) : '-';
-                const deletedDate = data.deletedAt ? data.deletedAt.slice(0, 16).replace('T', ' ') : '삭제일시 미기록';
-                
-                let deletedByText = '';
-                if (data.deletedBy) {
-                    let dBy = data.deletedBy;
-                    if (typeof dBy === 'string' && dBy.startsWith('{')) {
-                        try { dBy = JSON.parse(dBy).userId || dBy; } catch(e){}
-                    }
-                    deletedByText = ` (by ${dBy})`;
-                }
+                const deletedDate = data.deletedAt ? data.deletedAt.slice(0, 10) : '-';
 
                 html += `
-                <div class="user-card-item is-suspended-card" style="background:linear-gradient(135deg, rgba(40, 20, 25, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%); border:1.5px solid rgba(239, 68, 68, 0.45); border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; justify-content:space-between; gap:8px; box-shadow:0 4px 16px rgba(0,0,0,0.35); box-sizing:border-box;">
-                    <!-- Top Info Row -->
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                        <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                            <div class="user-avatar-badge" style="width:36px; height:36px; min-width:36px; min-height:36px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.5); color:#fca5a5;">
-                                <i class="fa-solid fa-trash-can"></i>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.06); gap:8px; background:rgba(239,68,68,0.04); box-sizing:border-box;">
+                    <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#ef4444; flex-shrink:0;"></span>
+                        <div style="min-width:0; flex:1;">
+                            <div style="display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <span style="font-weight:800; color:#fca5a5; font-size:0.82rem; text-decoration:line-through; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${userId}</span>
+                                ${realName ? `<span style="font-size:0.75rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${realName}</span>` : ''}
                             </div>
-                            <div style="display:flex; flex-direction:column; min-width:0;">
-                                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                                    <span style="font-weight:900; color:#fca5a5; font-size:1.02rem; text-decoration:line-through;">${userId}</span>
-                                    ${realName ? `<span style="font-size:0.85rem; color:#cbd5e1; font-weight:700;">${realName}</span>` : ''}
-                                </div>
-                                <span style="font-size:0.72rem; color:#f87171;">삭제: ${deletedDate}${deletedByText}</span>
-                            </div>
+                            <div style="font-size:0.68rem; color:#f87171; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">삭제일: ${deletedDate}</div>
                         </div>
-                        <span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#f87171; background:rgba(239,68,68,0.2); border:1px solid #ef4444; flex-shrink:0; display:inline-flex; align-items:center; gap:3px;">
-                            <i class="fa-solid fa-ban"></i> 휴지통 보관
-                        </span>
                     </div>
-
-                    <!-- Meta Box -->
-                    <div class="user-meta-box" style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; font-size:0.75rem; color:#cbd5e1; box-sizing:border-box;">
-                        <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><i class="fa-solid fa-phone" style="color:#64748b; width:14px; flex-shrink:0;"></i> <span style="overflow:hidden; text-overflow:ellipsis;">${data.phoneNumber || '연락처 미등록'}</span></div>
-                        <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><i class="fa-regular fa-calendar" style="color:#64748b; width:14px; flex-shrink:0;"></i> <span>가입: ${joinDate}</span></div>
-                    </div>
-
-                    <!-- Trash Action Buttons -->
-                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:2px;">
-                        <button type="button" onclick="window.restoreUserFromTrash(decodeURIComponent('${safeUserId}'))" title="계정을 다시 정상 활성 상태로 복구" class="user-action-btn-primary" style="flex:1; height:32px; background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:1px solid rgba(16,185,129,0.5); border-radius:6px; font-size:0.75rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:4px; box-shadow:0 2px 6px rgba(16,185,129,0.3); box-sizing:border-box;">
-                            <i class="fa-solid fa-rotate-left"></i> ♻️ 계정 복구하기
+                    <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                        <button type="button" onclick="window.restoreUserFromTrash(decodeURIComponent('${safeUserId}'))" style="height:28px; padding:0 8px; background:#10b981; color:#fff; border:none; border-radius:5px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="fa-solid fa-rotate-left"></i> 복구
                         </button>
-                        <button type="button" onclick="window.viewUserAgreementDoc(decodeURIComponent('${safeUserId}'))" title="가입 전자 서명 서약서 열람" class="user-action-btn-sub" style="height:32px; background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); color:#fbbf24; padding:0 8px; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-file-signature"></i> 서약서
-                        </button>
-                        <button type="button" onclick="window.permanentlyDeleteUser(decodeURIComponent('${safeUserId}'))" title="DB에서 완전히 영구 삭제" class="user-action-btn-sub" style="height:32px; background:rgba(239,68,68,0.25); border:1px solid rgba(239,68,68,0.55); color:#fca5a5; padding:0 8px; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-fire"></i> 영구 삭제
+                        <button type="button" onclick="window.permanentlyDeleteUser(decodeURIComponent('${safeUserId}'))" style="height:28px; padding:0 6px; background:rgba(239,68,68,0.25); border:1px solid #ef4444; color:#fca5a5; border-radius:5px; font-size:0.72rem; font-weight:800; cursor:pointer;">
+                            <i class="fa-solid fa-fire"></i>
                         </button>
                     </div>
                 </div>`;
@@ -4268,162 +4238,81 @@ function setupAuthEvents(initFirebaseAndData) {
             return;
         }
 
+        // High-Density Single-Line Rows (Mobile-Optimized)
         usersList.forEach(item => {
-            const { userId, data, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, status } = item;
+            const { userId, data, pStatus, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, status } = item;
             const safeUserId = encodeURIComponent(userId);
-
-            // 1. Avatar badge styling
-            let avatarHtml = '';
-            const isKakaoUser = userId.startsWith('kakao_') || (data.kakaoAuth && data.kakaoAuth.kakaoId);
+            const isKakaoUser = userId.startsWith('kakao_') || !!(data.kakaoAuth && data.kakaoAuth.kakaoId);
             const isMaster = (userId || '').toLowerCase().trim() === 'master';
-            if (isKakaoUser) {
-                avatarHtml = `<div class="user-avatar-badge user-avatar-kakao" title="카카오톡 간편가입 회원" style="width:36px; height:36px; min-width:36px; min-height:36px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; background:#fee500; color:#191919; border:1px solid rgba(254, 229, 0, 0.6); box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fa-solid fa-comment"></i></div>`;
-            } else if (isMaster || isUserAdmin) {
-                avatarHtml = `<div class="user-avatar-badge user-avatar-master" title="${isMaster ? '최고 관리자(Master)' : '운영 관리자(Admin)'}" style="width:36px; height:36px; min-width:36px; min-height:36px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color:#0f172a; border:1px solid rgba(251, 191, 36, 0.7); box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fa-solid fa-crown"></i></div>`;
-            } else {
-                avatarHtml = `<div class="user-avatar-badge user-avatar-regular" title="일반 회원" style="width:36px; height:36px; min-width:36px; min-height:36px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0; background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:#ffffff; border:1px solid rgba(59, 130, 246, 0.6); box-shadow:0 2px 8px rgba(0,0,0,0.3);"><i class="fa-solid fa-user"></i></div>`;
-            }
 
-            // 2. Admin & Status Badges
-            let adminBadge = isUserAdmin 
-                ? `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#fbbf24; background:rgba(245,158,11,0.2); border:1px solid #f59e0b; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-crown"></i> 관리자</span>` 
-                : `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:600; color:#94a3b8; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-user"></i> 일반</span>`;
-
-            let statusBadge = '';
-            if (isUserAdmin || isPermanent) {
-                statusBadge = `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#38bdf8; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-gem"></i> 영구활성</span>`;
-            } else if (status === 'active') {
-                statusBadge = `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#10b981; background:rgba(16,185,129,0.15); border:1px solid #10b981; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-circle-check"></i> 정상</span>`;
+            // 1. Status Dot Color
+            let statusDotBg = '#10b981'; // Green
+            if (isMaster || isUserAdmin || isPermanent) {
+                statusDotBg = '#38bdf8'; // Sky Blue
             } else if (isNoPurchaseSuspended) {
-                statusBadge = `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#fbbf24; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-triangle-exclamation"></i> 미구매정지</span>`;
-            } else {
-                statusBadge = `<span class="user-chip-badge" style="font-size:0.7rem; padding:2px 6px; border-radius:5px; font-weight:800; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-ban"></i> 수동정지</span>`;
+                statusDotBg = '#fbbf24'; // Amber
+            } else if (isSuspended || status !== 'active') {
+                statusDotBg = '#ef4444'; // Red
             }
 
-            let lottoPermBadge = allowLotto
-                ? `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#34d399; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:3px;">🍀 로또ON</span>`
-                : `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:800; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); display:inline-flex; align-items:center; gap:3px;">❌ 로또OFF</span>`;
+            // 2. Avatar Minimal Badge (26x26px)
+            let avatarHtml = '';
+            if (isKakaoUser) {
+                avatarHtml = `<div style="width:24px; height:24px; min-width:24px; border-radius:6px; background:#fee500; color:#191919; display:inline-flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:900; flex-shrink:0;"><i class="fa-solid fa-comment"></i></div>`;
+            } else if (isMaster || isUserAdmin) {
+                avatarHtml = `<div style="width:24px; height:24px; min-width:24px; border-radius:6px; background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color:#0f172a; display:inline-flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:900; flex-shrink:0;"><i class="fa-solid fa-crown"></i></div>`;
+            } else {
+                avatarHtml = `<div style="width:24px; height:24px; min-width:24px; border-radius:6px; background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:#ffffff; display:inline-flex; align-items:center; justify-content:center; font-size:0.72rem; font-weight:900; flex-shrink:0;"><i class="fa-solid fa-user"></i></div>`;
+            }
 
-            let totoPermBadge = allowToto
-                ? `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#fbbf24; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); display:inline-flex; align-items:center; gap:3px;">🏆 토토ON</span>`
-                : `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:800; color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); display:inline-flex; align-items:center; gap:3px;">❌ 토토OFF</span>`;
-
-            const hasPledgeSigned = !!(data.agreementDoc && data.agreementDoc.signatureDataUrl);
-            let pledgeBadge = hasPledgeSigned
-                ? `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#34d399; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.3); display:inline-flex; align-items:center; gap:3px;" title="필수 약관 및 전자서약 완료"><i class="fa-solid fa-file-signature"></i> 서약완료</span>`
-                : `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:800; color:#f87171; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); display:inline-flex; align-items:center; gap:3px;" title="필수 약관 및 전자서약 미완료"><i class="fa-solid fa-file-excel"></i> 서약미동의</span>`;
-
-            const hasKakaoMsgScope = !!(data.kakaoAuth && data.kakaoAuth.hasTalkMessageScope);
-            let kakaoBadge = hasKakaoMsgScope
-                ? `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#fee500; background:rgba(254,229,0,0.12); border:1px solid rgba(254,229,0,0.35); display:inline-flex; align-items:center; gap:3px;" title="카카오톡 알림 메시지 동의 완료"><i class="fa-solid fa-comment"></i> 카톡동의</span>`
-                : (isKakaoUser ? `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:600; color:#94a3b8; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); display:inline-flex; align-items:center; gap:3px;" title="카카오톡 알림 메시지 권한 미동의"><i class="fa-solid fa-comment-slash"></i> 카톡미동의</span>` : '');
-
+            // 3. Purchase Badge (Compact single-line)
             let purchaseBadge = '';
             if (isUserAdmin || isPermanent) {
-                purchaseBadge = `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); display:inline-flex; align-items:center; gap:3px;"><i class="fa-solid fa-infinity"></i> 평생면제</span>`;
-            } else if (pStatus.hasPurchased) {
-                purchaseBadge = `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#10b981; background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.35); display:inline-flex; align-items:center; gap:3px;">✅ ${latestRound}회 구매(${pStatus.targetRoundGameCount}G)</span>`;
-            } else if (pStatus.isGracePeriod) {
-                purchaseBadge = `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:700; color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.3); display:inline-flex; align-items:center; gap:3px;">첫주 유예</span>`;
+                purchaseBadge = `<span style="font-size:0.68rem; font-weight:800; padding:1px 5px; border-radius:4px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); white-space:nowrap;">💎평생</span>`;
+            } else if (pStatus && pStatus.hasPurchased) {
+                purchaseBadge = `<span style="font-size:0.68rem; font-weight:800; padding:1px 5px; border-radius:4px; background:rgba(16,185,129,0.15); color:#34d399; border:1px solid rgba(16,185,129,0.35); white-space:nowrap;">🍀${pStatus.targetRoundGameCount || 5}G</span>`;
+            } else if (pStatus && pStatus.isGracePeriod) {
+                purchaseBadge = `<span style="font-size:0.68rem; font-weight:800; padding:1px 5px; border-radius:4px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); white-space:nowrap;">유예</span>`;
             } else {
-                purchaseBadge = `<span class="user-chip-badge" style="font-size:0.68rem; padding:2px 5px; border-radius:5px; font-weight:800; color:#ef4444; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); display:inline-flex; align-items:center; gap:3px;">❌ ${latestRound}회 미구매</span>`;
+                purchaseBadge = `<span style="font-size:0.68rem; font-weight:800; padding:1px 5px; border-radius:4px; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.35); white-space:nowrap;">❌미구매</span>`;
             }
 
-            // 3. Identification & Metadata
+            // 4. Pledge Status Badge
+            const hasPledgeSigned = !!(data.agreementDoc && data.agreementDoc.signatureDataUrl);
+            const pledgeBadge = hasPledgeSigned
+                ? `<span style="font-size:0.75rem; color:#34d399;" title="전자 서약 완료">✍️</span>`
+                : `<span style="font-size:0.66rem; font-weight:900; padding:1px 4px; border-radius:4px; background:rgba(239,68,68,0.22); color:#fca5a5; border:1px solid rgba(239,68,68,0.45); white-space:nowrap;" title="필수 약관 및 전자 서약 미완료">⚠️미서약</span>`;
+
             const realName = data.realName && data.realName !== userId ? data.realName : '';
-            const joinDate = data.createdAt ? data.createdAt.slice(0, 10) : '-';
-            const lastRoundText = pStatus.lastPurchasedRound > 0 ? `제 ${pStatus.lastPurchasedRound}회` : (isPermanent ? '무제한' : '없음');
-            const reasonText = data.suspensionReason ? `<div style="font-size:0.73rem; color:#f87171; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); padding:4px 8px; border-radius:6px; margin-top:2px; display:flex; align-items:center; gap:5px;"><i class="fa-solid fa-circle-info"></i> 정지사유: <strong>${data.suspensionReason}</strong></div>` : '';
-
-            // Card highlight theme & borders
-            let cardCustomClass = 'user-card-item';
-            let cardBorder = 'rgba(255, 255, 255, 0.1)';
-            let cardBg = 'linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.96) 100%)';
-
-            if (isUserAdmin) {
-                cardCustomClass += ' is-admin-card';
-                cardBorder = 'rgba(245, 158, 11, 0.5)';
-                cardBg = 'linear-gradient(135deg, rgba(40, 35, 20, 0.9) 0%, rgba(15, 23, 42, 0.96) 100%)';
-            } else if (isPermanent) {
-                cardCustomClass += ' is-permanent-card';
-                cardBorder = 'rgba(56, 189, 248, 0.45)';
-            } else if (status !== 'active') {
-                cardCustomClass += ' is-suspended-card';
-                cardBorder = 'rgba(239, 68, 68, 0.45)';
-                cardBg = 'linear-gradient(135deg, rgba(40, 20, 25, 0.9) 0%, rgba(15, 23, 42, 0.96) 100%)';
-            }
+            const phoneDisplay = data.phoneNumber || '연락처 미등록';
 
             html += `
-            <div class="${cardCustomClass}" style="background:${cardBg}; border:1.5px solid ${cardBorder}; border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; justify-content:space-between; gap:8px; box-shadow:0 4px 16px rgba(0,0,0,0.35); box-sizing:border-box;">
+            <div onclick="window.openUserDetailDrawer(decodeURIComponent('${safeUserId}'))" class="user-row-item" style="display:flex; align-items:center; justify-content:space-between; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.06); cursor:pointer; transition:background 0.15s; word-break:keep-all; min-height:42px; box-sizing:border-box;">
                 
-                <!-- 1. Header: Avatar + User ID + Real Name + Role Badges -->
-                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
-                    <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-                        ${avatarHtml}
-                        <div style="display:flex; flex-direction:column; min-width:0;">
-                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                                <span style="font-weight:900; color:#f8fafc; font-size:1.02rem; letter-spacing:0.2px;">${userId}</span>
-                                ${realName ? `<span style="font-size:0.85rem; color:#67e8f9; font-weight:800; background:rgba(6,182,212,0.15); border:1px solid rgba(6,182,212,0.35); padding:1px 6px; border-radius:5px;">👤 ${realName}</span>` : ''}
-                            </div>
-                            <div style="display:flex; align-items:center; gap:4px; margin-top:3px; flex-wrap:wrap;">
-                                ${adminBadge}
-                                ${statusBadge}
-                            </div>
+                <!-- Left: Status Dot + Avatar + ID & RealName + Phone (Single line truncation) -->
+                <div style="display:flex; align-items:center; gap:7px; min-width:0; flex:1;">
+                    <span style="width:7px; height:7px; border-radius:50%; background:${statusDotBg}; flex-shrink:0;" title="계정 상태"></span>
+                    ${avatarHtml}
+                    <div style="min-width:0; flex:1; display:flex; flex-direction:column; justify-content:center;">
+                        <div style="display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            <span style="font-weight:800; color:#f8fafc; font-size:0.83rem; letter-spacing:-0.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${userId}</span>
+                            ${realName ? `<span style="font-size:0.74rem; color:#94a3b8; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">(${realName})</span>` : ''}
+                        </div>
+                        <div style="font-size:0.68rem; color:#64748b; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px;">
+                            ${phoneDisplay}
                         </div>
                     </div>
                 </div>
 
-                <!-- 2. Badges Chip Row -->
-                <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap; padding-top:2px;">
-                    ${lottoPermBadge}
-                    ${totoPermBadge}
-                    ${pledgeBadge}
-                    ${kakaoBadge}
-                    ${purchaseBadge}
-                </div>
-
-                <!-- 3. 2-Column Metadata Box -->
-                <div class="user-meta-box" style="background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.06); border-radius:8px; padding:8px 10px; display:grid; grid-template-columns:1fr 1fr; gap:5px 10px; font-size:0.75rem; color:#cbd5e1; box-sizing:border-box;">
-                    <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="연락처"><i class="fa-solid fa-phone" style="color:#60a5fa; width:14px; flex-shrink:0;"></i> <span style="color:#e2e8f0; font-weight:600; overflow:hidden; text-overflow:ellipsis;">${data.phoneNumber || '연락처 미등록'}</span></div>
-                    <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="가입일자"><i class="fa-regular fa-calendar" style="color:#a78bfa; width:14px; flex-shrink:0;"></i> <span>가입: <strong style="color:#e2e8f0;">${joinDate}</strong></span></div>
-                    <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="최근 실구매 회차"><i class="fa-solid fa-receipt" style="color:#34d399; width:14px; flex-shrink:0;"></i> <span>최근: <strong style="color:#e2e8f0;">${lastRoundText}</strong></span></div>
-                    <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="이번 회차 등록 게임 수"><i class="fa-solid fa-ticket" style="color:#fbbf24; width:14px; flex-shrink:0;"></i> <span>금회: <strong style="color:#e2e8f0;">${pStatus.targetRoundGameCount || 0}G</strong></span></div>
-                </div>
-                ${reasonText}
-
-                <!-- 4. 2-Tier Action Buttons -->
-                <div style="display:flex; flex-direction:column; gap:5px; margin-top:2px;">
-                    <!-- Tier 1: Primary Action Button -->
-                    <button type="button" onclick="window.openEditUserModal(decodeURIComponent('${safeUserId}'))" title="회원 정보 수정 및 권한/상태/옵션 종합 설정" class="user-action-btn-primary" style="width:100%; height:34px; background:linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color:#ffffff !important; border:1px solid rgba(96,165,250,0.45); border-radius:7px; font-size:0.8rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 2px 8px rgba(37,99,235,0.35); box-sizing:border-box;">
-                        <i class="fa-solid fa-sliders"></i> 회원 정보 &amp; 옵션 설정
-                    </button>
-                    <!-- Tier 2: Secondary Quick Actions -->
-                    <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                        <button type="button" onclick="window.viewUserAgreementDoc(decodeURIComponent('${safeUserId}'))" title="가입 전자 서명 서약서 열람" class="user-action-btn-sub" style="flex:1; min-width:62px; height:30px; background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); color:#fbbf24; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-file-signature"></i> 서약서
-                        </button>
-                        <button type="button" onclick="window.sendUserWinningKakaoMessage(decodeURIComponent('${safeUserId}'), ${latestRound})" title="제 ${latestRound}회 실구매 당첨 리포트 카카오톡 전송" class="user-action-btn-sub" style="flex:1; min-width:68px; height:30px; background:rgba(254, 229, 0, 0.12); border:1px solid rgba(254, 229, 0, 0.4); color:#fee500; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-comment-dots"></i> 당첨알림
-                        </button>
-                        <button type="button" onclick="window.sendUserUnsentWinningReports(decodeURIComponent('${safeUserId}'))" title="가입 후 미전송된 모든 실구매 당첨건 소급 발송" class="user-action-btn-sub" style="flex:1; min-width:70px; height:30px; background:rgba(167, 139, 250, 0.12); border:1px solid rgba(167, 139, 250, 0.4); color:#c4b5fd; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-box-archive"></i> 미전송발송
-                        </button>
-                        <button type="button" onclick="window.openSnapshotAuditModal && window.openSnapshotAuditModal(decodeURIComponent('${safeUserId}'))" title="이 회원의 추천번호 및 실구매 스냅샷 상태 상세 확인" class="user-action-btn-sub" style="flex:1; min-width:62px; height:30px; background:rgba(16, 185, 129, 0.15); border:1px solid rgba(16, 185, 129, 0.45); color:#34d399; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                            <i class="fa-solid fa-server"></i> 스냅샷
-                        </button>
-                        ${(function() {
-                            let curAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
-                            if (typeof curAuth === 'string' && curAuth.startsWith('{')) {
-                                try { curAuth = JSON.parse(curAuth).userid || curAuth; } catch(e) {}
-                            }
-                            return (curAuth || '').toLowerCase().trim() === 'master' ? `
-                            <button type="button" onclick="window.deleteUser(decodeURIComponent('${safeUserId}'))" title="계정을 휴지통으로 이동" class="user-action-btn-sub" style="flex:0.8; min-width:54px; height:30px; background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.45); color:#fca5a5; border-radius:6px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:3px; box-sizing:border-box;">
-                                <i class="fa-solid fa-trash-can"></i> 삭제
-                            </button>
-                            ` : '';
-                        })()}
+                <!-- Right: Purchase Badge + Pledge Badge + Arrow (Strictly No Break) -->
+                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                    <div style="display:flex; align-items:center; gap:4px;">
+                        ${purchaseBadge}
+                        ${pledgeBadge}
                     </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size:0.68rem; color:#475569; margin-left:1px;"></i>
                 </div>
+
             </div>
             `;
         });
@@ -4431,7 +4320,256 @@ function setupAuthEvents(initFirebaseAndData) {
         userListContainer.innerHTML = html;
     }
 
-    async function loadUserList() {
+    // ========================================================
+    // 🗂️ User Detail Slide Drawer Handlers (Mobile Bottomsheet & Desktop Drawer)
+    // ========================================================
+    window.openUserDetailDrawer = async function(userId) {
+        if (!userId) return;
+        window.currentDrawerUserId = userId;
+
+        // 1. Locate user data from cache or Firestore
+        let item = (__cachedUsersWithStatus || []).find(u => u.userId === userId);
+        if (!item && window.db) {
+            try {
+                const doc = await window.db.collection('lotto_users').doc(userId).get();
+                if (doc.exists) {
+                    const data = doc.data() || {};
+                    const isUserAdmin = !!(data.isAdmin === true || data.role === 'admin' || userId === 'master' || userId === 'admin');
+                    const isPermanent = !!(data.isPermanent === true || data.userType === 'permanent' || isUserAdmin);
+                    const allowLotto = isUserAdmin || data.allowLotto !== false;
+                    const allowToto = isUserAdmin || data.allowToto !== false;
+                    const status = data.status || 'active';
+                    item = { userId, data, allowLotto, allowToto, isUserAdmin, isPermanent, status };
+                }
+            } catch(e) {
+                console.warn('[openUserDetailDrawer Fetch Error]', e);
+            }
+        }
+
+        if (!item) {
+            alert('사용자 정보를 찾을 수 없습니다.');
+            return;
+        }
+
+        const { data, allowLotto, allowToto, isUserAdmin, isPermanent, status } = item;
+        const isKakaoUser = userId.startsWith('kakao_') || !!(data.kakaoAuth && data.kakaoAuth.kakaoId);
+        const isMaster = (userId || '').toLowerCase().trim() === 'master';
+
+        // 2. Populate Header Elements
+        const elTitle = document.getElementById('drawerUserIdTitle');
+        const elSubTitle = document.getElementById('drawerSubTitle');
+        const elStatusChip = document.getElementById('drawerStatusChip');
+        const elAvatar = document.getElementById('drawerAvatarBadge');
+        const elProvider = document.getElementById('drawerAuthProviderText');
+
+        if (elTitle) elTitle.textContent = userId;
+        if (elSubTitle) elSubTitle.textContent = `${data.realName || userId} · ${data.phoneNumber || '연락처 미등록'}`;
+
+        if (elAvatar) {
+            if (isKakaoUser) {
+                elAvatar.style.background = '#fee500';
+                elAvatar.style.color = '#191919';
+                elAvatar.innerHTML = '<i class="fa-solid fa-comment"></i>';
+            } else if (isMaster || isUserAdmin) {
+                elAvatar.style.background = 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
+                elAvatar.style.color = '#0f172a';
+                elAvatar.innerHTML = '<i class="fa-solid fa-crown"></i>';
+            } else {
+                elAvatar.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+                elAvatar.style.color = '#ffffff';
+                elAvatar.innerHTML = '<i class="fa-solid fa-user"></i>';
+            }
+        }
+
+        if (elStatusChip) {
+            if (isMaster || isUserAdmin || isPermanent) {
+                elStatusChip.textContent = '💎 영구/관리자';
+                elStatusChip.style.background = 'rgba(56,189,248,0.18)';
+                elStatusChip.style.color = '#38bdf8';
+                elStatusChip.style.borderColor = 'rgba(56,189,248,0.4)';
+            } else if (status === 'active') {
+                elStatusChip.textContent = '🟢 정상';
+                elStatusChip.style.background = 'rgba(16,185,129,0.18)';
+                elStatusChip.style.color = '#34d399';
+                elStatusChip.style.borderColor = 'rgba(16,185,129,0.4)';
+            } else if (status === 'suspended_nopurchase') {
+                elStatusChip.textContent = '🟡 미구매정지';
+                elStatusChip.style.background = 'rgba(245,158,11,0.18)';
+                elStatusChip.style.color = '#fbbf24';
+                elStatusChip.style.borderColor = 'rgba(245,158,11,0.4)';
+            } else {
+                elStatusChip.textContent = '🔴 수동정지';
+                elStatusChip.style.background = 'rgba(239,68,68,0.18)';
+                elStatusChip.style.color = '#f87171';
+                elStatusChip.style.borderColor = 'rgba(239,68,68,0.4)';
+            }
+        }
+
+        if (elProvider) {
+            elProvider.textContent = isKakaoUser ? '카카오 간편가입' : '일반 아이디 가입';
+        }
+
+        // 3. Populate Form Fields
+        const inputRealName = document.getElementById('detailRealName');
+        const inputPhone = document.getElementById('detailPhone');
+        const selectStatus = document.getElementById('detailStatusSelect');
+        const toggleLotto = document.getElementById('detailToggleAllowLotto');
+        const toggleToto = document.getElementById('detailToggleAllowToto');
+        const togglePerm = document.getElementById('detailTogglePermanent');
+        const toggleAdmin = document.getElementById('detailToggleAdmin');
+
+        if (inputRealName) inputRealName.value = data.realName || '';
+        if (inputPhone) inputPhone.value = data.phoneNumber || '';
+        if (selectStatus) selectStatus.value = status || 'active';
+        if (toggleLotto) toggleLotto.checked = allowLotto !== false;
+        if (toggleToto) toggleToto.checked = allowToto !== false;
+        if (togglePerm) togglePerm.checked = !!isPermanent;
+        if (toggleAdmin) toggleAdmin.checked = !!isUserAdmin;
+
+        // 4. Attach Action Tool Buttons
+        const btnAgreement = document.getElementById('btnDrawerAgreementDoc');
+        const btnSnapshot = document.getElementById('btnDrawerSnapshotAudit');
+        const btnResetPw = document.getElementById('btnDrawerResetPw');
+        const btnDelete = document.getElementById('btnDrawerDeleteUser');
+
+        if (btnAgreement) {
+            btnAgreement.onclick = () => window.viewUserAgreementDoc && window.viewUserAgreementDoc(userId);
+        }
+        if (btnSnapshot) {
+            btnSnapshot.onclick = () => window.openSnapshotAuditModal && window.openSnapshotAuditModal(userId);
+        }
+        if (btnResetPw) {
+            btnResetPw.onclick = () => window.resetUserPassword && window.resetUserPassword(userId);
+        }
+        if (btnDelete) {
+            btnDelete.onclick = () => {
+                window.closeUserDetailDrawer();
+                window.deleteUser && window.deleteUser(userId);
+            };
+        }
+
+        // 5. Open Drawer
+        const backdrop = document.getElementById('userDetailDrawerBackdrop');
+        if (backdrop) backdrop.style.display = 'flex';
+    };
+
+    window.closeUserDetailDrawer = function(e) {
+        if (e && e.target !== e.currentTarget && e.currentTarget !== document.getElementById('userDetailDrawerBackdrop')) return;
+        const backdrop = document.getElementById('userDetailDrawerBackdrop');
+        if (backdrop) backdrop.style.display = 'none';
+        window.currentDrawerUserId = null;
+    };
+
+    window.saveUserDetail = async function() {
+        const userId = window.currentDrawerUserId;
+        if (!userId || !window.db) return;
+
+        const inputRealName = document.getElementById('detailRealName');
+        const inputPhone = document.getElementById('detailPhone');
+        const selectStatus = document.getElementById('detailStatusSelect');
+        const toggleLotto = document.getElementById('detailToggleAllowLotto');
+        const toggleToto = document.getElementById('detailToggleAllowToto');
+        const togglePerm = document.getElementById('detailTogglePermanent');
+        const toggleAdmin = document.getElementById('detailToggleAdmin');
+        const btnSave = document.getElementById('btnSaveUserDetail');
+
+        const realName = inputRealName ? inputRealName.value.trim() : '';
+        const phone = inputPhone ? inputPhone.value.trim() : '';
+        const status = selectStatus ? selectStatus.value : 'active';
+        const allowLotto = toggleLotto ? toggleLotto.checked : true;
+        const allowToto = toggleToto ? toggleToto.checked : true;
+        const isPermanent = togglePerm ? togglePerm.checked : false;
+        const isAdmin = toggleAdmin ? toggleAdmin.checked : false;
+
+        try {
+            if (btnSave) {
+                btnSave.disabled = true;
+                btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 저장 중...';
+            }
+
+            const updateData = {
+                realName: realName || userId,
+                phoneNumber: phone,
+                status: status,
+                allowLotto: allowLotto,
+                allowToto: allowToto,
+                isPermanent: isPermanent,
+                isAdmin: isAdmin,
+                role: isAdmin ? 'admin' : (isPermanent ? 'permanent' : 'regular'),
+                userType: isPermanent ? 'permanent' : 'regular',
+                updatedAt: new Date().toISOString()
+            };
+
+            await window.db.collection('lotto_users').doc(userId).set(updateData, { merge: true });
+
+            // Update local memory cache
+            setIsPermanentCache(userId, isPermanent || isAdmin);
+            setUserPermissionsCache(userId, { allowLotto, allowToto });
+
+            if (__cachedUsersWithStatus) {
+                const idx = __cachedUsersWithStatus.findIndex(u => u.userId === userId);
+                if (idx !== -1) {
+                    __cachedUsersWithStatus[idx].data = { ...__cachedUsersWithStatus[idx].data, ...updateData };
+                    __cachedUsersWithStatus[idx].allowLotto = allowLotto;
+                    __cachedUsersWithStatus[idx].allowToto = allowToto;
+                    __cachedUsersWithStatus[idx].isPermanent = isPermanent || isAdmin;
+                    __cachedUsersWithStatus[idx].isUserAdmin = isAdmin;
+                    __cachedUsersWithStatus[idx].status = status;
+                    __cachedUsersWithStatus[idx].isSuspended = (status === 'suspended' || status === 'suspended_nopurchase');
+                    __cachedUsersWithStatus[idx].isNoPurchaseSuspended = (status === 'suspended_nopurchase');
+                }
+                try {
+                    localStorage.setItem('lotto_users_with_status_cache', JSON.stringify(__cachedUsersWithStatus));
+                } catch(e) {}
+            }
+
+            window.closeUserDetailDrawer();
+            window.filterUserList();
+
+            if (typeof showToast === 'function') {
+                showToast(`✅ [${userId}] 회원 정보와 권한이 성공적으로 저장되었습니다.`);
+            } else {
+                alert(`✅ [${userId}] 회원 정보와 권한이 저장되었습니다.`);
+            }
+
+        } catch(err) {
+            console.error('[saveUserDetail Error]', err);
+            alert('회원 정보 저장 중 오류가 발생했습니다: ' + err.message);
+        } finally {
+            if (btnSave) {
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i class="fa-solid fa-check"></i> 변경사항 저장';
+            }
+        }
+    };
+
+    window.resetUserPassword = async function(userId) {
+        if (!userId || !window.db) return;
+        const newPw = prompt(`[${userId}] 회원의 새 비밀번호를 입력하세요 (기본 추천: 0000):`, '0000');
+        if (newPw === null) return;
+        if (!newPw.trim()) {
+            alert('비밀번호를 1자 이상 입력해 주세요.');
+            return;
+        }
+
+        try {
+            await window.db.collection('lotto_users').doc(userId).set({
+                password: newPw.trim(),
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+
+            if (typeof showToast === 'function') {
+                showToast(`🔑 [${userId}] 회원의 비밀번호가 '${newPw.trim()}'(으)로 변경되었습니다.`);
+            } else {
+                alert(`🔑 [${userId}] 회원의 비밀번호가 '${newPw.trim()}'(으)로 변경되었습니다.`);
+            }
+        } catch(err) {
+            console.error('[resetUserPassword Error]', err);
+            alert('비밀번호 변경 중 오류가 발생했습니다: ' + err.message);
+        }
+    };
+
+    async function loadUserList(forceRefresh = false) {
         const userListContainer = document.getElementById('userListContainer');
         const summaryBadge = document.getElementById('userCountSummaryBadge');
         const trashBadge = document.getElementById('userTrashCountBadge');
@@ -4453,42 +4591,75 @@ function setupAuthEvents(initFirebaseAndData) {
             userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#ef4444;">🔒 관리자 권한이 필요합니다.</div>`;
             return;
         }
-        
-        userListContainer.innerHTML = `<div style="text-align:center; padding: 24px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> 사용자 및 실구매 데이터 동기화 중...</div>`;
-        
+
+        // ⚡ 1. SWR Instant Render from in-memory cache or localStorage cache (0ms perceived time)
+        if (!__cachedUsersWithStatus || __cachedUsersWithStatus.length === 0) {
+            try {
+                const stored = localStorage.getItem('lotto_users_with_status_cache');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        __cachedUsersWithStatus = parsed;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        if (__cachedUsersWithStatus && __cachedUsersWithStatus.length > 0 && !forceRefresh) {
+            // Render immediately with cached data
+            window.filterUserList();
+            if (summaryBadge && !summaryBadge.innerHTML.includes('fa-arrows-rotate')) {
+                summaryBadge.innerHTML += ` <span style="font-size:0.7rem; color:#93c5fd;"><i class="fa-solid fa-arrows-rotate fa-spin"></i></span>`;
+            }
+        } else {
+            userListContainer.innerHTML = `<div style="text-align:center; padding: 24px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> 사용자 및 실구매 데이터 동기화 중...</div>`;
+        }
+
+        // ⚡ 2. Fast Parallel Fetch with Timeout Protection (Only lightweight users + purchases)
         try {
-            const [usersSnapshot, purchasesSnapshot, agreementsSnapshot] = await Promise.all([
-                window.db.collection('lotto_users').get(),
-                window.db.collection('lotto_purchases').get().catch(err => {
-                    console.warn('[Purchases Batch Fetch Error]', err);
-                    return { docs: [], forEach: () => {} };
-                }),
-                window.db.collection('lotto_agreements').get().catch(err => {
-                    console.warn('[Agreements Batch Fetch Error]', err);
-                    return { docs: [], forEach: () => {} };
-                })
+            const fetchUsersPromise = window.db.collection('lotto_users').get();
+            const fetchPurchasesPromise = window.db.collection('lotto_purchases').get().catch(err => {
+                console.warn('[Purchases Batch Fetch Error]', err);
+                return { docs: [], forEach: () => {} };
+            });
+
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 4000));
+
+            const raceResult = await Promise.race([
+                Promise.all([fetchUsersPromise, fetchPurchasesPromise]),
+                timeoutPromise
             ]);
+
+            const usersSnapshot = (raceResult && raceResult[0]) ? raceResult[0] : null;
+            const purchasesSnapshot = (raceResult && raceResult[1]) ? raceResult[1] : null;
+
+            if (!usersSnapshot) {
+                // Timeout fallback
+                if (__cachedUsersWithStatus && __cachedUsersWithStatus.length > 0) {
+                    window.filterUserList();
+                } else {
+                    userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#fbbf24;">⚠️ 데이터 동기화가 지연되고 있습니다. <button type="button" onclick="window.loadUserList(true)" style="margin-left:8px; background:rgba(59,130,246,0.2); border:1px solid #3b82f6; color:#93c5fd; padding:3px 8px; border-radius:5px; cursor:pointer;">재시도</button></div>`;
+                }
+                return;
+            }
 
             if (usersSnapshot.empty) {
                 __cachedUsersWithStatus = [];
                 userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b;">등록된 사용자가 없습니다.</div>`;
                 if (summaryBadge) summaryBadge.textContent = '총 0명';
                 if (trashBadge) trashBadge.textContent = '0';
+                try { localStorage.removeItem('lotto_users_with_status_cache'); } catch(e){}
                 return;
             }
 
-            // Create preloaded lookup maps (O(1) In-Memory Lookup)
+            // Create preloaded lookup map for purchases (O(1) Memory Lookup)
             const purchasesMap = new Map();
-            purchasesSnapshot.forEach(doc => {
-                purchasesMap.set((doc.id || '').toLowerCase().trim(), doc.data());
-                purchasesMap.set(doc.id, doc.data());
-            });
-
-            const agreementsMap = new Map();
-            agreementsSnapshot.forEach(doc => {
-                agreementsMap.set((doc.id || '').toLowerCase().trim(), doc.data());
-                agreementsMap.set(doc.id, doc.data());
-            });
+            if (purchasesSnapshot && typeof purchasesSnapshot.forEach === 'function') {
+                purchasesSnapshot.forEach(doc => {
+                    purchasesMap.set((doc.id || '').toLowerCase().trim(), doc.data());
+                    purchasesMap.set(doc.id, doc.data());
+                });
+            }
 
             const users = [];
             const existingUserIds = new Set();
@@ -4496,7 +4667,6 @@ function setupAuthEvents(initFirebaseAndData) {
                 const uIdClean = (doc.id || '').toLowerCase().trim();
                 // Ignore corrupt/garbage JSON string IDs or system metadata if any
                 if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'app_latest_version') {
-                    // asynchronously clean up in background
                     if (uIdClean !== 'app_latest_version') {
                         window.db.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
                         window.db.collection('lotto_agreements').doc(doc.id).delete().catch(console.warn);
@@ -4504,16 +4674,11 @@ function setupAuthEvents(initFirebaseAndData) {
                     }
                     return;
                 }
-                const docData = doc.data() || {};
-                // If embedded agreementDoc is missing, merge from agreements collection
-                if (!docData.agreementDoc && agreementsMap.has(uIdClean)) {
-                    docData.agreementDoc = agreementsMap.get(uIdClean);
-                }
-                users.push({ userId: doc.id, data: docData });
+                users.push({ userId: doc.id, data: doc.data() || {} });
                 existingUserIds.add(uIdClean);
             });
 
-            // Ensure master, wdy and baseline default users are present if missing
+            // Ensure baseline default users if missing
             const knownBaseline = (typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) ? DEFAULT_KNOWN_USERS : [];
             knownBaseline.forEach(defU => {
                 const defId = (defU.id || '').toLowerCase().trim();
@@ -4559,6 +4724,9 @@ function setupAuthEvents(initFirebaseAndData) {
             }));
 
             __cachedUsersWithStatus = usersWithStatus;
+            try {
+                localStorage.setItem('lotto_users_with_status_cache', JSON.stringify(usersWithStatus));
+            } catch(e) {}
 
             const activeUsers = usersWithStatus.filter(u => !u.isDeleted);
             const trashUsers = usersWithStatus.filter(u => u.isDeleted);
@@ -4599,7 +4767,9 @@ function setupAuthEvents(initFirebaseAndData) {
             window.filterUserList();
         } catch (error) {
             console.error(error);
-            userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#ef4444;">데이터를 불러오는 중 오류가 발생했습니다.</div>`;
+            if (!__cachedUsersWithStatus || __cachedUsersWithStatus.length === 0) {
+                userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#ef4444;">데이터를 불러오는 중 오류가 발생했습니다.</div>`;
+            }
         }
     }
     window.loadUserList = loadUserList;

@@ -1,23 +1,9 @@
 {
-  "version": "v2026.09.25.1035",
+  "version": "v2026.09.25.1051",
   "buildDate": "2026-09-25",
-  "description": "Fix user mgmt loading speed and enforce mandatory pledge agreement screen",
-  "buildTimestamp": "2026-09-25T10:35:38.089683",
+  "description": "Apply high-density user list and mobile detail drawer",
+  "buildTimestamp": "2026-09-25T10:51:47.721701",
   "buildHistory": [
-    {
-      "version": "v2026.09.23.1918",
-      "buildDate": "2026-09-23",
-      "buildTime": "19:18",
-      "buildTimestamp": "2026-09-23T19:18:23.177834",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.24.0011",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:11",
-      "buildTimestamp": "2026-09-24T00:11:36.025123",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0012",
       "buildDate": "2026-09-24",
@@ -353,7 +339,21 @@
       "buildTime": "10:35",
       "buildTimestamp": "2026-09-25T10:35:38.089683",
       "description": "Fix user mgmt loading speed and enforce mandatory pledge agreement screen"
+    },
+    {
+      "version": "v2026.09.25.1042",
+      "buildDate": "2026-09-25",
+      "buildTime": "10:42",
+      "buildTimestamp": "2026-09-25T10:42:26.855809",
+      "description": "Instant SWR caching and fast batch fetch for user management"
+    },
+    {
+      "version": "v2026.09.25.1051",
+      "buildDate": "2026-09-25",
+      "buildTime": "10:51",
+      "buildTimestamp": "2026-09-25T10:51:47.721701",
+      "description": "Apply high-density user list and mobile detail drawer"
     }
   ],
-  "buildTime": "10:35"
+  "buildTime": "10:51"
 }
