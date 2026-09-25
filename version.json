@@ -1,23 +1,9 @@
 {
-  "version": "v2026.09.25.1220",
+  "version": "v2026.09.25.1228",
   "buildDate": "2026-09-25",
-  "description": "Fix login gate lockout and enhance mobile auth resilience",
-  "buildTimestamp": "2026-09-25T12:20:14.978555",
+  "description": "Fix Kakao 1-sec instant login click responsiveness and universal scope fallback",
+  "buildTimestamp": "2026-09-25T12:28:18.117031",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0021",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:21",
-      "buildTimestamp": "2026-09-24T00:21:09.341060",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.24.0021.57",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:21",
-      "buildTimestamp": "2026-09-24T00:21:57.101170",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0022",
       "buildDate": "2026-09-24",
@@ -353,7 +339,21 @@
       "buildTime": "12:20",
       "buildTimestamp": "2026-09-25T12:20:14.978555",
       "description": "Fix login gate lockout and enhance mobile auth resilience"
+    },
+    {
+      "version": "v2026.09.25.1226",
+      "buildDate": "2026-09-25",
+      "buildTime": "12:26",
+      "buildTimestamp": "2026-09-25T12:26:14.144904",
+      "description": "Fix Kakao 1-sec login click handler and universal bootstrap executor"
+    },
+    {
+      "version": "v2026.09.25.1228",
+      "buildDate": "2026-09-25",
+      "buildTime": "12:28",
+      "buildTimestamp": "2026-09-25T12:28:18.117031",
+      "description": "Fix Kakao 1-sec instant login click responsiveness and universal scope fallback"
     }
   ],
-  "buildTime": "12:20"
+  "buildTime": "12:28"
 }
