@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.25.1238",
+  "version": "v2026.09.25.1451",
   "buildDate": "2026-09-25",
-  "description": "Fix Kakao instant login loop and OAuth redirect session persistence",
-  "buildTimestamp": "2026-09-25T12:38:56.386275",
+  "description": "Fix Kakao pop-up debounce, CORS proxy, and eliminate login loop",
+  "buildTimestamp": "2026-09-25T14:51:15.185995",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0032",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:32",
-      "buildTimestamp": "2026-09-24T00:32:48.325986",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0033",
       "buildDate": "2026-09-24",
@@ -353,7 +346,14 @@
       "buildTime": "12:38",
       "buildTimestamp": "2026-09-25T12:38:56.386275",
       "description": "Fix Kakao instant login loop and OAuth redirect session persistence"
+    },
+    {
+      "version": "v2026.09.25.1451",
+      "buildDate": "2026-09-25",
+      "buildTime": "14:51",
+      "buildTimestamp": "2026-09-25T14:51:15.185995",
+      "description": "Fix Kakao pop-up debounce, CORS proxy, and eliminate login loop"
     }
   ],
-  "buildTime": "12:38"
+  "buildTime": "14:51"
 }

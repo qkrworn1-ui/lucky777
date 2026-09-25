@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1238 - BUILD_DATE: 2026-09-25] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1451 - BUILD_DATE: 2026-09-25] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.25.1238)
+ * Lucky777 Smart Bundle (v2026.09.25.1451)
  */
 
 
@@ -2807,6 +2807,8 @@ function processKakaoLoginSuccess(res, authObj = {}) {
     }
 }
 
+let _lastKakaoClickTime = 0;
+
 async function handleKakaoAuthRedirectOnLoad() {
     if (typeof window === 'undefined' || typeof window.location === 'undefined') return false;
     const search = window.location.search;
@@ -2839,25 +2841,39 @@ async function handleKakaoAuthRedirectOnLoad() {
 
     try {
         initKakaoSdk();
-        const tokenResp = await fetch('https://kauth.kakao.com/oauth/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
-            body: new URLSearchParams({
-                grant_type: 'authorization_code',
-                client_id: KAKAO_JS_KEY,
-                redirect_uri: window.location.origin + window.location.pathname,
-                code: code
-            })
-        });
+        let tokenData = null;
 
-        if (!tokenResp.ok) {
-            const errTxt = await tokenResp.text();
-            console.error('[Kakao OAuth Token Exchange Fail]', errTxt);
-            _setKakaoButtonsLoading(false);
-            return false;
+        // 1. Try Netlify Proxy Function first
+        try {
+            const proxyResp = await fetch(`/.netlify/functions/kakao-token?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(window.location.origin + window.location.pathname)}`);
+            if (proxyResp.ok) {
+                tokenData = await proxyResp.json();
+            }
+        } catch(e) {
+            console.warn('[Kakao Proxy Fetch Notice]', e);
         }
 
-        const tokenData = await tokenResp.json();
+        // 2. Direct fetch fallback
+        if (!tokenData || !tokenData.access_token) {
+            try {
+                const tokenResp = await fetch('https://kauth.kakao.com/oauth/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+                    body: new URLSearchParams({
+                        grant_type: 'authorization_code',
+                        client_id: KAKAO_JS_KEY,
+                        redirect_uri: window.location.origin + window.location.pathname,
+                        code: code
+                    })
+                });
+                if (tokenResp.ok) {
+                    tokenData = await tokenResp.json();
+                }
+            } catch(e) {
+                console.warn('[Kakao Direct Token Fetch Notice]', e);
+            }
+        }
+
         if (tokenData && tokenData.access_token) {
             if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.setAccessToken === 'function') {
                 window.Kakao.Auth.setAccessToken(tokenData.access_token);
@@ -2903,15 +2919,37 @@ async function handleKakaoAuthRedirectOnLoad() {
     return false;
 }
 
-function loginWithKakao() {
-    console.log('[Kakao] Login button clicked');
+function loginWithKakao(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (e && e.stopPropagation) e.stopPropagation();
+
+    const now = Date.now();
+    if (now - _lastKakaoClickTime < 2000 || _isKakaoLoginInProgress) {
+        console.log('[Kakao] Click debounced (too fast or already in progress)');
+        return;
+    }
+    _lastKakaoClickTime = now;
+    _isKakaoLoginInProgress = true;
+    _setKakaoButtonsLoading(true);
+
+    const unlockTimer = setTimeout(() => {
+        _isKakaoLoginInProgress = false;
+        _setKakaoButtonsLoading(false);
+    }, 6000);
+
+    const finishLogin = () => {
+        clearTimeout(unlockTimer);
+        _isKakaoLoginInProgress = false;
+        _setKakaoButtonsLoading(false);
+    };
 
     // 1. Ensure Kakao SDK is available and initialized immediately
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return finishLogin();
 
     initKakaoSdk();
 
     if (!window.Kakao) {
+        finishLogin();
         alert('💬 카카오 로그인 모듈을 불러오는 중입니다. 1초 후 다시 버튼을 눌러주세요.');
         return;
     }
@@ -2924,23 +2962,6 @@ function loginWithKakao() {
         }
     }
 
-    if (_isKakaoLoginInProgress) {
-        console.log('[Kakao] Previous login in progress, resetting state...');
-    }
-    _isKakaoLoginInProgress = true;
-    _setKakaoButtonsLoading(true);
-
-    const unlockTimer = setTimeout(() => {
-        _isKakaoLoginInProgress = false;
-        _setKakaoButtonsLoading(false);
-    }, 5000);
-
-    const finishLogin = () => {
-        clearTimeout(unlockTimer);
-        _isKakaoLoginInProgress = false;
-        _setKakaoButtonsLoading(false);
-    };
-
     // Clean any ?logout= query param
     try {
         if (window.location.search && window.location.search.includes('logout=')) {
@@ -2949,14 +2970,10 @@ function loginWithKakao() {
         }
     } catch(e) {}
 
-    const redirectUri = window.location.origin + window.location.pathname;
-
     // Synchronous execution inside user gesture
     try {
         const loginOptions = {
             persistAccessToken: true,
-            throughTalk: false, // Clean universal web modal prevents OS deep-link dropping
-            scope: 'profile_nickname,profile_image',
             success: function(authObj) {
                 console.log('[Kakao] Auth token granted, requesting profile...');
                 finishLogin();
@@ -2975,34 +2992,25 @@ function loginWithKakao() {
                 console.error('[Kakao Auth Error]', err);
                 finishLogin();
                 const errStr = JSON.stringify(err || {});
+                const desc = (err && (err.error_description || err.error || err.msg)) || '';
 
                 if (errStr.includes('KOE006') || errStr.includes('domain') || errStr.includes('Platform')) {
                     alert('⚠️ [카카오 도메인 미등록 안내]\n\n카카오 디벨로퍼스(developers.kakao.com)의\n[플랫폼] > [Web]에 현재 사이트 주소(' + window.location.origin + ')를 등록해 주세요!');
                     return;
                 }
 
-                // Fallback to authorize redirect if login popup failed/blocked on mobile
-                if (window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function') {
-                    console.log('[Kakao] Popup failed/blocked, falling back to authorize redirect...');
-                    window.Kakao.Auth.authorize({
-                        redirectUri: redirectUri,
-                        scope: 'profile_nickname,profile_image'
-                    });
+                if (errStr.includes('window_closed') || desc.includes('closed') || desc.includes('cancel')) {
+                    console.log('[Kakao] User closed login popup or cancelled');
                     return;
                 }
 
-                alert('⚠️ 카카오 로그인 안내: ' + (err.error_description || err.error || errStr));
+                alert('⚠️ 카카오 로그인 안내: ' + (desc || errStr));
             }
         };
 
-        // Standard Login
+        // Standard Pop-up Login
         if (window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
             window.Kakao.Auth.login(loginOptions);
-        } else if (window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function') {
-            window.Kakao.Auth.authorize({
-                redirectUri: redirectUri,
-                scope: 'profile_nickname,profile_image'
-            });
         } else {
             finishLogin();
             alert('⚠️ 카카오 SDK 로딩 실패: 잠시 후 다시 시도해 주세요.');
@@ -3010,14 +3018,7 @@ function loginWithKakao() {
     } catch (execErr) {
         finishLogin();
         console.error('[Kakao Exec Error]', execErr);
-        if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function') {
-            window.Kakao.Auth.authorize({
-                redirectUri: redirectUri,
-                scope: 'profile_nickname,profile_image'
-            });
-        } else {
-            alert('카카오 로그인 실행 오류: ' + execErr.message);
-        }
+        alert('카카오 로그인 실행 오류: ' + execErr.message);
     }
 }
 
