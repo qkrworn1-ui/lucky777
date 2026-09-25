@@ -1,23 +1,9 @@
 {
-  "version": "v2026.09.25.1101",
+  "version": "v2026.09.25.1118",
   "buildDate": "2026-09-25",
-  "description": "Apply A-type physical lottery ticket pass design with default collapsed state in confirmed purchases tab",
-  "buildTimestamp": "2026-09-25T11:01:43.654433",
+  "description": "Apply Option A ultra-compact ranked matrix for algorithm winning status view",
+  "buildTimestamp": "2026-09-25T11:18:45.414674",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0012.49",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:12",
-      "buildTimestamp": "2026-09-24T00:12:49.261624",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.24.0013",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:13",
-      "buildTimestamp": "2026-09-24T00:13:20.328539",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0016",
       "buildDate": "2026-09-24",
@@ -353,7 +339,21 @@
       "buildTime": "11:01",
       "buildTimestamp": "2026-09-25T11:01:43.654433",
       "description": "Apply A-type physical lottery ticket pass design with default collapsed state in confirmed purchases tab"
+    },
+    {
+      "version": "v2026.09.25.1110",
+      "buildDate": "2026-09-25",
+      "buildTime": "11:10",
+      "buildTimestamp": "2026-09-25T11:10:15.859263",
+      "description": "Fix user management sync delay and add zero-delay baseline fallback"
+    },
+    {
+      "version": "v2026.09.25.1118",
+      "buildDate": "2026-09-25",
+      "buildTime": "11:18",
+      "buildTimestamp": "2026-09-25T11:18:45.414674",
+      "description": "Apply Option A ultra-compact ranked matrix for algorithm winning status view"
     }
   ],
-  "buildTime": "11:01"
+  "buildTime": "11:18"
 }

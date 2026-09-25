@@ -3227,7 +3227,7 @@ export function setupAuthEvents(initFirebaseAndData) {
         const summaryBadge = document.getElementById('userCountSummaryBadge');
         const trashBadge = document.getElementById('userTrashCountBadge');
         const btnFilterTrash = document.getElementById('btnFilterTrash');
-        if (!window.db || !userListContainer) return;
+        if (!userListContainer) return;
 
         let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
         if (typeof authId === 'string' && authId.startsWith('{')) {
@@ -3245,7 +3245,22 @@ export function setupAuthEvents(initFirebaseAndData) {
             return;
         }
 
-        // ⚡ 1. SWR Instant Render from in-memory cache or localStorage cache (0ms perceived time)
+        // Helper to update summary badge
+        const updateSummaryDisplay = (isSyncing = false) => {
+            if (!summaryBadge || !__cachedUsersWithStatus) return;
+            const activeUsers = __cachedUsersWithStatus.filter(u => !u.isDeleted);
+            const trashUsers = __cachedUsersWithStatus.filter(u => u.isDeleted);
+            const purchasedCount = activeUsers.filter(u => u.pStatus && u.pStatus.hasPurchased).length;
+            const kakaoCount = activeUsers.filter(u => u.userId.startsWith('kakao_') || (u.data && u.data.kakaoAuth && u.data.kakaoAuth.hasTalkMessageScope)).length;
+            const trashText = (isMaster && trashUsers.length > 0) ? ` · <span style="color:#fca5a5; font-weight:700;"><i class="fa-solid fa-trash-can"></i> 휴지통 ${trashUsers.length}</span>` : '';
+            const syncIcon = isSyncing ? ` <span style="font-size:0.7rem; color:#93c5fd; margin-left:4px;"><i class="fa-solid fa-arrows-rotate fa-spin"></i></span>` : '';
+            summaryBadge.innerHTML = `총 <strong style="color:#fff;">${activeUsers.length}</strong>명 (실구매 ${purchasedCount} · 카카오 ${kakaoCount}${trashText})${syncIcon}`;
+            if (trashBadge) {
+                trashBadge.textContent = isMaster ? trashUsers.length : '0';
+            }
+        };
+
+        // ⚡ 1. SWR Instant Render from in-memory cache, localStorage, or DEFAULT_KNOWN_USERS (0ms)
         if (!__cachedUsersWithStatus || __cachedUsersWithStatus.length === 0) {
             try {
                 const stored = localStorage.getItem('lotto_users_with_status_cache');
@@ -3258,54 +3273,130 @@ export function setupAuthEvents(initFirebaseAndData) {
             } catch(e) {}
         }
 
-        if (__cachedUsersWithStatus && __cachedUsersWithStatus.length > 0 && !forceRefresh) {
-            // Render immediately with cached data
-            window.filterUserList();
-            if (summaryBadge && !summaryBadge.innerHTML.includes('fa-arrows-rotate')) {
-                summaryBadge.innerHTML += ` <span style="font-size:0.7rem; color:#93c5fd;"><i class="fa-solid fa-arrows-rotate fa-spin"></i></span>`;
+        // If still empty, fall back to localStorage lotto_all_users_list_cache or window.state.allRegisteredUsersList or DEFAULT_KNOWN_USERS
+        if (!__cachedUsersWithStatus || __cachedUsersWithStatus.length === 0) {
+            let fallbackList = [];
+            try {
+                const rawAll = localStorage.getItem('lotto_all_users_list_cache');
+                if (rawAll) {
+                    const parsed = JSON.parse(rawAll);
+                    if (Array.isArray(parsed) && parsed.length > 0) fallbackList = parsed;
+                }
+            } catch(e) {}
+
+            if (fallbackList.length === 0 && typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList) && window.state.allRegisteredUsersList.length > 0) {
+                fallbackList = window.state.allRegisteredUsersList;
             }
+
+            if (fallbackList.length === 0 && typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) {
+                fallbackList = DEFAULT_KNOWN_USERS;
+            }
+
+            if (fallbackList.length > 0) {
+                __cachedUsersWithStatus = fallbackList.map(u => {
+                    const uId = u.id || u.userId || '';
+                    const rName = u.realName || u.name || uId;
+                    const phone = u.phone || u.phoneNumber || '';
+                    const isUserAdmin = !!(u.isAdmin === true || u.role === 'admin' || uId.toLowerCase() === 'master' || uId.toLowerCase() === 'admin');
+                    const isPermanent = !!(u.isPermanent === true || u.userType === 'permanent' || isUserAdmin);
+                    const status = u.status || 'active';
+                    const isDeleted = !!(u.isDeleted || status === 'trash');
+                    return {
+                        userId: uId,
+                        data: {
+                            userId: uId,
+                            name: rName,
+                            realName: rName,
+                            phoneNumber: phone,
+                            isAdmin: isUserAdmin,
+                            isPermanent: isPermanent,
+                            userType: u.userType || (isPermanent ? 'permanent' : 'regular'),
+                            status: status,
+                            createdAt: u.createdAt || null,
+                            allowLotto: u.allowLotto !== false,
+                            allowToto: u.allowToto !== false,
+                            isDeleted: isDeleted
+                        },
+                        pStatus: { hasPurchased: false },
+                        allowLotto: u.allowLotto !== false,
+                        allowToto: u.allowToto !== false,
+                        isUserAdmin,
+                        isPermanent,
+                        isSuspended: (status === 'suspended' || status === 'suspended_nopurchase'),
+                        isNoPurchaseSuspended: (status === 'suspended_nopurchase'),
+                        isDeleted,
+                        deletedAt: u.deletedAt || null,
+                        status
+                    };
+                });
+            }
+        }
+
+        // Render immediately if we have data
+        if (__cachedUsersWithStatus && __cachedUsersWithStatus.length > 0) {
+            window.filterUserList();
+            updateSummaryDisplay(true);
         } else {
             userListContainer.innerHTML = `<div style="text-align:center; padding: 24px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> 사용자 및 실구매 데이터 동기화 중...</div>`;
         }
 
-        // ⚡ 2. Fast Parallel Fetch with Timeout Protection (Only lightweight users + purchases)
+        const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+        if (!firestore) {
+            updateSummaryDisplay(false);
+            return;
+        }
+
+        // ⚡ 2. Progressive Fetching (Users first, then Purchases)
         try {
-            const fetchUsersPromise = window.db.collection('lotto_users').get();
-            const fetchPurchasesPromise = window.db.collection('lotto_purchases').get().catch(err => {
+            const usersSnapshotPromise = firestore.collection('lotto_users').get();
+            const purchasesSnapshotPromise = firestore.collection('lotto_purchases').get().catch(err => {
                 console.warn('[Purchases Batch Fetch Error]', err);
                 return { docs: [], forEach: () => {} };
             });
 
-            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 4000));
+            // Set timeout protection (12s)
+            const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 12000));
 
             const raceResult = await Promise.race([
-                Promise.all([fetchUsersPromise, fetchPurchasesPromise]),
+                Promise.all([usersSnapshotPromise, purchasesSnapshotPromise]),
                 timeoutPromise
             ]);
 
-            const usersSnapshot = (raceResult && raceResult[0]) ? raceResult[0] : null;
-            const purchasesSnapshot = (raceResult && raceResult[1]) ? raceResult[1] : null;
+            if (raceResult) {
+                await processAndApplySnapshots(raceResult[0], raceResult[1]);
+            } else {
+                // Timeout occurred: Hook background listener so when network finishes, UI still updates smoothly
+                usersSnapshotPromise.then(async (uSnap) => {
+                    try {
+                        const pSnap = await purchasesSnapshotPromise;
+                        processAndApplySnapshots(uSnap, pSnap);
+                    } catch(e) {
+                        console.warn('[Delayed Sync Error]', e);
+                    }
+                }).catch(console.warn);
 
-            if (!usersSnapshot) {
-                // Timeout fallback
-                if (__cachedUsersWithStatus && __cachedUsersWithStatus.length > 0) {
-                    window.filterUserList();
-                } else {
-                    userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#fbbf24;">⚠️ 데이터 동기화가 지연되고 있습니다. <button type="button" onclick="window.loadUserList(true)" style="margin-left:8px; background:rgba(59,130,246,0.2); border:1px solid #3b82f6; color:#93c5fd; padding:3px 8px; border-radius:5px; cursor:pointer;">재시도</button></div>`;
+                // Update summary badge removing spinning icon
+                updateSummaryDisplay(false);
+            }
+
+        } catch (error) {
+            console.error('[loadUserList error]', error);
+            updateSummaryDisplay(false);
+            if (!__cachedUsersWithStatus || __cachedUsersWithStatus.length === 0) {
+                userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#ef4444;">데이터를 불러오는 중 오류가 발생했습니다.</div>`;
+            }
+        }
+
+        async function processAndApplySnapshots(usersSnapshot, purchasesSnapshot) {
+            if (!usersSnapshot || usersSnapshot.empty) {
+                if (!__cachedUsersWithStatus || __cachedUsersWithStatus.length === 0) {
+                    userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b;">등록된 사용자가 없습니다.</div>`;
+                    if (summaryBadge) summaryBadge.textContent = '총 0명';
+                    if (trashBadge) trashBadge.textContent = '0';
                 }
                 return;
             }
 
-            if (usersSnapshot.empty) {
-                __cachedUsersWithStatus = [];
-                userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b;">등록된 사용자가 없습니다.</div>`;
-                if (summaryBadge) summaryBadge.textContent = '총 0명';
-                if (trashBadge) trashBadge.textContent = '0';
-                try { localStorage.removeItem('lotto_users_with_status_cache'); } catch(e){}
-                return;
-            }
-
-            // Create preloaded lookup map for purchases (O(1) Memory Lookup)
             const purchasesMap = new Map();
             if (purchasesSnapshot && typeof purchasesSnapshot.forEach === 'function') {
                 purchasesSnapshot.forEach(doc => {
@@ -3318,12 +3409,11 @@ export function setupAuthEvents(initFirebaseAndData) {
             const existingUserIds = new Set();
             usersSnapshot.forEach(doc => {
                 const uIdClean = (doc.id || '').toLowerCase().trim();
-                // Ignore corrupt/garbage JSON string IDs or system metadata if any
                 if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'app_latest_version') {
                     if (uIdClean !== 'app_latest_version') {
-                        window.db.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
-                        window.db.collection('lotto_agreements').doc(doc.id).delete().catch(console.warn);
-                        window.db.collection('lotto_purchases').doc(doc.id).delete().catch(console.warn);
+                        firestore.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
+                        firestore.collection('lotto_agreements').doc(doc.id).delete().catch(console.warn);
+                        firestore.collection('lotto_purchases').doc(doc.id).delete().catch(console.warn);
                     }
                     return;
                 }
@@ -3356,7 +3446,6 @@ export function setupAuthEvents(initFirebaseAndData) {
                 }
             });
 
-            // Instant purchase status resolution using preloaded purchases (Zero Network Lag)
             const usersWithStatus = await Promise.all(users.map(async (u) => {
                 const isDeleted = !!(u.data.isDeleted === true || u.data.status === 'trash');
                 const deletedAt = u.data.deletedAt || null;
@@ -3382,21 +3471,6 @@ export function setupAuthEvents(initFirebaseAndData) {
             } catch(e) {}
 
             const activeUsers = usersWithStatus.filter(u => !u.isDeleted);
-            const trashUsers = usersWithStatus.filter(u => u.isDeleted);
-
-            // Update stats badge
-            if (summaryBadge) {
-                const purchasedCount = activeUsers.filter(u => u.pStatus && u.pStatus.hasPurchased).length;
-                const kakaoCount = activeUsers.filter(u => u.userId.startsWith('kakao_') || (u.data.kakaoAuth && u.data.kakaoAuth.hasTalkMessageScope)).length;
-                const trashText = (isMaster && trashUsers.length > 0) ? ` · <span style="color:#fca5a5; font-weight:700;"><i class="fa-solid fa-trash-can"></i> 휴지통 ${trashUsers.length}</span>` : '';
-                summaryBadge.innerHTML = `총 <strong style="color:#fff;">${activeUsers.length}</strong>명 (실구매 ${purchasedCount} · 카카오 ${kakaoCount}${trashText})`;
-            }
-
-            if (trashBadge) {
-                trashBadge.textContent = isMaster ? trashUsers.length : '0';
-            }
-
-            // Sync global state registered users list (only active users)
             if (typeof window !== 'undefined' && window.state) {
                 window.state.allRegisteredUsersList = activeUsers.map(u => ({
                     id: u.userId,
@@ -3416,13 +3490,8 @@ export function setupAuthEvents(initFirebaseAndData) {
                 } catch(e) {}
             }
 
-            // Render with current search query & filter
+            updateSummaryDisplay(false);
             window.filterUserList();
-        } catch (error) {
-            console.error(error);
-            if (!__cachedUsersWithStatus || __cachedUsersWithStatus.length === 0) {
-                userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#ef4444;">데이터를 불러오는 중 오류가 발생했습니다.</div>`;
-            }
         }
     }
     window.loadUserList = loadUserList;

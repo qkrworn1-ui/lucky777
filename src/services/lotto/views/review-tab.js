@@ -1231,137 +1231,114 @@ export async function renderAllRoundsReviewDetail() {
         algoRankMap[item.id] = idx + 1;
     });
 
-    // 7대 알고리즘별 전회차 누적 성과 카드 그리드
-    let algoCardsHtml = '';
-    algoPacks.forEach(pack => {
-        const aData = algoSummaryMap[pack.id];
-        const aRoi = (aData.games * 1000) > 0 ? (aData.prize / (aData.games * 1000)) * 100 : 0;
-        const isFilterMatched = (activeReviewFilter === 'all' || activeReviewFilter === pack.id);
-        const cardOpacity = isFilterMatched ? '1' : '0.45';
-        const rank = algoRankMap[pack.id] || 1;
+    const topAlgo = rankedAlgos[0];
+    const topAlgoName = topAlgo ? topAlgo.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/ 포트폴리오| 알고리즘/g, '') : '-';
+    const totalAlgoWins = (dispHits[1] + dispHits[2] + dispHits[3] + dispHits[4] + dispHits[5]);
 
-        let rankBadgeBg = 'rgba(255,255,255,0.06)';
-        let rankBadgeColor = '#94a3b8';
-        let rankBadgeBorder = 'rgba(255,255,255,0.15)';
-        let rankIcon = '';
-        if (rank === 1) {
-            rankBadgeBg = 'linear-gradient(135deg, rgba(251,191,36,0.25), rgba(217,119,6,0.25))';
-            rankBadgeColor = '#fbbf24';
-            rankBadgeBorder = '#fbbf24';
-            rankIcon = '🥇 ';
-        } else if (rank === 2) {
-            rankBadgeBg = 'linear-gradient(135deg, rgba(203,213,225,0.2), rgba(148,163,184,0.2))';
-            rankBadgeColor = '#f1f5f9';
-            rankBadgeBorder = '#cbd5e1';
-            rankIcon = '🥈 ';
-        } else if (rank === 3) {
-            rankBadgeBg = 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(180,83,9,0.2))';
-            rankBadgeColor = '#f59e0b';
-            rankBadgeBorder = '#f59e0b';
-            rankIcon = '🥉 ';
-        }
+    // 🏆 Option A: Ultra-Compact High-Density Single-Line Matrix Rows (82% Vertical Space Saved)
+    let algoRowsHtml = '';
+    rankedAlgos.forEach((algo, idx) => {
+        const rankNum = idx + 1;
+        const rankIcon = rankNum === 1 ? '🥇' : (rankNum === 2 ? '🥈' : (rankNum === 3 ? '🥉' : `${rankNum}`));
+        const rankBorderLeft = rankNum === 1 ? '3.5px solid #fbbf24' : (rankNum === 2 ? '3.5px solid #cbd5e1' : (rankNum === 3 ? '3.5px solid #f59e0b' : '3.5px solid rgba(255,255,255,0.15)'));
+        const rankBg = rankNum === 1 ? 'linear-gradient(90deg, rgba(251, 191, 36, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)' :
+                     (rankNum === 2 ? 'linear-gradient(90deg, rgba(203, 213, 225, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)' :
+                     (rankNum === 3 ? 'linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)' :
+                     'rgba(15, 23, 42, 0.5)'));
 
-        algoCardsHtml += `
-            <div style="background: rgba(0,0,0,0.3); border: 1.5px solid ${pack.color}50; border-radius: 10px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; opacity: ${cardOpacity}; transition: all 0.2s; box-sizing: border-box; width: 100%; max-width: 100%;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
-                    <div style="font-size: 0.82rem; font-weight: 800; color: ${pack.color}; display: flex; align-items: center; gap: 6px; word-break: keep-all;">
-                        <i class="fa-solid fa-cubes"></i> ${pack.name}
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 4px;">
-                        <span style="font-size: 0.7rem; background: ${rankBadgeBg}; color: ${rankBadgeColor}; border: 1px solid ${rankBadgeBorder}; padding: 1px 7px; border-radius: 6px; font-weight: 800; white-space: nowrap;">
-                            ${rankIcon}${rank}위
-                        </span>
-                        <span style="font-size: 0.68rem; background: ${pack.color}25; color: ${pack.color}; border: 1px solid ${pack.color}40; padding: 1px 6px; border-radius: 6px; font-weight: 700; white-space: nowrap;">
-                            ${pack.badge}
-                        </span>
+        const cleanName = algo.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/ 포트폴리오| 알고리즘/g, '');
+        
+        let hitsHtml = '';
+        if (algo.hits[1] > 0) hitsHtml += `<span style="font-size:0.65rem; font-weight:900; padding:1px 4px; border-radius:4px; margin-right:2px; background:rgba(251,191,36,0.22); color:#fbbf24; border:1px solid rgba(251,191,36,0.45); white-space:nowrap;">1등:${algo.hits[1]}</span>`;
+        if (algo.hits[2] > 0) hitsHtml += `<span style="font-size:0.65rem; font-weight:900; padding:1px 4px; border-radius:4px; margin-right:2px; background:rgba(248,113,113,0.22); color:#f87171; border:1px solid rgba(248,113,113,0.45); white-space:nowrap;">2등:${algo.hits[2]}</span>`;
+        if (algo.hits[3] > 0) hitsHtml += `<span style="font-size:0.65rem; font-weight:900; padding:1px 4px; border-radius:4px; margin-right:2px; background:rgba(96,165,250,0.22); color:#60a5fa; border:1px solid rgba(96,165,250,0.45); white-space:nowrap;">3등:${algo.hits[3]}</span>`;
+        if (algo.hits[4] > 0) hitsHtml += `<span style="font-size:0.65rem; font-weight:800; padding:1px 4px; border-radius:4px; margin-right:2px; background:rgba(52,211,153,0.2); color:#34d399; border:1px solid rgba(52,211,153,0.4); white-space:nowrap;">4등:${algo.hits[4]}</span>`;
+        if (algo.hits[5] > 0) hitsHtml += `<span style="font-size:0.65rem; font-weight:800; padding:1px 4px; border-radius:4px; margin-right:2px; background:rgba(192,132,252,0.2); color:#c084fc; border:1px solid rgba(192,132,252,0.4); white-space:nowrap;">5등:${algo.hits[5]}</span>`;
+        if (!hitsHtml) hitsHtml = `<span style="font-size:0.65rem; color:#64748b;">적중 없음</span>`;
+
+        const roiColor = algo.roi >= 100 ? '#10b981' : (algo.roi > 0 ? '#fbbf24' : '#94a3b8');
+
+        algoRowsHtml += `
+            <div onclick="window.setReviewViewFilter && window.setReviewViewFilter('${algo.id}')" style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:${rankBg}; border:1px solid rgba(255,255,255,0.06); border-left:${rankBorderLeft}; margin-bottom:5px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='rgba(251,191,36,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'" title="${algo.name} 필터링">
+                <!-- Left: Rank + Algo Name + Hits -->
+                <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+                    <span style="font-weight:900; font-size:0.84rem; color:#fbbf24; width:20px; text-align:center; flex-shrink:0;">${rankIcon}</span>
+                    <div style="min-width:0; flex:1;">
+                        <div style="display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            <span style="font-size:0.8rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cleanName}</span>
+                            <span style="font-size:0.68rem; color:${algo.color}; font-weight:700; flex-shrink:0;">(${algo.games}G)</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:2px; margin-top:1px; overflow:hidden; white-space:nowrap;">
+                            ${hitsHtml}
+                        </div>
                     </div>
                 </div>
-                <div style="font-size: 0.74rem; color: #cbd5e1; margin-bottom: 6px; display: flex; justify-content: space-between;">
-                    <span>누적 추천: <strong>${aData.games.toLocaleString()}게임</strong></span>
-                    <span style="color: #38bdf8;">총 적중: <strong>${aData.wins}회</strong></span>
-                </div>
-                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; text-align: center; margin-bottom: 8px; font-size: clamp(0.62rem, 1.8vw, 0.68rem); box-sizing: border-box;">
-                    <div style="background: rgba(251,191,36,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700; white-space: nowrap;">1등:${aData.hits[1]}</div>
-                    <div style="background: rgba(248,113,113,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[2] > 0 ? '#f87171' : '#64748b'}; font-weight: 700; white-space: nowrap;">2등:${aData.hits[2]}</div>
-                    <div style="background: rgba(96,165,250,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[3] > 0 ? '#60a5fa' : '#64748b'}; font-weight: 700; white-space: nowrap;">3등:${aData.hits[3]}</div>
-                    <div style="background: rgba(52,211,153,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[4] > 0 ? '#34d399' : '#64748b'}; font-weight: 700; white-space: nowrap;">4등:${aData.hits[4]}</div>
-                    <div style="background: rgba(167,139,250,0.12); padding: 3px 1px; border-radius: 4px; color: ${aData.hits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700; white-space: nowrap;">5등:${aData.hits[5]}</div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; font-size: 0.74rem;">
-                    <span style="color: #94a3b8;">당첨금: <strong style="color: #34d399;">+${aData.prize.toLocaleString()}원</strong></span>
-                    <span style="font-weight: 700; color: ${aRoi >= 100 ? '#10b981' : (aRoi > 0 ? '#fbbf24' : '#94a3b8')};">수익률 ${aRoi.toFixed(1)}%</span>
+
+                <!-- Right: Prize & ROI & Wins -->
+                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                    <div style="text-align:right;">
+                        <div style="font-size:0.84rem; font-weight:900; color:#34d399; letter-spacing:-0.3px;">+${algo.prize.toLocaleString()}원</div>
+                        <div style="font-size:0.67rem; font-weight:800; color:${roiColor};">${algo.roi.toFixed(1)}% <span style="color:#94a3b8; font-weight:normal;">(${algo.wins}회)</span></div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size:0.68rem; color:#64748b; margin-left:2px;"></i>
                 </div>
             </div>
         `;
     });
 
     html += `
-        <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px 12px; margin-bottom: 20px; box-sizing: border-box; width: 100%; max-width: 100%; overflow: hidden;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
-                    <i class="fa-solid fa-layer-group" style="color: #38bdf8; font-size: 1rem; flex-shrink: 0;"></i>
-                    <h4 style="margin: 0; color: #f8fafc; font-size: 0.92rem; font-weight: 800; word-break: keep-all; overflow-wrap: break-word; line-height: 1.35;">
-                        7대 알고리즘별 전회차 (${minTargetRound}회 ~ ${latestDrawnRound}회) 누적 성과 요약 & 등수별 당첨 순위
+        <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 20px; box-sizing: border-box; width: 100%; max-width: 100%; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+            
+            <!-- Section Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+                <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto;">
+                    <i class="fa-solid fa-trophy" style="color: #fbbf24; font-size: 0.95rem; flex-shrink: 0;"></i>
+                    <h4 style="margin: 0; color: #f8fafc; font-size: 0.92rem; font-weight: 800; word-break: keep-all; line-height: 1.3;">
+                        7대 알고리즘 당첨 랭킹 &amp; 누적 성과
                     </h4>
+                    <span style="font-size: 0.7rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; white-space: nowrap;">
+                        ${minTargetRound}~${latestDrawnRound}회
+                    </span>
                 </div>
-                <span style="font-size: 0.74rem; color: #94a3b8; white-space: nowrap;">
-                    ${isAllUsers ? '전체 회원 합산 통계' : `[${effectiveUserId}] 회원 배정 통계`}
-                </span>
-            </div>
-
-            <!-- 🏆 알고리즘별 종합 순위 빠른 요약 바 -->
-            <div class="review-algo-rank-bar" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 14px; -webkit-overflow-scrolling: touch; width: 100%; max-width: 100%; box-sizing: border-box; scrollbar-width: thin;">
-                ${rankedAlgos.map((item, idx) => {
-                    const rankNum = idx + 1;
-                    let rankBg = 'rgba(255,255,255,0.05)';
-                    let rankBorder = 'rgba(255,255,255,0.1)';
-                    let rankTitle = `${rankNum}위`;
-                    let rankColor = '#cbd5e1';
-                    if (rankNum === 1) {
-                        rankBg = 'rgba(251,191,36,0.15)';
-                        rankBorder = '#fbbf24';
-                        rankTitle = '🥇 1위';
-                        rankColor = '#fbbf24';
-                    } else if (rankNum === 2) {
-                        rankBg = 'rgba(203,213,225,0.12)';
-                        rankBorder = '#cbd5e1';
-                        rankTitle = '🥈 2위';
-                        rankColor = '#f1f5f9';
-                    } else if (rankNum === 3) {
-                        rankBg = 'rgba(245,158,11,0.12)';
-                        rankBorder = '#f59e0b';
-                        rankTitle = '🥉 3위';
-                        rankColor = '#fbbf24';
-                    }
-                    const cleanName = item.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/ 포트폴리오| 알고리즘/g, '');
-                    return `
-                        <div style="flex: 0 0 auto; background: ${rankBg}; border: 1px solid ${rankBorder}; padding: 5px 10px; border-radius: 8px; font-size: 0.74rem; white-space: nowrap; display: flex; align-items: center; gap: 6px;">
-                            <strong style="color: ${rankColor};">${rankTitle}</strong>
-                            <span style="color: #e2e8f0; font-weight: 700;">${cleanName}</span>
-                            <span style="color: #34d399; font-weight: 800;">+${item.prize.toLocaleString()}원</span>
-                            <span style="color: #60a5fa; font-size: 0.7rem;">(${item.wins}회)</span>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-
-            <!-- 📊 알고리즘별 등수별(1~5등) 누적 당첨 횟수 및 순위 비교 막대 그래프 -->
-            <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 8px; margin-bottom: 16px; box-sizing: border-box; width: 100%; max-width: 100%; overflow: hidden;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px; padding: 0 4px;">
-                    <div style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; display: flex; align-items: center; gap: 6px; word-break: keep-all; overflow-wrap: break-word; line-height: 1.35;">
-                        <i class="fa-solid fa-chart-column" style="color: #38bdf8; flex-shrink: 0;"></i> <span>알고리즘별 등수별(1~5등) 누적 당첨 실적 막대 그래프</span>
-                    </div>
-                    <div style="font-size: 0.7rem; color: #94a3b8; word-break: keep-all;">
-                        * ${minTargetRound}회~${latestDrawnRound}회 7대 알고리즘별 1등~5등 누적 적중 횟수 비교
-                    </div>
-                </div>
-                <div style="height: 240px; position: relative; width: 100%; max-width: 100%; box-sizing: border-box;">
-                    <canvas id="reviewAlgoBarChart"></canvas>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <button type="button" id="btnToggleAlgoChart" onclick="window.toggleReviewAlgoChart && window.toggleReviewAlgoChart()" style="background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.35); color: #38bdf8; font-size: 0.72rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="fa-solid fa-chart-column"></i> <span id="textToggleAlgoChart">차트 펼치기</span>
+                    </button>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 10px; box-sizing: border-box; width: 100%; max-width: 100%;">
-                ${algoCardsHtml}
+            <!-- 4-Stat Micro KPI Strip -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: rgba(0,0,0,0.35); border-radius: 8px; padding: 6px 4px; margin-bottom: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.05);">
+                <div>
+                    <div style="font-size: 0.65rem; color: #94a3b8;">총 추천</div>
+                    <div style="font-size: 0.82rem; font-weight: 900; color: #fff;">${dispCombos.toLocaleString()}G</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.65rem; color: #94a3b8;">총 적중</div>
+                    <div style="font-size: 0.82rem; font-weight: 900; color: #fbbf24;">${totalAlgoWins}회</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.65rem; color: #94a3b8;">총 당첨금</div>
+                    <div style="font-size: 0.82rem; font-weight: 900; color: #34d399;">+${dispPrize.toLocaleString()}원</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.65rem; color: #94a3b8;">1위 알고리즘</div>
+                    <div style="font-size: 0.82rem; font-weight: 900; color: #a78bfa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🥇 ${topAlgoName}</div>
+                </div>
+            </div>
+
+            <!-- Collapsible Bar Chart -->
+            <div id="reviewAlgoBarChartContainer" style="display: none; background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 8px; margin-bottom: 12px; height: 210px; position: relative; width: 100%; box-sizing: border-box; overflow: hidden;">
+                <canvas id="reviewAlgoBarChart"></canvas>
+            </div>
+
+            <!-- 7-Row High-Density Ranked List -->
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+                ${algoRowsHtml}
+            </div>
+
+            <div style="text-align: center; margin-top: 6px; font-size: 0.67rem; color: #64748b;">
+                💡 알고리즘을 터치하면 해당 알고리즘의 10게임 조합만 즉시 필터링하여 확인하실 수 있습니다.
             </div>
         </div>
     `;
@@ -1682,121 +1659,138 @@ export async function renderAllRoundsReviewDetail() {
     reviewMatchingContainer.innerHTML = html;
 
     // Render Chart.js Bar Chart for 7 Algorithms Cumulative Winning Performance
-    if (state.reviewAlgoBarChartInstance) {
-        state.reviewAlgoBarChartInstance.destroy();
-        state.reviewAlgoBarChartInstance = null;
-    }
-    const canvasAlgo = document.getElementById('reviewAlgoBarChart');
-    if (canvasAlgo && typeof canvasAlgo.getContext === 'function' && typeof window.Chart === 'function') {
-        const ctxAlgo = canvasAlgo.getContext('2d');
-        const algoLabels = [
-            ['V4.0', '행동경제'],
-            ['V3.0', '하이브리드'],
-            ['추가1', '고주기'],
-            ['추가2', '저주기'],
-            ['추가3', 'AC퀀트'],
-            ['추가4', '구간대칭'],
-            ['추가5', '극한홀짝']
-        ];
+    window.renderReviewAlgoBarChartDirect = function() {
+        if (state.reviewAlgoBarChartInstance) {
+            state.reviewAlgoBarChartInstance.destroy();
+            state.reviewAlgoBarChartInstance = null;
+        }
+        const canvasAlgo = document.getElementById('reviewAlgoBarChart');
+        if (canvasAlgo && typeof canvasAlgo.getContext === 'function' && typeof window.Chart === 'function') {
+            const ctxAlgo = canvasAlgo.getContext('2d');
+            const algoLabels = [
+                ['V4.0', '행동경제'],
+                ['V3.0', '하이브리드'],
+                ['추가1', '고주기'],
+                ['추가2', '저주기'],
+                ['추가3', 'AC퀀트'],
+                ['추가4', '구간대칭'],
+                ['추가5', '극한홀짝']
+            ];
 
-        state.reviewAlgoBarChartInstance = new window.Chart(ctxAlgo, {
-            type: 'bar',
-            data: {
-                labels: algoLabels,
-                datasets: [
-                    {
-                        label: '1등',
-                        data: algoPacks.map(p => algoSummaryMap[p.id].hits[1]),
-                        backgroundColor: '#fbbf24',
-                        stack: 'hits',
-                        borderRadius: 2
-                    },
-                    {
-                        label: '2등',
-                        data: algoPacks.map(p => algoSummaryMap[p.id].hits[2]),
-                        backgroundColor: '#f87171',
-                        stack: 'hits',
-                        borderRadius: 2
-                    },
-                    {
-                        label: '3등',
-                        data: algoPacks.map(p => algoSummaryMap[p.id].hits[3]),
-                        backgroundColor: '#60a5fa',
-                        stack: 'hits',
-                        borderRadius: 2
-                    },
-                    {
-                        label: '4등',
-                        data: algoPacks.map(p => algoSummaryMap[p.id].hits[4]),
-                        backgroundColor: '#34d399',
-                        stack: 'hits',
-                        borderRadius: 2
-                    },
-                    {
-                        label: '5등',
-                        data: algoPacks.map(p => algoSummaryMap[p.id].hits[5]),
-                        backgroundColor: '#a78bfa',
-                        stack: 'hits',
-                        borderRadius: 2
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            color: '#cbd5e1',
-                            font: { size: 9, weight: 'bold' },
-                            boxWidth: 8,
-                            padding: 6
+            state.reviewAlgoBarChartInstance = new window.Chart(ctxAlgo, {
+                type: 'bar',
+                data: {
+                    labels: algoLabels,
+                    datasets: [
+                        {
+                            label: '1등',
+                            data: algoPacks.map(p => algoSummaryMap[p.id].hits[1]),
+                            backgroundColor: '#fbbf24',
+                            stack: 'hits',
+                            borderRadius: 2
+                        },
+                        {
+                            label: '2등',
+                            data: algoPacks.map(p => algoSummaryMap[p.id].hits[2]),
+                            backgroundColor: '#f87171',
+                            stack: 'hits',
+                            borderRadius: 2
+                        },
+                        {
+                            label: '3등',
+                            data: algoPacks.map(p => algoSummaryMap[p.id].hits[3]),
+                            backgroundColor: '#60a5fa',
+                            stack: 'hits',
+                            borderRadius: 2
+                        },
+                        {
+                            label: '4등',
+                            data: algoPacks.map(p => algoSummaryMap[p.id].hits[4]),
+                            backgroundColor: '#34d399',
+                            stack: 'hits',
+                            borderRadius: 2
+                        },
+                        {
+                            label: '5등',
+                            data: algoPacks.map(p => algoSummaryMap[p.id].hits[5]),
+                            backgroundColor: '#a78bfa',
+                            stack: 'hits',
+                            borderRadius: 2
                         }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
                     },
-                    tooltip: {
-                        callbacks: {
-                            title: function(items) {
-                                if (!items.length) return '';
-                                const idx = items[0].dataIndex;
-                                const pack = algoPacks[idx];
-                                const rank = algoRankMap[pack.id] || (idx + 1);
-                                return `[${rank}위] ${pack.name}`;
-                            },
-                            label: function(ctx) {
-                                const val = ctx.raw || 0;
-                                return `${ctx.dataset.label}: ${val}회`;
-                            },
-                            footer: function(items) {
-                                if (!items.length) return '';
-                                const idx = items[0].dataIndex;
-                                const pack = algoPacks[idx];
-                                const aData = algoSummaryMap[pack.id];
-                                return `총 적중: ${aData.wins}회 | 누적 당첨금: +${aData.prize.toLocaleString()}원`;
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                color: '#cbd5e1',
+                                font: { size: 9, weight: 'bold' },
+                                boxWidth: 8,
+                                padding: 6
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(items) {
+                                    if (!items.length) return '';
+                                    const idx = items[0].dataIndex;
+                                    const pack = algoPacks[idx];
+                                    const rank = algoRankMap[pack.id] || (idx + 1);
+                                    return `[${rank}위] ${pack.name}`;
+                                },
+                                label: function(ctx) {
+                                    const val = ctx.raw || 0;
+                                    return `${ctx.dataset.label}: ${val}회`;
+                                },
+                                footer: function(items) {
+                                    if (!items.length) return '';
+                                    const idx = items[0].dataIndex;
+                                    const pack = algoPacks[idx];
+                                    const aData = algoSummaryMap[pack.id];
+                                    return `총 적중: ${aData.wins}회 | 누적 당첨금: +${aData.prize.toLocaleString()}원`;
+                                }
                             }
                         }
-                    }
-                },
-                scales: {
-                    x: {
-                        stacked: true,
-                        ticks: { color: '#cbd5e1', font: { size: 9, weight: 'bold' }, maxRotation: 0, autoSkip: false },
-                        grid: { display: false }
                     },
-                    y: {
-                        stacked: true,
-                        beginAtZero: true,
-                        ticks: { color: '#94a3b8', precision: 0, font: { size: 9 } },
-                        grid: { color: 'rgba(255,255,255,0.06)' }
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: { color: '#cbd5e1', font: { size: 9, weight: 'bold' }, maxRotation: 0, autoSkip: false },
+                            grid: { display: false }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { color: '#94a3b8', precision: 0, font: { size: 9 } },
+                            grid: { color: 'rgba(255,255,255,0.06)' }
+                        }
                     }
                 }
-            }
-        });
-    }
+            });
+        }
+    };
+
+    window.toggleReviewAlgoChart = function() {
+        const chartBox = document.getElementById('reviewAlgoBarChartContainer');
+        const btnText = document.getElementById('textToggleAlgoChart');
+        if (!chartBox) return;
+        const isHidden = (chartBox.style.display === 'none');
+        if (isHidden) {
+            chartBox.style.display = 'block';
+            if (btnText) btnText.textContent = '차트 접기';
+            window.renderReviewAlgoBarChartDirect();
+        } else {
+            chartBox.style.display = 'none';
+            if (btnText) btnText.textContent = '차트 펼치기';
+        }
+    };
 }
 
 export async function renderReviewDetail(r) {
