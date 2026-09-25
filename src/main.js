@@ -8,6 +8,12 @@ import { reconnectFirebaseNetwork } from './shared/db.js';
 let _lastBackPressTime = 0;
 
 function _closeAnyActiveModal() {
+    // 0. Mandatory Pledge Modal - Strict Gate (Cannot be dismissed via back key / ESC / global click)
+    const mandatoryModal = document.getElementById('mandatoryPledgeModal');
+    if (mandatoryModal && (mandatoryModal.classList.contains('active') || mandatoryModal.style.display === 'flex' || mandatoryModal.style.display === 'block')) {
+        return true; // Strictly block dismissal
+    }
+
     // 1. Donghang verify modal
     const donghangModal = document.getElementById('donghangVerifyModal');
     if (donghangModal && (donghangModal.classList.contains('active') || donghangModal.style.display === 'flex')) {

@@ -323,7 +323,7 @@ if (typeof window !== 'undefined') {
 /**
  * Check if a user has completed the mandatory weekly purchase registration for the given drawn round
  */
-export async function checkUserWeeklyPurchaseStatus(userId, userDocData = null) {
+export async function checkUserWeeklyPurchaseStatus(userId, userDocData = null, preloadedPurchasesDoc = undefined) {
     const upcomingRound = getUpcomingLottoRound();
     const latestRound = getLatestDrawnRound();
 
@@ -419,7 +419,11 @@ export async function checkUserWeeklyPurchaseStatus(userId, userDocData = null) 
     let lastPurchasedRound = 0;
     let targetRoundGameCount = 0;
 
-    if (firestore) {
+    if (preloadedPurchasesDoc !== undefined) {
+        if (preloadedPurchasesDoc && preloadedPurchasesDoc.ledger) {
+            userLedger = preloadedPurchasesDoc.ledger;
+        }
+    } else if (firestore) {
         try {
             const pDoc = await firestore.collection('lotto_purchases').doc(userId).get();
             if (pDoc.exists && pDoc.data().ledger) {
@@ -1177,28 +1181,36 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                         }
 
                         // 🔒 Check if Mandatory Profile & E-Signature Pledge is Complete
-                        // (Exempt root built-in master/admin ID and Kakao OAuth authenticated accounts who already completed Kakao terms)
+                        // (Exempt only root built-in master/admin accounts and admin-role users)
                         const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
-                        const isKakaoAuth = authId.startsWith('kakao_') || uData.authProvider === 'kakao' || !!uData.kakaoAuth;
-                        if (!isRootMaster && !isKakaoAuth) {
-                            const isPhoneValid = uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.length >= 10;
-                            const isSigValid = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl);
-                            const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2);
+                        const isUserAdminAcc = isRootMaster || freshAdmin;
+
+                        if (!isUserAdminAcc) {
+                            const isPhoneValid = !!(uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.replace(/[^0-9]/g, '').length >= 10);
+                            const isSigValid = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl && uData.agreementDoc.signatureDataUrl.length > 50);
+                            const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2 && !uData.realName.startsWith('카카오_') && !uData.realName.startsWith('kakao_'));
 
                             if (!isPhoneValid || !isSigValid || !isNameValid) {
+                                // Block and hide all underlying main app pages
+                                const pages = ['landingPage', 'totoPage', 'appContainer'];
+                                pages.forEach(pId => {
+                                    const pEl = document.getElementById(pId);
+                                    if (pEl) {
+                                        pEl.classList.remove('active');
+                                        pEl.style.setProperty('display', 'none', 'important');
+                                    }
+                                });
                                 if (loginModal) {
                                     loginModal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
                                     loginModal.classList.add('hidden');
                                     loginModal.classList.remove('active');
                                 }
                                 if (document.body) {
-                                    document.body.style.overflow = '';
+                                    document.body.style.overflow = 'hidden';
                                 }
-                                setTimeout(() => {
-                                    if (typeof window.openMandatoryPledgeModal === 'function') {
-                                        window.openMandatoryPledgeModal(authId, uData);
-                                    }
-                                }, 100);
+                                if (typeof window.openMandatoryPledgeModal === 'function') {
+                                    window.openMandatoryPledgeModal(authId, uData);
+                                }
                                 return; // Halt service access until pledge is submitted
                             }
                         }
@@ -3098,18 +3110,42 @@ export function setupAuthEvents(initFirebaseAndData) {
         userListContainer.innerHTML = `<div style="text-align:center; padding: 24px; color:#64748b;"><i class="fa-solid fa-spinner fa-spin"></i> 사용자 및 실구매 데이터 동기화 중...</div>`;
         
         try {
-            const snapshot = await window.db.collection('lotto_users').get();
-            if (snapshot.empty) {
+            const [usersSnapshot, purchasesSnapshot, agreementsSnapshot] = await Promise.all([
+                window.db.collection('lotto_users').get(),
+                window.db.collection('lotto_purchases').get().catch(err => {
+                    console.warn('[Purchases Batch Fetch Error]', err);
+                    return { docs: [], forEach: () => {} };
+                }),
+                window.db.collection('lotto_agreements').get().catch(err => {
+                    console.warn('[Agreements Batch Fetch Error]', err);
+                    return { docs: [], forEach: () => {} };
+                })
+            ]);
+
+            if (usersSnapshot.empty) {
                 __cachedUsersWithStatus = [];
                 userListContainer.innerHTML = `<div style="text-align:center; padding: 20px; color:#64748b;">등록된 사용자가 없습니다.</div>`;
                 if (summaryBadge) summaryBadge.textContent = '총 0명';
                 if (trashBadge) trashBadge.textContent = '0';
                 return;
             }
-            
+
+            // Create preloaded lookup maps (O(1) In-Memory Lookup)
+            const purchasesMap = new Map();
+            purchasesSnapshot.forEach(doc => {
+                purchasesMap.set((doc.id || '').toLowerCase().trim(), doc.data());
+                purchasesMap.set(doc.id, doc.data());
+            });
+
+            const agreementsMap = new Map();
+            agreementsSnapshot.forEach(doc => {
+                agreementsMap.set((doc.id || '').toLowerCase().trim(), doc.data());
+                agreementsMap.set(doc.id, doc.data());
+            });
+
             const users = [];
             const existingUserIds = new Set();
-            snapshot.forEach(doc => {
+            usersSnapshot.forEach(doc => {
                 const uIdClean = (doc.id || '').toLowerCase().trim();
                 // Ignore corrupt/garbage JSON string IDs or system metadata if any
                 if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'app_latest_version') {
@@ -3121,7 +3157,12 @@ export function setupAuthEvents(initFirebaseAndData) {
                     }
                     return;
                 }
-                users.push({ userId: doc.id, data: doc.data() });
+                const docData = doc.data() || {};
+                // If embedded agreementDoc is missing, merge from agreements collection
+                if (!docData.agreementDoc && agreementsMap.has(uIdClean)) {
+                    docData.agreementDoc = agreementsMap.get(uIdClean);
+                }
+                users.push({ userId: doc.id, data: docData });
                 existingUserIds.add(uIdClean);
             });
 
@@ -3150,11 +3191,12 @@ export function setupAuthEvents(initFirebaseAndData) {
                 }
             });
 
-            // Concurrently fetch purchase status for each user
+            // Instant purchase status resolution using preloaded purchases (Zero Network Lag)
             const usersWithStatus = await Promise.all(users.map(async (u) => {
                 const isDeleted = !!(u.data.isDeleted === true || u.data.status === 'trash');
                 const deletedAt = u.data.deletedAt || null;
-                const pStatus = isDeleted ? { hasPurchased: false } : await checkUserWeeklyPurchaseStatus(u.userId, u.data);
+                const preloadedP = purchasesMap.get(u.userId) || purchasesMap.get(u.userId.toLowerCase().trim()) || null;
+                const pStatus = isDeleted ? { hasPurchased: false } : await checkUserWeeklyPurchaseStatus(u.userId, u.data, preloadedP);
                 const isUserAdmin = !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin');
                 const isPermanent = !!(u.data.isPermanent === true || u.data.userType === 'permanent' || isUserAdmin);
                 const allowLotto = isUserAdmin || u.data.allowLotto !== false;
@@ -3732,6 +3774,16 @@ export function setupAuthEvents(initFirebaseAndData) {
         const modal = document.getElementById('mandatoryPledgeModal');
         if (!modal) return;
 
+        // Block and hide all underlying main app pages
+        const pages = ['landingPage', 'totoPage', 'appContainer'];
+        pages.forEach(pId => {
+            const pEl = document.getElementById(pId);
+            if (pEl) {
+                pEl.classList.remove('active');
+                pEl.style.setProperty('display', 'none', 'important');
+            }
+        });
+
         const idHidden = document.getElementById('pledgeUserId');
         const realNameInput = document.getElementById('pledgeRealName');
         const phoneInput = document.getElementById('pledgePhone');
@@ -3739,7 +3791,10 @@ export function setupAuthEvents(initFirebaseAndData) {
         const errEl = document.getElementById('pledgeError');
 
         if (idHidden) idHidden.value = userId;
-        if (realNameInput) realNameInput.value = (userData.realName && !userData.realName.startsWith('카카오_') && !userData.realName.startsWith('kakao_')) ? userData.realName : '';
+        if (realNameInput) {
+            const rName = userData.realName || '';
+            realNameInput.value = (rName && !rName.startsWith('카카오_') && !rName.startsWith('kakao_')) ? rName : '';
+        }
         if (phoneInput) {
             const rawPhone = (userData.phoneNumber && !userData.phoneNumber.includes('카카오') && userData.phoneNumber !== '미등록') ? userData.phoneNumber : '';
             phoneInput.value = formatPhoneNumber(rawPhone);
@@ -3748,11 +3803,25 @@ export function setupAuthEvents(initFirebaseAndData) {
         if (agreeCb) agreeCb.checked = false;
         if (errEl) errEl.style.display = 'none';
 
-        modal.style.display = 'flex';
+        modal.style.setProperty('display', 'flex', 'important');
+        modal.style.setProperty('z-index', '100005', 'important');
         modal.classList.add('active');
         modal.classList.remove('hidden');
 
-        setTimeout(initPledgeSignaturePad, 120);
+        if (document.body) {
+            document.body.style.overflow = 'hidden';
+        }
+
+        setTimeout(() => {
+            if (typeof initPledgeSignaturePad === 'function') {
+                initPledgeSignaturePad();
+            }
+        }, 80);
+        setTimeout(() => {
+            if (typeof initPledgeSignaturePad === 'function') {
+                initPledgeSignaturePad();
+            }
+        }, 300);
     };
 
     window.saveMandatoryPledge = async function(e) {
