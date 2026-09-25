@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.25.1459",
+  "version": "v2026.09.25.1512",
   "buildDate": "2026-09-25",
-  "description": "Harden Kakao auth with AuthStateMachine, serverless OAuth proxy, debounce lock, and anti-loop guards",
-  "buildTimestamp": "2026-09-25T14:59:10.733262",
+  "description": "Fix user gesture token preservation, head eager Kakao SDK init, and throughTalk mobile direct authentication",
+  "buildTimestamp": "2026-09-25T15:12:24.010400",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0044",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:44",
-      "buildTimestamp": "2026-09-24T00:44:23.228385",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0047",
       "buildDate": "2026-09-24",
@@ -353,7 +346,14 @@
       "buildTime": "14:59",
       "buildTimestamp": "2026-09-25T14:59:10.733262",
       "description": "Harden Kakao auth with AuthStateMachine, serverless OAuth proxy, debounce lock, and anti-loop guards"
+    },
+    {
+      "version": "v2026.09.25.1512",
+      "buildDate": "2026-09-25",
+      "buildTime": "15:12",
+      "buildTimestamp": "2026-09-25T15:12:24.010400",
+      "description": "Fix user gesture token preservation, head eager Kakao SDK init, and throughTalk mobile direct authentication"
     }
   ],
-  "buildTime": "14:59"
+  "buildTime": "15:12"
 }

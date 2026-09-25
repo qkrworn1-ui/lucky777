@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1459 - BUILD_DATE: 2026-09-25] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1512 - BUILD_DATE: 2026-09-25] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.25.1459)
+ * Lucky777 Smart Bundle (v2026.09.25.1512)
  */
 
 
@@ -2694,12 +2694,11 @@ function _setKakaoButtonsLoading(isLoading) {
         const btns = document.querySelectorAll('button[onclick*="loginWithKakao"], .btn-kakao-login-action');
         btns.forEach(btn => {
             if (isLoading) {
-                if (!btn.dataset.originalHtml) btn.dataset.originalHtml = btn.innerHTML;
-                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color: #191919;"></i> 카카오 연결 중...';
-                btn.style.opacity = '0.75';
+                btn.style.opacity = '0.7';
+                btn.style.filter = 'grayscale(0.3)';
             } else {
-                if (btn.dataset.originalHtml) btn.innerHTML = btn.dataset.originalHtml;
                 btn.style.opacity = '1';
+                btn.style.filter = 'none';
                 btn.disabled = false;
             }
         });
@@ -3034,6 +3033,7 @@ function loginWithKakao(e) {
     try {
         const loginOptions = {
             persistAccessToken: true,
+            throughTalk: true,
             success: function(authObj) {
                 console.log('[Kakao] Auth token granted, requesting profile...');
                 window.Kakao.API.request({
@@ -3408,16 +3408,16 @@ function setupAuthEvents(initFirebaseAndData) {
     const btnKakaoMain = document.getElementById('btnKakaoLoginMain');
     const btnKakaoSignup = document.getElementById('btnKakaoSignupMain');
     if (btnKakaoMain) {
-        btnKakaoMain.addEventListener('click', (e) => {
-            if (e) e.preventDefault();
-            loginWithKakao();
-        });
+        btnKakaoMain.onclick = (e) => {
+            if (e && e.preventDefault) e.preventDefault();
+            loginWithKakao(e);
+        };
     }
     if (btnKakaoSignup) {
-        btnKakaoSignup.addEventListener('click', (e) => {
-            if (e) e.preventDefault();
-            loginWithKakao();
-        });
+        btnKakaoSignup.onclick = (e) => {
+            if (e && e.preventDefault) e.preventDefault();
+            loginWithKakao(e);
+        };
     }
 
     // ========================================================
