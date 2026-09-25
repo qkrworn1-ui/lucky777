@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1051 - BUILD_DATE: 2026-09-25] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1101 - BUILD_DATE: 2026-09-25] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.25.1051)
+ * Lucky777 Smart Bundle (v2026.09.25.1101)
  */
 
 
@@ -25518,124 +25518,132 @@ async function renderConfirmedPurchasesList() {
             const finalQrUrl = buildDonghangLotteryQrUrl(round, purchase.combos, serial, rawUrl);
             const safeEncodedQrUrl = encodeURIComponent(finalQrUrl || '');
 
-            const cardBorderStyle = hasWonReceipt ? `1.5px solid ${themeBorder}` : '1px solid rgba(255,255,255,0.08)';
-            const cardBgStyle = hasWonReceipt ? `linear-gradient(180deg, ${themeDarkBg} 0%, #0a0f1d 100%)` : '#0a0f1d';
-            const cardShadowStyle = hasWonReceipt ? `box-shadow: 0 0 22px ${themeGlow}, 0 6px 18px rgba(0,0,0,0.5);` : 'box-shadow: 0 4px 14px rgba(0,0,0,0.35);';
+            // 🎟️ [A안] 실물 복권 티켓 패스 스타일 테두리 & 네온 림 라이트
+            let cardBorderStyle = '2px solid rgba(255, 255, 255, 0.1)';
+            let cardShadowStyle = 'box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);';
+            let cardBgStyle = 'background: #090d16;';
+            let topHeaderBg = 'background: linear-gradient(90deg, #111827 0%, #0d1322 100%); border-bottom: 1px solid rgba(255, 255, 255, 0.08);';
+            let ticketTagBg = 'background: #1e293b; color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.15);';
+
+            if (hasWonReceipt) {
+                if (highestRank <= 3) {
+                    cardBorderStyle = '2px solid #fbbf24';
+                    cardShadowStyle = 'box-shadow: 0 0 20px rgba(245, 158, 11, 0.28), 0 6px 18px rgba(0, 0, 0, 0.7);';
+                    cardBgStyle = 'background: linear-gradient(180deg, #1a1405 0%, #090d16 100%);';
+                    topHeaderBg = 'background: linear-gradient(90deg, #2a1b06 0%, #111827 100%); border-bottom: 1px solid rgba(251, 191, 36, 0.4);';
+                    ticketTagBg = 'background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #0f172a; font-weight: 900; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);';
+                } else {
+                    cardBorderStyle = '2px solid #10b981';
+                    cardShadowStyle = 'box-shadow: 0 0 20px rgba(16, 185, 129, 0.28), 0 6px 18px rgba(0, 0, 0, 0.7);';
+                    cardBgStyle = 'background: linear-gradient(180deg, #071f16 0%, #090d16 100%);';
+                    topHeaderBg = 'background: linear-gradient(90deg, #082a1d 0%, #111827 100%); border-bottom: 1px solid rgba(16, 185, 129, 0.4);';
+                    ticketTagBg = 'background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; font-weight: 900; box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);';
+                }
+            }
 
             const receiptId = purchase.receiptId || '';
             const purchaseFingerprint = getReceiptCombosFingerprint(purchase);
 
             html += `
-                <!-- 🎟️ 스마트 모바일 월렛 패스 스타일 실구매 영수증 카드 (Clean Deep Black / Winning High Contrast) -->
-                <div class="confirmed-receipt-card confirmed-receipt-pass ${hasWonReceipt ? 'confirmed-receipt-won' : ''}" style="border: ${cardBorderStyle}; border-radius: 12px; margin-bottom: 14px; background: ${cardBgStyle}; overflow: hidden; position: relative; ${cardShadowStyle}">
+                <!-- 🎟️ [A안] 실물 복권 티켓 패스 스타일 실구매 영수증 (기본 접힘 최적화) -->
+                <div class="confirmed-receipt-card confirmed-receipt-pass ${hasWonReceipt ? 'confirmed-receipt-won' : ''}" style="border: ${cardBorderStyle}; border-radius: 14px; margin-bottom: 12px; ${cardBgStyle}; position: relative; ${cardShadowStyle} transition: all 0.2s ease;">
                     
-                    ${hasWonReceipt ? `
-                        <!-- 🏆 당첨 영수증 상단 하이라이트 배너 (High Contrast Radiant Win Ribbon) -->
-                        <div class="confirmed-receipt-win-banner" style="background: linear-gradient(90deg, ${themeBannerBg} 0%, rgba(15, 23, 42, 0.95) 100%); border-bottom: 1px solid ${themeBorder}; padding: 9px 13px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; box-sizing: border-box; width: 100%; min-width: 0;">
-                            <div style="display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1 1 auto;">
-                                <span style="font-size: 1.15rem; line-height: 1; filter: drop-shadow(0 0 6px ${themeColor}); flex-shrink: 0;">${rankIconEmoji}</span>
-                                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0;">
-                                    <strong style="font-size: 0.88rem; color: #ffffff; letter-spacing: -0.2px; font-weight: 800; white-space: nowrap;">
-                                        축하합니다! <span style="color: ${themeColor};">${highestRankLabel} 당첨!</span>
-                                    </strong>
-                                    <span style="font-size: 0.72rem; color: #cbd5e1; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12); padding: 2px 7px; border-radius: 4px; white-space: nowrap;">
-                                        ${parts.join(' · ')}
-                                    </span>
+                    <!-- 1. 티켓 고유 식별 헤더 바 (원터치 접힘/펼침) -->
+                    <div class="confirmed-receipt-header" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this)" style="${topHeaderBg}; padding: 10px 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; user-select: none; transition: filter 0.15s;" onmouseover="this.style.filter='brightness(1.1)';" onmouseout="this.style.filter='brightness(1)';" title="터치(클릭)하여 번호 및 동행복권 검증 정보를 펼치거나 접습니다">
+                        
+                        <!-- Left: TICKET #01 Badge + User + Version + Games -->
+                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
+                            <span class="confirmed-ticket-tag" style="${ticketTagBg}; padding: 3px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 900; font-family: monospace; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0;">
+                                🎟️ TICKET #${String(pIdx + 1).padStart(2, '0')}
+                            </span>
+                            <div style="display: flex; flex-direction: column; min-width: 0; justify-content: center;">
+                                <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    <span style="font-size: 0.86rem; font-weight: 800; color: #f8fafc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${purchaseUserName || purchaseUser}</span>
+                                    ${purchaseUserName && purchaseUserName.toLowerCase() !== purchaseUser.toLowerCase() ? `<span style="font-size: 0.72rem; color: #94a3b8; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">(${purchaseUser})</span>` : ''}
+                                    <span style="font-size: 0.68rem; color: #94a3b8; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px; font-weight: 700; white-space: nowrap; flex-shrink: 0;">${purchase.combos.length}게임</span>
+                                </div>
+                                <div style="font-size: 0.7rem; color: #94a3b8; display: flex; align-items: center; gap: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px;">
+                                    ${versionBadgeHtml}
+                                    ${isLocked ? '<span style="color:#fbbf24; font-size:0.68rem; background:rgba(245,158,11,0.12); border:1px solid rgba(245,158,11,0.3); padding:1px 5px; border-radius:4px; font-weight:700;"><i class="fa-solid fa-lock"></i> 잠김</span>' : ''}
                                 </div>
                             </div>
-                            <div style="display: flex; align-items: center; gap: 5px; margin-left: auto; flex-shrink: 0;">
-                                <span style="font-size: 0.72rem; color: #94a3b8; white-space: nowrap;">당첨금</span>
-                                <strong style="font-size: 1.02rem; font-weight: 900; color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.4); font-family: monospace; white-space: nowrap;">
+                        </div>
+
+                        <!-- Right: Win Result & Actions & Dropdown Arrow -->
+                        <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
+                            <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                ${winPillBadgeHtml || receiptResultBadge}
+                            </div>
+                            
+                            <!-- Fold / Expand Dropdown Button -->
+                            <div class="btn-toggle-receipt-combos" style="width: 28px; height: 28px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 7px; color: #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; transition: all 0.2s;">
+                                <i class="fa-solid fa-chevron-down toggle-combos-icon" style="transition: transform 0.25s ease;"></i>
+                            </div>
+
+                            ${isAdmin ? `
+                                <div onclick="event.stopPropagation();" style="display: flex; align-items: center; gap: 4px; margin-left: 2px;">
+                                    <button class="btn-toggle-lock-purchase btn-dark-pill" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="height: 26px; padding: 0 6px; box-sizing: border-box;">
+                                        <i class="fa-solid ${lockIcon}" style="color: #fbbf24; font-size: 0.72rem;"></i>
+                                    </button>
+                                    ${isMaster ? `
+                                        <button class="btn-delete-purchase btn-dark-pill" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="height: 26px; padding: 0 6px; box-sizing: border-box; ${isLocked ? 'opacity: 0.4; cursor: not-allowed;' : ''}">
+                                            <i class="fa-solid fa-trash-can" style="color: #f87171; font-size: 0.72rem;"></i>
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+
+                    <!-- 당첨 영수증 상단 하이라이트 배너 (펼쳐졌을 때 더욱 상세히 노출) -->
+                    ${hasWonReceipt ? `
+                        <div class="confirmed-receipt-win-banner" style="display: none; background: linear-gradient(90deg, ${themeBannerBg} 0%, rgba(15, 23, 42, 0.95) 100%); border-bottom: 1px solid ${themeBorder}; padding: 8px 12px; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; box-sizing: border-box; width: 100%;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 1.1rem; line-height: 1; flex-shrink: 0;">${rankIconEmoji}</span>
+                                <strong style="font-size: 0.85rem; color: #ffffff; font-weight: 800; white-space: nowrap;">
+                                    축하합니다! <span style="color: ${themeColor};">${highestRankLabel} 당첨!</span>
+                                </strong>
+                                <span style="font-size: 0.7rem; color: #cbd5e1; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.12); padding: 1px 6px; border-radius: 4px; white-space: nowrap;">
+                                    ${parts.join(' · ')}
+                                </span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px; margin-left: auto;">
+                                <strong style="font-size: 0.96rem; font-weight: 900; color: #fbbf24; font-family: monospace; white-space: nowrap;">
                                     +${receiptPrize.toLocaleString()}원
                                 </strong>
                             </div>
                         </div>
                     ` : ''}
 
-                    <!-- 1. Pass Top Header -->
-                    <div class="confirmed-receipt-header" style="padding: 11px 13px; background: #0f172a; border-bottom: 1px dashed rgba(255,255,255,0.08); position: relative;">
-                        <!-- Top Badges Row -->
-                        <div class="confirmed-receipt-top-row" style="display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 6px; width: 100%;">
-                            <div class="confirmed-receipt-badge-group" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap; min-width: 0;">
-                                <span style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 2px 7px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">
-                                    <i class="fa-solid fa-circle-check"></i> 실구매인증
-                                </span>
-                                ${versionBadgeHtml}
-                                ${isLocked ? '<span class="confirmed-lock-badge" style="color: #fbbf24; font-size: 0.7rem; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); padding: 2px 6px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-lock"></i> 잠김</span>' : ''}
-                            </div>
-                            <div class="confirmed-receipt-result-pill" style="display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; margin-left: auto;">
-                                ${winPillBadgeHtml || receiptResultBadge}
-                            </div>
-                        </div>
-
-                        <!-- Main Title & Purchaser Meta -->
-                        <div style="display: flex; flex-direction: column; gap: 3px;">
-                            <div style="font-size: 0.92rem; font-weight: 800; color: #ffffff; display: flex; align-items: center; gap: 6px; letter-spacing: -0.2px;">
-                                <i class="fa-solid fa-ticket" style="color: #fbbf24; font-size: 0.85rem;"></i> 제 ${round}회차 로또 6/45 · <span style="color: #cbd5e1;">영수증 #${pIdx+1}</span>
-                            </div>
-                            <div class="confirmed-receipt-meta" style="font-size: 0.72rem; color: #94a3b8; display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; line-height: 1.35;">
-                                <span style="display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">${purchaserLabel}</span>
-                                <span style="color: rgba(255,255,255,0.2);">•</span>
-                                <span style="color: #cbd5e1; font-weight: 700; white-space: nowrap;">${purchase.combos.length}게임 (${(purchase.combos.length * 1000).toLocaleString()}원)</span>
-                                ${scannedAt !== '-' ? `<span style="color: rgba(255,255,255,0.2);">•</span> <span style="font-family: monospace; color: #64748b; font-size: 0.68rem; white-space: nowrap;">${scannedAt}</span>` : ''}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 2. Pass Mid Control Bar -->
-                    <div class="confirmed-receipt-control-bar" style="padding: 6px 12px; background: #0b1120; border-bottom: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; box-sizing: border-box; min-width: 0;">
-                        <div style="font-size: 0.74rem; font-weight: 700; color: #cbd5e1; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; flex-shrink: 0; min-width: 0;">
-                            <i class="fa-solid fa-list-check" style="color: #818cf8; font-size: 0.72rem; flex-shrink: 0;"></i>
-                            <span>${purchase.combos.length}개 게임 번호</span>
-                            ${hasWonReceipt && winningGamesList.length > 0 ? `
-                                <span class="confirmed-win-folded-badge" style="font-size: 0.7rem; font-weight: 800; color: ${themeColor}; background: rgba(16, 185, 129, 0.15); border: 1px solid ${themeBorder}; padding: 2px 7px; border-radius: 5px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 8px ${themeGlow}; white-space: nowrap;">
-                                    <i class="fa-solid fa-trophy" style="font-size: 0.65rem;"></i>
-                                    <span>${winningGamesList.map(w => `${w.letter}게임 ${w.label}`).join(', ')}</span>
-                                </span>
-                            ` : ''}
-                        </div>
-                        <div class="confirmed-receipt-actions" style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap; flex-shrink: 0; margin-left: auto;">
-                            <button type="button" class="btn-toggle-receipt-combos btn-dark-pill" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this)" style="height: 26px; box-sizing: border-box;">
-                                <i class="fa-solid fa-list-ol"></i>
-                                <span class="toggle-combos-text">번호 펼치기</span>
-                                <i class="fa-solid fa-chevron-down toggle-combos-icon" style="transition: transform 0.2s; font-size: 0.62rem;"></i>
-                            </button>
-                            ${isAdmin ? `
-                                <button class="btn-toggle-lock-purchase btn-dark-pill" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" title="${isLocked ? '잠금 해제하기' : '실수 방지 잠금'}" style="height: 26px; box-sizing: border-box;">
-                                    <i class="fa-solid ${lockIcon}" style="color: #fbbf24;"></i> ${lockBtnText}
-                                </button>
-                                ${isMaster ? `
-                                    <button class="btn-delete-purchase btn-dark-pill" data-round="${round}" data-pidx="${pIdx}" data-receiptid="${receiptId}" data-user="${purchaseUser}" data-fingerprint="${purchaseFingerprint}" ${isLocked ? 'disabled' : ''} title="${isLocked ? '잠금 해제 후 휴지통으로 이동 가능' : '휴지통으로 안전 보관 이동'}" style="height: 26px; box-sizing: border-box; ${isLocked ? 'opacity: 0.4; cursor: not-allowed;' : ''}">
-                                        <i class="fa-solid fa-trash-can" style="color: #f87171;"></i> 삭제
-                                    </button>
-                                ` : ''}
-                            ` : ''}
-                        </div>
-                    </div>
-
-                    <!-- 3. Pass Body (Collapsible Games List - Folded by default) -->
-                    <div class="confirmed-games-list" style="display:none; flex-direction:column; gap: 5px; padding: 8px 10px; background: rgba(0,0,0,0.25);">
+                    <!-- 2. 본문: 5개 게임 번호 리스트 (기본 접힘: style="display:none;") -->
+                    <div class="confirmed-games-list" style="display: none; flex-direction: column; gap: 5px; padding: 10px; background: rgba(0,0,0,0.45);">
                         ${gamesHtml}
                     </div>
 
-                    <!-- 4. Pass Bottom Footer (TR Info & 동행복권 원본 QR 링크 & 당첨여부확인 버튼) -->
-                    <div class="confirmed-receipt-footer" style="padding: 10px 12px; background: #0f172a; border-top: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column; gap: 8px; width: 100%; box-sizing: border-box; min-width: 0; overflow: hidden;">
+                    <!-- ✂️ 절취선 & 펀치홀 홈 (기본 접힘: style="display:none;") -->
+                    <div class="perforated-line confirmed-receipt-perforation" style="display: none; border-top: 1.5px dashed rgba(255, 255, 255, 0.15); position: relative; margin: 0;">
+                        <div class="ticket-notch-left" style="position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #090d16; top: 50%; transform: translateY(-50%); left: -7px; box-shadow: inset -2px 0 3px rgba(0,0,0,0.6);"></div>
+                        <div class="ticket-notch-right" style="position: absolute; width: 14px; height: 14px; border-radius: 50%; background: #090d16; top: 50%; transform: translateY(-50%); right: -7px; box-shadow: inset 2px 0 3px rgba(0,0,0,0.6);"></div>
+                    </div>
+
+                    <!-- 3. 티켓 푸터 (바코드 / 동행복권 실시간 조회 및 QR 복사, 기본 접힘: style="display:none;") -->
+                    <div class="confirmed-receipt-footer" style="display: none; padding: 9px 12px; background: #090d16; border-top: 1px solid rgba(255,255,255,0.06); flex-direction: column; gap: 7px; width: 100%; box-sizing: border-box;">
                         
                         <!-- Top row: Serial & Status & Action Button -->
-                        <div class="confirmed-footer-top-row">
-                            <div class="confirmed-serial-group">
-                                <div class="confirmed-serial-text">
-                                    <span class="confirmed-serial-label">발행 일련번호:</span>
-                                    <strong class="confirmed-serial-num" title="${serial}">${serial}</strong>
+                        <div class="confirmed-footer-top-row" style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <div class="confirmed-serial-group" style="display: flex; align-items: center; gap: 6px; min-width: 0;">
+                                <i class="fa-solid fa-barcode" style="color: #64748b; font-size: 1.1rem; flex-shrink: 0;"></i>
+                                <div class="confirmed-serial-text" style="font-size: 0.72rem; color: #94a3b8; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    NO: <strong class="confirmed-serial-num" title="${serial}" style="color: #cbd5e1;">${serial}</strong>
                                 </div>
-                                <span class="confirmed-serial-dot">•</span>
-                                <div class="confirmed-verify-status">
+                                <span class="confirmed-serial-dot" style="color: rgba(255,255,255,0.2);">•</span>
+                                <div class="confirmed-verify-status" style="font-size: 0.7rem; color: #34d399; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;">
                                     <i class="fa-solid fa-shield-check"></i>
                                     <span>발권 검증 완료</span>
                                 </div>
                             </div>
-                            <div class="confirmed-footer-btn-wrap">
-                                <button type="button" class="confirmed-btn-verify-qr" title="동행복권 공식 서버 실시간 당첨결과 조회" data-qr-url="${safeEncodedQrUrl}" onclick="window.handleDonghangVerifyClick ? window.handleDonghangVerifyClick(this) : (window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}'))">
+                            <div class="confirmed-footer-btn-wrap" style="margin-left: auto;">
+                                <button type="button" class="confirmed-btn-verify-qr" title="동행복권 공식 서버 실시간 당첨결과 조회" data-qr-url="${safeEncodedQrUrl}" onclick="window.handleDonghangVerifyClick ? window.handleDonghangVerifyClick(this) : (window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}'))" style="height: 28px; padding: 0 10px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff; border: none; border-radius: 6px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(37,99,235,0.35);">
                                     <i class="fa-solid fa-magnifying-glass-chart"></i>
                                     <span>동행복권 당첨확인</span>
                                 </button>
@@ -25643,13 +25651,13 @@ async function renderConfirmedPurchasesList() {
                         </div>
 
                         <!-- Bottom row: 동행복권 원본 QR 링크 바 -->
-                        <div class="confirmed-receipt-qr-link-bar">
-                            <div class="confirmed-qr-info-wrap">
-                                <i class="fa-solid fa-qrcode confirmed-qr-icon"></i>
-                                <span class="confirmed-qr-badge">공식 QR:</span>
-                                <button type="button" class="confirmed-qr-url-link" title="${finalQrUrl}" data-qr-url="${safeEncodedQrUrl}" onclick="window.handleDonghangVerifyClick ? window.handleDonghangVerifyClick(this) : (window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}'))">${finalQrUrl}</button>
+                        <div class="confirmed-receipt-qr-link-bar" style="display: flex; align-items: center; justify-content: space-between; gap: 6px; background: rgba(0,0,0,0.35); padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div class="confirmed-qr-info-wrap" style="display: flex; align-items: center; gap: 5px; min-width: 0; flex: 1;">
+                                <i class="fa-solid fa-qrcode confirmed-qr-icon" style="color: #64748b; font-size: 0.74rem; flex-shrink: 0;"></i>
+                                <span class="confirmed-qr-badge" style="font-size: 0.68rem; color: #94a3b8; font-weight: 700; white-space: nowrap;">공식 QR:</span>
+                                <button type="button" class="confirmed-qr-url-link" title="${finalQrUrl}" data-qr-url="${safeEncodedQrUrl}" onclick="window.handleDonghangVerifyClick ? window.handleDonghangVerifyClick(this) : (window.openDonghangVerifyModal && window.openDonghangVerifyModal('${finalQrUrl}'))" style="background: transparent; border: none; color: #60a5fa; font-size: 0.68rem; font-family: monospace; text-align: left; text-decoration: underline; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; padding: 0;">${finalQrUrl}</button>
                             </div>
-                            <button type="button" class="btn-dark-pill confirmed-qr-copy-btn" data-qr-url="${safeEncodedQrUrl}" onclick="window.copyToClipboard && window.copyToClipboard(decodeURIComponent(this.getAttribute('data-qr-url') || '${finalQrUrl}'), '🔗 동행복권 원본 QR 링크가 복사되었습니다.')" title="동행복권 공식 QR 원본 링크 클립보드 복사">
+                            <button type="button" class="btn-dark-pill confirmed-qr-copy-btn" data-qr-url="${safeEncodedQrUrl}" onclick="window.copyToClipboard && window.copyToClipboard(decodeURIComponent(this.getAttribute('data-qr-url') || '${finalQrUrl}'), '🔗 동행복권 원본 QR 링크가 복사되었습니다.')" title="동행복권 공식 QR 원본 링크 클립보드 복사" style="height: 22px; padding: 0 6px; font-size: 0.68rem; flex-shrink: 0;">
                                 <i class="fa-solid fa-copy"></i>
                                 <span>복사</span>
                             </button>
@@ -26502,58 +26510,82 @@ function renderReceiptTrashModalContent() {
 }
 
 /**
- * 📱 단일 구매영수증의 5게임 번호 조합 목록 펼치기/접기 토글
+ * 📱 단일 구매영수증의 5게임 번호 조합 목록 펼치기/접기 토글 (A안 실물 티켓 패스 연동)
  */
-function toggleReceiptCombos(btn) {
-    if (!btn) return;
-    const card = btn.closest('.confirmed-receipt-card');
+function toggleReceiptCombos(el) {
+    if (!el) return;
+    const card = el.closest('.confirmed-receipt-card');
     if (!card) return;
     const gamesList = card.querySelector('.confirmed-games-list');
-    const textEl = btn.querySelector('.toggle-combos-text');
-    const iconEl = btn.querySelector('.toggle-combos-icon');
+    const perfLine = card.querySelector('.confirmed-receipt-perforation');
+    const footer = card.querySelector('.confirmed-receipt-footer');
+    const winBanner = card.querySelector('.confirmed-receipt-win-banner');
+    const iconEl = card.querySelector('.toggle-combos-icon');
+    const toggleBtnWrap = card.querySelector('.btn-toggle-receipt-combos');
     if (!gamesList) return;
 
     const isHidden = (gamesList.style.display === 'none' || !gamesList.style.display);
     if (isHidden) {
         gamesList.style.display = 'flex';
-        if (textEl) textEl.textContent = '번호 접기';
+        if (perfLine) perfLine.style.display = 'block';
+        if (footer) footer.style.display = 'flex';
+        if (winBanner) winBanner.style.display = 'flex';
         if (iconEl) iconEl.style.transform = 'rotate(180deg)';
-        btn.style.background = 'rgba(59, 130, 246, 0.28)';
-        btn.style.borderColor = '#3b82f6';
-        btn.style.color = '#bfdbfe';
+        if (toggleBtnWrap) {
+            toggleBtnWrap.style.background = 'rgba(59, 130, 246, 0.28)';
+            toggleBtnWrap.style.borderColor = '#3b82f6';
+            toggleBtnWrap.style.color = '#bfdbfe';
+        }
     } else {
         gamesList.style.display = 'none';
-        if (textEl) textEl.textContent = '번호 펼치기';
+        if (perfLine) perfLine.style.display = 'none';
+        if (footer) footer.style.display = 'none';
+        if (winBanner) winBanner.style.display = 'none';
         if (iconEl) iconEl.style.transform = 'rotate(0deg)';
-        btn.style.background = 'rgba(59, 130, 246, 0.15)';
-        btn.style.borderColor = 'rgba(59, 130, 246, 0.4)';
-        btn.style.color = '#93c5fd';
+        if (toggleBtnWrap) {
+            toggleBtnWrap.style.background = 'rgba(255, 255, 255, 0.08)';
+            toggleBtnWrap.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+            toggleBtnWrap.style.color = '#cbd5e1';
+        }
     }
 }
 
 /**
- * 📱 해당 회차 내 모든 구매영수증 번호 일괄 펼치기/접기 토글
+ * 📱 해당 회차 내 모든 구매영수증 번호 일괄 펼치기/접기 토글 (A안 실물 티켓 패스 연동)
  */
 function toggleRoundAllReceipts(btn, round) {
     if (!btn) return;
     const roundCard = btn.closest('.confirmed-round-card');
     if (!roundCard) return;
     const allGamesLists = roundCard.querySelectorAll('.confirmed-games-list');
-    const allToggleBtns = roundCard.querySelectorAll('.btn-toggle-receipt-combos');
+    const allPerfLines = roundCard.querySelectorAll('.confirmed-receipt-perforation');
+    const allFooters = roundCard.querySelectorAll('.confirmed-receipt-footer');
+    const allWinBanners = roundCard.querySelectorAll('.confirmed-receipt-win-banner');
+    const allIcons = roundCard.querySelectorAll('.toggle-combos-icon');
+    const allToggleBtnWraps = roundCard.querySelectorAll('.btn-toggle-receipt-combos');
     const isCurrentlyCollapsed = Array.from(allGamesLists).some(el => el.style.display === 'none' || !el.style.display);
 
     allGamesLists.forEach(el => {
         el.style.display = isCurrentlyCollapsed ? 'flex' : 'none';
     });
+    allPerfLines.forEach(el => {
+        el.style.display = isCurrentlyCollapsed ? 'block' : 'none';
+    });
+    allFooters.forEach(el => {
+        el.style.display = isCurrentlyCollapsed ? 'flex' : 'none';
+    });
+    allWinBanners.forEach(el => {
+        el.style.display = isCurrentlyCollapsed ? 'flex' : 'none';
+    });
 
-    allToggleBtns.forEach(b => {
-        const textEl = b.querySelector('.toggle-combos-text');
-        const iconEl = b.querySelector('.toggle-combos-icon');
-        if (textEl) textEl.textContent = isCurrentlyCollapsed ? '번호 접기' : '번호 펼치기';
-        if (iconEl) iconEl.style.transform = isCurrentlyCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
-        b.style.background = isCurrentlyCollapsed ? 'rgba(59, 130, 246, 0.28)' : 'rgba(59, 130, 246, 0.15)';
-        b.style.borderColor = isCurrentlyCollapsed ? '#3b82f6' : 'rgba(59, 130, 246, 0.4)';
-        b.style.color = isCurrentlyCollapsed ? '#bfdbfe' : '#93c5fd';
+    allIcons.forEach(iconEl => {
+        iconEl.style.transform = isCurrentlyCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
+    });
+
+    allToggleBtnWraps.forEach(b => {
+        b.style.background = isCurrentlyCollapsed ? 'rgba(59, 130, 246, 0.28)' : 'rgba(255, 255, 255, 0.08)';
+        b.style.borderColor = isCurrentlyCollapsed ? '#3b82f6' : 'rgba(255, 255, 255, 0.15)';
+        b.style.color = isCurrentlyCollapsed ? '#bfdbfe' : '#cbd5e1';
     });
 
     const roundToggleText = btn.querySelector('.toggle-all-text');

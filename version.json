@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.25.1051",
+  "version": "v2026.09.25.1101",
   "buildDate": "2026-09-25",
-  "description": "Apply high-density user list and mobile detail drawer",
-  "buildTimestamp": "2026-09-25T10:51:47.721701",
+  "description": "Apply A-type physical lottery ticket pass design with default collapsed state in confirmed purchases tab",
+  "buildTimestamp": "2026-09-25T11:01:43.654433",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0012",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:12",
-      "buildTimestamp": "2026-09-24T00:12:12.389825",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0012.49",
       "buildDate": "2026-09-24",
@@ -353,7 +346,14 @@
       "buildTime": "10:51",
       "buildTimestamp": "2026-09-25T10:51:47.721701",
       "description": "Apply high-density user list and mobile detail drawer"
+    },
+    {
+      "version": "v2026.09.25.1101",
+      "buildDate": "2026-09-25",
+      "buildTime": "11:01",
+      "buildTimestamp": "2026-09-25T11:01:43.654433",
+      "description": "Apply A-type physical lottery ticket pass design with default collapsed state in confirmed purchases tab"
     }
   ],
-  "buildTime": "10:51"
+  "buildTime": "11:01"
 }
