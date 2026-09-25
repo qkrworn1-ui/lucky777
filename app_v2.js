@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1228 - BUILD_DATE: 2026-09-25] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1238 - BUILD_DATE: 2026-09-25] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.25.1228)
+ * Lucky777 Smart Bundle (v2026.09.25.1238)
  */
 
 
@@ -2359,6 +2359,16 @@ if (typeof window !== 'undefined') {
 
 async function checkAuthOnLoad(initFirebaseAndData) {
     updateDebugMonitor({});
+
+    // Check if returning from Kakao OAuth redirect (?code=...)
+    if (typeof window !== 'undefined' && window.location && window.location.search && window.location.search.includes('code=')) {
+        try {
+            await handleKakaoAuthRedirectOnLoad();
+        } catch(e) {
+            console.warn('[checkAuthOnLoad] Kakao redirect handle notice:', e);
+        }
+    }
+
     const authId = SafeAuth.get();
     const loginModal = document.getElementById('loginModalOverlay');
     const appContainer = document.getElementById('appContainer');
@@ -2584,7 +2594,8 @@ async function checkAuthOnLoad(initFirebaseAndData) {
 const KAKAO_JS_KEY = 'c40e8adc700a6f1c1e62b6aa3fa0c60a';
 
 function initKakaoSdk() {
-    if (typeof window !== 'undefined' && window.Kakao) {
+    if (typeof window === 'undefined') return;
+    if (window.Kakao) {
         try {
             if (!window.Kakao.isInitialized()) {
                 window.Kakao.init(KAKAO_JS_KEY);
@@ -2593,6 +2604,22 @@ function initKakaoSdk() {
         } catch (e) {
             console.warn('[Kakao Init Handled]', e);
         }
+        return;
+    }
+    if (typeof document !== 'undefined' && !document.getElementById('kakao-sdk-script')) {
+        const script = document.createElement('script');
+        script.id = 'kakao-sdk-script';
+        script.src = 'https://developers.kakao.com/sdk/js/kakao.min.js';
+        script.async = true;
+        script.onload = () => {
+            try {
+                if (window.Kakao && !window.Kakao.isInitialized()) {
+                    window.Kakao.init(KAKAO_JS_KEY);
+                    console.log('[Kakao SDK Loaded & Initialized]');
+                }
+            } catch(e){}
+        };
+        document.head.appendChild(script);
     }
 }
 
@@ -2627,46 +2654,264 @@ function _setKakaoButtonsLoading(isLoading) {
     } catch(e) {}
 }
 
-function initKakaoSdk() {
-    if (typeof window !== 'undefined') {
-        if (!window.Kakao) {
-            // Dynamic SDK script injection fallback if not already loaded
-            if (!document.getElementById('kakao-sdk-script')) {
-                const script = document.createElement('script');
-                script.id = 'kakao-sdk-script';
-                script.src = 'https://developers.kakao.com/sdk/js/kakao.min.js';
-                script.async = true;
-                script.onload = () => {
-                    try {
-                        if (window.Kakao && !window.Kakao.isInitialized()) {
-                            window.Kakao.init(KAKAO_JS_KEY);
-                            console.log('[Kakao SDK Loaded & Initialized]');
-                        }
-                    } catch(e){}
-                };
-                document.head.appendChild(script);
-            }
-            return;
+function processKakaoLoginSuccess(res, authObj = {}) {
+    try {
+        const kakaoId = String(res.id);
+        const profile = (res.kakao_account && res.kakao_account.profile) ? res.kakao_account.profile : {};
+        const nickname = profile.nickname || (res.properties && res.properties.nickname) || `카카오_${kakaoId.slice(-4)}`;
+        const profileImg = profile.profile_image_url || (res.properties && res.properties.profile_image) || '';
+        const customUserId = `kakao_${kakaoId}`;
+        const now = new Date();
+        const nowIso = now.toISOString();
+
+        console.log('[Kakao] Login successful for user:', customUserId, nickname);
+
+        // 1. Instant Session Unlock (Multi-storage persistence)
+        SafeAuth.set(customUserId);
+        try {
+            window.sessionStorage.setItem('lotto_auth', customUserId);
+            window.localStorage.setItem('lotto_auth', customUserId);
+            document.cookie = 'lotto_auth=' + encodeURIComponent(customUserId) + '; path=/; max-age=2592000; SameSite=Lax';
+        } catch(e) {}
+        window.__appUnlocked = true;
+        setIsPermanentCache(customUserId, true);
+        setUserNameCache(customUserId, nickname);
+        setUserCreatedCache(customUserId, nowIso);
+        setUserPermissionsCache(customUserId, { allowLotto: true, allowToto: true });
+
+        window.__currentUser = {
+            userId: customUserId,
+            realName: nickname,
+            role: 'user',
+            isAdmin: false,
+            isPermanent: true,
+            createdAt: nowIso,
+            authProvider: 'kakao'
+        };
+
+        // 2. Hide Login Modal immediately
+        const modal = document.getElementById('loginModalOverlay');
+        if (modal) {
+            modal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
+            modal.classList.add('hidden');
+            modal.classList.remove('active');
+        }
+        if (document.body) {
+            document.body.style.overflow = '';
         }
 
-        try {
-            if (!window.Kakao.isInitialized()) {
-                window.Kakao.init(KAKAO_JS_KEY);
-                console.log('[Kakao SDK Initialized]');
-            }
-        } catch (e) {
-            console.warn('[Kakao Init Handled]', e);
+        // 3. Show Landing Page immediately
+        const kakaoLpEl = document.getElementById('landingPage');
+        const kakaoAcEl = document.getElementById('appContainer');
+        const kakaoTpEl = document.getElementById('totoPage');
+        if (kakaoLpEl) { kakaoLpEl.classList.add('active'); kakaoLpEl.style.setProperty('display', 'flex', 'important'); }
+        if (kakaoAcEl) { kakaoAcEl.classList.remove('active'); kakaoAcEl.style.setProperty('display', 'none', 'important'); }
+        if (kakaoTpEl) { kakaoTpEl.classList.remove('active'); kakaoTpEl.style.setProperty('display', 'none', 'important'); }
+
+        updateLoggedInUserHeaderUI(customUserId);
+        showToast(`👋 [${nickname}]님 환영합니다!`);
+
+        // 4. Render Dashboard & Init Services
+        setTimeout(() => {
+            try {
+                if (typeof window.checkAuthOnLoad === 'function') {
+                    window.checkAuthOnLoad();
+                } else if (typeof window.initLottoService === 'function') {
+                    window.initLottoService();
+                }
+            } catch(ex) {}
+            try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
+        }, 50);
+
+        // 5. Background Firestore Persistence
+        const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+        if (firestore) {
+            (async () => {
+                try {
+                    const kakaoAuthData = {
+                        accessToken: authObj.access_token || (window.Kakao && window.Kakao.Auth && window.Kakao.Auth.getAccessToken()) || '',
+                        refreshToken: authObj.refresh_token || '',
+                        expiresIn: authObj.expires_in || 0,
+                        refreshTokenExpiresIn: authObj.refresh_token_expires_in || 0,
+                        scopes: authObj.scope ? (typeof authObj.scope === 'string' ? authObj.scope.split(' ') : authObj.scope) : ['profile_nickname', 'profile_image'],
+                        hasTalkMessageScope: authObj.scope ? (typeof authObj.scope === 'string' ? authObj.scope.includes('talk_message') : Array.isArray(authObj.scope) && authObj.scope.includes('talk_message')) : false,
+                        updatedAt: nowIso
+                    };
+
+                    const userDoc = await firestore.collection('lotto_users').doc(customUserId).get();
+                    if (!userDoc.exists) {
+                        const formattedDate = `${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, '0')}월 ${String(now.getDate()).padStart(2, '0')}일 ${String(now.getHours()).padStart(2, '0')}시 ${String(now.getMinutes()).padStart(2, '0')}분`;
+                        const agreementDocument = {
+                            docId: `AGR-${customUserId}-${Date.now()}`,
+                            documentTitle: '로또 AI 퀀트 서비스 이용 및 성공수수료 전자 서약서 (카카오 간편 본인인증)',
+                            userId: customUserId,
+                            realName: nickname,
+                            phoneNumber: '카카오 1초 본인인증',
+                            createdAt: nowIso,
+                            agreedDateFormatted: formattedDate,
+                            userAgent: navigator.userAgent,
+                            authProvider: 'kakao',
+                            terms: getStandardAgreementTerms(now),
+                            signatureDataUrl: null,
+                            legalPledgeStatement: '카카오 간편 본인인증을 통해 위 모든 약관의 전문 내용을 확인하였으며 본 전자 계약을 체결합니다.',
+                            status: 'legally_binding'
+                        };
+
+                        const userData = {
+                            userId: customUserId,
+                            phoneNumber: '카카오 1초 본인인증',
+                            realName: nickname,
+                            authProvider: 'kakao',
+                            kakaoId: kakaoId,
+                            profileImage: profileImg,
+                            status: 'active',
+                            createdAt: nowIso,
+                            agreementDoc: agreementDocument,
+                            kakaoAuth: kakaoAuthData,
+                            agreedTerms: {
+                                feeAgreement: true,
+                                weeklyPurchaseAgreement: true,
+                                privacyAgreement: true,
+                                algoDisclaimer: true,
+                                agreedAt: nowIso,
+                                authProvider: 'kakao'
+                            },
+                            loginFailCount: 0,
+                            lockoutUntil: null
+                        };
+
+                        await firestore.collection('lotto_users').doc(customUserId).set(userData);
+                        try { await firestore.collection('lotto_agreements').doc(customUserId).set(agreementDocument); } catch(e){}
+                    } else {
+                        await firestore.collection('lotto_users').doc(customUserId).set({
+                            kakaoAuth: kakaoAuthData,
+                            lastLoginAt: nowIso
+                        }, { merge: true });
+
+                        const existingData = userDoc.data() || {};
+                        const isAdm = !!(existingData.role === 'admin' || existingData.isAdmin === true);
+                        const isPerm = !!(isAdm || existingData.isPermanent === true || existingData.userType === 'permanent');
+                        if (isAdm) setIsAdminCache(customUserId, true);
+                        if (isPerm) setIsPermanentCache(customUserId, true);
+                        if (existingData.realName) setUserNameCache(customUserId, existingData.realName);
+                    }
+                } catch(bgErr) {
+                    console.warn('[Kakao BG Sync Error]', bgErr);
+                }
+            })();
         }
+        return true;
+    } catch(err) {
+        console.error('[processKakaoLoginSuccess Error]', err);
+        return false;
     }
+}
+
+async function handleKakaoAuthRedirectOnLoad() {
+    if (typeof window === 'undefined' || typeof window.location === 'undefined') return false;
+    const search = window.location.search;
+    if (!search) return false;
+
+    const urlParams = new URLSearchParams(search);
+    const code = urlParams.get('code');
+    const error = urlParams.get('error');
+
+    if (error) {
+        console.warn('[Kakao OAuth Redirect] Error param detected in URL:', error, urlParams.get('error_description'));
+        try {
+            const cleanUrl = window.location.origin + window.location.pathname + window.location.hash;
+            window.history.replaceState(null, '', cleanUrl);
+        } catch(e) {}
+        return false;
+    }
+
+    if (!code) return false;
+
+    console.log('[Kakao OAuth Redirect] Found auth code in URL, completing login flow...');
+    
+    // Clean query param immediately so refreshing doesn't replay expired code
+    try {
+        const cleanUrl = window.location.origin + window.location.pathname + window.location.hash;
+        window.history.replaceState(null, '', cleanUrl);
+    } catch(e) {}
+
+    _setKakaoButtonsLoading(true);
+
+    try {
+        initKakaoSdk();
+        const tokenResp = await fetch('https://kauth.kakao.com/oauth/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+            body: new URLSearchParams({
+                grant_type: 'authorization_code',
+                client_id: KAKAO_JS_KEY,
+                redirect_uri: window.location.origin + window.location.pathname,
+                code: code
+            })
+        });
+
+        if (!tokenResp.ok) {
+            const errTxt = await tokenResp.text();
+            console.error('[Kakao OAuth Token Exchange Fail]', errTxt);
+            _setKakaoButtonsLoading(false);
+            return false;
+        }
+
+        const tokenData = await tokenResp.json();
+        if (tokenData && tokenData.access_token) {
+            if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.setAccessToken === 'function') {
+                window.Kakao.Auth.setAccessToken(tokenData.access_token);
+            }
+
+            let userData = null;
+            try {
+                const userMeResp = await fetch('https://kapi.kakao.com/v2/user/me', {
+                    headers: { 'Authorization': `Bearer ${tokenData.access_token}` }
+                });
+                if (userMeResp.ok) {
+                    userData = await userMeResp.json();
+                }
+            } catch(fetchErr) {
+                console.warn('[Kakao User Fetch Direct Fallback]', fetchErr);
+            }
+
+            if (userData && userData.id) {
+                _setKakaoButtonsLoading(false);
+                return processKakaoLoginSuccess(userData, tokenData);
+            } else if (window.Kakao && window.Kakao.API) {
+                return new Promise((resolve) => {
+                    window.Kakao.API.request({
+                        url: '/v2/user/me',
+                        success: function(res) {
+                            _setKakaoButtonsLoading(false);
+                            resolve(processKakaoLoginSuccess(res, tokenData));
+                        },
+                        fail: function(err) {
+                            _setKakaoButtonsLoading(false);
+                            console.error('[Kakao API Fallback Fail]', err);
+                            resolve(false);
+                        }
+                    });
+                });
+            }
+        }
+    } catch (e) {
+        console.error('[Kakao OAuth Redirect Handler Error]', e);
+    } finally {
+        _setKakaoButtonsLoading(false);
+    }
+    return false;
 }
 
 function loginWithKakao() {
     console.log('[Kakao] Login button clicked');
 
     // 1. Ensure Kakao SDK is available and initialized immediately
-    if (typeof window === 'undefined' || !window.Kakao) {
-        initKakaoSdk();
-        // Fallback: Alert and dynamic load
+    if (typeof window === 'undefined') return;
+
+    initKakaoSdk();
+
+    if (!window.Kakao) {
         alert('💬 카카오 로그인 모듈을 불러오는 중입니다. 1초 후 다시 버튼을 눌러주세요.');
         return;
     }
@@ -2680,7 +2925,6 @@ function loginWithKakao() {
     }
 
     if (_isKakaoLoginInProgress) {
-        // Reset after 3 seconds in case previous attempt timed out
         console.log('[Kakao] Previous login in progress, resetting state...');
     }
     _isKakaoLoginInProgress = true;
@@ -2689,7 +2933,7 @@ function loginWithKakao() {
     const unlockTimer = setTimeout(() => {
         _isKakaoLoginInProgress = false;
         _setKakaoButtonsLoading(false);
-    }, 4000);
+    }, 5000);
 
     const finishLogin = () => {
         clearTimeout(unlockTimer);
@@ -2705,6 +2949,8 @@ function loginWithKakao() {
         }
     } catch(e) {}
 
+    const redirectUri = window.location.origin + window.location.pathname;
+
     // Synchronous execution inside user gesture
     try {
         const loginOptions = {
@@ -2713,157 +2959,13 @@ function loginWithKakao() {
             scope: 'profile_nickname,profile_image',
             success: function(authObj) {
                 console.log('[Kakao] Auth token granted, requesting profile...');
+                finishLogin();
                 window.Kakao.API.request({
                     url: '/v2/user/me',
                     success: function(res) {
-                        try {
-                            const kakaoId = String(res.id);
-                            const profile = res.kakao_account?.profile || {};
-                            const nickname = profile.nickname || `카카오_${kakaoId.slice(-4)}`;
-                            const customUserId = `kakao_${kakaoId}`;
-                            const now = new Date();
-                            const nowIso = now.toISOString();
-
-                            console.log('[Kakao] Logged in successfully as:', customUserId, nickname);
-
-                            // ⚡ INSTANT UI UNLOCK (0ms perception time)
-                            SafeAuth.set(customUserId);
-                            window.__appUnlocked = true;
-                            setUserNameCache(customUserId, nickname);
-                            setUserCreatedCache(customUserId, nowIso);
-                            setUserPermissionsCache(customUserId, { allowLotto: true, allowToto: true });
-
-                            window.__currentUser = {
-                                userId: customUserId,
-                                realName: nickname,
-                                role: 'user',
-                                isAdmin: false,
-                                createdAt: nowIso,
-                                authProvider: 'kakao'
-                            };
-
-                            // 1. Hide Login Modal immediately
-                            const modal = document.getElementById('loginModalOverlay');
-                            if (modal) {
-                                modal.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
-                                modal.classList.add('hidden');
-                                modal.classList.remove('active');
-                            }
-                            if (document.body) {
-                                document.body.style.overflow = '';
-                            }
-
-                            // 2. Show Landing Page immediately
-                            const kakaoLpEl = document.getElementById('landingPage');
-                            const kakaoAcEl = document.getElementById('appContainer');
-                            const kakaoTpEl = document.getElementById('totoPage');
-                            if (kakaoLpEl) { kakaoLpEl.classList.add('active'); kakaoLpEl.style.setProperty('display', 'flex', 'important'); }
-                            if (kakaoAcEl) { kakaoAcEl.classList.remove('active'); kakaoAcEl.style.setProperty('display', 'none', 'important'); }
-                            if (kakaoTpEl) { kakaoTpEl.classList.remove('active'); kakaoTpEl.style.setProperty('display', 'none', 'important'); }
-
-                            showToast(`👋 [${nickname}]님 환영합니다!`);
-                            finishLogin();
-
-                            // 3. Render Dashboard & Init Services immediately
-                            setTimeout(() => {
-                                try {
-                                    if (typeof window.checkAuthOnLoad === 'function') {
-                                        window.checkAuthOnLoad();
-                                    } else if (typeof window.initLottoService === 'function') {
-                                        window.initLottoService();
-                                    }
-                                } catch(ex) {}
-                                try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
-                            }, 50);
-
-                            // 4. Non-blocking Background Firestore Sync & Profile Persistence
-                            const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
-                            if (firestore) {
-                                (async () => {
-                                    try {
-                                        const kakaoAuthData = {
-                                            accessToken: authObj.access_token || '',
-                                            refreshToken: authObj.refresh_token || '',
-                                            expiresIn: authObj.expires_in || 0,
-                                            refreshTokenExpiresIn: authObj.refresh_token_expires_in || 0,
-                                            scopes: authObj.scope ? authObj.scope.split(' ') : ['profile_nickname', 'profile_image'],
-                                            hasTalkMessageScope: authObj.scope ? authObj.scope.includes('talk_message') : false,
-                                            updatedAt: nowIso
-                                        };
-
-                                        const userDoc = await firestore.collection('lotto_users').doc(customUserId).get();
-                                        if (!userDoc.exists) {
-                                            const formattedDate = `${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, '0')}월 ${String(now.getDate()).padStart(2, '0')}일 ${String(now.getHours()).padStart(2, '0')}시 ${String(now.getMinutes()).padStart(2, '0')}분`;
-                                            const agreementDocument = {
-                                                docId: `AGR-${customUserId}-${Date.now()}`,
-                                                documentTitle: '로또 AI 퀀트 서비스 이용 및 성공수수료 전자 서약서 (카카오 간편 본인인증)',
-                                                userId: customUserId,
-                                                realName: nickname,
-                                                phoneNumber: '카카오 1초 본인인증',
-                                                createdAt: nowIso,
-                                                agreedDateFormatted: formattedDate,
-                                                userAgent: navigator.userAgent,
-                                                authProvider: 'kakao',
-                                                terms: getStandardAgreementTerms(now),
-                                                signatureDataUrl: null,
-                                                legalPledgeStatement: '카카오 간편 본인인증을 통해 위 모든 약관의 전문 내용을 확인하였으며 본 전자 계약을 체결합니다.',
-                                                status: 'legally_binding'
-                                            };
-
-                                            const userData = {
-                                                userId: customUserId,
-                                                phoneNumber: '카카오 1초 본인인증',
-                                                realName: nickname,
-                                                authProvider: 'kakao',
-                                                kakaoId: kakaoId,
-                                                profileImage: profile.profile_image_url || '',
-                                                status: 'active',
-                                                createdAt: nowIso,
-                                                agreementDoc: agreementDocument,
-                                                kakaoAuth: kakaoAuthData,
-                                                agreedTerms: {
-                                                    feeAgreement: true,
-                                                    weeklyPurchaseAgreement: true,
-                                                    privacyAgreement: true,
-                                                    algoDisclaimer: true,
-                                                    agreedAt: nowIso,
-                                                    authProvider: 'kakao'
-                                                },
-                                                loginFailCount: 0,
-                                                lockoutUntil: null
-                                            };
-
-                                            await firestore.collection('lotto_users').doc(customUserId).set(userData);
-                                            try { await firestore.collection('lotto_agreements').doc(customUserId).set(agreementDocument); } catch(e){}
-                                        } else {
-                                            await firestore.collection('lotto_users').doc(customUserId).set({
-                                                kakaoAuth: kakaoAuthData,
-                                                lastLoginAt: nowIso
-                                            }, { merge: true });
-
-                                            const existingData = userDoc.data() || {};
-                                            const isAdm = !!(existingData.role === 'admin' || existingData.isAdmin === true);
-                                            const isPerm = !!(isAdm || existingData.isPermanent === true || existingData.userType === 'permanent');
-                                            if (isAdm) setIsAdminCache(customUserId, true);
-                                            if (isPerm) setIsPermanentCache(customUserId, true);
-                                            if (existingData.realName) setUserNameCache(customUserId, existingData.realName);
-                                        }
-
-                                        if (typeof window.checkAuthOnLoad === 'function') {
-                                            window.checkAuthOnLoad();
-                                        }
-                                    } catch(bgErr) {
-                                        console.warn('[Kakao BG Sync Error]', bgErr);
-                                    }
-                                })();
-                            }
-                        } catch(procErr) {
-                            console.error('[Kakao Process Error]', procErr);
-                            finishLogin();
-                        }
+                        processKakaoLoginSuccess(res, authObj);
                     },
                     fail: function(error) {
-                        finishLogin();
                         console.error('[Kakao API Error]', error);
                         alert('카카오 사용자 정보를 가져오는 데 실패했습니다: ' + (error?.msg || JSON.stringify(error || {})));
                     }
@@ -2873,24 +2975,23 @@ function loginWithKakao() {
                 console.error('[Kakao Auth Error]', err);
                 finishLogin();
                 const errStr = JSON.stringify(err || {});
-                const desc = ((err && (err.error_description || err.error || err.msg)) || '') + ' ' + errStr;
 
                 if (errStr.includes('KOE006') || errStr.includes('domain') || errStr.includes('Platform')) {
                     alert('⚠️ [카카오 도메인 미등록 안내]\n\n카카오 디벨로퍼스(developers.kakao.com)의\n[플랫폼] > [Web]에 현재 사이트 주소(' + window.location.origin + ')를 등록해 주세요!');
-                } else if (errStr.includes('window') || errStr.includes('closed') || errStr.includes('popup')) {
-                    alert('⚠️ 팝업창이 닫혔거나 차단되었습니다. 브라우저의 팝업 차단을 해제하고 다시 시도해 주세요.');
-                } else {
-                    // Fallback to authorize redirect if login popup failed
-                    if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function') {
-                        const redirectUri = window.location.origin + window.location.pathname;
-                        window.Kakao.Auth.authorize({
-                            redirectUri: redirectUri,
-                            scope: 'profile_nickname,profile_image'
-                        });
-                        return;
-                    }
-                    alert('⚠️ 카카오 로그인 안내: ' + (err.error_description || err.error || errStr));
+                    return;
                 }
+
+                // Fallback to authorize redirect if login popup failed/blocked on mobile
+                if (window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function') {
+                    console.log('[Kakao] Popup failed/blocked, falling back to authorize redirect...');
+                    window.Kakao.Auth.authorize({
+                        redirectUri: redirectUri,
+                        scope: 'profile_nickname,profile_image'
+                    });
+                    return;
+                }
+
+                alert('⚠️ 카카오 로그인 안내: ' + (err.error_description || err.error || errStr));
             }
         };
 
@@ -2898,7 +2999,6 @@ function loginWithKakao() {
         if (window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
             window.Kakao.Auth.login(loginOptions);
         } else if (window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function') {
-            const redirectUri = window.location.origin + window.location.pathname;
             window.Kakao.Auth.authorize({
                 redirectUri: redirectUri,
                 scope: 'profile_nickname,profile_image'
@@ -2910,7 +3010,14 @@ function loginWithKakao() {
     } catch (execErr) {
         finishLogin();
         console.error('[Kakao Exec Error]', execErr);
-        alert('카카오 로그인 실행 오류: ' + execErr.message);
+        if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function') {
+            window.Kakao.Auth.authorize({
+                redirectUri: redirectUri,
+                scope: 'profile_nickname,profile_image'
+            });
+        } else {
+            alert('카카오 로그인 실행 오류: ' + execErr.message);
+        }
     }
 }
 
@@ -2919,6 +3026,8 @@ if (typeof window !== 'undefined') {
     window._loginWithKakaoImpl = loginWithKakao;
     window.initKakaoSdk = initKakaoSdk;
     window.KAKAO_JS_KEY = KAKAO_JS_KEY;
+    window.processKakaoLoginSuccess = processKakaoLoginSuccess;
+    window.handleKakaoAuthRedirectOnLoad = handleKakaoAuthRedirectOnLoad;
 }
 
 /**
@@ -7942,9 +8051,13 @@ window.startBatchWinningSend = async function() {
             __exports.initKakaoSdk = initKakaoSdk;
             if (typeof window !== 'undefined') window.initKakaoSdk = initKakaoSdk;
         }
-        if (typeof initKakaoSdk !== 'undefined') {
-            __exports.initKakaoSdk = initKakaoSdk;
-            if (typeof window !== 'undefined') window.initKakaoSdk = initKakaoSdk;
+        if (typeof processKakaoLoginSuccess !== 'undefined') {
+            __exports.processKakaoLoginSuccess = processKakaoLoginSuccess;
+            if (typeof window !== 'undefined') window.processKakaoLoginSuccess = processKakaoLoginSuccess;
+        }
+        if (typeof handleKakaoAuthRedirectOnLoad !== 'undefined') {
+            __exports.handleKakaoAuthRedirectOnLoad = handleKakaoAuthRedirectOnLoad;
+            if (typeof window !== 'undefined') window.handleKakaoAuthRedirectOnLoad = handleKakaoAuthRedirectOnLoad;
         }
         if (typeof loginWithKakao !== 'undefined') {
             __exports.loginWithKakao = loginWithKakao;

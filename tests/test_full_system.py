@@ -2464,6 +2464,25 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('onclick="window.loginWithKakao && window.loginWithKakao()"', index_code)
         self.assertIn('window._loginWithKakaoImpl = loginWithKakao;', auth_code)
 
+    # [Test 71] Kakao OAuth Redirect & Session Unlock Integrity Test
+    def test_71_kakao_oauth_redirect_and_session_unlock_integrity(self):
+        with open('index.html', 'r', encoding='utf-8') as f:
+            index_code = f.read()
+        with open('src/shared/auth-mgmt.js', 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+
+        # 1. Verify handleKakaoAuthRedirectOnLoad and processKakaoLoginSuccess are exported
+        self.assertIn('export async function handleKakaoAuthRedirectOnLoad', auth_code)
+        self.assertIn('export function processKakaoLoginSuccess', auth_code)
+        self.assertIn('window.processKakaoLoginSuccess = processKakaoLoginSuccess;', auth_code)
+        self.assertIn('window.handleKakaoAuthRedirectOnLoad = handleKakaoAuthRedirectOnLoad;', auth_code)
+
+        # 2. Verify checkAuthOnLoad checks for Kakao OAuth redirect code
+        self.assertIn('handleKakaoAuthRedirectOnLoad', auth_code)
+
+        # 3. Verify service worker controllerchange protects active login flow
+        self.assertIn('isUserInActiveFlow', index_code)
+
 
 if __name__ == '__main__':
     unittest.main()

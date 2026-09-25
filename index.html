@@ -57,7 +57,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.09.25.1228">
+    <link rel="stylesheet" href="styles.css?v=2026.09.25.1238">
 </head>
 
 <body>
@@ -134,7 +134,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.09.25.1228 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.09.25.1238 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -511,7 +511,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.09.25.1228
+                                v2026.09.25.1238
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1974,7 +1974,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.09.25.1228
+                        <i class="fa-solid fa-code-branch"></i> v2026.09.25.1238
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3659,6 +3659,8 @@
                 try { window.Kakao.init(K_KEY); } catch(err) { console.warn(err); }
             }
 
+            var redirectUri = window.location.origin + window.location.pathname;
+
             try {
                 if (window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
                     window.Kakao.Auth.login({
@@ -3668,15 +3670,62 @@
                         success: function(authObj) {
                             if (window._loginWithKakaoImpl) {
                                 window._loginWithKakaoImpl();
+                            } else if (window.processKakaoLoginSuccess) {
+                                window.Kakao.API.request({
+                                    url: '/v2/user/me',
+                                    success: function(res) {
+                                        window.processKakaoLoginSuccess(res, authObj);
+                                    },
+                                    fail: function(err) {
+                                        console.error('[Kakao User Fetch Failed]', err);
+                                        alert('카카오 사용자 정보 조회에 실패했습니다: ' + (err.msg || JSON.stringify(err)));
+                                    }
+                                });
                             } else {
-                                window.location.reload();
+                                window.Kakao.API.request({
+                                    url: '/v2/user/me',
+                                    success: function(res) {
+                                        var kakaoId = String(res.id);
+                                        var profile = (res.kakao_account && res.kakao_account.profile) ? res.kakao_account.profile : {};
+                                        var nickname = profile.nickname || (res.properties && res.properties.nickname) || ('카카오_' + kakaoId.slice(-4));
+                                        var customUserId = 'kakao_' + kakaoId;
+                                        try {
+                                            sessionStorage.setItem('lotto_auth', customUserId);
+                                            localStorage.setItem('lotto_auth', customUserId);
+                                            document.cookie = 'lotto_auth=' + encodeURIComponent(customUserId) + '; path=/; max-age=2592000; SameSite=Lax';
+                                        } catch(e) {}
+                                        window.__appUnlocked = true;
+                                        var m = document.getElementById('loginModalOverlay');
+                                        if (m) {
+                                            m.setAttribute('style', 'display: none !important; visibility: hidden !important; opacity: 0 !important; pointer-events: none !important;');
+                                            m.classList.add('hidden');
+                                            m.classList.remove('active');
+                                        }
+                                        var lp = document.getElementById('landingPage');
+                                        if (lp) {
+                                            lp.classList.add('active');
+                                            lp.style.setProperty('display', 'flex', 'important');
+                                        }
+                                        if (typeof window.checkAuthOnLoad === 'function') {
+                                            window.checkAuthOnLoad();
+                                        }
+                                    },
+                                    fail: function(err) {
+                                        console.error('[Kakao User Fetch Fallback Error]', err);
+                                    }
+                                });
                             }
                         },
                         fail: function(err) {
                             console.error('[Kakao Init Error]', err);
+                            var errStr = JSON.stringify(err || {});
+                            if (errStr.includes('KOE006') || errStr.includes('domain') || errStr.includes('Platform')) {
+                                alert('⚠️ [카카오 도메인 미등록 안내]\n\n카카오 디벨로퍼스(developers.kakao.com)의\n[플랫폼] > [Web]에 현재 사이트 주소(' + window.location.origin + ')를 등록해 주세요!');
+                                return;
+                            }
                             if (window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function') {
                                 window.Kakao.Auth.authorize({
-                                    redirectUri: window.location.origin + window.location.pathname,
+                                    redirectUri: redirectUri,
                                     scope: 'profile_nickname,profile_image'
                                 });
                             } else {
@@ -3686,7 +3735,7 @@
                     });
                 } else if (window.Kakao.Auth && typeof window.Kakao.Auth.authorize === 'function') {
                     window.Kakao.Auth.authorize({
-                        redirectUri: window.location.origin + window.location.pathname,
+                        redirectUri: redirectUri,
                         scope: 'profile_nickname,profile_image'
                     });
                 }
@@ -3731,7 +3780,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.09.25.1228';
+        window.APP_VERSION = 'v2026.09.25.1238';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -3783,7 +3832,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.09.25.1228';
+            var v = ver || window.APP_VERSION || 'v2026.09.25.1238';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -3969,7 +4018,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.25.1228';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.25.1238';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4082,14 +4131,23 @@
         // 📱 PWA Service Worker & Install Prompt Controller
         // ========================================================
         if ('serviceWorker' in navigator) {
-            // Auto-reload on service worker takeover (Controller change)
+            var isUserInActiveFlow = function() {
+                var loginModal = document.getElementById('loginModalOverlay');
+                var isLoginOpen = loginModal && loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden');
+                var authId = (window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : (sessionStorage.getItem('lotto_auth') || localStorage.getItem('lotto_auth'));
+                return isLoginOpen && !authId;
+            };
+
+            // Auto-reload on service worker takeover (Controller change) safely
             navigator.serviceWorker.addEventListener('controllerchange', function() {
-                console.log('[PWA] Service Worker controller changed! Reloading to fresh build...');
-                window.location.reload();
+                console.log('[PWA] Service Worker controller changed!');
+                if (!isUserInActiveFlow()) {
+                    window.location.reload();
+                }
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.09.25.1228')
+                navigator.serviceWorker.register('./sw.js?v=2026.09.25.1238')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -4098,8 +4156,10 @@
                             if (installingWorker) {
                                 installingWorker.onstatechange = function() {
                                     if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        console.log('[PWA] New version (v2026.09.25.1228) installed! Refreshing cache...');
-                                        window.location.reload();
+                                        console.log('[PWA] New version (v2026.09.25.1238) installed! Refreshing cache...');
+                                        if (!isUserInActiveFlow()) {
+                                            window.location.reload();
+                                        }
                                     }
                                 };
                             }
@@ -4165,8 +4225,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.09.25.1228"></script>
-    <script src="app_v2.js?v=2026.09.25.1228"></script>
+    <script src="data.js?v=2026.09.25.1238"></script>
+    <script src="app_v2.js?v=2026.09.25.1238"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">
