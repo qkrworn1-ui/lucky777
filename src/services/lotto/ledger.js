@@ -2051,87 +2051,62 @@ export function getComboNumbers(combo) {
  */
 
 export function getUserPurchasesForRound(userId, round) {
-
     if (!userId) return [];
-
     const r = Number(round);
-
     if (isNaN(r) || r <= 0) return [];
-
     const cleanId = String(userId).trim().toLowerCase();
 
-
+    const normalizeReceipts = (raw) => {
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'object') return Object.values(raw).filter(Boolean);
+        if (typeof raw === 'string') {
+            try {
+                const parsed = JSON.parse(raw);
+                if (Array.isArray(parsed)) return parsed;
+                if (parsed && typeof parsed === 'object') return Object.values(parsed).filter(Boolean);
+            } catch(e) {}
+        }
+        return [];
+    };
 
     if (cleanId === 'all') {
-
         const merged = state.allUsersMergedLedger || {};
-
-        const receipts = merged[r] || merged[String(r)] || [];
-
+        const receipts = normalizeReceipts(merged[r] || merged[String(r)]);
         return deduplicateReceipts(receipts.map(syncPurchaseWithQrUrl));
-
     }
-
-
 
     if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanId] && state.allUsersPurchasesMap[cleanId].ledger) {
-
         const uLedger = state.allUsersPurchasesMap[cleanId].ledger;
-
-        const receipts = uLedger[r] || uLedger[String(r)] || [];
-
-        if (receipts && receipts.length > 0) {
-
+        const receipts = normalizeReceipts(uLedger[r] || uLedger[String(r)]);
+        if (receipts.length > 0) {
             return deduplicateReceipts(receipts.map(syncPurchaseWithQrUrl));
-
         }
-
     }
-
-
 
     // Check local storage / global ledger
-
     const rawLedger = state.globalLedger || {};
-
-    if (rawLedger[r] && Array.isArray(rawLedger[r])) {
-
-        const userReceipts = rawLedger[r].filter(p => {
-
+    const globalRound = normalizeReceipts(rawLedger[r] || rawLedger[String(r)]);
+    if (globalRound.length > 0) {
+        const userReceipts = globalRound.filter(p => {
+            if (!p) return false;
             const pUser = (p.user || p.userId || '').trim().toLowerCase();
-
             return pUser === cleanId;
-
         }).map(syncPurchaseWithQrUrl);
-
         if (userReceipts.length > 0) {
-
             return deduplicateReceipts(userReceipts);
-
         }
-
     }
-
-
 
     // Master fallback for 1235~1240 only
-
     if (cleanId === 'master' || cleanId === 'admin') {
-
-        const off = getOfficialPastRecommendation(r);
-
-        if (off && off.length > 0) {
-
+        const off = normalizeReceipts(getOfficialPastRecommendation(r));
+        if (off.length > 0) {
             return (r === 1239 ? normalizeMaster1239Order(off.map(syncPurchaseWithQrUrl)) : off.map(syncPurchaseWithQrUrl));
-
         }
-
     }
 
-
-
     return [];
-
 }
 
 

@@ -1,37 +1,9 @@
 {
-  "version": "v2026.09.25.1549",
+  "version": "v2026.09.25.1911",
   "buildDate": "2026-09-25",
-  "description": "Fix SyntaxError identifier collision and add navigation fallbacks",
-  "buildTimestamp": "2026-09-25T15:49:27.885476",
+  "description": "Fix receipts array guard and ensure Option A on mobile",
+  "buildTimestamp": "2026-09-25T19:11:04.681372",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0125",
-      "buildDate": "2026-09-24",
-      "buildTime": "01:25",
-      "buildTimestamp": "2026-09-24T01:25:30.902561",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.24.0143",
-      "buildDate": "2026-09-24",
-      "buildTime": "01:43",
-      "buildTimestamp": "2026-09-24T01:43:26.310702",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.24.0143.43",
-      "buildDate": "2026-09-24",
-      "buildTime": "01:43",
-      "buildTimestamp": "2026-09-24T01:43:43.777780",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.24.0156",
-      "buildDate": "2026-09-24",
-      "buildTime": "01:56",
-      "buildTimestamp": "2026-09-24T01:56:59.609295",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0206",
       "buildDate": "2026-09-24",
@@ -353,7 +325,35 @@
       "buildTime": "15:49",
       "buildTimestamp": "2026-09-25T15:49:27.885476",
       "description": "Fix SyntaxError identifier collision and add navigation fallbacks"
+    },
+    {
+      "version": "v2026.09.25.1901",
+      "buildDate": "2026-09-25",
+      "buildTime": "19:01",
+      "buildTimestamp": "2026-09-25T19:01:48.377822",
+      "description": "Apply Option A (초슬림 랭킹 매트릭스) to review tab"
+    },
+    {
+      "version": "v2026.09.25.1905",
+      "buildDate": "2026-09-25",
+      "buildTime": "19:05",
+      "buildTimestamp": "2026-09-25T19:05:29.456128",
+      "description": "Sync review tab Option A"
+    },
+    {
+      "version": "v2026.09.25.1906",
+      "buildDate": "2026-09-25",
+      "buildTime": "19:06",
+      "buildTimestamp": "2026-09-25T19:06:59.456477",
+      "description": "Fix v4Combos in single round Option A"
+    },
+    {
+      "version": "v2026.09.25.1911",
+      "buildDate": "2026-09-25",
+      "buildTime": "19:11",
+      "buildTimestamp": "2026-09-25T19:11:04.681372",
+      "description": "Fix receipts array guard and ensure Option A on mobile"
     }
   ],
-  "buildTime": "15:49"
+  "buildTime": "19:11"
 }

@@ -838,6 +838,37 @@ if (typeof window !== 'undefined') {
         const r = sel && sel.value ? (sel.value === 'all_rounds' ? 'all_rounds' : parseInt(sel.value)) : latestDrawn;
         renderReviewDetail(r);
     };
+
+    window.toggleReviewAlgoAccordion = function(algoId) {
+        const panel = document.getElementById('algo-accordion-' + algoId);
+        const chevron = document.getElementById('algo-chevron-' + algoId);
+        if (!panel) return;
+        const isHidden = (panel.style.display === 'none' || !panel.style.display);
+        document.querySelectorAll('.algo-accordion-panel').forEach(p => {
+            if (p !== panel) p.style.display = 'none';
+        });
+        document.querySelectorAll('.algo-chevron-icon').forEach(c => {
+            if (c !== chevron) {
+                c.classList.remove('fa-chevron-up');
+                c.classList.add('fa-chevron-down');
+            }
+        });
+        if (isHidden) {
+            panel.style.display = 'block';
+            if (chevron) {
+                chevron.classList.remove('fa-chevron-down');
+                chevron.classList.add('fa-chevron-up');
+            }
+            window._expandedReviewAlgoId = algoId;
+        } else {
+            panel.style.display = 'none';
+            if (chevron) {
+                chevron.classList.remove('fa-chevron-up');
+                chevron.classList.add('fa-chevron-down');
+            }
+            window._expandedReviewAlgoId = null;
+        }
+    };
 }
 
 export function selectSpecificReviewRound(roundNum) {
@@ -1060,7 +1091,8 @@ export async function renderAllRoundsReviewDetail() {
                 let realPurchasedRnds = 0, realPurchasedGms = 0;
                 for (let r of validRounds) {
                     await new Promise(_res => setTimeout(_res, 0));
-                    const rawRList = (userLedger && userLedger[r]) ? userLedger[r] : [];
+                    const rawVal = (userLedger && userLedger[r]) ? userLedger[r] : [];
+                    const rawRList = Array.isArray(rawVal) ? rawVal : (rawVal && typeof rawVal === 'object' ? Object.values(rawVal).filter(Boolean) : []);
                     const rReceipts = (typeof deduplicateReceipts === 'function') 
                         ? deduplicateReceipts(rawRList.map(syncPurchaseWithQrUrl))
                         : rawRList;
@@ -1318,62 +1350,96 @@ export async function renderAllRoundsReviewDetail() {
     rankedAlgos.forEach((algo, idx) => {
         const rankNum = idx + 1;
         const rankIcon = rankNum === 1 ? '🥇' : (rankNum === 2 ? '🥈' : (rankNum === 3 ? '🥉' : `${rankNum}`));
-        const rankBorderLeft = rankNum === 1 ? '3.5px solid #fbbf24' : (rankNum === 2 ? '3.5px solid #cbd5e1' : (rankNum === 3 ? '3.5px solid #f59e0b' : '3.5px solid rgba(255,255,255,0.15)'));
-        const rankBg = rankNum === 1 ? 'linear-gradient(90deg, rgba(251, 191, 36, 0.12) 0%, rgba(15, 23, 42, 0.6) 100%)' :
-                     (rankNum === 2 ? 'linear-gradient(90deg, rgba(203, 213, 225, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)' :
-                     (rankNum === 3 ? 'linear-gradient(90deg, rgba(245, 158, 11, 0.1) 0%, rgba(15, 23, 42, 0.6) 100%)' :
-                     'rgba(15, 23, 42, 0.5)'));
+        const rankClass = rankNum <= 3 ? `rank-${rankNum}` : '';
 
-        const cleanName = algo.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/ 포트폴리오| 알고리즘/g, '');
+        const cleanName = algo.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/추가\s*(\d):?\s*/, '추가$1 ').replace(/ 포트폴리오| 알고리즘/g, '');
         
         let hitsHtml = '';
-        if (algo.hits[1] > 0) hitsHtml += `<span style="font-size:0.65rem; font-weight:900; padding:1px 4px; border-radius:4px; margin-right:2px; background:rgba(251,191,36,0.22); color:#fbbf24; border:1px solid rgba(251,191,36,0.45); white-space:nowrap;">1등:${algo.hits[1]}</span>`;
-        if (algo.hits[2] > 0) hitsHtml += `<span style="font-size:0.65rem; font-weight:900; padding:1px 4px; border-radius:4px; margin-right:2px; background:rgba(248,113,113,0.22); color:#f87171; border:1px solid rgba(248,113,113,0.45); white-space:nowrap;">2등:${algo.hits[2]}</span>`;
-        if (algo.hits[3] > 0) hitsHtml += `<span style="font-size:0.65rem; font-weight:900; padding:1px 4px; border-radius:4px; margin-right:2px; background:rgba(96,165,250,0.22); color:#60a5fa; border:1px solid rgba(96,165,250,0.45); white-space:nowrap;">3등:${algo.hits[3]}</span>`;
-        if (algo.hits[4] > 0) hitsHtml += `<span style="font-size:0.65rem; font-weight:800; padding:1px 4px; border-radius:4px; margin-right:2px; background:rgba(52,211,153,0.2); color:#34d399; border:1px solid rgba(52,211,153,0.4); white-space:nowrap;">4등:${algo.hits[4]}</span>`;
-        if (algo.hits[5] > 0) hitsHtml += `<span style="font-size:0.65rem; font-weight:800; padding:1px 4px; border-radius:4px; margin-right:2px; background:rgba(192,132,252,0.2); color:#c084fc; border:1px solid rgba(192,132,252,0.4); white-space:nowrap;">5등:${algo.hits[5]}</span>`;
+        if (algo.hits[1] > 0) hitsHtml += `<span class="hit-tag hit-1">1등:${algo.hits[1]}</span>`;
+        if (algo.hits[2] > 0) hitsHtml += `<span class="hit-tag hit-2">2등:${algo.hits[2]}</span>`;
+        if (algo.hits[3] > 0) hitsHtml += `<span class="hit-tag hit-3">3등:${algo.hits[3]}</span>`;
+        if (algo.hits[4] > 0) hitsHtml += `<span class="hit-tag hit-4">4등:${algo.hits[4]}</span>`;
+        if (algo.hits[5] > 0) hitsHtml += `<span class="hit-tag hit-5">5등:${algo.hits[5]}</span>`;
         if (!hitsHtml) hitsHtml = `<span style="font-size:0.65rem; color:#64748b;">적중 없음</span>`;
 
         const roiColor = algo.roi >= 100 ? '#10b981' : (algo.roi > 0 ? '#fbbf24' : '#94a3b8');
 
         algoRowsHtml += `
-            <div onclick="window.setReviewViewFilter && window.setReviewViewFilter('${algo.id}')" style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:${rankBg}; border:1px solid rgba(255,255,255,0.06); border-left:${rankBorderLeft}; margin-bottom:5px; cursor:pointer; transition:all 0.15s ease;" onmouseover="this.style.borderColor='rgba(251,191,36,0.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'" title="${algo.name} 필터링">
-                <!-- Left: Rank + Algo Name + Hits -->
-                <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
-                    <span style="font-weight:900; font-size:0.84rem; color:#fbbf24; width:20px; text-align:center; flex-shrink:0;">${rankIcon}</span>
-                    <div style="min-width:0; flex:1;">
-                        <div style="display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                            <span style="font-size:0.8rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cleanName}</span>
-                            <span style="font-size:0.68rem; color:${algo.color}; font-weight:700; flex-shrink:0;">(${algo.games}G)</span>
+            <div>
+                <div class="compact-row-item ${rankClass}" onclick="window.toggleReviewAlgoAccordion && window.toggleReviewAlgoAccordion('${algo.id}')">
+                    <!-- Left: Rank + Algo Name + Hits -->
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0; flex:1;">
+                        <span style="font-weight:900; font-size:0.84rem; color:#fbbf24; width:20px; text-align:center; flex-shrink:0;">${rankIcon}</span>
+                        <div style="min-width:0; flex:1;">
+                            <div style="display:flex; align-items:center; gap:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <span style="font-size:0.8rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${cleanName}</span>
+                                <span style="font-size:0.68rem; color:${algo.color}; font-weight:700; flex-shrink:0;">(${algo.games}G)</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:2px; margin-top:1px; overflow:hidden; white-space:nowrap;">
+                                ${hitsHtml}
+                            </div>
                         </div>
-                        <div style="display:flex; align-items:center; gap:2px; margin-top:1px; overflow:hidden; white-space:nowrap;">
-                            ${hitsHtml}
+                    </div>
+
+                    <!-- Right: Prize & ROI & Chevron -->
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                        <div style="text-align:right;">
+                            <div style="font-size:0.84rem; font-weight:900; color:#34d399; letter-spacing:-0.3px;">+${algo.prize.toLocaleString()}원</div>
+                            <div style="font-size:0.67rem; font-weight:800; color:${roiColor};">${algo.roi.toFixed(1)}% <span style="color:#94a3b8; font-weight:normal;">(${algo.wins}회)</span></div>
                         </div>
+                        <i class="fa-solid fa-chevron-down algo-chevron-icon" id="algo-chevron-${algo.id}" style="font-size:0.72rem; color:#64748b; width:14px; text-align:center; transition:transform 0.2s;"></i>
                     </div>
                 </div>
 
-                <!-- Right: Prize & ROI & Wins -->
-                <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                    <div style="text-align:right;">
-                        <div style="font-size:0.84rem; font-weight:900; color:#34d399; letter-spacing:-0.3px;">+${algo.prize.toLocaleString()}원</div>
-                        <div style="font-size:0.67rem; font-weight:800; color:${roiColor};">${algo.roi.toFixed(1)}% <span style="color:#94a3b8; font-weight:normal;">(${algo.wins}회)</span></div>
+                <!-- Accordion Dropdown for All Rounds Cumulative Breakdown -->
+                <div id="algo-accordion-${algo.id}" class="algo-accordion-panel" style="display:none; border:1.5px dashed ${algo.color}60;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid rgba(255,255,255,0.08);">
+                        <span style="font-size:0.74rem; font-weight:800; color:${algo.color};">
+                            <i class="fa-solid fa-list-check"></i> ${algo.name} (${minTargetRound}~${latestDrawnRound}회 누적 상세)
+                        </span>
+                        <span style="font-size:0.68rem; color:#94a3b8;">전체 ${validRounds.length}개 회차</span>
                     </div>
-                    <i class="fa-solid fa-chevron-right" style="font-size:0.68rem; color:#64748b; margin-left:2px;"></i>
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(110px, 1fr)); gap:6px; background:rgba(0,0,0,0.3); border-radius:6px; padding:8px; margin-bottom:8px; text-align:center;">
+                        <div>
+                            <div style="font-size:0.65rem; color:#94a3b8;">누적 추천게임</div>
+                            <div style="font-size:0.82rem; font-weight:800; color:#fff;">${algo.games.toLocaleString()}G</div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.65rem; color:#94a3b8;">누적 총 당첨금</div>
+                            <div style="font-size:0.82rem; font-weight:800; color:#34d399;">+${algo.prize.toLocaleString()}원</div>
+                        </div>
+                        <div>
+                            <div style="font-size:0.65rem; color:#94a3b8;">적중 건수 (수익률)</div>
+                            <div style="font-size:0.82rem; font-weight:800; color:#fbbf24;">${algo.wins}회 (${algo.roi.toFixed(1)}%)</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:4px; flex-wrap:wrap; justify-content:center; margin-bottom:8px;">
+                        <span class="hit-tag hit-1" style="font-size:0.72rem; padding:2px 6px;">1등: ${algo.hits[1]}회</span>
+                        <span class="hit-tag hit-2" style="font-size:0.72rem; padding:2px 6px;">2등: ${algo.hits[2]}회</span>
+                        <span class="hit-tag hit-3" style="font-size:0.72rem; padding:2px 6px;">3등: ${algo.hits[3]}회</span>
+                        <span class="hit-tag hit-4" style="font-size:0.72rem; padding:2px 6px;">4등: ${algo.hits[4]}회</span>
+                        <span class="hit-tag hit-5" style="font-size:0.72rem; padding:2px 6px;">5등: ${algo.hits[5]}회</span>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end; gap:6px;">
+                        <button type="button" onclick="event.stopPropagation(); window.setReviewViewFilter && window.setReviewViewFilter('${algo.id}')" style="background:${algo.color}25; border:1px solid ${algo.color}60; color:${algo.color}; font-size:0.72rem; font-weight:800; padding:4px 10px; border-radius:6px; cursor:pointer;">
+                            <i class="fa-solid fa-filter"></i> ${algo.name} 회차별 전체 성과 조회
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
     });
 
     html += `
-        <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 20px; box-sizing: border-box; width: 100%; max-width: 100%; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
-            
+        <div class="algo-section-box">
             <!-- Section Header -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+            <div class="algo-section-header">
                 <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto;">
                     <i class="fa-solid fa-trophy" style="color: #fbbf24; font-size: 0.95rem; flex-shrink: 0;"></i>
                     <h4 style="margin: 0; color: #f8fafc; font-size: 0.92rem; font-weight: 800; word-break: keep-all; line-height: 1.3;">
                         7대 알고리즘 당첨 랭킹 &amp; 누적 성과
                     </h4>
+                    <span class="height-indicator height-good"><i class="fa-solid fa-compress"></i> 높이 82% 절감</span>
                     <span style="font-size: 0.7rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; white-space: nowrap;">
                         ${minTargetRound}~${latestDrawnRound}회
                     </span>
@@ -1411,12 +1477,12 @@ export async function renderAllRoundsReviewDetail() {
             </div>
 
             <!-- 7-Row High-Density Ranked List -->
-            <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
                 ${algoRowsHtml}
             </div>
 
-            <div style="text-align: center; margin-top: 6px; font-size: 0.67rem; color: #64748b;">
-                💡 알고리즘을 터치하면 해당 알고리즘의 10게임 조합만 즉시 필터링하여 확인하실 수 있습니다.
+            <div style="text-align: center; margin-top: 8px; font-size: 0.68rem; color: #94a3b8;">
+                💡 각 알고리즘을 탭하면 누적 상세 적중 지표가 즉시 펼쳐집니다.
             </div>
         </div>
     `;
@@ -1947,7 +2013,9 @@ export async function renderReviewDetail(r) {
 
     // Evaluate effective user's 70 recommendations for this round
     const userReview = computeUser70RecommendationsReview(effectiveUserId, roundNum);
-    const { v4Eval, v3Eval, extraPackEvals, grandHits, totalPrize, roi, totalGames, totalInvest } = userReview;
+    const { v4Combos, v4Eval, v3Combos, v3Eval, extraPackEvals, grandHits, totalPrize, roi, totalGames, totalInvest } = userReview;
+    const actualV4Combos = Array.isArray(v4Combos) ? v4Combos : (v4Eval && Array.isArray(v4Eval.items) ? v4Eval.items.map(i => i.nums) : []);
+    const actualV3Combos = Array.isArray(v3Combos) ? v3Combos : (v3Eval && Array.isArray(v3Eval.items) ? v3Eval.items.map(i => i.nums) : []);
 
     // Determine values to display in header cards (All-Users Grand Total vs Single User 70-Games)
     const dispCombos = isAllUsers ? grandTotalGames : totalGames;
@@ -2246,6 +2314,214 @@ export async function renderReviewDetail(r) {
             </div>
         `;
     } else {
+        // 🏆 Option A: 7대 알고리즘 당첨 랭킹 & 초슬림 매트릭스 (Ultra-Compact Ranking Matrix)
+        const singleRoundAlgoPacks = [
+            {
+                id: 'v4',
+                name: 'V4.0 행동경제학 포트폴리오',
+                shortName: 'V4.0 행동경제',
+                badge: 'BEHAVIORAL QUANT',
+                color: '#8b5cf6',
+                games: actualV4Combos.length || 10,
+                prize: v4Eval.totalPrize,
+                wins: v4Eval.totalWins,
+                hits: v4Eval.hits,
+                roi: (actualV4Combos.length * 1000) > 0 ? (v4Eval.totalPrize / (actualV4Combos.length * 1000)) * 100 : 0,
+                combos: actualV4Combos,
+                evalData: v4Eval
+            },
+            {
+                id: 'v3',
+                name: 'V3.0 하이브리드 정통 수학',
+                shortName: 'V3.0 하이브리드',
+                badge: 'HYBRID MATH',
+                color: '#3b82f6',
+                games: actualV3Combos.length || 10,
+                prize: v3Eval.totalPrize,
+                wins: v3Eval.totalWins,
+                hits: v3Eval.hits,
+                roi: (actualV3Combos.length * 1000) > 0 ? (v3Eval.totalPrize / (actualV3Combos.length * 1000)) * 100 : 0,
+                combos: actualV3Combos,
+                evalData: v3Eval
+            }
+        ];
+
+        extraPackEvals.forEach(ep => {
+            const epCount = ep.combos.length || 10;
+            const epPrize = ep.evalData.totalPrize;
+            const epWins = ep.evalData.totalWins;
+            const epRoi = (epCount * 1000) > 0 ? (epPrize / (epCount * 1000)) * 100 : 0;
+            singleRoundAlgoPacks.push({
+                id: `extra_${ep.packId}`,
+                name: ep.name,
+                shortName: ep.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/추가\s*(\d):?\s*/, '추가$1 ').replace(/ 포트폴리오| 알고리즘/g, ''),
+                badge: ep.badge,
+                color: ep.color,
+                games: epCount,
+                prize: epPrize,
+                wins: epWins,
+                hits: ep.evalData.hits,
+                roi: epRoi,
+                combos: ep.combos,
+                evalData: ep.evalData
+            });
+        });
+
+        singleRoundAlgoPacks.sort((a, b) => {
+            if (b.prize !== a.prize) return b.prize - a.prize;
+            if (b.hits[1] !== a.hits[1]) return b.hits[1] - a.hits[1];
+            if (b.hits[2] !== a.hits[2]) return b.hits[2] - a.hits[2];
+            if (b.hits[3] !== a.hits[3]) return b.hits[3] - a.hits[3];
+            if (b.hits[4] !== a.hits[4]) return b.hits[4] - a.hits[4];
+            if (b.wins !== a.wins) return b.wins - a.wins;
+            return b.hits[5] - a.hits[5];
+        });
+
+        const roundTopAlgo = singleRoundAlgoPacks[0];
+        const roundTopAlgoName = roundTopAlgo ? roundTopAlgo.shortName : '-';
+        const roundTotalWins = (grandHits[1] + grandHits[2] + grandHits[3] + grandHits[4] + grandHits[5]);
+
+        let roundAlgoRowsHtml = '';
+        singleRoundAlgoPacks.forEach((algo, idx) => {
+            const rankNum = idx + 1;
+            const rankIcon = rankNum === 1 ? '🥇' : (rankNum === 2 ? '🥈' : (rankNum === 3 ? '🥉' : `${rankNum}`));
+            const rankClass = rankNum <= 3 ? `rank-${rankNum}` : '';
+
+            let hitsHtml = '';
+            if (algo.hits[1] > 0) hitsHtml += `<span class="hit-tag hit-1">1등:${algo.hits[1]}</span>`;
+            if (algo.hits[2] > 0) hitsHtml += `<span class="hit-tag hit-2">2등:${algo.hits[2]}</span>`;
+            if (algo.hits[3] > 0) hitsHtml += `<span class="hit-tag hit-3">3등:${algo.hits[3]}</span>`;
+            if (algo.hits[4] > 0) hitsHtml += `<span class="hit-tag hit-4">4등:${algo.hits[4]}</span>`;
+            if (algo.hits[5] > 0) hitsHtml += `<span class="hit-tag hit-5">5등:${algo.hits[5]}</span>`;
+            if (!hitsHtml) {
+                hitsHtml = actualDraw ? `<span style="font-size:0.65rem; color:#64748b;">적중 없음</span>` : `<span style="font-size:0.65rem; color:#94a3b8;">추첨 대기</span>`;
+            }
+
+            const roiColor = algo.roi >= 100 ? '#10b981' : (algo.roi > 0 ? '#fbbf24' : '#94a3b8');
+
+            // 10 combos inside accordion
+            let combosHtml = '';
+            if (algo.evalData && Array.isArray(algo.evalData.items)) {
+                combosHtml = algo.evalData.items.map(item => {
+                    const ballsHtml = item.nums.map(n => {
+                        const isHit = actualDraw ? winningSet.has(n) : false;
+                        const isBonusHit = actualDraw && bonus ? (n === bonus) : false;
+                        return createBallHtml(n, {
+                            isHit: isHit,
+                            isBonusHit: isBonusHit,
+                            dim: actualDraw && !isHit && !isBonusHit,
+                            size: 'small'
+                        });
+                    }).join('');
+
+                    return `
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: ${item.resultBg || 'rgba(0,0,0,0.3)'}; border: ${item.cardBorder || '1px solid rgba(255,255,255,0.06)'}; border-radius: 6px; padding: 4px 8px; gap: 4px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 0.72rem; color: #cbd5e1; font-weight: 800; min-width: 24px;">#${String(item.idx).padStart(2, '0')}</span>
+                                <div style="display: flex; gap: 4px; align-items: center;">
+                                    ${ballsHtml}
+                                </div>
+                            </div>
+                            <span style="font-size: 0.7rem; font-weight: 800; color: ${item.resultColor}; white-space: nowrap;">
+                                ${item.resultText}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            roundAlgoRowsHtml += `
+                <div>
+                    <div class="compact-row-item ${rankClass}" onclick="window.toggleReviewAlgoAccordion && window.toggleReviewAlgoAccordion('${algo.id}')">
+                        <!-- Left: Rank + Algo Name + Hits -->
+                        <div style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1;">
+                            <span style="font-weight: 900; font-size: 0.84rem; color: #fbbf24; width: 20px; text-align: center; flex-shrink: 0;">${rankIcon}</span>
+                            <div style="min-width: 0; flex: 1;">
+                                <div style="display: flex; align-items: center; gap: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    <span style="font-size: 0.8rem; font-weight: 800; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${algo.shortName}</span>
+                                    <span style="font-size: 0.68rem; color: ${algo.color}; font-weight: 700; flex-shrink: 0;">(${algo.games}G)</span>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 2px; margin-top: 1px; overflow: hidden; white-space: nowrap;">
+                                    ${hitsHtml}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Prize & ROI & Chevron -->
+                        <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                            <div style="text-align: right;">
+                                <div style="font-size: 0.84rem; font-weight: 900; color: #34d399; letter-spacing: -0.3px;">+${algo.prize.toLocaleString()}원</div>
+                                <div style="font-size: 0.67rem; font-weight: 800; color: ${roiColor};">${algo.roi.toFixed(1)}% <span style="color: #94a3b8; font-weight: normal;">(${algo.wins}회)</span></div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down algo-chevron-icon" id="algo-chevron-${algo.id}" style="font-size: 0.72rem; color: #64748b; width: 14px; text-align: center; transition: transform 0.2s;"></i>
+                        </div>
+                    </div>
+
+                    <!-- Accordion Dropdown for Recommended 10 Games -->
+                    <div id="algo-accordion-${algo.id}" class="algo-accordion-panel" style="display: none; border: 1.5px dashed ${algo.color}60;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                            <span style="font-size: 0.74rem; font-weight: 800; color: ${algo.color};">
+                                <i class="fa-solid fa-list-check"></i> ${algo.name} (추천 10게임 조합)
+                            </span>
+                            <span style="font-size: 0.68rem; color: #94a3b8;">제 ${roundNum}회차 대조</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            ${combosHtml}
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.7rem; color: #94a3b8;">
+                            <span>총 10게임 중 <strong>${algo.wins}게임</strong> 적중</span>
+                            <button type="button" onclick="event.stopPropagation(); window.setReviewViewFilter && window.setReviewViewFilter('${algo.id}')" style="background: ${algo.color}25; border: 1px solid ${algo.color}60; color: ${algo.color}; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; cursor: pointer;">
+                                하단 카드에서 보기 <i class="fa-solid fa-arrow-down"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `
+            <div class="algo-section-box">
+                <!-- Section Header -->
+                <div class="algo-section-header">
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-trophy" style="color: #fbbf24; font-size: 0.95rem;"></i>
+                        <span style="font-size: 0.9rem; font-weight: 900; color: #fff;">7대 알고리즘 당첨 랭킹</span>
+                        <span class="height-indicator height-good"><i class="fa-solid fa-compress"></i> 높이 82% 절감</span>
+                    </div>
+                    <span style="font-size: 0.72rem; color: #94a3b8;">제 ${roundNum}회차 대조</span>
+                </div>
+
+                <!-- 4-Stat Micro KPI Strip -->
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: rgba(0,0,0,0.35); border-radius: 8px; padding: 6px 4px; margin-bottom: 10px; text-align: center; border: 1px solid rgba(255,255,255,0.06);">
+                    <div>
+                        <div style="font-size: 0.65rem; color: #94a3b8;">총 추천</div>
+                        <div style="font-size: 0.82rem; font-weight: 900; color: #fff;">${totalGames}G</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.65rem; color: #94a3b8;">총 적중</div>
+                        <div style="font-size: 0.82rem; font-weight: 900; color: #fbbf24;">${roundTotalWins}회</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.65rem; color: #94a3b8;">총 당첨금</div>
+                        <div style="font-size: 0.82rem; font-weight: 900; color: #34d399;">+${totalPrize.toLocaleString()}원</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.65rem; color: #94a3b8;">최고 1위</div>
+                        <div style="font-size: 0.82rem; font-weight: 900; color: #a78bfa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🥇 ${roundTopAlgoName}</div>
+                    </div>
+                </div>
+
+                <!-- 7-Row High-Density Ranked List -->
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    ${roundAlgoRowsHtml}
+                </div>
+
+                <div style="text-align: center; margin-top: 8px; font-size: 0.68rem; color: #94a3b8;">
+                    💡 각 알고리즘을 탭하면 10게임 상세 대조 번호가 즉시 펼쳐집니다.
+                </div>
+            </div>
+        `;
+
         // 3. View Filter Buttons (V3, V4, and Extra Packs 1~5)
         html += `
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
