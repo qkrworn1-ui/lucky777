@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1911 - BUILD_DATE: 2026-09-25] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1928 - BUILD_DATE: 2026-09-25] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.25.1911)
+ * Lucky777 Smart Bundle (v2026.09.25.1928)
  */
 
 
@@ -30970,6 +30970,7 @@ const __M_services_lotto_views_snapshot_audit_modal = (function() {
 
 const { SafeAuth, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { UserContextManager } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
+const { getComboNumbers, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 
 let __auditData = null;
 let __auditLoading = false;
@@ -30982,18 +30983,27 @@ let __auditFilter = {
 
 // 공식 추첨 결과 캐시 및 매칭 헬퍼
 const OFFICIAL_DRAWS = {
-    1235: { numbers: [6, 14, 22, 29, 36, 41], bonus: 17, date: '2026.08.01' },
-    1236: { numbers: [3, 11, 18, 25, 33, 42], bonus: 8, date: '2026.08.08' },
-    1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, date: '2026.08.15' },
-    1238: { numbers: [2, 13, 18, 32, 38, 42], bonus: 22, date: '2026.08.22' },
-    1239: { numbers: [1, 3, 17, 26, 33, 42], bonus: 41, date: '2026.08.29' },
-    1240: { numbers: [11, 13, 19, 20, 31, 44], bonus: 27, date: '2026.09.05' },
-    1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, date: '2026.09.12' }
+    1235: { numbers: [6, 14, 22, 29, 36, 41], bonus: 17, rank1Prize: 1985670000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.08.01' },
+    1236: { numbers: [3, 11, 18, 25, 33, 42], bonus: 8, rank1Prize: 2450320000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.08.08' },
+    1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, rank1Prize: 2180450000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.08.15' },
+    1238: { numbers: [2, 13, 18, 32, 38, 42], bonus: 22, rank1Prize: 1197250000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.08.22' },
+    1239: { numbers: [1, 3, 17, 26, 33, 42], bonus: 41, rank1Prize: 1980500000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.08.29' },
+    1240: { numbers: [11, 13, 19, 20, 31, 44], bonus: 27, rank1Prize: 2000000000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.05' },
+    1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.12' },
+    1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.19' }
 };
 
 function getDrawDataForAudit(round) {
     const r = Number(round);
     if (OFFICIAL_DRAWS[r]) return OFFICIAL_DRAWS[r];
+    if (typeof getSafeActualDraw === 'function') {
+        const d = getSafeActualDraw(r);
+        if (d) return d;
+    }
+    if (typeof window !== 'undefined' && window.getSafeActualDraw) {
+        const d = window.getSafeActualDraw(r);
+        if (d) return d;
+    }
     if (typeof window !== 'undefined' && window.getDrawWinningNumbers) {
         return window.getDrawWinningNumbers(r);
     }
@@ -31262,13 +31272,20 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
                 if (recCombos.length === 0) {
                     const v4 = snap.v4Combos || [];
                     const v3 = snap.v3Combos || [];
-                    const extra = snap.extraPacks ? Object.values(snap.extraPacks).flat() : [];
+                    let extra = [];
+                    if (snap.extraPacks) {
+                        const packValues = Array.isArray(snap.extraPacks) ? snap.extraPacks : Object.values(snap.extraPacks);
+                        packValues.forEach(pv => {
+                            if (pv && Array.isArray(pv.combos)) extra.push(...pv.combos);
+                            else if (Array.isArray(pv)) extra.push(...pv);
+                        });
+                    }
                     recCombos = [...v4, ...v3, ...extra];
                 }
                 if (recCombos.length === 0 && recGames === 70) recGames = 70;
 
                 totalRecSnapshotsCount++;
-                totalRecGamesCount += recGames;
+                totalRecGamesCount += (recCombos.length > 0 ? recCombos.length : recGames);
 
                 // Match against official draw if available
                 const draw = getDrawDataForAudit(round);
@@ -31277,14 +31294,14 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
                     const bonus = draw.bonus;
                     let wins5th = 0, wins4th = 0, wins3th = 0, wins2nd = 0, wins1st = 0;
                     for (const c of recCombos) {
-                        const nums = Array.isArray(c) ? c : (c.numbers || []);
+                        const nums = (typeof getComboNumbers === 'function') ? getComboNumbers(c) : (Array.isArray(c) ? c : (c.numbers || c.nums || []));
                         const matchCount = nums.filter(n => winSet.has(Number(n))).length;
                         const hasBonus = nums.includes(Number(bonus));
-                        if (matchCount === 6) { wins1st++; recPrizeWon += 2000000000; }
-                        else if (matchCount === 5 && hasBonus) { wins2nd++; recPrizeWon += 50000000; }
-                        else if (matchCount === 5) { wins3th++; recPrizeWon += 1500000; }
-                        else if (matchCount === 4) { wins4th++; recPrizeWon += 50000; }
-                        else if (matchCount === 3) { wins5th++; recPrizeWon += 5000; }
+                        if (matchCount === 6) { wins1st++; recPrizeWon += (draw.rank1Prize || 2000000000); }
+                        else if (matchCount === 5 && hasBonus) { wins2nd++; recPrizeWon += (draw.rank2Prize || 50000000); }
+                        else if (matchCount === 5) { wins3th++; recPrizeWon += (draw.rank3Prize || 1500000); }
+                        else if (matchCount === 4) { wins4th++; recPrizeWon += (draw.rank4Prize || 50000); }
+                        else if (matchCount === 3) { wins5th++; recPrizeWon += (draw.rank5Prize || 5000); }
                     }
                     const hitParts = [];
                     if (wins1st) hitParts.push(`1등 ${wins1st}개`);
@@ -31322,14 +31339,14 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
                     }
                     if (winSet) {
                         combos.forEach(c => {
-                            const nums = Array.isArray(c) ? c : (c.numbers || []);
+                            const nums = (typeof getComboNumbers === 'function') ? getComboNumbers(c) : (Array.isArray(c) ? c : (c.numbers || c.nums || []));
                             const matchCount = nums.filter(n => winSet.has(Number(n))).length;
                             const hasBonus = nums.includes(Number(bonus));
-                            if (matchCount === 6) purchasePrizeWon += 2000000000;
-                            else if (matchCount === 5 && hasBonus) purchasePrizeWon += 50000000;
-                            else if (matchCount === 5) purchasePrizeWon += 1500000;
-                            else if (matchCount === 4) purchasePrizeWon += 50000;
-                            else if (matchCount === 3) purchasePrizeWon += 5000;
+                            if (matchCount === 6) purchasePrizeWon += (draw.rank1Prize || 2000000000);
+                            else if (matchCount === 5 && hasBonus) purchasePrizeWon += (draw.rank2Prize || 50000000);
+                            else if (matchCount === 5) purchasePrizeWon += (draw.rank3Prize || 1500000);
+                            else if (matchCount === 4) purchasePrizeWon += (draw.rank4Prize || 50000);
+                            else if (matchCount === 3) purchasePrizeWon += (draw.rank5Prize || 5000);
                         });
                     }
                 });
@@ -31743,8 +31760,8 @@ function openSnapshotDetail(safeUserId, round) {
             <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
         `;
         row.recCombos.forEach((c, idx) => {
-            const nums = Array.isArray(c) ? c : (c.numbers || []);
-            const label = c.name || `게임 ${idx + 1}`;
+            const nums = (typeof getComboNumbers === 'function') ? getComboNumbers(c) : (Array.isArray(c) ? c : (c.numbers || c.nums || []));
+            const label = c.name || (c.meta && c.meta.name) || (c.version ? `${c.version} #${idx + 1}` : `게임 ${idx + 1}`);
             const matches = nums.filter(n => winSet.has(Number(n)));
             const matchCount = matches.length;
             const hasBonus = nums.includes(Number(bonus));
@@ -31808,7 +31825,7 @@ function openSnapshotDetail(safeUserId, round) {
             `;
 
             combos.forEach((c, cIdx) => {
-                const nums = Array.isArray(c) ? c : (c.numbers || []);
+                const nums = (typeof getComboNumbers === 'function') ? getComboNumbers(c) : (Array.isArray(c) ? c : (c.numbers || c.nums || []));
                 const letter = String.fromCharCode(65 + cIdx);
                 const matches = nums.filter(n => winSet.has(Number(n)));
                 const matchCount = matches.length;

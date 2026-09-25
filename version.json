@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.25.1911",
+  "version": "v2026.09.25.1928",
   "buildDate": "2026-09-25",
-  "description": "Fix receipts array guard and ensure Option A on mobile",
-  "buildTimestamp": "2026-09-25T19:11:04.681372",
+  "description": "Enhance snapshot audit with round 1242 and exact combo matching",
+  "buildTimestamp": "2026-09-25T19:28:28.227963",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0206",
-      "buildDate": "2026-09-24",
-      "buildTime": "02:06",
-      "buildTimestamp": "2026-09-24T02:06:32.501540",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0207",
       "buildDate": "2026-09-24",
@@ -353,7 +346,14 @@
       "buildTime": "19:11",
       "buildTimestamp": "2026-09-25T19:11:04.681372",
       "description": "Fix receipts array guard and ensure Option A on mobile"
+    },
+    {
+      "version": "v2026.09.25.1928",
+      "buildDate": "2026-09-25",
+      "buildTime": "19:28",
+      "buildTimestamp": "2026-09-25T19:28:28.227963",
+      "description": "Enhance snapshot audit with round 1242 and exact combo matching"
     }
   ],
-  "buildTime": "19:11"
+  "buildTime": "19:28"
 }
