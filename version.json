@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.25.1451",
+  "version": "v2026.09.25.1459",
   "buildDate": "2026-09-25",
-  "description": "Fix Kakao pop-up debounce, CORS proxy, and eliminate login loop",
-  "buildTimestamp": "2026-09-25T14:51:15.185995",
+  "description": "Harden Kakao auth with AuthStateMachine, serverless OAuth proxy, debounce lock, and anti-loop guards",
+  "buildTimestamp": "2026-09-25T14:59:10.733262",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0033",
-      "buildDate": "2026-09-24",
-      "buildTime": "00:33",
-      "buildTimestamp": "2026-09-24T00:33:48.910340",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0044",
       "buildDate": "2026-09-24",
@@ -353,7 +346,14 @@
       "buildTime": "14:51",
       "buildTimestamp": "2026-09-25T14:51:15.185995",
       "description": "Fix Kakao pop-up debounce, CORS proxy, and eliminate login loop"
+    },
+    {
+      "version": "v2026.09.25.1459",
+      "buildDate": "2026-09-25",
+      "buildTime": "14:59",
+      "buildTimestamp": "2026-09-25T14:59:10.733262",
+      "description": "Harden Kakao auth with AuthStateMachine, serverless OAuth proxy, debounce lock, and anti-loop guards"
     }
   ],
-  "buildTime": "14:51"
+  "buildTime": "14:59"
 }

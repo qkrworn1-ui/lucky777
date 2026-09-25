@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1451 - BUILD_DATE: 2026-09-25] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.25.1459 - BUILD_DATE: 2026-09-25] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.25.1451)
+ * Lucky777 Smart Bundle (v2026.09.25.1459)
  */
 
 
@@ -1403,12 +1403,63 @@ const SafeAuth = {
     clear: function() { _clearRaw('lotto_auth'); }
 };
 
+const AuthState = {
+    IDLE: 'IDLE',
+    AUTHENTICATING: 'AUTHENTICATING',
+    AUTHENTICATED: 'AUTHENTICATED',
+    SUSPENDED: 'SUSPENDED'
+};
+
+const AuthStateMachine = {
+    _state: AuthState.IDLE,
+    _listeners: [],
+    getState: function() {
+        if (this._state === AuthState.AUTHENTICATING) return AuthState.AUTHENTICATING;
+        const currentAuth = SafeAuth.get();
+        if (currentAuth || (typeof window !== 'undefined' && window.__appUnlocked)) {
+            return AuthState.AUTHENTICATED;
+        }
+        return this._state;
+    },
+    setState: function(newState, context = {}) {
+        const oldState = this._state;
+        this._state = newState;
+        if (typeof window !== 'undefined') {
+            window.__authState = newState;
+            if (newState === AuthState.AUTHENTICATED) {
+                window.__appUnlocked = true;
+            } else if (newState === AuthState.IDLE) {
+                window.__appUnlocked = false;
+            }
+        }
+        console.log(`[AuthStateMachine] Transition: ${oldState} -> ${newState}`, context);
+        this._listeners.forEach(fn => {
+            try { fn(newState, oldState, context); } catch(e) { console.warn('[AuthStateMachine Listener Error]', e); }
+        });
+    },
+    subscribe: function(fn) {
+        if (typeof fn === 'function') this._listeners.push(fn);
+    },
+    isAuthenticated: function() {
+        return !!SafeAuth.get() || (typeof window !== 'undefined' && window.__appUnlocked === true);
+    },
+    isAuthenticating: function() {
+        return this._state === AuthState.AUTHENTICATING;
+    }
+};
+
+if (typeof window !== 'undefined') {
+    window.AuthState = AuthState;
+    window.AuthStateMachine = AuthStateMachine;
+}
+
 let _isLoggingOut = false;
 
 function handleLogout(skipConfirm = false) {
     if (_isLoggingOut) return;
     if (!skipConfirm && !confirm('정말로 로그아웃 하시겠습니까?')) return;
     _isLoggingOut = true;
+    AuthStateMachine.setState(AuthState.IDLE, { reason: 'user_logout' });
     
     // 1. Reset Global Lifecycle Flags
     if (typeof window !== 'undefined') {
@@ -2402,6 +2453,7 @@ async function checkAuthOnLoad(initFirebaseAndData) {
     if (btnFetchLatestDraw) btnFetchLatestDraw.style.display = 'inline-flex';
 
     if (authId) {
+        AuthStateMachine.setState(AuthState.AUTHENTICATED, { userId: authId });
         let isUserAdmin = isAdminUser(authId);
 
         // 1. Instant UI Unlock from Local Cache (Zero Mobile Delay)
@@ -2668,6 +2720,7 @@ function processKakaoLoginSuccess(res, authObj = {}) {
 
         // 1. Instant Session Unlock (Multi-storage persistence)
         SafeAuth.set(customUserId);
+        AuthStateMachine.setState(AuthState.AUTHENTICATED, { userId: customUserId, provider: 'kakao' });
         try {
             window.sessionStorage.setItem('lotto_auth', customUserId);
             window.localStorage.setItem('lotto_auth', customUserId);
@@ -2930,17 +2983,24 @@ function loginWithKakao(e) {
     }
     _lastKakaoClickTime = now;
     _isKakaoLoginInProgress = true;
+    AuthStateMachine.setState(AuthState.AUTHENTICATING, { provider: 'kakao' });
     _setKakaoButtonsLoading(true);
 
     const unlockTimer = setTimeout(() => {
         _isKakaoLoginInProgress = false;
         _setKakaoButtonsLoading(false);
+        if (!SafeAuth.get() && AuthStateMachine.getState() === AuthState.AUTHENTICATING) {
+            AuthStateMachine.setState(AuthState.IDLE);
+        }
     }, 6000);
 
     const finishLogin = () => {
         clearTimeout(unlockTimer);
         _isKakaoLoginInProgress = false;
         _setKakaoButtonsLoading(false);
+        if (!SafeAuth.get() && AuthStateMachine.getState() === AuthState.AUTHENTICATING) {
+            AuthStateMachine.setState(AuthState.IDLE);
+        }
     };
 
     // 1. Ensure Kakao SDK is available and initialized immediately
@@ -2976,13 +3036,14 @@ function loginWithKakao(e) {
             persistAccessToken: true,
             success: function(authObj) {
                 console.log('[Kakao] Auth token granted, requesting profile...');
-                finishLogin();
                 window.Kakao.API.request({
                     url: '/v2/user/me',
                     success: function(res) {
+                        finishLogin();
                         processKakaoLoginSuccess(res, authObj);
                     },
                     fail: function(error) {
+                        finishLogin();
                         console.error('[Kakao API Error]', error);
                         alert('카카오 사용자 정보를 가져오는 데 실패했습니다: ' + (error?.msg || JSON.stringify(error || {})));
                     }
@@ -7959,6 +8020,14 @@ window.startBatchWinningSend = async function() {
         if (typeof SafeAuth !== 'undefined') {
             __exports.SafeAuth = SafeAuth;
             if (typeof window !== 'undefined') window.SafeAuth = SafeAuth;
+        }
+        if (typeof AuthState !== 'undefined') {
+            __exports.AuthState = AuthState;
+            if (typeof window !== 'undefined') window.AuthState = AuthState;
+        }
+        if (typeof AuthStateMachine !== 'undefined') {
+            __exports.AuthStateMachine = AuthStateMachine;
+            if (typeof window !== 'undefined') window.AuthStateMachine = AuthStateMachine;
         }
         if (typeof handleLogout !== 'undefined') {
             __exports.handleLogout = handleLogout;

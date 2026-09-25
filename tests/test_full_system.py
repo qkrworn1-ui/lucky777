@@ -2483,6 +2483,65 @@ class TestFullSystem(unittest.TestCase):
         # 3. Verify service worker controllerchange protects active login flow
         self.assertIn('isUserInActiveFlow', index_code)
 
+    # [Test 72] AuthStateMachine and Serverless OAuth Proxy Integrity Test
+    def test_72_auth_state_machine_and_serverless_proxy_integrity(self):
+        with open('src/shared/auth-mgmt.js', 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        proxy_path = os.path.join(self.root_dir, 'netlify', 'functions', 'kakao-token.js')
+        self.assertTrue(os.path.exists(proxy_path), "netlify/functions/kakao-token.js must exist for CORS-safe token exchange")
+
+        with open(proxy_path, 'r', encoding='utf-8') as f:
+            proxy_code = f.read()
+
+        # 1. AuthState enum definition
+        self.assertIn('export const AuthState = {', auth_code)
+        self.assertIn("IDLE: 'IDLE'", auth_code)
+        self.assertIn("AUTHENTICATING: 'AUTHENTICATING'", auth_code)
+        self.assertIn("AUTHENTICATED: 'AUTHENTICATED'", auth_code)
+        self.assertIn("SUSPENDED: 'SUSPENDED'", auth_code)
+
+        # 2. AuthStateMachine implementation
+        self.assertIn('export const AuthStateMachine = {', auth_code)
+        self.assertIn('getState:', auth_code)
+        self.assertIn('setState:', auth_code)
+        self.assertIn('subscribe:', auth_code)
+        self.assertIn('isAuthenticated:', auth_code)
+        self.assertIn('isAuthenticating:', auth_code)
+        self.assertIn('window.AuthState = AuthState;', auth_code)
+        self.assertIn('window.AuthStateMachine = AuthStateMachine;', auth_code)
+
+        # 3. Netlify OAuth Proxy structure
+        self.assertIn('exports.handler = async function', proxy_code)
+        self.assertIn("'Access-Control-Allow-Origin': '*'", proxy_code)
+        self.assertIn('kauth.kakao.com', proxy_code)
+        self.assertIn('/oauth/token', proxy_code)
+        self.assertIn('authorization_code', proxy_code)
+
+        # 4. Proxy integration in auth-mgmt.js
+        self.assertIn('/.netlify/functions/kakao-token', auth_code)
+
+    # [Test 73] Kakao Debounce and Anti-Loop Guard Integrity Test
+    def test_73_kakao_debounce_and_anti_loop_guards(self):
+        with open('src/shared/auth-mgmt.js', 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        with open('index.html', 'r', encoding='utf-8') as f:
+            index_code = f.read()
+
+        # 1. Debounce and concurrency locks in auth-mgmt.js
+        self.assertIn('_lastKakaoClickTime', auth_code)
+        self.assertIn('_isKakaoLoginInProgress', auth_code)
+        self.assertIn('now - _lastKakaoClickTime < 2000', auth_code)
+
+        # 2. Debounce lock in index.html bootstrap executor
+        self.assertIn('_idxLastKakaoClick', index_code)
+        self.assertIn('now - _idxLastKakaoClick < 2000', index_code)
+
+        # 3. State transitions in lifecycle functions
+        self.assertIn("AuthStateMachine.setState(AuthState.AUTHENTICATED", auth_code)
+        self.assertIn("AuthStateMachine.setState(AuthState.AUTHENTICATING", auth_code)
+        self.assertIn("AuthStateMachine.setState(AuthState.IDLE", auth_code)
+        self.assertIn("SafeAuth.clear();", auth_code)
+
 
 if __name__ == '__main__':
     unittest.main()
