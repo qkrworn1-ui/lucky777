@@ -318,31 +318,6 @@ export function renderSimulationTab(targetRound = null) {
         return null;
     }
 
-    const drawData = getHistoricalDrawData(selectedRound);
-
-    const el_simSelectedRoundTitle = document.getElementById('simSelectedRoundTitle');
-    if (el_simSelectedRoundTitle) el_simSelectedRoundTitle.textContent = `제 ${selectedRound}회`;
-    const el_simSelectedRoundDate = document.getElementById('simSelectedRoundDate');
-    if (el_simSelectedRoundDate) el_simSelectedRoundDate.textContent = `${drawData ? drawData.date : ''} 추첨`;
-
-    const winDisplay = document.getElementById('simWinningNumbersDisplay');
-    if (winDisplay && drawData) {
-        const ballsHTML = drawData.numbers.map(n => `<div class="lotto-ball sm-ball ${getBallColorClass(n)}">${n}</div>`).join('');
-        const bonusHTML = `<div class="lotto-ball sm-ball ${getBallColorClass(drawData.bonus)}" title="보너스 번호">${drawData.bonus}</div>`;
-        winDisplay.innerHTML = `
-            <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-weight:700; color:var(--accent-gold); font-size:0.95rem;">
-                    <i class="fa-solid fa-trophy"></i> 제 ${selectedRound}회 실제 당첨번호
-                </span>
-            </div>
-            <div class="balls-row" style="display:flex; align-items:center; gap:6px;">
-                ${ballsHTML}
-                <span style="font-size:0.8rem; color:#aaa; margin:0 4px; font-weight:600;">+ 보너스</span>
-                ${bonusHTML}
-            </div>
-        `;
-    }
-
     const cfg = getSelectedSimulationConfig();
     const cfgKey = `${effectiveTarget}_${JSON.stringify(cfg)}`;
     const baseCount = (cfg.includeV4 ? 10 : 0) + (cfg.includeV3 ? 10 : 0);
@@ -466,105 +441,6 @@ export function renderSimulationTab(targetRound = null) {
 
     renderAccumulatedWins(0);
     renderSimulationCharts(hit1st, hit2nd, hit3rd, hit4th, hit5th, totalHits);
-
-    const gridEl = document.getElementById('simHistoryCardsGrid');
-    if (!gridEl) return;
-    gridEl.innerHTML = '';
-    
-    if (drawData) {
-        const winningSet = new Set(drawData.numbers);
-        const bonusNum = drawData.bonus;
-        
-        const getColor = (n) => {
-            if (n <= 10) return '#fbc400';
-            if (n <= 20) return '#69c8f2';
-            if (n <= 30) return '#ff7272';
-            if (n <= 40) return '#aaa';
-            return '#b0d840';
-        };
-        
-        const simCombinations = getCombosForSimulationRound(selectedRound, cfg);
-        if (!simCombinations || simCombinations.length === 0) {
-            gridEl.innerHTML = `
-                <div style="grid-column: 1 / -1; text-align: center; padding: 28px 16px; background: rgba(15, 23, 42, 0.5); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; color: #94a3b8;">
-                    <i class="fa-solid fa-sliders" style="font-size: 1.5rem; color: #fbbf24; margin-bottom: 8px; display: block;"></i>
-                    <strong style="color: #f8fafc; font-size: 0.95rem;">선택된 알고리즘이 없습니다.</strong><br>
-                    <span style="font-size: 0.8rem; color: #cbd5e1;">상단의 알고리즘 선택 체크박스에서 시뮬레이션할 알고리즘을 1개 이상 선택해주세요.</span>
-                </div>
-            `;
-            return;
-        }
-        const cardsHtml = (simCombinations || []).map(combo => {
-            let matchesList = (combo.numbers || []).filter(n => winningSet.has(n));
-            let realMatchCount = matchesList.length;
-            let isBonusMatch = (combo.numbers || []).includes(bonusNum);
-            
-            let highlightSet = new Set(matchesList);
-            let matchCount = realMatchCount;
-            let finalBonusMatch = isBonusMatch;
-
-            let prizeText = '낙첨';
-            let prizeStyle = 'background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); font-weight: normal; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem;';
-            if (matchCount === 6) { 
-                prizeText = '🎉 1등 당첨!! (6개 일치)'; 
-                prizeStyle = 'background: rgba(251,191,36,0.25); color: #fbbf24; border: 1.5px solid #fbbf24; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; box-shadow: 0 0 10px rgba(251,191,36,0.5);';
-            }
-            else if (matchCount === 5 && finalBonusMatch) { 
-                prizeText = '🥈 2등 당첨!! (5개+보너스)'; 
-                prizeStyle = 'background: rgba(96,165,250,0.25); color: #60a5fa; border: 1.5px solid #60a5fa; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; box-shadow: 0 0 10px rgba(96,165,250,0.5);';
-            }
-            else if (matchCount === 5) { 
-                prizeText = '🥉 3등 당첨! (5개 일치)'; 
-                prizeStyle = 'background: rgba(52,211,153,0.25); color: #34d399; border: 1.5px solid #34d399; font-weight: 800; padding: 3px 8px; border-radius: 6px; font-size: 0.8rem; box-shadow: 0 0 10px rgba(52,211,153,0.5);';
-            }
-            else if (matchCount === 4) { 
-                prizeText = '✨ 4등 (50,000원)'; 
-                prizeStyle = 'background: rgba(167,139,250,0.2); color: #c4b5fd; border: 1px solid #a78bfa; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem;';
-            }
-            else if (matchCount === 3) { 
-                prizeText = '⭐ 5등 (5,000원)'; 
-                prizeStyle = 'background: rgba(244,114,182,0.2); color: #f472b6; border: 1px solid #f472b6; font-weight: 700; padding: 2px 8px; border-radius: 6px; font-size: 0.78rem;';
-            }
-
-            const badgeColor = (combo.meta && combo.meta.badgeColor) ? combo.meta.badgeColor : '#38bdf8';
-            const comboTitle = (combo.meta && combo.meta.name) ? combo.meta.name : (combo.name || '추천 조합');
-            const ownerName = (combo.meta && combo.meta.ownerName) ? combo.meta.ownerName : combo.userName;
-            const ownerBadge = ownerName ? `<span style="font-size: 0.72rem; font-weight: 800; color: #fbbf24; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.4); padding: 2px 6px; border-radius: 4px;"><i class="fa-solid fa-user"></i> ${ownerName}</span>` : '';
-
-            return `
-                <div class="verify-card" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; margin-bottom: 10px;">
-                    <div class="verify-card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <div class="combo-title-group" style="display: flex; align-items: center; gap: 8px;">
-                            ${ownerBadge}
-                            <span style="font-size: 0.72rem; font-weight: 800; color: ${badgeColor}; background: ${badgeColor}20; border: 1px solid ${badgeColor}50; padding: 2px 6px; border-radius: 4px;">
-                                ${(combo.meta && combo.meta.rankBadge) ? combo.meta.rankBadge : 'AI 퀀트'}
-                            </span>
-                            <span class="combo-name" style="font-weight: bold; color: #fff; font-size: 0.92rem;">${comboTitle}</span>
-                        </div>
-                        <span style="${prizeStyle}">${prizeText}</span>
-                    </div>
-                    <div class="balls-row" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-                        ${(combo.numbers || []).map(n => {
-                            const isHit = highlightSet.has(n);
-                            const isBonus = (n === bonusNum);
-                            const ballBg = getColor(n);
-                            let extraStyle = '';
-                            if (isHit) {
-                                extraStyle = 'border: 2px solid #fbbf24; font-weight: 800; transform: scale(1.1); box-shadow: 0 0 10px rgba(251,191,36,0.9); opacity: 1; z-index: 2;';
-                            } else if (isBonus) {
-                                extraStyle = 'border: 2px solid #f87171; font-weight: 800; transform: scale(1.1); box-shadow: 0 0 10px rgba(248,113,113,0.9); opacity: 1; z-index: 2;';
-                            } else {
-                                extraStyle = 'opacity: 0.35; filter: grayscale(35%);';
-                            }
-                            const textColor = n <= 10 ? '#0f172a' : '#fff';
-                            return `<div class="lotto-ball sm-ball ${getBallColorClass(n)}" style="background: ${ballBg}; ${extraStyle} width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; color: ${textColor}; font-weight: 900; font-size: 0.8rem; display: inline-block;">${n}</div>`;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-        }).join('');
-        gridEl.innerHTML = cardsHtml;
-    }
 }
 
 export function renderAccumulatedWins(rankFilter) {

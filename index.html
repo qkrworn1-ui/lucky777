@@ -82,7 +82,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.09.26.1255">
+    <link rel="stylesheet" href="styles.css?v=2026.09.26.1307">
 </head>
 
 <body>
@@ -159,7 +159,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.09.26.1255 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.09.26.1307 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -562,7 +562,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.09.26.1255
+                                v2026.09.26.1307
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1063,9 +1063,9 @@
 
                 <div id="simNormalContent">
                 <div class="dashboard-header">
-                    <h2><i class="fa-solid fa-desktop"></i> 역대 회차별 추천 조합 5세트 백테스팅 & 당첨 대조 리포트</h2>
+                    <h2><i class="fa-solid fa-desktop"></i> 역대 회차별 추천 알고리즘 백테스팅 & 당첨 대조 리포트</h2>
 
-                    <p>과거 모든 회차별로 본 알고리즘이 추천했던 5개 조합의 실제 맞춘 번호와 당첨 내역을 대조 검증하고 알고리즘을 고도화합니다.</p>
+                    <p>과거 모든 회차별로 본 알고리즘이 추천했던 조합의 실제 맞춘 번호와 당첨 내역을 대조 검증하고 알고리즘을 고도화합니다.</p>
 
                 </div>
 
@@ -1146,9 +1146,9 @@
 
                         <div class="ai-gen-badge"><i class="fa-solid fa-vial-virus"></i> Backtest Simulation Engine</div>
 
-                        <h3>회차별 추천 조합 5세트 정밀 대조</h3>
+                        <h3>회차별 추천 알고리즘 정밀 대조</h3>
 
-                        <p>선택한 과거 회차의 실제 당첨번호와 해당 회차 5개 추천 조합의 맞춘 공 및 당첨 결과를 검증합니다.</p>
+                        <p>선택한 과거 회차의 실제 당첨번호와 해당 회차 추천 알고리즘 조합의 맞춘 공 및 당첨 결과를 검증합니다.</p>
 
                     </div>
 
@@ -1340,31 +1340,7 @@
 
                 </div>
 
-                <!-- Selected Draw Round 5 Combinations Detailed Verification Cards -->
 
-                <div class="verification-list-container">
-
-                    <div class="section-title-bar">
-
-                        <h3><i class="fa-solid fa-list-check"></i> <span id="simSelectedRoundTitle">제 1234회</span> 추천 조합 5세트 맞춘 번호 & 당첨 내역 검증</h3>
-
-                        <span class="chart-tag" id="simSelectedRoundDate">2026.07.25 추첨</span>
-
-                    </div>
-
-                    <div id="simWinningNumbersDisplay" class="sim-winning-banner" style="margin: 12px 0 16px 0; padding: 12px 16px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,215,0,0.2); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-
-                        <!-- Dynamic winning numbers for selected round -->
-
-                    </div>
-
-                    <div id="simHistoryCardsGrid" class="verify-cards-grid">
-
-                        <!-- Dynamic backtest 5-combo cards for selected round -->
-
-                    </div>
-
-                </div>
 
                 <!-- Simulation Charts Grid -->
 
@@ -2025,7 +2001,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.09.26.1255
+                        <i class="fa-solid fa-code-branch"></i> v2026.09.26.1307
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3879,7 +3855,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.09.26.1255';
+        window.APP_VERSION = 'v2026.09.26.1307';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -3931,7 +3907,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.09.26.1255';
+            var v = ver || window.APP_VERSION || 'v2026.09.26.1307';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4117,7 +4093,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.26.1255';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.26.1307';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4250,7 +4226,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.09.26.1255')
+                navigator.serviceWorker.register('./sw.js?v=2026.09.26.1307')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -4328,8 +4304,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.09.26.1255"></script>
-    <script src="app_v2.js?v=2026.09.26.1255"></script>
+    <script src="data.js?v=2026.09.26.1307"></script>
+    <script src="app_v2.js?v=2026.09.26.1307"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">
