@@ -1,4 +1,5 @@
 import unittest
+import os
 from datetime import datetime, timezone, timedelta
 
 KST = timezone(timedelta(hours=9))
@@ -67,5 +68,21 @@ class TestEngineIntegrity(unittest.TestCase):
         zero_roi = (0 / zero_invest * 100) if zero_invest > 0 else 0.0
         self.assertEqual(zero_roi, 0.0)
 
+    def test_05_combination_numbers_strict_uniqueness(self):
+        import json
+        audit_file = r"C:\Users\qkrwo\.gemini\antigravity\brain\431af86b-b082-4449-aa45-ff751a338b47\algorithm_complementarity_audit_report.json"
+        if os.path.exists(audit_file):
+            with open(audit_file, encoding='utf-8') as f:
+                data = json.load(f)
+            total_checked = 0
+            for rnd, rdata in data.get('roundReports', {}).items():
+                for uid, uinfo in rdata.get('userValidation', {}).items():
+                    total_checked += uinfo.get('totalGames', 0)
+                    self.assertTrue(uinfo.get('validNumbersCount'), f"User {uid} round {rnd} invalid number count")
+                    self.assertTrue(uinfo.get('validRange'), f"User {uid} round {rnd} invalid range 1..45")
+                    self.assertTrue(uinfo.get('isSorted'), f"User {uid} round {rnd} not strictly sorted / duplicate")
+            self.assertGreater(total_checked, 1000, "Should have verified over 1000 games")
+
 if __name__ == '__main__':
     unittest.main()
+
