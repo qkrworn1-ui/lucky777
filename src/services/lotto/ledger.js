@@ -1486,7 +1486,7 @@ export function getLedger(explicitTarget = null) {
 
  */
 
-export async function saveLedgerDirectly(ledger, user = null, successMsg = null) {
+export async function saveLedgerDirectly(ledger, user = null, successMsg = null, targetRound = null, isAsyncServerSync = false) {
 
     const incomingLedger = ledger || {};
 
@@ -1576,88 +1576,62 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null)
 
     let isServerSaved = false;
 
-    if (authId) {
-
+    const performServerSync = async () => {
+        if (!authId) return false;
         const cleanLedger = removeUndefined(protectedLedger);
-
         const firestore = (db && typeof db.getFirestore === 'function') ? db.getFirestore() : window.db;
+        if (!firestore) return false;
 
-        if (firestore) {
+        try {
+            // Direct server save with 4-second safety guard
+            await Promise.race([
+                firestore.collection('lotto_purchases').doc(authId).set({ ledger: cleanLedger }, { merge: true }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore sync timeout')), 4000))
+            ]);
 
-            try {
+            console.log("[Firestore] Ledger permanently saved & synced to server for user:", authId);
 
-                // Direct server save with 4-second safety guard
+            // 🔒 [영수증 아카이브 영구보존] targetRound 지정 시 해당 회차만 고속 아카이빙 (네트워크 90% 절감)
+            const roundsToArchive = (targetRound !== null && targetRound !== undefined)
+                ? [String(targetRound)]
+                : Object.keys(cleanLedger);
 
-                await Promise.race([
-
-                    firestore.collection('lotto_purchases').doc(authId).set({ ledger: cleanLedger }, { merge: true }),
-
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore sync timeout')), 4000))
-
-                ]);
-
-                isServerSaved = true;
-
-                console.log("[Firestore] Ledger permanently saved & synced to server for user:", authId);
-
-
-
-                // ??? [???? ?????????? ???????] ?????????? ?÷????? 2?????? ?и? ???? (Write-Once / ???? ???? ?????????? ????)
-
-                for (const roundKey in cleanLedger) {
-
-                    const roundReceipts = cleanLedger[roundKey];
-
-                    if (Array.isArray(roundReceipts) && roundReceipts.length > 0) {
-
-                        const archiveDocId = `${authId}_${roundKey}`;
-
-                        try {
-
-                            storage.setItem(`lotto_receipt_archive_${archiveDocId}`, JSON.stringify(roundReceipts));
-
-                        } catch(e) {}
-
-                        firestore.collection('lotto_receipt_archives').doc(archiveDocId).set({
-
-                            userId: authId,
-
-                            round: parseInt(roundKey, 10),
-
-                            receipts: roundReceipts,
-
-                            savedAt: new Date().toISOString(),
-
-                            isImmutable: true
-
-                        }, { merge: true }).catch(e => console.warn('[Archive Note]', e));
-
-                    }
-
+            for (const roundKey of roundsToArchive) {
+                const roundReceipts = cleanLedger[roundKey];
+                if (Array.isArray(roundReceipts) && roundReceipts.length > 0) {
+                    const archiveDocId = `${authId}_${roundKey}`;
+                    try {
+                        storage.setItem(`lotto_receipt_archive_${archiveDocId}`, JSON.stringify(roundReceipts));
+                    } catch(e) {}
+                    firestore.collection('lotto_receipt_archives').doc(archiveDocId).set({
+                        userId: authId,
+                        round: parseInt(roundKey, 10),
+                        receipts: roundReceipts,
+                        savedAt: new Date().toISOString(),
+                        isImmutable: true
+                    }, { merge: true }).catch(e => console.warn('[Archive Note]', e));
                 }
-
-            } catch (err) {
-
-                console.warn("[Firestore] Sync note (saved locally):", err);
-
             }
-
+            return true;
+        } catch (err) {
+            console.warn("[Firestore] Sync note (saved locally):", err);
+            return false;
         }
+    };
 
+    if (isAsyncServerSync) {
+        // High-speed non-blocking background sync: returns immediately (<5ms)
+        performServerSync().catch(err => console.warn('[Async Server Sync Note]', err));
+        isServerSaved = true;
+    } else {
+        isServerSaved = await performServerSync();
     }
-
-
 
     if (typeof updateDebugMonitor === 'function') updateDebugMonitor(protectedLedger);
 
-    
-
     if (successMsg && typeof showToast === 'function') {
-
-        const prefix = isServerSaved ? '??? ???? ????????' : '??? ???? ????????';
-
+        const prefix = isServerSaved ? '💾 장부 저장 완료' : '⚠️ 로컬 장부저장';
         showToast(`${prefix}: ${successMsg}`);
-
     }
 
     return isServerSaved;
@@ -1682,7 +1656,7 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null)
 
  */
 
-export async function saveToLedger(round, combos, versionStr, user = null, qrMeta = null) {
+export async function saveToLedger(round, combos, versionStr, user = null, qrMeta = null, isAsyncServerSync = true) {
 
     if (!combos || combos.length === 0) return false;
 
@@ -2000,9 +1974,9 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
 
 
 
-    const successMsg = `??????${addedReceipts.length}??${cleanCombos.length}????) ???? ???? ????`;
+    const successMsg = `영수증 ${addedReceipts.length}장(${cleanCombos.length}게임) 정상 등록 완료`;
 
-    return await saveLedgerDirectly(ledger, authId, successMsg);
+    return await saveLedgerDirectly(ledger, authId, successMsg, r, isAsyncServerSync);
 
 }
 

@@ -1,58 +1,9 @@
 {
-  "version": "v2026.09.26.1307",
+  "version": "v2026.09.26.1522",
   "buildDate": "2026-09-26",
   "description": "Remove 5-combo verification cards from simulation tab",
-  "buildTimestamp": "2026-09-26T13:07:45.645065",
+  "buildTimestamp": "2026-09-26T15:22:10.346660",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0240",
-      "buildDate": "2026-09-24",
-      "buildTime": "02:40",
-      "buildTimestamp": "2026-09-24T02:40:31.372441",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.24.0247",
-      "buildDate": "2026-09-24",
-      "buildTime": "02:47",
-      "buildTimestamp": "2026-09-24T02:47:30.262377",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.24.0247.58",
-      "buildDate": "2026-09-24",
-      "buildTime": "02:47",
-      "buildTimestamp": "2026-09-24T02:47:58.404095",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
-    {
-      "version": "v2026.09.24.0300",
-      "buildDate": "2026-09-24",
-      "buildTime": "03:00",
-      "buildTimestamp": "2026-09-24T03:00:05.104102",
-      "description": "Fix generator-tab module isolation error and enhance safe import destructuring"
-    },
-    {
-      "version": "v2026.09.24.0300.44",
-      "buildDate": "2026-09-24",
-      "buildTime": "03:00",
-      "buildTimestamp": "2026-09-24T03:00:44.031775",
-      "description": "Resolve generator-tab forward import crash and improve initial banner state"
-    },
-    {
-      "version": "v2026.09.24.1142",
-      "buildDate": "2026-09-24",
-      "buildTime": "11:42",
-      "buildTimestamp": "2026-09-24T11:42:59.710150",
-      "description": "Calculate 7 algorithms performance strictly based on server snapshots"
-    },
-    {
-      "version": "v2026.09.24.1147",
-      "buildDate": "2026-09-24",
-      "buildTime": "11:47",
-      "buildTimestamp": "2026-09-24T11:47:36.006888",
-      "description": "Strictly exclude pre-join rounds from user aggregation starting 1235"
-    },
     {
       "version": "v2026.09.24.1152",
       "buildDate": "2026-09-24",
@@ -353,7 +304,56 @@
       "buildTime": "13:07",
       "buildTimestamp": "2026-09-26T13:07:45.645065",
       "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.26.1509",
+      "buildDate": "2026-09-26",
+      "buildTime": "15:09",
+      "buildTimestamp": "2026-09-26T15:09:09.250912",
+      "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.26.1511",
+      "buildDate": "2026-09-26",
+      "buildTime": "15:11",
+      "buildTimestamp": "2026-09-26T15:11:49.114049",
+      "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.26.1516",
+      "buildDate": "2026-09-26",
+      "buildTime": "15:16",
+      "buildTimestamp": "2026-09-26T15:16:58.963666",
+      "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.26.1518",
+      "buildDate": "2026-09-26",
+      "buildTime": "15:18",
+      "buildTimestamp": "2026-09-26T15:18:46.802048",
+      "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.26.1519",
+      "buildDate": "2026-09-26",
+      "buildTime": "15:19",
+      "buildTimestamp": "2026-09-26T15:19:00.142074",
+      "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.26.1520",
+      "buildDate": "2026-09-26",
+      "buildTime": "15:20",
+      "buildTimestamp": "2026-09-26T15:20:34.641126",
+      "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.26.1522",
+      "buildDate": "2026-09-26",
+      "buildTime": "15:22",
+      "buildTimestamp": "2026-09-26T15:22:10.346660",
+      "description": "Remove 5-combo verification cards from simulation tab"
     }
   ],
-  "buildTime": "13:07"
+  "buildTime": "15:22"
 }
