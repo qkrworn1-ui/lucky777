@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.25.1940",
-  "buildDate": "2026-09-25",
-  "description": "Add smartphone program share button to home screen bottom",
-  "buildTimestamp": "2026-09-25T19:40:14.388940",
+  "version": "v2026.09.26.1243",
+  "buildDate": "2026-09-26",
+  "description": "Remove redundant bottom 70-game cards section in review tab",
+  "buildTimestamp": "2026-09-26T12:43:46.396686",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.0211",
-      "buildDate": "2026-09-24",
-      "buildTime": "02:11",
-      "buildTimestamp": "2026-09-24T02:11:10.451001",
-      "description": "Data: 1242회차 최신 당첨번호 데이터 업데이트 및 스크래퍼 검증 완료"
-    },
     {
       "version": "v2026.09.24.0221",
       "buildDate": "2026-09-24",
@@ -353,7 +346,14 @@
       "buildTime": "19:40",
       "buildTimestamp": "2026-09-25T19:40:14.388940",
       "description": "Add smartphone program share button to home screen bottom"
+    },
+    {
+      "version": "v2026.09.26.1243",
+      "buildDate": "2026-09-26",
+      "buildTime": "12:43",
+      "buildTimestamp": "2026-09-26T12:43:46.396686",
+      "description": "Remove redundant bottom 70-game cards section in review tab"
     }
   ],
-  "buildTime": "19:40"
+  "buildTime": "12:43"
 }

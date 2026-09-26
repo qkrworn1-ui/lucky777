@@ -1736,7 +1736,7 @@ export async function renderAllRoundsReviewDetail() {
                     </td>
                     <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
                         <button type="button" onclick="window.selectSpecificReviewRound && window.selectSpecificReviewRound(${uItem.roundNum})" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-magnifying-glass"></i> ${uItem.roundNum}회 70게임 결과
+                            <i class="fa-solid fa-magnifying-glass"></i> ${uItem.roundNum}회 결과 보기
                         </button>
                     </td>
                 </tr>
@@ -2225,7 +2225,7 @@ export async function renderReviewDetail(r) {
                     </td>
                     <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
                         <button type="button" onclick="window.changeReviewAdminUser && window.changeReviewAdminUser('${m.userId}')" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; padding: 3px 8px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; cursor: pointer;">
-                            <i class="fa-solid fa-magnifying-glass"></i> 70게임 결과
+                            <i class="fa-solid fa-magnifying-glass"></i> 당첨 결과
                         </button>
                     </td>
                 </tr>
@@ -2291,7 +2291,7 @@ export async function renderReviewDetail(r) {
             <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;">
                 <span style="font-size: 0.78rem; color: #93c5fd; display: flex; align-items: center; gap: 6px; word-break: keep-all; overflow-wrap: break-word;">
                     <i class="fa-solid fa-circle-info" style="color: #60a5fa; flex-shrink: 0;"></i>
-                    <strong>알림:</strong> 회원마다 고유한 70게임이 맞춤 배정되어 당첨 내역이 다릅니다. 아래 조합 카드는 관리자 계정(${effectiveUserId}) 기준 대표 예시이며, 각 회원의 개별 추천 70게임을 상세 확인하시려면 상단 표의 <strong>[70게임 결과]</strong> 버튼을 클릭하세요.
+                    <strong>알림:</strong> 회원마다 고유한 7대 알고리즘(70게임)이 맞춤 배정되어 당첨 내역이 다릅니다. 아래 당첨 랭킹 및 대조 번호는 관리자 계정(${effectiveUserId}) 기준이며, 각 회원의 알고리즘별 상세 당첨결과를 확인하시려면 상단 표의 <strong>[당첨 결과]</strong> 버튼을 클릭하세요.
                 </span>
             </div>
         `;
@@ -2470,9 +2470,7 @@ export async function renderReviewDetail(r) {
                         </div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.7rem; color: #94a3b8;">
                             <span>총 10게임 중 <strong>${algo.wins}게임</strong> 적중</span>
-                            <button type="button" onclick="event.stopPropagation(); window.setReviewViewFilter && window.setReviewViewFilter('${algo.id}')" style="background: ${algo.color}25; border: 1px solid ${algo.color}60; color: ${algo.color}; font-size: 0.68rem; font-weight: 800; padding: 2px 8px; border-radius: 4px; cursor: pointer;">
-                                하단 카드에서 보기 <i class="fa-solid fa-arrow-down"></i>
-                            </button>
+                            <span style="font-weight: 700; color: ${algo.prize > 0 ? '#34d399' : '#94a3b8'};">당첨금 +${algo.prize.toLocaleString()}원</span>
                         </div>
                     </div>
                 </div>
@@ -2488,7 +2486,12 @@ export async function renderReviewDetail(r) {
                         <span style="font-size: 0.9rem; font-weight: 900; color: #fff;">7대 알고리즘 당첨 랭킹</span>
                         <span class="height-indicator height-good"><i class="fa-solid fa-compress"></i> 높이 82% 절감</span>
                     </div>
-                    <span style="font-size: 0.72rem; color: #94a3b8;">제 ${roundNum}회차 대조</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.72rem; color: #94a3b8;">제 ${roundNum}회차 대조</span>
+                        <button type="button" onclick="window.exportImmutableUnifiedArchive && window.exportImmutableUnifiedArchive('${effectiveUserId}')" title="알고리즘명과 구매자 정보가 포함된 추천당첨목록 및 구매영수증을 불변 텍스트 파일(.json)로 백업합니다." style="padding: 3px 8px; border-radius: 6px; font-size: 0.68rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.45); background: rgba(16,185,129,0.2); color: #6ee7b7; display: inline-flex; align-items: center; gap: 4px;">
+                            <i class="fa-solid fa-file-arrow-down"></i> 💾 통합 백업
+                        </button>
+                    </div>
                 </div>
 
                 <!-- 4-Stat Micro KPI Strip -->
@@ -2522,46 +2525,7 @@ export async function renderReviewDetail(r) {
             </div>
         `;
 
-        // 3. View Filter Buttons (V3, V4, and Extra Packs 1~5)
-        html += `
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;">
-            <div style="display: flex; align-items: center; gap: 6px; font-size: 0.88rem; font-weight: 800; color: #f8fafc; word-break: keep-all;">
-                <i class="fa-solid fa-cubes-stacked" style="color: #60a5fa; flex-shrink: 0;"></i> 
-                ${isAllUsers ? `전체 통합 7대 알고리즘 추천 70게임 당첨 결과` : `[${(typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || (effectiveUserId === 'master' ? '최고관리자' : effectiveUserId)}] 회원 배정 7대 알고리즘 70게임 당첨 결과`}
-            </div>
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-                <button type="button" class="btn-filter-review ${activeReviewFilter === 'all' ? 'active' : ''}" onclick="window.setReviewViewFilter('all')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'all' ? '#fbbf24' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'all' ? 'linear-gradient(135deg, rgba(245,158,11,0.35), rgba(217,119,6,0.35))' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'all' ? '#fbbf24' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
-                    전체 (70)
-                </button>
-                <button type="button" class="btn-filter-review ${activeReviewFilter === 'v4' ? 'active' : ''}" onclick="window.setReviewViewFilter('v4')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'v4' ? '#a78bfa' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'v4' ? 'linear-gradient(135deg, rgba(139,92,246,0.35), rgba(99,102,241,0.35))' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'v4' ? '#c4b5fd' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
-                    V4.0 (10)
-                </button>
-                <button type="button" class="btn-filter-review ${activeReviewFilter === 'v3' ? 'active' : ''}" onclick="window.setReviewViewFilter('v3')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'v3' ? '#60a5fa' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'v3' ? 'linear-gradient(135deg, rgba(59,130,246,0.35), rgba(14,165,233,0.35))' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'v3' ? '#93c5fd' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
-                    V3.0 (10)
-                </button>
-                <button type="button" class="btn-filter-review ${activeReviewFilter === 'extra_1' ? 'active' : ''}" onclick="window.setReviewViewFilter('extra_1')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'extra_1' ? '#10b981' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'extra_1' ? 'rgba(16,185,129,0.35)' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'extra_1' ? '#34d399' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
-                    추가1 (10)
-                </button>
-                <button type="button" class="btn-filter-review ${activeReviewFilter === 'extra_2' ? 'active' : ''}" onclick="window.setReviewViewFilter('extra_2')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'extra_2' ? '#f59e0b' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'extra_2' ? 'rgba(245,158,11,0.35)' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'extra_2' ? '#fbbf24' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
-                    추가2 (10)
-                </button>
-                <button type="button" class="btn-filter-review ${activeReviewFilter === 'extra_3' ? 'active' : ''}" onclick="window.setReviewViewFilter('extra_3')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'extra_3' ? '#8b5cf6' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'extra_3' ? 'rgba(139,92,246,0.35)' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'extra_3' ? '#a78bfa' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
-                    추가3 (10)
-                </button>
-                <button type="button" class="btn-filter-review ${activeReviewFilter === 'extra_4' ? 'active' : ''}" onclick="window.setReviewViewFilter('extra_4')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'extra_4' ? '#06b6d4' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'extra_4' ? 'rgba(6,182,212,0.35)' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'extra_4' ? '#38bdf8' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
-                    추가4 (10)
-                </button>
-                <button type="button" class="btn-filter-review ${activeReviewFilter === 'extra_5' ? 'active' : ''}" onclick="window.setReviewViewFilter('extra_5')" style="padding: 6px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; cursor: pointer; border: 1.5px solid ${activeReviewFilter === 'extra_5' ? '#ec4899' : 'rgba(255,255,255,0.2)'}; background: ${activeReviewFilter === 'extra_5' ? 'rgba(236,72,153,0.35)' : 'rgba(30,41,59,0.85)'}; color: ${activeReviewFilter === 'extra_5' ? '#f472b6' : '#f1f5f9'}; box-shadow: 0 2px 6px rgba(0,0,0,0.35);">
-                    추가5 (10)
-                </button>
-                <button type="button" onclick="window.exportImmutableUnifiedArchive && window.exportImmutableUnifiedArchive('${effectiveUserId}')" title="알고리즘명과 구매자 정보가 포함된 추천당첨목록 및 구매영수증을 불변 텍스트 파일(.json)로 백업합니다." style="padding: 5px 10px; border-radius: 8px; font-size: 0.74rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.45); background: rgba(16,185,129,0.2); color: #6ee7b7; display: inline-flex; align-items: center; gap: 4px; margin-left: 4px;">
-                    <i class="fa-solid fa-file-arrow-down"></i> 💾 통합 텍스트 백업
-                </button>
-            </div>
-        </div>
-    `;
-
-    // Helper: Render combo cards list
+    // Helper: Render combo cards list (used for real paper purchase receipts)
     function renderComboCardSection(title, badgeText, badgeBg, badgeColor, borderColor, evalData) {
         let sectionHtml = `
             <div style="margin-bottom: 16px; background: rgba(0,0,0,0.25); border: 1px solid ${borderColor}; border-radius: 10px; padding: 12px 14px;">
@@ -2604,43 +2568,6 @@ export async function renderReviewDetail(r) {
         sectionHtml += `</div></div>`;
         return sectionHtml;
     }
-
-    // Render Sections based on active filter
-    if (activeReviewFilter === 'all' || activeReviewFilter === 'v4') {
-        html += renderComboCardSection(
-            '<i class="fa-solid fa-brain" style="color: #a78bfa;"></i> V4.0 행동경제학 포트폴리오 (추천 10게임 검증)',
-            `10게임 검증 완료 (적중 ${v4Eval.totalWins}회)`,
-            'rgba(139, 92, 246, 0.2)',
-            '#c4b5fd',
-            'rgba(139, 92, 246, 0.35)',
-            v4Eval
-        );
-    }
-
-    if (activeReviewFilter === 'all' || activeReviewFilter === 'v3') {
-        html += renderComboCardSection(
-            '<i class="fa-solid fa-gears" style="color: #60a5fa;"></i> V3.0 하이브리드 정통 수학 알고리즘 (추천 10게임 검증)',
-            `10게임 검증 완료 (적중 ${v3Eval.totalWins}회)`,
-            'rgba(59, 130, 246, 0.2)',
-            '#93c5fd',
-            'rgba(59, 130, 246, 0.35)',
-            v3Eval
-        );
-    }
-
-    extraPackEvals.forEach(pack => {
-        const filterKey = `extra_${pack.packId}`;
-        if (activeReviewFilter === 'all' || activeReviewFilter === filterKey) {
-            html += renderComboCardSection(
-                `<i class="fa-solid fa-layer-group" style="color: ${pack.color};"></i> ${pack.name} (추가 ${pack.packId}팩 10게임 검증)`,
-                `10게임 검증 완료 (적중 ${pack.evalData.totalWins}회)`,
-                `${pack.color}25`,
-                pack.color,
-                `${pack.color}40`,
-                pack.evalData
-            );
-        }
-    });
 
     // 3. Render Logged-in User's Real Purchases for this round
     const targetReceiptUser = (isAdmin && !isAllUsers) ? effectiveUserId : authId;
@@ -2699,7 +2626,7 @@ export function changeReviewAdminUser(userId) {
     const isAll = (userId === 'all');
     const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '';
     const isSelf = (userId.toLowerCase().trim() === rawAuth.toLowerCase().trim() || userId === 'master' || userId === 'admin');
-    showToast(isAll ? '🌐 전체 회원 추천번호 당첨 결과 종합 화면으로 전환되었습니다.' : (isSelf ? '👑 관리자 본인의 70게임 당첨 결과로 전환되었습니다.' : `👤 [${userId}] 회원의 추천번호 70게임 당첨 결과로 전환되었습니다.`));
+    showToast(isAll ? '🌐 전체 회원 추천번호 당첨 결과 종합 화면으로 전환되었습니다.' : (isSelf ? '👑 관리자 본인의 7대 알고리즘 당첨 결과로 전환되었습니다.' : `👤 [${userId}] 회원의 추천번호 당첨 결과로 전환되었습니다.`));
 }
 
 // ====================================================================
