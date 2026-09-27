@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.28.0035",
+  "version": "v2026.09.28.0059",
   "buildDate": "2026-09-28",
   "description": "Remove 5-combo verification cards from simulation tab",
-  "buildTimestamp": "2026-09-28T00:35:47.964079",
+  "buildTimestamp": "2026-09-28T00:59:22.800662",
   "buildHistory": [
-    {
-      "version": "v2026.09.25.1906",
-      "buildDate": "2026-09-25",
-      "buildTime": "19:06",
-      "buildTimestamp": "2026-09-25T19:06:59.456477",
-      "description": "Fix v4Combos in single round Option A"
-    },
     {
       "version": "v2026.09.25.1911",
       "buildDate": "2026-09-25",
@@ -109,8 +102,16 @@
       "buildDateTime": "2026-09-28 00:35",
       "buildTimestamp": "2026-09-28T00:35:47.964079",
       "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.28.0059",
+      "buildDate": "2026-09-28",
+      "buildTime": "00:59",
+      "buildDateTime": "2026-09-28 00:59",
+      "buildTimestamp": "2026-09-28T00:59:22.800662",
+      "description": "Remove 5-combo verification cards from simulation tab"
     }
   ],
-  "buildTime": "00:35",
-  "buildDateTime": "2026-09-28 00:35"
+  "buildTime": "00:59",
+  "buildDateTime": "2026-09-28 00:59"
 }

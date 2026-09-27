@@ -1178,9 +1178,16 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
         if (window.db) {
             (async () => {
                 try {
-                    const queryPromise = window.db.collection('lotto_users').doc(authId).get();
-                    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500));
-                    const userDoc = await Promise.race([queryPromise, timeoutPromise]);
+                    // ⚡ 캐시 우선 조회 (즉시 응답) → 실패 시 네트워크 조회 (타임아웃 5초)
+                    let userDoc = null;
+                    try {
+                        userDoc = await window.db.collection('lotto_users').doc(authId).get({ source: 'cache' });
+                    } catch(cacheErr) { /* 캐시 없으면 네트워크 조회 */ }
+                    if (!userDoc || !userDoc.exists) {
+                        const queryPromise = window.db.collection('lotto_users').doc(authId).get();
+                        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 5000));
+                        userDoc = await Promise.race([queryPromise, timeoutPromise]);
+                    }
                     if (userDoc && userDoc.exists) {
                         const uData = userDoc.data() || {};
                         let freshAdmin = isUserAdmin;
@@ -1565,35 +1572,39 @@ export async function handleKakaoAuthRedirectOnLoad() {
         initKakaoSdk();
         let tokenData = null;
 
-        // 1. Try Netlify Proxy Function first
+        // ⚡ Netlify 프록시 + 직접 fetch 병렬 실행 (첫 성공 응답 즉시 사용 → 지연 최소화)
+        const tokenEndpointUrl = 'https://kauth.kakao.com/oauth/token';
+        const redirectUri = window.location.origin + window.location.pathname;
+        const tokenBody = new URLSearchParams({
+            grant_type: 'authorization_code',
+            client_id: KAKAO_JS_KEY,
+            redirect_uri: redirectUri,
+            code: code
+        });
+
+        const proxyFetch = fetch(`/.netlify/functions/kakao-token?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUri)}`)
+            .then(r => r.ok ? r.json() : Promise.reject('proxy_fail'))
+            .catch(() => null);
+
+        const directFetch = fetch(tokenEndpointUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+            body: tokenBody
+        })
+            .then(r => r.ok ? r.json() : Promise.reject('direct_fail'))
+            .catch(() => null);
+
+        // 두 요청 중 먼저 유효한 access_token을 반환하는 것 사용
         try {
-            const proxyResp = await fetch(`/.netlify/functions/kakao-token?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(window.location.origin + window.location.pathname)}`);
-            if (proxyResp.ok) {
-                tokenData = await proxyResp.json();
+            const results = await Promise.allSettled([proxyFetch, directFetch]);
+            for (const res of results) {
+                if (res.status === 'fulfilled' && res.value && res.value.access_token) {
+                    tokenData = res.value;
+                    break;
+                }
             }
         } catch(e) {
-            console.warn('[Kakao Proxy Fetch Notice]', e);
-        }
-
-        // 2. Direct fetch fallback
-        if (!tokenData || !tokenData.access_token) {
-            try {
-                const tokenResp = await fetch('https://kauth.kakao.com/oauth/token', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
-                    body: new URLSearchParams({
-                        grant_type: 'authorization_code',
-                        client_id: KAKAO_JS_KEY,
-                        redirect_uri: window.location.origin + window.location.pathname,
-                        code: code
-                    })
-                });
-                if (tokenResp.ok) {
-                    tokenData = await tokenResp.json();
-                }
-            } catch(e) {
-                console.warn('[Kakao Direct Token Fetch Notice]', e);
-            }
+            console.warn('[Kakao Token Parallel Fetch]', e);
         }
 
         if (tokenData && tokenData.access_token) {
