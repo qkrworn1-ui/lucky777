@@ -314,6 +314,25 @@ function handleAppResumeAndWakeup() {
             try { checkAuthOnLoad(initLottoService); } catch(e) {}
         }, 50);
     }
+
+    // 5. 💬 [Kakao Auto-Resume] 모바일에서 카카오 인증창(새 탭/팝업)을 마치고 원래 창으로 복귀했을 때,
+    // 카카오 SDK에 이미 발급된 access_token이 있다면 2번째 클릭 없이 즉시 자동 로그인 완료!
+    if (!authId && typeof window !== 'undefined' && window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
+        const cachedToken = window.Kakao.Auth.getAccessToken();
+        console.log('[Kakao Resume] Access token detected upon returning to app, finalizing login automatically...');
+        window.Kakao.API.request({
+            url: '/v2/user/me',
+            success: function(res) {
+                if (typeof window.processKakaoLoginSuccess === 'function') {
+                    window.processKakaoLoginSuccess(res, { access_token: cachedToken });
+                }
+            },
+            fail: function(err) {
+                console.warn('[Kakao Resume] Token expired or invalid:', err);
+                try { window.Kakao.Auth.setAccessToken(null); } catch(e) {}
+            }
+        });
+    }
 }
 
 if (typeof document !== 'undefined') {

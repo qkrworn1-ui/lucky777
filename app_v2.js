@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0232 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0242 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0232)
+ * Lucky777 Smart Bundle (v2026.09.28.0242)
  */
 
 
@@ -3131,6 +3131,36 @@ function loginWithKakao(e) {
  * 실제 Kakao.Auth.login 실행 헬퍼 (사용자 터치 제스처 즉시 동기 실행으로 팝업 차단 방지)
  */
 function _doKakaoLogin(finishLogin) {
+    try {
+        // ⚡ [패스트트랙] 이미 SDK에 유효한 Access Token이 보관되어 있는 경우:
+        // 새 팝업 창을 띄우지 않고 즉시 프로필을 조회하여 0.1초 만에 로그인 완료
+        if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
+            const cachedToken = window.Kakao.Auth.getAccessToken();
+            console.log('[Kakao] Found existing access token, attempting fast profile fetch...');
+            window.Kakao.API.request({
+                url: '/v2/user/me',
+                success: function(res) {
+                    processKakaoLoginSuccess(res, { access_token: cachedToken });
+                    finishLogin();
+                },
+                fail: function(profileErr) {
+                    console.warn('[Kakao] Existing token invalid, clearing and opening fresh popup:', profileErr);
+                    try { window.Kakao.Auth.setAccessToken(null); } catch(e) {}
+                    _executeFreshKakaoLogin(finishLogin);
+                }
+            });
+            return;
+        }
+
+        _executeFreshKakaoLogin(finishLogin);
+    } catch (execErr) {
+        finishLogin();
+        console.error('[Kakao Exec Error]', execErr);
+        alert('카카오 로그인 실행 오류: ' + execErr.message);
+    }
+}
+
+function _executeFreshKakaoLogin(finishLogin) {
     try {
         const loginOptions = {
             persistAccessToken: true,
@@ -41586,6 +41616,25 @@ function handleAppResumeAndWakeup() {
         setTimeout(() => {
             try { checkAuthOnLoad(initLottoService); } catch(e) {}
         }, 50);
+    }
+
+    // 5. 💬 [Kakao Auto-Resume] 모바일에서 카카오 인증창(새 탭/팝업)을 마치고 원래 창으로 복귀했을 때,
+    // 카카오 SDK에 이미 발급된 access_token이 있다면 2번째 클릭 없이 즉시 자동 로그인 완료!
+    if (!authId && typeof window !== 'undefined' && window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
+        const cachedToken = window.Kakao.Auth.getAccessToken();
+        console.log('[Kakao Resume] Access token detected upon returning to app, finalizing login automatically...');
+        window.Kakao.API.request({
+            url: '/v2/user/me',
+            success: function(res) {
+                if (typeof window.processKakaoLoginSuccess === 'function') {
+                    window.processKakaoLoginSuccess(res, { access_token: cachedToken });
+                }
+            },
+            fail: function(err) {
+                console.warn('[Kakao Resume] Token expired or invalid:', err);
+                try { window.Kakao.Auth.setAccessToken(null); } catch(e) {}
+            }
+        });
     }
 }
 

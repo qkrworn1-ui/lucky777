@@ -1747,6 +1747,36 @@ export function loginWithKakao(e) {
  */
 function _doKakaoLogin(finishLogin) {
     try {
+        // ⚡ [패스트트랙] 이미 SDK에 유효한 Access Token이 보관되어 있는 경우:
+        // 새 팝업 창을 띄우지 않고 즉시 프로필을 조회하여 0.1초 만에 로그인 완료
+        if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
+            const cachedToken = window.Kakao.Auth.getAccessToken();
+            console.log('[Kakao] Found existing access token, attempting fast profile fetch...');
+            window.Kakao.API.request({
+                url: '/v2/user/me',
+                success: function(res) {
+                    processKakaoLoginSuccess(res, { access_token: cachedToken });
+                    finishLogin();
+                },
+                fail: function(profileErr) {
+                    console.warn('[Kakao] Existing token invalid, clearing and opening fresh popup:', profileErr);
+                    try { window.Kakao.Auth.setAccessToken(null); } catch(e) {}
+                    _executeFreshKakaoLogin(finishLogin);
+                }
+            });
+            return;
+        }
+
+        _executeFreshKakaoLogin(finishLogin);
+    } catch (execErr) {
+        finishLogin();
+        console.error('[Kakao Exec Error]', execErr);
+        alert('카카오 로그인 실행 오류: ' + execErr.message);
+    }
+}
+
+function _executeFreshKakaoLogin(finishLogin) {
+    try {
         const loginOptions = {
             persistAccessToken: true,
             throughTalk: false,
