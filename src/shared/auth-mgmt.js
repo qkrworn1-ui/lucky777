@@ -1294,7 +1294,9 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             }
         }, 1200);
     } else {
-        if (!window.__appUnlocked && loginModal) {
+        // 카카오 로그인 진행 중이거나 방금 로그인 완료한 경우 모달 재표시 금지
+        const kakaoInProgress = window._isKakaoLoginInProgress || window.__appUnlocked;
+        if (!kakaoInProgress && loginModal) {
             loginModal.removeAttribute('style');
             loginModal.style.cssText = 'display: flex !important; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 10, 20, 0.95); z-index: 99999; padding: 16px; box-sizing: border-box;';
             loginModal.classList.remove('hidden');
@@ -1571,39 +1573,42 @@ export async function handleKakaoAuthRedirectOnLoad() {
         initKakaoSdk();
         let tokenData = null;
 
-        // ⚡ Netlify 프록시 + 직접 fetch 병렬 실행 (첫 성공 응답 즉시 사용 → 지연 최소화)
-        const tokenEndpointUrl = 'https://kauth.kakao.com/oauth/token';
-        const redirectUri = window.location.origin + window.location.pathname;
-        const tokenBody = new URLSearchParams({
-            grant_type: 'authorization_code',
-            client_id: KAKAO_JS_KEY,
-            redirect_uri: redirectUri,
-            code: code
-        });
-
-        const proxyFetch = fetch(`/.netlify/functions/kakao-token?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUri)}`)
-            .then(r => r.ok ? r.json() : Promise.reject('proxy_fail'))
-            .catch(() => null);
-
-        const directFetch = fetch(tokenEndpointUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
-            body: tokenBody
-        })
-            .then(r => r.ok ? r.json() : Promise.reject('direct_fail'))
-            .catch(() => null);
-
-        // 두 요청 중 먼저 유효한 access_token을 반환하는 것 사용
+        // 직접 토큰 교환 시도 (Netlify 프록시 먼저, 실패 시 직접 fetch)
+        // 주의: 직접 fetch는 CORS 제한이 있을 수 있음
         try {
-            const results = await Promise.allSettled([proxyFetch, directFetch]);
-            for (const res of results) {
-                if (res.status === 'fulfilled' && res.value && res.value.access_token) {
-                    tokenData = res.value;
-                    break;
+            const redirectUri = window.location.origin + window.location.pathname;
+            const tokenBody = new URLSearchParams({
+                grant_type: 'authorization_code',
+                client_id: KAKAO_JS_KEY,
+                redirect_uri: redirectUri,
+                code: code
+            });
+
+            // Netlify 프록시 먼저 시도 (Firebase 호스팅에서는 404 → catch)
+            const proxyResp = await fetch(
+                `/.netlify/functions/kakao-token?code=${encodeURIComponent(code)}&redirect_uri=${encodeURIComponent(redirectUri)}`,
+                { signal: AbortSignal.timeout ? AbortSignal.timeout(3000) : undefined }
+            ).catch(() => null);
+
+            if (proxyResp && proxyResp.ok) {
+                const proxyData = await proxyResp.json().catch(() => null);
+                if (proxyData && proxyData.access_token) tokenData = proxyData;
+            }
+
+            // 프록시 실패 시 직접 fetch (CORS 허용 환경에서만 성공)
+            if (!tokenData) {
+                const directResp = await fetch('https://kauth.kakao.com/oauth/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+                    body: tokenBody
+                }).catch(() => null);
+                if (directResp && directResp.ok) {
+                    const directData = await directResp.json().catch(() => null);
+                    if (directData && directData.access_token) tokenData = directData;
                 }
             }
-        } catch(e) {
-            console.warn('[Kakao Token Parallel Fetch]', e);
+        } catch(tokenErr) {
+            console.warn('[Kakao Token Exchange]', tokenErr);
         }
 
         if (tokenData && tokenData.access_token) {
@@ -1643,6 +1648,26 @@ export async function handleKakaoAuthRedirectOnLoad() {
                 });
             }
         }
+
+        // 토큰 교환 실패 → SDK 팝업 방식으로 재시도 (로그인 모달 재표시 방지)
+        console.warn('[Kakao OAuth Redirect] Token exchange failed, falling back to SDK popup login');
+        _setKakaoButtonsLoading(false);
+        if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
+            return new Promise((resolve) => {
+                window.Kakao.Auth.login({
+                    persistAccessToken: true,
+                    throughTalk: false,
+                    success: function(authObj) {
+                        window.Kakao.API.request({
+                            url: '/v2/user/me',
+                            success: function(res) { resolve(processKakaoLoginSuccess(res, authObj)); },
+                            fail: function() { resolve(false); }
+                        });
+                    },
+                    fail: function() { resolve(false); }
+                });
+            });
+        }
     } catch (e) {
         console.error('[Kakao OAuth Redirect Handler Error]', e);
     } finally {
@@ -1662,6 +1687,7 @@ export function loginWithKakao(e) {
     }
     _lastKakaoClickTime = now;
     _isKakaoLoginInProgress = true;
+    window._isKakaoLoginInProgress = true;  // checkAuthOnLoad 모달 방지용
     AuthStateMachine.setState(AuthState.AUTHENTICATING, { provider: 'kakao' });
     _setKakaoButtonsLoading(true);
 
@@ -1676,6 +1702,7 @@ export function loginWithKakao(e) {
     const finishLogin = () => {
         clearTimeout(unlockTimer);
         _isKakaoLoginInProgress = false;
+        window._isKakaoLoginInProgress = false;
         _setKakaoButtonsLoading(false);
         if (!SafeAuth.get() && AuthStateMachine.getState() === AuthState.AUTHENTICATING) {
             AuthStateMachine.setState(AuthState.IDLE);
