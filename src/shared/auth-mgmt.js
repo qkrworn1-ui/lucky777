@@ -1440,12 +1440,11 @@ export function processKakaoLoginSuccess(res, authObj = {}) {
         updateLoggedInUserHeaderUI(customUserId);
         showToast(`👋 [${nickname}]님 환영합니다!`);
 
-        // 4. Render Dashboard & Init Services
+        // 4. Render Dashboard & Init Services (checkAuthOnLoad 재호출 없이 직접 서비스 초기화)
         setTimeout(() => {
             try {
-                if (typeof window.checkAuthOnLoad === 'function') {
-                    window.checkAuthOnLoad();
-                } else if (typeof window.initLottoService === 'function') {
+                // checkAuthOnLoad 재호출 금지: 모달 재표시 사이드 이펙트 방지
+                if (typeof window.initLottoService === 'function') {
                     window.initLottoService();
                 }
             } catch(ex) {}
@@ -1689,8 +1688,27 @@ export function loginWithKakao(e) {
     initKakaoSdk();
 
     if (!window.Kakao) {
-        finishLogin();
-        alert('💬 카카오 로그인 모듈을 불러오는 중입니다. 1초 후 다시 버튼을 눌러주세요.');
+        // SDK 미로드: 최대 3초 대기 후 자동 재시도
+        let waited = 0;
+        const waitInterval = setInterval(() => {
+            waited += 200;
+            if (window.Kakao) {
+                clearInterval(waitInterval);
+                try {
+                    if (!window.Kakao.isInitialized()) window.Kakao.init(KAKAO_JS_KEY);
+                } catch(e) {}
+                if (window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
+                    _doKakaoLogin(finishLogin);
+                } else {
+                    finishLogin();
+                    alert('⚠️ 카카오 SDK 로딩 실패: 잠시 후 다시 시도해 주세요.');
+                }
+            } else if (waited >= 3000) {
+                clearInterval(waitInterval);
+                finishLogin();
+                alert('💬 카카오 로그인 모듈 로딩이 지연되고 있습니다. 잠시 후 다시 눌러주세요.');
+            }
+        }, 200);
         return;
     }
 
@@ -1710,7 +1728,13 @@ export function loginWithKakao(e) {
         }
     } catch(e) {}
 
-    // Synchronous execution inside user gesture
+    _doKakaoLogin(finishLogin);
+}
+
+/**
+ * 실제 Kakao.Auth.login 실행 헬퍼 (SDK 로드 완료 후 호출)
+ */
+function _doKakaoLogin(finishLogin) {
     try {
         const loginOptions = {
             persistAccessToken: true,
