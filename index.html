@@ -82,7 +82,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.09.26.1522">
+    <link rel="stylesheet" href="styles.css?v=2026.09.28.0035">
 </head>
 
 <body>
@@ -118,7 +118,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.09.26.1522
+                        v2026.09.28.0035
                     </span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -159,7 +159,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.09.26.1522 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.09.28.0035 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -562,7 +562,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.09.26.1522
+                                v2026.09.28.0035
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -2001,7 +2001,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.09.26.1522
+                        <i class="fa-solid fa-code-branch"></i> v2026.09.28.0035
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3855,7 +3855,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.09.26.1522';
+        window.APP_VERSION = 'v2026.09.28.0035';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -3886,6 +3886,22 @@
             return clean ? parseInt(clean, 10) : 0;
         }
 
+        function formatBuildDateTimeDisplay(dateStr, timeStr, fallbackIso) {
+            if (dateStr && timeStr) return dateStr + ' ' + timeStr;
+            if (dateStr && dateStr.includes(':')) return dateStr;
+            if (fallbackIso) {
+                var s = String(fallbackIso).trim();
+                if (s.includes('T')) {
+                    var parts = s.split('T');
+                    var d = parts[0];
+                    var t = (parts[1] || '').slice(0, 5);
+                    return t ? (d + ' ' + t) : d;
+                }
+                if (s.includes(':')) return s;
+            }
+            return dateStr || fallbackIso || '';
+        }
+
         function getVersionJsonUrl() {
             var loc = window.location;
             if (loc.protocol === 'file:') {
@@ -3910,7 +3926,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.09.26.1522';
+            var v = ver || window.APP_VERSION || 'v2026.09.28.0035';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -3980,7 +3996,7 @@
                         if (doc && doc.exists) {
                             var data = doc.data();
                             var fbVer = data.version;
-                            var fbDate = data.buildDate || data.updatedAt || '';
+                            var fbDate = formatBuildDateTimeDisplay(data.buildDate, data.buildTime, data.buildDateTime || data.updatedAt);
                             if (fbVer) {
                                 console.log('[Firebase Version Listener] Live Firestore Push received:', fbVer, fbDate);
                                 window.FIREBASE_LATEST_VERSION = fbVer;
@@ -4013,7 +4029,7 @@
                     var data = await res.json();
                     if (data && data.version) {
                         window.HOSTING_LATEST_VERSION = data.version;
-                        window.SERVER_BUILD_DATE = data.buildDate || '';
+                        window.SERVER_BUILD_DATE = formatBuildDateTimeDisplay(data.buildDate, data.buildTime, data.buildDateTime || data.buildTimestamp);
                     }
                 } else if (window.location && window.location.protocol !== 'file:') {
                     // Fallback relative fetch if absolute path had 404 or rewrite
@@ -4023,7 +4039,7 @@
                             var relData = await relRes.json();
                             if (relData && relData.version) {
                                 window.HOSTING_LATEST_VERSION = relData.version;
-                                window.SERVER_BUILD_DATE = relData.buildDate || '';
+                                window.SERVER_BUILD_DATE = formatBuildDateTimeDisplay(relData.buildDate, relData.buildTime, relData.buildDateTime || relData.buildTimestamp);
                             }
                         }
                     } catch(relErr) {}
@@ -4047,7 +4063,7 @@
                             var fbData = doc.data();
                             if (fbData && fbData.version) {
                                 fetchedFbVer = fbData.version;
-                                fetchedFbDate = fbData.buildDate || fbData.updatedAt || '';
+                                fetchedFbDate = formatBuildDateTimeDisplay(fbData.buildDate, fbData.buildTime, fbData.buildDateTime || fbData.updatedAt);
                             }
                         }
                     } catch(sdkErr) {
@@ -4057,7 +4073,7 @@
                                 var cData = cacheDoc.data();
                                 if (cData && cData.version) {
                                     fetchedFbVer = cData.version;
-                                    fetchedFbDate = cData.buildDate || cData.updatedAt || '';
+                                    fetchedFbDate = formatBuildDateTimeDisplay(cData.buildDate, cData.buildTime, cData.buildDateTime || cData.updatedAt);
                                 }
                             }
                         } catch(cErr) {}
@@ -4074,7 +4090,11 @@
                             var fields = restData.fields || {};
                             if (fields.version && fields.version.stringValue) {
                                 fetchedFbVer = fields.version.stringValue;
-                                fetchedFbDate = (fields.buildDate && fields.buildDate.stringValue) || (fields.updatedAt && fields.updatedAt.stringValue) || '';
+                                var bDate = fields.buildDate ? fields.buildDate.stringValue : '';
+                                var bTime = fields.buildTime ? fields.buildTime.stringValue : '';
+                                var bDt = fields.buildDateTime ? fields.buildDateTime.stringValue : '';
+                                var uAt = fields.updatedAt ? fields.updatedAt.stringValue : '';
+                                fetchedFbDate = formatBuildDateTimeDisplay(bDate, bTime, bDt || uAt);
                             }
                         }
                     } catch(restErr) {
@@ -4120,7 +4140,7 @@
             var serverV = checkResult.serverVersion;
             var fbV = checkResult.firebaseVersion;
             var hostV = checkResult.hostingVersion;
-            var buildDate = checkResult.serverBuildDate || '최신';
+            var buildDate = formatBuildDateTimeDisplay(checkResult.serverBuildDate) || '최신';
 
             if (!checkResult.isLatest) {
                 var proceed = confirm(
@@ -4149,7 +4169,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.26.1522';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.28.0035';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4282,7 +4302,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.09.26.1522')
+                navigator.serviceWorker.register('./sw.js?v=2026.09.28.0035')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -4360,8 +4380,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.09.26.1522"></script>
-    <script src="app_v2.js?v=2026.09.26.1522"></script>
+    <script src="data.js?v=2026.09.28.0035"></script>
+    <script src="app_v2.js?v=2026.09.28.0035"></script>
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
     <div id="kakaoBatchSendModal" class="modal-overlay hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(7, 10, 20, 0.94); z-index:100010; display:none; align-items:center; justify-content:center; overflow-y:auto; padding:16px;">

@@ -16,18 +16,28 @@ if sys.platform == 'win32':
         pass
 
 
-def push_version_to_firestore(version, build_date):
-    print(f"[*] [FIREBASE] Pushing build version {version} to Firestore...")
+def push_version_to_firestore(version, build_date=None, build_time=None):
+    now_dt = datetime.datetime.now()
+    if not build_date:
+        build_date = now_dt.strftime('%Y-%m-%d')
+    if not build_time:
+        build_time = now_dt.strftime('%H:%M')
+    
+    build_datetime_str = f"{build_date} {build_time}"
+    now_iso = now_dt.strftime('%Y-%m-%dT%H:%M:%S+09:00')
+    
+    print(f"[*] [FIREBASE] Pushing build version {version} ({build_datetime_str}) to Firestore...")
     api_key = "AIzaSyAnkGVAlO39p6rnTEibygeQTBYDbp505dA"
     project_id = "sonamu-jokgu-club"
     doc_path = "lotto_purchases/app_latest_version"
     url = f"https://firestore.googleapis.com/v1/projects/{project_id}/databases/(default)/documents/{doc_path}?key={api_key}"
     
-    now_iso = datetime.datetime.now().isoformat()
     payload = {
         "fields": {
             "version": {"stringValue": version},
             "buildDate": {"stringValue": build_date},
+            "buildTime": {"stringValue": build_time},
+            "buildDateTime": {"stringValue": build_datetime_str},
             "updatedAt": {"stringValue": now_iso},
             "channel": {"stringValue": "production"}
         }
@@ -38,7 +48,7 @@ def push_version_to_firestore(version, build_date):
         req = urllib.request.Request(url, data=data_bytes, method='PATCH', headers={'Content-Type': 'application/json', 'User-Agent': 'Lucky777-Builder'})
         with urllib.request.urlopen(req, timeout=8) as resp:
             if resp.status in (200, 204):
-                print(f"[+] [FIREBASE-SYNC-PASS] Version {version} successfully pushed to Firestore ({doc_path})!")
+                print(f"[+] [FIREBASE-SYNC-PASS] Version {version} ({build_datetime_str}) successfully pushed to Firestore ({doc_path})!")
                 return True
     except Exception as ex:
         print(f"[!] [FIREBASE-WARN] Firestore push skipped/failed (offline or timeout): {ex}")
@@ -104,25 +114,31 @@ def sync_version_assets(auto_bump=True, explicit_version=None, build_desc=""):
         history = []
     
     # Check if this version entry already exists
+    build_datetime = f"{build_date} {build_time}"
     existing_entry = next((h for h in history if h.get('version') == version), None)
     if not existing_entry:
         history.append({
             "version": version,
             "buildDate": build_date,
             "buildTime": build_time,
+            "buildDateTime": build_datetime,
             "buildTimestamp": now_iso,
             "description": build_desc or vdata.get('description', 'Application production build')
         })
     else:
+        existing_entry['buildDate'] = build_date
+        existing_entry['buildTime'] = build_time
+        existing_entry['buildDateTime'] = build_datetime
         if build_desc:
             existing_entry['description'] = build_desc
-            existing_entry['buildTimestamp'] = now_iso
+        existing_entry['buildTimestamp'] = now_iso
 
     # Keep last 15 builds in history to prevent version.json bloating
     vdata['buildHistory'] = history[-15:]
     vdata['version'] = version
     vdata['buildDate'] = build_date
     vdata['buildTime'] = build_time
+    vdata['buildDateTime'] = build_datetime
     vdata['buildTimestamp'] = now_iso
     if build_desc:
         vdata['description'] = build_desc
@@ -425,9 +441,10 @@ def clean_and_bundle(custom_desc=None, explicit_version=None):
     run_preflight_tests()
     print(f"[*] Starting smart bundling process for [{version}]...")
     bundle_core(version)
-    verify_version_crosscheck(version)
-    build_date = datetime.date.today().isoformat()
-    push_version_to_firestore(version, build_date)
+    now_dt = datetime.datetime.now()
+    build_date = now_dt.strftime('%Y-%m-%d')
+    build_time = now_dt.strftime('%H:%M')
+    push_version_to_firestore(version, build_date, build_time)
     prune_old_backups(keep_count=5)
     clean_temp_artifacts()
     print(f"[*] Done! Build [{version}] completed and snapshot archived.")
