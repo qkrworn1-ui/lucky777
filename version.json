@@ -1,16 +1,9 @@
 {
-  "version": "v2026.09.27.1153",
+  "version": "v2026.09.27.1251",
   "buildDate": "2026-09-27",
   "description": "Remove 5-combo verification cards from simulation tab",
-  "buildTimestamp": "2026-09-27T11:53:16.075327",
+  "buildTimestamp": "2026-09-27T12:51:25.188229",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.1204",
-      "buildDate": "2026-09-24",
-      "buildTime": "12:04",
-      "buildTimestamp": "2026-09-24T12:04:21.076264",
-      "description": "Unify all members winning prize calculation between algorithm intro and review tabs"
-    },
     {
       "version": "v2026.09.24.1220",
       "buildDate": "2026-09-24",
@@ -353,7 +346,14 @@
       "buildTime": "11:53",
       "buildTimestamp": "2026-09-27T11:53:16.075327",
       "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.27.1251",
+      "buildDate": "2026-09-27",
+      "buildTime": "12:51",
+      "buildTimestamp": "2026-09-27T12:51:25.188229",
+      "description": "Remove 5-combo verification cards from simulation tab"
     }
   ],
-  "buildTime": "11:53"
+  "buildTime": "12:51"
 }

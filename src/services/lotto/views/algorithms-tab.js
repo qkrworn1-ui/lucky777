@@ -335,26 +335,9 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
     }
     const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : fromRound;
 
-    // 전수 검증 대상 사용자 ID 수집 (전체 등록 회원 목록과 100% 동기화)
-    const allUserIdsSet = new Set();
-    if (isAll) {
-        baseList.forEach(u => {
-            if (u && u.id && !isSystemOrDummyUser(u.id)) {
-                allUserIdsSet.add(String(u.id).toLowerCase().trim());
-            }
-        });
-        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
-            state.allRegisteredUsersList.forEach(u => {
-                if (u && u.id && !isSystemOrDummyUser(u.id)) {
-                    allUserIdsSet.add(String(u.id).toLowerCase().trim());
-                }
-            });
-        }
-    } else {
-        allUserIdsSet.add(cleanUser);
-    }
-
-    const candidateUsers = Array.from(allUserIdsSet);
+    // 전수 검증 대상 사용자 ID 수집
+    // 'all' 또는 'master'인 경우: 7대 알고리즘의 공식 통합 스냅샷 시리즈(master: 1235~1239 guest, 1240~1243 kakao_5070244665)를 단일 기준으로 전수 채점하여 중복 및 누락 원천 차단
+    const candidateUsers = isAll ? ['master'] : [cleanUser];
 
     const cacheKey = `${fromRound}_${cleanUser}_${maxRound}_${drawnRounds.length}_${candidateUsers.length}`;
     if (_algoPerfCache.has(cacheKey)) {
@@ -362,7 +345,7 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
     }
 
     try {
-        const sessionCached = sessionStorage.getItem(`algo_perf_v2_${cacheKey}`);
+        const sessionCached = sessionStorage.getItem(`algo_perf_v3_${cacheKey}`);
         if (sessionCached) {
             const parsed = JSON.parse(sessionCached);
             if (parsed && typeof parsed === 'object' && parsed.fromRound === fromRound && parsed.maxRound === maxRound) {
@@ -516,7 +499,7 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
 
     _algoPerfCache.set(cacheKey, perfResult);
     try {
-        sessionStorage.setItem(`algo_perf_v2_${cacheKey}`, JSON.stringify(perfResult));
+        sessionStorage.setItem(`algo_perf_v3_${cacheKey}`, JSON.stringify(perfResult));
     } catch(e) {}
     return perfResult;
 }

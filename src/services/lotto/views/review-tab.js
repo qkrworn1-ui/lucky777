@@ -331,6 +331,30 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         }
     }
 
+    // 4. Official Unified Baseline Fallback (master -> guest -> kakao_5070244665)
+    const roundInt = parseInt(roundNum, 10);
+    const fallbackUsers = ['master', roundInt <= 1239 ? 'guest' : 'kakao_5070244665', 'guest', 'kakao_5070244665'];
+    for (const altUser of fallbackUsers) {
+        if (altUser === cleanUser) continue;
+        const altKey = `${altUser}_${roundInt}`;
+        if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[altKey]) {
+            return state.userRecommendationSnapshots[altKey];
+        }
+        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[altUser]) {
+            const altDoc = state.allUsersPurchasesMap[altUser];
+            if (altDoc.recommendationSnapshots && altDoc.recommendationSnapshots[rKey]) {
+                return altDoc.recommendationSnapshots[rKey];
+            }
+        }
+        try {
+            const rawAlt = localStorage.getItem(`lotto_rec_snapshot_${altKey}`);
+            if (rawAlt) {
+                const parsed = JSON.parse(rawAlt);
+                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks || parsed.combos)) return parsed;
+            }
+        } catch(e) {}
+    }
+
     return null;
 }
 if (typeof window !== 'undefined') {
@@ -394,7 +418,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
     }
 
     try {
-        const localCached = localStorage.getItem(`lotto_review_v2_${cacheKey}`);
+        const localCached = localStorage.getItem(`lotto_review_v3_${cacheKey}`);
         if (localCached) {
             const parsed = JSON.parse(localCached);
             if (parsed && typeof parsed === 'object' && parsed.userId === cleanUser && parsed.roundNum === roundNum && parsed.v4Combos && parsed.v3Combos && parsed.extraPackEvals && parsed.extraPackEvals.length === 5) {
@@ -453,14 +477,49 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
         v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
         for (let pId = 1; pId <= 5; pId++) {
-            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId) || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] };
-            const pCombos = (packObj && Array.isArray(packObj.combos)) ? packObj.combos : (Array.isArray(packObj) ? packObj : []);
+            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId);
+            let pCombos = [];
+            if (packObj && Array.isArray(packObj.combos)) {
+                pCombos = packObj.combos;
+            } else if (Array.isArray(packObj)) {
+                pCombos = packObj;
+            } else if (Array.isArray(snapshot.combos) && snapshot.combos.length >= 20 + pId * 10) {
+                pCombos = snapshot.combos.slice(10 + pId * 10, 20 + pId * 10);
+            }
             const evalData = evaluateRecommendationSet(pCombos, actualDraw);
             extraPackEvals.push({
                 packId: pId,
-                name: packObj.name || `추가팩 ${pId}`,
-                badge: packObj.badge || `EXTRA ${pId}`,
-                color: packObj.color || '#38bdf8',
+                name: (packObj && packObj.name) || `추가팩 ${pId}`,
+                badge: (packObj && packObj.badge) || `EXTRA ${pId}`,
+                color: (packObj && packObj.color) || '#38bdf8',
+                combos: pCombos,
+                evalData: evalData
+            });
+        }
+    } else if (snapshot && (snapshot.combos || snapshot.v4Combos)) {
+        if (Array.isArray(snapshot.combos) && snapshot.combos.length >= 70 && (!snapshot.v4Combos || snapshot.v4Combos.length === 0)) {
+            v4Combos = snapshot.combos.slice(0, 10);
+            v3Combos = snapshot.combos.slice(10, 20);
+        } else {
+            v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
+            v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
+        }
+        for (let pId = 1; pId <= 5; pId++) {
+            const packObj = snapshot.extraPacks ? getPackFromSnapshot(snapshot.extraPacks, pId) : null;
+            let pCombos = [];
+            if (packObj && Array.isArray(packObj.combos)) {
+                pCombos = packObj.combos;
+            } else if (Array.isArray(packObj)) {
+                pCombos = packObj;
+            } else if (Array.isArray(snapshot.combos) && snapshot.combos.length >= 20 + pId * 10) {
+                pCombos = snapshot.combos.slice(10 + pId * 10, 20 + pId * 10);
+            }
+            const evalData = evaluateRecommendationSet(pCombos, actualDraw);
+            extraPackEvals.push({
+                packId: pId,
+                name: (packObj && packObj.name) || `추가팩 ${pId}`,
+                badge: (packObj && packObj.badge) || `EXTRA ${pId}`,
+                color: (packObj && packObj.color) || '#38bdf8',
                 combos: pCombos,
                 evalData: evalData
             });
@@ -640,7 +699,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
 
     _user70ReviewCache[cacheKey] = reviewResult;
     try {
-        localStorage.setItem(`lotto_review_v2_${cacheKey}`, JSON.stringify(reviewResult));
+        localStorage.setItem(`lotto_review_v3_${cacheKey}`, JSON.stringify(reviewResult));
     } catch(e) {}
     return reviewResult;
 }

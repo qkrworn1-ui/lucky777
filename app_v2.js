@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.27.1153 - BUILD_DATE: 2026-09-27] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.27.1251 - BUILD_DATE: 2026-09-27] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.27.1153)
+ * Lucky777 Smart Bundle (v2026.09.27.1251)
  */
 
 
@@ -9553,7 +9553,7 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                         if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                         for (const rKey in d.recommendationSnapshots) {
                             const snapData = d.recommendationSnapshots[rKey];
-                            if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
+                            if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks || snapData.combos)) {
                                 state.userRecommendationSnapshots[`${uId}_${parseInt(rKey, 10)}`] = snapData;
                             }
                         }
@@ -9597,7 +9597,7 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                     if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                     for (const rKey in data.recommendationSnapshots) {
                         const snapData = data.recommendationSnapshots[rKey];
-                        if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
+                        if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks || snapData.combos)) {
                             state.userRecommendationSnapshots[`${userId}_${parseInt(rKey, 10)}`] = snapData;
                         }
                     }
@@ -9677,7 +9677,8 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                     userId: rawUserId,
                     realName: userNames[rawUserId] || rawUserId,
                     createdAt: (state.allRegisteredUsersList.find(u => u.id === rawUserId)?.createdAt) || null,
-                    ledger: cleanUserLedger
+                    ledger: cleanUserLedger,
+                    recommendationSnapshots: data.recommendationSnapshots || {}
                 };
 
                 for (const r in cleanUserLedger) {
@@ -9705,7 +9706,8 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                     userId: 'master',
                     realName: '최고관리자',
                     createdAt: '2026-07-25T12:00:00+09:00',
-                    ledger: masterCleanLedger
+                    ledger: masterCleanLedger,
+                    recommendationSnapshots: {}
                 };
                 for (const r in masterCleanLedger) {
                     const roundNum = parseInt(r, 10);
@@ -9715,6 +9717,34 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                     if (roundNum === 1239) {
                         mergedLedger[1239] = normalizeMaster1239Order(mergedLedger[1239]);
                     }
+                }
+            }
+
+            if (!allUsersMap['master'].recommendationSnapshots) {
+                allUsersMap['master'].recommendationSnapshots = {};
+            }
+            if (!state.userRecommendationSnapshots) {
+                state.userRecommendationSnapshots = {};
+            }
+            // Consolidate official snapshots into master (1235~1239 from guest, 1240~1243 from kakao_5070244665)
+            const gSnaps = (allUsersMap['guest'] && allUsersMap['guest'].recommendationSnapshots) || {};
+            const kSnaps = (allUsersMap['kakao_5070244665'] && allUsersMap['kakao_5070244665'].recommendationSnapshots) || {};
+            for (const r in gSnaps) {
+                if (!allUsersMap['master'].recommendationSnapshots[r]) {
+                    allUsersMap['master'].recommendationSnapshots[r] = gSnaps[r];
+                }
+                const rNum = parseInt(r, 10);
+                if (!state.userRecommendationSnapshots[`master_${rNum}`]) {
+                    state.userRecommendationSnapshots[`master_${rNum}`] = gSnaps[r];
+                }
+            }
+            for (const r in kSnaps) {
+                if (!allUsersMap['master'].recommendationSnapshots[r]) {
+                    allUsersMap['master'].recommendationSnapshots[r] = kSnaps[r];
+                }
+                const rNum = parseInt(r, 10);
+                if (!state.userRecommendationSnapshots[`master_${rNum}`]) {
+                    state.userRecommendationSnapshots[`master_${rNum}`] = kSnaps[r];
                 }
             }
 
@@ -11731,11 +11761,11 @@ function getSafeActualDraw(round) {
 
     const STATIC_DRAWS = {
 
-        1235: { numbers: [6, 14, 22, 29, 36, 41], bonus: 17, rank1Prize: 1985670000, date: '2026-08-01' },
+        1235: { numbers: [6, 14, 22, 29, 36, 41], bonus: 17, rank1Prize: 1985670000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-01' },
 
-        1236: { numbers: [3, 11, 18, 25, 33, 42], bonus: 8, rank1Prize: 2450320000, date: '2026-08-08' },
+        1236: { numbers: [3, 11, 18, 25, 33, 42], bonus: 8, rank1Prize: 2450320000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-08' },
 
-        1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, rank1Prize: 2180450000, date: '2026-08-15' },
+        1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, rank1Prize: 2180450000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-15' },
 
         1238: { numbers: [2, 13, 18, 32, 38, 42], bonus: 22, rank1Prize: 1197250000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-22' },
 
@@ -15823,21 +15853,60 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     cleanUser = cleanUser.toLowerCase().trim();
     const roundNum = parseInt(round, 10);
     const docKey = `${cleanUser}_${roundNum}`;
+    const rKey = String(roundNum);
 
+    // 1. Direct in-memory state snapshot
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey]) {
         return state.userRecommendationSnapshots[docKey];
     }
+    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
+        return state.userRecommendationSnapshots[rKey];
+    }
+
+    // 2. Direct LocalStorage cache
     try {
         const raw = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem(`lotto_rec_snapshot_${docKey}`) : null;
         if (raw) {
             const parsed = JSON.parse(raw);
-            if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
+            if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks || parsed.combos)) {
                 if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                 state.userRecommendationSnapshots[docKey] = parsed;
                 return parsed;
             }
         }
     } catch(e) {}
+
+    // 3. state.allUsersPurchasesMap for cleanUser
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
+        const pDoc = state.allUsersPurchasesMap[cleanUser];
+        if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
+            return pDoc.recommendationSnapshots[rKey];
+        }
+    }
+
+    // 4. Official Unified Baseline Fallback (master -> guest -> kakao_5070244665)
+    const fallbackUsers = ['master', roundNum <= 1239 ? 'guest' : 'kakao_5070244665', 'guest', 'kakao_5070244665'];
+    for (const altUser of fallbackUsers) {
+        if (altUser === cleanUser) continue;
+        const altKey = `${altUser}_${roundNum}`;
+        if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[altKey]) {
+            return state.userRecommendationSnapshots[altKey];
+        }
+        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[altUser]) {
+            const altDoc = state.allUsersPurchasesMap[altUser];
+            if (altDoc.recommendationSnapshots && altDoc.recommendationSnapshots[rKey]) {
+                return altDoc.recommendationSnapshots[rKey];
+            }
+        }
+        try {
+            const rawAlt = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem(`lotto_rec_snapshot_${altKey}`) : null;
+            if (rawAlt) {
+                const parsed = JSON.parse(rawAlt);
+                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks || parsed.combos)) return parsed;
+            }
+        } catch(e) {}
+    }
+
     return null;
 }
 
@@ -16533,6 +16602,30 @@ function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         }
     }
 
+    // 4. Official Unified Baseline Fallback (master -> guest -> kakao_5070244665)
+    const roundInt = parseInt(roundNum, 10);
+    const fallbackUsers = ['master', roundInt <= 1239 ? 'guest' : 'kakao_5070244665', 'guest', 'kakao_5070244665'];
+    for (const altUser of fallbackUsers) {
+        if (altUser === cleanUser) continue;
+        const altKey = `${altUser}_${roundInt}`;
+        if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[altKey]) {
+            return state.userRecommendationSnapshots[altKey];
+        }
+        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[altUser]) {
+            const altDoc = state.allUsersPurchasesMap[altUser];
+            if (altDoc.recommendationSnapshots && altDoc.recommendationSnapshots[rKey]) {
+                return altDoc.recommendationSnapshots[rKey];
+            }
+        }
+        try {
+            const rawAlt = SafeLocalStorage.getItem(`lotto_rec_snapshot_${altKey}`);
+            if (rawAlt) {
+                const parsed = JSON.parse(rawAlt);
+                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks || parsed.combos)) return parsed;
+            }
+        } catch(e) {}
+    }
+
     return null;
 }
 if (typeof window !== 'undefined') {
@@ -16596,7 +16689,7 @@ function computeUser70RecommendationsReview(userId, roundNum) {
     }
 
     try {
-        const localCached = SafeLocalStorage.getItem(`lotto_review_v2_${cacheKey}`);
+        const localCached = SafeLocalStorage.getItem(`lotto_review_v3_${cacheKey}`);
         if (localCached) {
             const parsed = JSON.parse(localCached);
             if (parsed && typeof parsed === 'object' && parsed.userId === cleanUser && parsed.roundNum === roundNum && parsed.v4Combos && parsed.v3Combos && parsed.extraPackEvals && parsed.extraPackEvals.length === 5) {
@@ -16655,14 +16748,49 @@ function computeUser70RecommendationsReview(userId, roundNum) {
         v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
         v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
         for (let pId = 1; pId <= 5; pId++) {
-            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId) || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] };
-            const pCombos = (packObj && Array.isArray(packObj.combos)) ? packObj.combos : (Array.isArray(packObj) ? packObj : []);
+            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId);
+            let pCombos = [];
+            if (packObj && Array.isArray(packObj.combos)) {
+                pCombos = packObj.combos;
+            } else if (Array.isArray(packObj)) {
+                pCombos = packObj;
+            } else if (Array.isArray(snapshot.combos) && snapshot.combos.length >= 20 + pId * 10) {
+                pCombos = snapshot.combos.slice(10 + pId * 10, 20 + pId * 10);
+            }
             const evalData = evaluateRecommendationSet(pCombos, actualDraw);
             extraPackEvals.push({
                 packId: pId,
-                name: packObj.name || `추가팩 ${pId}`,
-                badge: packObj.badge || `EXTRA ${pId}`,
-                color: packObj.color || '#38bdf8',
+                name: (packObj && packObj.name) || `추가팩 ${pId}`,
+                badge: (packObj && packObj.badge) || `EXTRA ${pId}`,
+                color: (packObj && packObj.color) || '#38bdf8',
+                combos: pCombos,
+                evalData: evalData
+            });
+        }
+    } else if (snapshot && (snapshot.combos || snapshot.v4Combos)) {
+        if (Array.isArray(snapshot.combos) && snapshot.combos.length >= 70 && (!snapshot.v4Combos || snapshot.v4Combos.length === 0)) {
+            v4Combos = snapshot.combos.slice(0, 10);
+            v3Combos = snapshot.combos.slice(10, 20);
+        } else {
+            v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
+            v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
+        }
+        for (let pId = 1; pId <= 5; pId++) {
+            const packObj = snapshot.extraPacks ? getPackFromSnapshot(snapshot.extraPacks, pId) : null;
+            let pCombos = [];
+            if (packObj && Array.isArray(packObj.combos)) {
+                pCombos = packObj.combos;
+            } else if (Array.isArray(packObj)) {
+                pCombos = packObj;
+            } else if (Array.isArray(snapshot.combos) && snapshot.combos.length >= 20 + pId * 10) {
+                pCombos = snapshot.combos.slice(10 + pId * 10, 20 + pId * 10);
+            }
+            const evalData = evaluateRecommendationSet(pCombos, actualDraw);
+            extraPackEvals.push({
+                packId: pId,
+                name: (packObj && packObj.name) || `추가팩 ${pId}`,
+                badge: (packObj && packObj.badge) || `EXTRA ${pId}`,
+                color: (packObj && packObj.color) || '#38bdf8',
                 combos: pCombos,
                 evalData: evalData
             });
@@ -16842,7 +16970,7 @@ function computeUser70RecommendationsReview(userId, roundNum) {
 
     _user70ReviewCache[cacheKey] = reviewResult;
     try {
-        SafeLocalStorage.setItem(`lotto_review_v2_${cacheKey}`, JSON.stringify(reviewResult));
+        SafeLocalStorage.setItem(`lotto_review_v3_${cacheKey}`, JSON.stringify(reviewResult));
     } catch(e) {}
     return reviewResult;
 }
@@ -20520,26 +20648,9 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
     }
     const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : fromRound;
 
-    // 전수 검증 대상 사용자 ID 수집 (전체 등록 회원 목록과 100% 동기화)
-    const allUserIdsSet = new Set();
-    if (isAll) {
-        baseList.forEach(u => {
-            if (u && u.id && !isSystemOrDummyUser(u.id)) {
-                allUserIdsSet.add(String(u.id).toLowerCase().trim());
-            }
-        });
-        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
-            state.allRegisteredUsersList.forEach(u => {
-                if (u && u.id && !isSystemOrDummyUser(u.id)) {
-                    allUserIdsSet.add(String(u.id).toLowerCase().trim());
-                }
-            });
-        }
-    } else {
-        allUserIdsSet.add(cleanUser);
-    }
-
-    const candidateUsers = Array.from(allUserIdsSet);
+    // 전수 검증 대상 사용자 ID 수집
+    // 'all' 또는 'master'인 경우: 7대 알고리즘의 공식 통합 스냅샷 시리즈(master: 1235~1239 guest, 1240~1243 kakao_5070244665)를 단일 기준으로 전수 채점하여 중복 및 누락 원천 차단
+    const candidateUsers = isAll ? ['master'] : [cleanUser];
 
     const cacheKey = `${fromRound}_${cleanUser}_${maxRound}_${drawnRounds.length}_${candidateUsers.length}`;
     if (_algoPerfCache.has(cacheKey)) {
@@ -20547,7 +20658,7 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
     }
 
     try {
-        const sessionCached = SafeStorage.getItem(`algo_perf_v2_${cacheKey}`);
+        const sessionCached = SafeStorage.getItem(`algo_perf_v3_${cacheKey}`);
         if (sessionCached) {
             const parsed = JSON.parse(sessionCached);
             if (parsed && typeof parsed === 'object' && parsed.fromRound === fromRound && parsed.maxRound === maxRound) {
@@ -20701,7 +20812,7 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
 
     _algoPerfCache.set(cacheKey, perfResult);
     try {
-        SafeStorage.setItem(`algo_perf_v2_${cacheKey}`, JSON.stringify(perfResult));
+        SafeStorage.setItem(`algo_perf_v3_${cacheKey}`, JSON.stringify(perfResult));
     } catch(e) {}
     return perfResult;
 }

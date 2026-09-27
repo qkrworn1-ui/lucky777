@@ -1052,7 +1052,7 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                         if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                         for (const rKey in d.recommendationSnapshots) {
                             const snapData = d.recommendationSnapshots[rKey];
-                            if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
+                            if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks || snapData.combos)) {
                                 state.userRecommendationSnapshots[`${uId}_${parseInt(rKey, 10)}`] = snapData;
                             }
                         }
@@ -1096,7 +1096,7 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                     if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                     for (const rKey in data.recommendationSnapshots) {
                         const snapData = data.recommendationSnapshots[rKey];
-                        if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
+                        if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks || snapData.combos)) {
                             state.userRecommendationSnapshots[`${userId}_${parseInt(rKey, 10)}`] = snapData;
                         }
                     }
@@ -1176,7 +1176,8 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                     userId: rawUserId,
                     realName: userNames[rawUserId] || rawUserId,
                     createdAt: (state.allRegisteredUsersList.find(u => u.id === rawUserId)?.createdAt) || null,
-                    ledger: cleanUserLedger
+                    ledger: cleanUserLedger,
+                    recommendationSnapshots: data.recommendationSnapshots || {}
                 };
 
                 for (const r in cleanUserLedger) {
@@ -1204,7 +1205,8 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                     userId: 'master',
                     realName: '최고관리자',
                     createdAt: '2026-07-25T12:00:00+09:00',
-                    ledger: masterCleanLedger
+                    ledger: masterCleanLedger,
+                    recommendationSnapshots: {}
                 };
                 for (const r in masterCleanLedger) {
                     const roundNum = parseInt(r, 10);
@@ -1214,6 +1216,34 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                     if (roundNum === 1239) {
                         mergedLedger[1239] = normalizeMaster1239Order(mergedLedger[1239]);
                     }
+                }
+            }
+
+            if (!allUsersMap['master'].recommendationSnapshots) {
+                allUsersMap['master'].recommendationSnapshots = {};
+            }
+            if (!state.userRecommendationSnapshots) {
+                state.userRecommendationSnapshots = {};
+            }
+            // Consolidate official snapshots into master (1235~1239 from guest, 1240~1243 from kakao_5070244665)
+            const gSnaps = (allUsersMap['guest'] && allUsersMap['guest'].recommendationSnapshots) || {};
+            const kSnaps = (allUsersMap['kakao_5070244665'] && allUsersMap['kakao_5070244665'].recommendationSnapshots) || {};
+            for (const r in gSnaps) {
+                if (!allUsersMap['master'].recommendationSnapshots[r]) {
+                    allUsersMap['master'].recommendationSnapshots[r] = gSnaps[r];
+                }
+                const rNum = parseInt(r, 10);
+                if (!state.userRecommendationSnapshots[`master_${rNum}`]) {
+                    state.userRecommendationSnapshots[`master_${rNum}`] = gSnaps[r];
+                }
+            }
+            for (const r in kSnaps) {
+                if (!allUsersMap['master'].recommendationSnapshots[r]) {
+                    allUsersMap['master'].recommendationSnapshots[r] = kSnaps[r];
+                }
+                const rNum = parseInt(r, 10);
+                if (!state.userRecommendationSnapshots[`master_${rNum}`]) {
+                    state.userRecommendationSnapshots[`master_${rNum}`] = kSnaps[r];
                 }
             }
 
@@ -3230,11 +3260,11 @@ export function getSafeActualDraw(round) {
 
     const STATIC_DRAWS = {
 
-        1235: { numbers: [6, 14, 22, 29, 36, 41], bonus: 17, rank1Prize: 1985670000, date: '2026-08-01' },
+        1235: { numbers: [6, 14, 22, 29, 36, 41], bonus: 17, rank1Prize: 1985670000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-01' },
 
-        1236: { numbers: [3, 11, 18, 25, 33, 42], bonus: 8, rank1Prize: 2450320000, date: '2026-08-08' },
+        1236: { numbers: [3, 11, 18, 25, 33, 42], bonus: 8, rank1Prize: 2450320000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-08' },
 
-        1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, rank1Prize: 2180450000, date: '2026-08-15' },
+        1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, rank1Prize: 2180450000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-15' },
 
         1238: { numbers: [2, 13, 18, 32, 38, 42], bonus: 22, rank1Prize: 1197250000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-22' },
 
