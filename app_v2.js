@@ -40779,6 +40779,19 @@ async function updateHomeWinningTicker() {
                     ${item.prizeText ? `<span style="color: #94a3b8; font-size: 0.74rem; font-weight: 700; white-space: nowrap; flex-shrink: 0;">${item.prizeText}</span>` : ''}
                 </div>
             `);
+
+            // 🎯 당첨자가 1명일 때도 멈추지 않고 위아래 플립 애니메이션이 연속 구동되도록 축하/인증 안내 슬라이드 추가
+            if (aggregatedWinners.length === 1) {
+                const singleWinner = aggregatedWinners[0];
+                flipItems.push(`
+                    <div class="lp-flip-item">
+                        <i class="fa-solid fa-gift" style="color: #fbbf24; font-size: 0.82rem; flex-shrink: 0;"></i>
+                        <strong style="color: #f8fafc; font-size: 0.84rem; letter-spacing: -0.2px; flex-shrink: 0;">${singleWinner.displayName}</strong>
+                        <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; font-size: 0.72rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;">실구매 인증 당첨 축하 🎉</span>
+                        <span class="lp-desktop-only" style="color: #94a3b8; font-size: 0.74rem; font-weight: 600; white-space: nowrap; flex-shrink: 0;">(구매확정현황에서 영수증 확인)</span>
+                    </div>
+                `);
+            }
         } else {
             flipItems = [
                 `<div class="lp-flip-item">

@@ -1657,6 +1657,7 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('aggregatedWinners', code)
         self.assertIn('shouldScroll = aggregatedWinners.length >= 3', code)
         self.assertIn('총 ${totalWinCombosCount}건', code)
+        self.assertIn('if (aggregatedWinners.length === 1)', code)
 
         # 2. Simulate 1241 Kang Ji-min 2x 5th prize aggregation
         mock_receipts = [
