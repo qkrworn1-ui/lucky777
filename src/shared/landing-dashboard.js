@@ -30,25 +30,44 @@ export async function renderLandingDashboard() {
                     if (localUsers) state.allRegisteredUsersList = JSON.parse(localUsers);
                 } catch(e) {}
             }
+            // ⚡ 0ms 즉시 로컬 캐시 복원: 스마트폰 접속 시 대시보드 당첨이력 및 금융 지표 즉각 렌더링
+            try {
+                const localMap = localStorage.getItem('lotto_all_users_purchases_map_cache');
+                const localMerged = localStorage.getItem('lotto_all_users_merged_ledger_cache');
+                if (localMap && localMerged) {
+                    state.allUsersPurchasesMap = JSON.parse(localMap);
+                    state.allUsersMergedLedger = JSON.parse(localMerged);
+                }
+            } catch(e) {}
+
             if (typeof fetchAllUsersPurchases === 'function') {
                 fetchAllUsersPurchases().catch(e => console.warn('[BG fetch users purchases]', e));
             }
         }
 
-    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '비로그인';
-    if (typeof authId === 'string' && authId.startsWith('{')) {
-        try {
-            const parsed = JSON.parse(authId);
-            authId = parsed.userid || parsed.userId || authId;
-        } catch (e) {}
-    }
-    const realName = (typeof getUserRealName === 'function' ? getUserRealName(authId) : '') || '';
-    let displayName = realName;
-    if (!displayName) {
-        if (authId === 'master') displayName = '최고관리자';
-        else if (authId.startsWith('kakao_')) displayName = `카카오회원 (${authId.slice(-4)})`;
-        else displayName = authId;
-    }
+        let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '비로그인';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(authId);
+                authId = parsed.userid || parsed.userId || authId;
+            } catch (e) {}
+        }
+
+        // ⚡ 로그인한 사용자의 장부가 state.globalLedger에 비어있다면 로컬 캐시에서 0ms 즉시 복원
+        if (authId && authId !== '비로그인' && (!state.globalLedger || Object.keys(state.globalLedger).length === 0)) {
+            try {
+                const cachedLedger = localStorage.getItem(`lotto_actual_ledger_${authId.toLowerCase().trim()}`);
+                if (cachedLedger) state.globalLedger = JSON.parse(cachedLedger);
+            } catch(e) {}
+        }
+
+        const realName = (typeof getUserRealName === 'function' ? getUserRealName(authId) : '') || '';
+        let displayName = realName;
+        if (!displayName) {
+            if (authId === 'master') displayName = '최고관리자';
+            else if (authId.startsWith('kakao_')) displayName = `카카오회원 (${authId.slice(-4)})`;
+            else displayName = authId;
+        }
 
     // 0. Update Service Cards Access Permission Badges & Counters IMMEDIATELY (0ms perception)
     updateLoggedInUserHeaderUI(authId);

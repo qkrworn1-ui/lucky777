@@ -99,6 +99,21 @@ export async function initLottoService(force = false) {
 
             const statusIndicator = document.getElementById('serverStatusIndicator');
             const statusText = document.getElementById('serverStatusText');
+            const statusBadge = document.getElementById('serverStatusBadge');
+
+            if (statusBadge && !statusBadge.__clickBound) {
+                statusBadge.__clickBound = true;
+                statusBadge.style.cursor = 'pointer';
+                statusBadge.setAttribute('title', '서버 접속 상태 확인 (클릭 시 최근 접속시간 안내)');
+                statusBadge.onclick = (e) => {
+                    e.stopPropagation();
+                    const isOnline = !!window.db;
+                    const cTime = window.__lastServerConnectTimeStr || new Date().toLocaleTimeString('ko-KR');
+                    if (typeof showToast === 'function') {
+                        showToast(isOnline ? `🟢 Firestore 서버 정상 연결됨\n⏱️ 최근 접속시간: ${cTime}` : '🔴 서버 미연결 (로컬 캐시 모드)');
+                    }
+                };
+            }
 
             if (!window.db) {
                 console.error("Firebase not initialized.");
@@ -106,16 +121,31 @@ export async function initLottoService(force = false) {
                 state.savedCombinations = [];
                 if (statusIndicator) { statusIndicator.style.background = '#ef4444'; statusIndicator.style.boxShadow = '0 0 8px #ef4444'; }
                 if (statusText) statusText.textContent = 'DB 접속 오류 (로컬)';
+                if (typeof window.updateServerConnectionStatus === 'function') {
+                    window.updateServerConnectionStatus(false);
+                }
             } else {
                 if (statusIndicator) { statusIndicator.style.background = '#10b981'; statusIndicator.style.boxShadow = '0 0 8px #10b981'; }
                 if (statusText) statusText.textContent = 'DB 접속 완료 (Cloud)';
+                if (typeof window.updateServerConnectionStatus === 'function') {
+                    window.updateServerConnectionStatus(true);
+                }
 
                 // Initial background sync for receipt trash
                 fetchReceiptTrash().catch(() => {});
 
                 const authId = (SafeAuth.get() || '').trim().toLowerCase();
-                // Reset in-memory ledger to prevent cross-account pollution on re-login
-                state.globalLedger = {};
+                // ⚡ 0ms 즉시 복원: 서버 응답 대기 없이 로컬 캐시에서 내 실구매 장부 즉각 로드 (모바일 실구매 당첨이력 지연 0초 해결)
+                try {
+                    const cachedMyLedger = localStorage.getItem(`lotto_actual_ledger_${authId}`);
+                    if (cachedMyLedger) {
+                        state.globalLedger = JSON.parse(cachedMyLedger);
+                    } else {
+                        state.globalLedger = {};
+                    }
+                } catch(e) {
+                    state.globalLedger = {};
+                }
                 state.ledgerFinancialsCache = null;
                 state.allUsersMergedLedger = null;
 

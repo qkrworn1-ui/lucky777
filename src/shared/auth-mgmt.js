@@ -1020,6 +1020,31 @@ export function updateLoggedInUserHeaderUI(targetAuthId = null) {
     }
 }
 
+export function updateServerConnectionStatus(isOnline = true) {
+    window.__isServerConnected = isOnline;
+    if (isOnline && !window.__lastServerConnectTimeStr) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        window.__lastServerConnectTimeStr = `${y}.${m}.${d} ${hh}:${mm}:${ss}`;
+    }
+
+    const popoverStatus = document.getElementById('popoverServerStatus');
+    const popoverTime = document.getElementById('popoverConnectTime');
+    if (popoverStatus) {
+        popoverStatus.innerHTML = isOnline 
+            ? '🟢 DB 연결됨 (Cloud)' 
+            : '<span style="color:#ef4444;">🔴 로컬 모드 (서버 미연결)</span>';
+    }
+    if (popoverTime) {
+        popoverTime.textContent = window.__lastServerConnectTimeStr || '-';
+    }
+}
+
 export function toggleUserProfilePopover(anchorEl = null) {
     const popover = document.getElementById('userProfilePopover');
     if (!popover) return;
@@ -1030,6 +1055,10 @@ export function toggleUserProfilePopover(anchorEl = null) {
         popover.style.display = 'none';
         return;
     }
+
+    // ⚡ 모바일/PC 팝오버 오픈 시 실시간 서버 접속 상태 및 최근 접속시간 동적 갱신
+    const isOnline = !!window.db;
+    updateServerConnectionStatus(isOnline);
 
     if (anchorEl) {
         const rect = anchorEl.getBoundingClientRect();
@@ -1049,6 +1078,7 @@ export function toggleUserProfilePopover(anchorEl = null) {
 if (typeof window !== 'undefined') {
     window.updateLoggedInUserHeaderUI = updateLoggedInUserHeaderUI;
     window.toggleUserProfilePopover = toggleUserProfilePopover;
+    window.updateServerConnectionStatus = updateServerConnectionStatus;
 
     window.addEventListener('click', (e) => {
         const popover = document.getElementById('userProfilePopover');
@@ -1063,6 +1093,7 @@ if (typeof window !== 'undefined') {
 
 export async function checkAuthOnLoad(initFirebaseAndData) {
     updateDebugMonitor({});
+    try { updateServerConnectionStatus(!!window.db); } catch(e) {}
 
     // Check if returning from Kakao OAuth redirect (?code=...)
     if (typeof window !== 'undefined' && window.location && window.location.search && window.location.search.includes('code=')) {

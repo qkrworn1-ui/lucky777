@@ -990,6 +990,19 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
     if (!forceRefresh && state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0 && (Date.now() - _lastFetchAllUsersPurchasesTime < FETCH_ALL_CACHE_TTL_MS)) {
         return { allUsersMap: state.allUsersPurchasesMap, mergedLedger: state.allUsersMergedLedger || {} };
     }
+
+    // ⚡ 0ms 즉시 로컬 캐시 복원: 네트워크 다운로드 전에도 대시보드 당첨이력 즉각 렌더링
+    if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+        try {
+            const rawMap = localStorage.getItem('lotto_all_users_purchases_map_cache');
+            const rawMerged = localStorage.getItem('lotto_all_users_merged_ledger_cache');
+            if (rawMap && rawMerged) {
+                state.allUsersPurchasesMap = JSON.parse(rawMap);
+                state.allUsersMergedLedger = JSON.parse(rawMerged);
+            }
+        } catch(e) {}
+    }
+
     if (_inFlightFetchAllUsersPurchasesPromise) {
         return _inFlightFetchAllUsersPurchasesPromise;
     }
@@ -1253,7 +1266,17 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
             state.allUsersMergedLedger = mergedLedger;
             _lastFetchAllUsersPurchasesTime = Date.now();
 
+            try {
+                localStorage.setItem('lotto_all_users_purchases_map_cache', JSON.stringify(allUsersMap));
+                localStorage.setItem('lotto_all_users_merged_ledger_cache', JSON.stringify(mergedLedger));
+            } catch(e) {}
+
             if (typeof window.triggerGlobalEvent === 'function') window.triggerGlobalEvent('onLedgerDataUpdated');
+
+            // ⚡ 메인 대시보드가 열려 있는 경우 즉시 최신 당첨이력 및 금융 요약 재렌더링
+            if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+                try { window.renderLandingDashboard(); } catch(e){}
+            }
 
             if (typeof document !== 'undefined') {
                 const appContainer = document.getElementById('appContainer');

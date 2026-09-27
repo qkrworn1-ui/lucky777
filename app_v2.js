@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0520.50 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0539 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0520.50)
+ * Lucky777 Smart Bundle (v2026.09.28.0539)
  */
 
 
@@ -2413,6 +2413,31 @@ function updateLoggedInUserHeaderUI(targetAuthId = null) {
     }
 }
 
+function updateServerConnectionStatus(isOnline = true) {
+    window.__isServerConnected = isOnline;
+    if (isOnline && !window.__lastServerConnectTimeStr) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        const ss = String(now.getSeconds()).padStart(2, '0');
+        window.__lastServerConnectTimeStr = `${y}.${m}.${d} ${hh}:${mm}:${ss}`;
+    }
+
+    const popoverStatus = document.getElementById('popoverServerStatus');
+    const popoverTime = document.getElementById('popoverConnectTime');
+    if (popoverStatus) {
+        popoverStatus.innerHTML = isOnline 
+            ? '🟢 DB 연결됨 (Cloud)' 
+            : '<span style="color:#ef4444;">🔴 로컬 모드 (서버 미연결)</span>';
+    }
+    if (popoverTime) {
+        popoverTime.textContent = window.__lastServerConnectTimeStr || '-';
+    }
+}
+
 function toggleUserProfilePopover(anchorEl = null) {
     const popover = document.getElementById('userProfilePopover');
     if (!popover) return;
@@ -2423,6 +2448,10 @@ function toggleUserProfilePopover(anchorEl = null) {
         popover.style.display = 'none';
         return;
     }
+
+    // ⚡ 모바일/PC 팝오버 오픈 시 실시간 서버 접속 상태 및 최근 접속시간 동적 갱신
+    const isOnline = !!window.db;
+    updateServerConnectionStatus(isOnline);
 
     if (anchorEl) {
         const rect = anchorEl.getBoundingClientRect();
@@ -2442,6 +2471,7 @@ function toggleUserProfilePopover(anchorEl = null) {
 if (typeof window !== 'undefined') {
     window.updateLoggedInUserHeaderUI = updateLoggedInUserHeaderUI;
     window.toggleUserProfilePopover = toggleUserProfilePopover;
+    window.updateServerConnectionStatus = updateServerConnectionStatus;
 
     window.addEventListener('click', (e) => {
         const popover = document.getElementById('userProfilePopover');
@@ -2456,6 +2486,7 @@ if (typeof window !== 'undefined') {
 
 async function checkAuthOnLoad(initFirebaseAndData) {
     updateDebugMonitor({});
+    try { updateServerConnectionStatus(!!window.db); } catch(e) {}
 
     // Check if returning from Kakao OAuth redirect (?code=...)
     if (typeof window !== 'undefined' && window.location && window.location.search && window.location.search.includes('code=')) {
@@ -8794,6 +8825,10 @@ window.startBatchWinningSend = async function() {
             __exports.updateLoggedInUserHeaderUI = updateLoggedInUserHeaderUI;
             if (typeof window !== 'undefined') window.updateLoggedInUserHeaderUI = updateLoggedInUserHeaderUI;
         }
+        if (typeof updateServerConnectionStatus !== 'undefined') {
+            __exports.updateServerConnectionStatus = updateServerConnectionStatus;
+            if (typeof window !== 'undefined') window.updateServerConnectionStatus = updateServerConnectionStatus;
+        }
         if (typeof toggleUserProfilePopover !== 'undefined') {
             __exports.toggleUserProfilePopover = toggleUserProfilePopover;
             if (typeof window !== 'undefined') window.toggleUserProfilePopover = toggleUserProfilePopover;
@@ -10012,6 +10047,19 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
     if (!forceRefresh && state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0 && (Date.now() - _lastFetchAllUsersPurchasesTime < FETCH_ALL_CACHE_TTL_MS)) {
         return { allUsersMap: state.allUsersPurchasesMap, mergedLedger: state.allUsersMergedLedger || {} };
     }
+
+    // ⚡ 0ms 즉시 로컬 캐시 복원: 네트워크 다운로드 전에도 대시보드 당첨이력 즉각 렌더링
+    if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+        try {
+            const rawMap = SafeLocalStorage.getItem('lotto_all_users_purchases_map_cache');
+            const rawMerged = SafeLocalStorage.getItem('lotto_all_users_merged_ledger_cache');
+            if (rawMap && rawMerged) {
+                state.allUsersPurchasesMap = JSON.parse(rawMap);
+                state.allUsersMergedLedger = JSON.parse(rawMerged);
+            }
+        } catch(e) {}
+    }
+
     if (_inFlightFetchAllUsersPurchasesPromise) {
         return _inFlightFetchAllUsersPurchasesPromise;
     }
@@ -10275,7 +10323,17 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
             state.allUsersMergedLedger = mergedLedger;
             _lastFetchAllUsersPurchasesTime = Date.now();
 
+            try {
+                SafeLocalStorage.setItem('lotto_all_users_purchases_map_cache', JSON.stringify(allUsersMap));
+                SafeLocalStorage.setItem('lotto_all_users_merged_ledger_cache', JSON.stringify(mergedLedger));
+            } catch(e) {}
+
             if (typeof window.triggerGlobalEvent === 'function') window.triggerGlobalEvent('onLedgerDataUpdated');
+
+            // ⚡ 메인 대시보드가 열려 있는 경우 즉시 최신 당첨이력 및 금융 요약 재렌더링
+            if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+                try { window.renderLandingDashboard(); } catch(e){}
+            }
 
             if (typeof document !== 'undefined') {
                 const appContainer = document.getElementById('appContainer');
@@ -33869,6 +33927,21 @@ async function initLottoService(force = false) {
 
             const statusIndicator = document.getElementById('serverStatusIndicator');
             const statusText = document.getElementById('serverStatusText');
+            const statusBadge = document.getElementById('serverStatusBadge');
+
+            if (statusBadge && !statusBadge.__clickBound) {
+                statusBadge.__clickBound = true;
+                statusBadge.style.cursor = 'pointer';
+                statusBadge.setAttribute('title', '서버 접속 상태 확인 (클릭 시 최근 접속시간 안내)');
+                statusBadge.onclick = (e) => {
+                    e.stopPropagation();
+                    const isOnline = !!window.db;
+                    const cTime = window.__lastServerConnectTimeStr || new Date().toLocaleTimeString('ko-KR');
+                    if (typeof showToast === 'function') {
+                        showToast(isOnline ? `🟢 Firestore 서버 정상 연결됨\n⏱️ 최근 접속시간: ${cTime}` : '🔴 서버 미연결 (로컬 캐시 모드)');
+                    }
+                };
+            }
 
             if (!window.db) {
                 console.error("Firebase not initialized.");
@@ -33876,16 +33949,31 @@ async function initLottoService(force = false) {
                 state.savedCombinations = [];
                 if (statusIndicator) { statusIndicator.style.background = '#ef4444'; statusIndicator.style.boxShadow = '0 0 8px #ef4444'; }
                 if (statusText) statusText.textContent = 'DB 접속 오류 (로컬)';
+                if (typeof window.updateServerConnectionStatus === 'function') {
+                    window.updateServerConnectionStatus(false);
+                }
             } else {
                 if (statusIndicator) { statusIndicator.style.background = '#10b981'; statusIndicator.style.boxShadow = '0 0 8px #10b981'; }
                 if (statusText) statusText.textContent = 'DB 접속 완료 (Cloud)';
+                if (typeof window.updateServerConnectionStatus === 'function') {
+                    window.updateServerConnectionStatus(true);
+                }
 
                 // Initial background sync for receipt trash
                 fetchReceiptTrash().catch(() => {});
 
                 const authId = (SafeAuth.get() || '').trim().toLowerCase();
-                // Reset in-memory ledger to prevent cross-account pollution on re-login
-                state.globalLedger = {};
+                // ⚡ 0ms 즉시 복원: 서버 응답 대기 없이 로컬 캐시에서 내 실구매 장부 즉각 로드 (모바일 실구매 당첨이력 지연 0초 해결)
+                try {
+                    const cachedMyLedger = SafeLocalStorage.getItem(`lotto_actual_ledger_${authId}`);
+                    if (cachedMyLedger) {
+                        state.globalLedger = JSON.parse(cachedMyLedger);
+                    } else {
+                        state.globalLedger = {};
+                    }
+                } catch(e) {
+                    state.globalLedger = {};
+                }
                 state.ledgerFinancialsCache = null;
                 state.allUsersMergedLedger = null;
 
@@ -40789,25 +40877,44 @@ async function renderLandingDashboard() {
                     if (localUsers) state.allRegisteredUsersList = JSON.parse(localUsers);
                 } catch(e) {}
             }
+            // ⚡ 0ms 즉시 로컬 캐시 복원: 스마트폰 접속 시 대시보드 당첨이력 및 금융 지표 즉각 렌더링
+            try {
+                const localMap = SafeLocalStorage.getItem('lotto_all_users_purchases_map_cache');
+                const localMerged = SafeLocalStorage.getItem('lotto_all_users_merged_ledger_cache');
+                if (localMap && localMerged) {
+                    state.allUsersPurchasesMap = JSON.parse(localMap);
+                    state.allUsersMergedLedger = JSON.parse(localMerged);
+                }
+            } catch(e) {}
+
             if (typeof fetchAllUsersPurchases === 'function') {
                 fetchAllUsersPurchases().catch(e => console.warn('[BG fetch users purchases]', e));
             }
         }
 
-    let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '비로그인';
-    if (typeof authId === 'string' && authId.startsWith('{')) {
-        try {
-            const parsed = JSON.parse(authId);
-            authId = parsed.userid || parsed.userId || authId;
-        } catch (e) {}
-    }
-    const realName = (typeof getUserRealName === 'function' ? getUserRealName(authId) : '') || '';
-    let displayName = realName;
-    if (!displayName) {
-        if (authId === 'master') displayName = '최고관리자';
-        else if (authId.startsWith('kakao_')) displayName = `카카오회원 (${authId.slice(-4)})`;
-        else displayName = authId;
-    }
+        let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '비로그인';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(authId);
+                authId = parsed.userid || parsed.userId || authId;
+            } catch (e) {}
+        }
+
+        // ⚡ 로그인한 사용자의 장부가 state.globalLedger에 비어있다면 로컬 캐시에서 0ms 즉시 복원
+        if (authId && authId !== '비로그인' && (!state.globalLedger || Object.keys(state.globalLedger).length === 0)) {
+            try {
+                const cachedLedger = SafeLocalStorage.getItem(`lotto_actual_ledger_${authId.toLowerCase().trim()}`);
+                if (cachedLedger) state.globalLedger = JSON.parse(cachedLedger);
+            } catch(e) {}
+        }
+
+        const realName = (typeof getUserRealName === 'function' ? getUserRealName(authId) : '') || '';
+        let displayName = realName;
+        if (!displayName) {
+            if (authId === 'master') displayName = '최고관리자';
+            else if (authId.startsWith('kakao_')) displayName = `카카오회원 (${authId.slice(-4)})`;
+            else displayName = authId;
+        }
 
     // 0. Update Service Cards Access Permission Badges & Counters IMMEDIATELY (0ms perception)
     updateLoggedInUserHeaderUI(authId);
