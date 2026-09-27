@@ -1771,8 +1771,10 @@ function _doKakaoLogin(finishLogin) {
                 window.Kakao.API.request({
                     url: '/v2/user/me',
                     success: function(res) {
-                        finishLogin();
+                        // ✅ 순서 중요: processKakaoLoginSuccess 먼저 → SafeAuth 설정 → finishLogin
+                        // finishLogin이 먼저 실행되면 SafeAuth=null 상태에서 AuthState.IDLE → __appUnlocked=false → 모달 재표시
                         processKakaoLoginSuccess(res, authObj);
+                        finishLogin();
                     },
                     fail: function(error) {
                         finishLogin();

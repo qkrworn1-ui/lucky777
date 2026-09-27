@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0117 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0123 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0117)
+ * Lucky777 Smart Bundle (v2026.09.28.0123)
  */
 
 
@@ -3156,8 +3156,10 @@ function _doKakaoLogin(finishLogin) {
                 window.Kakao.API.request({
                     url: '/v2/user/me',
                     success: function(res) {
-                        finishLogin();
+                        // ✅ 순서 중요: processKakaoLoginSuccess 먼저 → SafeAuth 설정 → finishLogin
+                        // finishLogin이 먼저 실행되면 SafeAuth=null 상태에서 AuthState.IDLE → __appUnlocked=false → 모달 재표시
                         processKakaoLoginSuccess(res, authObj);
+                        finishLogin();
                     },
                     fail: function(error) {
                         finishLogin();
