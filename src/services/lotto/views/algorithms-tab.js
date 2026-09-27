@@ -289,7 +289,7 @@ export function clearAlgoPerfCache() {
         const keysToRemove = [];
         for (let i = 0; i < sessionStorage.length; i++) {
             const k = sessionStorage.key(i);
-            if (k && (k.startsWith('algo_perf_v2_') || k.startsWith('algo_perf_v3_'))) keysToRemove.push(k);
+            if (k && k.startsWith('algo_perf_v2_')) keysToRemove.push(k);
         }
         keysToRemove.forEach(k => sessionStorage.removeItem(k));
     } catch(e) {}
@@ -302,9 +302,6 @@ if (typeof window !== 'undefined') {
  * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 서버 스냅샷 기반 정확한 전수 집계)
  */
 export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all') {
-    // 🔒 추천번호 스냅샷은 1235회부터 발급 — 그 이전 회차는 집계 의미 없음
-    fromRound = Math.max(1235, parseInt(fromRound, 10) || 1235);
-
     if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
         if (typeof initHistory === 'function') initHistory();
         else if (typeof LOTTO_HISTORY !== 'undefined') state.mergedHistory = { ...LOTTO_HISTORY, ...(state.lottoExtraHistory || {}) };
@@ -338,9 +335,26 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
     }
     const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : fromRound;
 
-    // 전수 검증 대상 사용자 ID 수집
-    // 'all' 또는 'master'인 경우: 7대 알고리즘의 공식 통합 스냅샷 시리즈(master: 1235~1239 guest, 1240~1243 kakao_5070244665)를 단일 기준으로 전수 채점하여 중복 및 누락 원천 차단
-    const candidateUsers = isAll ? ['master'] : [cleanUser];
+    // 전수 검증 대상 사용자 ID 수집 (전체 등록 회원 목록과 100% 동기화)
+    const allUserIdsSet = new Set();
+    if (isAll) {
+        baseList.forEach(u => {
+            if (u && u.id && !isSystemOrDummyUser(u.id)) {
+                allUserIdsSet.add(String(u.id).toLowerCase().trim());
+            }
+        });
+        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+            state.allRegisteredUsersList.forEach(u => {
+                if (u && u.id && !isSystemOrDummyUser(u.id)) {
+                    allUserIdsSet.add(String(u.id).toLowerCase().trim());
+                }
+            });
+        }
+    } else {
+        allUserIdsSet.add(cleanUser);
+    }
+
+    const candidateUsers = Array.from(allUserIdsSet);
 
     const cacheKey = `${fromRound}_${cleanUser}_${maxRound}_${drawnRounds.length}_${candidateUsers.length}`;
     if (_algoPerfCache.has(cacheKey)) {
@@ -348,7 +362,7 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
     }
 
     try {
-        const sessionCached = sessionStorage.getItem(`algo_perf_v3_${cacheKey}`);
+        const sessionCached = sessionStorage.getItem(`algo_perf_v2_${cacheKey}`);
         if (sessionCached) {
             const parsed = JSON.parse(sessionCached);
             if (parsed && typeof parsed === 'object' && parsed.fromRound === fromRound && parsed.maxRound === maxRound) {
@@ -502,7 +516,7 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
 
     _algoPerfCache.set(cacheKey, perfResult);
     try {
-        sessionStorage.setItem(`algo_perf_v3_${cacheKey}`, JSON.stringify(perfResult));
+        sessionStorage.setItem(`algo_perf_v2_${cacheKey}`, JSON.stringify(perfResult));
     } catch(e) {}
     return perfResult;
 }
@@ -805,7 +819,11 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                         <label for="algoReviewStartRoundSelect" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; white-space: nowrap;">집계 시작 회차:</label>
                         <select id="algoReviewStartRoundSelect" onchange="window.changeAlgoReviewStartRound && window.changeAlgoReviewStartRound(this.value)" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
-                            <option value="1235" ${currentAlgoStartRound === 1235 ? 'selected' : ''}>제 1235회부터 누적 (실제 발급 이력 전체)</option>
+                            <option value="1235" ${currentAlgoStartRound === 1235 ? 'selected' : ''}>제 1235회부터 누적 (실제 발급 이력)</option>
+                            <option value="1230" ${currentAlgoStartRound === 1230 ? 'selected' : ''}>제 1230회부터 누적</option>
+                            <option value="1220" ${currentAlgoStartRound === 1220 ? 'selected' : ''}>제 1220회부터 누적</option>
+                            <option value="1200" ${currentAlgoStartRound === 1200 ? 'selected' : ''}>제 1200회부터 누적</option>
+                            <option value="1" ${currentAlgoStartRound === 1 ? 'selected' : ''}>제 1회부터 전체 전수 누적</option>
                         </select>
                     </div>
                 </div>
@@ -924,7 +942,7 @@ export function toggleAllAlgoDetailAccordions(expand = true) {
  * 집계 시작 회차 변경
  */
 export function changeAlgoReviewStartRound(roundVal) {
-    const r = Math.max(1235, parseInt(roundVal, 10)); // 🔒 최소 1235회 (스냅샷 발급 시작 기준)
+    const r = parseInt(roundVal, 10);
     if (!isNaN(r)) {
         currentAlgoStartRound = r;
         renderAlgorithmsTab(r);

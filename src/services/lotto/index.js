@@ -18,8 +18,7 @@ import { setupManualLedgerModal, updateManualModalCrossCheck } from './views/man
 import { setupManualDrawModal } from './views/manual-draw-modal.js';
 import { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } from './views/snapshot-audit-modal.js';
 import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
-import { computeAbsoluteTop10Combinations, saveUserWeeklyRecommendationSnapshot } from './generator.js';
-import { isSystemOrDummyUser } from '../../shared/utils.js';
+import { computeAbsoluteTop10Combinations } from './generator.js';
 import { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from './ledger.js';
 
 let _isLottoInitializing = false;
@@ -209,24 +208,11 @@ export async function initLottoService(force = false) {
             updateDebugMonitor(state.globalLedger);
         }
 
-        // 1) Local storage pre-load for extra history & global state (offline resilient)
+        // 1) Local storage pre-load for extra history (offline resilient)
         try {
             const localExtra = localStorage.getItem('lotto_extra_history');
             if (localExtra) {
                 state.lottoExtraHistory = JSON.parse(localExtra) || {};
-            }
-        } catch(e) {}
-
-        try {
-            const localState = localStorage.getItem('lotto_global_state_cache');
-            if (localState) {
-                const parsed = JSON.parse(localState);
-                if (parsed && typeof parsed === 'object') {
-                    if (parsed.aiState) state.aiState = parsed.aiState;
-                    if (parsed.fixedTop5Combinations_v3 && parsed.fixedTop5Combinations_v3.length > 0) state.fixedTop5Combinations_v3 = parsed.fixedTop5Combinations_v3;
-                    if (parsed.fixedTop5Combinations_v4 && parsed.fixedTop5Combinations_v4.length > 0) state.fixedTop5Combinations_v4 = parsed.fixedTop5Combinations_v4;
-                    if (Array.isArray(parsed.extraPacks)) state.extraPacks = parsed.extraPacks;
-                }
             }
         } catch(e) {}
 
@@ -293,9 +279,6 @@ export async function initLottoService(force = false) {
                 if (stateDoc.fixedTop5Combinations_v3) state.fixedTop5Combinations_v3 = stateDoc.fixedTop5Combinations_v3;
                 if (stateDoc.fixedTop5Combinations_v4) state.fixedTop5Combinations_v4 = stateDoc.fixedTop5Combinations_v4;
                 if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks;
-                try {
-                    localStorage.setItem('lotto_global_state_cache', JSON.stringify(stateDoc));
-                } catch(e) {}
             } else {
                 state.fixedTop5Combinations = [];
                 state.fixedTop5Combinations_v3 = [];
@@ -345,7 +328,6 @@ export async function initLottoService(force = false) {
                         : state.fixedTop5Combinations_v3;
 
                     if (changed) {
-                        try { localStorage.setItem('lotto_global_state_cache', JSON.stringify(data)); } catch(e) {}
                         renderTop5Combinations(false);
                     }
                 }
@@ -424,17 +406,6 @@ export async function initLottoService(force = false) {
             autoSyncMissingDraws().catch(err => console.warn('[AutoSync Background Skipped/Error]', err));
         }
     }, 1500);
-
-    // 🔒 Auto-preserve current user's weekly recommendation snapshot for upcoming round (Write-Once, safe to call repeatedly)
-    // Runs 3 seconds after init to ensure Firestore auth and state.allRegisteredUsersList are fully loaded
-    setTimeout(() => {
-        const initAuthId = (SafeAuth.get() || '').trim().toLowerCase();
-        const initRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244);
-        if (initAuthId && initAuthId !== 'guest' && !isSystemOrDummyUser(initAuthId) && initAuthId !== 'all') {
-            saveUserWeeklyRecommendationSnapshot(initAuthId, initRound)
-                .catch(e => console.warn('[initLottoService] Auto Snapshot Preservation Error:', e));
-        }
-    }, 3000);
 
     const landingEl = document.getElementById('landingPage');
     if (landingEl && (landingEl.classList.contains('active') || landingEl.style.display !== 'none')) {

@@ -1498,65 +1498,21 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     cleanUser = cleanUser.toLowerCase().trim();
     const roundNum = parseInt(round, 10);
     const docKey = `${cleanUser}_${roundNum}`;
-    const rKey = String(roundNum);
 
-    // 1. Direct in-memory state snapshot
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey]) {
         return state.userRecommendationSnapshots[docKey];
     }
-    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
-        return state.userRecommendationSnapshots[rKey];
-    }
-
-    // 2. Direct LocalStorage cache
     try {
         const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(`lotto_rec_snapshot_${docKey}`) : null;
         if (raw) {
             const parsed = JSON.parse(raw);
-            if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks || parsed.combos)) {
+            if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
                 if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                 state.userRecommendationSnapshots[docKey] = parsed;
                 return parsed;
             }
         }
     } catch(e) {}
-
-    // 3. state.allUsersPurchasesMap for cleanUser
-    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
-        const pDoc = state.allUsersPurchasesMap[cleanUser];
-        if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
-            return pDoc.recommendationSnapshots[rKey];
-        }
-    }
-
-    // 4. Official Unified Baseline Fallback – ONLY for admin/master/official-snapshot accounts.
-    //    Regular users must NOT fall back to official sample numbers; they use their own snapshot
-    //    or fall through to dynamic generation.
-    const isOfficialAccount = (cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'guest' || cleanUser === 'kakao_5070244665' || cleanUser === 'all');
-    if (!isOfficialAccount) return null;
-
-    const fallbackUsers = ['master', roundNum <= 1239 ? 'guest' : 'kakao_5070244665', 'guest', 'kakao_5070244665'];
-    for (const altUser of fallbackUsers) {
-        if (altUser === cleanUser) continue;
-        const altKey = `${altUser}_${roundNum}`;
-        if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[altKey]) {
-            return state.userRecommendationSnapshots[altKey];
-        }
-        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[altUser]) {
-            const altDoc = state.allUsersPurchasesMap[altUser];
-            if (altDoc.recommendationSnapshots && altDoc.recommendationSnapshots[rKey]) {
-                return altDoc.recommendationSnapshots[rKey];
-            }
-        }
-        try {
-            const rawAlt = (typeof localStorage !== 'undefined') ? localStorage.getItem(`lotto_rec_snapshot_${altKey}`) : null;
-            if (rawAlt) {
-                const parsed = JSON.parse(rawAlt);
-                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks || parsed.combos)) return parsed;
-            }
-        } catch(e) {}
-    }
-
     return null;
 }
 

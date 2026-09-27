@@ -1,65 +1,13 @@
-let _isReconnecting = false;
-let _lastReconnectTimestamp = 0;
-
-export async function reconnectFirebaseNetwork(force = false, timeoutMs = 2500) {
-    if (typeof window === 'undefined' || !window.db) return;
-
-    const now = Date.now();
-    if (!force && _isReconnecting) return;
-    if (!force && (now - _lastReconnectTimestamp < 1200)) return;
-
-    _isReconnecting = true;
-    _lastReconnectTimestamp = now;
-
-    try {
-        // 1. Force drop any dead half-open TCP stream caused by mobile sleep / tab backgrounding
-        if (typeof window.db.disableNetwork === 'function') {
-            try {
-                await window.db.disableNetwork();
-            } catch(e) {}
-        }
-        // 2. Open fresh WebChannel/stream connection
-        if (typeof window.db.enableNetwork === 'function') {
+export async function reconnectFirebaseNetwork(timeoutMs = 2500) {
+    if (typeof window !== 'undefined' && window.db && typeof window.db.enableNetwork === 'function') {
+        try {
             const enablePromise = window.db.enableNetwork();
             const timeoutPromise = new Promise(resolve => setTimeout(resolve, timeoutMs));
             await Promise.race([enablePromise, timeoutPromise]);
             console.log('[Firestore] Network connection revived instantly on app wakeup');
+        } catch(e) {
+            console.warn('[Firestore Reconnect Note]', e);
         }
-    } catch(e) {
-        console.warn('[Firestore Reconnect Note]', e);
-    } finally {
-        _isReconnecting = false;
-    }
-}
-
-/**
- * Fast cache-first document fetcher with strict timeout fallback.
- * Prevents mobile sleep / network freeze from hanging requests.
- */
-export async function safeDocGet(docRef, timeoutMs = 2500) {
-    if (!docRef || typeof docRef.get !== 'function') return null;
-
-    // 1. Try local offline cache first (0ms instantaneous response)
-    try {
-        const cachedDoc = await docRef.get({ source: 'cache' });
-        if (cachedDoc && cachedDoc.exists) {
-            // Background refresh from live server without blocking caller
-            docRef.get({ source: 'server' }).catch(() => {});
-            return cachedDoc;
-        }
-    } catch(cErr) {
-        // Cache miss or doc not in offline IndexedDB
-    }
-
-    // 2. Fall back to server fetch with strict timeout race
-    try {
-        const queryPromise = docRef.get();
-        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), timeoutMs));
-        const res = await Promise.race([queryPromise, timeoutPromise]);
-        return res;
-    } catch(e) {
-        console.warn('[safeDocGet Error]', e);
-        return null;
     }
 }
 
@@ -91,24 +39,11 @@ export const db = {
         }
         return fs.collection(name);
     },
-    async get(collection, docId, timeoutMs = 2500) {
+    async get(collection, docId, timeoutMs = 3500) {
         const fs = this.getFirestore();
         if (!fs) return null;
-        const docRef = fs.collection(collection).doc(docId);
-
-        // 1. Instant Cache retrieval (0ms from IndexedDB / local memory)
         try {
-            const cached = await docRef.get({ source: 'cache' });
-            if (cached && cached.exists) {
-                // Background refresh from server without blocking
-                docRef.get({ source: 'server' }).catch(() => {});
-                return cached.data();
-            }
-        } catch(cacheErr) {}
-
-        // 2. Server fetch with timeout race
-        try {
-            const queryPromise = docRef.get();
+            const queryPromise = fs.collection(collection).doc(docId).get();
             const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), timeoutMs));
             const doc = await Promise.race([queryPromise, timeoutPromise]);
             return (doc && doc.exists) ? doc.data() : null;
@@ -127,7 +62,7 @@ export const db = {
             return !!res;
         } catch(e) { 
             console.error('DB set error:', e); 
-            return false; 
+            return false;
         }
     },
     onSnapshot(collection, docId, callback) {
@@ -141,6 +76,4 @@ export const db = {
 
 if (typeof window !== 'undefined') {
     window.reconnectFirebaseNetwork = reconnectFirebaseNetwork;
-    window.safeDocGet = safeDocGet;
 }
-

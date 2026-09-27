@@ -48,7 +48,7 @@ export function generatePredictionReport() {
         else displayName = effectiveUserId;
     }
 
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : 1244));
+    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1241);
     const targetCombosUser = (effectiveUserId === 'all') ? 'master' : effectiveUserId;
 
     // 2. Fetch User's Real Historical Review Stats (1235회차 ~ 최신)

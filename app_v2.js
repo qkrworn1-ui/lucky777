@@ -1,4 +1,4 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.26.1522 - BUILD_DATE: 2026-09-26] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.26.1522 - BUILD_DATE: 2026-09-27] */
 
 try {
 
@@ -27289,20 +27289,26 @@ function openDonghangVerifyModal(url) {
                 ${summaryBannerHtml}
 
                 <!-- QR 원본 및 공식 사이트 검증 카드 -->
-                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 14px;">
-                    <div style="width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.2); flex-shrink: 0;">
-                        <i class="fa-solid fa-qrcode" style="font-size: 2.5rem; color: #94a3b8;"></i>
+                <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 96px; height: 96px; padding: 4px; display: flex; align-items: center; justify-content: center; background: #ffffff; border-radius: 10px; border: 1.5px solid rgba(255,255,255,0.2); flex-shrink: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.6); position: relative;" title="동행복권 모바일 앱이나 기본 카메라로 스캔 가능">
+                        <img src="${qrImageUrl}" alt="동행복권 공식 QR" style="width: 88px; height: 88px; display: block; border-radius: 6px; object-fit: contain; cursor: pointer;" onclick="window.open('${qrImageUrl}', '_blank')" onerror="this.onerror=null; this.src='https://quickchart.io/qr?size=150&text=${encodeURIComponent(url)}';" />
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1;">
-                        <div style="font-size: 0.78rem; font-weight: 800; color: #f8fafc;">
-                            <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i> 동행복권 공식 QR 데이터
+                        <div style="font-size: 0.8rem; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i> 동행복권 공식 QR코드
+                            <span style="font-size: 0.65rem; color: #34d399; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); padding: 1px 5px; border-radius: 4px; font-weight: 700;">카메라 스캔 가능</span>
                         </div>
-                        <div style="font-size: 0.68rem; color: #64748b; word-break: break-all; line-height: 1.35; max-height: 38px; overflow: hidden;">
+                        <div style="font-size: 0.68rem; color: #94a3b8; word-break: break-all; line-height: 1.35; max-height: 38px; overflow: hidden; font-family: monospace;">
                             ${url}
                         </div>
-                        <button type="button" class="btn-dark-pill" onclick="window.copyToClipboard && window.copyToClipboard('${url}', '🔗 공식 QR 링크가 복사되었습니다.')" style="align-self: flex-start; padding: 4px 10px; font-size: 0.72rem; height: 24px;">
-                            <i class="fa-solid fa-copy"></i> 링크 복사
-                        </button>
+                        <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                            <button type="button" class="btn-dark-pill" onclick="window.copyToClipboard && window.copyToClipboard('${url}', '🔗 공식 QR 링크가 복사되었습니다.')" style="padding: 4px 10px; font-size: 0.72rem; height: 26px;">
+                                <i class="fa-solid fa-copy"></i> 링크 복사
+                            </button>
+                            <a href="${qrImageUrl}" target="_blank" download="donghang_qr_${round || 'draw'}.png" class="btn-dark-pill" style="padding: 4px 10px; font-size: 0.72rem; height: 26px; text-decoration: none; color: #cbd5e1; display: inline-flex; align-items: center; gap: 4px;">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i> 크게 보기
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
