@@ -1,0 +1,32 @@
+# ==========================================
+# Lucky777 Git Ignore Rules
+# ==========================================
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+.pytest_cache/
+
+# Test output and error dumps
+test_output.txt
+test_stderr.txt
+fail.txt
+failures.txt
+scratch.txt
+scratch2.js
+scratch/
+
+# Temporary and local editor files
+*.tmp
+*.bak
+*~
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Large historical build backups (managed separately)
+backups/
+lucky777/

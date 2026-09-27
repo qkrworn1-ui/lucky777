@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0242 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0321 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0242)
+ * Lucky777 Smart Bundle (v2026.09.28.0321)
  */
 
 
@@ -3061,15 +3061,63 @@ function loginWithKakao(e) {
     _setKakaoButtonsLoading(true);
 
     const unlockTimer = setTimeout(() => {
+        // 타임아웃 만료 시에도 토큰이 들어와 있는지 마지막 확인
+        if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
+            const token = window.Kakao.Auth.getAccessToken();
+            window.Kakao.API.request({
+                url: '/v2/user/me',
+                success: function(res) {
+                    processKakaoLoginSuccess(res, { access_token: token });
+                    finishLogin();
+                },
+                fail: function() { finishLogin(); }
+            });
+            return;
+        }
         _isKakaoLoginInProgress = false;
+        window._isKakaoLoginInProgress = false;
         _setKakaoButtonsLoading(false);
         if (!SafeAuth.get() && AuthStateMachine.getState() === AuthState.AUTHENTICATING) {
             AuthStateMachine.setState(AuthState.IDLE);
         }
-    }, 6000);
+    }, 120000); // 넉넉한 2분 타임아웃 (기존 6초 조기 리셋 버그 해결)
+
+    // ⚡ [모바일 팝업 복귀 즉시 감지기] 카카오 팝업창에서 인증 후 원래 앱으로 돌아오는 순간 0초 만에 로그인 완료
+    const onWindowReturn = () => {
+        if (typeof window !== 'undefined' && window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
+            const token = window.Kakao.Auth.getAccessToken();
+            console.log('[Kakao Focus Return] Access token detected upon window focus, completing login...');
+            cleanupReturnListeners();
+            window.Kakao.API.request({
+                url: '/v2/user/me',
+                success: function(res) {
+                    processKakaoLoginSuccess(res, { access_token: token });
+                    finishLogin();
+                },
+                fail: function(err) {
+                    console.warn('[Kakao Return User Fetch Notice]', err);
+                }
+            });
+        }
+    };
+    const onVisibilityChange = () => {
+        if (document.visibilityState === 'visible') onWindowReturn();
+    };
+    const cleanupReturnListeners = () => {
+        try {
+            window.removeEventListener('focus', onWindowReturn);
+            document.removeEventListener('visibilitychange', onVisibilityChange);
+        } catch(e) {}
+    };
+
+    if (typeof window !== 'undefined') {
+        window.addEventListener('focus', onWindowReturn);
+        document.addEventListener('visibilitychange', onVisibilityChange);
+    }
 
     const finishLogin = () => {
         clearTimeout(unlockTimer);
+        cleanupReturnListeners();
         _isKakaoLoginInProgress = false;
         window._isKakaoLoginInProgress = false;
         _setKakaoButtonsLoading(false);
