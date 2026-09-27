@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0321 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0328 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0321)
+ * Lucky777 Smart Bundle (v2026.09.28.0328)
  */
 
 
@@ -3074,37 +3074,43 @@ function loginWithKakao(e) {
             });
             return;
         }
-        _isKakaoLoginInProgress = false;
-        window._isKakaoLoginInProgress = false;
-        _setKakaoButtonsLoading(false);
-        if (!SafeAuth.get() && AuthStateMachine.getState() === AuthState.AUTHENTICATING) {
-            AuthStateMachine.setState(AuthState.IDLE);
-        }
-    }, 120000); // 넉넉한 2분 타임아웃 (기존 6초 조기 리셋 버그 해결)
+        finishLogin();
+    }, 12000); // 안전한 12초 타임아웃 (영구 멈춤 현상 원천 차단)
 
-    // ⚡ [모바일 팝업 복귀 즉시 감지기] 카카오 팝업창에서 인증 후 원래 앱으로 돌아오는 순간 0초 만에 로그인 완료
+    // ⚡ [모바일 팝업 복귀 즉시 감지기] 카카오 팝업창에서 인증 후 원래 앱으로 돌아오는 순간 즉시 처리
+    let _returnCheckTimeout = null;
     const onWindowReturn = () => {
-        if (typeof window !== 'undefined' && window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
-            const token = window.Kakao.Auth.getAccessToken();
-            console.log('[Kakao Focus Return] Access token detected upon window focus, completing login...');
-            cleanupReturnListeners();
-            window.Kakao.API.request({
-                url: '/v2/user/me',
-                success: function(res) {
-                    processKakaoLoginSuccess(res, { access_token: token });
-                    finishLogin();
-                },
-                fail: function(err) {
-                    console.warn('[Kakao Return User Fetch Notice]', err);
-                }
-            });
-        }
+        // 복귀 감지 후 약간의 딜레이를 주어 SDK 토큰 동기화 대기
+        if (_returnCheckTimeout) clearTimeout(_returnCheckTimeout);
+        _returnCheckTimeout = setTimeout(() => {
+            if (typeof window !== 'undefined' && window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
+                const token = window.Kakao.Auth.getAccessToken();
+                console.log('[Kakao Focus Return] Access token detected upon window focus, completing login...');
+                cleanupReturnListeners();
+                window.Kakao.API.request({
+                    url: '/v2/user/me',
+                    success: function(res) {
+                        processKakaoLoginSuccess(res, { access_token: token });
+                        finishLogin();
+                    },
+                    fail: function(err) {
+                        console.warn('[Kakao Return User Fetch Notice]', err);
+                        finishLogin();
+                    }
+                });
+            } else {
+                // 토큰이 없으면 (사용자가 팝업을 취소했거나 닫음) 버튼 락 즉시 해제!
+                console.log('[Kakao Return] No token on return, unlocking buttons...');
+                finishLogin();
+            }
+        }, 600);
     };
     const onVisibilityChange = () => {
         if (document.visibilityState === 'visible') onWindowReturn();
     };
     const cleanupReturnListeners = () => {
         try {
+            if (_returnCheckTimeout) clearTimeout(_returnCheckTimeout);
             window.removeEventListener('focus', onWindowReturn);
             document.removeEventListener('visibilitychange', onVisibilityChange);
         } catch(e) {}
