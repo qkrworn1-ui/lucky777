@@ -39,16 +39,24 @@ export const db = {
         }
         return fs.collection(name);
     },
-    async get(collection, docId, timeoutMs = 3500) {
+    async get(collection, docId, timeoutMs = 1800) {
         const fs = this.getFirestore();
         if (!fs) return null;
         try {
+            // ⚡ 캐시 우선 조회 (0ms 즉시 반환)
+            try {
+                const cachedDoc = await fs.collection(collection).doc(docId).get({ source: 'cache' });
+                if (cachedDoc && cachedDoc.exists) {
+                    return cachedDoc.data();
+                }
+            } catch(cacheErr) { /* 캐시 없으면 네트워크 조회 진행 */ }
+
             const queryPromise = fs.collection(collection).doc(docId).get();
             const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), timeoutMs));
             const doc = await Promise.race([queryPromise, timeoutPromise]);
             return (doc && doc.exists) ? doc.data() : null;
         } catch(e) { 
-            console.error('DB get error:', e); 
+            console.warn(`[DB] get ${collection}/${docId} note:`, e); 
             return null; 
         }
     },

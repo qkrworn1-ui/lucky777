@@ -479,7 +479,7 @@ export function switchLottoTab(target) {
         }
     });
 
-    // 4. Safely execute tab-specific render routines asynchronously without blocking the UI thread
+    // 4. Safely execute tab-specific render routines (Immediate 0ms render for generator, async for heavy tabs)
     if (target === 'tab-generator' && typeof renderTop5Combinations === 'function') {
         try { renderTop5Combinations(false); } catch(e){}
         if (typeof updateTop7AlgoUI === 'function') {

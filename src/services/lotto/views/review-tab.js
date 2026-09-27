@@ -682,9 +682,6 @@ export async function renderReviewTab() {
             if (typeof window !== 'undefined') window.selectedAdminViewingUser = authId;
             const existingAdminContainer = document.getElementById('reviewAdminUserFilterContainer');
             if (existingAdminContainer) existingAdminContainer.remove();
-            if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
-                fetchAllUsersPurchases().catch(() => {});
-            }
         } else {
             if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
                 reviewAdminViewingUser = window.selectedAdminViewingUser;
@@ -692,8 +689,9 @@ export async function renderReviewTab() {
                 reviewAdminViewingUser = authId;
                 if (typeof window !== 'undefined') window.selectedAdminViewingUser = authId;
             }
+            // 관리자이며 회원 목록이 전혀 로드되지 않은 경우에만 1회 백그라운드 지연 로드
             if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
-                fetchAllUsersPurchases().catch(() => {});
+                setTimeout(() => { fetchAllUsersPurchases().catch(() => {}); }, 300);
             }
         }
 

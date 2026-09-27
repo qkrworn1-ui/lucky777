@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0507 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0520.50 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0507)
+ * Lucky777 Smart Bundle (v2026.09.28.0520.50)
  */
 
 
@@ -891,16 +891,24 @@ const db = {
         }
         return fs.collection(name);
     },
-    async get(collection, docId, timeoutMs = 3500) {
+    async get(collection, docId, timeoutMs = 1800) {
         const fs = this.getFirestore();
         if (!fs) return null;
         try {
+            // ⚡ 캐시 우선 조회 (0ms 즉시 반환)
+            try {
+                const cachedDoc = await fs.collection(collection).doc(docId).get({ source: 'cache' });
+                if (cachedDoc && cachedDoc.exists) {
+                    return cachedDoc.data();
+                }
+            } catch(cacheErr) { /* 캐시 없으면 네트워크 조회 진행 */ }
+
             const queryPromise = fs.collection(collection).doc(docId).get();
             const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), timeoutMs));
             const doc = await Promise.race([queryPromise, timeoutPromise]);
             return (doc && doc.exists) ? doc.data() : null;
         } catch(e) { 
-            console.error('DB get error:', e); 
+            console.warn(`[DB] get ${collection}/${docId} note:`, e); 
             return null; 
         }
     },
@@ -2563,18 +2571,47 @@ async function checkAuthOnLoad(initFirebaseAndData) {
         if (window.db) {
             (async () => {
                 try {
-                    // ⚡ 캐시 우선 조회 (즉시 응답) → 실패 시 네트워크 조회 (타임아웃 5초)
+                    // ⚡ 0ms 로컬 스토리지 캐시 선반영 (네트워크 지연 시에도 즉시 렌더링)
+                    let cachedData = null;
+                    try {
+                        const localRaw = localStorage.getItem('lotto_user_cache_' + authId);
+                        if (localRaw) cachedData = JSON.parse(localRaw);
+                    } catch(e) {}
+
+                    if (cachedData && typeof cachedData === 'object') {
+                        const cAdmin = !!(cachedData.isAdmin === true || cachedData.role === 'admin' || authId === 'master' || authId === 'admin' || authId === 'kakao_5070244665');
+                        const cPerm = cAdmin || !!(cachedData.isPermanent === true || cachedData.userType === 'permanent');
+                        setIsAdminCache(authId, cAdmin);
+                        setIsPermanentCache(authId, cPerm);
+                        if (cachedData.realName) setUserNameCache(authId, cachedData.realName);
+                        setUserPermissionsCache(authId, {
+                            allowLotto: cAdmin || cPerm || cachedData.allowLotto !== false,
+                            allowToto: cAdmin || cPerm || cachedData.allowToto !== false
+                        });
+                        window.__currentUser = {
+                            userId: authId,
+                            realName: cachedData.realName || authId,
+                            role: cAdmin ? 'admin' : (cPerm ? 'permanent' : (cachedData.role || 'user')),
+                            isAdmin: cAdmin,
+                            isPermanent: cPerm,
+                            createdAt: cachedData.createdAt || null,
+                            authProvider: cachedData.authProvider || 'password'
+                        };
+                    }
+
+                    // ⚡ 캐시 우선 조회 → 실패 시 네트워크 조회 (빠른 1.8초 타임아웃)
                     let userDoc = null;
                     try {
                         userDoc = await window.db.collection('lotto_users').doc(authId).get({ source: 'cache' });
                     } catch(cacheErr) { /* 캐시 없으면 네트워크 조회 */ }
                     if (!userDoc || !userDoc.exists) {
                         const queryPromise = window.db.collection('lotto_users').doc(authId).get();
-                        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 5000));
+                        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 1800));
                         userDoc = await Promise.race([queryPromise, timeoutPromise]);
                     }
                     if (userDoc && userDoc.exists) {
                         const uData = userDoc.data() || {};
+                        try { localStorage.setItem('lotto_user_cache_' + authId, JSON.stringify(uData)); } catch(e){}
                         let freshAdmin = isUserAdmin;
                         if (uData.isAdmin === true || uData.role === 'admin' || uData.userType === 'admin') {
                             freshAdmin = true;
@@ -17366,9 +17403,6 @@ async function renderReviewTab() {
             if (typeof window !== 'undefined') window.selectedAdminViewingUser = authId;
             const existingAdminContainer = document.getElementById('reviewAdminUserFilterContainer');
             if (existingAdminContainer) existingAdminContainer.remove();
-            if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
-                fetchAllUsersPurchases().catch(() => {});
-            }
         } else {
             if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
                 reviewAdminViewingUser = window.selectedAdminViewingUser;
@@ -17376,8 +17410,9 @@ async function renderReviewTab() {
                 reviewAdminViewingUser = authId;
                 if (typeof window !== 'undefined') window.selectedAdminViewingUser = authId;
             }
+            // 관리자이며 회원 목록이 전혀 로드되지 않은 경우에만 1회 백그라운드 지연 로드
             if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
-                fetchAllUsersPurchases().catch(() => {});
+                setTimeout(() => { fetchAllUsersPurchases().catch(() => {}); }, 300);
             }
         }
 
@@ -34214,7 +34249,7 @@ function switchLottoTab(target) {
         }
     });
 
-    // 4. Safely execute tab-specific render routines asynchronously without blocking the UI thread
+    // 4. Safely execute tab-specific render routines (Immediate 0ms render for generator, async for heavy tabs)
     if (target === 'tab-generator' && typeof renderTop5Combinations === 'function') {
         try { renderTop5Combinations(false); } catch(e){}
         if (typeof updateTop7AlgoUI === 'function') {
@@ -41981,24 +42016,32 @@ function runInit() {
     }, 20);
 }
 
+let _lastResumeWakeupTime = 0;
+
 function handleAppResumeAndWakeup() {
-    // 1. Immediately revive Firestore network connection (eliminates mobile sleep/background lag)
-    if (typeof reconnectFirebaseNetwork === 'function') {
-        reconnectFirebaseNetwork();
-    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
-        window.reconnectFirebaseNetwork();
-    } else if (window.db && typeof window.db.enableNetwork === 'function') {
-        try { window.db.enableNetwork(); } catch(e) {}
-    }
+    const now = Date.now();
+    const isThrottled = (now - _lastResumeWakeupTime < 20000);
+    if (!isThrottled) {
+        _lastResumeWakeupTime = now;
 
-    // 2. Render Landing UI immediately from cache (0ms instant response)
-    if (typeof renderLandingDashboard === 'function') {
-        try { renderLandingDashboard(); } catch(e) {}
-    }
+        // 1. Revive Firestore network connection if needed
+        if (typeof reconnectFirebaseNetwork === 'function') {
+            reconnectFirebaseNetwork();
+        } else if (typeof window.reconnectFirebaseNetwork === 'function') {
+            window.reconnectFirebaseNetwork();
+        } else if (window.db && typeof window.db.enableNetwork === 'function') {
+            try { window.db.enableNetwork(); } catch(e) {}
+        }
 
-    // 3. Fast non-blocking version cross-check
-    if (typeof window.checkLatestBuildVersion === 'function') {
-        try { window.checkLatestBuildVersion(true); } catch(e) {}
+        // 2. Render Landing UI immediately from cache (0ms instant response)
+        if (typeof renderLandingDashboard === 'function') {
+            try { renderLandingDashboard(); } catch(e) {}
+        }
+
+        // 3. Fast non-blocking version cross-check
+        if (typeof window.checkLatestBuildVersion === 'function') {
+            try { window.checkLatestBuildVersion(true); } catch(e) {}
+        }
     }
 
     // 4. If logged in but login modal is lingering, re-verify auth

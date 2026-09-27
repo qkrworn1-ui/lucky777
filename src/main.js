@@ -285,24 +285,32 @@ function runInit() {
     }, 20);
 }
 
+let _lastResumeWakeupTime = 0;
+
 function handleAppResumeAndWakeup() {
-    // 1. Immediately revive Firestore network connection (eliminates mobile sleep/background lag)
-    if (typeof reconnectFirebaseNetwork === 'function') {
-        reconnectFirebaseNetwork();
-    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
-        window.reconnectFirebaseNetwork();
-    } else if (window.db && typeof window.db.enableNetwork === 'function') {
-        try { window.db.enableNetwork(); } catch(e) {}
-    }
+    const now = Date.now();
+    const isThrottled = (now - _lastResumeWakeupTime < 20000);
+    if (!isThrottled) {
+        _lastResumeWakeupTime = now;
 
-    // 2. Render Landing UI immediately from cache (0ms instant response)
-    if (typeof renderLandingDashboard === 'function') {
-        try { renderLandingDashboard(); } catch(e) {}
-    }
+        // 1. Revive Firestore network connection if needed
+        if (typeof reconnectFirebaseNetwork === 'function') {
+            reconnectFirebaseNetwork();
+        } else if (typeof window.reconnectFirebaseNetwork === 'function') {
+            window.reconnectFirebaseNetwork();
+        } else if (window.db && typeof window.db.enableNetwork === 'function') {
+            try { window.db.enableNetwork(); } catch(e) {}
+        }
 
-    // 3. Fast non-blocking version cross-check
-    if (typeof window.checkLatestBuildVersion === 'function') {
-        try { window.checkLatestBuildVersion(true); } catch(e) {}
+        // 2. Render Landing UI immediately from cache (0ms instant response)
+        if (typeof renderLandingDashboard === 'function') {
+            try { renderLandingDashboard(); } catch(e) {}
+        }
+
+        // 3. Fast non-blocking version cross-check
+        if (typeof window.checkLatestBuildVersion === 'function') {
+            try { window.checkLatestBuildVersion(true); } catch(e) {}
+        }
     }
 
     // 4. If logged in but login modal is lingering, re-verify auth

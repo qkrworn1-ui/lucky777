@@ -1178,18 +1178,47 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
         if (window.db) {
             (async () => {
                 try {
-                    // ⚡ 캐시 우선 조회 (즉시 응답) → 실패 시 네트워크 조회 (타임아웃 5초)
+                    // ⚡ 0ms 로컬 스토리지 캐시 선반영 (네트워크 지연 시에도 즉시 렌더링)
+                    let cachedData = null;
+                    try {
+                        const localRaw = localStorage.getItem('lotto_user_cache_' + authId);
+                        if (localRaw) cachedData = JSON.parse(localRaw);
+                    } catch(e) {}
+
+                    if (cachedData && typeof cachedData === 'object') {
+                        const cAdmin = !!(cachedData.isAdmin === true || cachedData.role === 'admin' || authId === 'master' || authId === 'admin' || authId === 'kakao_5070244665');
+                        const cPerm = cAdmin || !!(cachedData.isPermanent === true || cachedData.userType === 'permanent');
+                        setIsAdminCache(authId, cAdmin);
+                        setIsPermanentCache(authId, cPerm);
+                        if (cachedData.realName) setUserNameCache(authId, cachedData.realName);
+                        setUserPermissionsCache(authId, {
+                            allowLotto: cAdmin || cPerm || cachedData.allowLotto !== false,
+                            allowToto: cAdmin || cPerm || cachedData.allowToto !== false
+                        });
+                        window.__currentUser = {
+                            userId: authId,
+                            realName: cachedData.realName || authId,
+                            role: cAdmin ? 'admin' : (cPerm ? 'permanent' : (cachedData.role || 'user')),
+                            isAdmin: cAdmin,
+                            isPermanent: cPerm,
+                            createdAt: cachedData.createdAt || null,
+                            authProvider: cachedData.authProvider || 'password'
+                        };
+                    }
+
+                    // ⚡ 캐시 우선 조회 → 실패 시 네트워크 조회 (빠른 1.8초 타임아웃)
                     let userDoc = null;
                     try {
                         userDoc = await window.db.collection('lotto_users').doc(authId).get({ source: 'cache' });
                     } catch(cacheErr) { /* 캐시 없으면 네트워크 조회 */ }
                     if (!userDoc || !userDoc.exists) {
                         const queryPromise = window.db.collection('lotto_users').doc(authId).get();
-                        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 5000));
+                        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 1800));
                         userDoc = await Promise.race([queryPromise, timeoutPromise]);
                     }
                     if (userDoc && userDoc.exists) {
                         const uData = userDoc.data() || {};
+                        try { localStorage.setItem('lotto_user_cache_' + authId, JSON.stringify(uData)); } catch(e){}
                         let freshAdmin = isUserAdmin;
                         if (uData.isAdmin === true || uData.role === 'admin' || uData.userType === 'admin') {
                             freshAdmin = true;
