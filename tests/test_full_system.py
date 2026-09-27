@@ -2603,6 +2603,31 @@ class TestFullSystem(unittest.TestCase):
 
         self.assertEqual(collisions, [], f"Duplicate import and declaration collisions found: {collisions}")
 
+    # [Test 76] Mandatory Pledge Status & Electronic Signature Integrity Test
+    def test_76_pledge_status_and_signature_integrity(self):
+        with open(os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js'), 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        with open(os.path.join(self.root_dir, 'src', 'shared', 'user-context.js'), 'r', encoding='utf-8') as f:
+            user_context_code = f.read()
+
+        # 1. Verify hasPledgeSigned in auth-mgmt.js includes agreedTerms and hasSignature
+        self.assertIn('data.agreedTerms', auth_code)
+        self.assertIn('data.hasSignature === true', auth_code)
+        self.assertIn('isMaster', auth_code)
+
+        # 2. Verify fallbackList mapping preserves agreementDoc and agreedTerms
+        self.assertIn('(u.data && u.data.agreementDoc) || u.agreementDoc', auth_code)
+        self.assertIn('(u.data && u.data.agreedTerms) || u.agreedTerms', auth_code)
+
+        # 3. Verify DEFAULT_KNOWN_USERS baseline contains signature indicators for master and signed users
+        self.assertIn("id: 'master'", user_context_code)
+        self.assertIn("id: 'kakao_5070244665'", user_context_code)
+        self.assertIn("hasPledgeSigned: true", user_context_code)
+
+        # 4. Verify saveMandatoryPledge updates both phone fields and in-memory caches
+        self.assertIn("phone: cleanPhone", auth_code)
+        self.assertIn("targetU.hasPledgeSigned = true", auth_code)
+
 
 if __name__ == '__main__':
     unittest.main()

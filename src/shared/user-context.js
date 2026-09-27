@@ -43,19 +43,19 @@ export const LottoTimeService = {
 };
 
 export const DEFAULT_KNOWN_USERS = [
-    { id: 'master', name: '최고관리자', realName: '최고관리자', phone: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-07-25T12:00:00+09:00', status: 'active', isDeleted: false },
-    { id: 'wdy', name: '우대용', realName: '우대용', phone: '010-4056-8177', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-01T12:00:00+09:00', status: 'active', isDeleted: false },
-    { id: 'kakao_5070244665', name: '박재구', realName: '박재구', phone: '010-7177-2581', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T07:11:50.351Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5070267707', name: '정미승', realName: '정미승', phone: '010-7124-5768', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T05:16:47.711Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5070669650', name: '강지민', realName: '강지민', phone: '010-7191-1151', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T09:32:47.035Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5071901217', name: '황선영', realName: '황선영', phone: '010-3332-5843', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-04T05:58:58.537Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5072328991', name: '채금조(재우주식회사)', realName: '채금조(재우주식회사)', phone: '010-2596-1107', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-04T10:34:57.095Z', status: 'suspended_nopurchase', isDeleted: false },
-    { id: 'kakao_5073272571', name: '우순애', realName: '우순애', phone: '010-8865-7777', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-05T04:26:10.288Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5078158815', name: '이재문', realName: '이재문', phone: '010-9116-3887', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-08T04:35:33.378Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5081166702', name: '은정', realName: '은정', phone: '010-8952-1325', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-09T15:36:24.439Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5081608503', name: '백인동', realName: '백인동', phone: '010-9444-6044', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-10T02:12:26.711Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5090399860', name: 'Stealth honey bang', realName: 'Stealth honey bang', phone: '010-6556-6393', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-15T06:22:13.931Z', status: 'active', isDeleted: false }
+    { id: 'master', name: '최고관리자', realName: '최고관리자', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-07-25T12:00:00+09:00', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
+    { id: 'wdy', name: '우대용', realName: '우대용', phone: '010-4056-8177', phoneNumber: '010-4056-8177', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-01T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'kakao_5070244665', name: '박재구', realName: '박재구', phone: '010-7177-2581', phoneNumber: '010-7177-2581', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T07:11:50.351Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
+    { id: 'kakao_5070267707', name: '정미승', realName: '정미승', phone: '010-7124-5768', phoneNumber: '010-7124-5768', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T05:16:47.711Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5070669650', name: '강지민', realName: '강지민', phone: '010-7191-1151', phoneNumber: '010-7191-1151', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T09:32:47.035Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
+    { id: 'kakao_5071901217', name: '황선영', realName: '황선영', phone: '010-3332-5843', phoneNumber: '010-3332-5843', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-04T05:58:58.537Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5072328991', name: '채금조(재우주식회사)', realName: '채금조(재우주식회사)', phone: '010-2596-1107', phoneNumber: '010-2596-1107', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-04T10:34:57.095Z', status: 'suspended_nopurchase', isDeleted: false },
+    { id: 'kakao_5073272571', name: '우순애', realName: '우순애', phone: '010-8865-7777', phoneNumber: '010-8865-7777', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-05T04:26:10.288Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5078158815', name: '이재문', realName: '이재문', phone: '010-9116-3887', phoneNumber: '010-9116-3887', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-08T04:35:33.378Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5081166702', name: '은정', realName: '은정', phone: '010-8952-1325', phoneNumber: '010-8952-1325', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-09T15:36:24.439Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5081608503', name: '백인동', realName: '백인동', phone: '010-9444-6044', phoneNumber: '010-9444-6044', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-10T02:12:26.711Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5090399860', name: 'Stealth honey bang', realName: 'Stealth honey bang', phone: '010-6556-6393', phoneNumber: '010-6556-6393', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-15T06:22:13.931Z', status: 'active', isDeleted: false }
 ];
 
 /**

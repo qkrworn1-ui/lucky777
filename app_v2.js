@@ -1021,19 +1021,19 @@ const LottoTimeService = {
 };
 
 const DEFAULT_KNOWN_USERS = [
-    { id: 'master', name: '최고관리자', realName: '최고관리자', phone: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-07-25T12:00:00+09:00', status: 'active', isDeleted: false },
-    { id: 'wdy', name: '우대용', realName: '우대용', phone: '010-4056-8177', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-01T12:00:00+09:00', status: 'active', isDeleted: false },
-    { id: 'kakao_5070244665', name: '박재구', realName: '박재구', phone: '010-7177-2581', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T07:11:50.351Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5070267707', name: '정미승', realName: '정미승', phone: '010-7124-5768', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T05:16:47.711Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5070669650', name: '강지민', realName: '강지민', phone: '010-7191-1151', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T09:32:47.035Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5071901217', name: '황선영', realName: '황선영', phone: '010-3332-5843', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-04T05:58:58.537Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5072328991', name: '채금조(재우주식회사)', realName: '채금조(재우주식회사)', phone: '010-2596-1107', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-04T10:34:57.095Z', status: 'suspended_nopurchase', isDeleted: false },
-    { id: 'kakao_5073272571', name: '우순애', realName: '우순애', phone: '010-8865-7777', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-05T04:26:10.288Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5078158815', name: '이재문', realName: '이재문', phone: '010-9116-3887', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-08T04:35:33.378Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5081166702', name: '은정', realName: '은정', phone: '010-8952-1325', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-09T15:36:24.439Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5081608503', name: '백인동', realName: '백인동', phone: '010-9444-6044', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-10T02:12:26.711Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5090399860', name: 'Stealth honey bang', realName: 'Stealth honey bang', phone: '010-6556-6393', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-15T06:22:13.931Z', status: 'active', isDeleted: false }
+    { id: 'master', name: '최고관리자', realName: '최고관리자', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-07-25T12:00:00+09:00', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
+    { id: 'wdy', name: '우대용', realName: '우대용', phone: '010-4056-8177', phoneNumber: '010-4056-8177', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-01T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'kakao_5070244665', name: '박재구', realName: '박재구', phone: '010-7177-2581', phoneNumber: '010-7177-2581', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T07:11:50.351Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
+    { id: 'kakao_5070267707', name: '정미승', realName: '정미승', phone: '010-7124-5768', phoneNumber: '010-7124-5768', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T05:16:47.711Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5070669650', name: '강지민', realName: '강지민', phone: '010-7191-1151', phoneNumber: '010-7191-1151', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T09:32:47.035Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
+    { id: 'kakao_5071901217', name: '황선영', realName: '황선영', phone: '010-3332-5843', phoneNumber: '010-3332-5843', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-04T05:58:58.537Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5072328991', name: '채금조(재우주식회사)', realName: '채금조(재우주식회사)', phone: '010-2596-1107', phoneNumber: '010-2596-1107', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-04T10:34:57.095Z', status: 'suspended_nopurchase', isDeleted: false },
+    { id: 'kakao_5073272571', name: '우순애', realName: '우순애', phone: '010-8865-7777', phoneNumber: '010-8865-7777', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-05T04:26:10.288Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5078158815', name: '이재문', realName: '이재문', phone: '010-9116-3887', phoneNumber: '010-9116-3887', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-08T04:35:33.378Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5081166702', name: '은정', realName: '은정', phone: '010-8952-1325', phoneNumber: '010-8952-1325', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-09T15:36:24.439Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5081608503', name: '백인동', realName: '백인동', phone: '010-9444-6044', phoneNumber: '010-9444-6044', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-10T02:12:26.711Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5090399860', name: 'Stealth honey bang', realName: 'Stealth honey bang', phone: '010-6556-6393', phoneNumber: '010-6556-6393', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-15T06:22:13.931Z', status: 'active', isDeleted: false }
 ];
 
 /**
@@ -4540,13 +4540,21 @@ function setupAuthEvents(initFirebaseAndData) {
             }
 
             // 4. Pledge Status Badge
-            const hasPledgeSigned = !!(data.agreementDoc && data.agreementDoc.signatureDataUrl);
+            const hasPledgeSigned = !!(
+                (data.agreementDoc && (data.agreementDoc.signatureDataUrl || data.agreementDoc.signature || data.agreementDoc.signedAt || data.agreementDoc.agreedDateFormatted || data.agreementDoc.status === 'legally_binding')) ||
+                (data.agreedTerms && (data.agreedTerms.hasSignature || data.agreedTerms.agreedAt || data.agreedTerms.weeklyPurchaseAgreement)) ||
+                data.hasSignature === true ||
+                data.signatureDataUrl ||
+                data.isPledgeSigned === true ||
+                item.hasPledgeSigned === true ||
+                isMaster
+            );
             const pledgeBadge = hasPledgeSigned
                 ? `<span style="font-size:0.75rem; color:#34d399;" title="전자 서약 완료">✍️</span>`
                 : `<span style="font-size:0.66rem; font-weight:900; padding:1px 4px; border-radius:4px; background:rgba(239,68,68,0.22); color:#fca5a5; border:1px solid rgba(239,68,68,0.45); white-space:nowrap;" title="필수 약관 및 전자 서약 미완료">⚠️미서약</span>`;
 
             const realName = data.realName && data.realName !== userId ? data.realName : '';
-            const phoneDisplay = data.phoneNumber || '연락처 미등록';
+            const phoneDisplay = data.phoneNumber || data.phone || (isKakaoUser ? '카카오 인증' : '연락처 미등록');
 
             html += `
             <div onclick="window.openUserDetailDrawer(decodeURIComponent('${safeUserId}'))" class="user-row-item" style="display:flex; align-items:center; justify-content:space-between; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.06); cursor:pointer; transition:background 0.15s; word-break:keep-all; min-height:42px; box-sizing:border-box;">
@@ -4625,7 +4633,7 @@ function setupAuthEvents(initFirebaseAndData) {
         const elProvider = document.getElementById('drawerAuthProviderText');
 
         if (elTitle) elTitle.textContent = userId;
-        if (elSubTitle) elSubTitle.textContent = `${data.realName || userId} · ${data.phoneNumber || '연락처 미등록'}`;
+        if (elSubTitle) elSubTitle.textContent = `${data.realName || userId} · ${data.phoneNumber || data.phone || '연락처 미등록'}`;
 
         if (elAvatar) {
             if (isKakaoUser) {
@@ -4681,7 +4689,7 @@ function setupAuthEvents(initFirebaseAndData) {
         const toggleAdmin = document.getElementById('detailToggleAdmin');
 
         if (inputRealName) inputRealName.value = data.realName || '';
-        if (inputPhone) inputPhone.value = data.phoneNumber || '';
+        if (inputPhone) inputPhone.value = data.phoneNumber || data.phone || '';
         if (selectStatus) selectStatus.value = status || 'active';
         if (toggleLotto) toggleLotto.checked = allowLotto !== false;
         if (toggleToto) toggleToto.checked = allowToto !== false;
@@ -4752,6 +4760,7 @@ function setupAuthEvents(initFirebaseAndData) {
             const updateData = {
                 realName: realName || userId,
                 phoneNumber: phone,
+                phone: phone,
                 status: status,
                 allowLotto: allowLotto,
                 allowToto: allowToto,
@@ -4904,12 +4913,23 @@ function setupAuthEvents(initFirebaseAndData) {
             if (fallbackList.length > 0) {
                 __cachedUsersWithStatus = fallbackList.map(u => {
                     const uId = u.id || u.userId || '';
-                    const rName = u.realName || u.name || uId;
-                    const phone = u.phone || u.phoneNumber || '';
-                    const isUserAdmin = !!(u.isAdmin === true || u.role === 'admin' || uId.toLowerCase() === 'master' || uId.toLowerCase() === 'admin');
-                    const isPermanent = !!(u.isPermanent === true || u.userType === 'permanent' || isUserAdmin);
-                    const status = u.status || 'active';
-                    const isDeleted = !!(u.isDeleted || status === 'trash');
+                    const rName = u.realName || u.name || (u.data && (u.data.realName || u.data.name)) || uId;
+                    const phone = u.phone || u.phoneNumber || (u.data && (u.data.phoneNumber || u.data.phone)) || '';
+                    const isUserAdmin = !!(u.isAdmin === true || u.role === 'admin' || (u.data && (u.data.isAdmin === true || u.data.role === 'admin')) || uId.toLowerCase() === 'master' || uId.toLowerCase() === 'admin');
+                    const isPermanent = !!(u.isPermanent === true || u.userType === 'permanent' || (u.data && (u.data.isPermanent === true || u.data.userType === 'permanent')) || isUserAdmin);
+                    const status = u.status || (u.data && u.data.status) || 'active';
+                    const isDeleted = !!(u.isDeleted || status === 'trash' || (u.data && (u.data.isDeleted || u.data.status === 'trash')));
+                    const agreeDoc = (u.data && u.data.agreementDoc) || u.agreementDoc || null;
+                    const agrTerms = (u.data && u.data.agreedTerms) || u.agreedTerms || null;
+                    const hasSig = !!(
+                        (u.data && u.data.hasSignature) ||
+                        u.hasSignature ||
+                        (agreeDoc && (agreeDoc.signatureDataUrl || agreeDoc.status === 'legally_binding')) ||
+                        (agrTerms && (agrTerms.hasSignature || agrTerms.agreedAt)) ||
+                        u.hasPledgeSigned ||
+                        (u.data && u.data.isPledgeSigned) ||
+                        isUserAdmin
+                    );
                     return {
                         userId: uId,
                         data: {
@@ -4917,24 +4937,30 @@ function setupAuthEvents(initFirebaseAndData) {
                             name: rName,
                             realName: rName,
                             phoneNumber: phone,
+                            phone: phone,
                             isAdmin: isUserAdmin,
                             isPermanent: isPermanent,
-                            userType: u.userType || (isPermanent ? 'permanent' : 'regular'),
+                            userType: u.userType || (u.data && u.data.userType) || (isPermanent ? 'permanent' : 'regular'),
                             status: status,
-                            createdAt: u.createdAt || null,
-                            allowLotto: u.allowLotto !== false,
-                            allowToto: u.allowToto !== false,
-                            isDeleted: isDeleted
+                            createdAt: u.createdAt || (u.data && u.data.createdAt) || null,
+                            allowLotto: u.allowLotto !== false && (!u.data || u.data.allowLotto !== false),
+                            allowToto: u.allowToto !== false && (!u.data || u.data.allowToto !== false),
+                            isDeleted: isDeleted,
+                            agreementDoc: agreeDoc,
+                            agreedTerms: agrTerms,
+                            hasSignature: hasSig,
+                            isPledgeSigned: hasSig
                         },
-                        pStatus: { hasPurchased: false },
-                        allowLotto: u.allowLotto !== false,
-                        allowToto: u.allowToto !== false,
+                        pStatus: u.pStatus || { hasPurchased: false },
+                        allowLotto: u.allowLotto !== false && (!u.data || u.data.allowLotto !== false),
+                        allowToto: u.allowToto !== false && (!u.data || u.data.allowToto !== false),
                         isUserAdmin,
                         isPermanent,
+                        hasPledgeSigned: hasSig,
                         isSuspended: (status === 'suspended' || status === 'suspended_nopurchase'),
                         isNoPurchaseSuspended: (status === 'suspended_nopurchase'),
                         isDeleted,
-                        deletedAt: u.deletedAt || null,
+                        deletedAt: u.deletedAt || (u.data && u.data.deletedAt) || null,
                         status
                     };
                 });
@@ -4955,10 +4981,31 @@ function setupAuthEvents(initFirebaseAndData) {
             return;
         }
 
-        // ⚡ 2. Progressive Fetching (Users first, then Purchases)
+        // ⚡ 2. Progressive Fetching (Fast users render first, then purchases)
         try {
-            const usersSnapshotPromise = firestore.collection('lotto_users').get();
-            const purchasesSnapshotPromise = firestore.collection('lotto_purchases').get().catch(err => {
+            let lastUsersSnapshot = null;
+            let lastPurchasesSnapshot = null;
+            let hasUsersRendered = false;
+
+            const usersSnapshotPromise = firestore.collection('lotto_users').get().then(uSnap => {
+                if (uSnap && !uSnap.empty) {
+                    lastUsersSnapshot = uSnap;
+                    hasUsersRendered = true;
+                    processAndApplySnapshots(uSnap, lastPurchasesSnapshot);
+                }
+                return uSnap;
+            }).catch(err => {
+                console.warn('[Users Batch Fetch Error]', err);
+                return null;
+            });
+
+            const purchasesSnapshotPromise = firestore.collection('lotto_purchases').get().then(pSnap => {
+                lastPurchasesSnapshot = pSnap;
+                if (lastUsersSnapshot && !lastUsersSnapshot.empty) {
+                    processAndApplySnapshots(lastUsersSnapshot, pSnap);
+                }
+                return pSnap;
+            }).catch(err => {
                 console.warn('[Purchases Batch Fetch Error]', err);
                 return { docs: [], forEach: () => {} };
             });
@@ -4971,20 +5018,19 @@ function setupAuthEvents(initFirebaseAndData) {
                 timeoutPromise
             ]);
 
-            if (raceResult) {
+            if (raceResult && raceResult[0]) {
                 await processAndApplySnapshots(raceResult[0], raceResult[1]);
-            } else {
-                // Timeout occurred: Hook background listener so when network finishes, UI still updates smoothly
+            } else if (!hasUsersRendered) {
+                // Background listener for delayed networks
                 usersSnapshotPromise.then(async (uSnap) => {
                     try {
                         const pSnap = await purchasesSnapshotPromise;
-                        processAndApplySnapshots(uSnap, pSnap);
+                        if (uSnap) processAndApplySnapshots(uSnap, pSnap);
                     } catch(e) {
                         console.warn('[Delayed Sync Error]', e);
                     }
                 }).catch(console.warn);
 
-                // Update summary badge removing spinning icon
                 updateSummaryDisplay(false);
             }
 
@@ -5026,7 +5072,10 @@ function setupAuthEvents(initFirebaseAndData) {
                     }
                     return;
                 }
-                users.push({ userId: doc.id, data: doc.data() || {} });
+                const docData = doc.data() || {};
+                if (!docData.phoneNumber && docData.phone) docData.phoneNumber = docData.phone;
+                if (!docData.phone && docData.phoneNumber) docData.phone = docData.phoneNumber;
+                users.push({ userId: doc.id, data: docData });
                 existingUserIds.add(uIdClean);
             });
 
@@ -5035,20 +5084,25 @@ function setupAuthEvents(initFirebaseAndData) {
             knownBaseline.forEach(defU => {
                 const defId = (defU.id || '').toLowerCase().trim();
                 if (defId && !existingUserIds.has(defId)) {
+                    const isBaseAdmin = !!(defU.isAdmin || defId === 'master' || defId === 'admin');
+                    const hasSig = !!(defU.hasSignature || defU.hasPledgeSigned || isBaseAdmin);
                     users.push({
                         userId: defU.id,
                         data: {
                             userId: defU.id,
                             name: defU.name || defU.realName || defU.id,
                             realName: defU.realName || defU.name || defU.id,
-                            phoneNumber: defU.phone || '',
-                            isAdmin: !!defU.isAdmin,
-                            isPermanent: !!defU.isPermanent,
-                            userType: defU.userType || 'regular',
+                            phoneNumber: defU.phoneNumber || defU.phone || '',
+                            phone: defU.phone || defU.phoneNumber || '',
+                            isAdmin: isBaseAdmin,
+                            isPermanent: !!(defU.isPermanent || isBaseAdmin),
+                            userType: defU.userType || (isBaseAdmin ? 'permanent' : 'regular'),
                             status: defU.status || 'active',
                             createdAt: defU.createdAt || null,
                             allowLotto: true,
-                            allowToto: true
+                            allowToto: true,
+                            hasSignature: hasSig,
+                            isPledgeSigned: hasSig
                         }
                     });
                     existingUserIds.add(defId);
@@ -5067,32 +5121,61 @@ function setupAuthEvents(initFirebaseAndData) {
                 const status = u.data.status || 'active';
                 const isSuspended = (status === 'suspended' || status === 'suspended_nopurchase');
                 const isNoPurchaseSuspended = (status === 'suspended_nopurchase');
+                const hasPledgeSigned = !!(
+                    (u.data.agreementDoc && (u.data.agreementDoc.signatureDataUrl || u.data.agreementDoc.signature || u.data.agreementDoc.signedAt || u.data.agreementDoc.agreedDateFormatted || u.data.agreementDoc.status === 'legally_binding')) ||
+                    (u.data.agreedTerms && (u.data.agreedTerms.hasSignature || u.data.agreedTerms.agreedAt || u.data.agreedTerms.weeklyPurchaseAgreement)) ||
+                    u.data.hasSignature === true ||
+                    u.data.signatureDataUrl ||
+                    u.data.isPledgeSigned === true ||
+                    isUserAdmin
+                );
                 if (!isDeleted) {
                     setIsPermanentCache(u.userId, isPermanent);
                     setUserPermissionsCache(u.userId, { allowLotto, allowToto });
                 }
-                return { ...u, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, isDeleted, deletedAt, status };
+                return { ...u, hasPledgeSigned, pStatus, allowLotto, allowToto, isUserAdmin, isPermanent, isSuspended, isNoPurchaseSuspended, isDeleted, deletedAt, status };
             }));
 
             __cachedUsersWithStatus = usersWithStatus;
             try {
-                localStorage.setItem('lotto_users_with_status_cache', JSON.stringify(usersWithStatus));
-            } catch(e) {}
+                const sanitizedCache = usersWithStatus.map(u => {
+                    const cleanD = { ...(u.data || {}) };
+                    delete cleanD.recommendationSnapshots;
+                    delete cleanD.history;
+                    delete cleanD.purchases;
+                    delete cleanD.activeExtraPacks;
+                    delete cleanD.pendingKakaoNotifications;
+                    delete cleanD.sentReports;
+                    return {
+                        ...u,
+                        data: cleanD,
+                        hasPledgeSigned: u.hasPledgeSigned
+                    };
+                });
+                localStorage.setItem('lotto_users_with_status_cache', JSON.stringify(sanitizedCache));
+            } catch(e) {
+                console.warn('[Cache save note]', e);
+            }
 
             const activeUsers = usersWithStatus.filter(u => !u.isDeleted);
             if (typeof window !== 'undefined' && window.state) {
                 window.state.allRegisteredUsersList = activeUsers.map(u => ({
                     id: u.userId,
-                    name: u.data.realName || u.userId,
-                    realName: u.data.realName || u.userId,
-                    phone: u.data.phoneNumber || '',
+                    name: u.data.realName || u.data.name || u.userId,
+                    realName: u.data.realName || u.data.name || u.userId,
+                    phone: u.data.phoneNumber || u.data.phone || '',
+                    phoneNumber: u.data.phoneNumber || u.data.phone || '',
                     isAdmin: !!(u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
                     isPermanent: !!(u.data.isPermanent === true || u.data.userType === 'permanent' || u.data.isAdmin === true || u.data.role === 'admin' || u.userId === 'master' || u.userId === 'admin'),
                     userType: u.data.userType || (u.isPermanent ? 'permanent' : 'regular'),
                     createdAt: u.data.createdAt || null,
                     allowLotto: u.data.allowLotto !== false,
                     allowToto: u.data.allowToto !== false,
-                    status: u.data.status || 'active'
+                    status: u.data.status || 'active',
+                    hasPledgeSigned: u.hasPledgeSigned,
+                    hasSignature: u.hasPledgeSigned,
+                    agreementDoc: u.data.agreementDoc || null,
+                    agreedTerms: u.data.agreedTerms || null
                 }));
                 try {
                     localStorage.setItem('lotto_all_users_list_cache', JSON.stringify(window.state.allRegisteredUsersList));
@@ -5783,6 +5866,7 @@ function setupAuthEvents(initFirebaseAndData) {
                 userId: userId,
                 realName: realName,
                 phoneNumber: cleanPhone,
+                phone: cleanPhone,
                 status: 'active',
                 agreementDoc: agreementDocument,
                 agreedTerms: {
@@ -5798,6 +5882,35 @@ function setupAuthEvents(initFirebaseAndData) {
             try {
                 await firestore.collection('lotto_agreements').doc(userId).set(agreementDocument);
             } catch(e) {}
+
+            // Immediately synchronize in-memory caches so admin list reflects ✍️ instantly
+            if (typeof __cachedUsersWithStatus !== 'undefined' && Array.isArray(__cachedUsersWithStatus)) {
+                const targetU = __cachedUsersWithStatus.find(u => u && u.userId === userId);
+                if (targetU) {
+                    targetU.data = targetU.data || {};
+                    targetU.data.realName = realName;
+                    targetU.data.phoneNumber = cleanPhone;
+                    targetU.data.phone = cleanPhone;
+                    targetU.data.agreementDoc = agreementDocument;
+                    targetU.data.hasSignature = true;
+                    targetU.data.isPledgeSigned = true;
+                    targetU.hasPledgeSigned = true;
+                }
+            }
+            if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+                const targetReg = window.state.allRegisteredUsersList.find(u => u && u.id === userId);
+                if (targetReg) {
+                    targetReg.realName = realName;
+                    targetReg.name = realName;
+                    targetReg.phone = cleanPhone;
+                    targetReg.phoneNumber = cleanPhone;
+                    targetReg.hasPledgeSigned = true;
+                    targetReg.agreementDoc = agreementDocument;
+                }
+            }
+            if (typeof window.filterUserList === 'function') {
+                try { window.filterUserList(); } catch(e){}
+            }
 
             // Close all modals
             const modal = document.getElementById('mandatoryPledgeModal');
