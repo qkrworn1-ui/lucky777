@@ -2,7 +2,7 @@ import { state, saveGlobalState } from '../state.js';
 import { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml } from '../../../shared/components.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getEffectiveGeneratorUserId } from '../generator.js';
-import { db } from '../../../shared/db.js';
+import { db, safeDocGet } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPermanentUser } from '../../../shared/auth-mgmt.js';
 import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
 import { getComboNumbers, getLedger, getHistoricalTop10Combinations, saveToLedger } from '../ledger.js';
@@ -1506,8 +1506,8 @@ export async function syncUserActiveExtraPacksFromCloud(userId, round) {
     try {
         let cloudPacks = null;
 
-        // 1. Primary: fetch from writable lotto_users collection
-        const uDoc = await firestore.collection('lotto_users').doc(effectiveUserId).get();
+        // 1. Primary: fetch from writable lotto_users collection using safeDocGet
+        const uDoc = await safeDocGet(firestore.collection('lotto_users').doc(effectiveUserId), 2000);
         if (uDoc && uDoc.exists) {
             const ud = uDoc.data();
             if (ud && ud.activeExtraPacks && Array.isArray(ud.activeExtraPacks[curRound])) {
@@ -1520,7 +1520,7 @@ export async function syncUserActiveExtraPacksFromCloud(userId, round) {
         // 2. Secondary fallback
         if (!cloudPacks) {
             try {
-                const cloudDoc = await firestore.collection('lotto_user_extra_packs').doc(`${effectiveUserId}_${curRound}`).get();
+                const cloudDoc = await safeDocGet(firestore.collection('lotto_user_extra_packs').doc(`${effectiveUserId}_${curRound}`), 2000);
                 if (cloudDoc && cloudDoc.exists) {
                     const d = cloudDoc.data();
                     if (d && Array.isArray(d.packIds)) cloudPacks = d.packIds;

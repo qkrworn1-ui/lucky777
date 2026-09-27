@@ -1,4 +1,4 @@
-import { db } from './db.js';
+import { db, reconnectFirebaseNetwork, safeDocGet } from './db.js';
 import { showToast } from './utils.js';
 import { hashPassword, checkPasswordStrength } from './crypto-utils.js';
 import { DEFAULT_KNOWN_USERS, getAllUnifiedRegisteredUsers, UserContextManager } from './user-context.js';
@@ -410,8 +410,8 @@ export async function checkUserWeeklyPurchaseStatus(userId, userDocData = null, 
     let userData = userDocData;
     if (!userData && firestore) {
         try {
-            const uDoc = await firestore.collection('lotto_users').doc(userId).get();
-            if (uDoc.exists) userData = uDoc.data();
+            const uDoc = await safeDocGet(firestore.collection('lotto_users').doc(userId), 2000);
+            if (uDoc && uDoc.exists) userData = uDoc.data();
         } catch(e) { console.error('[checkUserWeeklyPurchaseStatus Error]', e); }
     }
 
@@ -476,8 +476,8 @@ export async function checkUserWeeklyPurchaseStatus(userId, userDocData = null, 
         }
     } else if (firestore) {
         try {
-            const pDoc = await firestore.collection('lotto_purchases').doc(userId).get();
-            if (pDoc.exists && pDoc.data().ledger) {
+            const pDoc = await safeDocGet(firestore.collection('lotto_purchases').doc(userId), 2000);
+            if (pDoc && pDoc.exists && pDoc.data().ledger) {
                 userLedger = pDoc.data().ledger;
             }
         } catch(e) {
@@ -1178,9 +1178,7 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
         if (window.db) {
             (async () => {
                 try {
-                    const queryPromise = window.db.collection('lotto_users').doc(authId).get();
-                    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500));
-                    const userDoc = await Promise.race([queryPromise, timeoutPromise]);
+                    const userDoc = await safeDocGet(window.db.collection('lotto_users').doc(authId), 2500);
                     if (userDoc && userDoc.exists) {
                         const uData = userDoc.data() || {};
                         let freshAdmin = isUserAdmin;
@@ -1230,7 +1228,8 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                         }
 
                         if (!freshAdmin && !isPerm) {
-                            const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
+                            const preloadedP = (typeof state !== 'undefined' && state.globalLedger) ? { ledger: state.globalLedger } : undefined;
+                            const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData, preloadedP);
 
                             // Note: Non-purchased users are NOT suspended from logging in.
                             // Instead, they are restricted from accessing Extra 5 Packs and Simulation tab.
@@ -2640,6 +2639,18 @@ export function setupAuthEvents(initFirebaseAndData) {
             const submitBtn = loginForm.querySelector('button[type="submit"]') || document.getElementById('btnLoginSubmit');
             const origBtnText = submitBtn ? submitBtn.innerHTML : '시스템 접속';
 
+            // Proactively warm up network connection on mobile interaction
+            ['focus', 'touchstart'].forEach(evt => {
+                if (idEl) idEl.addEventListener(evt, () => {
+                    if (typeof reconnectFirebaseNetwork === 'function') reconnectFirebaseNetwork();
+                    else if (typeof window.reconnectFirebaseNetwork === 'function') window.reconnectFirebaseNetwork();
+                }, { passive: true, once: true });
+                if (pwEl) pwEl.addEventListener(evt, () => {
+                    if (typeof reconnectFirebaseNetwork === 'function') reconnectFirebaseNetwork();
+                    else if (typeof window.reconnectFirebaseNetwork === 'function') window.reconnectFirebaseNetwork();
+                }, { passive: true, once: true });
+            });
+
             const rawId = idEl ? idEl.value.trim() : '';
             const idLower = rawId.toLowerCase();
             const pw = pwEl ? pwEl.value.trim() : '';
@@ -2743,12 +2754,19 @@ export function setupAuthEvents(initFirebaseAndData) {
                 }
 
                 const docRef = firestore.collection('lotto_users').doc(rawId);
-                const queryPromise = docRef.get();
-                const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('TIMEOUT'), 4500));
-                const userDoc = await Promise.race([queryPromise, timeoutPromise]);
+                let userDoc = await safeDocGet(docRef, 3000);
 
-                if (userDoc === 'TIMEOUT') {
-                    if (typeof window.reconnectFirebaseNetwork === 'function') window.reconnectFirebaseNetwork();
+                if (!userDoc) {
+                    // Try forceful reconnect and retry once if mobile socket was dead
+                    if (typeof reconnectFirebaseNetwork === 'function') {
+                        await reconnectFirebaseNetwork(true, 1500);
+                    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
+                        await window.reconnectFirebaseNetwork(true, 1500);
+                    }
+                    userDoc = await safeDocGet(docRef, 2500);
+                }
+
+                if (!userDoc) {
                     if (loginError) { 
                         loginError.textContent = "서버 통신 지연이 발생했습니다. 1~2초 후 다시 접속을 눌러주세요."; 
                         loginError.style.display = 'block'; 
@@ -2756,7 +2774,7 @@ export function setupAuthEvents(initFirebaseAndData) {
                     return false;
                 }
 
-                if (!userDoc || !userDoc.exists) {
+                if (!userDoc.exists) {
                     if (loginError) { loginError.textContent = "아이디 또는 비밀번호가 일치하지 않습니다."; loginError.style.display = 'block'; }
                     return false;
                 }
@@ -6586,17 +6604,25 @@ window.startBatchWinningSend = async function() {
 
         let uData = null;
         let isUserAdmin = isAdminUser(authId);
-        try {
-            if (window.db) {
-                const doc = await window.db.collection('lotto_users').doc(authId).get();
-                if (doc.exists) {
-                    uData = doc.data();
-                    if (uData.isAdmin === true || uData.role === 'admin') isUserAdmin = true;
-                }
-            }
-        } catch(e) {}
+        if (window.__currentUser && window.__currentUser.userId === authId) {
+            uData = window.__currentUser;
+            if (window.__currentUser.isAdmin) isUserAdmin = true;
+        }
 
-        const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
+        if (!uData) {
+            try {
+                if (window.db) {
+                    const doc = await safeDocGet(window.db.collection('lotto_users').doc(authId), 2000);
+                    if (doc && doc.exists) {
+                        uData = doc.data();
+                        if (uData.isAdmin === true || uData.role === 'admin') isUserAdmin = true;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        const preloadedP = (typeof state !== 'undefined' && state.globalLedger) ? { ledger: state.globalLedger } : undefined;
+        const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData, preloadedP);
         const targetRound = pStatus.targetRound || getUpcomingLottoRound();
 
         const targetSaturday = getNextSaturday20PM();

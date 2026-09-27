@@ -3244,7 +3244,9 @@ export function getSafeActualDraw(round) {
 
         1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-12' },
 
-        1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-19' }
+        1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-19' },
+
+        1243: { numbers: [9, 18, 24, 38, 43, 44], bonus: 35, rank1Prize: 2200000000, rank2Prize: 50000000, rank3Prize: 1500000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-26' }
 
     };
 

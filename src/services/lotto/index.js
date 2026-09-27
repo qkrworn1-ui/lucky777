@@ -208,11 +208,24 @@ export async function initLottoService(force = false) {
             updateDebugMonitor(state.globalLedger);
         }
 
-        // 1) Local storage pre-load for extra history (offline resilient)
+        // 1) Local storage pre-load for extra history & global state (offline resilient)
         try {
             const localExtra = localStorage.getItem('lotto_extra_history');
             if (localExtra) {
                 state.lottoExtraHistory = JSON.parse(localExtra) || {};
+            }
+        } catch(e) {}
+
+        try {
+            const localState = localStorage.getItem('lotto_global_state_cache');
+            if (localState) {
+                const parsed = JSON.parse(localState);
+                if (parsed && typeof parsed === 'object') {
+                    if (parsed.aiState) state.aiState = parsed.aiState;
+                    if (parsed.fixedTop5Combinations_v3 && parsed.fixedTop5Combinations_v3.length > 0) state.fixedTop5Combinations_v3 = parsed.fixedTop5Combinations_v3;
+                    if (parsed.fixedTop5Combinations_v4 && parsed.fixedTop5Combinations_v4.length > 0) state.fixedTop5Combinations_v4 = parsed.fixedTop5Combinations_v4;
+                    if (Array.isArray(parsed.extraPacks)) state.extraPacks = parsed.extraPacks;
+                }
             }
         } catch(e) {}
 
@@ -279,6 +292,9 @@ export async function initLottoService(force = false) {
                 if (stateDoc.fixedTop5Combinations_v3) state.fixedTop5Combinations_v3 = stateDoc.fixedTop5Combinations_v3;
                 if (stateDoc.fixedTop5Combinations_v4) state.fixedTop5Combinations_v4 = stateDoc.fixedTop5Combinations_v4;
                 if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks;
+                try {
+                    localStorage.setItem('lotto_global_state_cache', JSON.stringify(stateDoc));
+                } catch(e) {}
             } else {
                 state.fixedTop5Combinations = [];
                 state.fixedTop5Combinations_v3 = [];
@@ -328,6 +344,7 @@ export async function initLottoService(force = false) {
                         : state.fixedTop5Combinations_v3;
 
                     if (changed) {
+                        try { localStorage.setItem('lotto_global_state_cache', JSON.stringify(data)); } catch(e) {}
                         renderTop5Combinations(false);
                     }
                 }

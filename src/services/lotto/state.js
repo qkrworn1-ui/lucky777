@@ -12,6 +12,14 @@ try {
     }
 } catch(e) {}
 
+let initialGlobalState = {};
+try {
+    const rawState = (typeof localStorage !== 'undefined') ? localStorage.getItem('lotto_global_state_cache') : null;
+    if (rawState) {
+        initialGlobalState = JSON.parse(rawState) || {};
+    }
+} catch(e) {}
+
 export const state = {
     allNumbers: Array.from({ length: 45 }, (_, i) => i + 1),
     allRegisteredUsersList: initialCachedUsers,
@@ -27,10 +35,10 @@ export const state = {
     COLD_FREQ_GROUP: [],
     COLD_OVERDUE_GROUP: [],
     savedCombinations: [],
-    fixedTop5Combinations: [],
-    fixedTop5Combinations_v3: [],
-    fixedTop5Combinations_v4: [],
-    extraPacks: [], // Up to 5 additional 10-combo packs: [{ packId: 1, name: '추가 1', combos: [...] }]
+    fixedTop5Combinations: initialGlobalState.fixedTop5Combinations || [],
+    fixedTop5Combinations_v3: initialGlobalState.fixedTop5Combinations_v3 || [],
+    fixedTop5Combinations_v4: initialGlobalState.fixedTop5Combinations_v4 || [],
+    extraPacks: initialGlobalState.extraPacks || [], // Up to 5 additional 10-combo packs: [{ packId: 1, name: '추가 1', combos: [...] }]
     editingLedgerInfo: null,
     selectedWheelingPool: [3, 7, 12, 18, 21, 27, 34, 38, 42, 45],
     comboChartInstances: [],
@@ -71,7 +79,7 @@ export function initHistory() {
  */
 export function saveGlobalState() {
     const currentRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
-    db.set('lotto_app_state', 'global_state', removeUndefined({
+    const payload = removeUndefined({
         round: currentRound,
         aiState: state.aiState,
         fixedTop5Combinations: state.fixedTop5Combinations,
@@ -79,9 +87,11 @@ export function saveGlobalState() {
         fixedTop5Combinations_v4: state.fixedTop5Combinations_v4,
         extraPacks: state.extraPacks || [],
         updatedAt: new Date().toISOString()
-    }));
+    });
+    db.set('lotto_app_state', 'global_state', payload);
     try {
         localStorage.setItem('lotto_extra_packs', JSON.stringify(state.extraPacks || []));
+        localStorage.setItem('lotto_global_state_cache', JSON.stringify(payload));
     } catch(e) {}
 }
 

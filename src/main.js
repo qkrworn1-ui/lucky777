@@ -153,6 +153,13 @@ window.showLotto = function(pushHistory = true) {
         }
     }
 
+    // Proactively revive Firestore network connection on entering main lotto program
+    if (typeof reconnectFirebaseNetwork === 'function') {
+        reconnectFirebaseNetwork();
+    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
+        window.reconnectFirebaseNetwork();
+    }
+
     _switchPage('appContainer', pushHistory);
     try {
         if (typeof switchLottoTab === 'function') {
@@ -285,35 +292,72 @@ function runInit() {
     }, 20);
 }
 
+let _resumeDebounceTimer = null;
+let _lastResumeTimestamp = 0;
+
 function handleAppResumeAndWakeup() {
-    // 1. Immediately revive Firestore network connection (eliminates mobile sleep/background lag)
-    if (typeof reconnectFirebaseNetwork === 'function') {
-        reconnectFirebaseNetwork();
-    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
-        window.reconnectFirebaseNetwork();
-    } else if (window.db && typeof window.db.enableNetwork === 'function') {
-        try { window.db.enableNetwork(); } catch(e) {}
+    const now = Date.now();
+    if (now - _lastResumeTimestamp < 600) {
+        return; // Debounce rapid concurrent browser events
+    }
+    _lastResumeTimestamp = now;
+
+    if (_resumeDebounceTimer) {
+        clearTimeout(_resumeDebounceTimer);
     }
 
-    // 2. Render Landing UI immediately from cache (0ms instant response)
-    if (typeof renderLandingDashboard === 'function') {
-        try { renderLandingDashboard(); } catch(e) {}
-    }
+    _resumeDebounceTimer = setTimeout(async () => {
+        // 1. Immediately revive Firestore network connection (force reset dead sockets)
+        if (typeof reconnectFirebaseNetwork === 'function') {
+            await reconnectFirebaseNetwork(true);
+        } else if (typeof window.reconnectFirebaseNetwork === 'function') {
+            await window.reconnectFirebaseNetwork(true);
+        } else if (window.db && typeof window.db.enableNetwork === 'function') {
+            try {
+                if (typeof window.db.disableNetwork === 'function') await window.db.disableNetwork();
+                await window.db.enableNetwork();
+            } catch(e) {}
+        }
 
-    // 3. Fast non-blocking version cross-check
-    if (typeof window.checkLatestBuildVersion === 'function') {
-        try { window.checkLatestBuildVersion(true); } catch(e) {}
-    }
+        // 2. Refresh active page view immediately from local cache (0ms instant response)
+        const appContainer = document.getElementById('appContainer');
+        const isLottoActive = appContainer && (appContainer.classList.contains('active') || appContainer.style.display === 'flex');
+        const totoPage = document.getElementById('totoPage');
+        const isTotoActive = totoPage && (totoPage.classList.contains('active') || totoPage.style.display === 'block');
 
-    // 4. If logged in but login modal is lingering, re-verify auth
-    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
-    const loginModal = document.getElementById('loginModalOverlay');
-    const isModalVisible = loginModal && loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden');
-    if (authId && isModalVisible) {
-        setTimeout(() => {
-            try { checkAuthOnLoad(initLottoService); } catch(e) {}
-        }, 50);
-    }
+        if (isLottoActive) {
+            // Main Lotto Program active: refresh active lotto tab view
+            const curTab = window.__currentLottoTab || 'tab-generator';
+            if (typeof window.switchLottoTab === 'function') {
+                try { window.switchLottoTab(curTab); } catch(e) {}
+            }
+        } else if (isTotoActive) {
+            // Toto Program active
+            if (typeof renderTotoDashboard === 'function') {
+                try { renderTotoDashboard(); } catch(e) {}
+            }
+        } else {
+            // Landing Dashboard active
+            if (typeof renderLandingDashboard === 'function') {
+                try { renderLandingDashboard(); } catch(e) {}
+            }
+        }
+
+        // 3. Fast non-blocking version cross-check
+        if (typeof window.checkLatestBuildVersion === 'function') {
+            try { window.checkLatestBuildVersion(true); } catch(e) {}
+        }
+
+        // 4. If logged in but login modal is lingering, re-verify auth
+        const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
+        const loginModal = document.getElementById('loginModalOverlay');
+        const isModalVisible = loginModal && loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden');
+        if (authId && isModalVisible) {
+            setTimeout(() => {
+                try { checkAuthOnLoad(initLottoService); } catch(e) {}
+            }, 50);
+        }
+    }, 100);
 }
 
 if (typeof document !== 'undefined') {

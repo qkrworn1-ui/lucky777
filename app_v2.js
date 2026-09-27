@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.26.1522 - BUILD_DATE: 2026-09-26] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.27.1153 - BUILD_DATE: 2026-09-27] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.26.1522)
+ * Lucky777 Smart Bundle (v2026.09.27.1153)
  */
 
 
@@ -850,16 +850,68 @@ if (typeof window !== 'undefined') {
 const __M_shared_db = (function() {
     const __exports = {};
     try {
-async function reconnectFirebaseNetwork(timeoutMs = 2500) {
-    if (typeof window !== 'undefined' && window.db && typeof window.db.enableNetwork === 'function') {
-        try {
+let _isReconnecting = false;
+let _lastReconnectTimestamp = 0;
+
+async function reconnectFirebaseNetwork(force = false, timeoutMs = 2500) {
+    if (typeof window === 'undefined' || !window.db) return;
+
+    const now = Date.now();
+    if (!force && _isReconnecting) return;
+    if (!force && (now - _lastReconnectTimestamp < 1200)) return;
+
+    _isReconnecting = true;
+    _lastReconnectTimestamp = now;
+
+    try {
+        // 1. Force drop any dead half-open TCP stream caused by mobile sleep / tab backgrounding
+        if (typeof window.db.disableNetwork === 'function') {
+            try {
+                await window.db.disableNetwork();
+            } catch(e) {}
+        }
+        // 2. Open fresh WebChannel/stream connection
+        if (typeof window.db.enableNetwork === 'function') {
             const enablePromise = window.db.enableNetwork();
             const timeoutPromise = new Promise(resolve => setTimeout(resolve, timeoutMs));
             await Promise.race([enablePromise, timeoutPromise]);
             console.log('[Firestore] Network connection revived instantly on app wakeup');
-        } catch(e) {
-            console.warn('[Firestore Reconnect Note]', e);
         }
+    } catch(e) {
+        console.warn('[Firestore Reconnect Note]', e);
+    } finally {
+        _isReconnecting = false;
+    }
+}
+
+/**
+ * Fast cache-first document fetcher with strict timeout fallback.
+ * Prevents mobile sleep / network freeze from hanging requests.
+ */
+async function safeDocGet(docRef, timeoutMs = 2500) {
+    if (!docRef || typeof docRef.get !== 'function') return null;
+
+    // 1. Try local offline cache first (0ms instantaneous response)
+    try {
+        const cachedDoc = await docRef.get({ source: 'cache' });
+        if (cachedDoc && cachedDoc.exists) {
+            // Background refresh from live server without blocking caller
+            docRef.get({ source: 'server' }).catch(() => {});
+            return cachedDoc;
+        }
+    } catch(cErr) {
+        // Cache miss or doc not in offline IndexedDB
+    }
+
+    // 2. Fall back to server fetch with strict timeout race
+    try {
+        const queryPromise = docRef.get();
+        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), timeoutMs));
+        const res = await Promise.race([queryPromise, timeoutPromise]);
+        return res;
+    } catch(e) {
+        console.warn('[safeDocGet Error]', e);
+        return null;
     }
 }
 
@@ -891,11 +943,24 @@ const db = {
         }
         return fs.collection(name);
     },
-    async get(collection, docId, timeoutMs = 3500) {
+    async get(collection, docId, timeoutMs = 2500) {
         const fs = this.getFirestore();
         if (!fs) return null;
+        const docRef = fs.collection(collection).doc(docId);
+
+        // 1. Instant Cache retrieval (0ms from IndexedDB / local memory)
         try {
-            const queryPromise = fs.collection(collection).doc(docId).get();
+            const cached = await docRef.get({ source: 'cache' });
+            if (cached && cached.exists) {
+                // Background refresh from server without blocking
+                docRef.get({ source: 'server' }).catch(() => {});
+                return cached.data();
+            }
+        } catch(cacheErr) {}
+
+        // 2. Server fetch with timeout race
+        try {
+            const queryPromise = docRef.get();
             const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), timeoutMs));
             const doc = await Promise.race([queryPromise, timeoutPromise]);
             return (doc && doc.exists) ? doc.data() : null;
@@ -914,7 +979,7 @@ const db = {
             return !!res;
         } catch(e) { 
             console.error('DB set error:', e); 
-            return false;
+            return false; 
         }
     },
     onSnapshot(collection, docId, callback) {
@@ -928,11 +993,17 @@ const db = {
 
 if (typeof window !== 'undefined') {
     window.reconnectFirebaseNetwork = reconnectFirebaseNetwork;
+    window.safeDocGet = safeDocGet;
 }
+
 
         if (typeof reconnectFirebaseNetwork !== 'undefined') {
             __exports.reconnectFirebaseNetwork = reconnectFirebaseNetwork;
             if (typeof window !== 'undefined') window.reconnectFirebaseNetwork = reconnectFirebaseNetwork;
+        }
+        if (typeof safeDocGet !== 'undefined') {
+            __exports.safeDocGet = safeDocGet;
+            if (typeof window !== 'undefined') window.safeDocGet = safeDocGet;
         }
         if (typeof db !== 'undefined') {
             __exports.db = db;
@@ -1383,7 +1454,7 @@ if (typeof window !== 'undefined') {
 const __M_shared_auth_mgmt = (function() {
     const __exports = {};
     try {
-const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
+const { db, reconnectFirebaseNetwork, safeDocGet } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { showToast } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { hashPassword, checkPasswordStrength } = (typeof __M_shared_crypto_utils !== 'undefined' ? __M_shared_crypto_utils : {});
 const { DEFAULT_KNOWN_USERS, getAllUnifiedRegisteredUsers, UserContextManager } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
@@ -1795,8 +1866,8 @@ async function checkUserWeeklyPurchaseStatus(userId, userDocData = null, preload
     let userData = userDocData;
     if (!userData && firestore) {
         try {
-            const uDoc = await firestore.collection('lotto_users').doc(userId).get();
-            if (uDoc.exists) userData = uDoc.data();
+            const uDoc = await safeDocGet(firestore.collection('lotto_users').doc(userId), 2000);
+            if (uDoc && uDoc.exists) userData = uDoc.data();
         } catch(e) { console.error('[checkUserWeeklyPurchaseStatus Error]', e); }
     }
 
@@ -1861,8 +1932,8 @@ async function checkUserWeeklyPurchaseStatus(userId, userDocData = null, preload
         }
     } else if (firestore) {
         try {
-            const pDoc = await firestore.collection('lotto_purchases').doc(userId).get();
-            if (pDoc.exists && pDoc.data().ledger) {
+            const pDoc = await safeDocGet(firestore.collection('lotto_purchases').doc(userId), 2000);
+            if (pDoc && pDoc.exists && pDoc.data().ledger) {
                 userLedger = pDoc.data().ledger;
             }
         } catch(e) {
@@ -2563,9 +2634,7 @@ async function checkAuthOnLoad(initFirebaseAndData) {
         if (window.db) {
             (async () => {
                 try {
-                    const queryPromise = window.db.collection('lotto_users').doc(authId).get();
-                    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500));
-                    const userDoc = await Promise.race([queryPromise, timeoutPromise]);
+                    const userDoc = await safeDocGet(window.db.collection('lotto_users').doc(authId), 2500);
                     if (userDoc && userDoc.exists) {
                         const uData = userDoc.data() || {};
                         let freshAdmin = isUserAdmin;
@@ -2615,7 +2684,8 @@ async function checkAuthOnLoad(initFirebaseAndData) {
                         }
 
                         if (!freshAdmin && !isPerm) {
-                            const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
+                            const preloadedP = (typeof state !== 'undefined' && state.globalLedger) ? { ledger: state.globalLedger } : undefined;
+                            const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData, preloadedP);
 
                             // Note: Non-purchased users are NOT suspended from logging in.
                             // Instead, they are restricted from accessing Extra 5 Packs and Simulation tab.
@@ -4025,6 +4095,18 @@ function setupAuthEvents(initFirebaseAndData) {
             const submitBtn = loginForm.querySelector('button[type="submit"]') || document.getElementById('btnLoginSubmit');
             const origBtnText = submitBtn ? submitBtn.innerHTML : '시스템 접속';
 
+            // Proactively warm up network connection on mobile interaction
+            ['focus', 'touchstart'].forEach(evt => {
+                if (idEl) idEl.addEventListener(evt, () => {
+                    if (typeof reconnectFirebaseNetwork === 'function') reconnectFirebaseNetwork();
+                    else if (typeof window.reconnectFirebaseNetwork === 'function') window.reconnectFirebaseNetwork();
+                }, { passive: true, once: true });
+                if (pwEl) pwEl.addEventListener(evt, () => {
+                    if (typeof reconnectFirebaseNetwork === 'function') reconnectFirebaseNetwork();
+                    else if (typeof window.reconnectFirebaseNetwork === 'function') window.reconnectFirebaseNetwork();
+                }, { passive: true, once: true });
+            });
+
             const rawId = idEl ? idEl.value.trim() : '';
             const idLower = rawId.toLowerCase();
             const pw = pwEl ? pwEl.value.trim() : '';
@@ -4128,12 +4210,19 @@ function setupAuthEvents(initFirebaseAndData) {
                 }
 
                 const docRef = firestore.collection('lotto_users').doc(rawId);
-                const queryPromise = docRef.get();
-                const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('TIMEOUT'), 4500));
-                const userDoc = await Promise.race([queryPromise, timeoutPromise]);
+                let userDoc = await safeDocGet(docRef, 3000);
 
-                if (userDoc === 'TIMEOUT') {
-                    if (typeof window.reconnectFirebaseNetwork === 'function') window.reconnectFirebaseNetwork();
+                if (!userDoc) {
+                    // Try forceful reconnect and retry once if mobile socket was dead
+                    if (typeof reconnectFirebaseNetwork === 'function') {
+                        await reconnectFirebaseNetwork(true, 1500);
+                    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
+                        await window.reconnectFirebaseNetwork(true, 1500);
+                    }
+                    userDoc = await safeDocGet(docRef, 2500);
+                }
+
+                if (!userDoc) {
                     if (loginError) { 
                         loginError.textContent = "서버 통신 지연이 발생했습니다. 1~2초 후 다시 접속을 눌러주세요."; 
                         loginError.style.display = 'block'; 
@@ -4141,7 +4230,7 @@ function setupAuthEvents(initFirebaseAndData) {
                     return false;
                 }
 
-                if (!userDoc || !userDoc.exists) {
+                if (!userDoc.exists) {
                     if (loginError) { loginError.textContent = "아이디 또는 비밀번호가 일치하지 않습니다."; loginError.style.display = 'block'; }
                     return false;
                 }
@@ -7971,17 +8060,25 @@ window.startBatchWinningSend = async function() {
 
         let uData = null;
         let isUserAdmin = isAdminUser(authId);
-        try {
-            if (window.db) {
-                const doc = await window.db.collection('lotto_users').doc(authId).get();
-                if (doc.exists) {
-                    uData = doc.data();
-                    if (uData.isAdmin === true || uData.role === 'admin') isUserAdmin = true;
-                }
-            }
-        } catch(e) {}
+        if (window.__currentUser && window.__currentUser.userId === authId) {
+            uData = window.__currentUser;
+            if (window.__currentUser.isAdmin) isUserAdmin = true;
+        }
 
-        const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
+        if (!uData) {
+            try {
+                if (window.db) {
+                    const doc = await safeDocGet(window.db.collection('lotto_users').doc(authId), 2000);
+                    if (doc && doc.exists) {
+                        uData = doc.data();
+                        if (uData.isAdmin === true || uData.role === 'admin') isUserAdmin = true;
+                    }
+                }
+            } catch(e) {}
+        }
+
+        const preloadedP = (typeof state !== 'undefined' && state.globalLedger) ? { ledger: state.globalLedger } : undefined;
+        const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData, preloadedP);
         const targetRound = pStatus.targetRound || getUpcomingLottoRound();
 
         const targetSaturday = getNextSaturday20PM();
@@ -8221,6 +8318,14 @@ try {
     }
 } catch(e) {}
 
+let initialGlobalState = {};
+try {
+    const rawState = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem('lotto_global_state_cache') : null;
+    if (rawState) {
+        initialGlobalState = JSON.parse(rawState) || {};
+    }
+} catch(e) {}
+
 const state = {
     allNumbers: Array.from({ length: 45 }, (_, i) => i + 1),
     allRegisteredUsersList: initialCachedUsers,
@@ -8236,10 +8341,10 @@ const state = {
     COLD_FREQ_GROUP: [],
     COLD_OVERDUE_GROUP: [],
     savedCombinations: [],
-    fixedTop5Combinations: [],
-    fixedTop5Combinations_v3: [],
-    fixedTop5Combinations_v4: [],
-    extraPacks: [], // Up to 5 additional 10-combo packs: [{ packId: 1, name: '추가 1', combos: [...] }]
+    fixedTop5Combinations: initialGlobalState.fixedTop5Combinations || [],
+    fixedTop5Combinations_v3: initialGlobalState.fixedTop5Combinations_v3 || [],
+    fixedTop5Combinations_v4: initialGlobalState.fixedTop5Combinations_v4 || [],
+    extraPacks: initialGlobalState.extraPacks || [], // Up to 5 additional 10-combo packs: [{ packId: 1, name: '추가 1', combos: [...] }]
     editingLedgerInfo: null,
     selectedWheelingPool: [3, 7, 12, 18, 21, 27, 34, 38, 42, 45],
     comboChartInstances: [],
@@ -8280,7 +8385,7 @@ function initHistory() {
  */
 function saveGlobalState() {
     const currentRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
-    db.set('lotto_app_state', 'global_state', removeUndefined({
+    const payload = removeUndefined({
         round: currentRound,
         aiState: state.aiState,
         fixedTop5Combinations: state.fixedTop5Combinations,
@@ -8288,9 +8393,11 @@ function saveGlobalState() {
         fixedTop5Combinations_v4: state.fixedTop5Combinations_v4,
         extraPacks: state.extraPacks || [],
         updatedAt: new Date().toISOString()
-    }));
+    });
+    db.set('lotto_app_state', 'global_state', payload);
     try {
         SafeLocalStorage.setItem('lotto_extra_packs', JSON.stringify(state.extraPacks || []));
+        SafeLocalStorage.setItem('lotto_global_state_cache', JSON.stringify(payload));
     } catch(e) {}
 }
 
@@ -11638,7 +11745,9 @@ function getSafeActualDraw(round) {
 
         1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-12' },
 
-        1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-19' }
+        1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-19' },
+
+        1243: { numbers: [9, 18, 24, 38, 43, 44], bonus: 35, rank1Prize: 2200000000, rank2Prize: 50000000, rank3Prize: 1500000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-26' }
 
     };
 
@@ -21083,7 +21192,7 @@ const { state, saveGlobalState } = (typeof __M_services_lotto_state !== 'undefin
 const { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { createBallHtml } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getEffectiveGeneratorUserId } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
-const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
+const { db, safeDocGet } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPermanentUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getAllUnifiedRegisteredUsers } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
 const { getComboNumbers, getLedger, getHistoricalTop10Combinations, saveToLedger } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
@@ -22587,8 +22696,8 @@ async function syncUserActiveExtraPacksFromCloud(userId, round) {
     try {
         let cloudPacks = null;
 
-        // 1. Primary: fetch from writable lotto_users collection
-        const uDoc = await firestore.collection('lotto_users').doc(effectiveUserId).get();
+        // 1. Primary: fetch from writable lotto_users collection using safeDocGet
+        const uDoc = await safeDocGet(firestore.collection('lotto_users').doc(effectiveUserId), 2000);
         if (uDoc && uDoc.exists) {
             const ud = uDoc.data();
             if (ud && ud.activeExtraPacks && Array.isArray(ud.activeExtraPacks[curRound])) {
@@ -22601,7 +22710,7 @@ async function syncUserActiveExtraPacksFromCloud(userId, round) {
         // 2. Secondary fallback
         if (!cloudPacks) {
             try {
-                const cloudDoc = await firestore.collection('lotto_user_extra_packs').doc(`${effectiveUserId}_${curRound}`).get();
+                const cloudDoc = await safeDocGet(firestore.collection('lotto_user_extra_packs').doc(`${effectiveUserId}_${curRound}`), 2000);
                 if (cloudDoc && cloudDoc.exists) {
                     const d = cloudDoc.data();
                     if (d && Array.isArray(d.packIds)) cloudPacks = d.packIds;
@@ -27976,7 +28085,7 @@ function generatePredictionReport() {
         else displayName = effectiveUserId;
     }
 
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1241);
+    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : 1244));
     const targetCombosUser = (effectiveUserId === 'all') ? 'master' : effectiveUserId;
 
     // 2. Fetch User's Real Historical Review Stats (1235회차 ~ 최신)
@@ -30876,7 +30985,8 @@ const OFFICIAL_DRAWS = {
     1239: { numbers: [1, 3, 17, 26, 33, 42], bonus: 41, rank1Prize: 1980500000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.08.29' },
     1240: { numbers: [11, 13, 19, 20, 31, 44], bonus: 27, rank1Prize: 2000000000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.05' },
     1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.12' },
-    1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.19' }
+    1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.19' },
+    1243: { numbers: [9, 18, 24, 38, 43, 44], bonus: 35, rank1Prize: 2200000000, rank2Prize: 50000000, rank3Prize: 1500000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.26' }
 };
 
 function getDrawDataForAudit(round) {
@@ -31053,7 +31163,7 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
 
     // Process Purchases & Snapshots
     const processedUsers = [];
-    const allRoundsSet = new Set([1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242]);
+    const allRoundsSet = new Set([1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243]);
 
     const purchasesMap = {};
     purchasesDocs.forEach(p => {
@@ -33346,11 +33456,24 @@ async function initLottoService(force = false) {
             updateDebugMonitor(state.globalLedger);
         }
 
-        // 1) Local storage pre-load for extra history (offline resilient)
+        // 1) Local storage pre-load for extra history & global state (offline resilient)
         try {
             const localExtra = SafeLocalStorage.getItem('lotto_extra_history');
             if (localExtra) {
                 state.lottoExtraHistory = JSON.parse(localExtra) || {};
+            }
+        } catch(e) {}
+
+        try {
+            const localState = SafeLocalStorage.getItem('lotto_global_state_cache');
+            if (localState) {
+                const parsed = JSON.parse(localState);
+                if (parsed && typeof parsed === 'object') {
+                    if (parsed.aiState) state.aiState = parsed.aiState;
+                    if (parsed.fixedTop5Combinations_v3 && parsed.fixedTop5Combinations_v3.length > 0) state.fixedTop5Combinations_v3 = parsed.fixedTop5Combinations_v3;
+                    if (parsed.fixedTop5Combinations_v4 && parsed.fixedTop5Combinations_v4.length > 0) state.fixedTop5Combinations_v4 = parsed.fixedTop5Combinations_v4;
+                    if (Array.isArray(parsed.extraPacks)) state.extraPacks = parsed.extraPacks;
+                }
             }
         } catch(e) {}
 
@@ -33417,6 +33540,9 @@ async function initLottoService(force = false) {
                 if (stateDoc.fixedTop5Combinations_v3) state.fixedTop5Combinations_v3 = stateDoc.fixedTop5Combinations_v3;
                 if (stateDoc.fixedTop5Combinations_v4) state.fixedTop5Combinations_v4 = stateDoc.fixedTop5Combinations_v4;
                 if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks;
+                try {
+                    SafeLocalStorage.setItem('lotto_global_state_cache', JSON.stringify(stateDoc));
+                } catch(e) {}
             } else {
                 state.fixedTop5Combinations = [];
                 state.fixedTop5Combinations_v3 = [];
@@ -33466,6 +33592,7 @@ async function initLottoService(force = false) {
                         : state.fixedTop5Combinations_v3;
 
                     if (changed) {
+                        try { SafeLocalStorage.setItem('lotto_global_state_cache', JSON.stringify(data)); } catch(e) {}
                         renderTop5Combinations(false);
                     }
                 }
@@ -40221,22 +40348,68 @@ async function renderLandingDashboard() {
     const elMobileUserName = document.getElementById('lpMobileUserName');
     if (elMobileUserName) elMobileUserName.textContent = displayName || '회원';
 
-    const latestRound = (state && state.latestRound) ? state.latestRound : 1241;
+    const latestDrawnRound = (state && state.latestDrawData && state.latestDrawData.drwNo) 
+        ? state.latestDrawData.drwNo 
+        : ((state && state.latestRoundNum) ? state.latestRoundNum : (typeof window !== 'undefined' && window.getLatestDrawnRound ? window.getLatestDrawnRound() : 1243));
+
+    const upcomingRound = (typeof window !== 'undefined' && window.getUpcomingLottoRound) 
+        ? window.getUpcomingLottoRound() 
+        : (latestDrawnRound + 1);
+
+    // Identify user's purchased rounds from myFin breakdown
+    const roundBreakdown = (myFin && myFin.roundBreakdown) ? myFin.roundBreakdown : {};
+    const purchasedRounds = Object.keys(roundBreakdown)
+        .map(Number)
+        .filter(r => !isNaN(r) && r > 0 && ((roundBreakdown[r].combos > 0) || (roundBreakdown[r].invest > 0)))
+        .sort((a, b) => b - a);
+
     const elMobileConfirmedPill = document.getElementById('lpMobileConfirmedPill');
-    if (elMobileConfirmedPill) elMobileConfirmedPill.textContent = `${latestRound}회 구매확정`;
+    if (elMobileConfirmedPill) {
+        if (purchasedRounds.includes(upcomingRound)) {
+            elMobileConfirmedPill.textContent = `${upcomingRound}회 구매확정`;
+            elMobileConfirmedPill.style.background = 'rgba(16, 185, 129, 0.2)';
+            elMobileConfirmedPill.style.color = '#34d399';
+        } else if (purchasedRounds.includes(latestDrawnRound)) {
+            elMobileConfirmedPill.textContent = `${latestDrawnRound}회 구매확정`;
+            elMobileConfirmedPill.style.background = 'rgba(56, 189, 248, 0.2)';
+            elMobileConfirmedPill.style.color = '#38bdf8';
+        } else if (purchasedRounds.length > 0) {
+            elMobileConfirmedPill.textContent = `${purchasedRounds[0]}회 구매확정`;
+            elMobileConfirmedPill.style.background = 'rgba(56, 189, 248, 0.2)';
+            elMobileConfirmedPill.style.color = '#38bdf8';
+        } else {
+            elMobileConfirmedPill.textContent = `${latestDrawnRound}회 구매확정`;
+            elMobileConfirmedPill.style.background = 'rgba(148, 163, 184, 0.15)';
+            elMobileConfirmedPill.style.color = '#94a3b8';
+        }
+    }
 
     const elWinStripText = document.getElementById('lpWinStripText');
     if (elWinStripText) {
-        if (myFin && myFin.totalWins > 0) {
-            const ranksArr = [];
-            if (myFin.hits[4] > 0) ranksArr.push(`5등 ${myFin.hits[4]}건`);
-            if (myFin.hits[3] > 0) ranksArr.push(`4등 ${myFin.hits[3]}건`);
-            if (myFin.hits[2] > 0) ranksArr.push(`3등 ${myFin.hits[2]}건`);
-            if (myFin.hits[1] > 0) ranksArr.push(`2등 ${myFin.hits[1]}건`);
-            if (myFin.hits[0] > 0) ranksArr.push(`1등 ${myFin.hits[0]}건`);
-            elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> ${ranksArr.join(', ') || '당첨'} (총 ${(myFin.totalPrize || 0).toLocaleString()}원)`;
+        // Prioritize the latest drawn round the user participated in
+        const drawnPurchased = purchasedRounds.filter(r => r <= latestDrawnRound);
+        if (drawnPurchased.length > 0) {
+            const targetRound = drawnPurchased.includes(latestDrawnRound) ? latestDrawnRound : drawnPurchased[0];
+            const roundData = roundBreakdown[targetRound] || {};
+            const roundHits = roundData.hits || [0, 0, 0, 0, 0, 0]; // [miss, rank1, rank2, rank3, rank4, rank5]
+            const roundWins = (roundHits[1] || 0) + (roundHits[2] || 0) + (roundHits[3] || 0) + (roundHits[4] || 0) + (roundHits[5] || 0);
+
+            if (roundWins > 0) {
+                const ranksArr = [];
+                if (roundHits[1] > 0) ranksArr.push(`1등 ${roundHits[1]}건`);
+                if (roundHits[2] > 0) ranksArr.push(`2등 ${roundHits[2]}건`);
+                if (roundHits[3] > 0) ranksArr.push(`3등 ${roundHits[3]}건`);
+                if (roundHits[4] > 0) ranksArr.push(`4등 ${roundHits[4]}건`);
+                if (roundHits[5] > 0) ranksArr.push(`5등 ${roundHits[5]}건`);
+                elWinStripText.innerHTML = `<strong>제 ${targetRound}회 적중:</strong> ${ranksArr.join(', ')} (총 ${(roundData.prize || 0).toLocaleString()}원)`;
+            } else {
+                elWinStripText.innerHTML = `<strong>제 ${targetRound}회:</strong> 구매 ${roundData.combos || 0}게임 미당첨 (다음 회차 대박 기원!)`;
+            }
+        } else if (purchasedRounds.includes(upcomingRound)) {
+            const upData = roundBreakdown[upcomingRound] || {};
+            elWinStripText.innerHTML = `<strong>제 ${upcomingRound}회:</strong> 구매확정 완료 (${upData.combos || 0}게임 · 추첨 대기 중)`;
         } else {
-            elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> 5등 2건 (총 10,000원)`;
+            elWinStripText.innerHTML = `<strong>제 ${latestDrawnRound}회 추첨완료:</strong> [장부 상세 >]에서 영수증을 등록하고 당첨을 확인하세요!`;
         }
     }
 
@@ -40432,7 +40605,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             .filter(n => !isNaN(n) && n >= fromRound && Array.isArray(history[n]?.numbers) && history[n].numbers.length === 6)
             .sort((a, b) => a - b);
 
-        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
+        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
         const maxRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);
@@ -40492,7 +40665,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
                 // Fallback direct calculation across rounds 1235..maxRound and registered users
                 const userList = getAllUnifiedRegisteredUsers();
 
-                const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
+                const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243].filter(r => r <= maxRound);
 
                 rounds.forEach(rnd => {
                     userList.forEach(u => {
@@ -41221,6 +41394,13 @@ window.showLotto = function(pushHistory = true) {
         }
     }
 
+    // Proactively revive Firestore network connection on entering main lotto program
+    if (typeof reconnectFirebaseNetwork === 'function') {
+        reconnectFirebaseNetwork();
+    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
+        window.reconnectFirebaseNetwork();
+    }
+
     _switchPage('appContainer', pushHistory);
     try {
         if (typeof switchLottoTab === 'function') {
@@ -41353,35 +41533,72 @@ function runInit() {
     }, 20);
 }
 
+let _resumeDebounceTimer = null;
+let _lastResumeTimestamp = 0;
+
 function handleAppResumeAndWakeup() {
-    // 1. Immediately revive Firestore network connection (eliminates mobile sleep/background lag)
-    if (typeof reconnectFirebaseNetwork === 'function') {
-        reconnectFirebaseNetwork();
-    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
-        window.reconnectFirebaseNetwork();
-    } else if (window.db && typeof window.db.enableNetwork === 'function') {
-        try { window.db.enableNetwork(); } catch(e) {}
+    const now = Date.now();
+    if (now - _lastResumeTimestamp < 600) {
+        return; // Debounce rapid concurrent browser events
+    }
+    _lastResumeTimestamp = now;
+
+    if (_resumeDebounceTimer) {
+        clearTimeout(_resumeDebounceTimer);
     }
 
-    // 2. Render Landing UI immediately from cache (0ms instant response)
-    if (typeof renderLandingDashboard === 'function') {
-        try { renderLandingDashboard(); } catch(e) {}
-    }
+    _resumeDebounceTimer = setTimeout(async () => {
+        // 1. Immediately revive Firestore network connection (force reset dead sockets)
+        if (typeof reconnectFirebaseNetwork === 'function') {
+            await reconnectFirebaseNetwork(true);
+        } else if (typeof window.reconnectFirebaseNetwork === 'function') {
+            await window.reconnectFirebaseNetwork(true);
+        } else if (window.db && typeof window.db.enableNetwork === 'function') {
+            try {
+                if (typeof window.db.disableNetwork === 'function') await window.db.disableNetwork();
+                await window.db.enableNetwork();
+            } catch(e) {}
+        }
 
-    // 3. Fast non-blocking version cross-check
-    if (typeof window.checkLatestBuildVersion === 'function') {
-        try { window.checkLatestBuildVersion(true); } catch(e) {}
-    }
+        // 2. Refresh active page view immediately from local cache (0ms instant response)
+        const appContainer = document.getElementById('appContainer');
+        const isLottoActive = appContainer && (appContainer.classList.contains('active') || appContainer.style.display === 'flex');
+        const totoPage = document.getElementById('totoPage');
+        const isTotoActive = totoPage && (totoPage.classList.contains('active') || totoPage.style.display === 'block');
 
-    // 4. If logged in but login modal is lingering, re-verify auth
-    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
-    const loginModal = document.getElementById('loginModalOverlay');
-    const isModalVisible = loginModal && loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden');
-    if (authId && isModalVisible) {
-        setTimeout(() => {
-            try { checkAuthOnLoad(initLottoService); } catch(e) {}
-        }, 50);
-    }
+        if (isLottoActive) {
+            // Main Lotto Program active: refresh active lotto tab view
+            const curTab = window.__currentLottoTab || 'tab-generator';
+            if (typeof window.switchLottoTab === 'function') {
+                try { window.switchLottoTab(curTab); } catch(e) {}
+            }
+        } else if (isTotoActive) {
+            // Toto Program active
+            if (typeof renderTotoDashboard === 'function') {
+                try { renderTotoDashboard(); } catch(e) {}
+            }
+        } else {
+            // Landing Dashboard active
+            if (typeof renderLandingDashboard === 'function') {
+                try { renderLandingDashboard(); } catch(e) {}
+            }
+        }
+
+        // 3. Fast non-blocking version cross-check
+        if (typeof window.checkLatestBuildVersion === 'function') {
+            try { window.checkLatestBuildVersion(true); } catch(e) {}
+        }
+
+        // 4. If logged in but login modal is lingering, re-verify auth
+        const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
+        const loginModal = document.getElementById('loginModalOverlay');
+        const isModalVisible = loginModal && loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden');
+        if (authId && isModalVisible) {
+            setTimeout(() => {
+                try { checkAuthOnLoad(initLottoService); } catch(e) {}
+            }, 50);
+        }
+    }, 100);
 }
 
 if (typeof document !== 'undefined') {

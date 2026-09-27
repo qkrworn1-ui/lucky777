@@ -94,22 +94,68 @@ export async function renderLandingDashboard() {
     const elMobileUserName = document.getElementById('lpMobileUserName');
     if (elMobileUserName) elMobileUserName.textContent = displayName || '회원';
 
-    const latestRound = (state && state.latestRound) ? state.latestRound : 1241;
+    const latestDrawnRound = (state && state.latestDrawData && state.latestDrawData.drwNo) 
+        ? state.latestDrawData.drwNo 
+        : ((state && state.latestRoundNum) ? state.latestRoundNum : (typeof window !== 'undefined' && window.getLatestDrawnRound ? window.getLatestDrawnRound() : 1243));
+
+    const upcomingRound = (typeof window !== 'undefined' && window.getUpcomingLottoRound) 
+        ? window.getUpcomingLottoRound() 
+        : (latestDrawnRound + 1);
+
+    // Identify user's purchased rounds from myFin breakdown
+    const roundBreakdown = (myFin && myFin.roundBreakdown) ? myFin.roundBreakdown : {};
+    const purchasedRounds = Object.keys(roundBreakdown)
+        .map(Number)
+        .filter(r => !isNaN(r) && r > 0 && ((roundBreakdown[r].combos > 0) || (roundBreakdown[r].invest > 0)))
+        .sort((a, b) => b - a);
+
     const elMobileConfirmedPill = document.getElementById('lpMobileConfirmedPill');
-    if (elMobileConfirmedPill) elMobileConfirmedPill.textContent = `${latestRound}회 구매확정`;
+    if (elMobileConfirmedPill) {
+        if (purchasedRounds.includes(upcomingRound)) {
+            elMobileConfirmedPill.textContent = `${upcomingRound}회 구매확정`;
+            elMobileConfirmedPill.style.background = 'rgba(16, 185, 129, 0.2)';
+            elMobileConfirmedPill.style.color = '#34d399';
+        } else if (purchasedRounds.includes(latestDrawnRound)) {
+            elMobileConfirmedPill.textContent = `${latestDrawnRound}회 구매확정`;
+            elMobileConfirmedPill.style.background = 'rgba(56, 189, 248, 0.2)';
+            elMobileConfirmedPill.style.color = '#38bdf8';
+        } else if (purchasedRounds.length > 0) {
+            elMobileConfirmedPill.textContent = `${purchasedRounds[0]}회 구매확정`;
+            elMobileConfirmedPill.style.background = 'rgba(56, 189, 248, 0.2)';
+            elMobileConfirmedPill.style.color = '#38bdf8';
+        } else {
+            elMobileConfirmedPill.textContent = `${latestDrawnRound}회 구매확정`;
+            elMobileConfirmedPill.style.background = 'rgba(148, 163, 184, 0.15)';
+            elMobileConfirmedPill.style.color = '#94a3b8';
+        }
+    }
 
     const elWinStripText = document.getElementById('lpWinStripText');
     if (elWinStripText) {
-        if (myFin && myFin.totalWins > 0) {
-            const ranksArr = [];
-            if (myFin.hits[4] > 0) ranksArr.push(`5등 ${myFin.hits[4]}건`);
-            if (myFin.hits[3] > 0) ranksArr.push(`4등 ${myFin.hits[3]}건`);
-            if (myFin.hits[2] > 0) ranksArr.push(`3등 ${myFin.hits[2]}건`);
-            if (myFin.hits[1] > 0) ranksArr.push(`2등 ${myFin.hits[1]}건`);
-            if (myFin.hits[0] > 0) ranksArr.push(`1등 ${myFin.hits[0]}건`);
-            elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> ${ranksArr.join(', ') || '당첨'} (총 ${(myFin.totalPrize || 0).toLocaleString()}원)`;
+        // Prioritize the latest drawn round the user participated in
+        const drawnPurchased = purchasedRounds.filter(r => r <= latestDrawnRound);
+        if (drawnPurchased.length > 0) {
+            const targetRound = drawnPurchased.includes(latestDrawnRound) ? latestDrawnRound : drawnPurchased[0];
+            const roundData = roundBreakdown[targetRound] || {};
+            const roundHits = roundData.hits || [0, 0, 0, 0, 0, 0]; // [miss, rank1, rank2, rank3, rank4, rank5]
+            const roundWins = (roundHits[1] || 0) + (roundHits[2] || 0) + (roundHits[3] || 0) + (roundHits[4] || 0) + (roundHits[5] || 0);
+
+            if (roundWins > 0) {
+                const ranksArr = [];
+                if (roundHits[1] > 0) ranksArr.push(`1등 ${roundHits[1]}건`);
+                if (roundHits[2] > 0) ranksArr.push(`2등 ${roundHits[2]}건`);
+                if (roundHits[3] > 0) ranksArr.push(`3등 ${roundHits[3]}건`);
+                if (roundHits[4] > 0) ranksArr.push(`4등 ${roundHits[4]}건`);
+                if (roundHits[5] > 0) ranksArr.push(`5등 ${roundHits[5]}건`);
+                elWinStripText.innerHTML = `<strong>제 ${targetRound}회 적중:</strong> ${ranksArr.join(', ')} (총 ${(roundData.prize || 0).toLocaleString()}원)`;
+            } else {
+                elWinStripText.innerHTML = `<strong>제 ${targetRound}회:</strong> 구매 ${roundData.combos || 0}게임 미당첨 (다음 회차 대박 기원!)`;
+            }
+        } else if (purchasedRounds.includes(upcomingRound)) {
+            const upData = roundBreakdown[upcomingRound] || {};
+            elWinStripText.innerHTML = `<strong>제 ${upcomingRound}회:</strong> 구매확정 완료 (${upData.combos || 0}게임 · 추첨 대기 중)`;
         } else {
-            elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> 5등 2건 (총 10,000원)`;
+            elWinStripText.innerHTML = `<strong>제 ${latestDrawnRound}회 추첨완료:</strong> [장부 상세 >]에서 영수증을 등록하고 당첨을 확인하세요!`;
         }
     }
 
@@ -305,7 +351,7 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
             .filter(n => !isNaN(n) && n >= fromRound && Array.isArray(history[n]?.numbers) && history[n].numbers.length === 6)
             .sort((a, b) => a - b);
 
-        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
+        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
         const maxRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);
@@ -365,7 +411,7 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                 // Fallback direct calculation across rounds 1235..maxRound and registered users
                 const userList = getAllUnifiedRegisteredUsers();
 
-                const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
+                const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243].filter(r => r <= maxRound);
 
                 rounds.forEach(rnd => {
                     userList.forEach(u => {
