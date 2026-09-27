@@ -1202,7 +1202,7 @@ export function openManualLedgerModal() {
             if (Array.isArray(state.allRegisteredUsersList) && state.allRegisteredUsersList.length > 0) {
                 state.allRegisteredUsersList.forEach(u => {
                     const uId = (u.id || '').trim().toLowerCase();
-                    if (uId && uId !== currentAuthId && uId !== 'admin' && !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'guest' && uId !== 'sample') {
+                    if (uId && uId !== currentAuthId && uId !== 'admin' && !uId.startsWith('{') && !uId.startsWith('test') && !uId.startsWith('guest') && uId !== 'sample') {
                         userMap.set(uId, { id: uId, name: u.name || '', phone: u.phone || '' });
                     }
                 });
@@ -1216,7 +1216,7 @@ export function openManualLedgerModal() {
                             state.allRegisteredUsersList = parsed;
                             parsed.forEach(u => {
                                 const uId = (u.id || '').trim().toLowerCase();
-                                if (uId && uId !== currentAuthId && uId !== 'admin' && !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'guest' && uId !== 'sample') {
+                                if (uId && uId !== currentAuthId && uId !== 'admin' && !uId.startsWith('{') && !uId.startsWith('test') && !uId.startsWith('guest') && uId !== 'sample') {
                                     userMap.set(uId, { id: uId, name: u.name || '', phone: u.phone || '' });
                                 }
                             });
@@ -1229,7 +1229,7 @@ export function openManualLedgerModal() {
             if (state.allUsersPurchasesMap) {
                 Object.keys(state.allUsersPurchasesMap).forEach(uId => {
                     const clean = (uId || '').trim().toLowerCase();
-                    if (clean && clean !== currentAuthId && clean !== 'admin' && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'guest' && clean !== 'sample' && !userMap.has(clean)) {
+                    if (clean && clean !== currentAuthId && clean !== 'admin' && !clean.startsWith('{') && !clean.startsWith('test') && !clean.startsWith('guest') && clean !== 'sample' && !userMap.has(clean)) {
                         const rName = state.allUsersPurchasesMap[clean]?.realName || (typeof getUserRealName === 'function' ? getUserRealName(clean) : '') || '';
                         userMap.set(clean, { id: clean, name: rName, phone: '' });
                     }

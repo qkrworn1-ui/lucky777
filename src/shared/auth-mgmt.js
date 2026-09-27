@@ -6324,10 +6324,10 @@ window.startBatchWinningSend = async function() {
             
             const isTestUserId = (rawId) => {
                 const id = (rawId || '').trim().toLowerCase();
-                return id.startsWith('test_') || id.startsWith('{') || 
+                return id.startsWith('test') || id.startsWith('guest') || id.startsWith('{') || 
                        id === 'user_alpha' || id === 'user_beta' || id === 'user_gamma' || 
                        id === 'user_1235' || id === 'user_1238' || id === 'user_1240' || id === 'user_1241' ||
-                       id === 'sample' || id === 'hms';
+                       id === 'sample' || id === 'hms' || id === 'all';
             };
 
             let deletedUserCount = 0;

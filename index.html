@@ -118,7 +118,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.09.24.1204
+                        v2026.09.26.1522
                     </span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -3888,7 +3888,10 @@
 
         function getVersionJsonUrl() {
             var loc = window.location;
-            var path = loc.pathname;
+            if (loc.protocol === 'file:') {
+                return 'version.json?_t=' + Date.now();
+            }
+            var path = loc.pathname || '/';
             if (!path.endsWith('/')) {
                 path = path.substring(0, path.lastIndexOf('/') + 1);
             }
@@ -3896,7 +3899,7 @@
         }
 
         function getHighestKnownVersion() {
-            var highest = window.APP_VERSION || 'v2026.09.24.0103.52';
+            var highest = window.APP_VERSION || 'v2026.09.26.1522';
             if (window.HOSTING_LATEST_VERSION && compareVersions(window.HOSTING_LATEST_VERSION, highest) > 0) {
                 highest = window.HOSTING_LATEST_VERSION;
             }
@@ -4002,33 +4005,86 @@
 
         // 2. 2-Track (Firebase + Hosting version.json) Cross-Check
         window.checkLatestBuildVersion = async function(isSilent) {
-            if (window.location && window.location.protocol === 'file:') return;
+            // Track 1: Hosting Server version.json
             try {
-                // Track 1: Hosting Server version.json
                 var url = getVersionJsonUrl();
                 var res = await fetch(url, { cache: 'no-store' });
                 if (res.ok) {
                     var data = await res.json();
-                    window.HOSTING_LATEST_VERSION = data.version;
-                    window.SERVER_BUILD_DATE = data.buildDate || '';
+                    if (data && data.version) {
+                        window.HOSTING_LATEST_VERSION = data.version;
+                        window.SERVER_BUILD_DATE = data.buildDate || '';
+                    }
+                } else if (window.location && window.location.protocol !== 'file:') {
+                    // Fallback relative fetch if absolute path had 404 or rewrite
+                    try {
+                        var relRes = await fetch('version.json?_t=' + Date.now(), { cache: 'no-store' });
+                        if (relRes.ok) {
+                            var relData = await relRes.json();
+                            if (relData && relData.version) {
+                                window.HOSTING_LATEST_VERSION = relData.version;
+                                window.SERVER_BUILD_DATE = relData.buildDate || '';
+                            }
+                        }
+                    } catch(relErr) {}
                 }
             } catch (err) {
                 console.warn('[checkLatestBuildVersion] Hosting fetch skipped:', err);
             }
 
-            // Track 2: Direct Firestore Document Read (with fast 2.5s timeout race)
+            // Track 2: Direct Firestore Document Read (SDK + Instant REST API Fallback)
             try {
+                var fetchedFbVer = null;
+                var fetchedFbDate = null;
+
+                // 2A: Try Firestore SDK read with server source (up to 2s race)
                 if (window.db && typeof window.db.collection === 'function') {
-                    var docPromise = window.db.collection('lotto_purchases').doc('app_latest_version').get();
-                    var timeoutPromise = new Promise(function(resolve) { setTimeout(function() { resolve(null); }, 2500); });
-                    var doc = await Promise.race([docPromise, timeoutPromise]);
-                    if (doc && doc.exists) {
-                        var fbData = doc.data();
-                        if (fbData && fbData.version) {
-                            window.FIREBASE_LATEST_VERSION = fbData.version;
-                            window.FIREBASE_BUILD_DATE = fbData.buildDate || '';
+                    try {
+                        var docPromise = window.db.collection('lotto_purchases').doc('app_latest_version').get({ source: 'server' });
+                        var timeoutPromise = new Promise(function(resolve) { setTimeout(function() { resolve(null); }, 2000); });
+                        var doc = await Promise.race([docPromise, timeoutPromise]);
+                        if (doc && doc.exists) {
+                            var fbData = doc.data();
+                            if (fbData && fbData.version) {
+                                fetchedFbVer = fbData.version;
+                                fetchedFbDate = fbData.buildDate || fbData.updatedAt || '';
+                            }
                         }
+                    } catch(sdkErr) {
+                        try {
+                            var cacheDoc = await window.db.collection('lotto_purchases').doc('app_latest_version').get();
+                            if (cacheDoc && cacheDoc.exists) {
+                                var cData = cacheDoc.data();
+                                if (cData && cData.version) {
+                                    fetchedFbVer = cData.version;
+                                    fetchedFbDate = cData.buildDate || cData.updatedAt || '';
+                                }
+                            }
+                        } catch(cErr) {}
                     }
+                }
+
+                // 2B: Direct Firestore REST API (Always fast, bypasses IndexedDB tab locks, works in all environments)
+                if (!fetchedFbVer) {
+                    try {
+                        var restUrl = 'https://firestore.googleapis.com/v1/projects/sonamu-jokgu-club/databases/(default)/documents/lotto_purchases/app_latest_version?key=AIzaSyAnkGVAlO39p6rnTEibygeQTBYDbp505dA';
+                        var restRes = await fetch(restUrl, { cache: 'no-store' });
+                        if (restRes.ok) {
+                            var restData = await restRes.json();
+                            var fields = restData.fields || {};
+                            if (fields.version && fields.version.stringValue) {
+                                fetchedFbVer = fields.version.stringValue;
+                                fetchedFbDate = (fields.buildDate && fields.buildDate.stringValue) || (fields.updatedAt && fields.updatedAt.stringValue) || '';
+                            }
+                        }
+                    } catch(restErr) {
+                        console.warn('[checkLatestBuildVersion] Firestore REST fetch skipped:', restErr);
+                    }
+                }
+
+                if (fetchedFbVer) {
+                    window.FIREBASE_LATEST_VERSION = fetchedFbVer;
+                    window.FIREBASE_BUILD_DATE = fetchedFbDate;
                 }
             } catch (fbErr) {
                 console.warn('[checkLatestBuildVersion] Firestore read skipped:', fbErr);

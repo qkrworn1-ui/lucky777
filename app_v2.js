@@ -82,10 +82,10 @@ function isSystemOrDummyUser(userId) {
         } catch(e) {}
     }
     if (!clean) return true;
-    if (clean === 'all' || clean === 'guest' || clean === 'app_latest_version' ||
+    if (clean === 'all' || clean.startsWith('guest') || clean === 'app_latest_version' ||
         clean === 'global_trash' || clean === 'global_state' || clean === 'global_saved' || clean === 'extra_history' ||
         clean === 'user_alpha' || clean === 'user_beta' || clean === 'user_gamma' || clean === 'sample' || clean === 'hms' ||
-        clean.startsWith('test_') || clean.startsWith('{')) {
+        clean.startsWith('test') || clean.startsWith('{') || clean.includes('테스트')) {
         return true;
     }
     return false;
@@ -1306,10 +1306,10 @@ const UserContextManager = {
             if (!u || !u.id) return false;
             const uId = String(u.id).trim().toLowerCase();
             if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted') return false;
-            if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'app_latest_version' ||
+            if (uId.startsWith('{') || uId.startsWith('test') || uId.startsWith('guest') || uId === 'app_latest_version' ||
                 uId === 'global_trash' || uId === 'global_state' || uId === 'global_saved' || uId === 'extra_history' ||
                 uId === 'user_alpha' || uId === 'user_beta' || uId === 'user_gamma' || uId === 'sample' || uId === 'hms' ||
-                uId === 'guest' || uId === 'all') {
+                uId === 'all' || u.isTest === true || (u.name && u.name.includes('테스트')) || (u.realName && u.realName.includes('테스트'))) {
                 return false;
             }
             // Filter out non-canonical name aliases if an official kakao account already exists for this person
@@ -7709,10 +7709,10 @@ window.startBatchWinningSend = async function() {
             
             const isTestUserId = (rawId) => {
                 const id = (rawId || '').trim().toLowerCase();
-                return id.startsWith('test_') || id.startsWith('{') || 
+                return id.startsWith('test') || id.startsWith('guest') || id.startsWith('{') || 
                        id === 'user_alpha' || id === 'user_beta' || id === 'user_gamma' || 
                        id === 'user_1235' || id === 'user_1238' || id === 'user_1240' || id === 'user_1241' ||
-                       id === 'sample' || id === 'hms';
+                       id === 'sample' || id === 'hms' || id === 'all';
             };
 
             let deletedUserCount = 0;
@@ -29936,7 +29936,7 @@ function openManualLedgerModal() {
             if (Array.isArray(state.allRegisteredUsersList) && state.allRegisteredUsersList.length > 0) {
                 state.allRegisteredUsersList.forEach(u => {
                     const uId = (u.id || '').trim().toLowerCase();
-                    if (uId && uId !== currentAuthId && uId !== 'admin' && !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'guest' && uId !== 'sample') {
+                    if (uId && uId !== currentAuthId && uId !== 'admin' && !uId.startsWith('{') && !uId.startsWith('test') && !uId.startsWith('guest') && uId !== 'sample') {
                         userMap.set(uId, { id: uId, name: u.name || '', phone: u.phone || '' });
                     }
                 });
@@ -29950,7 +29950,7 @@ function openManualLedgerModal() {
                             state.allRegisteredUsersList = parsed;
                             parsed.forEach(u => {
                                 const uId = (u.id || '').trim().toLowerCase();
-                                if (uId && uId !== currentAuthId && uId !== 'admin' && !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'guest' && uId !== 'sample') {
+                                if (uId && uId !== currentAuthId && uId !== 'admin' && !uId.startsWith('{') && !uId.startsWith('test') && !uId.startsWith('guest') && uId !== 'sample') {
                                     userMap.set(uId, { id: uId, name: u.name || '', phone: u.phone || '' });
                                 }
                             });
@@ -29963,7 +29963,7 @@ function openManualLedgerModal() {
             if (state.allUsersPurchasesMap) {
                 Object.keys(state.allUsersPurchasesMap).forEach(uId => {
                     const clean = (uId || '').trim().toLowerCase();
-                    if (clean && clean !== currentAuthId && clean !== 'admin' && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'guest' && clean !== 'sample' && !userMap.has(clean)) {
+                    if (clean && clean !== currentAuthId && clean !== 'admin' && !clean.startsWith('{') && !clean.startsWith('test') && !clean.startsWith('guest') && clean !== 'sample' && !userMap.has(clean)) {
                         const rName = state.allUsersPurchasesMap[clean]?.realName || (typeof getUserRealName === 'function' ? getUserRealName(clean) : '') || '';
                         userMap.set(clean, { id: clean, name: rName, phone: '' });
                     }

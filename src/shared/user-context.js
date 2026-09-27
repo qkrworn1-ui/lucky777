@@ -328,10 +328,10 @@ export const UserContextManager = {
             if (!u || !u.id) return false;
             const uId = String(u.id).trim().toLowerCase();
             if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted') return false;
-            if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'app_latest_version' ||
+            if (uId.startsWith('{') || uId.startsWith('test') || uId.startsWith('guest') || uId === 'app_latest_version' ||
                 uId === 'global_trash' || uId === 'global_state' || uId === 'global_saved' || uId === 'extra_history' ||
                 uId === 'user_alpha' || uId === 'user_beta' || uId === 'user_gamma' || uId === 'sample' || uId === 'hms' ||
-                uId === 'guest' || uId === 'all') {
+                uId === 'all' || u.isTest === true || (u.name && u.name.includes('테스트')) || (u.realName && u.realName.includes('테스트'))) {
                 return false;
             }
             // Filter out non-canonical name aliases if an official kakao account already exists for this person

@@ -2111,6 +2111,10 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn('forceReloadCache', html_code)
         self.assertIn('targetUrl', html_code)
 
+        # 4. Direct Firestore REST API fallback ensures zero-delay version checking without SDK tab lock
+        self.assertIn('firestore.googleapis.com', html_code)
+        self.assertIn('app_latest_version', html_code)
+
     def test_59_kakao_user_generator_parity_and_mobile_display(self):
         """Test 59: Verify generator combo completeness, defensive fallbacks, and mobile display parity."""
         gen_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')

@@ -142,17 +142,17 @@ def sync_version_assets(auto_bump=True, explicit_version=None, build_desc=""):
         html = re.sub(r'data\.js\?v=[a-zA-Z0-9_.-]+', f'data.js?v={v_num}', html)
         html = re.sub(r'New version \([^)]+\) installed!', f'New version ({version}) installed!', html)
         html = re.sub(
-            r'(<span id="appVersionBadgeLanding"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)([vV0-9_.-]+)(\s*<i class="fa-solid fa-rotate"[^>]*></i>\s*</span>)',
+            r'(<span[^>]*id="appVersionBadgeLanding"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)([vV0-9_.-]+)(\s*<i class="fa-solid fa-rotate"[^>]*></i>\s*</span>)',
             rf'\g<1>{version}\g<3>',
             html
         )
         html = re.sub(
-            r'(<span class="app-version-badge"[^>]*>\s*)([vV0-9_.-]+)(\s*</span>)',
+            r'(<span[^>]*class="[^"]*\bapp-version-badge\b[^"]*"[^>]*>\s*)([vV0-9_.-]+)(\s*</span>)',
             rf'\g<1>{version}\g<3>',
             html
         )
         html = re.sub(
-            r'(<span class="app-version-badge"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)([vV0-9_.-]+)(\s*</span>)',
+            r'(<span[^>]*class="[^"]*\bapp-version-badge\b[^"]*"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)([vV0-9_.-]+)(\s*</span>)',
             rf'\g<1>{version}\g<3>',
             html
         )
