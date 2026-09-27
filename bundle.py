@@ -6,6 +6,8 @@ import unittest
 import datetime
 import urllib.request
 
+sys.dont_write_bytecode = True
+
 if sys.platform == 'win32':
     try:
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
@@ -116,8 +118,8 @@ def sync_version_assets(auto_bump=True, explicit_version=None, build_desc=""):
             existing_entry['description'] = build_desc
             existing_entry['buildTimestamp'] = now_iso
 
-    # Keep last 50 builds in history
-    vdata['buildHistory'] = history[-50:]
+    # Keep last 15 builds in history to prevent version.json bloating
+    vdata['buildHistory'] = history[-15:]
     vdata['version'] = version
     vdata['buildDate'] = build_date
     vdata['buildTime'] = build_time
@@ -367,7 +369,58 @@ def bundle_core(version):
         out.write("\n".join(final_output))
 
 
+def prune_old_backups(keep_count=5):
+    """
+    Keep only the latest `keep_count` backup versions in the 'backups' folder,
+    automatically pruning older versions to prevent disk bloat.
+    """
+    if not os.path.exists('backups'):
+        return
+    try:
+        ver_files = [f for f in os.listdir('backups') if f.startswith('version_') and f.endswith('.json')]
+        ver_files.sort(reverse=True)
+        keep_prefixes = [f.replace('version_', '').replace('.json', '') for f in ver_files[:keep_count]]
+        
+        all_backup_files = os.listdir('backups')
+        pruned_count = 0
+        for f in all_backup_files:
+            if not any(kp in f for kp in keep_prefixes):
+                full_path = os.path.join('backups', f)
+                try:
+                    os.remove(full_path)
+                    pruned_count += 1
+                except OSError:
+                    pass
+        if pruned_count > 0:
+            print(f"[*] [PRUNE] Cleaned {pruned_count} old backup files (retained top {keep_count} builds).")
+    except Exception as e:
+        print(f"[!] [BACKUP-PRUNE-WARN] Error pruning backups: {e}")
+
+
+def clean_temp_artifacts():
+    """
+    Clean up temporary unittest dumps, error logs, and stray pycache automatically.
+    """
+    temp_files = ['fail.txt', 'test_output.txt', 'test_stderr.txt', 'failures.txt']
+    for f in temp_files:
+        if os.path.exists(f):
+            try:
+                os.remove(f)
+            except OSError:
+                pass
+    try:
+        import shutil
+        for root, dirs, _ in os.walk('.', topdown=False):
+            for d in dirs:
+                if d == '__pycache__':
+                    shutil.rmtree(os.path.join(root, d), ignore_errors=True)
+    except Exception:
+        pass
+
+
 def clean_and_bundle(custom_desc=None, explicit_version=None):
+    clean_temp_artifacts()
+    prune_old_backups(keep_count=5)
     version = sync_version_assets(explicit_version=explicit_version, build_desc=custom_desc)
     run_preflight_tests()
     print(f"[*] Starting smart bundling process for [{version}]...")
@@ -375,6 +428,8 @@ def clean_and_bundle(custom_desc=None, explicit_version=None):
     verify_version_crosscheck(version)
     build_date = datetime.date.today().isoformat()
     push_version_to_firestore(version, build_date)
+    prune_old_backups(keep_count=5)
+    clean_temp_artifacts()
     print(f"[*] Done! Build [{version}] completed and snapshot archived.")
 
 

@@ -1,4 +1,5 @@
 @echo off
+set PYTHONDONTWRITEBYTECODE=1
 echo ==============================================
 echo        Lotto Winning Numbers Auto-Updater
 echo ==============================================

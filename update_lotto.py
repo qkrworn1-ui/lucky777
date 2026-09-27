@@ -1,9 +1,12 @@
 import os
+import sys
 import re
 import json
 import requests
 from bs4 import BeautifulSoup
 import time
+
+sys.dont_write_bytecode = True
 
 DATA_JS_PATH = 'data.js'
 

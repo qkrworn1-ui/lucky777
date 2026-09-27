@@ -4,6 +4,8 @@ import time
 import subprocess
 from datetime import datetime
 
+sys.dont_write_bytecode = True
+
 WATCH_DIRS = ['src', 'tests']
 WATCH_FILES = ['index.html', 'styles.css', 'version.json']
 

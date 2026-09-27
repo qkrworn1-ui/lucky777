@@ -1,6 +1,9 @@
 import unittest
 import os
+import sys
 from datetime import datetime, timezone, timedelta
+
+sys.dont_write_bytecode = True
 
 KST = timezone(timedelta(hours=9))
 FIRST_CUTOFF = datetime(2002, 12, 7, 20, 0, 0, tzinfo=KST)
