@@ -1,25 +1,9 @@
 {
-  "version": "v2026.09.28.0457.59",
+  "version": "v2026.09.28.0507",
   "buildDate": "2026-09-28",
   "description": "Remove 5-combo verification cards from simulation tab",
-  "buildTimestamp": "2026-09-28T04:57:59.149458",
+  "buildTimestamp": "2026-09-28T05:07:08.508316",
   "buildHistory": [
-    {
-      "version": "v2026.09.28.0327.37",
-      "buildDate": "2026-09-28",
-      "buildTime": "03:27",
-      "buildDateTime": "2026-09-28 03:27",
-      "buildTimestamp": "2026-09-28T03:27:37.012038",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
-    {
-      "version": "v2026.09.28.0327.44",
-      "buildDate": "2026-09-28",
-      "buildTime": "03:27",
-      "buildDateTime": "2026-09-28 03:27",
-      "buildTimestamp": "2026-09-28T03:27:44.941089",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
     {
       "version": "v2026.09.28.0328",
       "buildDate": "2026-09-28",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-09-28 04:57",
       "buildTimestamp": "2026-09-28T04:57:59.149458",
       "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.28.0506",
+      "buildDate": "2026-09-28",
+      "buildTime": "05:06",
+      "buildDateTime": "2026-09-28 05:06",
+      "buildTimestamp": "2026-09-28T05:06:30.968373",
+      "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.28.0507",
+      "buildDate": "2026-09-28",
+      "buildTime": "05:07",
+      "buildDateTime": "2026-09-28 05:07",
+      "buildTimestamp": "2026-09-28T05:07:08.508316",
+      "description": "Remove 5-combo verification cards from simulation tab"
     }
   ],
-  "buildTime": "04:57",
-  "buildDateTime": "2026-09-28 04:57"
+  "buildTime": "05:07",
+  "buildDateTime": "2026-09-28 05:07"
 }
