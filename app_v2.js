@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0344.24 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0439 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0344.24)
+ * Lucky777 Smart Bundle (v2026.09.28.0439)
  */
 
 
@@ -2635,20 +2635,24 @@ async function checkAuthOnLoad(initFirebaseAndData) {
                         }
 
                         // 🔒 Check if Mandatory Profile & E-Signature Pledge is Complete
-                        // (Exempt root master/admin, admin roles, permanent users, and Kakao quick-auth users)
+                        // (Only root master/admin is exempt; all users including Kakao quick-auth users must complete realName, phone, and e-signature)
                         const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
-                        const isKakaoAuthUser = authId.startsWith('kakao_') || uData.authProvider === 'kakao' || !!(uData.kakaoAuth);
-                        const isUserAdminAcc = isRootMaster || freshAdmin || isPerm || isKakaoAuthUser;
 
-                        if (!isUserAdminAcc) {
+                        if (!isRootMaster) {
                             const isPhoneValid = !!(uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.replace(/[^0-9]/g, '').length >= 10);
-                            const isSigValid = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl && uData.agreementDoc.signatureDataUrl.length > 50);
+                            const isSigValid = !!(
+                                uData.hasSignature !== false &&
+                                uData.agreementDoc && 
+                                uData.agreementDoc.signatureDataUrl && 
+                                uData.agreementDoc.signatureDataUrl.length > 50 &&
+                                uData.agreementDoc.status !== 'reset'
+                            );
                             const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2 && !uData.realName.startsWith('카카오_') && !uData.realName.startsWith('kakao_'));
 
                             if (!isPhoneValid || !isSigValid || !isNameValid) {
                                 if (typeof window.openMandatoryPledgeModal === 'function') {
                                     window.openMandatoryPledgeModal(authId, uData);
-                                    return; // Prompt user to complete profile
+                                    return; // Prompt user to complete profile & sign pledge
                                 }
                             }
                         }
@@ -2830,42 +2834,76 @@ function processKakaoLoginSuccess(res, authObj = {}) {
             document.body.style.overflow = '';
         }
 
-        // 3. Show Landing Page immediately & Force Browser Repaint
-        const kakaoLpEl = document.getElementById('landingPage');
-        const kakaoAcEl = document.getElementById('appContainer');
-        const kakaoTpEl = document.getElementById('totoPage');
-        if (kakaoLpEl) { kakaoLpEl.classList.add('active'); kakaoLpEl.style.setProperty('display', 'flex', 'important'); }
-        if (kakaoAcEl) { kakaoAcEl.classList.remove('active'); kakaoAcEl.style.setProperty('display', 'none', 'important'); }
-        if (kakaoTpEl) { kakaoTpEl.classList.remove('active'); kakaoTpEl.style.setProperty('display', 'none', 'important'); }
-
-        // 💥 [모바일 강제 화면 갱신] 홈키/탭이동 없이도 즉시 화면이 전환되도록 브라우저 렌더링 강제 리드로우(Force Reflow)
-        try {
-            if (document.body) { void document.body.offsetHeight; }
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new Event('resize'));
-                window.dispatchEvent(new Event('scroll'));
-            }
-            requestAnimationFrame(() => {
-                const m = document.getElementById('loginModalOverlay');
-                if (m) m.style.setProperty('display', 'none', 'important');
-                const lp = document.getElementById('landingPage');
-                if (lp) lp.style.setProperty('display', 'flex', 'important');
-            });
-        } catch(e) {}
-
-        updateLoggedInUserHeaderUI(customUserId);
-        showToast(`👋 [${nickname}]님 환영합니다!`);
-
-        // 4. Render Dashboard & Init Services (checkAuthOnLoad 재호출 없이 직접 서비스 초기화)
-        setTimeout(() => {
+        // 3. Check if Kakao user has already signed the pledge
+        const isRootMaster = (customUserId.toLowerCase() === 'master' || customUserId.toLowerCase() === 'admin');
+        let isPledgeConfirmed = false;
+        if (!isRootMaster) {
             try {
-                // checkAuthOnLoad 재호출 금지: 모달 재표시 사이드 이펙트 방지
-                if (typeof window.initLottoService === 'function') {
-                    window.initLottoService();
+                if (localStorage.getItem('pledge_signed_' + customUserId) === 'true') {
+                    isPledgeConfirmed = true;
                 }
-            } catch(ex) {}
-            try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
-        }, 50);
+                const cachedUsers = JSON.parse(localStorage.getItem('lotto_users_with_status_cache') || '[]');
+                const found = cachedUsers.find(u => u && u.userId === customUserId);
+                if (found && found.hasPledgeSigned && found.data && found.data.agreementDoc && found.data.agreementDoc.signatureDataUrl && found.data.agreementDoc.status !== 'reset') {
+                    isPledgeConfirmed = true;
+                }
+            } catch(e) {}
+        } else {
+            isPledgeConfirmed = true;
+        }
+
+        if (isPledgeConfirmed) {
+            // Already signed -> Show Landing Page immediately & Force Browser Repaint
+            const kakaoLpEl = document.getElementById('landingPage');
+            const kakaoAcEl = document.getElementById('appContainer');
+            const kakaoTpEl = document.getElementById('totoPage');
+            if (kakaoLpEl) { kakaoLpEl.classList.add('active'); kakaoLpEl.style.setProperty('display', 'flex', 'important'); }
+            if (kakaoAcEl) { kakaoAcEl.classList.remove('active'); kakaoAcEl.style.setProperty('display', 'none', 'important'); }
+            if (kakaoTpEl) { kakaoTpEl.classList.remove('active'); kakaoTpEl.style.setProperty('display', 'none', 'important'); }
+
+            // 💥 [모바일 강제 화면 갱신] 홈키/탭이동 없이도 즉시 화면이 전환되도록 브라우저 렌더링 강제 리드로우(Force Reflow)
+            try {
+                if (document.body) { void document.body.offsetHeight; }
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new Event('resize'));
+                    window.dispatchEvent(new Event('scroll'));
+                }
+                requestAnimationFrame(() => {
+                    const m = document.getElementById('loginModalOverlay');
+                    if (m) m.style.setProperty('display', 'none', 'important');
+                    const lp = document.getElementById('landingPage');
+                    if (lp) lp.style.setProperty('display', 'flex', 'important');
+                });
+            } catch(e) {}
+
+            updateLoggedInUserHeaderUI(customUserId);
+            showToast(`👋 [${nickname}]님 환영합니다!`);
+
+            // 4. Render Dashboard & Init Services (checkAuthOnLoad 재호출 없이 직접 서비스 초기화)
+            setTimeout(() => {
+                try {
+                    if (typeof window.initLottoService === 'function') {
+                        window.initLottoService();
+                    }
+                } catch(ex) {}
+                try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
+            }, 50);
+        } else {
+            // 🔒 최초 간편가입자 또는 서약 미완료자: 랜딩페이지 노출 없이 즉시(0초) 서약서 모달 오픈
+            const pages = ['landingPage', 'totoPage', 'appContainer'];
+            pages.forEach(pId => {
+                const pEl = document.getElementById(pId);
+                if (pEl) {
+                    pEl.classList.remove('active');
+                    pEl.style.setProperty('display', 'none', 'important');
+                }
+            });
+            updateLoggedInUserHeaderUI(customUserId);
+            console.log('[Kakao] New or unsigned Kakao user, immediately displaying pledge modal for:', customUserId);
+            if (typeof window.openMandatoryPledgeModal === 'function') {
+                window.openMandatoryPledgeModal(customUserId, { realName: nickname, authProvider: 'kakao' });
+            }
+        }
 
         // 5. Background Firestore Persistence
         const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
@@ -2924,21 +2962,64 @@ function processKakaoLoginSuccess(res, authObj = {}) {
                             lockoutUntil: null
                         };
 
-                        await firestore.collection('lotto_users').doc(customUserId).set(userData);
-                        try { await firestore.collection('lotto_agreements').doc(customUserId).set(agreementDocument); } catch(e){}
-                    } else {
-                        await firestore.collection('lotto_users').doc(customUserId).set({
-                            kakaoAuth: kakaoAuthData,
-                            lastLoginAt: nowIso
-                        }, { merge: true });
+                        let activeUserData = null;
+                        if (!userDoc.exists) {
+                            await firestore.collection('lotto_users').doc(customUserId).set(userData);
+                            try { await firestore.collection('lotto_agreements').doc(customUserId).set(agreementDocument); } catch(e){}
+                            activeUserData = userData;
+                        } else {
+                            await firestore.collection('lotto_users').doc(customUserId).set({
+                                kakaoAuth: kakaoAuthData,
+                                lastLoginAt: nowIso
+                            }, { merge: true });
 
-                        const existingData = userDoc.data() || {};
-                        const isAdm = !!(existingData.role === 'admin' || existingData.isAdmin === true);
-                        const isPerm = !!(isAdm || existingData.isPermanent === true || existingData.userType === 'permanent');
-                        if (isAdm) setIsAdminCache(customUserId, true);
-                        if (isPerm) setIsPermanentCache(customUserId, true);
-                        if (existingData.realName) setUserNameCache(customUserId, existingData.realName);
-                    }
+                            const existingData = userDoc.data() || {};
+                            const isAdm = !!(existingData.role === 'admin' || existingData.isAdmin === true);
+                            const isPerm = !!(isAdm || existingData.isPermanent === true || existingData.userType === 'permanent');
+                            if (isAdm) setIsAdminCache(customUserId, true);
+                            if (isPerm) setIsPermanentCache(customUserId, true);
+                            if (existingData.realName) setUserNameCache(customUserId, existingData.realName);
+                            activeUserData = { ...existingData, kakaoAuth: kakaoAuthData };
+                        }
+
+                        // 🔒 [카카오 간편 가입자 필수 정보 & 전자 서명 검증 게이트]
+                        const isRootMaster = (customUserId.toLowerCase() === 'master' || customUserId.toLowerCase() === 'admin');
+                        if (!isRootMaster && activeUserData) {
+                            const isPhoneValid = !!(activeUserData.phoneNumber && !activeUserData.phoneNumber.includes('카카오') && activeUserData.phoneNumber !== '미등록' && activeUserData.phoneNumber.replace(/[^0-9]/g, '').length >= 10);
+                            const isSigValid = !!(
+                                activeUserData.hasSignature !== false &&
+                                activeUserData.agreementDoc && 
+                                activeUserData.agreementDoc.signatureDataUrl && 
+                                activeUserData.agreementDoc.signatureDataUrl.length > 50 &&
+                                activeUserData.agreementDoc.status !== 'reset'
+                            );
+                            const isNameValid = !!(activeUserData.realName && activeUserData.realName.trim().length >= 2 && !activeUserData.realName.startsWith('카카오_') && !activeUserData.realName.startsWith('kakao_'));
+
+                            if (!isPhoneValid || !isSigValid || !isNameValid) {
+                                try { localStorage.removeItem('pledge_signed_' + customUserId); } catch(e){}
+                                console.log('[Kakao Login] Mandatory profile/signature incomplete. Ensuring pledge modal for:', customUserId);
+                                if (typeof window.openMandatoryPledgeModal === 'function') {
+                                    window.openMandatoryPledgeModal(customUserId, activeUserData);
+                                }
+                            } else {
+                                // DB상 이미 서약 및 필수정보가 유효한 기존 회원인 경우
+                                try { localStorage.setItem('pledge_signed_' + customUserId, 'true'); } catch(e){}
+                                const pledgeModal = document.getElementById('mandatoryPledgeModal');
+                                if (pledgeModal && pledgeModal.style.display !== 'none') {
+                                    pledgeModal.style.display = 'none';
+                                    pledgeModal.classList.remove('active');
+                                    pledgeModal.classList.add('hidden');
+                                    const kakaoLp = document.getElementById('landingPage');
+                                    if (kakaoLp) {
+                                        kakaoLp.classList.add('active');
+                                        kakaoLp.style.setProperty('display', 'flex', 'important');
+                                    }
+                                    if (typeof window.renderLandingDashboard === 'function') {
+                                        try { window.renderLandingDashboard(); } catch(e){}
+                                    }
+                                }
+                            }
+                        }
                 } catch(bgErr) {
                     console.warn('[Kakao BG Sync Error]', bgErr);
                 }
@@ -4736,15 +4817,17 @@ function setupAuthEvents(initFirebaseAndData) {
             }
 
             // 4. Pledge Status Badge
-            const hasPledgeSigned = !!(
-                (data.agreementDoc && (data.agreementDoc.signatureDataUrl || data.agreementDoc.signature || data.agreementDoc.signedAt || data.agreementDoc.agreedDateFormatted || data.agreementDoc.status === 'legally_binding')) ||
-                (data.agreedTerms && (data.agreedTerms.hasSignature || data.agreedTerms.agreedAt || data.agreedTerms.weeklyPurchaseAgreement)) ||
+            const isSigReset = (data.agreementDoc && data.agreementDoc.status === 'reset') || data.hasSignature === false;
+            const hasValidSig = !!(data.agreementDoc && data.agreementDoc.signatureDataUrl && data.agreementDoc.signatureDataUrl.length > 50);
+            const hasPledgeSigned = isMaster || (!isSigReset && (
+                hasValidSig ||
                 data.hasSignature === true ||
                 data.signatureDataUrl ||
                 data.isPledgeSigned === true ||
                 item.hasPledgeSigned === true ||
-                isMaster
-            );
+                (data.agreementDoc && (data.agreementDoc.signature || data.agreementDoc.status === 'legally_binding')) ||
+                (data.agreedTerms && (data.agreedTerms.hasSignature || data.agreedTerms.agreedAt || data.agreedTerms.weeklyPurchaseAgreement))
+            ));
             const pledgeBadge = hasPledgeSigned
                 ? `<span style="font-size:0.75rem; color:#34d399;" title="전자 서약 완료">✍️</span>`
                 : `<span style="font-size:0.66rem; font-weight:900; padding:1px 4px; border-radius:4px; background:rgba(239,68,68,0.22); color:#fca5a5; border:1px solid rgba(239,68,68,0.45); white-space:nowrap;" title="필수 약관 및 전자 서약 미완료">⚠️미서약</span>`;
@@ -4896,6 +4979,7 @@ function setupAuthEvents(initFirebaseAndData) {
         const btnAgreement = document.getElementById('btnDrawerAgreementDoc');
         const btnSnapshot = document.getElementById('btnDrawerSnapshotAudit');
         const btnResetPw = document.getElementById('btnDrawerResetPw');
+        const btnResetSig = document.getElementById('btnDrawerResetSignature');
         const btnDelete = document.getElementById('btnDrawerDeleteUser');
 
         if (btnAgreement) {
@@ -4906,6 +4990,9 @@ function setupAuthEvents(initFirebaseAndData) {
         }
         if (btnResetPw) {
             btnResetPw.onclick = () => window.resetUserPassword && window.resetUserPassword(userId);
+        }
+        if (btnResetSig) {
+            btnResetSig.onclick = () => window.resetUserSignature && window.resetUserSignature(userId);
         }
         if (btnDelete) {
             btnDelete.onclick = () => {
@@ -5385,6 +5472,8 @@ function setupAuthEvents(initFirebaseAndData) {
     window.loadUserList = loadUserList;
 
     window.viewUserAgreementDoc = async function(userId) {
+        if (!userId) return;
+        window.currentViewingAgreementUserId = userId;
         if (!window.db) return;
         try {
             let docData = null;
@@ -5796,6 +5885,129 @@ function setupAuthEvents(initFirebaseAndData) {
         }
     };
 
+    // ✍️ 관리자 전용: 회원 전자 서약서 및 전자서명 초기화 함수
+    window.resetUserSignature = async function(userId) {
+        if (!userId) userId = window.currentDrawerUserId || window.currentViewingAgreementUserId;
+        if (!userId) {
+            alert('대상 사용자를 찾을 수 없습니다.');
+            return;
+        }
+        const cleanId = String(userId).trim().toLowerCase();
+        if (cleanId === 'master' || cleanId === 'admin') {
+            alert('최고관리자(master/admin) 계정은 전자서명 초기화 대상이 아닙니다.');
+            return;
+        }
+
+        const firestore = window.db || (db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+        if (!firestore) {
+            alert('데이터베이스에 연결되지 않았습니다.');
+            return;
+        }
+
+        let displayName = userId;
+        if (typeof __cachedUsersWithStatus !== 'undefined' && Array.isArray(__cachedUsersWithStatus)) {
+            const found = __cachedUsersWithStatus.find(u => u && u.userId === userId);
+            if (found && found.data && found.data.realName) displayName = `${found.data.realName}(${userId})`;
+        }
+
+        const confirmMsg = `⚠️ [${displayName}] 님의 전자서약서 및 전자서명을 초기화하시겠습니까?\n\n초기화 시 해당 회원은 다음 로그인 시 [필수 정보 등록 및 전자 서약] 화면이 강제로 표시되며, 실명/전화번호 확인 및 자필 서명을 다시 완료해야 시스템을 이용할 수 있습니다.`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+            const nowIso = new Date().toISOString();
+            
+            // 1. lotto_users 문서 서명 관련 필드 리셋
+            await firestore.collection('lotto_users').doc(userId).set({
+                hasSignature: false,
+                hasPledgeSigned: false,
+                isPledgeSigned: false,
+                agreementDoc: {
+                    signatureDataUrl: null,
+                    signature: null,
+                    status: 'reset',
+                    resetAt: nowIso
+                },
+                agreedTerms: {
+                    hasSignature: false,
+                    resetAt: nowIso
+                }
+            }, { merge: true });
+
+            // 2. lotto_agreements 컬렉션도 리셋
+            try {
+                await firestore.collection('lotto_agreements').doc(userId).set({
+                    signatureDataUrl: null,
+                    signature: null,
+                    status: 'reset',
+                    resetAt: nowIso
+                }, { merge: true });
+            } catch(e) {}
+
+            // 3. 인메모리 캐시 갱신
+            if (typeof __cachedUsersWithStatus !== 'undefined' && Array.isArray(__cachedUsersWithStatus)) {
+                const targetU = __cachedUsersWithStatus.find(u => u && u.userId === userId);
+                if (targetU) {
+                    targetU.hasPledgeSigned = false;
+                    targetU.hasSignature = false;
+                    if (targetU.data) {
+                        targetU.data.hasSignature = false;
+                        targetU.data.hasPledgeSigned = false;
+                        targetU.data.isPledgeSigned = false;
+                        if (targetU.data.agreementDoc) {
+                            targetU.data.agreementDoc.signatureDataUrl = null;
+                            targetU.data.agreementDoc.signature = null;
+                            targetU.data.agreementDoc.status = 'reset';
+                            targetU.data.agreementDoc.resetAt = nowIso;
+                        }
+                        if (targetU.data.agreedTerms) {
+                            targetU.data.agreedTerms.hasSignature = false;
+                            targetU.data.agreedTerms.resetAt = nowIso;
+                        }
+                    }
+                }
+            }
+
+            if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+                const targetReg = window.state.allRegisteredUsersList.find(u => u && u.id === userId);
+                if (targetReg) {
+                    targetReg.hasPledgeSigned = false;
+                    targetReg.hasSignature = false;
+                    if (targetReg.agreementDoc) {
+                        targetReg.agreementDoc.signatureDataUrl = null;
+                        targetReg.agreementDoc.signature = null;
+                        targetReg.agreementDoc.status = 'reset';
+                        targetReg.agreementDoc.resetAt = nowIso;
+                    }
+                }
+            }
+
+            try {
+                localStorage.removeItem('pledge_signed_' + userId);
+            } catch(e) {}
+
+            // 4. 모달이 열려있다면 닫기
+            const agrModal = document.getElementById('agreementViewerModal');
+            if (agrModal) agrModal.style.display = 'none';
+
+            // 5. 알림 및 UI 갱신
+            showToast(`✍️ [${displayName}] 님의 전자서약 및 서명이 성공적으로 초기화되었습니다.`);
+            if (typeof window.filterUserList === 'function') {
+                try { window.filterUserList(); } catch(e){}
+            } else if (typeof window.loadUserList === 'function') {
+                try { window.loadUserList(); } catch(e){}
+            }
+
+            // 열려있는 드로어가 있다면 갱신
+            if (window.currentDrawerUserId === userId && typeof window.openUserDetailDrawer === 'function') {
+                window.openUserDetailDrawer(userId);
+            }
+
+        } catch(err) {
+            console.error('[resetUserSignature Error]', err);
+            alert('전자서명 초기화 중 오류가 발생했습니다: ' + (err.message || err));
+        }
+    };
+
     // ========================================================
     // 📋 Mandatory Profile Completion & E-Signature Pledge Gate
     // ========================================================
@@ -6123,13 +6335,14 @@ function setupAuthEvents(initFirebaseAndData) {
             }
 
             SafeAuth.set(userId);
+            try { localStorage.setItem('pledge_signed_' + userId, 'true'); } catch(e){}
             showToast(`🎉 [${realName}]님, 필수 정보 등록 및 전자 서약이 완료되었습니다!`);
 
             // Unlock and reveal landing page directly
             const landingPage = document.getElementById('landingPage');
             if (landingPage) {
                 landingPage.classList.add('active');
-                landingPage.style.display = 'flex';
+                landingPage.style.setProperty('display', 'flex', 'important');
             }
 
             if (typeof initFirebaseAndData === 'function' && !window.__lottoInitialized) {
