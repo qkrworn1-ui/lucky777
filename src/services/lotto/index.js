@@ -18,7 +18,8 @@ import { setupManualLedgerModal, updateManualModalCrossCheck } from './views/man
 import { setupManualDrawModal } from './views/manual-draw-modal.js';
 import { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } from './views/snapshot-audit-modal.js';
 import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
-import { computeAbsoluteTop10Combinations } from './generator.js';
+import { computeAbsoluteTop10Combinations, saveUserWeeklyRecommendationSnapshot } from './generator.js';
+import { isSystemOrDummyUser } from '../../shared/utils.js';
 import { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from './ledger.js';
 
 let _isLottoInitializing = false;
@@ -423,6 +424,17 @@ export async function initLottoService(force = false) {
             autoSyncMissingDraws().catch(err => console.warn('[AutoSync Background Skipped/Error]', err));
         }
     }, 1500);
+
+    // 🔒 Auto-preserve current user's weekly recommendation snapshot for upcoming round (Write-Once, safe to call repeatedly)
+    // Runs 3 seconds after init to ensure Firestore auth and state.allRegisteredUsersList are fully loaded
+    setTimeout(() => {
+        const initAuthId = (SafeAuth.get() || '').trim().toLowerCase();
+        const initRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244);
+        if (initAuthId && initAuthId !== 'guest' && !isSystemOrDummyUser(initAuthId) && initAuthId !== 'all') {
+            saveUserWeeklyRecommendationSnapshot(initAuthId, initRound)
+                .catch(e => console.warn('[initLottoService] Auto Snapshot Preservation Error:', e));
+        }
+    }, 3000);
 
     const landingEl = document.getElementById('landingPage');
     if (landingEl && (landingEl.classList.contains('active') || landingEl.style.display !== 'none')) {

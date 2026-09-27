@@ -1529,7 +1529,12 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
         }
     }
 
-    // 4. Official Unified Baseline Fallback (master -> guest -> kakao_5070244665)
+    // 4. Official Unified Baseline Fallback – ONLY for admin/master/official-snapshot accounts.
+    //    Regular users must NOT fall back to official sample numbers; they use their own snapshot
+    //    or fall through to dynamic generation.
+    const isOfficialAccount = (cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'guest' || cleanUser === 'kakao_5070244665' || cleanUser === 'all');
+    if (!isOfficialAccount) return null;
+
     const fallbackUsers = ['master', roundNum <= 1239 ? 'guest' : 'kakao_5070244665', 'guest', 'kakao_5070244665'];
     for (const altUser of fallbackUsers) {
         if (altUser === cleanUser) continue;

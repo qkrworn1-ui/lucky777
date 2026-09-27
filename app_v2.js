@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.27.1251 - BUILD_DATE: 2026-09-27] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.27.1323 - BUILD_DATE: 2026-09-27] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.27.1251)
+ * Lucky777 Smart Bundle (v2026.09.27.1323)
  */
 
 
@@ -15884,7 +15884,12 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
         }
     }
 
-    // 4. Official Unified Baseline Fallback (master -> guest -> kakao_5070244665)
+    // 4. Official Unified Baseline Fallback – ONLY for admin/master/official-snapshot accounts.
+    //    Regular users must NOT fall back to official sample numbers; they use their own snapshot
+    //    or fall through to dynamic generation.
+    const isOfficialAccount = (cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'guest' || cleanUser === 'kakao_5070244665' || cleanUser === 'all');
+    if (!isOfficialAccount) return null;
+
     const fallbackUsers = ['master', roundNum <= 1239 ? 'guest' : 'kakao_5070244665', 'guest', 'kakao_5070244665'];
     for (const altUser of fallbackUsers) {
         if (altUser === cleanUser) continue;
@@ -16531,7 +16536,7 @@ function clearUser70ReviewCache() {
         const keysToRemove = [];
         for (let i = 0; i < SafeLocalStorage.length; i++) {
             const key = SafeLocalStorage.key(i);
-            if (key && (key.startsWith('lotto_review_v2_') || key.startsWith('lotto_rec_snapshot_'))) {
+            if (key && (key.startsWith('lotto_review_v2_') || key.startsWith('lotto_review_v3_') || key.startsWith('lotto_rec_snapshot_'))) {
                 keysToRemove.push(key);
             }
         }
@@ -16602,7 +16607,13 @@ function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         }
     }
 
-    // 4. Official Unified Baseline Fallback (master -> guest -> kakao_5070244665)
+    // 4. Official Unified Baseline Fallback – ONLY for admin/master/official-snapshot accounts.
+    //    Regular users must NOT fall back to the official sample numbers; they must use their own
+    //    snapshot or fall through to dynamic generation (which will also save their own snapshot).
+    const isOfficialAccount = (cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'guest' || cleanUser === 'kakao_5070244665' || cleanUser === 'all');
+    if (!isOfficialAccount) {
+        return null;
+    }
     const roundInt = parseInt(roundNum, 10);
     const fallbackUsers = ['master', roundInt <= 1239 ? 'guest' : 'kakao_5070244665', 'guest', 'kakao_5070244665'];
     for (const altUser of fallbackUsers) {
@@ -20602,7 +20613,7 @@ function clearAlgoPerfCache() {
         const keysToRemove = [];
         for (let i = 0; i < SafeStorage.length; i++) {
             const k = SafeStorage.key(i);
-            if (k && k.startsWith('algo_perf_v2_')) keysToRemove.push(k);
+            if (k && (k.startsWith('algo_perf_v2_') || k.startsWith('algo_perf_v3_'))) keysToRemove.push(k);
         }
         keysToRemove.forEach(k => SafeStorage.removeItem(k));
     } catch(e) {}
@@ -33377,7 +33388,8 @@ const { setupManualLedgerModal, updateManualModalCrossCheck } = (typeof __M_serv
 const { setupManualDrawModal } = (typeof __M_services_lotto_views_manual_draw_modal !== 'undefined' ? __M_services_lotto_views_manual_draw_modal : {});
 const { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } = (typeof __M_services_lotto_views_snapshot_audit_modal !== 'undefined' ? __M_services_lotto_views_snapshot_audit_modal : {});
 const { autoSyncMissingDraws, setupSyncEvents } = (typeof __M_services_lotto_views_sync !== 'undefined' ? __M_services_lotto_views_sync : {});
-const { computeAbsoluteTop10Combinations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { computeAbsoluteTop10Combinations, saveUserWeeklyRecommendationSnapshot } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 
 let _isLottoInitializing = false;
@@ -33782,6 +33794,17 @@ async function initLottoService(force = false) {
             autoSyncMissingDraws().catch(err => console.warn('[AutoSync Background Skipped/Error]', err));
         }
     }, 1500);
+
+    // 🔒 Auto-preserve current user's weekly recommendation snapshot for upcoming round (Write-Once, safe to call repeatedly)
+    // Runs 3 seconds after init to ensure Firestore auth and state.allRegisteredUsersList are fully loaded
+    setTimeout(() => {
+        const initAuthId = (SafeAuth.get() || '').trim().toLowerCase();
+        const initRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244);
+        if (initAuthId && initAuthId !== 'guest' && !isSystemOrDummyUser(initAuthId) && initAuthId !== 'all') {
+            saveUserWeeklyRecommendationSnapshot(initAuthId, initRound)
+                .catch(e => console.warn('[initLottoService] Auto Snapshot Preservation Error:', e));
+        }
+    }, 3000);
 
     const landingEl = document.getElementById('landingPage');
     if (landingEl && (landingEl.classList.contains('active') || landingEl.style.display !== 'none')) {

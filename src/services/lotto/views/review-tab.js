@@ -260,7 +260,7 @@ export function clearUser70ReviewCache() {
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && (key.startsWith('lotto_review_v2_') || key.startsWith('lotto_rec_snapshot_'))) {
+            if (key && (key.startsWith('lotto_review_v2_') || key.startsWith('lotto_review_v3_') || key.startsWith('lotto_rec_snapshot_'))) {
                 keysToRemove.push(key);
             }
         }
@@ -331,7 +331,13 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         }
     }
 
-    // 4. Official Unified Baseline Fallback (master -> guest -> kakao_5070244665)
+    // 4. Official Unified Baseline Fallback – ONLY for admin/master/official-snapshot accounts.
+    //    Regular users must NOT fall back to the official sample numbers; they must use their own
+    //    snapshot or fall through to dynamic generation (which will also save their own snapshot).
+    const isOfficialAccount = (cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'guest' || cleanUser === 'kakao_5070244665' || cleanUser === 'all');
+    if (!isOfficialAccount) {
+        return null;
+    }
     const roundInt = parseInt(roundNum, 10);
     const fallbackUsers = ['master', roundInt <= 1239 ? 'guest' : 'kakao_5070244665', 'guest', 'kakao_5070244665'];
     for (const altUser of fallbackUsers) {

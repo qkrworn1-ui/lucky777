@@ -289,7 +289,7 @@ export function clearAlgoPerfCache() {
         const keysToRemove = [];
         for (let i = 0; i < sessionStorage.length; i++) {
             const k = sessionStorage.key(i);
-            if (k && k.startsWith('algo_perf_v2_')) keysToRemove.push(k);
+            if (k && (k.startsWith('algo_perf_v2_') || k.startsWith('algo_perf_v3_'))) keysToRemove.push(k);
         }
         keysToRemove.forEach(k => sessionStorage.removeItem(k));
     } catch(e) {}
