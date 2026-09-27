@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0439 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0444.24 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0439)
+ * Lucky777 Smart Bundle (v2026.09.28.0444.24)
  */
 
 
@@ -2921,6 +2921,7 @@ function processKakaoLoginSuccess(res, authObj = {}) {
                     };
 
                     const userDoc = await firestore.collection('lotto_users').doc(customUserId).get();
+                    let activeUserData = null;
                     if (!userDoc.exists) {
                         const formattedDate = `${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, '0')}월 ${String(now.getDate()).padStart(2, '0')}일 ${String(now.getHours()).padStart(2, '0')}시 ${String(now.getMinutes()).padStart(2, '0')}분`;
                         const agreementDocument = {
@@ -2962,12 +2963,10 @@ function processKakaoLoginSuccess(res, authObj = {}) {
                             lockoutUntil: null
                         };
 
-                        let activeUserData = null;
-                        if (!userDoc.exists) {
-                            await firestore.collection('lotto_users').doc(customUserId).set(userData);
-                            try { await firestore.collection('lotto_agreements').doc(customUserId).set(agreementDocument); } catch(e){}
-                            activeUserData = userData;
-                        } else {
+                        await firestore.collection('lotto_users').doc(customUserId).set(userData);
+                        try { await firestore.collection('lotto_agreements').doc(customUserId).set(agreementDocument); } catch(e){}
+                        activeUserData = userData;
+                    } else {
                             await firestore.collection('lotto_users').doc(customUserId).set({
                                 kakaoAuth: kakaoAuthData,
                                 lastLoginAt: nowIso
