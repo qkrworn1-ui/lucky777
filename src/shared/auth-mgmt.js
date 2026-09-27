@@ -1431,13 +1431,28 @@ export function processKakaoLoginSuccess(res, authObj = {}) {
             document.body.style.overflow = '';
         }
 
-        // 3. Show Landing Page immediately
+        // 3. Show Landing Page immediately & Force Browser Repaint
         const kakaoLpEl = document.getElementById('landingPage');
         const kakaoAcEl = document.getElementById('appContainer');
         const kakaoTpEl = document.getElementById('totoPage');
         if (kakaoLpEl) { kakaoLpEl.classList.add('active'); kakaoLpEl.style.setProperty('display', 'flex', 'important'); }
         if (kakaoAcEl) { kakaoAcEl.classList.remove('active'); kakaoAcEl.style.setProperty('display', 'none', 'important'); }
         if (kakaoTpEl) { kakaoTpEl.classList.remove('active'); kakaoTpEl.style.setProperty('display', 'none', 'important'); }
+
+        // 💥 [모바일 강제 화면 갱신] 홈키/탭이동 없이도 즉시 화면이 전환되도록 브라우저 렌더링 강제 리드로우(Force Reflow)
+        try {
+            if (document.body) { void document.body.offsetHeight; }
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new Event('resize'));
+                window.dispatchEvent(new Event('scroll'));
+            }
+            requestAnimationFrame(() => {
+                const m = document.getElementById('loginModalOverlay');
+                if (m) m.style.setProperty('display', 'none', 'important');
+                const lp = document.getElementById('landingPage');
+                if (lp) lp.style.setProperty('display', 'flex', 'important');
+            });
+        } catch(e) {}
 
         updateLoggedInUserHeaderUI(customUserId);
         showToast(`👋 [${nickname}]님 환영합니다!`);
@@ -1720,11 +1735,30 @@ export function loginWithKakao(e) {
             }
         }, 600);
     };
-    const onVisibilityChange = () => {
-        if (document.visibilityState === 'visible') onWindowReturn();
-    };
+    // ⚡ [실시간 토큰 폴러] 팝업에서 로그인이 완료되는 순간 200ms 주기로 토큰을 감지하여 홈키/탭이동 없이 즉시 로그인 완료!
+    const _tokenWatchInterval = setInterval(() => {
+        if (typeof window !== 'undefined' && window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
+            const token = window.Kakao.Auth.getAccessToken();
+            console.log('[Kakao Poller] Token detected in SDK! Auto-triggering UI transition...');
+            clearInterval(_tokenWatchInterval);
+            cleanupReturnListeners();
+            window.Kakao.API.request({
+                url: '/v2/user/me',
+                success: function(res) {
+                    processKakaoLoginSuccess(res, { access_token: token });
+                    finishLogin();
+                },
+                fail: function(err) {
+                    console.warn('[Kakao Poller API Fail]', err);
+                    finishLogin();
+                }
+            });
+        }
+    }, 250);
+
     const cleanupReturnListeners = () => {
         try {
+            if (_tokenWatchInterval) clearInterval(_tokenWatchInterval);
             if (_returnCheckTimeout) clearTimeout(_returnCheckTimeout);
             window.removeEventListener('focus', onWindowReturn);
             document.removeEventListener('visibilitychange', onVisibilityChange);
