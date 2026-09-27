@@ -18199,4 +18199,63 @@ body.is-admin .btn-snapshot-audit-compact {
     }
 }
 
+/* ==========================================================================
+   🏆 Dashboard Winning Ticker Vertical Flip (대시보드 당첨속보 수직 플립)
+   ========================================================================== */
+.lp-flip-viewport {
+    position: relative !important;
+    flex: 1 1 auto !important;
+    height: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    perspective: 600px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.lp-flip-item {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    opacity: 0 !important;
+    transform: translateY(100%) rotateX(-18deg) !important;
+    transition: transform 0.48s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.48s ease !important;
+    pointer-events: none !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    will-change: transform, opacity !important;
+}
+
+.lp-flip-item.lp-flip-active {
+    opacity: 1 !important;
+    transform: translateY(0%) rotateX(0deg) !important;
+    pointer-events: auto !important;
+}
+
+.lp-flip-item.lp-flip-exit {
+    opacity: 0 !important;
+    transform: translateY(-100%) rotateX(18deg) !important;
+    pointer-events: none !important;
+}
+
+@media (max-width: 480px) {
+    .lp-flip-item {
+        gap: 5px !important;
+        font-size: 11px !important;
+    }
+    .lp-flip-item strong {
+        font-size: 11px !important;
+    }
+    .lp-flip-item span {
+        font-size: 10px !important;
+    }
+}
+
+
 

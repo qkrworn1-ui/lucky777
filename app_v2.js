@@ -40768,69 +40768,87 @@ async function updateHomeWinningTicker() {
         });
 
         const shouldScroll = aggregatedWinners.length >= 3;
-        let itemsHtml = '';
+        let flipItems = [];
 
         if (aggregatedWinners.length > 0) {
-            const renderedList = aggregatedWinners.map((item, idx) => `
-                <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 0.82rem !important; color: #f1f5f9 !important; font-weight: 600 !important; white-space: nowrap !important; flex-shrink: 0 !important;">
-                    <i class="fa-solid fa-trophy" style="color: ${item.bestRank <= 3 ? '#fbbf24' : '#34d399'}; font-size: 0.82rem;"></i>
-                    <strong style="color: #f8fafc; font-size: 0.85rem; letter-spacing: -0.2px;">${item.displayName}</strong>
-                    <span style="background: ${item.bestRank <= 3 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; border: 1px solid ${item.bestRank <= 3 ? '#f59e0b' : '#10b981'}; color: ${item.bestRank <= 3 ? '#fbbf24' : '#6ee7b7'}; font-size: 0.72rem; font-weight: 800; padding: 1px 6px; border-radius: 4px; white-space: nowrap;">${item.rankSummaryText}</span>
-                    ${item.prizeText ? `<span style="color: #94a3b8; font-size: 0.74rem;">${item.prizeText}</span>` : ''}
-                    ${(shouldScroll || idx < aggregatedWinners.length - 1) ? `<span style="color: rgba(255,255,255,0.3); margin-left: 8px;">•</span>` : ''}
-                </span>
-            `).join('');
-
-            if (shouldScroll) {
-                // 부드러운 무한 롤링을 위해 2벌만 복제 (과도한 4벌 복제 방지)
-                itemsHtml = renderedList + renderedList;
-            } else {
-                // 당첨 인원이 소수(1~2명)일 때는 흐르지 않고 정적으로 안정감 있게 표시
-                itemsHtml = renderedList;
-            }
+            flipItems = aggregatedWinners.map(item => `
+                <div class="lp-flip-item">
+                    <i class="fa-solid fa-trophy" style="color: ${item.bestRank <= 3 ? '#fbbf24' : '#34d399'}; font-size: 0.82rem; flex-shrink: 0;"></i>
+                    <strong style="color: #f8fafc; font-size: 0.84rem; letter-spacing: -0.2px; flex-shrink: 0;">${item.displayName}</strong>
+                    <span style="background: ${item.bestRank <= 3 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; border: 1px solid ${item.bestRank <= 3 ? '#f59e0b' : '#10b981'}; color: ${item.bestRank <= 3 ? '#fbbf24' : '#6ee7b7'}; font-size: 0.72rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;">${item.rankSummaryText}</span>
+                    ${item.prizeText ? `<span style="color: #94a3b8; font-size: 0.74rem; font-weight: 700; white-space: nowrap; flex-shrink: 0;">${item.prizeText}</span>` : ''}
+                </div>
+            `);
         } else {
-            const fallbackItem = `
-                <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 0.82rem !important; color: #cbd5e1 !important; white-space: nowrap !important; flex-shrink: 0 !important;">
-                    <i class="fa-solid fa-shield-halved" style="color: #10b981;"></i>
-                    <strong style="color: #f8fafc;">제 ${latestDrawnRound}회차 동행복권 실구매 영수증 인증 기반 당첨 집계 완료</strong>
-                    <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">•</span>
-                </span>
-                <span style="display: inline-flex !important; align-items: center !important; gap: 6px !important; font-size: 0.82rem !important; color: #cbd5e1 !important; white-space: nowrap !important; flex-shrink: 0 !important;">
-                    <i class="fa-solid fa-qrcode" style="color: #38bdf8;"></i>
-                    <span>매주 5게임 실구매 영수증(QR) 등록 시 7대 퀀트 알고리즘 무료 잠금 해제</span>
-                    <span style="color: rgba(255,255,255,0.3); margin-left: 8px;">•</span>
-                </span>
-            `;
-            itemsHtml = fallbackItem + fallbackItem;
+            flipItems = [
+                `<div class="lp-flip-item">
+                    <i class="fa-solid fa-shield-halved" style="color: #10b981; flex-shrink: 0;"></i>
+                    <strong style="color: #f8fafc; font-size: 0.82rem;">제 ${latestDrawnRound}회차 동행복권 실구매 영수증 인증 기반 당첨 집계 완료</strong>
+                </div>`,
+                `<div class="lp-flip-item">
+                    <i class="fa-solid fa-qrcode" style="color: #38bdf8; flex-shrink: 0;"></i>
+                    <span style="color: #cbd5e1; font-size: 0.82rem;">매주 5게임 실구매 영수증(QR) 등록 시 7대 퀀트 알고리즘 무료 잠금 해제</span>
+                </div>`
+            ];
         }
 
-        const isScrollMode = (aggregatedWinners.length >= 3) || (aggregatedWinners.length === 0);
+        const flipItemsHtml = flipItems.map((html, idx) => {
+            if (idx === 0) return html.replace('class="lp-flip-item"', 'class="lp-flip-item lp-flip-active"');
+            return html;
+        }).join('');
 
         container.innerHTML = `
-            <style>
-                @keyframes lpSingleLineScroll {
-                    0% { transform: translateX(0%); }
-                    100% { transform: translateX(-50%); }
-                }
-                .lp-singleline-ticker-bar:hover .lp-singleline-track {
-                    animation-play-state: paused !important;
-                }
-            </style>
             <div class="lp-singleline-ticker-bar" onclick="showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-confirmed-list'), 80);" title="제 ${latestDrawnRound}회 실구매 장부 당첨 내역 자세히 보기" style="display: flex !important; flex-direction: row !important; align-items: center !important; background: linear-gradient(90deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.92)) !important; border: 1.5px solid rgba(16, 185, 129, 0.45) !important; border-radius: 20px !important; height: 38px !important; min-height: 38px !important; max-height: 38px !important; padding: 0 12px !important; margin: 0 0 14px 0 !important; gap: 10px !important; overflow: hidden !important; width: 100% !important; max-width: 900px !important; box-sizing: border-box !important; cursor: pointer !important; white-space: nowrap !important; box-shadow: 0 2px 10px rgba(0,0,0,0.3) !important;">
                 <div class="lp-ticker-badge-pill" style="display: inline-flex !important; align-items: center !important; gap: 5px !important; font-size: 0.76rem !important; font-weight: 800 !important; color: #34d399 !important; white-space: nowrap !important; background: rgba(16, 185, 129, 0.2) !important; padding: 3px 9px !important; border-radius: 10px !important; border: 1px solid rgba(16, 185, 129, 0.5) !important; flex-shrink: 0 !important; z-index: 2 !important; height: 22px !important; line-height: 1 !important;">
                     <i class="fa-solid fa-bullhorn lp-desktop-only" style="color: #34d399;"></i>
                     <span class="lp-desktop-text">제 ${latestDrawnRound}회 실구매 당첨${totalWinCombosCount > 0 ? ` (총 ${totalWinCombosCount}건)` : ''}</span>
                     <span class="lp-mobile-text">당첨속보</span>
                 </div>
-                <div style="flex: 1 !important; height: 100% !important; display: flex !important; align-items: center !important; overflow: hidden !important; position: relative !important; white-space: nowrap !important; ${isScrollMode ? 'mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important; -webkit-mask-image: linear-gradient(to right, transparent, black 12px, black 96%, transparent) !important;' : ''}">
-                    <div class="lp-singleline-track" style="display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: ${isScrollMode ? '24px' : '14px'} !important; white-space: nowrap !important; will-change: transform !important; ${isScrollMode ? 'animation: lpSingleLineScroll 35s linear infinite !important;' : 'animation: none !important; transform: none !important;'}">
-                        ${itemsHtml}
-                    </div>
+                <div id="lpFlipViewport" class="lp-flip-viewport">
+                    ${flipItemsHtml}
                 </div>
                 <span class="lp-mobile-text lp-ticker-mobile-round" style="color: #34d399; font-weight: 800; font-size: 10px; margin-left: 6px; flex-shrink: 0;">${latestDrawnRound}회</span>
                 <i class="fa-solid fa-chevron-right lp-desktop-only" style="color: #64748b; font-size: 0.72rem; flex-shrink: 0;"></i>
             </div>
         `;
+
+        // 🔄 위아래 수직 플립(Vertical Flip) 타이머 시작 (3.2초 주기 부드러운 롤링)
+        if (window.__lpWinningTickerTimer) {
+            clearInterval(window.__lpWinningTickerTimer);
+            window.__lpWinningTickerTimer = null;
+        }
+
+        const viewport = container.querySelector('#lpFlipViewport');
+        if (viewport) {
+            const items = viewport.querySelectorAll('.lp-flip-item');
+            if (items.length > 1) {
+                let currentIndex = 0;
+                let isHovered = false;
+
+                const tickerBar = container.querySelector('.lp-singleline-ticker-bar');
+                if (tickerBar) {
+                    tickerBar.addEventListener('mouseenter', () => { isHovered = true; });
+                    tickerBar.addEventListener('mouseleave', () => { isHovered = false; });
+                }
+
+                window.__lpWinningTickerTimer = setInterval(() => {
+                    if (isHovered || !document.body.contains(viewport)) return;
+                    const currentItem = items[currentIndex];
+                    const nextIndex = (currentIndex + 1) % items.length;
+                    const nextItem = items[nextIndex];
+
+                    currentItem.classList.remove('lp-flip-active');
+                    currentItem.classList.add('lp-flip-exit');
+
+                    setTimeout(() => {
+                        currentItem.classList.remove('lp-flip-exit');
+                    }, 480);
+
+                    nextItem.classList.add('lp-flip-active');
+                    currentIndex = nextIndex;
+                }, 3200);
+            }
+        }
     } catch(e) {
         console.error('[updateHomeWinningTicker Error]', e);
     }
