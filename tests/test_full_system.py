@@ -2537,7 +2537,7 @@ class TestFullSystem(unittest.TestCase):
         # 1. Debounce and concurrency locks in auth-mgmt.js
         self.assertIn('_lastKakaoClickTime', auth_code)
         self.assertIn('_isKakaoLoginInProgress', auth_code)
-        self.assertIn('now - _lastKakaoClickTime < 2000', auth_code)
+        self.assertIn('now - _lastKakaoClickTime < 5000', auth_code)
 
         # 2. Debounce lock in index.html bootstrap executor
         self.assertIn('_idxLastKakaoClick', index_code)

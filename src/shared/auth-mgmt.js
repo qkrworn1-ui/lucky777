@@ -1649,25 +1649,9 @@ export async function handleKakaoAuthRedirectOnLoad() {
             }
         }
 
-        // 토큰 교환 실패 → SDK 팝업 방식으로 재시도 (로그인 모달 재표시 방지)
-        console.warn('[Kakao OAuth Redirect] Token exchange failed, falling back to SDK popup login');
-        _setKakaoButtonsLoading(false);
-        if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
-            return new Promise((resolve) => {
-                window.Kakao.Auth.login({
-                    persistAccessToken: true,
-                    throughTalk: false,
-                    success: function(authObj) {
-                        window.Kakao.API.request({
-                            url: '/v2/user/me',
-                            success: function(res) { resolve(processKakaoLoginSuccess(res, authObj)); },
-                            fail: function() { resolve(false); }
-                        });
-                    },
-                    fail: function() { resolve(false); }
-                });
-            });
-        }
+        // 토큰 교환 실패 → 로그인 버튼 잠금 해제만 하고 종료 (루프 방지)
+        // ⚠️ 여기서 Kakao.Auth.login()을 다시 호출하면 redirect 루프 + token rate limit 초과 발생
+        console.warn('[Kakao OAuth Redirect] Token exchange failed. User can retry by clicking the login button.');
     } catch (e) {
         console.error('[Kakao OAuth Redirect Handler Error]', e);
     } finally {
@@ -1681,7 +1665,7 @@ export function loginWithKakao(e) {
     if (e && e.stopPropagation) e.stopPropagation();
 
     const now = Date.now();
-    if (now - _lastKakaoClickTime < 2000 || _isKakaoLoginInProgress) {
+    if (now - _lastKakaoClickTime < 5000 || _isKakaoLoginInProgress) {
         console.log('[Kakao] Click debounced (too fast or already in progress)');
         return;
     }
@@ -1796,6 +1780,14 @@ function _doKakaoLogin(finishLogin) {
 
                 if (errStr.includes('window_closed') || desc.includes('closed') || desc.includes('cancel')) {
                     console.log('[Kakao] User closed login popup or cancelled');
+                    return;
+                }
+
+                // 속도 제한 초과: 잠시 대기 후 재시도 안내
+                if (errStr.includes('rate limit') || errStr.includes('rate_limit') || desc.includes('rate limit')) {
+                    alert('⏳ 카카오 로그인 요청이 너무 많습니다.\n\n30초 후 다시 시도해 주세요.');
+                    _setKakaoButtonsLoading(true);
+                    setTimeout(() => { _setKakaoButtonsLoading(false); }, 30000);
                     return;
                 }
 
