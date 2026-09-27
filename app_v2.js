@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0135 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0142 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0135)
+ * Lucky777 Smart Bundle (v2026.09.28.0142)
  */
 
 
@@ -3132,6 +3132,37 @@ function loginWithKakao(e) {
  */
 function _doKakaoLogin(finishLogin) {
     try {
+        // ⚡ [최적화 1] 이미 SDK에 유효한 Access Token이 보관되어 있는 경우:
+        // 토큰 엔드포인트를 다시 호출(KOE237 쿼터 소모)하지 않고 즉시 프로필 조회 시도
+        if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
+            const existingToken = window.Kakao.Auth.getAccessToken();
+            console.log('[Kakao] Found cached access token, checking profile directly...');
+            window.Kakao.API.request({
+                url: '/v2/user/me',
+                success: function(res) {
+                    console.log('[Kakao] Direct profile verification succeeded with existing token');
+                    processKakaoLoginSuccess(res, { access_token: existingToken });
+                    finishLogin();
+                },
+                fail: function(profileErr) {
+                    console.warn('[Kakao] Cached token invalid/expired, resetting and requesting fresh login:', profileErr);
+                    try { window.Kakao.Auth.setAccessToken(null); } catch(e) {}
+                    _executeKakaoPopupLogin(finishLogin);
+                }
+            });
+            return;
+        }
+
+        _executeKakaoPopupLogin(finishLogin);
+    } catch (execErr) {
+        finishLogin();
+        console.error('[Kakao Exec Error]', execErr);
+        alert('카카오 로그인 실행 오류: ' + execErr.message);
+    }
+}
+
+function _executeKakaoPopupLogin(finishLogin) {
+    try {
         const loginOptions = {
             persistAccessToken: true,
             throughTalk: false,
@@ -3168,9 +3199,9 @@ function _doKakaoLogin(finishLogin) {
                     return;
                 }
 
-                // 속도 제한 초과: 잠시 대기 후 재시도 안내
+                // 속도 제한 초과 (KOE237): 카카오 서버의 계정당 10분 요청 제한 안내
                 if (errStr.includes('rate limit') || errStr.includes('rate_limit') || desc.includes('rate limit')) {
-                    alert('⏳ 카카오 로그인 요청이 너무 많습니다.\n\n30초 후 다시 시도해 주세요.');
+                    alert('⏳ [카카오 로그인 안내]\n\n단시간 내 반복된 요청으로 카카오 인증 서버의 보안 제한(10분 대기)이 적용되었습니다.\n\n약 5~10분 후 카카오 서버에서 자동 해제되오니 잠시 후 다시 시도해 주세요.');
                     _setKakaoButtonsLoading(true);
                     setTimeout(() => { _setKakaoButtonsLoading(false); }, 30000);
                     return;
