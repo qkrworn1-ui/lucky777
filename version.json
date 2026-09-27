@@ -1,9 +1,58 @@
 {
-  "version": "v2026.09.27.1344",
-  "buildDate": "2026-09-27",
+  "version": "v2026.09.26.1522",
+  "buildDate": "2026-09-26",
   "description": "Remove 5-combo verification cards from simulation tab",
-  "buildTimestamp": "2026-09-27T13:44:56.450555",
+  "buildTimestamp": "2026-09-26T15:22:10.346660",
   "buildHistory": [
+    {
+      "version": "v2026.09.24.1152",
+      "buildDate": "2026-09-24",
+      "buildTime": "11:52",
+      "buildTimestamp": "2026-09-24T11:52:04.601558",
+      "description": "Verify and calculate confirmed purchases based on actual server receipts"
+    },
+    {
+      "version": "v2026.09.24.1154",
+      "buildDate": "2026-09-24",
+      "buildTime": "11:54",
+      "buildTimestamp": "2026-09-24T11:54:26.230292",
+      "description": "Verify actual winning numbers matching across recommendations and confirmed purchases"
+    },
+    {
+      "version": "v2026.09.24.1204",
+      "buildDate": "2026-09-24",
+      "buildTime": "12:04",
+      "buildTimestamp": "2026-09-24T12:04:21.076264",
+      "description": "Unify all members winning prize calculation between algorithm intro and review tabs"
+    },
+    {
+      "version": "v2026.09.24.1220",
+      "buildDate": "2026-09-24",
+      "buildTime": "12:20",
+      "buildTimestamp": "2026-09-24T12:20:55.333662",
+      "description": "Add logged in user profile display to app header, landing top bar, and dashboard"
+    },
+    {
+      "version": "v2026.09.24.1232",
+      "buildDate": "2026-09-24",
+      "buildTime": "12:32",
+      "buildTimestamp": "2026-09-24T12:32:37.309917",
+      "description": "Optimize mobile top header responsive layout and align components neatly across all device sizes"
+    },
+    {
+      "version": "v2026.09.24.1244",
+      "buildDate": "2026-09-24",
+      "buildTime": "12:44",
+      "buildTimestamp": "2026-09-24T12:44:18.154585",
+      "description": "Fix mobile text overflow and line break issues across recommendation and review tabs"
+    },
+    {
+      "version": "v2026.09.24.1256",
+      "buildDate": "2026-09-24",
+      "buildTime": "12:56",
+      "buildTimestamp": "2026-09-24T12:56:51.488099",
+      "description": "Apply Concept 1 Ultra-Slim Glassmorphism header to mobile Lotto Recommendation Service"
+    },
     {
       "version": "v2026.09.24.1307",
       "buildDate": "2026-09-24",
@@ -304,56 +353,7 @@
       "buildTime": "15:22",
       "buildTimestamp": "2026-09-26T15:22:10.346660",
       "description": "Remove 5-combo verification cards from simulation tab"
-    },
-    {
-      "version": "v2026.09.27.0334",
-      "buildDate": "2026-09-27",
-      "buildTime": "03:34",
-      "buildTimestamp": "2026-09-27T03:34:19.710902",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
-    {
-      "version": "v2026.09.27.1153",
-      "buildDate": "2026-09-27",
-      "buildTime": "11:53",
-      "buildTimestamp": "2026-09-27T11:53:16.075327",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
-    {
-      "version": "v2026.09.27.1251",
-      "buildDate": "2026-09-27",
-      "buildTime": "12:51",
-      "buildTimestamp": "2026-09-27T12:51:25.188229",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
-    {
-      "version": "v2026.09.27.1316",
-      "buildDate": "2026-09-27",
-      "buildTime": "13:16",
-      "buildTimestamp": "2026-09-27T13:16:22.982944",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
-    {
-      "version": "v2026.09.27.1323",
-      "buildDate": "2026-09-27",
-      "buildTime": "13:23",
-      "buildTimestamp": "2026-09-27T13:23:54.116631",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
-    {
-      "version": "v2026.09.27.1339",
-      "buildDate": "2026-09-27",
-      "buildTime": "13:39",
-      "buildTimestamp": "2026-09-27T13:39:22.089651",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
-    {
-      "version": "v2026.09.27.1344",
-      "buildDate": "2026-09-27",
-      "buildTime": "13:44",
-      "buildTimestamp": "2026-09-27T13:44:56.450555",
-      "description": "Remove 5-combo verification cards from simulation tab"
     }
   ],
-  "buildTime": "13:44"
+  "buildTime": "15:22"
 }

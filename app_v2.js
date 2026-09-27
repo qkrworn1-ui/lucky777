@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.27.1344 - BUILD_DATE: 2026-09-27] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.26.1522 - BUILD_DATE: 2026-09-26] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.27.1344)
+ * Lucky777 Smart Bundle (v2026.09.26.1522)
  */
 
 
@@ -850,68 +850,16 @@ if (typeof window !== 'undefined') {
 const __M_shared_db = (function() {
     const __exports = {};
     try {
-let _isReconnecting = false;
-let _lastReconnectTimestamp = 0;
-
-async function reconnectFirebaseNetwork(force = false, timeoutMs = 2500) {
-    if (typeof window === 'undefined' || !window.db) return;
-
-    const now = Date.now();
-    if (!force && _isReconnecting) return;
-    if (!force && (now - _lastReconnectTimestamp < 1200)) return;
-
-    _isReconnecting = true;
-    _lastReconnectTimestamp = now;
-
-    try {
-        // 1. Force drop any dead half-open TCP stream caused by mobile sleep / tab backgrounding
-        if (typeof window.db.disableNetwork === 'function') {
-            try {
-                await window.db.disableNetwork();
-            } catch(e) {}
-        }
-        // 2. Open fresh WebChannel/stream connection
-        if (typeof window.db.enableNetwork === 'function') {
+async function reconnectFirebaseNetwork(timeoutMs = 2500) {
+    if (typeof window !== 'undefined' && window.db && typeof window.db.enableNetwork === 'function') {
+        try {
             const enablePromise = window.db.enableNetwork();
             const timeoutPromise = new Promise(resolve => setTimeout(resolve, timeoutMs));
             await Promise.race([enablePromise, timeoutPromise]);
             console.log('[Firestore] Network connection revived instantly on app wakeup');
+        } catch(e) {
+            console.warn('[Firestore Reconnect Note]', e);
         }
-    } catch(e) {
-        console.warn('[Firestore Reconnect Note]', e);
-    } finally {
-        _isReconnecting = false;
-    }
-}
-
-/**
- * Fast cache-first document fetcher with strict timeout fallback.
- * Prevents mobile sleep / network freeze from hanging requests.
- */
-async function safeDocGet(docRef, timeoutMs = 2500) {
-    if (!docRef || typeof docRef.get !== 'function') return null;
-
-    // 1. Try local offline cache first (0ms instantaneous response)
-    try {
-        const cachedDoc = await docRef.get({ source: 'cache' });
-        if (cachedDoc && cachedDoc.exists) {
-            // Background refresh from live server without blocking caller
-            docRef.get({ source: 'server' }).catch(() => {});
-            return cachedDoc;
-        }
-    } catch(cErr) {
-        // Cache miss or doc not in offline IndexedDB
-    }
-
-    // 2. Fall back to server fetch with strict timeout race
-    try {
-        const queryPromise = docRef.get();
-        const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), timeoutMs));
-        const res = await Promise.race([queryPromise, timeoutPromise]);
-        return res;
-    } catch(e) {
-        console.warn('[safeDocGet Error]', e);
-        return null;
     }
 }
 
@@ -943,24 +891,11 @@ const db = {
         }
         return fs.collection(name);
     },
-    async get(collection, docId, timeoutMs = 2500) {
+    async get(collection, docId, timeoutMs = 3500) {
         const fs = this.getFirestore();
         if (!fs) return null;
-        const docRef = fs.collection(collection).doc(docId);
-
-        // 1. Instant Cache retrieval (0ms from IndexedDB / local memory)
         try {
-            const cached = await docRef.get({ source: 'cache' });
-            if (cached && cached.exists) {
-                // Background refresh from server without blocking
-                docRef.get({ source: 'server' }).catch(() => {});
-                return cached.data();
-            }
-        } catch(cacheErr) {}
-
-        // 2. Server fetch with timeout race
-        try {
-            const queryPromise = docRef.get();
+            const queryPromise = fs.collection(collection).doc(docId).get();
             const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), timeoutMs));
             const doc = await Promise.race([queryPromise, timeoutPromise]);
             return (doc && doc.exists) ? doc.data() : null;
@@ -979,7 +914,7 @@ const db = {
             return !!res;
         } catch(e) { 
             console.error('DB set error:', e); 
-            return false; 
+            return false;
         }
     },
     onSnapshot(collection, docId, callback) {
@@ -993,17 +928,11 @@ const db = {
 
 if (typeof window !== 'undefined') {
     window.reconnectFirebaseNetwork = reconnectFirebaseNetwork;
-    window.safeDocGet = safeDocGet;
 }
-
 
         if (typeof reconnectFirebaseNetwork !== 'undefined') {
             __exports.reconnectFirebaseNetwork = reconnectFirebaseNetwork;
             if (typeof window !== 'undefined') window.reconnectFirebaseNetwork = reconnectFirebaseNetwork;
-        }
-        if (typeof safeDocGet !== 'undefined') {
-            __exports.safeDocGet = safeDocGet;
-            if (typeof window !== 'undefined') window.safeDocGet = safeDocGet;
         }
         if (typeof db !== 'undefined') {
             __exports.db = db;
@@ -1454,7 +1383,7 @@ if (typeof window !== 'undefined') {
 const __M_shared_auth_mgmt = (function() {
     const __exports = {};
     try {
-const { db, reconnectFirebaseNetwork, safeDocGet } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
+const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { showToast } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { hashPassword, checkPasswordStrength } = (typeof __M_shared_crypto_utils !== 'undefined' ? __M_shared_crypto_utils : {});
 const { DEFAULT_KNOWN_USERS, getAllUnifiedRegisteredUsers, UserContextManager } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
@@ -1866,8 +1795,8 @@ async function checkUserWeeklyPurchaseStatus(userId, userDocData = null, preload
     let userData = userDocData;
     if (!userData && firestore) {
         try {
-            const uDoc = await safeDocGet(firestore.collection('lotto_users').doc(userId), 2000);
-            if (uDoc && uDoc.exists) userData = uDoc.data();
+            const uDoc = await firestore.collection('lotto_users').doc(userId).get();
+            if (uDoc.exists) userData = uDoc.data();
         } catch(e) { console.error('[checkUserWeeklyPurchaseStatus Error]', e); }
     }
 
@@ -1932,8 +1861,8 @@ async function checkUserWeeklyPurchaseStatus(userId, userDocData = null, preload
         }
     } else if (firestore) {
         try {
-            const pDoc = await safeDocGet(firestore.collection('lotto_purchases').doc(userId), 2000);
-            if (pDoc && pDoc.exists && pDoc.data().ledger) {
+            const pDoc = await firestore.collection('lotto_purchases').doc(userId).get();
+            if (pDoc.exists && pDoc.data().ledger) {
                 userLedger = pDoc.data().ledger;
             }
         } catch(e) {
@@ -2634,7 +2563,9 @@ async function checkAuthOnLoad(initFirebaseAndData) {
         if (window.db) {
             (async () => {
                 try {
-                    const userDoc = await safeDocGet(window.db.collection('lotto_users').doc(authId), 2500);
+                    const queryPromise = window.db.collection('lotto_users').doc(authId).get();
+                    const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 3500));
+                    const userDoc = await Promise.race([queryPromise, timeoutPromise]);
                     if (userDoc && userDoc.exists) {
                         const uData = userDoc.data() || {};
                         let freshAdmin = isUserAdmin;
@@ -2684,8 +2615,7 @@ async function checkAuthOnLoad(initFirebaseAndData) {
                         }
 
                         if (!freshAdmin && !isPerm) {
-                            const preloadedP = (typeof state !== 'undefined' && state.globalLedger) ? { ledger: state.globalLedger } : undefined;
-                            const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData, preloadedP);
+                            const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
 
                             // Note: Non-purchased users are NOT suspended from logging in.
                             // Instead, they are restricted from accessing Extra 5 Packs and Simulation tab.
@@ -4095,18 +4025,6 @@ function setupAuthEvents(initFirebaseAndData) {
             const submitBtn = loginForm.querySelector('button[type="submit"]') || document.getElementById('btnLoginSubmit');
             const origBtnText = submitBtn ? submitBtn.innerHTML : '시스템 접속';
 
-            // Proactively warm up network connection on mobile interaction
-            ['focus', 'touchstart'].forEach(evt => {
-                if (idEl) idEl.addEventListener(evt, () => {
-                    if (typeof reconnectFirebaseNetwork === 'function') reconnectFirebaseNetwork();
-                    else if (typeof window.reconnectFirebaseNetwork === 'function') window.reconnectFirebaseNetwork();
-                }, { passive: true, once: true });
-                if (pwEl) pwEl.addEventListener(evt, () => {
-                    if (typeof reconnectFirebaseNetwork === 'function') reconnectFirebaseNetwork();
-                    else if (typeof window.reconnectFirebaseNetwork === 'function') window.reconnectFirebaseNetwork();
-                }, { passive: true, once: true });
-            });
-
             const rawId = idEl ? idEl.value.trim() : '';
             const idLower = rawId.toLowerCase();
             const pw = pwEl ? pwEl.value.trim() : '';
@@ -4210,19 +4128,12 @@ function setupAuthEvents(initFirebaseAndData) {
                 }
 
                 const docRef = firestore.collection('lotto_users').doc(rawId);
-                let userDoc = await safeDocGet(docRef, 3000);
+                const queryPromise = docRef.get();
+                const timeoutPromise = new Promise(resolve => setTimeout(() => resolve('TIMEOUT'), 4500));
+                const userDoc = await Promise.race([queryPromise, timeoutPromise]);
 
-                if (!userDoc) {
-                    // Try forceful reconnect and retry once if mobile socket was dead
-                    if (typeof reconnectFirebaseNetwork === 'function') {
-                        await reconnectFirebaseNetwork(true, 1500);
-                    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
-                        await window.reconnectFirebaseNetwork(true, 1500);
-                    }
-                    userDoc = await safeDocGet(docRef, 2500);
-                }
-
-                if (!userDoc) {
+                if (userDoc === 'TIMEOUT') {
+                    if (typeof window.reconnectFirebaseNetwork === 'function') window.reconnectFirebaseNetwork();
                     if (loginError) { 
                         loginError.textContent = "서버 통신 지연이 발생했습니다. 1~2초 후 다시 접속을 눌러주세요."; 
                         loginError.style.display = 'block'; 
@@ -4230,7 +4141,7 @@ function setupAuthEvents(initFirebaseAndData) {
                     return false;
                 }
 
-                if (!userDoc.exists) {
+                if (!userDoc || !userDoc.exists) {
                     if (loginError) { loginError.textContent = "아이디 또는 비밀번호가 일치하지 않습니다."; loginError.style.display = 'block'; }
                     return false;
                 }
@@ -8060,25 +7971,17 @@ window.startBatchWinningSend = async function() {
 
         let uData = null;
         let isUserAdmin = isAdminUser(authId);
-        if (window.__currentUser && window.__currentUser.userId === authId) {
-            uData = window.__currentUser;
-            if (window.__currentUser.isAdmin) isUserAdmin = true;
-        }
-
-        if (!uData) {
-            try {
-                if (window.db) {
-                    const doc = await safeDocGet(window.db.collection('lotto_users').doc(authId), 2000);
-                    if (doc && doc.exists) {
-                        uData = doc.data();
-                        if (uData.isAdmin === true || uData.role === 'admin') isUserAdmin = true;
-                    }
+        try {
+            if (window.db) {
+                const doc = await window.db.collection('lotto_users').doc(authId).get();
+                if (doc.exists) {
+                    uData = doc.data();
+                    if (uData.isAdmin === true || uData.role === 'admin') isUserAdmin = true;
                 }
-            } catch(e) {}
-        }
+            }
+        } catch(e) {}
 
-        const preloadedP = (typeof state !== 'undefined' && state.globalLedger) ? { ledger: state.globalLedger } : undefined;
-        const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData, preloadedP);
+        const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
         const targetRound = pStatus.targetRound || getUpcomingLottoRound();
 
         const targetSaturday = getNextSaturday20PM();
@@ -8318,14 +8221,6 @@ try {
     }
 } catch(e) {}
 
-let initialGlobalState = {};
-try {
-    const rawState = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem('lotto_global_state_cache') : null;
-    if (rawState) {
-        initialGlobalState = JSON.parse(rawState) || {};
-    }
-} catch(e) {}
-
 const state = {
     allNumbers: Array.from({ length: 45 }, (_, i) => i + 1),
     allRegisteredUsersList: initialCachedUsers,
@@ -8341,10 +8236,10 @@ const state = {
     COLD_FREQ_GROUP: [],
     COLD_OVERDUE_GROUP: [],
     savedCombinations: [],
-    fixedTop5Combinations: initialGlobalState.fixedTop5Combinations || [],
-    fixedTop5Combinations_v3: initialGlobalState.fixedTop5Combinations_v3 || [],
-    fixedTop5Combinations_v4: initialGlobalState.fixedTop5Combinations_v4 || [],
-    extraPacks: initialGlobalState.extraPacks || [], // Up to 5 additional 10-combo packs: [{ packId: 1, name: '추가 1', combos: [...] }]
+    fixedTop5Combinations: [],
+    fixedTop5Combinations_v3: [],
+    fixedTop5Combinations_v4: [],
+    extraPacks: [], // Up to 5 additional 10-combo packs: [{ packId: 1, name: '추가 1', combos: [...] }]
     editingLedgerInfo: null,
     selectedWheelingPool: [3, 7, 12, 18, 21, 27, 34, 38, 42, 45],
     comboChartInstances: [],
@@ -8385,7 +8280,7 @@ function initHistory() {
  */
 function saveGlobalState() {
     const currentRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
-    const payload = removeUndefined({
+    db.set('lotto_app_state', 'global_state', removeUndefined({
         round: currentRound,
         aiState: state.aiState,
         fixedTop5Combinations: state.fixedTop5Combinations,
@@ -8393,11 +8288,9 @@ function saveGlobalState() {
         fixedTop5Combinations_v4: state.fixedTop5Combinations_v4,
         extraPacks: state.extraPacks || [],
         updatedAt: new Date().toISOString()
-    });
-    db.set('lotto_app_state', 'global_state', payload);
+    }));
     try {
         SafeLocalStorage.setItem('lotto_extra_packs', JSON.stringify(state.extraPacks || []));
-        SafeLocalStorage.setItem('lotto_global_state_cache', JSON.stringify(payload));
     } catch(e) {}
 }
 
@@ -9553,7 +9446,7 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                         if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                         for (const rKey in d.recommendationSnapshots) {
                             const snapData = d.recommendationSnapshots[rKey];
-                            if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks || snapData.combos)) {
+                            if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
                                 state.userRecommendationSnapshots[`${uId}_${parseInt(rKey, 10)}`] = snapData;
                             }
                         }
@@ -9597,7 +9490,7 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                     if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                     for (const rKey in data.recommendationSnapshots) {
                         const snapData = data.recommendationSnapshots[rKey];
-                        if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks || snapData.combos)) {
+                        if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
                             state.userRecommendationSnapshots[`${userId}_${parseInt(rKey, 10)}`] = snapData;
                         }
                     }
@@ -9677,8 +9570,7 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                     userId: rawUserId,
                     realName: userNames[rawUserId] || rawUserId,
                     createdAt: (state.allRegisteredUsersList.find(u => u.id === rawUserId)?.createdAt) || null,
-                    ledger: cleanUserLedger,
-                    recommendationSnapshots: data.recommendationSnapshots || {}
+                    ledger: cleanUserLedger
                 };
 
                 for (const r in cleanUserLedger) {
@@ -9706,8 +9598,7 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                     userId: 'master',
                     realName: '최고관리자',
                     createdAt: '2026-07-25T12:00:00+09:00',
-                    ledger: masterCleanLedger,
-                    recommendationSnapshots: {}
+                    ledger: masterCleanLedger
                 };
                 for (const r in masterCleanLedger) {
                     const roundNum = parseInt(r, 10);
@@ -9717,34 +9608,6 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                     if (roundNum === 1239) {
                         mergedLedger[1239] = normalizeMaster1239Order(mergedLedger[1239]);
                     }
-                }
-            }
-
-            if (!allUsersMap['master'].recommendationSnapshots) {
-                allUsersMap['master'].recommendationSnapshots = {};
-            }
-            if (!state.userRecommendationSnapshots) {
-                state.userRecommendationSnapshots = {};
-            }
-            // Consolidate official snapshots into master (1235~1239 from guest, 1240~1243 from kakao_5070244665)
-            const gSnaps = (allUsersMap['guest'] && allUsersMap['guest'].recommendationSnapshots) || {};
-            const kSnaps = (allUsersMap['kakao_5070244665'] && allUsersMap['kakao_5070244665'].recommendationSnapshots) || {};
-            for (const r in gSnaps) {
-                if (!allUsersMap['master'].recommendationSnapshots[r]) {
-                    allUsersMap['master'].recommendationSnapshots[r] = gSnaps[r];
-                }
-                const rNum = parseInt(r, 10);
-                if (!state.userRecommendationSnapshots[`master_${rNum}`]) {
-                    state.userRecommendationSnapshots[`master_${rNum}`] = gSnaps[r];
-                }
-            }
-            for (const r in kSnaps) {
-                if (!allUsersMap['master'].recommendationSnapshots[r]) {
-                    allUsersMap['master'].recommendationSnapshots[r] = kSnaps[r];
-                }
-                const rNum = parseInt(r, 10);
-                if (!state.userRecommendationSnapshots[`master_${rNum}`]) {
-                    state.userRecommendationSnapshots[`master_${rNum}`] = kSnaps[r];
                 }
             }
 
@@ -11761,11 +11624,11 @@ function getSafeActualDraw(round) {
 
     const STATIC_DRAWS = {
 
-        1235: { numbers: [6, 14, 22, 29, 36, 41], bonus: 17, rank1Prize: 1985670000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-01' },
+        1235: { numbers: [6, 14, 22, 29, 36, 41], bonus: 17, rank1Prize: 1985670000, date: '2026-08-01' },
 
-        1236: { numbers: [3, 11, 18, 25, 33, 42], bonus: 8, rank1Prize: 2450320000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-08' },
+        1236: { numbers: [3, 11, 18, 25, 33, 42], bonus: 8, rank1Prize: 2450320000, date: '2026-08-08' },
 
-        1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, rank1Prize: 2180450000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-15' },
+        1237: { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, rank1Prize: 2180450000, date: '2026-08-15' },
 
         1238: { numbers: [2, 13, 18, 32, 38, 42], bonus: 22, rank1Prize: 1197250000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-22' },
 
@@ -11775,9 +11638,7 @@ function getSafeActualDraw(round) {
 
         1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-12' },
 
-        1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-19' },
-
-        1243: { numbers: [9, 18, 24, 38, 43, 44], bonus: 35, rank1Prize: 2200000000, rank2Prize: 50000000, rank3Prize: 1500000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-26' }
+        1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-19' }
 
     };
 
@@ -15853,65 +15714,21 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     cleanUser = cleanUser.toLowerCase().trim();
     const roundNum = parseInt(round, 10);
     const docKey = `${cleanUser}_${roundNum}`;
-    const rKey = String(roundNum);
 
-    // 1. Direct in-memory state snapshot
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey]) {
         return state.userRecommendationSnapshots[docKey];
     }
-    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
-        return state.userRecommendationSnapshots[rKey];
-    }
-
-    // 2. Direct LocalStorage cache
     try {
         const raw = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem(`lotto_rec_snapshot_${docKey}`) : null;
         if (raw) {
             const parsed = JSON.parse(raw);
-            if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks || parsed.combos)) {
+            if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
                 if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                 state.userRecommendationSnapshots[docKey] = parsed;
                 return parsed;
             }
         }
     } catch(e) {}
-
-    // 3. state.allUsersPurchasesMap for cleanUser
-    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
-        const pDoc = state.allUsersPurchasesMap[cleanUser];
-        if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
-            return pDoc.recommendationSnapshots[rKey];
-        }
-    }
-
-    // 4. Official Unified Baseline Fallback – ONLY for admin/master/official-snapshot accounts.
-    //    Regular users must NOT fall back to official sample numbers; they use their own snapshot
-    //    or fall through to dynamic generation.
-    const isOfficialAccount = (cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'guest' || cleanUser === 'kakao_5070244665' || cleanUser === 'all');
-    if (!isOfficialAccount) return null;
-
-    const fallbackUsers = ['master', roundNum <= 1239 ? 'guest' : 'kakao_5070244665', 'guest', 'kakao_5070244665'];
-    for (const altUser of fallbackUsers) {
-        if (altUser === cleanUser) continue;
-        const altKey = `${altUser}_${roundNum}`;
-        if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[altKey]) {
-            return state.userRecommendationSnapshots[altKey];
-        }
-        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[altUser]) {
-            const altDoc = state.allUsersPurchasesMap[altUser];
-            if (altDoc.recommendationSnapshots && altDoc.recommendationSnapshots[rKey]) {
-                return altDoc.recommendationSnapshots[rKey];
-            }
-        }
-        try {
-            const rawAlt = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem(`lotto_rec_snapshot_${altKey}`) : null;
-            if (rawAlt) {
-                const parsed = JSON.parse(rawAlt);
-                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks || parsed.combos)) return parsed;
-            }
-        } catch(e) {}
-    }
-
     return null;
 }
 
@@ -16536,7 +16353,7 @@ function clearUser70ReviewCache() {
         const keysToRemove = [];
         for (let i = 0; i < SafeLocalStorage.length; i++) {
             const key = SafeLocalStorage.key(i);
-            if (key && (key.startsWith('lotto_review_v2_') || key.startsWith('lotto_review_v3_') || key.startsWith('lotto_rec_snapshot_'))) {
+            if (key && (key.startsWith('lotto_review_v2_') || key.startsWith('lotto_rec_snapshot_'))) {
                 keysToRemove.push(key);
             }
         }
@@ -16548,9 +16365,6 @@ function clearUser70ReviewCache() {
         }
         if (typeof window.clearHomeReviewDashboardCache === 'function') {
             try { window.clearHomeReviewDashboardCache(); } catch(e) {}
-        }
-        if (typeof window.clearConfirmedRecCache === 'function') {
-            try { window.clearConfirmedRecCache(); } catch(e) {}
         }
     }
 }
@@ -16608,36 +16422,6 @@ function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
             return pDoc.recommendationSnapshots[rKey];
         }
-    }
-
-    // 4. Official Unified Baseline Fallback – ONLY for admin/master/official-snapshot accounts.
-    //    Regular users must NOT fall back to the official sample numbers; they must use their own
-    //    snapshot or fall through to dynamic generation (which will also save their own snapshot).
-    const isOfficialAccount = (cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'guest' || cleanUser === 'kakao_5070244665' || cleanUser === 'all');
-    if (!isOfficialAccount) {
-        return null;
-    }
-    const roundInt = parseInt(roundNum, 10);
-    const fallbackUsers = ['master', roundInt <= 1239 ? 'guest' : 'kakao_5070244665', 'guest', 'kakao_5070244665'];
-    for (const altUser of fallbackUsers) {
-        if (altUser === cleanUser) continue;
-        const altKey = `${altUser}_${roundInt}`;
-        if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[altKey]) {
-            return state.userRecommendationSnapshots[altKey];
-        }
-        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[altUser]) {
-            const altDoc = state.allUsersPurchasesMap[altUser];
-            if (altDoc.recommendationSnapshots && altDoc.recommendationSnapshots[rKey]) {
-                return altDoc.recommendationSnapshots[rKey];
-            }
-        }
-        try {
-            const rawAlt = SafeLocalStorage.getItem(`lotto_rec_snapshot_${altKey}`);
-            if (rawAlt) {
-                const parsed = JSON.parse(rawAlt);
-                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks || parsed.combos)) return parsed;
-            }
-        } catch(e) {}
     }
 
     return null;
@@ -16703,7 +16487,7 @@ function computeUser70RecommendationsReview(userId, roundNum) {
     }
 
     try {
-        const localCached = SafeLocalStorage.getItem(`lotto_review_v3_${cacheKey}`);
+        const localCached = SafeLocalStorage.getItem(`lotto_review_v2_${cacheKey}`);
         if (localCached) {
             const parsed = JSON.parse(localCached);
             if (parsed && typeof parsed === 'object' && parsed.userId === cleanUser && parsed.roundNum === roundNum && parsed.v4Combos && parsed.v3Combos && parsed.extraPackEvals && parsed.extraPackEvals.length === 5) {
@@ -16762,49 +16546,14 @@ function computeUser70RecommendationsReview(userId, roundNum) {
         v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
         v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
         for (let pId = 1; pId <= 5; pId++) {
-            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId);
-            let pCombos = [];
-            if (packObj && Array.isArray(packObj.combos)) {
-                pCombos = packObj.combos;
-            } else if (Array.isArray(packObj)) {
-                pCombos = packObj;
-            } else if (Array.isArray(snapshot.combos) && snapshot.combos.length >= 20 + pId * 10) {
-                pCombos = snapshot.combos.slice(10 + pId * 10, 20 + pId * 10);
-            }
+            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId) || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] };
+            const pCombos = (packObj && Array.isArray(packObj.combos)) ? packObj.combos : (Array.isArray(packObj) ? packObj : []);
             const evalData = evaluateRecommendationSet(pCombos, actualDraw);
             extraPackEvals.push({
                 packId: pId,
-                name: (packObj && packObj.name) || `추가팩 ${pId}`,
-                badge: (packObj && packObj.badge) || `EXTRA ${pId}`,
-                color: (packObj && packObj.color) || '#38bdf8',
-                combos: pCombos,
-                evalData: evalData
-            });
-        }
-    } else if (snapshot && (snapshot.combos || snapshot.v4Combos)) {
-        if (Array.isArray(snapshot.combos) && snapshot.combos.length >= 70 && (!snapshot.v4Combos || snapshot.v4Combos.length === 0)) {
-            v4Combos = snapshot.combos.slice(0, 10);
-            v3Combos = snapshot.combos.slice(10, 20);
-        } else {
-            v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
-            v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
-        }
-        for (let pId = 1; pId <= 5; pId++) {
-            const packObj = snapshot.extraPacks ? getPackFromSnapshot(snapshot.extraPacks, pId) : null;
-            let pCombos = [];
-            if (packObj && Array.isArray(packObj.combos)) {
-                pCombos = packObj.combos;
-            } else if (Array.isArray(packObj)) {
-                pCombos = packObj;
-            } else if (Array.isArray(snapshot.combos) && snapshot.combos.length >= 20 + pId * 10) {
-                pCombos = snapshot.combos.slice(10 + pId * 10, 20 + pId * 10);
-            }
-            const evalData = evaluateRecommendationSet(pCombos, actualDraw);
-            extraPackEvals.push({
-                packId: pId,
-                name: (packObj && packObj.name) || `추가팩 ${pId}`,
-                badge: (packObj && packObj.badge) || `EXTRA ${pId}`,
-                color: (packObj && packObj.color) || '#38bdf8',
+                name: packObj.name || `추가팩 ${pId}`,
+                badge: packObj.badge || `EXTRA ${pId}`,
+                color: packObj.color || '#38bdf8',
                 combos: pCombos,
                 evalData: evalData
             });
@@ -16984,7 +16733,7 @@ function computeUser70RecommendationsReview(userId, roundNum) {
 
     _user70ReviewCache[cacheKey] = reviewResult;
     try {
-        SafeLocalStorage.setItem(`lotto_review_v3_${cacheKey}`, JSON.stringify(reviewResult));
+        SafeLocalStorage.setItem(`lotto_review_v2_${cacheKey}`, JSON.stringify(reviewResult));
     } catch(e) {}
     return reviewResult;
 }
@@ -20616,7 +20365,7 @@ function clearAlgoPerfCache() {
         const keysToRemove = [];
         for (let i = 0; i < SafeStorage.length; i++) {
             const k = SafeStorage.key(i);
-            if (k && (k.startsWith('algo_perf_v2_') || k.startsWith('algo_perf_v3_'))) keysToRemove.push(k);
+            if (k && k.startsWith('algo_perf_v2_')) keysToRemove.push(k);
         }
         keysToRemove.forEach(k => SafeStorage.removeItem(k));
     } catch(e) {}
@@ -20629,9 +20378,6 @@ if (typeof window !== 'undefined') {
  * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 서버 스냅샷 기반 정확한 전수 집계)
  */
 async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all') {
-    // 🔒 추천번호 스냅샷은 1235회부터 발급 — 그 이전 회차는 집계 의미 없음
-    fromRound = Math.max(1235, parseInt(fromRound, 10) || 1235);
-
     if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
         if (typeof initHistory === 'function') initHistory();
         else if (typeof LOTTO_HISTORY !== 'undefined') state.mergedHistory = { ...LOTTO_HISTORY, ...(state.lottoExtraHistory || {}) };
@@ -20665,9 +20411,26 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
     }
     const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : fromRound;
 
-    // 전수 검증 대상 사용자 ID 수집
-    // 'all' 또는 'master'인 경우: 7대 알고리즘의 공식 통합 스냅샷 시리즈(master: 1235~1239 guest, 1240~1243 kakao_5070244665)를 단일 기준으로 전수 채점하여 중복 및 누락 원천 차단
-    const candidateUsers = isAll ? ['master'] : [cleanUser];
+    // 전수 검증 대상 사용자 ID 수집 (전체 등록 회원 목록과 100% 동기화)
+    const allUserIdsSet = new Set();
+    if (isAll) {
+        baseList.forEach(u => {
+            if (u && u.id && !isSystemOrDummyUser(u.id)) {
+                allUserIdsSet.add(String(u.id).toLowerCase().trim());
+            }
+        });
+        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+            state.allRegisteredUsersList.forEach(u => {
+                if (u && u.id && !isSystemOrDummyUser(u.id)) {
+                    allUserIdsSet.add(String(u.id).toLowerCase().trim());
+                }
+            });
+        }
+    } else {
+        allUserIdsSet.add(cleanUser);
+    }
+
+    const candidateUsers = Array.from(allUserIdsSet);
 
     const cacheKey = `${fromRound}_${cleanUser}_${maxRound}_${drawnRounds.length}_${candidateUsers.length}`;
     if (_algoPerfCache.has(cacheKey)) {
@@ -20675,7 +20438,7 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
     }
 
     try {
-        const sessionCached = SafeStorage.getItem(`algo_perf_v3_${cacheKey}`);
+        const sessionCached = SafeStorage.getItem(`algo_perf_v2_${cacheKey}`);
         if (sessionCached) {
             const parsed = JSON.parse(sessionCached);
             if (parsed && typeof parsed === 'object' && parsed.fromRound === fromRound && parsed.maxRound === maxRound) {
@@ -20829,7 +20592,7 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
 
     _algoPerfCache.set(cacheKey, perfResult);
     try {
-        SafeStorage.setItem(`algo_perf_v3_${cacheKey}`, JSON.stringify(perfResult));
+        SafeStorage.setItem(`algo_perf_v2_${cacheKey}`, JSON.stringify(perfResult));
     } catch(e) {}
     return perfResult;
 }
@@ -21132,7 +20895,11 @@ async function renderAlgorithmsTab(fromRound = null) {
                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                         <label for="algoReviewStartRoundSelect" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; white-space: nowrap;">집계 시작 회차:</label>
                         <select id="algoReviewStartRoundSelect" onchange="window.changeAlgoReviewStartRound && window.changeAlgoReviewStartRound(this.value)" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
-                            <option value="1235" ${currentAlgoStartRound === 1235 ? 'selected' : ''}>제 1235회부터 누적 (실제 발급 이력 전체)</option>
+                            <option value="1235" ${currentAlgoStartRound === 1235 ? 'selected' : ''}>제 1235회부터 누적 (실제 발급 이력)</option>
+                            <option value="1230" ${currentAlgoStartRound === 1230 ? 'selected' : ''}>제 1230회부터 누적</option>
+                            <option value="1220" ${currentAlgoStartRound === 1220 ? 'selected' : ''}>제 1220회부터 누적</option>
+                            <option value="1200" ${currentAlgoStartRound === 1200 ? 'selected' : ''}>제 1200회부터 누적</option>
+                            <option value="1" ${currentAlgoStartRound === 1 ? 'selected' : ''}>제 1회부터 전체 전수 누적</option>
                         </select>
                     </div>
                 </div>
@@ -21251,7 +21018,7 @@ function toggleAllAlgoDetailAccordions(expand = true) {
  * 집계 시작 회차 변경
  */
 function changeAlgoReviewStartRound(roundVal) {
-    const r = Math.max(1235, parseInt(roundVal, 10)); // 🔒 최소 1235회 (스냅샷 발급 시작 기준)
+    const r = parseInt(roundVal, 10);
     if (!isNaN(r)) {
         currentAlgoStartRound = r;
         renderAlgorithmsTab(r);
@@ -21316,7 +21083,7 @@ const { state, saveGlobalState } = (typeof __M_services_lotto_state !== 'undefin
 const { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { createBallHtml } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getEffectiveGeneratorUserId } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
-const { db, safeDocGet } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
+const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPermanentUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getAllUnifiedRegisteredUsers } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
 const { getComboNumbers, getLedger, getHistoricalTop10Combinations, saveToLedger } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
@@ -22820,8 +22587,8 @@ async function syncUserActiveExtraPacksFromCloud(userId, round) {
     try {
         let cloudPacks = null;
 
-        // 1. Primary: fetch from writable lotto_users collection using safeDocGet
-        const uDoc = await safeDocGet(firestore.collection('lotto_users').doc(effectiveUserId), 2000);
+        // 1. Primary: fetch from writable lotto_users collection
+        const uDoc = await firestore.collection('lotto_users').doc(effectiveUserId).get();
         if (uDoc && uDoc.exists) {
             const ud = uDoc.data();
             if (ud && ud.activeExtraPacks && Array.isArray(ud.activeExtraPacks[curRound])) {
@@ -22834,7 +22601,7 @@ async function syncUserActiveExtraPacksFromCloud(userId, round) {
         // 2. Secondary fallback
         if (!cloudPacks) {
             try {
-                const cloudDoc = await safeDocGet(firestore.collection('lotto_user_extra_packs').doc(`${effectiveUserId}_${curRound}`), 2000);
+                const cloudDoc = await firestore.collection('lotto_user_extra_packs').doc(`${effectiveUserId}_${curRound}`).get();
                 if (cloudDoc && cloudDoc.exists) {
                     const d = cloudDoc.data();
                     if (d && Array.isArray(d.packIds)) cloudPacks = d.packIds;
@@ -25124,22 +24891,10 @@ const { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateE
 const { getPackFromSnapshot } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
 const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
 
-const { computeUser70RecommendationsReview, getUserJoinRound } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
-
-// 🔒 Snapshot-first with joinRound guard: consistent with review-tab and algorithms-tab
 const _roundUserRecCache = new Map();
 function getMemoizedRecommendations(rnd, user) {
     const key = `${rnd}_${(user || '').toLowerCase()}`;
     if (_roundUserRecCache.has(key)) return _roundUserRecCache.get(key);
-
-    // 🛡️ joinRound guard: do not generate recommendations for rounds before user's join date
-    const cleanUser = (user || '').toLowerCase().trim();
-    const joinRound = (typeof getUserJoinRound === 'function') ? getUserJoinRound(cleanUser) : 1235;
-    if (rnd < joinRound) {
-        const empty = { uV4: [], uV3: [], extraPacks: [] };
-        _roundUserRecCache.set(key, empty);
-        return empty;
-    }
 
     let snapshot = null;
     if (typeof getUserWeeklyRecommendationSnapshotSync === 'function') {
@@ -25154,20 +24909,14 @@ function getMemoizedRecommendations(rnd, user) {
     } else {
         uV4 = computeAbsoluteTop10Combinations(false, rnd, 'v4', true, user) || [];
         uV3 = computeAbsoluteTop10Combinations(false, rnd, 'v3', true, user) || [];
-        extraPacks = (typeof generateExtraAddonPack === 'function')
-            ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, rnd, user))
+        extraPacks = (typeof generateExtraAddonPack === 'function') 
+            ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, rnd, user)) 
             : (state.extraPacks || []);
     }
     const res = { uV4, uV3, extraPacks };
     _roundUserRecCache.set(key, res);
     return res;
 }
-
-// Register cache clear hook so clearUser70ReviewCache() can invalidate this cache too
-if (typeof window !== 'undefined') {
-    window.clearConfirmedRecCache = () => _roundUserRecCache.clear();
-}
-
 
 async function renderConfirmedPurchasesList() {
     const tabConfirmedEl = document.getElementById('tab-confirmed-list');
@@ -28227,7 +27976,7 @@ function generatePredictionReport() {
         else displayName = effectiveUserId;
     }
 
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : 1244));
+    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1241);
     const targetCombosUser = (effectiveUserId === 'all') ? 'master' : effectiveUserId;
 
     // 2. Fetch User's Real Historical Review Stats (1235회차 ~ 최신)
@@ -31127,8 +30876,7 @@ const OFFICIAL_DRAWS = {
     1239: { numbers: [1, 3, 17, 26, 33, 42], bonus: 41, rank1Prize: 1980500000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.08.29' },
     1240: { numbers: [11, 13, 19, 20, 31, 44], bonus: 27, rank1Prize: 2000000000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.05' },
     1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.12' },
-    1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.19' },
-    1243: { numbers: [9, 18, 24, 38, 43, 44], bonus: 35, rank1Prize: 2200000000, rank2Prize: 50000000, rank3Prize: 1500000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.26' }
+    1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.19' }
 };
 
 function getDrawDataForAudit(round) {
@@ -31305,7 +31053,7 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
 
     // Process Purchases & Snapshots
     const processedUsers = [];
-    const allRoundsSet = new Set([1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243]);
+    const allRoundsSet = new Set([1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242]);
 
     const purchasesMap = {};
     purchasesDocs.forEach(p => {
@@ -33408,8 +33156,7 @@ const { setupManualLedgerModal, updateManualModalCrossCheck } = (typeof __M_serv
 const { setupManualDrawModal } = (typeof __M_services_lotto_views_manual_draw_modal !== 'undefined' ? __M_services_lotto_views_manual_draw_modal : {});
 const { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } = (typeof __M_services_lotto_views_snapshot_audit_modal !== 'undefined' ? __M_services_lotto_views_snapshot_audit_modal : {});
 const { autoSyncMissingDraws, setupSyncEvents } = (typeof __M_services_lotto_views_sync !== 'undefined' ? __M_services_lotto_views_sync : {});
-const { computeAbsoluteTop10Combinations, saveUserWeeklyRecommendationSnapshot } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
-const { isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
+const { computeAbsoluteTop10Combinations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 
 let _isLottoInitializing = false;
@@ -33599,24 +33346,11 @@ async function initLottoService(force = false) {
             updateDebugMonitor(state.globalLedger);
         }
 
-        // 1) Local storage pre-load for extra history & global state (offline resilient)
+        // 1) Local storage pre-load for extra history (offline resilient)
         try {
             const localExtra = SafeLocalStorage.getItem('lotto_extra_history');
             if (localExtra) {
                 state.lottoExtraHistory = JSON.parse(localExtra) || {};
-            }
-        } catch(e) {}
-
-        try {
-            const localState = SafeLocalStorage.getItem('lotto_global_state_cache');
-            if (localState) {
-                const parsed = JSON.parse(localState);
-                if (parsed && typeof parsed === 'object') {
-                    if (parsed.aiState) state.aiState = parsed.aiState;
-                    if (parsed.fixedTop5Combinations_v3 && parsed.fixedTop5Combinations_v3.length > 0) state.fixedTop5Combinations_v3 = parsed.fixedTop5Combinations_v3;
-                    if (parsed.fixedTop5Combinations_v4 && parsed.fixedTop5Combinations_v4.length > 0) state.fixedTop5Combinations_v4 = parsed.fixedTop5Combinations_v4;
-                    if (Array.isArray(parsed.extraPacks)) state.extraPacks = parsed.extraPacks;
-                }
             }
         } catch(e) {}
 
@@ -33683,9 +33417,6 @@ async function initLottoService(force = false) {
                 if (stateDoc.fixedTop5Combinations_v3) state.fixedTop5Combinations_v3 = stateDoc.fixedTop5Combinations_v3;
                 if (stateDoc.fixedTop5Combinations_v4) state.fixedTop5Combinations_v4 = stateDoc.fixedTop5Combinations_v4;
                 if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks;
-                try {
-                    SafeLocalStorage.setItem('lotto_global_state_cache', JSON.stringify(stateDoc));
-                } catch(e) {}
             } else {
                 state.fixedTop5Combinations = [];
                 state.fixedTop5Combinations_v3 = [];
@@ -33735,7 +33466,6 @@ async function initLottoService(force = false) {
                         : state.fixedTop5Combinations_v3;
 
                     if (changed) {
-                        try { SafeLocalStorage.setItem('lotto_global_state_cache', JSON.stringify(data)); } catch(e) {}
                         renderTop5Combinations(false);
                     }
                 }
@@ -33814,17 +33544,6 @@ async function initLottoService(force = false) {
             autoSyncMissingDraws().catch(err => console.warn('[AutoSync Background Skipped/Error]', err));
         }
     }, 1500);
-
-    // 🔒 Auto-preserve current user's weekly recommendation snapshot for upcoming round (Write-Once, safe to call repeatedly)
-    // Runs 3 seconds after init to ensure Firestore auth and state.allRegisteredUsersList are fully loaded
-    setTimeout(() => {
-        const initAuthId = (SafeAuth.get() || '').trim().toLowerCase();
-        const initRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244);
-        if (initAuthId && initAuthId !== 'guest' && !isSystemOrDummyUser(initAuthId) && initAuthId !== 'all') {
-            saveUserWeeklyRecommendationSnapshot(initAuthId, initRound)
-                .catch(e => console.warn('[initLottoService] Auto Snapshot Preservation Error:', e));
-        }
-    }, 3000);
 
     const landingEl = document.getElementById('landingPage');
     if (landingEl && (landingEl.classList.contains('active') || landingEl.style.display !== 'none')) {
@@ -40502,68 +40221,22 @@ async function renderLandingDashboard() {
     const elMobileUserName = document.getElementById('lpMobileUserName');
     if (elMobileUserName) elMobileUserName.textContent = displayName || '회원';
 
-    const latestDrawnRound = (state && state.latestDrawData && state.latestDrawData.drwNo) 
-        ? state.latestDrawData.drwNo 
-        : ((state && state.latestRoundNum) ? state.latestRoundNum : (typeof window !== 'undefined' && window.getLatestDrawnRound ? window.getLatestDrawnRound() : 1243));
-
-    const upcomingRound = (typeof window !== 'undefined' && window.getUpcomingLottoRound) 
-        ? window.getUpcomingLottoRound() 
-        : (latestDrawnRound + 1);
-
-    // Identify user's purchased rounds from myFin breakdown
-    const roundBreakdown = (myFin && myFin.roundBreakdown) ? myFin.roundBreakdown : {};
-    const purchasedRounds = Object.keys(roundBreakdown)
-        .map(Number)
-        .filter(r => !isNaN(r) && r > 0 && ((roundBreakdown[r].combos > 0) || (roundBreakdown[r].invest > 0)))
-        .sort((a, b) => b - a);
-
+    const latestRound = (state && state.latestRound) ? state.latestRound : 1241;
     const elMobileConfirmedPill = document.getElementById('lpMobileConfirmedPill');
-    if (elMobileConfirmedPill) {
-        if (purchasedRounds.includes(upcomingRound)) {
-            elMobileConfirmedPill.textContent = `${upcomingRound}회 구매확정`;
-            elMobileConfirmedPill.style.background = 'rgba(16, 185, 129, 0.2)';
-            elMobileConfirmedPill.style.color = '#34d399';
-        } else if (purchasedRounds.includes(latestDrawnRound)) {
-            elMobileConfirmedPill.textContent = `${latestDrawnRound}회 구매확정`;
-            elMobileConfirmedPill.style.background = 'rgba(56, 189, 248, 0.2)';
-            elMobileConfirmedPill.style.color = '#38bdf8';
-        } else if (purchasedRounds.length > 0) {
-            elMobileConfirmedPill.textContent = `${purchasedRounds[0]}회 구매확정`;
-            elMobileConfirmedPill.style.background = 'rgba(56, 189, 248, 0.2)';
-            elMobileConfirmedPill.style.color = '#38bdf8';
-        } else {
-            elMobileConfirmedPill.textContent = `${latestDrawnRound}회 구매확정`;
-            elMobileConfirmedPill.style.background = 'rgba(148, 163, 184, 0.15)';
-            elMobileConfirmedPill.style.color = '#94a3b8';
-        }
-    }
+    if (elMobileConfirmedPill) elMobileConfirmedPill.textContent = `${latestRound}회 구매확정`;
 
     const elWinStripText = document.getElementById('lpWinStripText');
     if (elWinStripText) {
-        // Prioritize the latest drawn round the user participated in
-        const drawnPurchased = purchasedRounds.filter(r => r <= latestDrawnRound);
-        if (drawnPurchased.length > 0) {
-            const targetRound = drawnPurchased.includes(latestDrawnRound) ? latestDrawnRound : drawnPurchased[0];
-            const roundData = roundBreakdown[targetRound] || {};
-            const roundHits = roundData.hits || [0, 0, 0, 0, 0, 0]; // [miss, rank1, rank2, rank3, rank4, rank5]
-            const roundWins = (roundHits[1] || 0) + (roundHits[2] || 0) + (roundHits[3] || 0) + (roundHits[4] || 0) + (roundHits[5] || 0);
-
-            if (roundWins > 0) {
-                const ranksArr = [];
-                if (roundHits[1] > 0) ranksArr.push(`1등 ${roundHits[1]}건`);
-                if (roundHits[2] > 0) ranksArr.push(`2등 ${roundHits[2]}건`);
-                if (roundHits[3] > 0) ranksArr.push(`3등 ${roundHits[3]}건`);
-                if (roundHits[4] > 0) ranksArr.push(`4등 ${roundHits[4]}건`);
-                if (roundHits[5] > 0) ranksArr.push(`5등 ${roundHits[5]}건`);
-                elWinStripText.innerHTML = `<strong>제 ${targetRound}회 적중:</strong> ${ranksArr.join(', ')} (총 ${(roundData.prize || 0).toLocaleString()}원)`;
-            } else {
-                elWinStripText.innerHTML = `<strong>제 ${targetRound}회:</strong> 구매 ${roundData.combos || 0}게임 미당첨 (다음 회차 대박 기원!)`;
-            }
-        } else if (purchasedRounds.includes(upcomingRound)) {
-            const upData = roundBreakdown[upcomingRound] || {};
-            elWinStripText.innerHTML = `<strong>제 ${upcomingRound}회:</strong> 구매확정 완료 (${upData.combos || 0}게임 · 추첨 대기 중)`;
+        if (myFin && myFin.totalWins > 0) {
+            const ranksArr = [];
+            if (myFin.hits[4] > 0) ranksArr.push(`5등 ${myFin.hits[4]}건`);
+            if (myFin.hits[3] > 0) ranksArr.push(`4등 ${myFin.hits[3]}건`);
+            if (myFin.hits[2] > 0) ranksArr.push(`3등 ${myFin.hits[2]}건`);
+            if (myFin.hits[1] > 0) ranksArr.push(`2등 ${myFin.hits[1]}건`);
+            if (myFin.hits[0] > 0) ranksArr.push(`1등 ${myFin.hits[0]}건`);
+            elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> ${ranksArr.join(', ') || '당첨'} (총 ${(myFin.totalPrize || 0).toLocaleString()}원)`;
         } else {
-            elWinStripText.innerHTML = `<strong>제 ${latestDrawnRound}회 추첨완료:</strong> [장부 상세 >]에서 영수증을 등록하고 당첨을 확인하세요!`;
+            elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> 5등 2건 (총 10,000원)`;
         }
     }
 
@@ -40759,7 +40432,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             .filter(n => !isNaN(n) && n >= fromRound && Array.isArray(history[n]?.numbers) && history[n].numbers.length === 6)
             .sort((a, b) => a - b);
 
-        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
+        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
         const maxRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);
@@ -40819,7 +40492,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
                 // Fallback direct calculation across rounds 1235..maxRound and registered users
                 const userList = getAllUnifiedRegisteredUsers();
 
-                const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243].filter(r => r <= maxRound);
+                const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
 
                 rounds.forEach(rnd => {
                     userList.forEach(u => {
@@ -41548,13 +41221,6 @@ window.showLotto = function(pushHistory = true) {
         }
     }
 
-    // Proactively revive Firestore network connection on entering main lotto program
-    if (typeof reconnectFirebaseNetwork === 'function') {
-        reconnectFirebaseNetwork();
-    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
-        window.reconnectFirebaseNetwork();
-    }
-
     _switchPage('appContainer', pushHistory);
     try {
         if (typeof switchLottoTab === 'function') {
@@ -41687,72 +41353,35 @@ function runInit() {
     }, 20);
 }
 
-let _resumeDebounceTimer = null;
-let _lastResumeTimestamp = 0;
-
 function handleAppResumeAndWakeup() {
-    const now = Date.now();
-    if (now - _lastResumeTimestamp < 600) {
-        return; // Debounce rapid concurrent browser events
+    // 1. Immediately revive Firestore network connection (eliminates mobile sleep/background lag)
+    if (typeof reconnectFirebaseNetwork === 'function') {
+        reconnectFirebaseNetwork();
+    } else if (typeof window.reconnectFirebaseNetwork === 'function') {
+        window.reconnectFirebaseNetwork();
+    } else if (window.db && typeof window.db.enableNetwork === 'function') {
+        try { window.db.enableNetwork(); } catch(e) {}
     }
-    _lastResumeTimestamp = now;
 
-    if (_resumeDebounceTimer) {
-        clearTimeout(_resumeDebounceTimer);
+    // 2. Render Landing UI immediately from cache (0ms instant response)
+    if (typeof renderLandingDashboard === 'function') {
+        try { renderLandingDashboard(); } catch(e) {}
     }
 
-    _resumeDebounceTimer = setTimeout(async () => {
-        // 1. Immediately revive Firestore network connection (force reset dead sockets)
-        if (typeof reconnectFirebaseNetwork === 'function') {
-            await reconnectFirebaseNetwork(true);
-        } else if (typeof window.reconnectFirebaseNetwork === 'function') {
-            await window.reconnectFirebaseNetwork(true);
-        } else if (window.db && typeof window.db.enableNetwork === 'function') {
-            try {
-                if (typeof window.db.disableNetwork === 'function') await window.db.disableNetwork();
-                await window.db.enableNetwork();
-            } catch(e) {}
-        }
+    // 3. Fast non-blocking version cross-check
+    if (typeof window.checkLatestBuildVersion === 'function') {
+        try { window.checkLatestBuildVersion(true); } catch(e) {}
+    }
 
-        // 2. Refresh active page view immediately from local cache (0ms instant response)
-        const appContainer = document.getElementById('appContainer');
-        const isLottoActive = appContainer && (appContainer.classList.contains('active') || appContainer.style.display === 'flex');
-        const totoPage = document.getElementById('totoPage');
-        const isTotoActive = totoPage && (totoPage.classList.contains('active') || totoPage.style.display === 'block');
-
-        if (isLottoActive) {
-            // Main Lotto Program active: refresh active lotto tab view
-            const curTab = window.__currentLottoTab || 'tab-generator';
-            if (typeof window.switchLottoTab === 'function') {
-                try { window.switchLottoTab(curTab); } catch(e) {}
-            }
-        } else if (isTotoActive) {
-            // Toto Program active
-            if (typeof renderTotoDashboard === 'function') {
-                try { renderTotoDashboard(); } catch(e) {}
-            }
-        } else {
-            // Landing Dashboard active
-            if (typeof renderLandingDashboard === 'function') {
-                try { renderLandingDashboard(); } catch(e) {}
-            }
-        }
-
-        // 3. Fast non-blocking version cross-check
-        if (typeof window.checkLatestBuildVersion === 'function') {
-            try { window.checkLatestBuildVersion(true); } catch(e) {}
-        }
-
-        // 4. If logged in but login modal is lingering, re-verify auth
-        const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
-        const loginModal = document.getElementById('loginModalOverlay');
-        const isModalVisible = loginModal && loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden');
-        if (authId && isModalVisible) {
-            setTimeout(() => {
-                try { checkAuthOnLoad(initLottoService); } catch(e) {}
-            }, 50);
-        }
-    }, 100);
+    // 4. If logged in but login modal is lingering, re-verify auth
+    const authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : null;
+    const loginModal = document.getElementById('loginModalOverlay');
+    const isModalVisible = loginModal && loginModal.style.display !== 'none' && !loginModal.classList.contains('hidden');
+    if (authId && isModalVisible) {
+        setTimeout(() => {
+            try { checkAuthOnLoad(initLottoService); } catch(e) {}
+        }, 50);
+    }
 }
 
 if (typeof document !== 'undefined') {
