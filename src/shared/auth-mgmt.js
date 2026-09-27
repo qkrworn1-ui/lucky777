@@ -1255,13 +1255,13 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
 
                         if (!isRootMaster) {
                             const isPhoneValid = !!(uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.replace(/[^0-9]/g, '').length >= 10);
-                            const isSigValid = !!(
-                                uData.hasSignature !== false &&
-                                uData.agreementDoc && 
-                                uData.agreementDoc.signatureDataUrl && 
-                                uData.agreementDoc.signatureDataUrl.length > 50 &&
-                                uData.agreementDoc.status !== 'reset'
-                            );
+                            const isReset = !!(uData.agreementDoc && uData.agreementDoc.status === 'reset');
+                            const hasValidSigUrl = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl && uData.agreementDoc.signatureDataUrl.length > 50);
+                            const hasAnySigFlag = (uData.hasSignature === true || uData.hasPledgeSigned === true || uData.isPledgeSigned === true || (uData.agreedTerms && uData.agreedTerms.hasSignature === true));
+                            const isLocalSigned = (typeof localStorage !== 'undefined' && localStorage.getItem('pledge_signed_' + authId) === 'true');
+                            
+                            // 서명 유효성: 관리자에 의해 리셋되지 않았고, 유효한 서명 데이터 또는 플래그가 존재할 때 유효
+                            const isSigValid = !isReset && ((hasValidSigUrl && (hasAnySigFlag || isLocalSigned)) || (hasValidSigUrl && uData.hasSignature !== false));
                             const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2 && !uData.realName.startsWith('카카오_') && !uData.realName.startsWith('kakao_'));
 
                             if (!isPhoneValid || !isSigValid || !isNameValid) {
@@ -1600,13 +1600,13 @@ export function processKakaoLoginSuccess(res, authObj = {}) {
                         const isRootMaster = (customUserId.toLowerCase() === 'master' || customUserId.toLowerCase() === 'admin');
                         if (!isRootMaster && activeUserData) {
                             const isPhoneValid = !!(activeUserData.phoneNumber && !activeUserData.phoneNumber.includes('카카오') && activeUserData.phoneNumber !== '미등록' && activeUserData.phoneNumber.replace(/[^0-9]/g, '').length >= 10);
-                            const isSigValid = !!(
-                                activeUserData.hasSignature !== false &&
-                                activeUserData.agreementDoc && 
-                                activeUserData.agreementDoc.signatureDataUrl && 
-                                activeUserData.agreementDoc.signatureDataUrl.length > 50 &&
-                                activeUserData.agreementDoc.status !== 'reset'
-                            );
+                            const isReset = !!(activeUserData.agreementDoc && activeUserData.agreementDoc.status === 'reset');
+                            const hasValidSigUrl = !!(activeUserData.agreementDoc && activeUserData.agreementDoc.signatureDataUrl && activeUserData.agreementDoc.signatureDataUrl.length > 50);
+                            const hasAnySigFlag = (activeUserData.hasSignature === true || activeUserData.hasPledgeSigned === true || activeUserData.isPledgeSigned === true || (activeUserData.agreedTerms && activeUserData.agreedTerms.hasSignature === true));
+                            const isLocalSigned = (typeof localStorage !== 'undefined' && localStorage.getItem('pledge_signed_' + customUserId) === 'true');
+                            
+                            // 서명 유효성: 관리자에 의해 리셋되지 않았고, 유효한 서명 데이터 또는 플래그가 존재할 때 유효
+                            const isSigValid = !isReset && ((hasValidSigUrl && (hasAnySigFlag || isLocalSigned)) || (hasValidSigUrl && activeUserData.hasSignature !== false));
                             const isNameValid = !!(activeUserData.realName && activeUserData.realName.trim().length >= 2 && !activeUserData.realName.startsWith('카카오_') && !activeUserData.realName.startsWith('kakao_'));
 
                             if (!isPhoneValid || !isSigValid || !isNameValid) {
@@ -4863,7 +4863,7 @@ export function setupAuthEvents(initFirebaseAndData) {
                 console.warn('[Phone Duplicate Check Handled]', phoneCheckErr);
             }
 
-            const sigDataUrl = (typeof window.getPledgeSigDataUrl === 'function') ? window.getPledgeSigDataUrl() : null;
+            const sigDataUrl = (typeof window.getPledgeSigDataUrl === 'function') ? (window.getPledgeSigDataUrl() || '') : '';
             const now = new Date();
             const formattedDate = `${now.getFullYear()}년 ${String(now.getMonth() + 1).padStart(2, '0')}월 ${String(now.getDate()).padStart(2, '0')}일 ${String(now.getHours()).padStart(2, '0')}시 ${String(now.getMinutes()).padStart(2, '0')}분`;
 
@@ -4876,20 +4876,24 @@ export function setupAuthEvents(initFirebaseAndData) {
                 phoneNumber: cleanPhone,
                 createdAt: now.toISOString(),
                 agreedDateFormatted: formattedDate,
-                userAgent: navigator.userAgent,
-                terms: getStandardAgreementTerms(now),
-                signatureDataUrl: sigDataUrl,
+                userAgent: (typeof navigator !== 'undefined' && navigator.userAgent) ? navigator.userAgent : 'Web Browser',
+                terms: (typeof getStandardAgreementTerms === 'function') ? getStandardAgreementTerms(now) : [],
+                signatureDataUrl: sigDataUrl || '',
                 legalPledgeStatement: '위 모든 약관의 전문 내용을 확인하였으며 본인이 직접 자필 서명 날인하고 본 전자 계약을 체결합니다.',
                 status: 'legally_binding'
             };
 
             // Use set with merge: true for absolute safety (works whether doc exists or not)
+            // Ensure top-level hasSignature, hasPledgeSigned, isPledgeSigned are explicitly true!
             await firestore.collection('lotto_users').doc(userId).set({
                 userId: userId,
                 realName: realName,
                 phoneNumber: cleanPhone,
                 phone: cleanPhone,
                 status: 'active',
+                hasSignature: true,
+                hasPledgeSigned: true,
+                isPledgeSigned: true,
                 agreementDoc: agreementDocument,
                 agreedTerms: {
                     feeAgreement: true,
@@ -4898,12 +4902,15 @@ export function setupAuthEvents(initFirebaseAndData) {
                     algoDisclaimer: true,
                     agreedAt: now.toISOString(),
                     hasSignature: true
-                }
+                },
+                updatedAt: now.toISOString()
             }, { merge: true });
 
             try {
                 await firestore.collection('lotto_agreements').doc(userId).set(agreementDocument);
-            } catch(e) {}
+            } catch(e) {
+                console.warn('[saveMandatoryPledge] lotto_agreements archive notice (non-fatal):', e);
+            }
 
             // Immediately synchronize in-memory caches so admin list reflects ✍️ instantly
             if (typeof __cachedUsersWithStatus !== 'undefined' && Array.isArray(__cachedUsersWithStatus)) {
@@ -4915,8 +4922,10 @@ export function setupAuthEvents(initFirebaseAndData) {
                     targetU.data.phone = cleanPhone;
                     targetU.data.agreementDoc = agreementDocument;
                     targetU.data.hasSignature = true;
+                    targetU.data.hasPledgeSigned = true;
                     targetU.data.isPledgeSigned = true;
                     targetU.hasPledgeSigned = true;
+                    targetU.hasSignature = true;
                 }
             }
             if (typeof window !== 'undefined' && window.state && Array.isArray(window.state.allRegisteredUsersList)) {
@@ -4927,6 +4936,7 @@ export function setupAuthEvents(initFirebaseAndData) {
                     targetReg.phone = cleanPhone;
                     targetReg.phoneNumber = cleanPhone;
                     targetReg.hasPledgeSigned = true;
+                    targetReg.hasSignature = true;
                     targetReg.agreementDoc = agreementDocument;
                 }
             }
@@ -4966,10 +4976,10 @@ export function setupAuthEvents(initFirebaseAndData) {
                 try { window.renderLandingDashboard(); } catch(e){}
             }
 
-            // Fallback re-check
-            setTimeout(() => {
-                checkAuthOnLoad(initFirebaseAndData);
-            }, 300);
+            // Re-enable body scroll
+            if (document.body) {
+                document.body.style.overflow = '';
+            }
 
         } catch (err) {
             console.error('[saveMandatoryPledge Error]', err);
