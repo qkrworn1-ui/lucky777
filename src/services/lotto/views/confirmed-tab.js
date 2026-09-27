@@ -10,10 +10,22 @@ import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generate
 import { getPackFromSnapshot } from './review-tab.js';
 import { recalculateGroups } from '../statistics.js';
 
+import { computeUser70RecommendationsReview, getUserJoinRound } from './review-tab.js';
+
+// 🔒 Snapshot-first with joinRound guard: consistent with review-tab and algorithms-tab
 const _roundUserRecCache = new Map();
 function getMemoizedRecommendations(rnd, user) {
     const key = `${rnd}_${(user || '').toLowerCase()}`;
     if (_roundUserRecCache.has(key)) return _roundUserRecCache.get(key);
+
+    // 🛡️ joinRound guard: do not generate recommendations for rounds before user's join date
+    const cleanUser = (user || '').toLowerCase().trim();
+    const joinRound = (typeof getUserJoinRound === 'function') ? getUserJoinRound(cleanUser) : 1235;
+    if (rnd < joinRound) {
+        const empty = { uV4: [], uV3: [], extraPacks: [] };
+        _roundUserRecCache.set(key, empty);
+        return empty;
+    }
 
     let snapshot = null;
     if (typeof getUserWeeklyRecommendationSnapshotSync === 'function') {
@@ -28,14 +40,20 @@ function getMemoizedRecommendations(rnd, user) {
     } else {
         uV4 = computeAbsoluteTop10Combinations(false, rnd, 'v4', true, user) || [];
         uV3 = computeAbsoluteTop10Combinations(false, rnd, 'v3', true, user) || [];
-        extraPacks = (typeof generateExtraAddonPack === 'function') 
-            ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, rnd, user)) 
+        extraPacks = (typeof generateExtraAddonPack === 'function')
+            ? [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, rnd, user))
             : (state.extraPacks || []);
     }
     const res = { uV4, uV3, extraPacks };
     _roundUserRecCache.set(key, res);
     return res;
 }
+
+// Register cache clear hook so clearUser70ReviewCache() can invalidate this cache too
+if (typeof window !== 'undefined') {
+    window.clearConfirmedRecCache = () => _roundUserRecCache.clear();
+}
+
 
 export async function renderConfirmedPurchasesList() {
     const tabConfirmedEl = document.getElementById('tab-confirmed-list');

@@ -302,6 +302,9 @@ if (typeof window !== 'undefined') {
  * 7대 알고리즘의 복기 데이터 통계 계산 (지정 회차부터 최신 회차까지 - 서버 스냅샷 기반 정확한 전수 집계)
  */
 export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 'all') {
+    // 🔒 추천번호 스냅샷은 1235회부터 발급 — 그 이전 회차는 집계 의미 없음
+    fromRound = Math.max(1235, parseInt(fromRound, 10) || 1235);
+
     if (!state.mergedHistory || Object.keys(state.mergedHistory).length === 0) {
         if (typeof initHistory === 'function') initHistory();
         else if (typeof LOTTO_HISTORY !== 'undefined') state.mergedHistory = { ...LOTTO_HISTORY, ...(state.lottoExtraHistory || {}) };
@@ -802,11 +805,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                         <label for="algoReviewStartRoundSelect" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; white-space: nowrap;">집계 시작 회차:</label>
                         <select id="algoReviewStartRoundSelect" onchange="window.changeAlgoReviewStartRound && window.changeAlgoReviewStartRound(this.value)" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
-                            <option value="1235" ${currentAlgoStartRound === 1235 ? 'selected' : ''}>제 1235회부터 누적 (실제 발급 이력)</option>
-                            <option value="1230" ${currentAlgoStartRound === 1230 ? 'selected' : ''}>제 1230회부터 누적</option>
-                            <option value="1220" ${currentAlgoStartRound === 1220 ? 'selected' : ''}>제 1220회부터 누적</option>
-                            <option value="1200" ${currentAlgoStartRound === 1200 ? 'selected' : ''}>제 1200회부터 누적</option>
-                            <option value="1" ${currentAlgoStartRound === 1 ? 'selected' : ''}>제 1회부터 전체 전수 누적</option>
+                            <option value="1235" ${currentAlgoStartRound === 1235 ? 'selected' : ''}>제 1235회부터 누적 (실제 발급 이력 전체)</option>
                         </select>
                     </div>
                 </div>
@@ -925,7 +924,7 @@ export function toggleAllAlgoDetailAccordions(expand = true) {
  * 집계 시작 회차 변경
  */
 export function changeAlgoReviewStartRound(roundVal) {
-    const r = parseInt(roundVal, 10);
+    const r = Math.max(1235, parseInt(roundVal, 10)); // 🔒 최소 1235회 (스냅샷 발급 시작 기준)
     if (!isNaN(r)) {
         currentAlgoStartRound = r;
         renderAlgorithmsTab(r);

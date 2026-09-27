@@ -273,6 +273,9 @@ export function clearUser70ReviewCache() {
         if (typeof window.clearHomeReviewDashboardCache === 'function') {
             try { window.clearHomeReviewDashboardCache(); } catch(e) {}
         }
+        if (typeof window.clearConfirmedRecCache === 'function') {
+            try { window.clearConfirmedRecCache(); } catch(e) {}
+        }
     }
 }
 if (typeof window !== 'undefined') {

@@ -1,23 +1,9 @@
 {
-  "version": "v2026.09.27.1323",
+  "version": "v2026.09.27.1344",
   "buildDate": "2026-09-27",
   "description": "Remove 5-combo verification cards from simulation tab",
-  "buildTimestamp": "2026-09-27T13:23:54.116631",
+  "buildTimestamp": "2026-09-27T13:44:56.450555",
   "buildHistory": [
-    {
-      "version": "v2026.09.24.1244",
-      "buildDate": "2026-09-24",
-      "buildTime": "12:44",
-      "buildTimestamp": "2026-09-24T12:44:18.154585",
-      "description": "Fix mobile text overflow and line break issues across recommendation and review tabs"
-    },
-    {
-      "version": "v2026.09.24.1256",
-      "buildDate": "2026-09-24",
-      "buildTime": "12:56",
-      "buildTimestamp": "2026-09-24T12:56:51.488099",
-      "description": "Apply Concept 1 Ultra-Slim Glassmorphism header to mobile Lotto Recommendation Service"
-    },
     {
       "version": "v2026.09.24.1307",
       "buildDate": "2026-09-24",
@@ -353,7 +339,21 @@
       "buildTime": "13:23",
       "buildTimestamp": "2026-09-27T13:23:54.116631",
       "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.27.1339",
+      "buildDate": "2026-09-27",
+      "buildTime": "13:39",
+      "buildTimestamp": "2026-09-27T13:39:22.089651",
+      "description": "Remove 5-combo verification cards from simulation tab"
+    },
+    {
+      "version": "v2026.09.27.1344",
+      "buildDate": "2026-09-27",
+      "buildTime": "13:44",
+      "buildTimestamp": "2026-09-27T13:44:56.450555",
+      "description": "Remove 5-combo verification cards from simulation tab"
     }
   ],
-  "buildTime": "13:23"
+  "buildTime": "13:44"
 }
