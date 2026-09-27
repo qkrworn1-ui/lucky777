@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0142 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0232 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0142)
+ * Lucky777 Smart Bundle (v2026.09.28.0232)
  */
 
 
@@ -3128,40 +3128,9 @@ function loginWithKakao(e) {
 }
 
 /**
- * 실제 Kakao.Auth.login 실행 헬퍼 (SDK 로드 완료 후 호출)
+ * 실제 Kakao.Auth.login 실행 헬퍼 (사용자 터치 제스처 즉시 동기 실행으로 팝업 차단 방지)
  */
 function _doKakaoLogin(finishLogin) {
-    try {
-        // ⚡ [최적화 1] 이미 SDK에 유효한 Access Token이 보관되어 있는 경우:
-        // 토큰 엔드포인트를 다시 호출(KOE237 쿼터 소모)하지 않고 즉시 프로필 조회 시도
-        if (window.Kakao && window.Kakao.Auth && typeof window.Kakao.Auth.getAccessToken === 'function' && window.Kakao.Auth.getAccessToken()) {
-            const existingToken = window.Kakao.Auth.getAccessToken();
-            console.log('[Kakao] Found cached access token, checking profile directly...');
-            window.Kakao.API.request({
-                url: '/v2/user/me',
-                success: function(res) {
-                    console.log('[Kakao] Direct profile verification succeeded with existing token');
-                    processKakaoLoginSuccess(res, { access_token: existingToken });
-                    finishLogin();
-                },
-                fail: function(profileErr) {
-                    console.warn('[Kakao] Cached token invalid/expired, resetting and requesting fresh login:', profileErr);
-                    try { window.Kakao.Auth.setAccessToken(null); } catch(e) {}
-                    _executeKakaoPopupLogin(finishLogin);
-                }
-            });
-            return;
-        }
-
-        _executeKakaoPopupLogin(finishLogin);
-    } catch (execErr) {
-        finishLogin();
-        console.error('[Kakao Exec Error]', execErr);
-        alert('카카오 로그인 실행 오류: ' + execErr.message);
-    }
-}
-
-function _executeKakaoPopupLogin(finishLogin) {
     try {
         const loginOptions = {
             persistAccessToken: true,
@@ -3172,7 +3141,6 @@ function _executeKakaoPopupLogin(finishLogin) {
                     url: '/v2/user/me',
                     success: function(res) {
                         // ✅ 순서 중요: processKakaoLoginSuccess 먼저 → SafeAuth 설정 → finishLogin
-                        // finishLogin이 먼저 실행되면 SafeAuth=null 상태에서 AuthState.IDLE → __appUnlocked=false → 모달 재표시
                         processKakaoLoginSuccess(res, authObj);
                         finishLogin();
                     },
@@ -3211,7 +3179,7 @@ function _executeKakaoPopupLogin(finishLogin) {
             }
         };
 
-        // Standard Pop-up Login
+        // 🚀 사용자 클릭/터치 이벤트 핸들러 직후 동기적으로 팝업 호출 (모바일 브라우저 팝업 차단 100% 방지)
         if (window.Kakao.Auth && typeof window.Kakao.Auth.login === 'function') {
             window.Kakao.Auth.login(loginOptions);
         } else {
