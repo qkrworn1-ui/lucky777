@@ -150,6 +150,20 @@ export async function initLottoService(force = false) {
                 state.allUsersMergedLedger = null;
 
                 if (authId && window.db) {
+                    // ⚡ 0ms 즉시 복원: IndexedDB 로컬 캐시에서 즉시 doc(authId) 읽어 실구매 장부 선행 반영
+                    window.db.collection('lotto_purchases').doc(authId).get({ source: 'cache' }).then(cDoc => {
+                        if (cDoc && cDoc.exists) {
+                            const cLedger = cDoc.data()?.ledger || {};
+                            if (cLedger && Object.keys(cLedger).length > 0) {
+                                state.globalLedger = cLedger;
+                                try { localStorage.setItem(`lotto_actual_ledger_${authId}`, JSON.stringify(cLedger)); } catch(e) {}
+                                if (typeof window.renderLandingDashboard === 'function') {
+                                    window.renderLandingDashboard();
+                                }
+                            }
+                        }
+                    }).catch(() => {});
+
                     if (_activePurchasesUnsub) {
                         try { _activePurchasesUnsub(); } catch(e) {}
                         _activePurchasesUnsub = null;

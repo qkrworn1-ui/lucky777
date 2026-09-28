@@ -3504,7 +3504,7 @@ export function calculateLedgerFinancials(forceRefresh = false, explicitTarget =
     const totalRoi = totalInvest > 0 ? ((totalPrize / totalInvest) * 100) : 0;
     
     // Sort trend explicitly by round
-    // Arrays already chronological
+    const totalWins = hits.reduce((sum, h) => sum + h, 0);
 
     const result = {
         totalInvest,
@@ -3512,6 +3512,7 @@ export function calculateLedgerFinancials(forceRefresh = false, explicitTarget =
         netProfit,
         totalRoi,
         totalCombos,
+        totalWins,
         hits,
         trendLabels,
         trendInvest,

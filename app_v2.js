@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.1205 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.1232.37 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.1205)
+ * Lucky777 Smart Bundle (v2026.09.28.1232.37)
  */
 
 
@@ -12562,7 +12562,7 @@ function calculateLedgerFinancials(forceRefresh = false, explicitTarget = null) 
     const totalRoi = totalInvest > 0 ? ((totalPrize / totalInvest) * 100) : 0;
     
     // Sort trend explicitly by round
-    // Arrays already chronological
+    const totalWins = hits.reduce((sum, h) => sum + h, 0);
 
     const result = {
         totalInvest,
@@ -12570,6 +12570,7 @@ function calculateLedgerFinancials(forceRefresh = false, explicitTarget = null) 
         netProfit,
         totalRoi,
         totalCombos,
+        totalWins,
         hits,
         trendLabels,
         trendInvest,
@@ -34065,6 +34066,20 @@ async function initLottoService(force = false) {
                 state.allUsersMergedLedger = null;
 
                 if (authId && window.db) {
+                    // ⚡ 0ms 즉시 복원: IndexedDB 로컬 캐시에서 즉시 doc(authId) 읽어 실구매 장부 선행 반영
+                    window.db.collection('lotto_purchases').doc(authId).get({ source: 'cache' }).then(cDoc => {
+                        if (cDoc && cDoc.exists) {
+                            const cLedger = cDoc.data()?.ledger || {};
+                            if (cLedger && Object.keys(cLedger).length > 0) {
+                                state.globalLedger = cLedger;
+                                try { SafeLocalStorage.setItem(`lotto_actual_ledger_${authId}`, JSON.stringify(cLedger)); } catch(e) {}
+                                if (typeof window.renderLandingDashboard === 'function') {
+                                    window.renderLandingDashboard();
+                                }
+                            }
+                        }
+                    }).catch(() => {});
+
                     if (_activePurchasesUnsub) {
                         try { _activePurchasesUnsub(); } catch(e) {}
                         _activePurchasesUnsub = null;
