@@ -31,7 +31,7 @@ function _closeAnyActiveModal() {
     const modalSelectors = [
         '#agreementModalOverlay',
         '#modalReceiptTrash',
-        '#winningHistoryModal',
+        '#confirmedWinningHistoryModal',
         '#modalQuickView',
         '#modalManual',
         '#modalManualDraw',

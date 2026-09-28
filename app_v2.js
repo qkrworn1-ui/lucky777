@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.1756.13 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.1847 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.1756.13)
+ * Lucky777 Smart Bundle (v2026.09.28.1847)
  */
 
 
@@ -12542,11 +12542,16 @@ function calculateLedgerFinancials(forceRefresh = false, explicitTarget = null) 
         totalCombos += flatCombos.length;
 
         roundBreakdown[round] = {
+            round,
             invest: roundInvest,
             prize: roundPrize,
             hits: roundHits,
+            roundHits,
             winningCombos,
-            totalPurchases: purchases.length
+            totalPurchases: purchases.length,
+            combosCount: flatCombos.length,
+            roi: roundInvest > 0 ? (roundPrize / roundInvest) * 100 : 0,
+            actualDraw: actualDraw || null
         };
 
         if (actualDraw && actualDraw.numbers) {
@@ -12571,6 +12576,7 @@ function calculateLedgerFinancials(forceRefresh = false, explicitTarget = null) 
         totalRoi,
         totalCombos,
         totalWins,
+        winRate: totalCombos > 0 ? ((totalWins / totalCombos) * 100).toFixed(1) : '0.0',
         hits,
         trendLabels,
         trendInvest,
@@ -27165,9 +27171,17 @@ function openWinningHistoryModal() {
         console.error('[WinningHistory] #confirmedWinningHistoryModal element not found');
         return;
     }
-    renderWinningHistoryModal();
     modal.style.display = 'flex';
     modal.classList.add('active');
+    try {
+        renderWinningHistoryModal();
+    } catch (err) {
+        console.error('[WinningHistory] render failed', err);
+        const body = document.getElementById('winningHistoryModalBody');
+        if (body) {
+            body.innerHTML = `<div style="text-align:center;padding:32px 16px;color:#f87171;">당첨 이력 요약 표시 중 오류가 발생했습니다.<br><span style="font-size:0.8rem;color:#94a3b8;">${String(err && err.message ? err.message : err)}</span></div>`;
+        }
+    }
 
     if (!modal._hasBackdropClick) {
         modal.addEventListener('click', (e) => {
@@ -27200,9 +27214,25 @@ function renderWinningHistoryModal() {
     const currentTarget = isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId;
 
     const fin = calculateLedgerFinancials(true, currentTarget);
-    const { totalInvest, totalPrize, netProfit, totalRoi, totalCombos, totalWins, winRate, hits, roundBreakdown } = fin;
-    const roundDataList = Object.values(roundBreakdown).sort((a, b) => b.round - a.round);
-    const rounds = Object.keys(roundBreakdown);
+    const { totalInvest, totalPrize, netProfit, totalRoi, totalCombos, totalWins, hits, roundBreakdown } = fin;
+    const winRate = fin.winRate != null
+        ? fin.winRate
+        : (totalCombos > 0 ? ((totalWins / totalCombos) * 100).toFixed(1) : '0.0');
+    const roundDataList = Object.values(roundBreakdown || {}).map((item, idx) => {
+        const round = Number(item.round != null ? item.round : Object.keys(roundBreakdown)[idx]);
+        const invest = item.invest || 0;
+        const prize = item.prize || 0;
+        return {
+            ...item,
+            round,
+            roundHits: item.roundHits || item.hits || [0, 0, 0, 0, 0, 0],
+            winningCombos: item.winningCombos || [],
+            combosCount: item.combosCount != null ? item.combosCount : (item.totalPurchases || 0),
+            roi: item.roi != null ? item.roi : (invest > 0 ? (prize / invest) * 100 : 0),
+            actualDraw: item.actualDraw || (typeof getSafeActualDraw === 'function' ? getSafeActualDraw(round) : null)
+        };
+    }).sort((a, b) => (b.round || 0) - (a.round || 0));
+    const rounds = Object.keys(roundBreakdown || {});
 
     const getBallBadge = (n) => {
         const bg = getBallHexColor(n);
@@ -42045,7 +42075,7 @@ function _closeAnyActiveModal() {
     const modalSelectors = [
         '#agreementModalOverlay',
         '#modalReceiptTrash',
-        '#winningHistoryModal',
+        '#confirmedWinningHistoryModal',
         '#modalQuickView',
         '#modalManual',
         '#modalManualDraw',

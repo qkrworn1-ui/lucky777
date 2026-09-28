@@ -1,17 +1,9 @@
 {
-  "version": "v2026.09.28.1756.13",
+  "version": "v2026.09.28.1847",
   "buildDate": "2026-09-28",
   "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline",
-  "buildTimestamp": "2026-09-28T17:56:13.345110",
+  "buildTimestamp": "2026-09-28T18:47:14.577629",
   "buildHistory": [
-    {
-      "version": "v2026.09.28.0518",
-      "buildDate": "2026-09-28",
-      "buildTime": "05:18",
-      "buildDateTime": "2026-09-28 05:18",
-      "buildTimestamp": "2026-09-28T05:18:54.541930",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
     {
       "version": "v2026.09.28.0520",
       "buildDate": "2026-09-28",
@@ -123,8 +115,16 @@
       "buildDateTime": "2026-09-28 17:56",
       "buildTimestamp": "2026-09-28T17:56:13.345110",
       "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
+    },
+    {
+      "version": "v2026.09.28.1847",
+      "buildDate": "2026-09-28",
+      "buildTime": "18:47",
+      "buildDateTime": "2026-09-28 18:47",
+      "buildTimestamp": "2026-09-28T18:47:14.577629",
+      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
     }
   ],
-  "buildTime": "17:56",
-  "buildDateTime": "2026-09-28 17:56"
+  "buildTime": "18:47",
+  "buildDateTime": "2026-09-28 18:47"
 }

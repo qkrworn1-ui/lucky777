@@ -3484,11 +3484,16 @@ export function calculateLedgerFinancials(forceRefresh = false, explicitTarget =
         totalCombos += flatCombos.length;
 
         roundBreakdown[round] = {
+            round,
             invest: roundInvest,
             prize: roundPrize,
             hits: roundHits,
+            roundHits,
             winningCombos,
-            totalPurchases: purchases.length
+            totalPurchases: purchases.length,
+            combosCount: flatCombos.length,
+            roi: roundInvest > 0 ? (roundPrize / roundInvest) * 100 : 0,
+            actualDraw: actualDraw || null
         };
 
         if (actualDraw && actualDraw.numbers) {
@@ -3513,6 +3518,7 @@ export function calculateLedgerFinancials(forceRefresh = false, explicitTarget =
         totalRoi,
         totalCombos,
         totalWins,
+        winRate: totalCombos > 0 ? ((totalWins / totalCombos) * 100).toFixed(1) : '0.0',
         hits,
         trendLabels,
         trendInvest,
