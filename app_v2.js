@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.0539 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.1145.57 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.0539)
+ * Lucky777 Smart Bundle (v2026.09.28.1145.57)
  */
 
 
@@ -4379,6 +4379,7 @@ function setupAuthEvents(initFirebaseAndData) {
             function unlockUIImmediately(authId, welcomeMsg) {
                 SafeAuth.set(authId);
                 window.__appUnlocked = true;
+                try { updateServerConnectionStatus(true); } catch(e) {}
 
                 // 1. Immediately hide login modal
                 const modal = document.getElementById('loginModalOverlay');
@@ -41019,46 +41020,51 @@ async function renderLandingDashboard() {
         }
     }
 
-    // 5. Non-Blocking Concurrent Background Computations: All Users Aggregate + Review Dashboard + Ticker
-    Promise.allSettled([
-        calculateAllUsersTotalFinancials().then(allFin => {
-            const elAllSub = document.getElementById('lp-toto-mini-sub');
-            const elAllPrize = document.getElementById('lp-toto-mini-prize');
-            const elAllHits = document.getElementById('lp-toto-mini-hits');
+    // 5. Non-Blocking Staggered Background Computations:
+    // UI 스레드 프리즈 방지를 위해 카드 2(전체 회원 실구매)를 먼저 띄우고, 무거운 복기 요약과 롤링 티커는 지연 분산 실행
+    calculateAllUsersTotalFinancials().then(allFin => {
+        const elAllSub = document.getElementById('lp-toto-mini-sub');
+        const elAllPrize = document.getElementById('lp-toto-mini-prize');
+        const elAllHits = document.getElementById('lp-toto-mini-hits');
 
-            if (elAllSub) {
-                elAllSub.textContent = allFin.totalCombos > 0 
-                    ? `총 ${allFin.totalCombos.toLocaleString()}게임 (${allFin.totalInvest.toLocaleString()}원)`
-                    : '0게임 (0원)';
-            }
-            if (elAllPrize) {
-                elAllPrize.textContent = `총 당첨 ${allFin.totalPrize.toLocaleString()}원`;
-                elAllPrize.style.color = allFin.totalPrize > 0 ? '#fbbf24' : '#cbd5e1';
-            }
-            if (elAllHits) {
-                if (allFin.totalCombos > 0) {
-                    if (allFin.totalWins > 0) {
-                        const ranksArr = [];
-                        if (allFin.hits[0] > 0) ranksArr.push(`1등 ${allFin.hits[0]}`);
-                        if (allFin.hits[1] > 0) ranksArr.push(`2등 ${allFin.hits[1]}`);
-                        if (allFin.hits[2] > 0) ranksArr.push(`3등 ${allFin.hits[2]}`);
-                        if (allFin.hits[3] > 0) ranksArr.push(`4등 ${allFin.hits[3]}`);
-                        if (allFin.hits[4] > 0) ranksArr.push(`5등 ${allFin.hits[4]}`);
-                        elAllHits.textContent = `전체 ${allFin.totalWins}건 적중 (${ranksArr.join(', ')})`;
-                        elAllHits.style.color = '#38bdf8';
-                    } else {
-                        elAllHits.textContent = '당첨 내역 없음';
-                        elAllHits.style.color = '#94a3b8';
-                    }
+        if (elAllSub) {
+            elAllSub.textContent = allFin.totalCombos > 0 
+                ? `총 ${allFin.totalCombos.toLocaleString()}게임 (${allFin.totalInvest.toLocaleString()}원)`
+                : '0게임 (0원)';
+        }
+        if (elAllPrize) {
+            elAllPrize.textContent = `총 당첨 ${allFin.totalPrize.toLocaleString()}원`;
+            elAllPrize.style.color = allFin.totalPrize > 0 ? '#fbbf24' : '#cbd5e1';
+        }
+        if (elAllHits) {
+            if (allFin.totalCombos > 0) {
+                if (allFin.totalWins > 0) {
+                    const ranksArr = [];
+                    if (allFin.hits[0] > 0) ranksArr.push(`1등 ${allFin.hits[0]}`);
+                    if (allFin.hits[1] > 0) ranksArr.push(`2등 ${allFin.hits[1]}`);
+                    if (allFin.hits[2] > 0) ranksArr.push(`3등 ${allFin.hits[2]}`);
+                    if (allFin.hits[3] > 0) ranksArr.push(`4등 ${allFin.hits[3]}`);
+                    if (allFin.hits[4] > 0) ranksArr.push(`5등 ${allFin.hits[4]}`);
+                    elAllHits.textContent = `전체 ${allFin.totalWins}건 적중 (${ranksArr.join(', ')})`;
+                    elAllHits.style.color = '#38bdf8';
                 } else {
-                    elAllHits.textContent = '등록된 실구매 내역 없음';
-                    elAllHits.style.color = '#64748b';
+                    elAllHits.textContent = '당첨 내역 없음';
+                    elAllHits.style.color = '#94a3b8';
                 }
+            } else {
+                elAllHits.textContent = '등록된 실구매 내역 없음';
+                elAllHits.style.color = '#64748b';
             }
-        }),
-        updateHomeReviewDashboard(),
-        updateHomeWinningTicker()
-    ]).catch(e => console.warn('[Landing BG Compute Note]', e));
+        }
+    }).catch(e => console.warn('[Landing BG allFin Note]', e));
+
+    // ⚡ 스마트폰 로그인 직후 메인 스레드 멈춤 방지를 위한 Staggered Background Execution (600ms 분산 지연)
+    setTimeout(() => {
+        Promise.allSettled([
+            updateHomeReviewDashboard(),
+            updateHomeWinningTicker()
+        ]).catch(e => console.warn('[Landing BG Compute Note]', e));
+    }, 600);
 
     } finally {
         if (typeof window !== 'undefined') {
@@ -41181,7 +41187,21 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
         let summaryData = null;
         if (!forceRefresh && _homeReviewDashboardCache && (Date.now() - _homeReviewDashboardCacheTime < 25000) && _homeReviewDashboardCache.maxRound === maxRound) {
             summaryData = _homeReviewDashboardCache;
-        } else {
+        } else if (!forceRefresh) {
+            try {
+                const localRev = SafeLocalStorage.getItem('lotto_home_review_dashboard_cache');
+                if (localRev) {
+                    const parsed = JSON.parse(localRev);
+                    if (parsed && parsed.maxRound === maxRound) {
+                        summaryData = parsed;
+                        _homeReviewDashboardCache = parsed;
+                        _homeReviewDashboardCacheTime = Date.now();
+                    }
+                }
+            } catch(e) {}
+        }
+
+        if (!summaryData) {
             // 1. Synchronously pre-load cached users list if in-memory list is empty
             if (!state.allRegisteredUsersList || !Array.isArray(state.allRegisteredUsersList) || state.allRegisteredUsersList.length === 0) {
                 try {
@@ -41267,6 +41287,9 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             };
             _homeReviewDashboardCache = summaryData;
             _homeReviewDashboardCacheTime = Date.now();
+            try {
+                SafeLocalStorage.setItem('lotto_home_review_dashboard_cache', JSON.stringify(summaryData));
+            } catch(e) {}
         }
 
         const {

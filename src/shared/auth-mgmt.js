@@ -2986,6 +2986,7 @@ export function setupAuthEvents(initFirebaseAndData) {
             function unlockUIImmediately(authId, welcomeMsg) {
                 SafeAuth.set(authId);
                 window.__appUnlocked = true;
+                try { updateServerConnectionStatus(true); } catch(e) {}
 
                 // 1. Immediately hide login modal
                 const modal = document.getElementById('loginModalOverlay');
