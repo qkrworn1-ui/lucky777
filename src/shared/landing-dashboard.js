@@ -34,10 +34,8 @@ export async function renderLandingDashboard() {
             try {
                 const localMap = localStorage.getItem('lotto_all_users_purchases_map_cache');
                 const localMerged = localStorage.getItem('lotto_all_users_merged_ledger_cache');
-                if (localMap && localMerged) {
-                    state.allUsersPurchasesMap = JSON.parse(localMap);
-                    state.allUsersMergedLedger = JSON.parse(localMerged);
-                }
+                if (localMap) state.allUsersPurchasesMap = JSON.parse(localMap);
+                if (localMerged) state.allUsersMergedLedger = JSON.parse(localMerged);
             } catch(e) {}
 
             if (typeof fetchAllUsersPurchases === 'function') {
@@ -80,7 +78,33 @@ export async function renderLandingDashboard() {
     }
 
     // 1. Calculate Individual Logged-in User's Actual Lotto Financials (Synchronous 0ms)
-    const myFin = calculateLedgerFinancials(true, 'my');
+    let myFin = calculateLedgerFinancials(true, 'my');
+    const cleanAuthId = (authId || '').toLowerCase().trim();
+
+    // ⚡ 0ms 즉시 복원: 스마트폰 새로고침 시 myFin이 비어있다면 경량 로컬 KPI 캐시에서 즉시 표시
+    let cachedMyFin = null;
+    if (cleanAuthId && cleanAuthId !== '비로그인') {
+        try {
+            const rawMyKpi = localStorage.getItem(`lotto_my_fin_kpi_cache_${cleanAuthId}`);
+            if (rawMyKpi) cachedMyFin = JSON.parse(rawMyKpi);
+        } catch(e) {}
+    }
+
+    if ((!myFin || myFin.totalCombos === 0) && cachedMyFin && cachedMyFin.totalCombos > 0) {
+        myFin = cachedMyFin;
+    } else if (myFin && myFin.totalCombos > 0 && cleanAuthId && cleanAuthId !== '비로그인') {
+        try {
+            localStorage.setItem(`lotto_my_fin_kpi_cache_${cleanAuthId}`, JSON.stringify({
+                totalInvest: myFin.totalInvest,
+                totalPrize: myFin.totalPrize,
+                totalCombos: myFin.totalCombos,
+                totalWins: myFin.totalWins,
+                hits: myFin.hits,
+                netProfit: (myFin.totalPrize || 0) - (myFin.totalInvest || 0),
+                roi: myFin.totalInvest > 0 ? (((myFin.totalPrize - myFin.totalInvest) / myFin.totalInvest) * 100).toFixed(1) : '0.0'
+            }));
+        } catch(e) {}
+    }
 
     // Update Header Financial Summary KPI Elements (My Portfolio)
     const elInvest = document.getElementById('lp-total-invest');
@@ -173,30 +197,30 @@ export async function renderLandingDashboard() {
     }
 
     // 5. Non-Blocking Staggered Background Computations:
-    // UI 스레드 프리즈 방지를 위해 카드 2(전체 회원 실구매)를 먼저 띄우고, 무거운 복기 요약과 롤링 티커는 지연 분산 실행
-    calculateAllUsersTotalFinancials().then(allFin => {
+    function updateAllUsersCardUI(allFin) {
+        if (!allFin) return;
         const elAllSub = document.getElementById('lp-toto-mini-sub');
         const elAllPrize = document.getElementById('lp-toto-mini-prize');
         const elAllHits = document.getElementById('lp-toto-mini-hits');
 
         if (elAllSub) {
-            elAllSub.textContent = allFin.totalCombos > 0 
-                ? `총 ${allFin.totalCombos.toLocaleString()}게임 (${allFin.totalInvest.toLocaleString()}원)`
+            elAllSub.textContent = (allFin.totalCombos > 0)
+                ? `총 ${allFin.totalCombos.toLocaleString()}게임 (${(allFin.totalInvest || 0).toLocaleString()}원)`
                 : '0게임 (0원)';
         }
         if (elAllPrize) {
-            elAllPrize.textContent = `총 당첨 ${allFin.totalPrize.toLocaleString()}원`;
-            elAllPrize.style.color = allFin.totalPrize > 0 ? '#fbbf24' : '#cbd5e1';
+            elAllPrize.textContent = `총 당첨 ${(allFin.totalPrize || 0).toLocaleString()}원`;
+            elAllPrize.style.color = (allFin.totalPrize || 0) > 0 ? '#fbbf24' : '#cbd5e1';
         }
         if (elAllHits) {
             if (allFin.totalCombos > 0) {
                 if (allFin.totalWins > 0) {
                     const ranksArr = [];
-                    if (allFin.hits[0] > 0) ranksArr.push(`1등 ${allFin.hits[0]}`);
-                    if (allFin.hits[1] > 0) ranksArr.push(`2등 ${allFin.hits[1]}`);
-                    if (allFin.hits[2] > 0) ranksArr.push(`3등 ${allFin.hits[2]}`);
-                    if (allFin.hits[3] > 0) ranksArr.push(`4등 ${allFin.hits[3]}`);
-                    if (allFin.hits[4] > 0) ranksArr.push(`5등 ${allFin.hits[4]}`);
+                    if (allFin.hits && allFin.hits[0] > 0) ranksArr.push(`1등 ${allFin.hits[0]}`);
+                    if (allFin.hits && allFin.hits[1] > 0) ranksArr.push(`2등 ${allFin.hits[1]}`);
+                    if (allFin.hits && allFin.hits[2] > 0) ranksArr.push(`3등 ${allFin.hits[2]}`);
+                    if (allFin.hits && allFin.hits[3] > 0) ranksArr.push(`4등 ${allFin.hits[3]}`);
+                    if (allFin.hits && allFin.hits[4] > 0) ranksArr.push(`5등 ${allFin.hits[4]}`);
                     elAllHits.textContent = `전체 ${allFin.totalWins}건 적중 (${ranksArr.join(', ')})`;
                     elAllHits.style.color = '#38bdf8';
                 } else {
@@ -207,6 +231,34 @@ export async function renderLandingDashboard() {
                 elAllHits.textContent = '등록된 실구매 내역 없음';
                 elAllHits.style.color = '#64748b';
             }
+        }
+    }
+
+    // ⚡ 0ms 즉시 표시: 로컬 캐시된 전체 회원 실구매 KPI가 있으면 네트워크 다운로드 전 0ms 즉각 표시
+    let cachedAllFin = null;
+    try {
+        const rawAll = localStorage.getItem('lotto_all_fin_kpi_cache');
+        if (rawAll) cachedAllFin = JSON.parse(rawAll);
+    } catch(e) {}
+    if (cachedAllFin && cachedAllFin.totalCombos > 0) {
+        updateAllUsersCardUI(cachedAllFin);
+    }
+
+    // UI 스레드 프리즈 방지를 위해 카드 2(전체 회원 실구매)를 백그라운드 계산하여 최신화
+    calculateAllUsersTotalFinancials().then(allFin => {
+        if (allFin && allFin.totalCombos > 0) {
+            updateAllUsersCardUI(allFin);
+            try {
+                localStorage.setItem('lotto_all_fin_kpi_cache', JSON.stringify({
+                    totalInvest: allFin.totalInvest,
+                    totalPrize: allFin.totalPrize,
+                    totalCombos: allFin.totalCombos,
+                    totalWins: allFin.totalWins,
+                    hits: allFin.hits
+                }));
+            } catch(e) {}
+        } else if (!cachedAllFin) {
+            updateAllUsersCardUI(allFin);
         }
     }).catch(e => console.warn('[Landing BG allFin Note]', e));
 

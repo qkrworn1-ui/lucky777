@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.1145.57 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.1205 - BUILD_DATE: 2026-09-28] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.1145.57)
+ * Lucky777 Smart Bundle (v2026.09.28.1205)
  */
 
 
@@ -10054,10 +10054,8 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
         try {
             const rawMap = SafeLocalStorage.getItem('lotto_all_users_purchases_map_cache');
             const rawMerged = SafeLocalStorage.getItem('lotto_all_users_merged_ledger_cache');
-            if (rawMap && rawMerged) {
-                state.allUsersPurchasesMap = JSON.parse(rawMap);
-                state.allUsersMergedLedger = JSON.parse(rawMerged);
-            }
+            if (rawMap) state.allUsersPurchasesMap = JSON.parse(rawMap);
+            if (rawMerged) state.allUsersMergedLedger = JSON.parse(rawMerged);
         } catch(e) {}
     }
 
@@ -10068,295 +10066,379 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
     const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
     if (!firestore) return {};
 
-    _inFlightFetchAllUsersPurchasesPromise = (async () => {
-        try {
-            const [pSnapshot, uSnapshot] = await Promise.all([
-                firestore.collection('lotto_purchases').get().catch(err => { console.warn('[Purchases Fetch Error]', err); return { docs: [] }; }),
-                firestore.collection('lotto_users').get().catch(err => { console.warn('[Users Fetch Error]', err); return null; })
-            ]);
+    const applySnapshots = async (pSnapshot, uSnapshot) => {
+        if (!pSnapshot || pSnapshot.empty) return null;
 
-            const userNames = {};
-            if (uSnapshot && !uSnapshot.empty) {
-                state.allRegisteredUsersList = [];
-                uSnapshot.forEach(doc => {
-                    const uId = doc.id.trim().toLowerCase();
-                    if (isSystemOrDummyUser(uId)) return;
-                    const d = doc.data() || {};
-                    if (d.isDeleted === true || d.status === 'trash' || d.status === 'deleted') return;
-                    
-                    const rName = d.realName || doc.id;
-                    userNames[doc.id] = rName;
-                    userNames[uId] = rName;
+        const userNames = {};
+        if (uSnapshot && !uSnapshot.empty) {
+            state.allRegisteredUsersList = [];
+            uSnapshot.forEach(doc => {
+                const uId = doc.id.trim().toLowerCase();
+                if (isSystemOrDummyUser(uId)) return;
+                const d = doc.data() || {};
+                if (d.isDeleted === true || d.status === 'trash' || d.status === 'deleted') return;
+                
+                const rName = d.realName || doc.id;
+                userNames[doc.id] = rName;
+                userNames[uId] = rName;
 
-                    if (d.realName && typeof setUserNameCache === 'function') setUserNameCache(doc.id, d.realName);
+                if (d.realName && typeof setUserNameCache === 'function') setUserNameCache(doc.id, d.realName);
 
-                    const isAdm = !!(d.isAdmin === true || d.role === 'admin' || doc.id === 'master' || doc.id === 'admin');
-                    const isPerm = !!(d.isPermanent === true || d.isPermanent === 'true' || d.userType === 'permanent' || isAdm);
-                    
-                    if (typeof window !== 'undefined') {
-                        if (typeof window.setIsPermanentCache === 'function') window.setIsPermanentCache(doc.id, isPerm);
-                        if (typeof window.setIsAdminCache === 'function') window.setIsAdminCache(doc.id, isAdm);
+                const isAdm = !!(d.isAdmin === true || d.role === 'admin' || doc.id === 'master' || doc.id === 'admin');
+                const isPerm = !!(d.isPermanent === true || d.isPermanent === 'true' || d.userType === 'permanent' || isAdm);
+                
+                if (typeof window !== 'undefined') {
+                    if (typeof window.setIsPermanentCache === 'function') window.setIsPermanentCache(doc.id, isPerm);
+                    if (typeof window.setIsAdminCache === 'function') window.setIsAdminCache(doc.id, isAdm);
+                }
+                if (d.createdAt) {
+                    try {
+                        SafeLocalStorage.setItem(`lotto_user_created_${uId}`, d.createdAt);
+                        SafeLocalStorage.setItem(`created_${uId}`, d.createdAt);
+                        SafeStorage.setItem(`created_${uId}`, d.createdAt);
+                        if (typeof window !== 'undefined') {
+                            if (!window.__userCreatedMap) window.__userCreatedMap = {};
+                            window.__userCreatedMap[uId] = d.createdAt;
+                        }
+                    } catch(e) {}
+                }
+                state.allRegisteredUsersList.push({
+                    id: doc.id,
+                    name: rName,
+                    realName: rName,
+                    phone: d.phoneNumber || '',
+                    isAdmin: isAdm,
+                    isPermanent: isPerm,
+                    userType: d.userType || (isPerm ? 'permanent' : 'regular'),
+                    createdAt: d.createdAt || null
+                });
+
+                if (d.recommendationSnapshots && typeof d.recommendationSnapshots === 'object') {
+                    if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                    for (const rKey in d.recommendationSnapshots) {
+                        const snapData = d.recommendationSnapshots[rKey];
+                        if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
+                            state.userRecommendationSnapshots[`${uId}_${parseInt(rKey, 10)}`] = snapData;
+                        }
                     }
-                    if (d.createdAt) {
-                        try {
-                            SafeLocalStorage.setItem(`lotto_user_created_${uId}`, d.createdAt);
-                            SafeLocalStorage.setItem(`created_${uId}`, d.createdAt);
-                            SafeStorage.setItem(`created_${uId}`, d.createdAt);
-                            if (typeof window !== 'undefined') {
-                                if (!window.__userCreatedMap) window.__userCreatedMap = {};
-                                window.__userCreatedMap[uId] = d.createdAt;
-                            }
-                        } catch(e) {}
+                }
+            });
+
+            if (!state.allRegisteredUsersList.some(u => (u.id || '').toLowerCase().trim() === 'master')) {
+                state.allRegisteredUsersList.unshift({
+                    id: 'master', name: '최고관리자', realName: '최고관리자', phone: '',
+                    isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-07-25T12:00:00+09:00'
+                });
+            }
+            if (!state.allRegisteredUsersList.some(u => (u.id || '').toLowerCase().trim() === 'wdy')) {
+                state.allRegisteredUsersList.push({
+                    id: 'wdy', name: '우동윤', realName: '우동윤', phone: '',
+                    isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-01T12:00:00+09:00'
+                });
+            }
+            try { SafeLocalStorage.setItem('lotto_all_users_list_cache', JSON.stringify(state.allRegisteredUsersList)); } catch(e) {}
+        }
+
+        const allUsersMap = {};
+        const mergedLedger = {};
+
+        let docCounter = 0;
+        const docsArr = pSnapshot.docs || [];
+        
+        for (const doc of docsArr) {
+            docCounter++;
+            if (docCounter % 15 === 0) {
+                await new Promise(r => setTimeout(r, 0));
+            }
+
+            const rawUserId = doc.id;
+            const userId = rawUserId.trim().toLowerCase();
+            
+            if (isSystemOrDummyUser(userId)) continue;
+            
+            const data = doc.data() || {};
+            if (data.recommendationSnapshots && typeof data.recommendationSnapshots === 'object') {
+                if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                for (const rKey in data.recommendationSnapshots) {
+                    const snapData = data.recommendationSnapshots[rKey];
+                    if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
+                        state.userRecommendationSnapshots[`${userId}_${parseInt(rKey, 10)}`] = snapData;
                     }
-                    state.allRegisteredUsersList.push({
-                        id: doc.id,
-                        name: rName,
-                        realName: rName,
-                        phone: d.phoneNumber || '',
-                        isAdmin: isAdm,
-                        isPermanent: isPerm,
-                        userType: d.userType || (isPerm ? 'permanent' : 'regular'),
-                        createdAt: d.createdAt || null
+                }
+            }
+            let rawUserLedger = data.ledger || {};
+            if (typeof rawUserLedger === 'string') {
+                try { rawUserLedger = JSON.parse(rawUserLedger); } catch(e) { rawUserLedger = {}; }
+            }
+            if (!rawUserLedger || typeof rawUserLedger !== 'object') rawUserLedger = {};
+            
+            const cleanUserLedger = {};
+            let hadPollution = false;
+            const isMasterDoc = (userId === 'master' || userId === 'admin');
+
+            let _rCounter = 0;
+            for (const r in rawUserLedger) {
+                _rCounter++;
+                if (_rCounter % 3 === 0) await new Promise(res => setTimeout(res, 0));
+                const roundNum = parseInt(r, 10);
+                if (isNaN(roundNum) || !Array.isArray(rawUserLedger[r])) continue;
+
+                const validReceipts = [];
+                rawUserLedger[r].forEach(receipt => {
+                    if (!receipt || !receipt.combos || !Array.isArray(receipt.combos)) return;
+                    const pUser = (receipt.user || receipt.userId || '').trim().toLowerCase();
+                    if (!isMasterDoc && pUser && pUser !== userId) {
+                        hadPollution = true;
+                        return;
+                    }
+                    const sanitizedReceipt = syncPurchaseWithQrUrl({
+                        ...receipt,
+                        user: isMasterDoc ? (pUser || 'master') : userId,
+                        userName: userNames[rawUserId] || rawUserId
                     });
+                    validReceipts.push(sanitizedReceipt);
+                });
 
-                    if (d.recommendationSnapshots && typeof d.recommendationSnapshots === 'object') {
-                        if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                        for (const rKey in d.recommendationSnapshots) {
-                            const snapData = d.recommendationSnapshots[rKey];
-                            if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
-                                state.userRecommendationSnapshots[`${uId}_${parseInt(rKey, 10)}`] = snapData;
-                            }
+                if (validReceipts.length > 0) {
+                    cleanUserLedger[roundNum] = deduplicateReceipts(validReceipts);
+                }
+            }
+
+            if (cleanUserLedger[1239]) {
+                cleanUserLedger[1239] = normalizeMaster1239Order(cleanUserLedger[1239]);
+            }
+
+            if (isMasterDoc) {
+                [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
+                    if (!cleanUserLedger[r] || cleanUserLedger[r].length === 0) {
+                        const off = getOfficialPastRecommendation(r);
+                        if (off && off.length > 0) {
+                            cleanUserLedger[r] = off.map(syncPurchaseWithQrUrl);
                         }
                     }
                 });
-
-                if (!state.allRegisteredUsersList.some(u => (u.id || '').toLowerCase().trim() === 'master')) {
-                    state.allRegisteredUsersList.unshift({
-                        id: 'master', name: '최고관리자', realName: '최고관리자', phone: '',
-                        isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-07-25T12:00:00+09:00'
-                    });
-                }
-                if (!state.allRegisteredUsersList.some(u => (u.id || '').toLowerCase().trim() === 'wdy')) {
-                    state.allRegisteredUsersList.push({
-                        id: 'wdy', name: '우동윤', realName: '우동윤', phone: '',
-                        isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-01T12:00:00+09:00'
-                    });
-                }
-                try { SafeLocalStorage.setItem('lotto_all_users_list_cache', JSON.stringify(state.allRegisteredUsersList)); } catch(e) {}
-            }
-
-            const allUsersMap = {};
-            const mergedLedger = {};
-
-            let docCounter = 0;
-            const docsArr = pSnapshot.docs || [];
-            
-            for (const doc of docsArr) {
-                docCounter++;
-                if (docCounter % 15 === 0) {
-                    await new Promise(r => setTimeout(r, 0));
-                }
-
-                const rawUserId = doc.id;
-                const userId = rawUserId.trim().toLowerCase();
-                
-                if (isSystemOrDummyUser(userId)) continue;
-                
-                const data = doc.data() || {};
-                if (data.recommendationSnapshots && typeof data.recommendationSnapshots === 'object') {
-                    if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                    for (const rKey in data.recommendationSnapshots) {
-                        const snapData = data.recommendationSnapshots[rKey];
-                        if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
-                            state.userRecommendationSnapshots[`${userId}_${parseInt(rKey, 10)}`] = snapData;
-                        }
-                    }
-                }
-                let rawUserLedger = data.ledger || {};
-                if (typeof rawUserLedger === 'string') {
-                    try { rawUserLedger = JSON.parse(rawUserLedger); } catch(e) { rawUserLedger = {}; }
-                }
-                if (!rawUserLedger || typeof rawUserLedger !== 'object') rawUserLedger = {};
-                
-                const cleanUserLedger = {};
-                let hadPollution = false;
-                const isMasterDoc = (userId === 'master' || userId === 'admin');
-
-                let _rCounter = 0;
-                for (const r in rawUserLedger) {
-                    _rCounter++;
-                    if (_rCounter % 3 === 0) await new Promise(res => setTimeout(res, 0));
-                    const roundNum = parseInt(r, 10);
-                    if (isNaN(roundNum) || !Array.isArray(rawUserLedger[r])) continue;
-
-                    const validReceipts = [];
-                    rawUserLedger[r].forEach(receipt => {
-                        if (!receipt || !receipt.combos || !Array.isArray(receipt.combos)) return;
-                        const pUser = (receipt.user || receipt.userId || '').trim().toLowerCase();
-                        if (!isMasterDoc && pUser && pUser !== userId) {
-                            hadPollution = true;
-                            return;
-                        }
-                        const sanitizedReceipt = syncPurchaseWithQrUrl({
-                            ...receipt,
-                            user: isMasterDoc ? (pUser || 'master') : userId,
-                            userName: userNames[rawUserId] || rawUserId
-                        });
-                        validReceipts.push(sanitizedReceipt);
-                    });
-
-                    if (validReceipts.length > 0) {
-                        cleanUserLedger[roundNum] = deduplicateReceipts(validReceipts);
-                    }
-                }
-
                 if (cleanUserLedger[1239]) {
                     cleanUserLedger[1239] = normalizeMaster1239Order(cleanUserLedger[1239]);
                 }
+            }
 
-                if (isMasterDoc) {
-                    [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
-                        if (!cleanUserLedger[r] || cleanUserLedger[r].length === 0) {
-                            const off = getOfficialPastRecommendation(r);
-                            if (off && off.length > 0) {
-                                cleanUserLedger[r] = off.map(syncPurchaseWithQrUrl);
-                            }
-                        }
-                    });
-                    if (cleanUserLedger[1239]) {
-                        cleanUserLedger[1239] = normalizeMaster1239Order(cleanUserLedger[1239]);
+            if (hadPollution && !isMasterDoc) {
+                console.warn(`[Firestore Cloud Repair] Automatically purged leaked receipts for user: ${userId}`);
+                try {
+                    const cleanClone = JSON.parse(JSON.stringify(cleanUserLedger));
+                    for (const rr in cleanClone) {
+                        cleanClone[rr].forEach(c => {
+                            delete c.qrMeta;
+                        });
                     }
+                    firestore.collection('lotto_purchases').doc(rawUserId).update({ ledger: cleanClone }).catch(()=>{});
+                } catch(e) {
+                    console.warn('Failed to rewrite cleaned ledger to cloud', e);
                 }
+            }
 
-                if (hadPollution && !isMasterDoc) {
-                    console.warn(`[Firestore Cloud Repair] Automatically purged leaked receipts for user: ${userId}`);
-                    try {
-                        const cleanClone = JSON.parse(JSON.stringify(cleanUserLedger));
-                        for (const rr in cleanClone) {
-                            cleanClone[rr].forEach(c => {
-                                delete c.qrMeta;
-                            });
-                        }
-                        await firestore.collection('lotto_purchases').doc(rawUserId).update({ ledger: cleanClone });
-                    } catch(e) {
-                        console.warn('Failed to rewrite cleaned ledger to cloud', e);
-                    }
-                }
+            allUsersMap[userId] = {
+                userId: rawUserId,
+                realName: userNames[rawUserId] || rawUserId,
+                createdAt: (state.allRegisteredUsersList.find(u => u.id === rawUserId)?.createdAt) || null,
+                ledger: cleanUserLedger
+            };
 
-                allUsersMap[userId] = {
-                    userId: rawUserId,
-                    realName: userNames[rawUserId] || rawUserId,
-                    createdAt: (state.allRegisteredUsersList.find(u => u.id === rawUserId)?.createdAt) || null,
-                    ledger: cleanUserLedger
-                };
-
-                for (const r in cleanUserLedger) {
-                    const roundNum = parseInt(r, 10);
-                    if (!mergedLedger[roundNum]) mergedLedger[roundNum] = [];
-                    cleanUserLedger[r].forEach(receipt => {
-                        mergedLedger[roundNum].push(receipt);
-                    });
-                    mergedLedger[roundNum] = deduplicateReceipts(mergedLedger[roundNum]);
-                    if (roundNum === 1239) {
-                        mergedLedger[1239] = normalizeMaster1239Order(mergedLedger[1239]);
-                    }
-                }
-            } // end doc loop
-
-            if (!allUsersMap['master']) {
-                const masterCleanLedger = {};
-                [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
-                    masterCleanLedger[r] = (getOfficialPastRecommendation(r) || []).map(syncPurchaseWithQrUrl);
+            for (const r in cleanUserLedger) {
+                const roundNum = parseInt(r, 10);
+                if (!mergedLedger[roundNum]) mergedLedger[roundNum] = [];
+                cleanUserLedger[r].forEach(receipt => {
+                    mergedLedger[roundNum].push(receipt);
                 });
-                if (masterCleanLedger[1239]) {
-                    masterCleanLedger[1239] = normalizeMaster1239Order(masterCleanLedger[1239]);
-                }
-                allUsersMap['master'] = {
-                    userId: 'master',
-                    realName: '최고관리자',
-                    createdAt: '2026-07-25T12:00:00+09:00',
-                    ledger: masterCleanLedger
-                };
-                for (const r in masterCleanLedger) {
-                    const roundNum = parseInt(r, 10);
-                    if (!mergedLedger[roundNum]) mergedLedger[roundNum] = [];
-                    masterCleanLedger[r].forEach(receipt => mergedLedger[roundNum].push(receipt));
-                    mergedLedger[roundNum] = deduplicateReceipts(mergedLedger[roundNum]);
-                    if (roundNum === 1239) {
-                        mergedLedger[1239] = normalizeMaster1239Order(mergedLedger[1239]);
-                    }
+                mergedLedger[roundNum] = deduplicateReceipts(mergedLedger[roundNum]);
+                if (roundNum === 1239) {
+                    mergedLedger[1239] = normalizeMaster1239Order(mergedLedger[1239]);
                 }
             }
+        } // end doc loop
 
-            // Distribute master's official/scanned receipts to actual users
-            if (allUsersMap['master'] && allUsersMap['master'].ledger) {
-                const mLedger = allUsersMap['master'].ledger;
-                for (const r in mLedger) {
-                    const roundNum = parseInt(r, 10);
-                    mLedger[r].forEach(receipt => {
-                        const pUser = (receipt.user || receipt.userId || '').trim().toLowerCase();
-                        if (pUser && pUser !== 'master' && pUser !== 'admin') {
-                            if (!allUsersMap[pUser]) {
-                                allUsersMap[pUser] = {
-                                    userId: pUser,
-                                    realName: userNames[pUser] || pUser,
-                                    createdAt: null,
-                                    ledger: {}
-                                };
-                            }
-                            if (!allUsersMap[pUser].ledger[roundNum]) {
-                                allUsersMap[pUser].ledger[roundNum] = [];
-                            }
-                            allUsersMap[pUser].ledger[roundNum].push(receipt);
+        if (!allUsersMap['master']) {
+            const masterCleanLedger = {};
+            [1235, 1236, 1237, 1238, 1239, 1240].forEach(r => {
+                masterCleanLedger[r] = (getOfficialPastRecommendation(r) || []).map(syncPurchaseWithQrUrl);
+            });
+            if (masterCleanLedger[1239]) {
+                masterCleanLedger[1239] = normalizeMaster1239Order(masterCleanLedger[1239]);
+            }
+            allUsersMap['master'] = {
+                userId: 'master',
+                realName: '최고관리자',
+                createdAt: '2026-07-25T12:00:00+09:00',
+                ledger: masterCleanLedger
+            };
+            for (const r in masterCleanLedger) {
+                const roundNum = parseInt(r, 10);
+                if (!mergedLedger[roundNum]) mergedLedger[roundNum] = [];
+                masterCleanLedger[r].forEach(receipt => mergedLedger[roundNum].push(receipt));
+                mergedLedger[roundNum] = deduplicateReceipts(mergedLedger[roundNum]);
+                if (roundNum === 1239) {
+                    mergedLedger[1239] = normalizeMaster1239Order(mergedLedger[1239]);
+                }
+            }
+        }
+
+        // Distribute master's official/scanned receipts to actual users
+        if (allUsersMap['master'] && allUsersMap['master'].ledger) {
+            const mLedger = allUsersMap['master'].ledger;
+            for (const r in mLedger) {
+                const roundNum = parseInt(r, 10);
+                mLedger[r].forEach(receipt => {
+                    const pUser = (receipt.user || receipt.userId || '').trim().toLowerCase();
+                    if (pUser && pUser !== 'master' && pUser !== 'admin') {
+                        if (!allUsersMap[pUser]) {
+                            allUsersMap[pUser] = {
+                                userId: pUser,
+                                realName: userNames[pUser] || pUser,
+                                createdAt: null,
+                                ledger: {}
+                            };
                         }
-                    });
-                }
-                
-                for (const uId in allUsersMap) {
-                    if (uId === 'master' || uId === 'admin') continue;
-                    for (const r in allUsersMap[uId].ledger) {
-                        allUsersMap[uId].ledger[r] = deduplicateReceipts(allUsersMap[uId].ledger[r]);
+                        if (!allUsersMap[pUser].ledger[roundNum]) {
+                            allUsersMap[pUser].ledger[roundNum] = [];
+                        }
+                        allUsersMap[pUser].ledger[roundNum].push(receipt);
                     }
+                });
+            }
+            
+            for (const uId in allUsersMap) {
+                if (uId === 'master' || uId === 'admin') continue;
+                for (const r in allUsersMap[uId].ledger) {
+                    allUsersMap[uId].ledger[r] = deduplicateReceipts(allUsersMap[uId].ledger[r]);
                 }
             }
+        }
 
-            state.allUsersPurchasesMap = allUsersMap;
-            state.allUsersMergedLedger = mergedLedger;
-            _lastFetchAllUsersPurchasesTime = Date.now();
+        // ⚡ 현재 로그인된 사용자의 실구매 장부 로컬 캐시 즉시 동기화
+        const curAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null));
+        if (curAuth) {
+            let curClean = String(curAuth).toLowerCase().trim();
+            if (curClean.startsWith('{')) {
+                try { const p = JSON.parse(curClean); curClean = (p.userid || p.userId || curClean).toLowerCase().trim(); } catch(e){}
+            }
+            if (allUsersMap[curClean] && allUsersMap[curClean].ledger) {
+                try {
+                    SafeLocalStorage.setItem(`lotto_actual_ledger_${curClean}`, JSON.stringify(allUsersMap[curClean].ledger));
+                    if (!state.globalLedger || Object.keys(state.globalLedger).length === 0) {
+                        state.globalLedger = allUsersMap[curClean].ledger;
+                    }
+                } catch(e) {}
+            }
+        }
 
+        state.allUsersPurchasesMap = allUsersMap;
+        state.allUsersMergedLedger = mergedLedger;
+        _lastFetchAllUsersPurchasesTime = Date.now();
+
+        try {
+            SafeLocalStorage.setItem('lotto_all_users_purchases_map_cache', JSON.stringify(allUsersMap));
+            SafeLocalStorage.setItem('lotto_all_users_merged_ledger_cache', JSON.stringify(mergedLedger));
+        } catch(e) {
             try {
-                SafeLocalStorage.setItem('lotto_all_users_purchases_map_cache', JSON.stringify(allUsersMap));
-                SafeLocalStorage.setItem('lotto_all_users_merged_ledger_cache', JSON.stringify(mergedLedger));
+                const compactMerged = {};
+                for (const r in mergedLedger) {
+                    compactMerged[r] = (mergedLedger[r] || []).map(rc => ({
+                        user: rc.user,
+                        combos: rc.combos,
+                        date: rc.date,
+                        round: rc.round
+                    }));
+                }
+                SafeLocalStorage.setItem('lotto_all_users_merged_ledger_cache', JSON.stringify(compactMerged));
+            } catch(e2) {}
+        }
+
+        if (typeof window.triggerGlobalEvent === 'function') window.triggerGlobalEvent('onLedgerDataUpdated');
+
+        if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+            try { window.renderLandingDashboard(); } catch(e){}
+        }
+
+        if (typeof document !== 'undefined') {
+            const appContainer = document.getElementById('appContainer');
+            if (appContainer && (appContainer.classList.contains('active') || appContainer.style.display !== 'none')) {
+                const curTab = window.__currentLottoTab || 'tab-generator';
+                if (curTab === 'tab-review' && typeof window.renderReviewTab === 'function') {
+                    window.renderReviewTab();
+                } else if (curTab === 'tab-statistics' && typeof window.renderStatisticsTab === 'function') {
+                    window.renderStatisticsTab();
+                } else if (curTab === 'tab-dashboard' && typeof window.renderDashboardTab === 'function') {
+                    window.renderDashboardTab();
+                } else if (curTab === 'tab-generator' && typeof window.renderGeneratorTab === 'function') {
+                    window.renderGeneratorTab();
+                }
+            }
+        }
+
+        return { allUsersMap, mergedLedger };
+    };
+
+    _inFlightFetchAllUsersPurchasesPromise = (async () => {
+        try {
+            // ⚡ 1단계: IndexedDB 로컬 캐시에서 즉시(5~30ms) 스냅샷 획득 시도 (오프라인/모바일 네트워크 지연 완벽 차단)
+            let cachedSnapshotsApplied = false;
+            try {
+                const [pCache, uCache] = await Promise.all([
+                    firestore.collection('lotto_purchases').get({ source: 'cache' }).catch(() => null),
+                    firestore.collection('lotto_users').get({ source: 'cache' }).catch(() => null)
+                ]);
+                if (pCache && !pCache.empty) {
+                    await applySnapshots(pCache, uCache);
+                    cachedSnapshotsApplied = true;
+                }
             } catch(e) {}
 
-            if (typeof window.triggerGlobalEvent === 'function') window.triggerGlobalEvent('onLedgerDataUpdated');
+            // ⚡ 2단계: 최신 데이터는 서버에서 가져오되 모바일 12~15초 지연 방지
+            const fetchWithTimeout = (promise, ms = 2500) => {
+                let timer;
+                return Promise.race([
+                    promise.finally(() => clearTimeout(timer)),
+                    new Promise(resolve => { timer = setTimeout(() => resolve(null), ms); })
+                ]);
+            };
 
-            // ⚡ 메인 대시보드가 열려 있는 경우 즉시 최신 당첨이력 및 금융 요약 재렌더링
-            if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
-                try { window.renderLandingDashboard(); } catch(e){}
-            }
+            const serverPurchasesPromise = firestore.collection('lotto_purchases').get().catch(err => { console.warn('[Purchases Fetch Error]', err); return null; });
+            const serverUsersPromise = firestore.collection('lotto_users').get().catch(err => { console.warn('[Users Fetch Error]', err); return null; });
 
-            if (typeof document !== 'undefined') {
-                const appContainer = document.getElementById('appContainer');
-                if (appContainer && (appContainer.classList.contains('active') || appContainer.style.display !== 'none')) {
-                    const curTab = window.__currentLottoTab || 'tab-generator';
-                    if (curTab === 'tab-review' && typeof window.renderReviewTab === 'function') {
-                        window.renderReviewTab();
-                    } else if (curTab === 'tab-statistics' && typeof window.renderStatisticsTab === 'function') {
-                        window.renderStatisticsTab();
-                    } else if (curTab === 'tab-dashboard' && typeof window.renderDashboardTab === 'function') {
-                        window.renderDashboardTab();
-                    } else if (curTab === 'tab-generator' && typeof window.renderGeneratorTab === 'function') {
-                        window.renderGeneratorTab();
+            if (cachedSnapshotsApplied) {
+                // 이미 로컬 캐시로 화면 0ms 렌더링 완료됨 -> 서버 통신은 백그라운드 비차단 완료
+                serverPurchasesPromise.then(async (pServer) => {
+                    if (pServer && !pServer.empty) {
+                        const uServer = await serverUsersPromise;
+                        await applySnapshots(pServer, uServer);
                     }
+                }).catch(err => console.warn('[BG Server Sync Note]', err));
+
+                return { allUsersMap: state.allUsersPurchasesMap, mergedLedger: state.allUsersMergedLedger || {} };
+            } else {
+                // 로컬 캐시가 없었던 경우: 2500ms 동안 대기하여 모바일 무한 지연 차단
+                const [pSnapshot, uSnapshot] = await Promise.all([
+                    fetchWithTimeout(serverPurchasesPromise, 2500),
+                    fetchWithTimeout(serverUsersPromise, 2500)
+                ]);
+
+                if (pSnapshot && !pSnapshot.empty) {
+                    return await applySnapshots(pSnapshot, uSnapshot);
+                } else {
+                    // 2.5초 내에 서버 응답이 안 올 경우 백그라운드 도착 시 자동 갱신하도록 위임
+                    serverPurchasesPromise.then(async (pServer) => {
+                        if (pServer && !pServer.empty) {
+                            const uServer = await serverUsersPromise;
+                            await applySnapshots(pServer, uServer);
+                        }
+                    }).catch(err => console.warn('[Delayed Server Sync Note]', err));
+
+                    return { allUsersMap: state.allUsersPurchasesMap || {}, mergedLedger: state.allUsersMergedLedger || {} };
                 }
             }
-
-            return { allUsersMap, mergedLedger };
-
         } catch(e) {
             console.error('[fetchAllUsersPurchases Error]', e);
-            return {};
+            return { allUsersMap: state.allUsersPurchasesMap || {}, mergedLedger: state.allUsersMergedLedger || {} };
         }
     })().finally(() => {
         _inFlightFetchAllUsersPurchasesPromise = null;
@@ -10394,17 +10476,21 @@ function getLedger(explicitTarget = null) {
 
 
     // 1. If viewing ALL users merged ledger
-
     if (cleanTarget === 'all') {
-
         if (state.allUsersMergedLedger && Object.keys(state.allUsersMergedLedger).length > 0) {
-
             return state.allUsersMergedLedger;
-
         }
-
+        try {
+            const rawMerged = SafeLocalStorage.getItem('lotto_all_users_merged_ledger_cache');
+            if (rawMerged) {
+                const parsed = JSON.parse(rawMerged);
+                if (parsed && Object.keys(parsed).length > 0) {
+                    state.allUsersMergedLedger = parsed;
+                    return parsed;
+                }
+            }
+        } catch(e) {}
         return state.globalLedger || {};
-
     }
 
 
@@ -40882,10 +40968,8 @@ async function renderLandingDashboard() {
             try {
                 const localMap = SafeLocalStorage.getItem('lotto_all_users_purchases_map_cache');
                 const localMerged = SafeLocalStorage.getItem('lotto_all_users_merged_ledger_cache');
-                if (localMap && localMerged) {
-                    state.allUsersPurchasesMap = JSON.parse(localMap);
-                    state.allUsersMergedLedger = JSON.parse(localMerged);
-                }
+                if (localMap) state.allUsersPurchasesMap = JSON.parse(localMap);
+                if (localMerged) state.allUsersMergedLedger = JSON.parse(localMerged);
             } catch(e) {}
 
             if (typeof fetchAllUsersPurchases === 'function') {
@@ -40928,7 +41012,33 @@ async function renderLandingDashboard() {
     }
 
     // 1. Calculate Individual Logged-in User's Actual Lotto Financials (Synchronous 0ms)
-    const myFin = calculateLedgerFinancials(true, 'my');
+    let myFin = calculateLedgerFinancials(true, 'my');
+    const cleanAuthId = (authId || '').toLowerCase().trim();
+
+    // ⚡ 0ms 즉시 복원: 스마트폰 새로고침 시 myFin이 비어있다면 경량 로컬 KPI 캐시에서 즉시 표시
+    let cachedMyFin = null;
+    if (cleanAuthId && cleanAuthId !== '비로그인') {
+        try {
+            const rawMyKpi = SafeLocalStorage.getItem(`lotto_my_fin_kpi_cache_${cleanAuthId}`);
+            if (rawMyKpi) cachedMyFin = JSON.parse(rawMyKpi);
+        } catch(e) {}
+    }
+
+    if ((!myFin || myFin.totalCombos === 0) && cachedMyFin && cachedMyFin.totalCombos > 0) {
+        myFin = cachedMyFin;
+    } else if (myFin && myFin.totalCombos > 0 && cleanAuthId && cleanAuthId !== '비로그인') {
+        try {
+            SafeLocalStorage.setItem(`lotto_my_fin_kpi_cache_${cleanAuthId}`, JSON.stringify({
+                totalInvest: myFin.totalInvest,
+                totalPrize: myFin.totalPrize,
+                totalCombos: myFin.totalCombos,
+                totalWins: myFin.totalWins,
+                hits: myFin.hits,
+                netProfit: (myFin.totalPrize || 0) - (myFin.totalInvest || 0),
+                roi: myFin.totalInvest > 0 ? (((myFin.totalPrize - myFin.totalInvest) / myFin.totalInvest) * 100).toFixed(1) : '0.0'
+            }));
+        } catch(e) {}
+    }
 
     // Update Header Financial Summary KPI Elements (My Portfolio)
     const elInvest = document.getElementById('lp-total-invest');
@@ -41021,30 +41131,30 @@ async function renderLandingDashboard() {
     }
 
     // 5. Non-Blocking Staggered Background Computations:
-    // UI 스레드 프리즈 방지를 위해 카드 2(전체 회원 실구매)를 먼저 띄우고, 무거운 복기 요약과 롤링 티커는 지연 분산 실행
-    calculateAllUsersTotalFinancials().then(allFin => {
+    function updateAllUsersCardUI(allFin) {
+        if (!allFin) return;
         const elAllSub = document.getElementById('lp-toto-mini-sub');
         const elAllPrize = document.getElementById('lp-toto-mini-prize');
         const elAllHits = document.getElementById('lp-toto-mini-hits');
 
         if (elAllSub) {
-            elAllSub.textContent = allFin.totalCombos > 0 
-                ? `총 ${allFin.totalCombos.toLocaleString()}게임 (${allFin.totalInvest.toLocaleString()}원)`
+            elAllSub.textContent = (allFin.totalCombos > 0)
+                ? `총 ${allFin.totalCombos.toLocaleString()}게임 (${(allFin.totalInvest || 0).toLocaleString()}원)`
                 : '0게임 (0원)';
         }
         if (elAllPrize) {
-            elAllPrize.textContent = `총 당첨 ${allFin.totalPrize.toLocaleString()}원`;
-            elAllPrize.style.color = allFin.totalPrize > 0 ? '#fbbf24' : '#cbd5e1';
+            elAllPrize.textContent = `총 당첨 ${(allFin.totalPrize || 0).toLocaleString()}원`;
+            elAllPrize.style.color = (allFin.totalPrize || 0) > 0 ? '#fbbf24' : '#cbd5e1';
         }
         if (elAllHits) {
             if (allFin.totalCombos > 0) {
                 if (allFin.totalWins > 0) {
                     const ranksArr = [];
-                    if (allFin.hits[0] > 0) ranksArr.push(`1등 ${allFin.hits[0]}`);
-                    if (allFin.hits[1] > 0) ranksArr.push(`2등 ${allFin.hits[1]}`);
-                    if (allFin.hits[2] > 0) ranksArr.push(`3등 ${allFin.hits[2]}`);
-                    if (allFin.hits[3] > 0) ranksArr.push(`4등 ${allFin.hits[3]}`);
-                    if (allFin.hits[4] > 0) ranksArr.push(`5등 ${allFin.hits[4]}`);
+                    if (allFin.hits && allFin.hits[0] > 0) ranksArr.push(`1등 ${allFin.hits[0]}`);
+                    if (allFin.hits && allFin.hits[1] > 0) ranksArr.push(`2등 ${allFin.hits[1]}`);
+                    if (allFin.hits && allFin.hits[2] > 0) ranksArr.push(`3등 ${allFin.hits[2]}`);
+                    if (allFin.hits && allFin.hits[3] > 0) ranksArr.push(`4등 ${allFin.hits[3]}`);
+                    if (allFin.hits && allFin.hits[4] > 0) ranksArr.push(`5등 ${allFin.hits[4]}`);
                     elAllHits.textContent = `전체 ${allFin.totalWins}건 적중 (${ranksArr.join(', ')})`;
                     elAllHits.style.color = '#38bdf8';
                 } else {
@@ -41055,6 +41165,34 @@ async function renderLandingDashboard() {
                 elAllHits.textContent = '등록된 실구매 내역 없음';
                 elAllHits.style.color = '#64748b';
             }
+        }
+    }
+
+    // ⚡ 0ms 즉시 표시: 로컬 캐시된 전체 회원 실구매 KPI가 있으면 네트워크 다운로드 전 0ms 즉각 표시
+    let cachedAllFin = null;
+    try {
+        const rawAll = SafeLocalStorage.getItem('lotto_all_fin_kpi_cache');
+        if (rawAll) cachedAllFin = JSON.parse(rawAll);
+    } catch(e) {}
+    if (cachedAllFin && cachedAllFin.totalCombos > 0) {
+        updateAllUsersCardUI(cachedAllFin);
+    }
+
+    // UI 스레드 프리즈 방지를 위해 카드 2(전체 회원 실구매)를 백그라운드 계산하여 최신화
+    calculateAllUsersTotalFinancials().then(allFin => {
+        if (allFin && allFin.totalCombos > 0) {
+            updateAllUsersCardUI(allFin);
+            try {
+                SafeLocalStorage.setItem('lotto_all_fin_kpi_cache', JSON.stringify({
+                    totalInvest: allFin.totalInvest,
+                    totalPrize: allFin.totalPrize,
+                    totalCombos: allFin.totalCombos,
+                    totalWins: allFin.totalWins,
+                    hits: allFin.hits
+                }));
+            } catch(e) {}
+        } else if (!cachedAllFin) {
+            updateAllUsersCardUI(allFin);
         }
     }).catch(e => console.warn('[Landing BG allFin Note]', e));
 

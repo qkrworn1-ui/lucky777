@@ -1,25 +1,9 @@
 {
-  "version": "v2026.09.28.1145.57",
+  "version": "v2026.09.28.1205",
   "buildDate": "2026-09-28",
   "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline",
-  "buildTimestamp": "2026-09-28T11:45:57.659225",
+  "buildTimestamp": "2026-09-28T12:05:10.928202",
   "buildHistory": [
-    {
-      "version": "v2026.09.28.0439",
-      "buildDate": "2026-09-28",
-      "buildTime": "04:39",
-      "buildDateTime": "2026-09-28 04:39",
-      "buildTimestamp": "2026-09-28T04:39:21.779961",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
-    {
-      "version": "v2026.09.28.0442",
-      "buildDate": "2026-09-28",
-      "buildTime": "04:42",
-      "buildDateTime": "2026-09-28 04:42",
-      "buildTimestamp": "2026-09-28T04:42:48.493003",
-      "description": "Remove 5-combo verification cards from simulation tab"
-    },
     {
       "version": "v2026.09.28.0444",
       "buildDate": "2026-09-28",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-09-28 11:45",
       "buildTimestamp": "2026-09-28T11:45:57.659225",
       "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
+    },
+    {
+      "version": "v2026.09.28.1202",
+      "buildDate": "2026-09-28",
+      "buildTime": "12:02",
+      "buildDateTime": "2026-09-28 12:02",
+      "buildTimestamp": "2026-09-28T12:02:52.211852",
+      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
+    },
+    {
+      "version": "v2026.09.28.1205",
+      "buildDate": "2026-09-28",
+      "buildTime": "12:05",
+      "buildDateTime": "2026-09-28 12:05",
+      "buildTimestamp": "2026-09-28T12:05:10.928202",
+      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
     }
   ],
-  "buildTime": "11:45",
-  "buildDateTime": "2026-09-28 11:45"
+  "buildTime": "12:05",
+  "buildDateTime": "2026-09-28 12:05"
 }
