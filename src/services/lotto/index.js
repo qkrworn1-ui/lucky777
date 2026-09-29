@@ -19,7 +19,7 @@ import { setupManualDrawModal } from './views/manual-draw-modal.js';
 import { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } from './views/snapshot-audit-modal.js';
 import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
 import { computeAbsoluteTop10Combinations } from './generator.js';
-import { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from './ledger.js';
+import { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl, getUserConfirmedRoundNumbers, formatConfirmedRoundLabel } from './ledger.js';
 
 let _isLottoInitializing = false;
 let _lottoInitPromise = null;
@@ -669,6 +669,8 @@ if (typeof window !== 'undefined') {
     window.getSafeActualDraw = getSafeActualDraw;
     window.getUserPurchasesForRound = getUserPurchasesForRound;
     window.calculateLedgerFinancials = calculateLedgerFinancials;
+    window.getUserConfirmedRoundNumbers = getUserConfirmedRoundNumbers;
+    window.formatConfirmedRoundLabel = formatConfirmedRoundLabel;
     window.calculateAllUsersTotalFinancials = calculateAllUsersTotalFinancials;
     window.resetLottoServiceState = resetLottoServiceState;
     window.openSnapshotAuditModal = openSnapshotAuditModal;

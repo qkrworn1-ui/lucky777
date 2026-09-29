@@ -978,6 +978,7 @@ export function updateLoggedInUserHeaderUI(targetAuthId = null) {
         const dRole = dashCard.querySelector('#dashWelcomeRoleBadge');
         const dJoin = dashCard.querySelector('#dashWelcomeJoinBadge');
         const dQrStatus = dashCard.querySelector('#dashWelcomeQrStatus');
+        const dConfirmedRounds = dashCard.querySelector('#dashWelcomeConfirmedRounds');
         const dInvest = dashCard.querySelector('#dashWelcomeTotalInvest');
         const dPrize = dashCard.querySelector('#dashWelcomeTotalPrize');
         const dProfit = dashCard.querySelector('#dashWelcomeTotalProfit');
@@ -1015,6 +1016,17 @@ export function updateLoggedInUserHeaderUI(targetAuthId = null) {
             if (dRoi) {
                 dRoi.textContent = `${netProfit >= 0 ? '+' : ''}${roi}%`;
                 dRoi.className = `dash-welcome-kpi-val ${netProfit > 0 ? 'text-positive' : (netProfit < 0 ? 'text-negative' : '')}`;
+            }
+            if (dConfirmedRounds) {
+                let rounds = [];
+                if (typeof window.getUserConfirmedRoundNumbers === 'function') {
+                    rounds = window.getUserConfirmedRoundNumbers('my') || [];
+                } else if (myFin && myFin.roundBreakdown) {
+                    rounds = Object.keys(myFin.roundBreakdown).map(Number).filter(n => !isNaN(n) && n > 0).sort((a, b) => a - b);
+                }
+                dConfirmedRounds.textContent = (typeof window.formatConfirmedRoundLabel === 'function')
+                    ? window.formatConfirmedRoundLabel(rounds)
+                    : (rounds.length ? `${rounds[0] === rounds[rounds.length - 1] ? rounds[0] : `${rounds[0]}~${rounds[rounds.length - 1]}`}회 구매확정` : '구매확정 없음');
             }
         }
     }

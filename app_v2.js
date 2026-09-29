@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.28.1847 - BUILD_DATE: 2026-09-28] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.29.1204 - BUILD_DATE: 2026-09-29] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.28.1847)
+ * Lucky777 Smart Bundle (v2026.09.29.1204)
  */
 
 
@@ -2371,6 +2371,7 @@ function updateLoggedInUserHeaderUI(targetAuthId = null) {
         const dRole = dashCard.querySelector('#dashWelcomeRoleBadge');
         const dJoin = dashCard.querySelector('#dashWelcomeJoinBadge');
         const dQrStatus = dashCard.querySelector('#dashWelcomeQrStatus');
+        const dConfirmedRounds = dashCard.querySelector('#dashWelcomeConfirmedRounds');
         const dInvest = dashCard.querySelector('#dashWelcomeTotalInvest');
         const dPrize = dashCard.querySelector('#dashWelcomeTotalPrize');
         const dProfit = dashCard.querySelector('#dashWelcomeTotalProfit');
@@ -2408,6 +2409,17 @@ function updateLoggedInUserHeaderUI(targetAuthId = null) {
             if (dRoi) {
                 dRoi.textContent = `${netProfit >= 0 ? '+' : ''}${roi}%`;
                 dRoi.className = `dash-welcome-kpi-val ${netProfit > 0 ? 'text-positive' : (netProfit < 0 ? 'text-negative' : '')}`;
+            }
+            if (dConfirmedRounds) {
+                let rounds = [];
+                if (typeof window.getUserConfirmedRoundNumbers === 'function') {
+                    rounds = window.getUserConfirmedRoundNumbers('my') || [];
+                } else if (myFin && myFin.roundBreakdown) {
+                    rounds = Object.keys(myFin.roundBreakdown).map(Number).filter(n => !isNaN(n) && n > 0).sort((a, b) => a - b);
+                }
+                dConfirmedRounds.textContent = (typeof window.formatConfirmedRoundLabel === 'function')
+                    ? window.formatConfirmedRoundLabel(rounds)
+                    : (rounds.length ? `${rounds[0] === rounds[rounds.length - 1] ? rounds[0] : `${rounds[0]}~${rounds[rounds.length - 1]}`}회 구매확정` : '구매확정 없음');
             }
         }
     }
@@ -10637,6 +10649,22 @@ function getLedger(explicitTarget = null) {
 
 }
 
+function getUserConfirmedRoundNumbers(explicitTarget = null) {
+    const ledger = getLedger(explicitTarget);
+    return Object.keys(ledger || {})
+        .map(Number)
+        .filter(r => !isNaN(r) && r > 0 && Array.isArray(ledger[r]) && ledger[r].length > 0)
+        .sort((a, b) => a - b);
+}
+
+function formatConfirmedRoundLabel(rounds, emptyText = '구매확정 없음') {
+    if (!Array.isArray(rounds) || rounds.length === 0) return emptyText;
+    const min = rounds[0];
+    const max = rounds[rounds.length - 1];
+    if (min === max) return `${max}회 구매확정`;
+    return `${min}~${max}회 구매확정`;
+}
+
 
 
 /**
@@ -14175,6 +14203,14 @@ async function calculateAllUsersTotalFinancials() {
         if (typeof getLedger !== 'undefined') {
             __exports.getLedger = getLedger;
             if (typeof window !== 'undefined') window.getLedger = getLedger;
+        }
+        if (typeof getUserConfirmedRoundNumbers !== 'undefined') {
+            __exports.getUserConfirmedRoundNumbers = getUserConfirmedRoundNumbers;
+            if (typeof window !== 'undefined') window.getUserConfirmedRoundNumbers = getUserConfirmedRoundNumbers;
+        }
+        if (typeof formatConfirmedRoundLabel !== 'undefined') {
+            __exports.formatConfirmedRoundLabel = formatConfirmedRoundLabel;
+            if (typeof window !== 'undefined') window.formatConfirmedRoundLabel = formatConfirmedRoundLabel;
         }
         if (typeof saveLedgerDirectly !== 'undefined') {
             __exports.saveLedgerDirectly = saveLedgerDirectly;
@@ -33965,7 +34001,7 @@ const { setupManualDrawModal } = (typeof __M_services_lotto_views_manual_draw_mo
 const { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } = (typeof __M_services_lotto_views_snapshot_audit_modal !== 'undefined' ? __M_services_lotto_views_snapshot_audit_modal : {});
 const { autoSyncMissingDraws, setupSyncEvents } = (typeof __M_services_lotto_views_sync !== 'undefined' ? __M_services_lotto_views_sync : {});
 const { computeAbsoluteTop10Combinations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
-const { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
+const { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl, getUserConfirmedRoundNumbers, formatConfirmedRoundLabel } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 
 let _isLottoInitializing = false;
 let _lottoInitPromise = null;
@@ -34615,6 +34651,8 @@ if (typeof window !== 'undefined') {
     window.getSafeActualDraw = getSafeActualDraw;
     window.getUserPurchasesForRound = getUserPurchasesForRound;
     window.calculateLedgerFinancials = calculateLedgerFinancials;
+    window.getUserConfirmedRoundNumbers = getUserConfirmedRoundNumbers;
+    window.formatConfirmedRoundLabel = formatConfirmedRoundLabel;
     window.calculateAllUsersTotalFinancials = calculateAllUsersTotalFinancials;
     window.resetLottoServiceState = resetLottoServiceState;
     window.openSnapshotAuditModal = openSnapshotAuditModal;
@@ -40978,7 +41016,7 @@ const __M_shared_landing_dashboard = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUsersPurchases, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
+const { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUsersPurchases, getSafeActualDraw, getUserConfirmedRoundNumbers, formatConfirmedRoundLabel } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { SafeAuth, getUserRealName, updateLoggedInUserHeaderUI } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { getAllUnifiedRegisteredUsers } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
@@ -41080,7 +41118,8 @@ async function renderLandingDashboard() {
                 totalWins: myFin.totalWins,
                 hits: myFin.hits,
                 netProfit: (myFin.totalPrize || 0) - (myFin.totalInvest || 0),
-                roi: myFin.totalInvest > 0 ? (((myFin.totalPrize - myFin.totalInvest) / myFin.totalInvest) * 100).toFixed(1) : '0.0'
+                roi: myFin.totalInvest > 0 ? (((myFin.totalPrize - myFin.totalInvest) / myFin.totalInvest) * 100).toFixed(1) : '0.0',
+                confirmedRounds: getUserConfirmedRoundNumbers('my')
             }));
         } catch(e) {}
     }
@@ -41116,22 +41155,68 @@ async function renderLandingDashboard() {
     const elMobileUserName = document.getElementById('lpMobileUserName');
     if (elMobileUserName) elMobileUserName.textContent = displayName || '회원';
 
-    const latestRound = (state && state.latestRound) ? state.latestRound : 1241;
+    let confirmedRounds = [];
+    try {
+        confirmedRounds = getUserConfirmedRoundNumbers('my');
+    } catch (e) {}
+    if ((!confirmedRounds || confirmedRounds.length === 0) && Array.isArray(cachedMyFin?.confirmedRounds) && cachedMyFin.confirmedRounds.length > 0) {
+        confirmedRounds = cachedMyFin.confirmedRounds.map(Number).filter(n => !isNaN(n) && n > 0).sort((a, b) => a - b);
+    }
+    if ((!confirmedRounds || confirmedRounds.length === 0) && myFin && myFin.roundBreakdown) {
+        confirmedRounds = Object.keys(myFin.roundBreakdown).map(Number).filter(n => !isNaN(n) && n > 0).sort((a, b) => a - b);
+    }
+    const confirmedRoundLabel = formatConfirmedRoundLabel(confirmedRounds);
+    const latestConfirmedRound = confirmedRounds.length ? confirmedRounds[confirmedRounds.length - 1] : null;
+
     const elMobileConfirmedPill = document.getElementById('lpMobileConfirmedPill');
-    if (elMobileConfirmedPill) elMobileConfirmedPill.textContent = `${latestRound}회 구매확정`;
+    if (elMobileConfirmedPill) elMobileConfirmedPill.textContent = confirmedRoundLabel;
+    const elDesktopConfirmedPill = document.getElementById('lpDesktopConfirmedPill');
+    if (elDesktopConfirmedPill) elDesktopConfirmedPill.textContent = confirmedRoundLabel;
 
     const elWinStripText = document.getElementById('lpWinStripText');
     if (elWinStripText) {
-        if (myFin && myFin.totalWins > 0) {
+        const rankPartsFromHits = (hits) => {
             const ranksArr = [];
-            if (myFin.hits[4] > 0) ranksArr.push(`5등 ${myFin.hits[4]}건`);
-            if (myFin.hits[3] > 0) ranksArr.push(`4등 ${myFin.hits[3]}건`);
-            if (myFin.hits[2] > 0) ranksArr.push(`3등 ${myFin.hits[2]}건`);
-            if (myFin.hits[1] > 0) ranksArr.push(`2등 ${myFin.hits[1]}건`);
-            if (myFin.hits[0] > 0) ranksArr.push(`1등 ${myFin.hits[0]}건`);
-            elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> ${ranksArr.join(', ') || '당첨'} (총 ${(myFin.totalPrize || 0).toLocaleString()}원)`;
+            if (!hits) return ranksArr;
+            if (hits[0] > 0) ranksArr.push(`1등 ${hits[0]}건`);
+            if (hits[1] > 0) ranksArr.push(`2등 ${hits[1]}건`);
+            if (hits[2] > 0) ranksArr.push(`3등 ${hits[2]}건`);
+            if (hits[3] > 0) ranksArr.push(`4등 ${hits[3]}건`);
+            if (hits[4] > 0) ranksArr.push(`5등 ${hits[4]}건`);
+            return ranksArr;
+        };
+
+        let latestWinRound = null;
+        let latestWinBreakdown = null;
+        if (myFin && myFin.roundBreakdown) {
+            for (let i = confirmedRounds.length - 1; i >= 0; i--) {
+                const r = confirmedRounds[i];
+                const rb = myFin.roundBreakdown[r] || myFin.roundBreakdown[String(r)];
+                if (rb && Array.isArray(rb.winningCombos) && rb.winningCombos.length > 0) {
+                    latestWinRound = r;
+                    latestWinBreakdown = rb;
+                    break;
+                }
+            }
+        }
+
+        if (latestWinRound && latestWinBreakdown) {
+            const rh = latestWinBreakdown.roundHits || latestWinBreakdown.hits || [];
+            const ranksArr = [];
+            if (rh[1] > 0) ranksArr.push(`1등 ${rh[1]}건`);
+            if (rh[2] > 0) ranksArr.push(`2등 ${rh[2]}건`);
+            if (rh[3] > 0) ranksArr.push(`3등 ${rh[3]}건`);
+            if (rh[4] > 0) ranksArr.push(`4등 ${rh[4]}건`);
+            if (rh[5] > 0) ranksArr.push(`5등 ${rh[5]}건`);
+            const prize = latestWinBreakdown.prize || 0;
+            elWinStripText.innerHTML = `<strong>${latestWinRound}회 적중:</strong> ${ranksArr.join(', ') || '당첨'} (총 ${prize.toLocaleString()}원)`;
+        } else if (myFin && myFin.totalWins > 0) {
+            const ranksArr = rankPartsFromHits(myFin.hits);
+            elWinStripText.innerHTML = `<strong>누적 적중:</strong> ${ranksArr.join(', ') || '당첨'} (총 ${(myFin.totalPrize || 0).toLocaleString()}원)`;
+        } else if (latestConfirmedRound) {
+            elWinStripText.innerHTML = `<strong>${latestConfirmedRound}회 구매확정</strong> · 당첨 내역 없음`;
         } else {
-            elWinStripText.innerHTML = `<strong>${latestRound}회 적중:</strong> 5등 2건 (총 10,000원)`;
+            elWinStripText.innerHTML = `등록된 구매확정 내역이 없습니다`;
         }
     }
 

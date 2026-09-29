@@ -1579,6 +1579,22 @@ export function getLedger(explicitTarget = null) {
 
 }
 
+export function getUserConfirmedRoundNumbers(explicitTarget = null) {
+    const ledger = getLedger(explicitTarget);
+    return Object.keys(ledger || {})
+        .map(Number)
+        .filter(r => !isNaN(r) && r > 0 && Array.isArray(ledger[r]) && ledger[r].length > 0)
+        .sort((a, b) => a - b);
+}
+
+export function formatConfirmedRoundLabel(rounds, emptyText = '구매확정 없음') {
+    if (!Array.isArray(rounds) || rounds.length === 0) return emptyText;
+    const min = rounds[0];
+    const max = rounds[rounds.length - 1];
+    if (min === max) return `${max}회 구매확정`;
+    return `${min}~${max}회 구매확정`;
+}
+
 
 
 /**
