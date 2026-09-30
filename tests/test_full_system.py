@@ -2628,9 +2628,52 @@ class TestFullSystem(unittest.TestCase):
         self.assertIn("phone: cleanPhone", auth_code)
         self.assertIn("targetU.hasPledgeSigned = true", auth_code)
 
+    # [Test 77] Donghang Online Receipt & Mobile Multi-Modal Registration Test
+    def test_77_online_receipt_registration_system(self):
+        with open(os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js'), 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        with open(os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'manual-modal.js'), 'r', encoding='utf-8') as f:
+            modal_code = f.read()
+        with open(os.path.join(self.root_dir, 'index.html'), 'r', encoding='utf-8') as f:
+            html_code = f.read()
+        with open(os.path.join(self.root_dir, 'styles.css'), 'r', encoding='utf-8') as f:
+            css_code = f.read()
+
+        # 1. Verify parser implementation and exports
+        self.assertIn("parseDonghangOnlineReceiptText", ledger_code)
+        self.assertIn("window.parseDonghangOnlineReceiptText = parseDonghangOnlineReceiptText", ledger_code)
+        self.assertIn("parseDonghangOnlineReceiptText", modal_code)
+
+        # 2. Verify modal UI components in index.html
+        self.assertIn('id="manualLedgerModeTabs"', html_code)
+        self.assertIn('id="tabBtnOnlineReceipt"', html_code)
+        self.assertIn('id="tabBtnQrScan"', html_code)
+        self.assertIn('id="tabBtnTouchBall"', html_code)
+        self.assertIn('id="sectionOnlineReceipt"', html_code)
+        self.assertIn('id="onlineReceiptTextInput"', html_code)
+        self.assertIn('id="btnPasteMobileClipboard"', html_code)
+        self.assertIn('id="sectionTouchBall"', html_code)
+        self.assertIn('id="ballKeypadGrid"', html_code)
+
+        # 3. Verify CSS styling for tabs and ball keypad
+        self.assertIn(".manual-mode-tabs", css_code)
+        self.assertIn(".manual-tab-btn", css_code)
+        self.assertIn(".ball-keypad-grid", css_code)
+        self.assertIn(".ball-keypad-btn", css_code)
+        self.assertIn(".ball-game-chip", css_code)
+
+        # 4. Verify modal logic functions
+        self.assertIn("switchManualLedgerMode", modal_code)
+        self.assertIn("pasteFromMobileClipboard", modal_code)
+        self.assertIn("handleOnlineReceiptTextChange", modal_code)
+        self.assertIn("toggleBallInActiveGame", modal_code)
+        self.assertIn("ballPickerState", modal_code)
+        self.assertIn("renderBallPickerUI", modal_code)
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 

@@ -749,8 +749,112 @@ export function parseDonghangLotteryQrUrl(url) {
     });
 
     return { round, combos, serial };
-
 }
+
+/**
+ * 🌐 동행복권 온라인 구매내역 텍스트/표/상세팝업 지능형 파서
+ * @param {string} rawText 
+ * @returns {Object|null}
+ */
+export function parseDonghangOnlineReceiptText(rawText) {
+    if (!rawText || typeof rawText !== 'string') return null;
+    const text = rawText.trim();
+    if (!text) return null;
+
+    // 1. 회차 추출 (예: '회차 제 1241 회', '제 1241회', '1241회')
+    let round = null;
+    const roundMatch = text.match(/(?:회차\s*[:=\s]*\s*(?:제\s*)?|제\s*)(\d{1,4})\s*회?/i)
+                    || text.match(/\b(\d{3,4})\s*회/i);
+    if (roundMatch) {
+        const rVal = parseInt(roundMatch[1], 10);
+        if (!isNaN(rVal) && rVal >= 1 && rVal <= 5000) {
+            round = rVal;
+        }
+    }
+
+    // 2. 복권번호 / 일련번호 추출 (예: 54123-12894-39481-99231-00214 또는 20자리 숫자)
+    let serial = '';
+    const serialMatch = text.match(/(?:복권번호|바코드|일련번호)\s*[:=\s]*\s*([0-9\-]{15,35})/i) 
+                     || text.match(/\b\d{5}-\d{5}-\d{5}-\d{5}-\d{5}\b/);
+    if (serialMatch) {
+        serial = serialMatch[1].replace(/[^0-9]/g, '').slice(0, 24);
+    }
+
+    // 3. 구입일시 추출
+    let purchaseDate = null;
+    const dateMatch = text.match(/(\d{4}[-./]\d{2}[-./]\d{2}(?:\s+\d{2}:\d{2}(?::\d{2})?)?)/);
+    if (dateMatch) {
+        purchaseDate = dateMatch[1];
+    }
+
+    // 4. 게임 행(A ~ E) 및 6개 번호 추출
+    const lines = text.split(/\r?\n/);
+    const combos = [];
+    const gameLetters = ['A', 'B', 'C', 'D', 'E'];
+
+    for (let rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) continue;
+
+        // Skip obvious header/footer lines that don't have lotto games
+        if (/^(?:복권명|추첨일|구입일시|결제금액|금액|회차|합계)\b/i.test(line)) continue;
+
+        const letterMatch = line.match(/^([A-E])\b/i);
+        const typeMatch = line.match(/(자\s*동|수\s*동|반\s*자\s*동|자|수|반)/);
+
+        // Extract all 1-2 digit numbers in range 1-45
+        const allNums = (line.match(/\b\d{1,2}\b/g) || [])
+            .map(n => parseInt(n, 10))
+            .filter(n => n >= 1 && n <= 45);
+
+        let gameNums = [];
+        if (allNums.length === 6) {
+            gameNums = allNums;
+        } else if (allNums.length > 6) {
+            // Take the last 6 numbers (handles leading indices or game numbers)
+            gameNums = allNums.slice(-6);
+        }
+
+        if (gameNums.length === 6) {
+            const uniqueNums = Array.from(new Set(gameNums)).sort((a, b) => a - b);
+            if (uniqueNums.length === 6) {
+                const gameLetter = letterMatch ? letterMatch[1].toUpperCase() : (gameLetters[combos.length] || `${combos.length + 1}`);
+                let gameType = 'auto';
+                if (typeMatch) {
+                    const t = typeMatch[1].replace(/\s+/g, '');
+                    if (t.includes('수')) gameType = 'manual';
+                    else if (t.includes('반')) gameType = 'semi';
+                }
+
+                combos.push({
+                    letter: gameLetter,
+                    type: gameType,
+                    numbers: uniqueNums,
+                    meta: {
+                        name: `${gameLetter} [${gameType === 'manual' ? '수동' : gameType === 'semi' ? '반자동' : '자동'}]`,
+                        source: 'online_receipt'
+                    },
+                    stats: {}
+                });
+            }
+        }
+
+        if (combos.length >= 5) break;
+    }
+
+    if (combos.length === 0) return null;
+
+    return {
+        round,
+        serial: serial || (round ? `${String(round).padStart(4, '0')}00000114142041` : ''),
+        date: purchaseDate,
+        combos,
+        gameCount: combos.length,
+        totalAmount: combos.length * 1000,
+        channel: 'online'
+    };
+}
+
 
 
 
@@ -887,9 +991,8 @@ if (typeof window !== 'undefined') {
     window.normalizeMaster1239Order = normalizeMaster1239Order;
 
     window.parseDonghangLotteryQrUrl = parseDonghangLotteryQrUrl;
-
+    window.parseDonghangOnlineReceiptText = parseDonghangOnlineReceiptText;
     window.syncPurchaseWithQrUrl = syncPurchaseWithQrUrl;
-
 }
 
 

@@ -17729,6 +17729,189 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 
 /* ==========================================================================
+   📱 Mobile-First Manual Ledger Multi-Modal Tabs & Touch Ball Keypad
+   ========================================================================== */
+
+.manual-mode-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.manual-tab-btn {
+    flex: 1;
+    padding: 8px 6px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.manual-tab-btn:hover {
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.manual-tab-btn.active {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    font-weight: 800;
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.manual-tab-btn.active[data-mode="qr"] {
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+    border-color: rgba(16, 185, 129, 0.5);
+}
+
+.manual-tab-btn.active[data-mode="ball"] {
+    background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+    box-shadow: 0 2px 10px rgba(139, 92, 246, 0.35);
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+/* Touch Ball Selector Styles */
+.ball-game-chips-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.ball-game-chip {
+    flex: 1;
+    min-width: 54px;
+    padding: 6px 4px;
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.ball-game-chip.active {
+    background: rgba(139, 92, 246, 0.25);
+    border-color: #a78bfa;
+    color: #ede9fe;
+    font-weight: 800;
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.ball-game-chip .chip-count {
+    font-size: 0.68rem;
+    color: #a78bfa;
+    font-weight: 800;
+}
+
+.ball-game-chip.completed {
+    border-color: rgba(16, 185, 129, 0.6);
+}
+
+.ball-game-chip.completed .chip-count {
+    color: #34d399;
+}
+
+.ball-slots-preview {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: rgba(15, 23, 42, 0.9);
+    border-radius: 10px;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    margin-bottom: 8px;
+    min-height: 42px;
+    align-items: center;
+}
+
+.ball-slot-item {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.82rem;
+    font-weight: 800;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #64748b;
+}
+
+.ball-keypad-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 5px;
+    margin-bottom: 8px;
+    user-select: none;
+}
+
+@media (max-width: 440px) {
+    .ball-keypad-grid {
+        grid-template-columns: repeat(9, 1fr);
+        gap: 4px;
+    }
+}
+
+.ball-keypad-btn {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.ball-keypad-btn:active {
+    transform: scale(0.9);
+}
+
+.ball-keypad-btn.ball-yellow { background: linear-gradient(135deg, #fcd34d, #f59e0b); color: #0f172a; border-color: #fef08a; }
+.ball-keypad-btn.ball-blue   { background: linear-gradient(135deg, #60a5fa, #2563eb); color: #ffffff; border-color: #93c5fd; }
+.ball-keypad-btn.ball-red    { background: linear-gradient(135deg, #f87171, #dc2626); color: #ffffff; border-color: #fca5a5; }
+.ball-keypad-btn.ball-gray   { background: linear-gradient(135deg, #94a3b8, #475569); color: #ffffff; border-color: #cbd5e1; }
+.ball-keypad-btn.ball-green  { background: linear-gradient(135deg, #34d399, #059669); color: #ffffff; border-color: #6ee7b7; }
+
+.ball-keypad-btn.selected {
+    box-shadow: 0 0 0 2.5px #ffffff, 0 0 12px rgba(255, 255, 255, 0.7);
+    transform: scale(1.08);
+}
+
+/* ==========================================================================
    👤 Logged-in User Header Chip & Profile Popover & Dashboard Welcome Card
    ========================================================================== */
 

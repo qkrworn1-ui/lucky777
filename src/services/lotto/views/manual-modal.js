@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { showToast, getDrawDateByRound, getBallColorClass } from '../../../shared/utils.js';
-import { getLedger, saveToLedger, parseDonghangLotteryQrUrl, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
+import { getLedger, saveToLedger, parseDonghangLotteryQrUrl, parseDonghangOnlineReceiptText, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
 import { SafeAuth, getUserRealName, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { renderReviewTab, renderReviewDetail } from './review-tab.js';
 import { renderConfirmedPurchasesList } from './confirmed-tab.js';
@@ -357,6 +357,349 @@ export function updateManualModalCrossCheck() {
     }
 }
 
+// ============================================================================
+// 📱 Mobile-First Multi-Modal Registration (Online Receipt & Ball Keypad)
+// ============================================================================
+
+export const ballPickerState = {
+    activeGame: 'A',
+    games: {
+        A: [],
+        B: [],
+        C: [],
+        D: [],
+        E: []
+    }
+};
+
+export function setActiveBallGame(gameLetter) {
+    if (!['A', 'B', 'C', 'D', 'E'].includes(gameLetter)) return;
+    ballPickerState.activeGame = gameLetter;
+    renderBallPickerUI();
+}
+
+export function initBallPickerFromCombos() {
+    const combosEl = document.getElementById('manualLedgerCombos');
+    if (!combosEl || !combosEl.value.trim()) return;
+    const lines = combosEl.value.trim().split('\n').filter(l => l.trim().length > 0);
+    const letters = ['A', 'B', 'C', 'D', 'E'];
+    letters.forEach((letter, idx) => {
+        if (lines[idx]) {
+            const nums = lines[idx].replace(/,/g, ' ').split(/\s+/).map(Number).filter(n => !isNaN(n) && n >= 1 && n <= 45);
+            if (nums.length === 6) {
+                ballPickerState.games[letter] = nums.sort((a,b) => a - b);
+            }
+        }
+    });
+}
+
+export function syncBallPickerToCombos() {
+    const combosEl = document.getElementById('manualLedgerCombos');
+    if (!combosEl) return;
+    const letters = ['A', 'B', 'C', 'D', 'E'];
+    const lines = [];
+    letters.forEach(letter => {
+        const nums = ballPickerState.games[letter] || [];
+        if (nums.length === 6) {
+            lines.push(nums.slice().sort((a,b) => a - b).join(' '));
+        }
+    });
+    combosEl.value = lines.join('\n');
+    combosEl.dataset.isOnlineReceipt = 'false';
+    updateManualModalCrossCheck();
+}
+
+export function toggleBallInActiveGame(num) {
+    const letter = ballPickerState.activeGame || 'A';
+    let current = ballPickerState.games[letter] ? [...ballPickerState.games[letter]] : [];
+    
+    if (current.includes(num)) {
+        current = current.filter(n => n !== num);
+        ballPickerState.games[letter] = current;
+        if (navigator.vibrate) try { navigator.vibrate(10); } catch(e) {}
+    } else {
+        if (current.length >= 6) {
+            showToast(`⚠️ [${letter} 게임] 6개 번호가 이미 모두 선택되었습니다.`);
+            return;
+        }
+        current.push(num);
+        current.sort((a, b) => a - b);
+        ballPickerState.games[letter] = current;
+        if (navigator.vibrate) try { navigator.vibrate(10); } catch(e) {}
+
+        if (current.length === 6) {
+            if (navigator.vibrate) try { navigator.vibrate([15, 30, 15]); } catch(e) {}
+            const letters = ['A', 'B', 'C', 'D', 'E'];
+            const curIdx = letters.indexOf(letter);
+            const nextEmpty = letters.find((l, idx) => idx > curIdx && (ballPickerState.games[l] || []).length < 6);
+            if (nextEmpty) {
+                ballPickerState.activeGame = nextEmpty;
+                showToast(`✅ [${letter} 게임] 완성! 다음 [${nextEmpty} 게임]으로 이동`);
+            }
+        }
+    }
+
+    syncBallPickerToCombos();
+    renderBallPickerUI();
+}
+
+export function randomFillActiveGame() {
+    const letter = ballPickerState.activeGame || 'A';
+    const nums = [];
+    while (nums.length < 6) {
+        const r = Math.floor(Math.random() * 45) + 1;
+        if (!nums.includes(r)) nums.push(r);
+    }
+    nums.sort((a, b) => a - b);
+    ballPickerState.games[letter] = nums;
+    if (navigator.vibrate) try { navigator.vibrate([15, 30, 15]); } catch(e) {}
+
+    const letters = ['A', 'B', 'C', 'D', 'E'];
+    const curIdx = letters.indexOf(letter);
+    const nextEmpty = letters.find((l, idx) => idx > curIdx && (ballPickerState.games[l] || []).length < 6);
+    if (nextEmpty) {
+        ballPickerState.activeGame = nextEmpty;
+    }
+
+    syncBallPickerToCombos();
+    renderBallPickerUI();
+    showToast(`🎲 [${letter} 게임] 자동 6개 번호 생성 완료`);
+}
+
+export function clearActiveGame() {
+    const letter = ballPickerState.activeGame || 'A';
+    ballPickerState.games[letter] = [];
+    syncBallPickerToCombos();
+    renderBallPickerUI();
+    showToast(`🗑️ [${letter} 게임] 번호 초기화`);
+}
+
+export function clearAllGames() {
+    ['A', 'B', 'C', 'D', 'E'].forEach(l => {
+        ballPickerState.games[l] = [];
+    });
+    ballPickerState.activeGame = 'A';
+    syncBallPickerToCombos();
+    renderBallPickerUI();
+}
+
+export function renderBallPickerUI() {
+    const chipsContainer = document.getElementById('ballGameChipsRow');
+    const slotsContainer = document.getElementById('ballSlotsPreview');
+    const keypadContainer = document.getElementById('ballKeypadGrid');
+    const promptEl = document.getElementById('ballPickerPrompt');
+
+    if (!chipsContainer || !slotsContainer || !keypadContainer) return;
+
+    const letters = ['A', 'B', 'C', 'D', 'E'];
+    const activeLetter = ballPickerState.activeGame || 'A';
+    const activeNums = ballPickerState.games[activeLetter] || [];
+
+    // 1. Render Chips
+    chipsContainer.innerHTML = letters.map(letter => {
+        const count = (ballPickerState.games[letter] || []).length;
+        const isActive = (letter === activeLetter);
+        const isCompleted = (count === 6);
+        return `
+            <div class="ball-game-chip ${isActive ? 'active' : ''} ${isCompleted ? 'completed' : ''}" onclick="window.setActiveBallGame && window.setActiveBallGame('${letter}')">
+                <span>${letter} 게임</span>
+                <span class="chip-count">${count}/6</span>
+            </div>
+        `;
+    }).join('');
+
+    // 2. Render Slots
+    let slotsHtml = '';
+    for (let i = 0; i < 6; i++) {
+        if (i < activeNums.length) {
+            const n = activeNums[i];
+            const colorClass = (typeof getBallColorClass === 'function') ? getBallColorClass(n) : 'ball-yellow';
+            slotsHtml += `<span class="ball-mini ${colorClass}" style="width:30px; height:30px; font-size:0.8rem; cursor:pointer;" onclick="window.toggleBallInActiveGame && window.toggleBallInActiveGame(${n})">${n}</span>`;
+        } else {
+            slotsHtml += `<span class="ball-slot-item">${i + 1}</span>`;
+        }
+    }
+    slotsContainer.innerHTML = slotsHtml;
+
+    // 3. Update Prompt
+    if (promptEl) {
+        if (activeNums.length === 6) {
+            promptEl.innerHTML = `<i class="fa-solid fa-check-circle" style="color: #34d399;"></i> <strong>[${activeLetter} 게임]</strong> 선택 완료 (6/6)`;
+        } else {
+            promptEl.innerHTML = `<i class="fa-solid fa-hand-pointer" style="color: #a78bfa;"></i> <strong>[${activeLetter} 게임]</strong> 번호 ${6 - activeNums.length}개를 더 선택하세요 (${activeNums.length}/6)`;
+        }
+    }
+
+    // 4. Render 1~45 Keypad (DOM caching)
+    if (keypadContainer.children.length !== 45) {
+        let gridHtml = '';
+        for (let num = 1; num <= 45; num++) {
+            const colorClass = (typeof getBallColorClass === 'function') ? getBallColorClass(num) : 'ball-yellow';
+            gridHtml += `<button type="button" class="ball-keypad-btn ${colorClass}" data-num="${num}" onclick="window.toggleBallInActiveGame && window.toggleBallInActiveGame(${num})">${num}</button>`;
+        }
+        keypadContainer.innerHTML = gridHtml;
+    }
+
+    // Update selected states
+    Array.from(keypadContainer.children).forEach(btn => {
+        const num = parseInt(btn.dataset.num, 10);
+        if (activeNums.includes(num)) {
+            btn.classList.add('selected');
+        } else {
+            btn.classList.remove('selected');
+        }
+    });
+}
+
+export function switchManualLedgerMode(mode) {
+    const tabOnline = document.getElementById('tabBtnOnlineReceipt');
+    const tabQr = document.getElementById('tabBtnQrScan');
+    const tabBall = document.getElementById('tabBtnTouchBall');
+
+    const secOnline = document.getElementById('sectionOnlineReceipt');
+    const secQr = document.getElementById('qrScannerSection');
+    const secBall = document.getElementById('sectionTouchBall');
+
+    if (!tabOnline || !tabQr || !tabBall) return;
+
+    [tabOnline, tabQr, tabBall].forEach(t => t.classList.remove('active'));
+
+    if (secOnline) secOnline.style.display = 'none';
+    if (secQr) secQr.style.display = 'none';
+    if (secBall) secBall.style.display = 'none';
+
+    if (mode === 'qr') {
+        tabQr.classList.add('active');
+        if (secQr) secQr.style.display = 'flex';
+        try { localStorage.setItem('lucky777_manual_reg_mode', 'qr'); } catch(e) {}
+        setTimeout(() => {
+            startLottoQrScanner();
+        }, 100);
+    } else if (mode === 'ball') {
+        tabBall.classList.add('active');
+        if (secBall) secBall.style.display = 'flex';
+        try { localStorage.setItem('lucky777_manual_reg_mode', 'ball'); } catch(e) {}
+        stopScanning();
+        initBallPickerFromCombos();
+        renderBallPickerUI();
+    } else {
+        // Default: 'online'
+        tabOnline.classList.add('active');
+        if (secOnline) secOnline.style.display = 'flex';
+        try { localStorage.setItem('lucky777_manual_reg_mode', 'online'); } catch(e) {}
+        stopScanning();
+        const txtInput = document.getElementById('onlineReceiptTextInput');
+        if (txtInput && !txtInput.value.trim()) {
+            const combosEl = document.getElementById('manualLedgerCombos');
+            if (combosEl && combosEl.value.trim()) {
+                txtInput.value = combosEl.value.trim();
+            }
+        }
+    }
+}
+
+export function handleOnlineReceiptTextChange(rawText) {
+    if (!rawText || typeof rawText !== 'string' || !rawText.trim()) return;
+    const parsed = parseDonghangOnlineReceiptText(rawText);
+    
+    const roundInput = document.getElementById('manualLedgerRound');
+    const combosEl = document.getElementById('manualLedgerCombos');
+
+    if (parsed && Array.isArray(parsed.combos) && parsed.combos.length > 0) {
+        if (roundInput && parsed.round) {
+            roundInput.value = parsed.round;
+            syncLedgerDateGuide(parsed.round);
+        }
+
+        if (combosEl) {
+            combosEl.value = parsed.combos.map(c => c.numbers.join(' ')).join('\n');
+            combosEl.dataset.qrSerial = parsed.serial || '';
+            combosEl.dataset.qrScanned = 'true';
+            combosEl.dataset.isOnlineReceipt = 'true';
+            combosEl.dataset.qrRound = parsed.round || '';
+        }
+
+        // Sync into ballPickerState
+        ['A', 'B', 'C', 'D', 'E'].forEach((letter, idx) => {
+            if (parsed.combos[idx]) {
+                ballPickerState.games[letter] = [...parsed.combos[idx].numbers];
+            } else {
+                ballPickerState.games[letter] = [];
+            }
+        });
+
+        updateManualModalCrossCheck();
+
+        try {
+            if (navigator.vibrate) navigator.vibrate([15, 30, 15]);
+        } catch(e) {}
+
+        const drawDateStr = parsed.date ? ` (구매일시: ${parsed.date})` : '';
+        showToast(`🎉 온라인 영수증 인식 성공: ${parsed.round ? `제 ${parsed.round}회차 ` : ''}${parsed.combos.length}게임${drawDateStr}`);
+    } else {
+        // Fallback: check if raw text contains multiple 6-number lines
+        const lines = rawText.trim().split('\n').filter(l => l.trim().length > 0);
+        const validLines = [];
+        lines.forEach(l => {
+            const nums = (l.match(/\b\d{1,2}\b/g) || []).map(Number).filter(n => n >= 1 && n <= 45);
+            if (nums.length >= 6) {
+                const game6 = nums.slice(-6).sort((a,b) => a - b);
+                if (new Set(game6).size === 6) {
+                    validLines.push(game6.join(' '));
+                }
+            }
+        });
+
+        if (validLines.length > 0 && combosEl) {
+            combosEl.value = validLines.slice(0, 5).join('\n');
+            combosEl.dataset.isOnlineReceipt = 'true';
+            updateManualModalCrossCheck();
+            showToast(`✅ ${validLines.length}개 게임 번호가 감지되어 등록되었습니다.`);
+        }
+    }
+}
+
+export async function pasteFromMobileClipboard() {
+    try {
+        if (!navigator.clipboard || !navigator.clipboard.readText) {
+            showToast('⚠️ 브라우저가 클립보드 읽기를 지원하지 않습니다. 텍스트 창에 직접 붙여넣어 주세요.');
+            const txt = document.getElementById('onlineReceiptTextInput');
+            if (txt) txt.focus();
+            return;
+        }
+
+        const text = await navigator.clipboard.readText();
+        if (!text || text.trim().length === 0) {
+            showToast('⚠️ 클립보드가 비어 있습니다. 동행복권 구매내역을 먼저 복사해주세요.');
+            return;
+        }
+
+        const txt = document.getElementById('onlineReceiptTextInput');
+        if (txt) {
+            txt.value = text;
+        }
+        handleOnlineReceiptTextChange(text);
+    } catch(err) {
+        console.warn('[Clipboard Read Warn]', err);
+        showToast('📋 클립보드 접근 권한이 필요합니다. 아래 입력창에 직접 붙여넣어 주세요.');
+        const txt = document.getElementById('onlineReceiptTextInput');
+        if (txt) txt.focus();
+    }
+}
+
+export async function handleOnlineScreenshotFile(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    showToast('🔍 스크린샷 이미지를 분석 중입니다...');
+
+    try {
+        await handleLottoQrFile(event);
+    } catch(e) {
+        console.warn('[Screenshot scan fallback]', e);
+    }
+}
+
 export function setupManualLedgerModal() {
     const btnOpenManualLedger = document.getElementById('btnOpenManualLedger');
     const manualLedgerModal = document.getElementById('manualLedgerModal');
@@ -394,6 +737,22 @@ export function setupManualLedgerModal() {
             const selectedUId = masterUserSelect.value;
             const uName = (typeof getUserRealName === 'function' ? getUserRealName(selectedUId) : '') || selectedUId;
             showToast(`👤 대리 등록 대상 회원: [${uName}] 지정됨`);
+        });
+    }
+
+    const onlineTextInput = document.getElementById('onlineReceiptTextInput');
+    if (onlineTextInput) {
+        let textDebounceTimer = null;
+        onlineTextInput.addEventListener('input', (e) => {
+            clearTimeout(textDebounceTimer);
+            textDebounceTimer = setTimeout(() => {
+                handleOnlineReceiptTextChange(e.target.value);
+            }, 150);
+        });
+        onlineTextInput.addEventListener('paste', (e) => {
+            setTimeout(() => {
+                handleOnlineReceiptTextChange(e.target.value);
+            }, 50);
         });
     }
 
@@ -1061,13 +1420,14 @@ export async function handleSaveManualLedger() {
             }
         }
 
+        const isOnline = combosEl ? (combosEl.dataset.isOnlineReceipt === 'true') : false;
         parsedNumberArrays.forEach((nums, idx) => {
             const matchDetail = (check && check.matchDetails) ? check.matchDetails[idx] : null;
             newCombos.push({
                 numbers: nums,
                 meta: { 
-                    method: 'manual', 
-                    targetBenefit: matchDetail && matchDetail.label ? matchDetail.label : '실구매 등록',
+                    method: isOnline ? 'online' : 'manual', 
+                    targetBenefit: matchDetail && matchDetail.label ? matchDetail.label : (isOnline ? '온라인 구매' : '실구매 등록'),
                     version: finalVersionStr,
                     matchedAlgoVersion: matchDetail ? matchDetail.matchedVersion : null,
                     matchedAlgoLabel: matchDetail ? matchDetail.label : null
@@ -1081,14 +1441,15 @@ export async function handleSaveManualLedger() {
         const fallbackSerial = `${String(roundInput).padStart(4, '0')}00000014142041`;
         const finalSerial = qrSerial || fallbackSerial;
         const finalQrUrl = qrRawUrl || buildDonghangLotteryQrUrl(roundInput, newCombos, finalSerial);
-        const qrMeta = (combosEl && (combosEl.dataset.qrScanned === 'true' || qrRawUrl || qrSerial)) ? {
+        const qrMeta = (combosEl && (combosEl.dataset.qrScanned === 'true' || qrRawUrl || qrSerial || isOnline)) ? {
             qrSerial: finalSerial,
             qrRawUrl: finalQrUrl,
             qrScannedAt: new Date().toISOString(),
-            originalRound: roundInput
+            originalRound: roundInput,
+            channel: isOnline ? 'online' : 'offline'
         } : null;
 
-        console.log('[handleSaveManualLedger] Saving to ledger...', { roundInput, effectiveAuthId, qrSerial: qrMeta?.qrSerial });
+        console.log('[handleSaveManualLedger] Saving to ledger...', { roundInput, effectiveAuthId, qrSerial: qrMeta?.qrSerial, isOnline });
         const saveSuccess = await saveToLedger(roundInput, newCombos, finalVersionStr, effectiveAuthId, qrMeta, true);
         if (saveSuccess === false) {
             return;
@@ -1101,8 +1462,12 @@ export async function handleSaveManualLedger() {
             delete combosEl.dataset.qrRawUrl;
             delete combosEl.dataset.qrSerial;
             delete combosEl.dataset.qrRound;
+            delete combosEl.dataset.isOnlineReceipt;
             combosEl._cachedCrossCheck = null;
         }
+        const onlineTxt = document.getElementById('onlineReceiptTextInput');
+        if (onlineTxt) onlineTxt.value = '';
+        clearAllGames();
 
         // Close modal immediately (< 5ms response time)
         if (manualLedgerModal) {
@@ -1257,10 +1622,16 @@ export function openManualLedgerModal() {
         if (resultBox) resultBox.style.display = 'none';
         modal.style.display = 'flex';
 
-        // Auto-start camera QR scanner cleanly with safe hardware driver cooldown
-        setTimeout(() => {
-            startLottoQrScanner();
-        }, 200);
+        const onlineTxt = document.getElementById('onlineReceiptTextInput');
+        if (onlineTxt) onlineTxt.value = '';
+        clearAllGames();
+
+        // Check saved registration mode (default: 'online' for mobile-first convenience)
+        let savedMode = 'online';
+        try {
+            savedMode = localStorage.getItem('lucky777_manual_reg_mode') || 'online';
+        } catch(e) {}
+        switchManualLedgerMode(savedMode);
     }
 }
 
@@ -1281,4 +1652,13 @@ if (typeof window !== 'undefined') {
     window.stopScanning = stopScanning;
     window.stopLottoScanning = stopScanning;
     window.forceKillAllCameraTracks = forceKillAllCameraTracks;
+    window.switchManualLedgerMode = switchManualLedgerMode;
+    window.pasteFromMobileClipboard = pasteFromMobileClipboard;
+    window.handleOnlineScreenshotFile = handleOnlineScreenshotFile;
+    window.handleOnlineReceiptTextChange = handleOnlineReceiptTextChange;
+    window.toggleBallInActiveGame = toggleBallInActiveGame;
+    window.setActiveBallGame = setActiveBallGame;
+    window.randomFillActiveGame = randomFillActiveGame;
+    window.clearActiveGame = clearActiveGame;
+    window.clearAllGames = clearAllGames;
 }
