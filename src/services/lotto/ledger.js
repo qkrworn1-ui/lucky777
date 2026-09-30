@@ -761,28 +761,39 @@ export function parseDonghangOnlineReceiptText(rawText) {
     const text = rawText.trim();
     if (!text) return null;
 
-    // 1. 회차 추출 (예: '회차 제 1241 회', '제 1241회', '1241회')
+    // 1. 회차 추출 (예: '회차 제 1241 회', '제 1241회', '1241회', OCR 특성 '124473]', '12443]')
     let round = null;
     const roundMatch = text.match(/(?:회차\s*[:=\s]*\s*(?:제\s*)?|제\s*)(\d{1,4})\s*회?/i)
-                    || text.match(/\b(\d{3,4})\s*회/i);
+                    || text.match(/\b(\d{3,4})\s*(?:회|회차|3\]|72\]|73\]|2\]|[^\d\s\n]{1,2})/i)
+                    || text.match(/(?:^|\n)\s*(\d{3,4})\s*(?:회|[^\d\n]{1,3})?\s*(?:\r?\n)+\s*발행일/i)
+                    || text.match(/(?:^|\n)\s*(?:로또|lotto)?[^\n\d]*\n\s*(\d{3,4})\s*(?:\r?\n)/i)
+                    || text.match(/\b(1\d{3})\b/);
     if (roundMatch) {
         const rVal = parseInt(roundMatch[1], 10);
         if (!isNaN(rVal) && rVal >= 1 && rVal <= 5000) {
             round = rVal;
         }
     }
+    if (!round) {
+        try {
+            if (typeof window !== 'undefined' && window.getUpcomingLottoRound) {
+                round = window.getUpcomingLottoRound();
+            }
+        } catch(e) {}
+    }
 
-    // 2. 복권번호 / 일련번호 추출 (예: 54123-12894-39481-99231-00214 또는 20자리 숫자)
+    // 2. 복권번호 / 일련번호 추출 (예: 54123-12894-39481-99231-00214 또는 60645 60456 66628 14664 99446 6092)
     let serial = '';
     const serialMatch = text.match(/(?:복권번호|바코드|일련번호)\s*[:=\s]*\s*([0-9\-]{15,35})/i) 
-                     || text.match(/\b\d{5}-\d{5}-\d{5}-\d{5}-\d{5}\b/);
+                     || text.match(/\b\d{5}-\d{5}-\d{5}-\d{5}-\d{5}\b/)
+                     || text.match(/((?:\d{5}\s+){3,}\d{4,5})/);
     if (serialMatch) {
-        serial = serialMatch[1].replace(/[^0-9]/g, '').slice(0, 24);
+        serial = serialMatch[1].replace(/[^0-9]/g, '').slice(0, 30);
     }
 
     // 3. 구입일시 추출
     let purchaseDate = null;
-    const dateMatch = text.match(/(\d{4}[-./]\d{2}[-./]\d{2}(?:\s+\d{2}:\d{2}(?::\d{2})?)?)/);
+    const dateMatch = text.match(/(?:발행일|구입일시|구매일시)?\s*[:=\s]*\s*(\d{4}[-./]\d{2}[-./]\d{2}(?:\s+\([^\)]+\))?(?:\s+\d{2}:\d{2}(?::\d{2})?)?)/);
     if (dateMatch) {
         purchaseDate = dateMatch[1];
     }
@@ -797,7 +808,8 @@ export function parseDonghangOnlineReceiptText(rawText) {
         if (!line) continue;
 
         // Skip obvious header/footer lines that don't have lotto games
-        if (/^(?:복권명|추첨일|구입일시|결제금액|금액|회차|합계)\b/i.test(line)) continue;
+        if (/^(?:복권명|추첨일|구입일시|발행일|지급기한|결제금액|금액|회차|합계|티켓|매달|연금복권)\b/i.test(line)) continue;
+        if (/티켓\s*보기|Lotto|연금복권/i.test(line)) continue;
 
         const letterMatch = line.match(/^([A-E])\b/i);
         const typeMatch = line.match(/(자\s*동|수\s*동|반\s*자\s*동|자|수|반)/);
@@ -819,11 +831,12 @@ export function parseDonghangOnlineReceiptText(rawText) {
             const uniqueNums = Array.from(new Set(gameNums)).sort((a, b) => a - b);
             if (uniqueNums.length === 6) {
                 const gameLetter = letterMatch ? letterMatch[1].toUpperCase() : (gameLetters[combos.length] || `${combos.length + 1}`);
-                let gameType = 'auto';
+                let gameType = 'manual';
                 if (typeMatch) {
                     const t = typeMatch[1].replace(/\s+/g, '');
                     if (t.includes('수')) gameType = 'manual';
                     else if (t.includes('반')) gameType = 'semi';
+                    else if (t.includes('자')) gameType = 'auto';
                 }
 
                 combos.push({
@@ -2163,15 +2176,11 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
             qrRawUrl: chunkQrUrl,
 
             qrMeta: {
-
                 qrSerial: chunkSerial,
-
                 qrRawUrl: chunkQrUrl,
-
                 qrScannedAt: (qrMeta && qrMeta.qrScannedAt) || new Date().toISOString(),
-
-                originalRound: r
-
+                originalRound: r,
+                channel: (qrMeta && qrMeta.channel) || 'offline'
             }
 
         };

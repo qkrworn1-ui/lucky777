@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.30.1451 - BUILD_DATE: 2026-09-30] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.30.1837 - BUILD_DATE: 2026-09-30] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.30.1451)
+ * Lucky777 Smart Bundle (v2026.09.30.1837)
  */
 
 
@@ -9831,28 +9831,39 @@ function parseDonghangOnlineReceiptText(rawText) {
     const text = rawText.trim();
     if (!text) return null;
 
-    // 1. 회차 추출 (예: '회차 제 1241 회', '제 1241회', '1241회')
+    // 1. 회차 추출 (예: '회차 제 1241 회', '제 1241회', '1241회', OCR 특성 '124473]', '12443]')
     let round = null;
     const roundMatch = text.match(/(?:회차\s*[:=\s]*\s*(?:제\s*)?|제\s*)(\d{1,4})\s*회?/i)
-                    || text.match(/\b(\d{3,4})\s*회/i);
+                    || text.match(/\b(\d{3,4})\s*(?:회|회차|3\]|72\]|73\]|2\]|[^\d\s\n]{1,2})/i)
+                    || text.match(/(?:^|\n)\s*(\d{3,4})\s*(?:회|[^\d\n]{1,3})?\s*(?:\r?\n)+\s*발행일/i)
+                    || text.match(/(?:^|\n)\s*(?:로또|lotto)?[^\n\d]*\n\s*(\d{3,4})\s*(?:\r?\n)/i)
+                    || text.match(/\b(1\d{3})\b/);
     if (roundMatch) {
         const rVal = parseInt(roundMatch[1], 10);
         if (!isNaN(rVal) && rVal >= 1 && rVal <= 5000) {
             round = rVal;
         }
     }
+    if (!round) {
+        try {
+            if (typeof window !== 'undefined' && window.getUpcomingLottoRound) {
+                round = window.getUpcomingLottoRound();
+            }
+        } catch(e) {}
+    }
 
-    // 2. 복권번호 / 일련번호 추출 (예: 54123-12894-39481-99231-00214 또는 20자리 숫자)
+    // 2. 복권번호 / 일련번호 추출 (예: 54123-12894-39481-99231-00214 또는 60645 60456 66628 14664 99446 6092)
     let serial = '';
     const serialMatch = text.match(/(?:복권번호|바코드|일련번호)\s*[:=\s]*\s*([0-9\-]{15,35})/i) 
-                     || text.match(/\b\d{5}-\d{5}-\d{5}-\d{5}-\d{5}\b/);
+                     || text.match(/\b\d{5}-\d{5}-\d{5}-\d{5}-\d{5}\b/)
+                     || text.match(/((?:\d{5}\s+){3,}\d{4,5})/);
     if (serialMatch) {
-        serial = serialMatch[1].replace(/[^0-9]/g, '').slice(0, 24);
+        serial = serialMatch[1].replace(/[^0-9]/g, '').slice(0, 30);
     }
 
     // 3. 구입일시 추출
     let purchaseDate = null;
-    const dateMatch = text.match(/(\d{4}[-./]\d{2}[-./]\d{2}(?:\s+\d{2}:\d{2}(?::\d{2})?)?)/);
+    const dateMatch = text.match(/(?:발행일|구입일시|구매일시)?\s*[:=\s]*\s*(\d{4}[-./]\d{2}[-./]\d{2}(?:\s+\([^\)]+\))?(?:\s+\d{2}:\d{2}(?::\d{2})?)?)/);
     if (dateMatch) {
         purchaseDate = dateMatch[1];
     }
@@ -9867,7 +9878,8 @@ function parseDonghangOnlineReceiptText(rawText) {
         if (!line) continue;
 
         // Skip obvious header/footer lines that don't have lotto games
-        if (/^(?:복권명|추첨일|구입일시|결제금액|금액|회차|합계)\b/i.test(line)) continue;
+        if (/^(?:복권명|추첨일|구입일시|발행일|지급기한|결제금액|금액|회차|합계|티켓|매달|연금복권)\b/i.test(line)) continue;
+        if (/티켓\s*보기|Lotto|연금복권/i.test(line)) continue;
 
         const letterMatch = line.match(/^([A-E])\b/i);
         const typeMatch = line.match(/(자\s*동|수\s*동|반\s*자\s*동|자|수|반)/);
@@ -9889,11 +9901,12 @@ function parseDonghangOnlineReceiptText(rawText) {
             const uniqueNums = Array.from(new Set(gameNums)).sort((a, b) => a - b);
             if (uniqueNums.length === 6) {
                 const gameLetter = letterMatch ? letterMatch[1].toUpperCase() : (gameLetters[combos.length] || `${combos.length + 1}`);
-                let gameType = 'auto';
+                let gameType = 'manual';
                 if (typeMatch) {
                     const t = typeMatch[1].replace(/\s+/g, '');
                     if (t.includes('수')) gameType = 'manual';
                     else if (t.includes('반')) gameType = 'semi';
+                    else if (t.includes('자')) gameType = 'auto';
                 }
 
                 combos.push({
@@ -11233,15 +11246,11 @@ async function saveToLedger(round, combos, versionStr, user = null, qrMeta = nul
             qrRawUrl: chunkQrUrl,
 
             qrMeta: {
-
                 qrSerial: chunkSerial,
-
                 qrRawUrl: chunkQrUrl,
-
                 qrScannedAt: (qrMeta && qrMeta.qrScannedAt) || new Date().toISOString(),
-
-                originalRound: r
-
+                originalRound: r,
+                channel: (qrMeta && qrMeta.channel) || 'offline'
             }
 
         };
@@ -26552,6 +26561,8 @@ async function renderConfirmedPurchasesList() {
             let versionBadgeHtml = '';
             if (pVer.includes('추가')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.65rem;"></i> ${pVer.split(' (')[0]}</span>`;
+            } else if (pVer.includes('온라인') || (purchase.qrMeta && purchase.qrMeta.channel === 'online')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-globe" style="font-size: 0.65rem;"></i> 온라인영수증</span>`;
             } else if (pVer.includes('QR') || pVer.includes('qr')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-qrcode" style="font-size: 0.65rem;"></i> QR영수증</span>`;
             } else if (pVer.includes('V4.0') || pVer.includes('4.0')) {
@@ -29856,8 +29867,43 @@ function renderDigitalReceiptCard(round, parsedCombos, check, serial) {
 
     const totalAmount = parsedCombos.length * 1000;
     if (totalAmountTag) totalAmountTag.textContent = `${totalAmount.toLocaleString()} 원`;
-    if (subtitleTag) subtitleTag.textContent = `${parsedCombos.length}개 게임 (${totalAmount.toLocaleString()}원) · AI 추천 일치 확인`;
-    if (saveBtnText) saveBtnText.textContent = `실구매 등록하기 (+${totalAmount.toLocaleString()}원)`;
+    const combosEl = document.getElementById('manualLedgerCombos');
+    const isOnline = combosEl && (combosEl.dataset.isOnlineReceipt === 'true');
+
+    const summaryTitle = document.getElementById('receiptSummaryTitle');
+    if (summaryTitle) {
+        summaryTitle.innerHTML = isOnline 
+            ? `<i class="fa-solid fa-globe" style="color: #38bdf8;"></i> 온라인 영수증 분석 완료!`
+            : `QR 영수증 인식 완료!`;
+    }
+
+    if (subtitleTag) {
+        subtitleTag.textContent = isOnline
+            ? `${parsedCombos.length}개 게임 (${totalAmount.toLocaleString()}원) · 온라인 실구매 확인`
+            : `${parsedCombos.length}개 게임 (${totalAmount.toLocaleString()}원) · AI 추천 일치 확인`;
+    }
+
+    if (saveBtnText) {
+        saveBtnText.innerHTML = isOnline
+            ? `<strong>온라인 실구매 구매확정 (+${totalAmount.toLocaleString()}원)</strong>`
+            : `실구매 등록하기 (+${totalAmount.toLocaleString()}원)`;
+    }
+
+    // Direct Instant Purchase Confirmation Action Button right inside the card
+    let confirmBtnEl = document.getElementById('btnDirectConfirmReceipt');
+    if (!confirmBtnEl && previewContainer) {
+        confirmBtnEl = document.createElement('div');
+        confirmBtnEl.id = 'btnDirectConfirmReceipt';
+        confirmBtnEl.style.marginTop = '8px';
+        previewContainer.appendChild(confirmBtnEl);
+    }
+    if (confirmBtnEl) {
+        confirmBtnEl.innerHTML = `
+            <button type="button" onclick="window.handleSaveManualLedger && window.handleSaveManualLedger()" class="btn-primary" style="width: 100%; height: 44px; background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; font-size: 0.92rem; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); color: white;">
+                <i class="fa-solid fa-circle-check" style="font-size: 1.05rem;"></i> 제 ${round}회 실구매 구매확정 (${totalAmount.toLocaleString()}원)
+            </button>
+        `;
+    }
 
     previewContainer.style.display = 'flex';
 }
@@ -30366,17 +30412,292 @@ async function pasteFromMobileClipboard() {
     }
 }
 
+/**
+ * 🖼️ In-browser Canvas Preprocessing for Online Receipt Screenshots
+ * - Scales up 2x if needed for crisp character recognition
+ * - Inverts dark theme (#222222 Donghang ticket) to black text on white background
+ * - Enhances contrast
+ */
+async function preprocessReceiptImage(fileOrBlob) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const scale = (img.width < 1200) ? 2 : 1;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width * scale;
+                    canvas.height = img.height * scale;
+                    const ctx = canvas.getContext('2d');
+                    ctx.imageSmoothingEnabled = true;
+                    ctx.imageSmoothingQuality = 'high';
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+
+                    // Sample border / corner brightness to detect dark theme
+                    let borderBrightness = 0;
+                    const samplePoints = [
+                        0,
+                        4 * (canvas.width - 1),
+                        4 * (canvas.width * (canvas.height - 1)),
+                        4 * (canvas.width * canvas.height - 1),
+                        4 * Math.floor(canvas.width / 2),
+                        4 * Math.floor(canvas.width * (canvas.height - 1) + canvas.width / 2)
+                    ];
+                    samplePoints.forEach(p => {
+                        if (p < data.length - 3) {
+                            borderBrightness += (data[p] * 0.299 + data[p+1] * 0.587 + data[p+2] * 0.114);
+                        }
+                    });
+                    const isDarkBg = (borderBrightness / samplePoints.length) < 128;
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i], g = data[i+1], b = data[i+2];
+                        let gray = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                        // Invert if dark background (white text on dark -> dark text on white)
+                        if (isDarkBg) {
+                            gray = 255 - gray;
+                        }
+
+                        // Contrast enhancement: stretch values
+                        let enhanced = gray;
+                        if (enhanced < 130) {
+                            enhanced = Math.max(0, enhanced - 30);
+                        } else if (enhanced > 160) {
+                            enhanced = Math.min(255, enhanced + 30);
+                        }
+
+                        data[i] = enhanced;
+                        data[i+1] = enhanced;
+                        data[i+2] = enhanced;
+                    }
+
+                    ctx.putImageData(imgData, 0, 0);
+                    resolve(canvas.toDataURL('image/jpeg', 0.92));
+                } catch(err) {
+                    console.warn('[Preprocessing fallback]', err);
+                    resolve(e.target.result);
+                }
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(fileOrBlob);
+    });
+}
+
+let tesseractLoadPromise = null;
+async function ensureTesseractLoaded() {
+    if (window.Tesseract && typeof window.Tesseract.createWorker === 'function') {
+        return window.Tesseract;
+    }
+    if (tesseractLoadPromise) return tesseractLoadPromise;
+
+    tesseractLoadPromise = new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+        script.async = true;
+        script.onload = () => {
+            if (window.Tesseract) resolve(window.Tesseract);
+            else reject(new Error('Tesseract script loaded but object missing'));
+        };
+        script.onerror = () => {
+            // Fallback unpkg
+            const fbScript = document.createElement('script');
+            fbScript.src = 'https://unpkg.com/tesseract.js@5/dist/tesseract.min.js';
+            fbScript.async = true;
+            fbScript.onload = () => {
+                if (window.Tesseract) resolve(window.Tesseract);
+                else reject(new Error('Fallback Tesseract load failed'));
+            };
+            fbScript.onerror = () => reject(new Error('Failed to load Tesseract.js from CDN'));
+            document.head.appendChild(fbScript);
+        };
+        document.head.appendChild(script);
+    });
+
+    return tesseractLoadPromise;
+}
+
+async function recognizeOnlineReceiptImage(fileOrBlob, onProgress = null) {
+    if (onProgress) onProgress('📷 영수증 이미지 전처리 중...', 15);
+    const processedUrl = await preprocessReceiptImage(fileOrBlob);
+
+    if (onProgress) onProgress('⚡ AI OCR 엔진 준비 중...', 35);
+    const TesseractObj = await ensureTesseractLoaded();
+
+    if (onProgress) onProgress('🧠 복권 영수증 문자 인식 중...', 50);
+    const worker = await TesseractObj.createWorker('kor+eng', 1, {
+        logger: m => {
+            if (m && m.status === 'recognizing text' && m.progress != null) {
+                const pct = 50 + Math.round(m.progress * 45); // 50% ~ 95%
+                if (onProgress) onProgress(`🧠 문자 정밀 분석 중 (${Math.round(m.progress * 100)}%)`, pct);
+            }
+        }
+    });
+
+    const ocrResult = await worker.recognize(processedUrl);
+    await worker.terminate();
+
+    if (onProgress) onProgress('✨ 영수증 번호 추출 완료!', 100);
+    return ocrResult && ocrResult.data ? ocrResult.data.text : '';
+}
+
+async function processOnlineScreenshotFileDirect(file) {
+    if (!file) return false;
+
+    // Ensure we are in online tab
+    switchManualLedgerMode('online');
+
+    const statusBox = document.getElementById('onlineReceiptOcrLoading');
+    const statusText = document.getElementById('onlineReceiptOcrStatusText');
+    const progressBar = document.getElementById('onlineReceiptOcrProgressBar');
+    
+    const setStatus = (msg, pct) => {
+        if (statusBox) statusBox.style.display = 'flex';
+        if (statusText) statusText.textContent = msg;
+        if (progressBar) progressBar.style.width = `${pct}%`;
+    };
+
+    setStatus('📷 스크린샷 이미지 분석 준비 중...', 10);
+    showToast('🔍 온라인 영수증 스크린샷을 분석 중입니다...');
+
+    try {
+        // Step 1: In case user chose a paper ticket photo with a QR code, check BarcodeDetector first (< 50ms)
+        let qrProcessed = false;
+        if ('BarcodeDetector' in window) {
+            try {
+                const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+                const bitmap = await createImageBitmap(file);
+                const barcodes = await detector.detect(bitmap);
+                if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                    qrProcessed = processLottoQrPayload(barcodes[0].rawValue);
+                }
+            } catch(bdErr) {}
+        }
+
+        if (qrProcessed) {
+            if (statusBox) statusBox.style.display = 'none';
+            showToast('🎉 QR코드가 감지되어 즉시 등록되었습니다.');
+            return true;
+        }
+
+        // Step 2: Run AI OCR for Online Mobile Ticket Screenshot
+        const rawOcrText = await recognizeOnlineReceiptImage(file, setStatus);
+        console.log('[Online Receipt OCR raw output]:', rawOcrText);
+
+        if (!rawOcrText || rawOcrText.trim().length === 0) {
+            throw new Error('이미지에서 문자를 인식하지 못했습니다.');
+        }
+
+        const parsed = parseDonghangOnlineReceiptText(rawOcrText);
+        if (!parsed || !Array.isArray(parsed.combos) || parsed.combos.length === 0) {
+            throw new Error('영수증의 5개 게임 번호를 찾을 수 없습니다. 선명한 티켓 화면인지 확인해주세요.');
+        }
+
+        // Populate textarea with formatted receipt
+        const txtInput = document.getElementById('onlineReceiptTextInput');
+        if (txtInput) {
+            const formattedLines = [];
+            formattedLines.push(`[동행복권 온라인 영수증]`);
+            if (parsed.round) formattedLines.push(`제 ${parsed.round}회`);
+            if (parsed.date) formattedLines.push(`발행일: ${parsed.date}`);
+            parsed.combos.forEach(c => {
+                const tName = c.type === 'manual' ? '수동' : (c.type === 'semi' ? '반자동' : '자동');
+                formattedLines.push(`${c.letter} ${tName} ${c.numbers.map(n => String(n).padStart(2, '0')).join(' ')}`);
+            });
+            if (parsed.serial) formattedLines.push(`일련번호: ${parsed.serial}`);
+            formattedLines.push(`합계: ${(parsed.combos.length * 1000).toLocaleString()}원`);
+            txtInput.value = formattedLines.join('\n');
+        }
+
+        // Apply to modal fields
+        const roundInput = document.getElementById('manualLedgerRound');
+        const combosEl = document.getElementById('manualLedgerCombos');
+        const versionSelect = document.getElementById('manualLedgerVersion');
+
+        if (roundInput && parsed.round) {
+            roundInput.value = parsed.round;
+            syncLedgerDateGuide(parsed.round);
+        }
+
+        if (combosEl) {
+            combosEl.value = parsed.combos.map(c => c.numbers.map(n => String(n).padStart(2, '0')).join(' ')).join('\n');
+            combosEl.dataset.qrSerial = parsed.serial || '';
+            combosEl.dataset.qrScanned = 'true';
+            combosEl.dataset.isOnlineReceipt = 'true';
+            combosEl.dataset.qrRound = parsed.round || '';
+            combosEl.dataset.purchaseDate = parsed.date || '';
+        }
+
+        if (versionSelect) {
+            versionSelect.value = '온라인 실구매 영수증 (5게임)';
+        }
+
+        // Sync into ballPickerState
+        ['A', 'B', 'C', 'D', 'E'].forEach((letter, idx) => {
+            if (parsed.combos[idx]) {
+                ballPickerState.games[letter] = [...parsed.combos[idx].numbers];
+            } else {
+                ballPickerState.games[letter] = [];
+            }
+        });
+
+        // Trigger AI cross-check and render digital receipt preview card
+        updateManualModalCrossCheck();
+
+        // Update save button to highlight purchase confirmation
+        const saveBtnText = document.getElementById('btnSaveManualLedgerText');
+        const btnSave = document.getElementById('btnSaveManualLedger');
+        const totalWon = (parsed.combos.length * 1000).toLocaleString();
+        if (saveBtnText) {
+            saveBtnText.innerHTML = `<strong>실구매 구매확정 (+${totalWon}원)</strong>`;
+        }
+        if (btnSave) {
+            btnSave.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            btnSave.style.boxShadow = '0 4px 18px rgba(16, 185, 129, 0.5)';
+        }
+
+        // Haptic feedback
+        try {
+            if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+        } catch(e) {}
+
+        if (statusBox) {
+            setStatus('✨ 영수증 불러오기 성공!', 100);
+            setTimeout(() => { statusBox.style.display = 'none'; }, 2000);
+        }
+
+        showToast(`🎉 온라인 영수증 ${parsed.combos.length}게임 인식 성공! [실구매 구매확정]을 눌러 저장하세요.`);
+
+        // Scroll to preview card
+        const previewContainer = document.getElementById('qrScannedReceiptPreview');
+        if (previewContainer) {
+            previewContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        return true;
+    } catch(err) {
+        console.error('[Online Screenshot OCR Error]', err);
+        if (statusBox) statusBox.style.display = 'none';
+        alert(`⚠️ 온라인 영수증 스크린샷 인식 안내:\n\n${err.message || '영수증 이미지를 분석할 수 없습니다.'}\n\n💡 팁: 동행복권 모바일 [마이페이지 > 구매당첨내역 > 구매상세 (티켓 보기)] 화면을 캡처한 스크린샷인지 확인해주세요.\n또는 화면의 텍스트를 복사하여 [텍스트 붙여넣기]를 이용하실 수도 있습니다.`);
+        return false;
+    }
+}
+
 async function handleOnlineScreenshotFile(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
 
-    showToast('🔍 스크린샷 이미지를 분석 중입니다...');
+    // Reset file input value so user can pick the same file again if desired
+    try { event.target.value = ''; } catch(e) {}
 
-    try {
-        await handleLottoQrFile(event);
-    } catch(e) {
-        console.warn('[Screenshot scan fallback]', e);
-    }
+    await processOnlineScreenshotFileDirect(file);
 }
 
 function setupManualLedgerModal() {
@@ -30429,9 +30750,33 @@ function setupManualLedgerModal() {
             }, 150);
         });
         onlineTextInput.addEventListener('paste', (e) => {
+            // Check if clipboard contains an image (e.g. screenshot copied via Ctrl+V or screenshot tool)
+            if (e.clipboardData && e.clipboardData.items) {
+                for (let item of e.clipboardData.items) {
+                    if (item.type && item.type.indexOf('image') !== -1) {
+                        const file = item.getAsFile();
+                        if (file) {
+                            e.preventDefault();
+                            processOnlineScreenshotFileDirect(file);
+                            return;
+                        }
+                    }
+                }
+            }
             setTimeout(() => {
                 handleOnlineReceiptTextChange(e.target.value);
             }, 50);
+        });
+    }
+
+    const secOnline = document.getElementById('sectionOnlineReceipt');
+    if (secOnline) {
+        secOnline.addEventListener('dragover', (e) => { e.preventDefault(); });
+        secOnline.addEventListener('drop', (e) => {
+            e.preventDefault();
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                processOnlineScreenshotFileDirect(e.dataTransfer.files[0]);
+            }
         });
     }
 
@@ -30866,8 +31211,20 @@ async function handleLottoQrFile(event) {
         console.error('[Enhanced scan error]', e);
     }
 
+    // 4. Fallback: If no paper QR code was found, check if this is an online lottery receipt screenshot
+    try {
+        showToast('💡 QR코드가 없어 온라인 영수증(OCR) 자동 인식을 진행합니다...');
+        const ocrSuccess = await processOnlineScreenshotFileDirect(file);
+        if (ocrSuccess) {
+            event.target.value = '';
+            return;
+        }
+    } catch(ocrErr) {
+        console.warn('[Online OCR fallback in handleLottoQrFile failed]', ocrErr);
+    }
+
     event.target.value = '';
-    alert('⚠️ 사진에서 로또 QR 코드를 인식하지 못했습니다.\n\n• 영수증 상단의 사각형 QR 코드가 화면에 크게 선명하게 나오도록 다시 촬영해주세요.\n• 밝은 조명 아래에서 그림자나 빛 반사가 생기지 않게 해주세요.');
+    alert('⚠️ 사진에서 로또 QR 코드 또는 온라인 영수증을 인식하지 못했습니다.\n\n• 실물 복권인 경우 영수증 상단의 QR 코드가 잘 보이도록 다시 촬영해주세요.\n• 온라인 복권인 경우 [마이페이지 > 구매상세 (티켓 보기)] 화면을 캡처한 스크린샷인지 확인해주세요.');
 }
 
 /**
@@ -31100,6 +31457,9 @@ async function handleSaveManualLedger() {
         }
 
         const isOnline = combosEl ? (combosEl.dataset.isOnlineReceipt === 'true') : false;
+        if (isOnline && (!check || !check.detectedVersion || check.detectedVersion === '수동/직접입력')) {
+            finalVersionStr = '온라인 실구매 영수증 (5게임)';
+        }
         parsedNumberArrays.forEach((nums, idx) => {
             const matchDetail = (check && check.matchDetails) ? check.matchDetails[idx] : null;
             newCombos.push({
@@ -31330,6 +31690,9 @@ if (typeof window !== 'undefined') {
     window.switchManualLedgerMode = switchManualLedgerMode;
     window.pasteFromMobileClipboard = pasteFromMobileClipboard;
     window.handleOnlineScreenshotFile = handleOnlineScreenshotFile;
+    window.processOnlineScreenshotFileDirect = processOnlineScreenshotFileDirect;
+    window.preprocessReceiptImage = preprocessReceiptImage;
+    window.recognizeOnlineReceiptImage = recognizeOnlineReceiptImage;
     window.handleOnlineReceiptTextChange = handleOnlineReceiptTextChange;
     window.toggleBallInActiveGame = toggleBallInActiveGame;
     window.setActiveBallGame = setActiveBallGame;
@@ -31405,6 +31768,22 @@ if (typeof window !== 'undefined') {
         if (typeof pasteFromMobileClipboard !== 'undefined') {
             __exports.pasteFromMobileClipboard = pasteFromMobileClipboard;
             if (typeof window !== 'undefined') window.pasteFromMobileClipboard = pasteFromMobileClipboard;
+        }
+        if (typeof preprocessReceiptImage !== 'undefined') {
+            __exports.preprocessReceiptImage = preprocessReceiptImage;
+            if (typeof window !== 'undefined') window.preprocessReceiptImage = preprocessReceiptImage;
+        }
+        if (typeof ensureTesseractLoaded !== 'undefined') {
+            __exports.ensureTesseractLoaded = ensureTesseractLoaded;
+            if (typeof window !== 'undefined') window.ensureTesseractLoaded = ensureTesseractLoaded;
+        }
+        if (typeof recognizeOnlineReceiptImage !== 'undefined') {
+            __exports.recognizeOnlineReceiptImage = recognizeOnlineReceiptImage;
+            if (typeof window !== 'undefined') window.recognizeOnlineReceiptImage = recognizeOnlineReceiptImage;
+        }
+        if (typeof processOnlineScreenshotFileDirect !== 'undefined') {
+            __exports.processOnlineScreenshotFileDirect = processOnlineScreenshotFileDirect;
+            if (typeof window !== 'undefined') window.processOnlineScreenshotFileDirect = processOnlineScreenshotFileDirect;
         }
         if (typeof handleOnlineScreenshotFile !== 'undefined') {
             __exports.handleOnlineScreenshotFile = handleOnlineScreenshotFile;
