@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.30.1441 - BUILD_DATE: 2026-09-30] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.09.30.1451 - BUILD_DATE: 2026-09-30] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.09.30.1441)
+ * Lucky777 Smart Bundle (v2026.09.30.1451)
  */
 
 
@@ -30230,7 +30230,7 @@ function renderBallPickerUI() {
     });
 }
 
-function switchManualLedgerMode(mode) {
+function switchManualLedgerMode(mode = 'qr') {
     const tabOnline = document.getElementById('tabBtnOnlineReceipt');
     const tabQr = document.getElementById('tabBtnQrScan');
     const tabBall = document.getElementById('tabBtnTouchBall');
@@ -30247,22 +30247,7 @@ function switchManualLedgerMode(mode) {
     if (secQr) secQr.style.display = 'none';
     if (secBall) secBall.style.display = 'none';
 
-    if (mode === 'qr') {
-        tabQr.classList.add('active');
-        if (secQr) secQr.style.display = 'flex';
-        try { SafeLocalStorage.setItem('lucky777_manual_reg_mode', 'qr'); } catch(e) {}
-        setTimeout(() => {
-            startLottoQrScanner();
-        }, 100);
-    } else if (mode === 'ball') {
-        tabBall.classList.add('active');
-        if (secBall) secBall.style.display = 'flex';
-        try { SafeLocalStorage.setItem('lucky777_manual_reg_mode', 'ball'); } catch(e) {}
-        stopScanning();
-        initBallPickerFromCombos();
-        renderBallPickerUI();
-    } else {
-        // Default: 'online'
+    if (mode === 'online') {
         tabOnline.classList.add('active');
         if (secOnline) secOnline.style.display = 'flex';
         try { SafeLocalStorage.setItem('lucky777_manual_reg_mode', 'online'); } catch(e) {}
@@ -30274,6 +30259,21 @@ function switchManualLedgerMode(mode) {
                 txtInput.value = combosEl.value.trim();
             }
         }
+    } else if (mode === 'ball') {
+        tabBall.classList.add('active');
+        if (secBall) secBall.style.display = 'flex';
+        try { SafeLocalStorage.setItem('lucky777_manual_reg_mode', 'ball'); } catch(e) {}
+        stopScanning();
+        initBallPickerFromCombos();
+        renderBallPickerUI();
+    } else {
+        // Default: 'qr' (지류 복권 실시간 QR스캔)
+        tabQr.classList.add('active');
+        if (secQr) secQr.style.display = 'flex';
+        try { SafeLocalStorage.setItem('lucky777_manual_reg_mode', 'qr'); } catch(e) {}
+        setTimeout(() => {
+            startLottoQrScanner();
+        }, 150);
     }
 }
 
@@ -31305,12 +31305,8 @@ function openManualLedgerModal() {
         if (onlineTxt) onlineTxt.value = '';
         clearAllGames();
 
-        // Check saved registration mode (default: 'online' for mobile-first convenience)
-        let savedMode = 'online';
-        try {
-            savedMode = SafeLocalStorage.getItem('lucky777_manual_reg_mode') || 'online';
-        } catch(e) {}
-        switchManualLedgerMode(savedMode);
+        // 기본 모드는 지류 복권 QR스캔 (사용자 요청: 기본은 qr스캔)
+        switchManualLedgerMode('qr');
     }
 }
 

@@ -551,7 +551,7 @@ export function renderBallPickerUI() {
     });
 }
 
-export function switchManualLedgerMode(mode) {
+export function switchManualLedgerMode(mode = 'qr') {
     const tabOnline = document.getElementById('tabBtnOnlineReceipt');
     const tabQr = document.getElementById('tabBtnQrScan');
     const tabBall = document.getElementById('tabBtnTouchBall');
@@ -568,22 +568,7 @@ export function switchManualLedgerMode(mode) {
     if (secQr) secQr.style.display = 'none';
     if (secBall) secBall.style.display = 'none';
 
-    if (mode === 'qr') {
-        tabQr.classList.add('active');
-        if (secQr) secQr.style.display = 'flex';
-        try { localStorage.setItem('lucky777_manual_reg_mode', 'qr'); } catch(e) {}
-        setTimeout(() => {
-            startLottoQrScanner();
-        }, 100);
-    } else if (mode === 'ball') {
-        tabBall.classList.add('active');
-        if (secBall) secBall.style.display = 'flex';
-        try { localStorage.setItem('lucky777_manual_reg_mode', 'ball'); } catch(e) {}
-        stopScanning();
-        initBallPickerFromCombos();
-        renderBallPickerUI();
-    } else {
-        // Default: 'online'
+    if (mode === 'online') {
         tabOnline.classList.add('active');
         if (secOnline) secOnline.style.display = 'flex';
         try { localStorage.setItem('lucky777_manual_reg_mode', 'online'); } catch(e) {}
@@ -595,6 +580,21 @@ export function switchManualLedgerMode(mode) {
                 txtInput.value = combosEl.value.trim();
             }
         }
+    } else if (mode === 'ball') {
+        tabBall.classList.add('active');
+        if (secBall) secBall.style.display = 'flex';
+        try { localStorage.setItem('lucky777_manual_reg_mode', 'ball'); } catch(e) {}
+        stopScanning();
+        initBallPickerFromCombos();
+        renderBallPickerUI();
+    } else {
+        // Default: 'qr' (지류 복권 실시간 QR스캔)
+        tabQr.classList.add('active');
+        if (secQr) secQr.style.display = 'flex';
+        try { localStorage.setItem('lucky777_manual_reg_mode', 'qr'); } catch(e) {}
+        setTimeout(() => {
+            startLottoQrScanner();
+        }, 150);
     }
 }
 
@@ -1626,12 +1626,8 @@ export function openManualLedgerModal() {
         if (onlineTxt) onlineTxt.value = '';
         clearAllGames();
 
-        // Check saved registration mode (default: 'online' for mobile-first convenience)
-        let savedMode = 'online';
-        try {
-            savedMode = localStorage.getItem('lucky777_manual_reg_mode') || 'online';
-        } catch(e) {}
-        switchManualLedgerMode(savedMode);
+        // 기본 모드는 지류 복권 QR스캔 (사용자 요청: 기본은 qr스캔)
+        switchManualLedgerMode('qr');
     }
 }
 

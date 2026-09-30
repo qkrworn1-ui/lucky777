@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.09.30.1441">
+    <link rel="stylesheet" href="styles.css?v=2026.09.30.1451">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.09.30.1441
+                        v2026.09.30.1451
                     </span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 6px;">
@@ -166,7 +166,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.09.30.1441 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.09.30.1451 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -570,7 +570,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.09.30.1441
+                                v2026.09.30.1451
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -2010,7 +2010,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.09.30.1441
+                        <i class="fa-solid fa-code-branch"></i> v2026.09.30.1451
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3157,44 +3157,21 @@
                     </select>
                 </div>
 
-                <!-- 📱 Multi-Modal Registration Tabs (온라인 영수증 / 지류 QR스캔 / 터치 볼입력) -->
+                <!-- 📱 Multi-Modal Registration Tabs (지류 QR스캔[기본] / 온라인 영수증 / 터치 볼입력) -->
                 <div class="manual-mode-tabs" id="manualLedgerModeTabs">
-                    <button type="button" id="tabBtnOnlineReceipt" class="manual-tab-btn active" data-mode="online" onclick="window.switchManualLedgerMode && window.switchManualLedgerMode('online')">
-                        <i class="fa-solid fa-globe"></i> 온라인 영수증
-                    </button>
-                    <button type="button" id="tabBtnQrScan" class="manual-tab-btn" data-mode="qr" onclick="window.switchManualLedgerMode && window.switchManualLedgerMode('qr')">
+                    <button type="button" id="tabBtnQrScan" class="manual-tab-btn active" data-mode="qr" onclick="window.switchManualLedgerMode && window.switchManualLedgerMode('qr')">
                         <i class="fa-solid fa-qrcode"></i> 지류 QR스캔
+                    </button>
+                    <button type="button" id="tabBtnOnlineReceipt" class="manual-tab-btn" data-mode="online" onclick="window.switchManualLedgerMode && window.switchManualLedgerMode('online')">
+                        <i class="fa-solid fa-globe"></i> 온라인 영수증
                     </button>
                     <button type="button" id="tabBtnTouchBall" class="manual-tab-btn" data-mode="ball" onclick="window.switchManualLedgerMode && window.switchManualLedgerMode('ball')">
                         <i class="fa-solid fa-circle-dot"></i> 터치 볼입력
                     </button>
                 </div>
 
-                <!-- 1. ONLINE RECEIPT SECTION (온라인 영수증 텍스트 & 모바일 스크린샷) -->
-                <div id="sectionOnlineReceipt" style="display: flex; flex-direction: column; gap: 8px;">
-                    <!-- Mobile Quick Action Row -->
-                    <div style="display: flex; gap: 6px;">
-                        <button type="button" id="btnPasteMobileClipboard" onclick="window.pasteFromMobileClipboard && window.pasteFromMobileClipboard()" class="btn-primary" style="flex: 1.2; padding: 8px 10px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; height: 38px; background: linear-gradient(135deg, #2563eb, #1d4ed8); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);">
-                            <i class="fa-solid fa-clipboard"></i> 📋 클립보드 붙여넣기
-                        </button>
-                        <label class="btn-secondary" style="flex: 1; padding: 8px 10px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; height: 38px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; text-align: center; box-sizing: border-box; margin: 0;">
-                            <i class="fa-solid fa-image"></i> 📸 스크린샷 앨범
-                            <input type="file" id="onlineReceiptScreenshotInput" accept="image/*" style="display: none;" onchange="window.handleOnlineScreenshotFile && window.handleOnlineScreenshotFile(event)">
-                        </label>
-                    </div>
-
-                    <!-- Textarea Box -->
-                    <div style="position: relative;">
-                        <textarea id="onlineReceiptTextInput" class="modern-input" placeholder="💡 동행복권 [마이페이지 > 구매당첨내역 > 구매상세] 화면에서 텍스트를 복사(Ctrl+C 또는 길게 눌러 복사)하여 이곳에 붙여넣으세요.&#10;&#10;[예시]&#10;제 1241 회&#10;A 자동 03 11 15 36 40 44&#10;B 수동 08 12 21 25 38 42&#10;C 반자동 01 14 19 23 35 45&#10;D 자동 05 10 17 26 31 39&#10;E 자동 02 16 22 29 33 41" style="width: 100%; height: 110px; padding: 8px 10px; font-size: 0.78rem; line-height: 1.4; border-radius: 8px; box-sizing: border-box; resize: vertical; font-family: monospace; background: rgba(15, 23, 42, 0.9); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.15);"></textarea>
-                    </div>
-                    <div style="font-size: 0.72rem; color: #94a3b8; display: flex; align-items: center; gap: 4px; padding: 0 2px;">
-                        <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i>
-                        <span>복사한 텍스트를 붙여넣으면 회차와 5게임 번호가 즉시 자동 분석됩니다.</span>
-                    </div>
-                </div>
-
-                <!-- 2. SCANNER CAMERA SECTION (지류 복권 QR 스캔) -->
-                <div id="qrScannerSection" style="display: none; flex-direction: column; gap: 8px;">
+                <!-- 1. SCANNER CAMERA SECTION (지류 복권 QR 스캔 - 기본 가동) -->
+                <div id="qrScannerSection" style="display: flex; flex-direction: column; gap: 8px;">
                     <!-- High-tech Viewfinder Box -->
                     <div id="qrScannerContainer" style="display: none; border: 1.5px solid rgba(16, 185, 129, 0.45); border-radius: 14px; padding: 10px; background: #020617; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.7); position: relative;">
                         <!-- Floating camera header controls -->
@@ -3247,6 +3224,29 @@
                             <i class="fa-solid fa-image"></i> 📸 사진/갤러리
                             <input type="file" id="lottoQrFileInput" accept="image/*" capture="environment" style="display: none;" onchange="window.handleLottoQrFile && window.handleLottoQrFile(event)">
                         </label>
+                    </div>
+                </div>
+
+                <!-- 2. ONLINE RECEIPT SECTION (온라인 영수증 텍스트 & 모바일 스크린샷) -->
+                <div id="sectionOnlineReceipt" style="display: none; flex-direction: column; gap: 8px;">
+                    <!-- Mobile Quick Action Row -->
+                    <div style="display: flex; gap: 6px;">
+                        <button type="button" id="btnPasteMobileClipboard" onclick="window.pasteFromMobileClipboard && window.pasteFromMobileClipboard()" class="btn-primary" style="flex: 1.2; padding: 8px 10px; font-size: 0.82rem; font-weight: 800; border-radius: 8px; height: 38px; background: linear-gradient(135deg, #2563eb, #1d4ed8); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; box-shadow: 0 3px 10px rgba(37, 99, 235, 0.3);">
+                            <i class="fa-solid fa-clipboard"></i> 📋 클립보드 붙여넣기
+                        </button>
+                        <label class="btn-secondary" style="flex: 1; padding: 8px 10px; font-size: 0.8rem; font-weight: 700; border-radius: 8px; height: 38px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; text-align: center; box-sizing: border-box; margin: 0;">
+                            <i class="fa-solid fa-image"></i> 📸 스크린샷 앨범
+                            <input type="file" id="onlineReceiptScreenshotInput" accept="image/*" style="display: none;" onchange="window.handleOnlineScreenshotFile && window.handleOnlineScreenshotFile(event)">
+                        </label>
+                    </div>
+
+                    <!-- Textarea Box -->
+                    <div style="position: relative;">
+                        <textarea id="onlineReceiptTextInput" class="modern-input" placeholder="💡 동행복권 [마이페이지 > 구매당첨내역 > 구매상세] 화면에서 텍스트를 복사(Ctrl+C 또는 길게 눌러 복사)하여 이곳에 붙여넣으세요.&#10;&#10;[예시]&#10;제 1241 회&#10;A 자동 03 11 15 36 40 44&#10;B 수동 08 12 21 25 38 42&#10;C 반자동 01 14 19 23 35 45&#10;D 자동 05 10 17 26 31 39&#10;E 자동 02 16 22 29 33 41" style="width: 100%; height: 110px; padding: 8px 10px; font-size: 0.78rem; line-height: 1.4; border-radius: 8px; box-sizing: border-box; resize: vertical; font-family: monospace; background: rgba(15, 23, 42, 0.9); color: #e2e8f0; border: 1px solid rgba(255, 255, 255, 0.15);"></textarea>
+                    </div>
+                    <div style="font-size: 0.72rem; color: #94a3b8; display: flex; align-items: center; gap: 4px; padding: 0 2px;">
+                        <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i>
+                        <span>복사한 텍스트를 붙여넣으면 회차와 5게임 번호가 즉시 자동 분석됩니다.</span>
                     </div>
                 </div>
 
@@ -3977,7 +3977,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.09.30.1441';
+        window.APP_VERSION = 'v2026.09.30.1451';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4048,7 +4048,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.09.30.1441';
+            var v = ver || window.APP_VERSION || 'v2026.09.30.1451';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4291,7 +4291,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.30.1441';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.09.30.1451';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4429,7 +4429,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.09.30.1441')
+                navigator.serviceWorker.register('./sw.js?v=2026.09.30.1451')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -4507,8 +4507,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.09.30.1441"></script>
-    <script src="app_v2.js?v=2026.09.30.1441"></script>
+    <script src="data.js?v=2026.09.30.1451"></script>
+    <script src="app_v2.js?v=2026.09.30.1451"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
