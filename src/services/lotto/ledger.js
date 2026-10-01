@@ -1021,7 +1021,7 @@ export function parseDonghangOnlineReceiptText(rawText) {
                     });
                 }
                 if (fallbackCombos.length >= 5) break;
-            }}
+            }
             if (fallbackCombos.length > combos.length) {
                 combos.length = 0;
                 combos.push(...fallbackCombos.slice(0, 5));

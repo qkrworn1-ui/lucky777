@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.01.1321 - BUILD_DATE: 2026-10-01] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.01.1334.52 - BUILD_DATE: 2026-10-01] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.01.1321)
+ * Lucky777 Smart Bundle (v2026.10.01.1334.52)
  */
 
 
@@ -10091,7 +10091,7 @@ function parseDonghangOnlineReceiptText(rawText) {
                     });
                 }
                 if (fallbackCombos.length >= 5) break;
-            }}
+            }
             if (fallbackCombos.length > combos.length) {
                 combos.length = 0;
                 combos.push(...fallbackCombos.slice(0, 5));
