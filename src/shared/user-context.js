@@ -175,6 +175,25 @@ export const UserContextManager = {
             userMap.set(u.id.toLowerCase(), { ...u });
         });
 
+        // 0.1 Collect set of known deleted/trashed user IDs from status cache
+        const deletedUserIds = new Set();
+        try {
+            if (typeof localStorage !== 'undefined') {
+                const rawStatus = localStorage.getItem('lotto_users_with_status_cache');
+                if (rawStatus) {
+                    const parsedStatus = JSON.parse(rawStatus);
+                    if (Array.isArray(parsedStatus)) {
+                        parsedStatus.forEach(u => {
+                            const uIdClean = String(u.userId || u.id || '').trim().toLowerCase();
+                            if (uIdClean && (u.isDeleted === true || u.status === 'trash' || (u.data && (u.data.isDeleted === true || u.data.status === 'trash')))) {
+                                deletedUserIds.add(uIdClean);
+                            }
+                        });
+                    }
+                }
+            }
+        } catch(e) {}
+
         // 1. Synchronously pre-load cached users from localStorage
         try {
             if (typeof localStorage !== 'undefined') {
@@ -185,6 +204,7 @@ export const UserContextManager = {
                         parsed.forEach(u => {
                             if (u && u.id) {
                                 const cleanId = String(u.id).trim().toLowerCase();
+                                const isDel = !!(u.isDeleted || u.status === 'trash' || deletedUserIds.has(cleanId));
                                 if (cleanId && !userMap.has(cleanId)) {
                                     userMap.set(cleanId, {
                                         id: u.id,
@@ -195,8 +215,8 @@ export const UserContextManager = {
                                         isPermanent: !!u.isPermanent,
                                         userType: u.userType || 'regular',
                                         createdAt: u.createdAt || null,
-                                        status: u.status || 'active',
-                                        isDeleted: u.isDeleted || false
+                                        status: isDel ? 'trash' : (u.status || 'active'),
+                                        isDeleted: isDel
                                     });
                                 }
                             }
@@ -213,6 +233,7 @@ export const UserContextManager = {
                     const cleanId = String(u.id).trim().toLowerCase();
                     if (cleanId) {
                         const existing = userMap.get(cleanId) || {};
+                        const isDel = !!(u.isDeleted || u.status === 'trash' || existing.isDeleted || existing.status === 'trash' || deletedUserIds.has(cleanId));
                         userMap.set(cleanId, {
                             ...existing,
                             id: u.id,
@@ -223,66 +244,78 @@ export const UserContextManager = {
                             isPermanent: u.isPermanent !== undefined ? !!u.isPermanent : existing.isPermanent,
                             userType: u.userType || existing.userType || 'regular',
                             createdAt: u.createdAt || existing.createdAt || null,
-                            status: u.status || existing.status || 'active',
-                            isDeleted: u.isDeleted !== undefined ? u.isDeleted : existing.isDeleted
+                            status: isDel ? 'trash' : (u.status || existing.status || 'active'),
+                            isDeleted: isDel
                         });
                     }
                 }
             });
         }
 
-        // 3. Merge state.allUsersPurchasesMap
+        // 3. Merge state.allUsersPurchasesMap (Strictly skip deleted/trashed users)
         if (typeof window !== 'undefined' && window.state && window.state.allUsersPurchasesMap && typeof window.state.allUsersPurchasesMap === 'object') {
             Object.keys(window.state.allUsersPurchasesMap).forEach(uId => {
-                const pObj = window.state.allUsersPurchasesMap[uId];
-                if (pObj) {
-                    const cleanId = String(uId).trim().toLowerCase();
-                    if (cleanId) {
-                        const existing = userMap.get(cleanId) || {};
-                        const hasOfficialName = !!(existing.realName && !existing.realName.startsWith('kakao_') && !existing.realName.startsWith('카카오회원'));
-                        const officialRealName = hasOfficialName ? existing.realName : (pObj.realName || pObj.name || existing.name || uId);
-                        userMap.set(cleanId, {
-                            ...existing,
-                            id: pObj.userId || uId,
-                            name: officialRealName,
-                            realName: officialRealName,
-                            phone: existing.phone || '',
-                            isAdmin: existing.isAdmin !== undefined ? existing.isAdmin : false,
-                            isPermanent: existing.isPermanent !== undefined ? existing.isPermanent : false,
-                            userType: existing.userType || 'regular',
-                            createdAt: existing.createdAt || pObj.createdAt || pObj.created_at || null,
-                            status: existing.status || 'active',
-                            isDeleted: existing.isDeleted || false
-                        });
-                    }
+                const cleanId = String(uId).trim().toLowerCase();
+                if (!cleanId || cleanId === 'app_latest_version' || cleanId === 'dashboard_summary_latest' || 
+                    cleanId.startsWith('{') || cleanId.startsWith('test') || cleanId.startsWith('guest') ||
+                    cleanId === 'global_trash' || cleanId === 'global_state' || cleanId === 'global_saved' || cleanId === 'all') {
+                    return;
                 }
+                const pObj = window.state.allUsersPurchasesMap[uId];
+                if (!pObj) return;
+
+                // 🔒 삭제되거나 휴지통에 보관된 회원은 구매 데이터에서 활성 계정으로 부활 차단
+                if (deletedUserIds.has(cleanId) || pObj.isDeleted === true || pObj.status === 'trash') {
+                    return;
+                }
+                const existing = userMap.get(cleanId);
+                if (existing && (existing.isDeleted === true || existing.status === 'trash')) {
+                    return;
+                }
+
+                const hasOfficialName = !!(existing && existing.realName && !existing.realName.startsWith('kakao_') && !existing.realName.startsWith('카카오회원'));
+                const officialRealName = hasOfficialName ? existing.realName : (pObj.realName || pObj.name || (existing && existing.name) || uId);
+                userMap.set(cleanId, {
+                    ...(existing || {}),
+                    id: pObj.userId || uId,
+                    name: officialRealName,
+                    realName: officialRealName,
+                    phone: (existing && existing.phone) || '',
+                    isAdmin: (existing && existing.isAdmin !== undefined) ? existing.isAdmin : false,
+                    isPermanent: (existing && existing.isPermanent !== undefined) ? existing.isPermanent : false,
+                    userType: (existing && existing.userType) || 'regular',
+                    createdAt: (existing && existing.createdAt) || pObj.createdAt || pObj.created_at || null,
+                    status: 'active',
+                    isDeleted: false
+                });
             });
         }
 
-        // 4. Merge state.userRecommendationSnapshots
+        // 4. Merge state.userRecommendationSnapshots (Strictly skip deleted users)
         if (typeof window !== 'undefined' && window.state && window.state.userRecommendationSnapshots && typeof window.state.userRecommendationSnapshots === 'object') {
             Object.keys(window.state.userRecommendationSnapshots).forEach(k => {
                 const snap = window.state.userRecommendationSnapshots[k];
                 if (snap && snap.userId) {
                     const cleanId = String(snap.userId).trim().toLowerCase();
-                    if (cleanId) {
-                        const existing = userMap.get(cleanId) || {};
-                        const hasOfficialName = !!(existing.realName && !existing.realName.startsWith('kakao_') && !existing.realName.startsWith('카카오회원'));
-                        const officialRealName = hasOfficialName ? existing.realName : (snap.realName || existing.name || snap.userId);
-                        userMap.set(cleanId, {
-                            ...existing,
-                            id: snap.userId,
-                            name: officialRealName,
-                            realName: officialRealName,
-                            phone: existing.phone || snap.phone || '',
-                            isAdmin: existing.isAdmin !== undefined ? existing.isAdmin : false,
-                            isPermanent: existing.isPermanent !== undefined ? existing.isPermanent : false,
-                            userType: snap.userType || existing.userType || 'regular',
-                            createdAt: existing.createdAt || snap.userCreatedAt || null,
-                            status: existing.status || 'active',
-                            isDeleted: existing.isDeleted || false
-                        });
-                    }
+                    if (!cleanId || deletedUserIds.has(cleanId)) return;
+                    const existing = userMap.get(cleanId);
+                    if (existing && (existing.isDeleted === true || existing.status === 'trash')) return;
+
+                    const hasOfficialName = !!(existing && existing.realName && !existing.realName.startsWith('kakao_') && !existing.realName.startsWith('카카오회원'));
+                    const officialRealName = hasOfficialName ? existing.realName : (snap.realName || (existing && existing.name) || snap.userId);
+                    userMap.set(cleanId, {
+                        ...(existing || {}),
+                        id: snap.userId,
+                        name: officialRealName,
+                        realName: officialRealName,
+                        phone: (existing && existing.phone) || snap.phone || '',
+                        isAdmin: (existing && existing.isAdmin !== undefined) ? existing.isAdmin : false,
+                        isPermanent: (existing && existing.isPermanent !== undefined) ? existing.isPermanent : false,
+                        userType: snap.userType || (existing && existing.userType) || 'regular',
+                        createdAt: (existing && existing.createdAt) || snap.userCreatedAt || null,
+                        status: 'active',
+                        isDeleted: false
+                    });
                 }
             });
         }
@@ -327,8 +360,9 @@ export const UserContextManager = {
         const unifiedList = Array.from(userMap.values()).filter(u => {
             if (!u || !u.id) return false;
             const uId = String(u.id).trim().toLowerCase();
-            if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted') return false;
+            if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || deletedUserIds.has(uId)) return false;
             if (uId.startsWith('{') || uId.startsWith('test') || uId.startsWith('guest') || uId === 'app_latest_version' ||
+                uId === 'dashboard_summary_latest' ||
                 uId === 'global_trash' || uId === 'global_state' || uId === 'global_saved' || uId === 'extra_history' ||
                 uId === 'user_alpha' || uId === 'user_beta' || uId === 'user_gamma' || uId === 'sample' || uId === 'hms' ||
                 uId === 'all' || u.isTest === true || (u.name && u.name.includes('테스트')) || (u.realName && u.realName.includes('테스트'))) {

@@ -1,5 +1,5 @@
 import { db } from './db.js';
-import { showToast } from './utils.js';
+import { showToast, isSystemOrDummyUser } from './utils.js';
 import { hashPassword, checkPasswordStrength } from './crypto-utils.js';
 import { DEFAULT_KNOWN_USERS, getAllUnifiedRegisteredUsers, UserContextManager } from './user-context.js';
 
@@ -4097,7 +4097,9 @@ export function setupAuthEvents(initFirebaseAndData) {
             const purchasesMap = new Map();
             if (purchasesSnapshot && typeof purchasesSnapshot.forEach === 'function') {
                 purchasesSnapshot.forEach(doc => {
-                    purchasesMap.set((doc.id || '').toLowerCase().trim(), doc.data());
+                    const pId = (doc.id || '').toLowerCase().trim();
+                    if (pId === 'app_latest_version' || pId === 'dashboard_summary_latest') return;
+                    purchasesMap.set(pId, doc.data());
                     purchasesMap.set(doc.id, doc.data());
                 });
             }
@@ -4106,12 +4108,17 @@ export function setupAuthEvents(initFirebaseAndData) {
             const existingUserIds = new Set();
             usersSnapshot.forEach(doc => {
                 const uIdClean = (doc.id || '').toLowerCase().trim();
-                if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'app_latest_version') {
-                    if (uIdClean !== 'app_latest_version') {
+                if ((doc.id.startsWith('{') && (doc.id.includes('"userid"') || doc.id.includes('"timestamp"'))) || uIdClean === 'app_latest_version' || uIdClean === 'dashboard_summary_latest') {
+                    if (uIdClean !== 'app_latest_version' && uIdClean !== 'dashboard_summary_latest') {
                         firestore.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
                         firestore.collection('lotto_agreements').doc(doc.id).delete().catch(console.warn);
                         firestore.collection('lotto_purchases').doc(doc.id).delete().catch(console.warn);
+                    } else if (uIdClean === 'dashboard_summary_latest') {
+                        firestore.collection('lotto_users').doc(doc.id).delete().catch(console.warn);
                     }
+                    return;
+                }
+                if (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uIdClean)) {
                     return;
                 }
                 const docData = doc.data() || {};
@@ -6904,8 +6911,31 @@ window.startBatchWinningSend = async function() {
                 deletedBy: adminId
             }, { merge: true });
 
+            try {
+                await window.db.collection('lotto_purchases').doc(userId).set({
+                    isDeleted: true,
+                    status: 'trash',
+                    deletedAt: new Date().toISOString()
+                }, { merge: true });
+            } catch(e) {}
+
             showToast(`🗑️ [${userId}] 회원이 휴지통으로 안전하게 이동되었습니다.`);
-            if (typeof window.loadUserList === 'function') window.loadUserList();
+
+            // ⚡ 캐시 무효화 및 전체회원 당첨금액 즉시 자동 차감/재계산
+            if (typeof window.clearUser70ReviewCache === 'function') {
+                try { window.clearUser70ReviewCache(); } catch(e) {}
+            }
+            if (typeof window.clearHomeReviewDashboardCache === 'function') {
+                try { window.clearHomeReviewDashboardCache(); } catch(e) {}
+            }
+            if (window.state && window.state.allUsersPurchasesMap && window.state.allUsersPurchasesMap[userId]) {
+                window.state.allUsersPurchasesMap[userId].isDeleted = true;
+                window.state.allUsersPurchasesMap[userId].status = 'trash';
+            }
+            if (typeof window.loadUserList === 'function') await window.loadUserList();
+            if (typeof window.updateHomeReviewDashboard === 'function') {
+                try { await window.updateHomeReviewDashboard(true); } catch(e) {}
+            }
         } catch (err) {
             console.error('[Move User to Trash Error]', err);
             alert('휴지통 이동 중 오류가 발생했습니다: ' + (err.message || err));
@@ -6941,8 +6971,31 @@ window.startBatchWinningSend = async function() {
                 restoredAt: new Date().toISOString()
             }, { merge: true });
 
+            try {
+                await window.db.collection('lotto_purchases').doc(userId).set({
+                    isDeleted: false,
+                    status: 'active',
+                    deletedAt: null
+                }, { merge: true });
+            } catch(e) {}
+
             showToast(`🎉 [${userId}] 회원이 성공적으로 정상 복구되었습니다.`);
-            if (typeof window.loadUserList === 'function') window.loadUserList();
+
+            // ⚡ 캐시 무효화 및 전체회원 당첨금액 즉시 복구/재계산
+            if (typeof window.clearUser70ReviewCache === 'function') {
+                try { window.clearUser70ReviewCache(); } catch(e) {}
+            }
+            if (typeof window.clearHomeReviewDashboardCache === 'function') {
+                try { window.clearHomeReviewDashboardCache(); } catch(e) {}
+            }
+            if (window.state && window.state.allUsersPurchasesMap && window.state.allUsersPurchasesMap[userId]) {
+                window.state.allUsersPurchasesMap[userId].isDeleted = false;
+                window.state.allUsersPurchasesMap[userId].status = 'active';
+            }
+            if (typeof window.loadUserList === 'function') await window.loadUserList();
+            if (typeof window.updateHomeReviewDashboard === 'function') {
+                try { await window.updateHomeReviewDashboard(true); } catch(e) {}
+            }
         } catch (err) {
             console.error('[Restore User Error]', err);
             alert('회원 복구 중 오류가 발생했습니다: ' + (err.message || err));
@@ -6986,7 +7039,25 @@ window.startBatchWinningSend = async function() {
             } catch(e) {}
             
             showToast(`💥 [${userId}] 계정이 완전히 영구 삭제되었습니다.`);
-            if (typeof window.loadUserList === 'function') window.loadUserList();
+
+            // ⚡ 캐시 무효화 및 전체회원 당첨금액 즉시 자동 차감/재계산
+            if (typeof window.clearUser70ReviewCache === 'function') {
+                try { window.clearUser70ReviewCache(); } catch(e) {}
+            }
+            if (typeof window.clearHomeReviewDashboardCache === 'function') {
+                try { window.clearHomeReviewDashboardCache(); } catch(e) {}
+            }
+            if (window.state && window.state.allUsersPurchasesMap) {
+                delete window.state.allUsersPurchasesMap[userId];
+                delete window.state.allUsersPurchasesMap[userId.toLowerCase()];
+            }
+            if (window.state && window.state.userRecommendationSnapshots) {
+                delete window.state.userRecommendationSnapshots[userId];
+            }
+            if (typeof window.loadUserList === 'function') await window.loadUserList();
+            if (typeof window.updateHomeReviewDashboard === 'function') {
+                try { await window.updateHomeReviewDashboard(true); } catch(e) {}
+            }
         } catch (err) {
             console.error('[Permanent Delete Error]', err);
             alert('영구 삭제 중 오류가 발생했습니다: ' + (err.message || err));
@@ -7026,9 +7097,24 @@ window.startBatchWinningSend = async function() {
                     await window.db.collection('lotto_agreements').doc(u.userId).delete();
                     await window.db.collection('lotto_purchases').doc(u.userId).delete();
                 } catch(e) {}
+                if (window.state && window.state.allUsersPurchasesMap) {
+                    delete window.state.allUsersPurchasesMap[u.userId];
+                    delete window.state.allUsersPurchasesMap[u.userId.toLowerCase()];
+                }
             }
             showToast(`🎉 휴지통이 완전히 비워졌습니다.`);
-            if (typeof window.loadUserList === 'function') window.loadUserList();
+
+            // ⚡ 캐시 무효화 및 전체회원 당첨금액 즉시 자동 차감/재계산
+            if (typeof window.clearUser70ReviewCache === 'function') {
+                try { window.clearUser70ReviewCache(); } catch(e) {}
+            }
+            if (typeof window.clearHomeReviewDashboardCache === 'function') {
+                try { window.clearHomeReviewDashboardCache(); } catch(e) {}
+            }
+            if (typeof window.loadUserList === 'function') await window.loadUserList();
+            if (typeof window.updateHomeReviewDashboard === 'function') {
+                try { await window.updateHomeReviewDashboard(true); } catch(e) {}
+            }
         } catch (err) {
             console.error('[Empty Trash Error]', err);
             alert('휴지통 비우기 중 오류가 발생했습니다: ' + (err.message || err));
@@ -7063,7 +7149,7 @@ window.startBatchWinningSend = async function() {
                 return id.startsWith('test') || id.startsWith('guest') || id.startsWith('{') || 
                        id === 'user_alpha' || id === 'user_beta' || id === 'user_gamma' || 
                        id === 'user_1235' || id === 'user_1238' || id === 'user_1240' || id === 'user_1241' ||
-                       id === 'sample' || id === 'hms' || id === 'all';
+                       id === 'sample' || id === 'hms' || id === 'all' || id === 'dashboard_summary_latest';
             };
 
             let deletedUserCount = 0;
@@ -7078,7 +7164,9 @@ window.startBatchWinningSend = async function() {
                         if (isTestUserId(uId) || data.isTest === true) {
                             try { await window.db.collection('lotto_users').doc(uId).delete(); } catch(e){}
                             try { await window.db.collection('lotto_agreements').doc(uId).delete(); } catch(e){}
-                            try { await window.db.collection('lotto_purchases').doc(uId).delete(); } catch(e){}
+                            if (uId !== 'dashboard_summary_latest' && uId !== 'app_latest_version') {
+                                try { await window.db.collection('lotto_purchases').doc(uId).delete(); } catch(e){}
+                            }
                             deletedUserCount++;
                         }
                     }
@@ -7093,7 +7181,7 @@ window.startBatchWinningSend = async function() {
                 if (purchSnap && !purchSnap.empty) {
                     for (const pDoc of purchSnap.docs) {
                         const pId = pDoc.id;
-                        if (isTestUserId(pId)) {
+                        if (isTestUserId(pId) && pId !== 'dashboard_summary_latest' && pId !== 'app_latest_version') {
                             await window.db.collection('lotto_purchases').doc(pId).delete().catch(()=>{});
                         }
                     }

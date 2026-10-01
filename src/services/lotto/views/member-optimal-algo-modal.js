@@ -131,7 +131,7 @@ export async function analyzeAllMembersOptimalAlgorithms(forceRefresh = false) {
             const uSnap = await window.db.collection('lotto_users').get();
             const loaded = [];
             uSnap.forEach(d => {
-                if (d.id === 'app_latest_version') return;
+                if (d.id === 'app_latest_version' || d.id === 'dashboard_summary_latest') return;
                 const uData = d.data();
                 const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
                 loaded.push({
@@ -152,7 +152,9 @@ export async function analyzeAllMembersOptimalAlgorithms(forceRefresh = false) {
     // Include any users from purchase map
     if (state.allUsersPurchasesMap && typeof state.allUsersPurchasesMap === 'object') {
         Object.keys(state.allUsersPurchasesMap).forEach(uId => {
-            if (!userList.some(u => (u.id || '').toLowerCase().trim() === uId.toLowerCase().trim())) {
+            const cleanUId = (uId || '').trim().toLowerCase();
+            if (cleanUId === 'app_latest_version' || cleanUId === 'dashboard_summary_latest') return;
+            if (!userList.some(u => (u.id || '').toLowerCase().trim() === cleanUId)) {
                 const pObj = state.allUsersPurchasesMap[uId];
                 userList.push({
                     id: uId,
@@ -173,6 +175,7 @@ export async function analyzeAllMembersOptimalAlgorithms(forceRefresh = false) {
                !uId.startsWith('{') &&
                !uId.startsWith('test_') &&
                uId !== 'app_latest_version' &&
+               uId !== 'dashboard_summary_latest' &&
                uId !== 'user_alpha' &&
                uId !== 'user_beta' &&
                uId !== 'sample' &&

@@ -221,7 +221,7 @@ export async function renderConfirmedPurchasesList() {
     const allUnifiedUsers = (typeof getAllUnifiedRegisteredUsers === 'function') ? getAllUnifiedRegisteredUsers() : [];
     const validUnifiedUsers = allUnifiedUsers.filter(u => {
         const clean = (u.id || '').trim().toLowerCase();
-        return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
+        return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
     });
 
     if (isAdmin) {

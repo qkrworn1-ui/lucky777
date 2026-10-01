@@ -343,6 +343,7 @@ if (typeof window !== 'undefined') {
 export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotData) {
     if (!userId || !roundNum || !snapshotData) return;
     const cleanUser = String(userId).toLowerCase().trim();
+    if (cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || isSystemOrDummyUser(cleanUser)) return;
     const rKey = String(roundNum);
 
     const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
@@ -3379,7 +3380,7 @@ export async function shareAdmin1235ReviewToKakao() {
     const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
     const registeredUsers = rawUsers.filter(u => {
         const uId = (u.id || '').trim().toLowerCase();
-        return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+        return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'dashboard_summary_latest' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
     });
     const baseList = (registeredUsers && registeredUsers.length > 0) ? registeredUsers : [{ id: 'master', name: '관리자' }];
 

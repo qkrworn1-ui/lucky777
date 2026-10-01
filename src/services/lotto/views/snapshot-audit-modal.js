@@ -178,7 +178,7 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
     // Map users info
     const usersMap = {};
     usersDocs.forEach(u => {
-        if (u.id === 'app_latest_version') return;
+        if (u.id === 'app_latest_version' || u.id === 'dashboard_summary_latest') return;
         usersMap[u.id] = {
             id: u.id,
             ...u.data,
@@ -209,15 +209,18 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
 
     const purchasesMap = {};
     purchasesDocs.forEach(p => {
-        if (p.id && p.id !== 'app_latest_version') {
+        if (p.id && p.id !== 'app_latest_version' && p.id !== 'dashboard_summary_latest') {
             purchasesMap[p.id] = p;
         }
     });
 
     const allUserIds = Array.from(new Set([
-        ...purchasesDocs.map(p => p.id).filter(id => id && id !== 'app_latest_version'),
-        ...Object.keys(usersMap).filter(id => id && id !== 'app_latest_version')
-    ]));
+        ...purchasesDocs.map(p => p.id).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest'),
+        ...Object.keys(usersMap).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest')
+    ])).filter(id => {
+        const clean = (id || '').trim().toLowerCase();
+        return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
+    });
 
     // If still empty, add fallback master/admin
     if (allUserIds.length === 0) {

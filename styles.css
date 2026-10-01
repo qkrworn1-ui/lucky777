@@ -426,6 +426,16 @@ body {
     display: none;
 }
 
+.tab-text-short {
+    display: none;
+}
+.guide-subtitle-en {
+    font-size: 0.78rem;
+    font-weight: 500;
+    opacity: 0.75;
+    margin-left: 4px;
+}
+
 .tab-btn {
     flex: 1;
     min-width: 120px;
@@ -14285,27 +14295,71 @@ body.is-admin .btn-snapshot-audit-compact {
    📱 7대 메뉴 전체 스마트폰 모바일(≤768px, ≤420px) UI 최적화 시스템
    ========================================================================== */
 
-/* ── 1. 상단 메뉴 기능 안내 가이드 배너 모바일 최적화 ── */
+/* ── 1. 상단 메뉴 기능 안내 가이드 배너 & 탭 네비게이션 모바일 최적화 ── */
 @media (max-width: 768px) {
+    .tab-text-full {
+        display: none !important;
+    }
+    .tab-text-short {
+        display: inline !important;
+        white-space: nowrap !important;
+    }
+    .tab-nav {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        scroll-behavior: smooth !important;
+        scrollbar-width: none !important;
+        padding: 5px 6px !important;
+        gap: 6px !important;
+    }
+    .tab-btn {
+        flex: 0 0 auto !important;
+        min-width: unset !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+        padding: 8px 12px !important;
+        font-size: 0.82rem !important;
+        min-height: 38px !important;
+    }
+
     .menu-guide-banner {
-        padding: 12px 14px !important;
+        padding: 10px 12px !important;
         border-radius: 12px !important;
-        margin-bottom: 14px !important;
+        margin-bottom: 12px !important;
     }
 
     .guide-header {
-        flex-direction: column !important;
-        align-items: flex-start !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-wrap: nowrap !important;
         gap: 6px !important;
     }
 
     .guide-title {
-        font-size: 0.95rem !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        font-size: 0.9rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    .guide-subtitle-en {
+        display: none !important;
     }
 
     .guide-tag {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
         font-size: 0.68rem !important;
-        padding: 2px 7px !important;
+        padding: 2px 6px !important;
     }
 
     .guide-desc {
@@ -14333,7 +14387,34 @@ body.is-admin .btn-snapshot-audit-compact {
         grid-template-columns: 1fr !important;
     }
     .guide-title {
-        font-size: 0.88rem !important;
+        font-size: 0.85rem !important;
+    }
+    .tab-btn {
+        padding: 7px 10px !important;
+        font-size: 0.78rem !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .tab-nav {
+        padding: 4px 4px !important;
+        gap: 4px !important;
+    }
+    .tab-btn {
+        padding: 6px 8px !important;
+        font-size: 0.74rem !important;
+        min-height: 34px !important;
+        gap: 3px !important;
+    }
+    .tab-btn i {
+        font-size: 0.8rem !important;
+    }
+    .guide-title {
+        font-size: 0.82rem !important;
+    }
+    .guide-tag {
+        font-size: 0.62rem !important;
+        padding: 1px 5px !important;
     }
 }
 

@@ -257,6 +257,11 @@ def run_evaluation_batch():
         uid = p.get('id', '')
         if uid in ('app_latest_version', 'dashboard_summary_latest', 'test_write_perm', 'sample', 'test_alpha'):
             continue
+        if p.get('isDeleted') is True or p.get('status') in ('trash', 'deleted'):
+            continue
+        # 🔒 삭제되거나 휴지통에 보관된 회원은 전수 당첨금 집계 및 랭킹에서 100% 원천 배제
+        if uid not in user_metadata and uid not in ('master', 'wdy', 'admin'):
+            continue
         
         u_meta = user_metadata.get(uid) or {
             "realName": p.get('realName') or uid,

@@ -1324,7 +1324,7 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (isSystemOrDummyUser(cleanUser) || cleanUser.startsWith('{') || cleanUser.startsWith('test_') || cleanUser === 'user_alpha' || cleanUser === 'user_beta' || cleanUser === 'sample' || cleanUser === 'hms') {
+    if (isSystemOrDummyUser(cleanUser) || cleanUser.startsWith('{') || cleanUser.startsWith('test_') || cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || cleanUser === 'user_alpha' || cleanUser === 'user_beta' || cleanUser === 'sample' || cleanUser === 'hms') {
         return null;
     }
     const roundNum = parseInt(round, 10);

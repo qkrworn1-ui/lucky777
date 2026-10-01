@@ -2746,6 +2746,79 @@ Lotto 6/45
         self.assertIn("batch_evaluate_winnings.run_evaluation_batch()", update_code)
         self.assertIn("python batch_evaluate_winnings.py", build_code)
 
+    # [Test 82] dashboard_summary_latest Exclusion & User Integrity
+    def test_82_dashboard_summary_latest_user_exclusion_integrity(self):
+        utils_file = os.path.join(self.root_dir, 'src', 'shared', 'utils.js')
+        ucontext_file = os.path.join(self.root_dir, 'src', 'shared', 'user-context.js')
+        auth_file = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        rev_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        audit_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'snapshot-audit-modal.js')
+
+        with open(utils_file, 'r', encoding='utf-8') as f:
+            utils_code = f.read()
+        with open(ucontext_file, 'r', encoding='utf-8') as f:
+            ucontext_code = f.read()
+        with open(auth_file, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        with open(rev_file, 'r', encoding='utf-8') as f:
+            rev_code = f.read()
+        with open(audit_file, 'r', encoding='utf-8') as f:
+            audit_code = f.read()
+
+        # 1. utils.js isSystemOrDummyUser includes dashboard_summary_latest
+        self.assertIn("clean === 'dashboard_summary_latest'", utils_code)
+
+        # 2. user-context.js filters out dashboard_summary_latest from purchasesMap and unified user list
+        self.assertIn("cleanId === 'dashboard_summary_latest'", ucontext_code)
+        self.assertIn("uId === 'dashboard_summary_latest'", ucontext_code)
+
+        # 3. auth-mgmt.js loadUserList filters out dashboard_summary_latest from purchases and users
+        self.assertIn("pId === 'dashboard_summary_latest'", auth_code)
+        self.assertIn("uIdClean === 'dashboard_summary_latest'", auth_code)
+        self.assertIn("id === 'dashboard_summary_latest'", auth_code)
+
+        # 4. review-tab.js guards saveUserWeeklyRecommendationSnapshot and user filters
+        self.assertIn("cleanUser === 'dashboard_summary_latest'", rev_code)
+        self.assertIn("uId !== 'dashboard_summary_latest'", rev_code)
+
+        # 5. snapshot-audit-modal.js filters out dashboard_summary_latest
+        self.assertIn("u.id === 'dashboard_summary_latest'", audit_code)
+        self.assertIn("p.id !== 'dashboard_summary_latest'", audit_code)
+
+    # [Test 83] Deleted User Prize Deduction & Exclusion Integrity
+    def test_83_deleted_user_prize_deduction_and_exclusion_integrity(self):
+        ucontext_file = os.path.join(self.root_dir, 'src', 'shared', 'user-context.js')
+        auth_file = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        landing_file = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+        batch_file = os.path.join(self.root_dir, 'batch_evaluate_winnings.py')
+
+        with open(ucontext_file, 'r', encoding='utf-8') as f:
+            ucontext_code = f.read()
+        with open(auth_file, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        with open(landing_file, 'r', encoding='utf-8') as f:
+            landing_code = f.read()
+        with open(batch_file, 'r', encoding='utf-8') as f:
+            batch_code = f.read()
+
+        # 1. user-context.js collects deletedUserIds and prevents resurrection from purchases or recommendation snapshots
+        self.assertIn("deletedUserIds.has(cleanId)", ucontext_code)
+        self.assertIn("deletedUserIds.has(uId)", ucontext_code)
+        self.assertIn("existing.isDeleted === true || existing.status === 'trash'", ucontext_code)
+
+        # 2. auth-mgmt.js clears review & home dashboard cache and triggers updateHomeReviewDashboard on delete & restore
+        self.assertIn("window.clearUser70ReviewCache()", auth_code)
+        self.assertIn("window.clearHomeReviewDashboardCache()", auth_code)
+        self.assertIn("window.updateHomeReviewDashboard(true)", auth_code)
+
+        # 3. landing-dashboard.js supports forceRefresh and syncs summaryData to Firestore for admins
+        self.assertIn("if (!summaryData && !forceRefresh)", landing_code)
+        self.assertIn("doc('dashboard_summary_latest').set(summaryData, { merge: true })", landing_code)
+
+        # 4. batch_evaluate_winnings.py strictly excludes deleted users
+        self.assertIn("if p.get('isDeleted') is True or p.get('status') in ('trash', 'deleted')", batch_code)
+        self.assertIn("if uid not in user_metadata and uid not in ('master', 'wdy', 'admin'):", batch_code)
+
 
 if __name__ == '__main__':
     unittest.main()
