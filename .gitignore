@@ -30,3 +30,4 @@ Thumbs.db
 # Large historical build backups (managed separately)
 backups/
 lucky777/
+backup_firestore_*.json

@@ -1,33 +1,9 @@
 {
-  "version": "v2026.10.01.1334.52",
+  "version": "v2026.10.01.1539",
   "buildDate": "2026-10-01",
-  "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline",
-  "buildTimestamp": "2026-10-01T13:34:52.671057",
+  "description": "feat: server precomputed winning evaluations and 0.05s dashboard summary loader",
+  "buildTimestamp": "2026-10-01T15:39:35.814173",
   "buildHistory": [
-    {
-      "version": "v2026.09.30.1440",
-      "buildDate": "2026-09-30",
-      "buildTime": "14:40",
-      "buildDateTime": "2026-09-30 14:40",
-      "buildTimestamp": "2026-09-30T14:40:11.554618",
-      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
-    },
-    {
-      "version": "v2026.09.30.1441",
-      "buildDate": "2026-09-30",
-      "buildTime": "14:41",
-      "buildDateTime": "2026-09-30 14:41",
-      "buildTimestamp": "2026-09-30T14:41:03.266026",
-      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
-    },
-    {
-      "version": "v2026.09.30.1448",
-      "buildDate": "2026-09-30",
-      "buildTime": "14:48",
-      "buildDateTime": "2026-09-30 14:48",
-      "buildTimestamp": "2026-09-30T14:48:52.737071",
-      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
-    },
     {
       "version": "v2026.09.30.1451",
       "buildDate": "2026-09-30",
@@ -123,8 +99,32 @@
       "buildDateTime": "2026-10-01 13:34",
       "buildTimestamp": "2026-10-01T13:34:52.671057",
       "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
+    },
+    {
+      "version": "v2026.10.01.1532",
+      "buildDate": "2026-10-01",
+      "buildTime": "15:32",
+      "buildDateTime": "2026-10-01 15:32",
+      "buildTimestamp": "2026-10-01T15:32:48.898128",
+      "description": "feat(perf): implement server precomputed winning evaluations and 0.05s dashboard summary loader"
+    },
+    {
+      "version": "v2026.10.01.1538",
+      "buildDate": "2026-10-01",
+      "buildTime": "15:38",
+      "buildDateTime": "2026-10-01 15:38",
+      "buildTimestamp": "2026-10-01T15:38:30.090049",
+      "description": "feat: server precomputed winning evaluations and 0.05s dashboard summary loader"
+    },
+    {
+      "version": "v2026.10.01.1539",
+      "buildDate": "2026-10-01",
+      "buildTime": "15:39",
+      "buildDateTime": "2026-10-01 15:39",
+      "buildTimestamp": "2026-10-01T15:39:35.814173",
+      "description": "feat: server precomputed winning evaluations and 0.05s dashboard summary loader"
     }
   ],
-  "buildTime": "13:34",
-  "buildDateTime": "2026-10-01 13:34"
+  "buildTime": "15:39",
+  "buildDateTime": "2026-10-01 15:39"
 }

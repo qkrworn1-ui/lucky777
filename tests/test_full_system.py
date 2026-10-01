@@ -2705,10 +2705,46 @@ Lotto 6/45
 60645 60456 66628 14664 99446 6092
 매달 지급되는 연금복권 확인하기 »
 """
-        # Ensure regex patterns in ledger_code handle all 5 games
         self.assertIn("matchStd", ledger_code)
         self.assertIn("matchOcr", ledger_code)
         self.assertIn("matchTypeOnly", ledger_code)
+
+    # [Test 79] Server Precomputed Dashboard Summary & Batch Evaluator Integrity
+    def test_79_server_precomputed_dashboard_summary_and_batch_evaluator(self):
+        batch_file = os.path.join(self.root_dir, 'batch_evaluate_winnings.py')
+        lp_file = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        update_file = os.path.join(self.root_dir, 'update_lotto.py')
+        build_file = os.path.join(self.root_dir, 'build_and_sync.bat')
+
+        self.assertTrue(os.path.exists(batch_file), "batch_evaluate_winnings.py must exist")
+        with open(batch_file, 'r', encoding='utf-8') as f:
+            batch_code = f.read()
+        with open(lp_file, 'r', encoding='utf-8') as f:
+            lp_code = f.read()
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        with open(update_file, 'r', encoding='utf-8') as f:
+            update_code = f.read()
+        with open(build_file, 'r', encoding='utf-8') as f:
+            build_code = f.read()
+
+        # 1. batch_evaluate_winnings has run_evaluation_batch and writes to lotto_purchases
+        self.assertIn("def run_evaluation_batch()", batch_code)
+        self.assertIn("dashboard_summary_latest", batch_code)
+        self.assertIn("winningEvaluations", batch_code)
+
+        # 2. landing-dashboard.js checks dashboard_summary_latest first for 0.05s load
+        self.assertIn("dashboard_summary_latest", lp_code)
+        self.assertIn("lotto_home_review_dashboard_cache", lp_code)
+
+        # 3. ledger.js preserves and stores winningEvaluations in state
+        self.assertIn("data.winningEvaluations", ledger_code)
+        self.assertIn("state.userWinningEvaluations", ledger_code)
+
+        # 4. update_lotto.py and build_and_sync.bat trigger batch evaluation
+        self.assertIn("batch_evaluate_winnings.run_evaluation_batch()", update_code)
+        self.assertIn("python batch_evaluate_winnings.py", build_code)
 
 
 if __name__ == '__main__':

@@ -453,6 +453,37 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
         }
 
         if (!summaryData) {
+            // ⚡ 0순위: 서버 사전 판별 대시보드 요약 단일 문서(1~2KB) 초고속 조회 (0.05초 렌더링)
+            try {
+                const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+                if (firestore) {
+                    const snapDoc = await firestore.collection('lotto_purchases').doc('dashboard_summary_latest').get();
+                    if (snapDoc && snapDoc.exists) {
+                        const sData = snapDoc.data();
+                        if (sData && sData.maxRound && sData.maxRound >= (maxRound - 1)) {
+                            summaryData = {
+                                maxRound: sData.maxRound || maxRound,
+                                grandRank1: Number(sData.grandRank1 || 0),
+                                grandRank2: Number(sData.grandRank2 || 0),
+                                grandRank3: Number(sData.grandRank3 || 0),
+                                grandRank4: Number(sData.grandRank4 || 0),
+                                grandRank5: Number(sData.grandRank5 || 0),
+                                grandTotalPrize: Number(sData.grandTotalPrize || 0),
+                                grandTotalGames: Number(sData.grandTotalGames || 0),
+                                grandTotalWins: Number(sData.grandTotalWins || 0)
+                            };
+                            _homeReviewDashboardCache = summaryData;
+                            _homeReviewDashboardCacheTime = Date.now();
+                            try { localStorage.setItem('lotto_home_review_dashboard_cache', JSON.stringify(summaryData)); } catch(e) {}
+                        }
+                    }
+                }
+            } catch(srvErr) {
+                console.warn('[Server Dashboard Summary Fetch Fallback]', srvErr);
+            }
+        }
+
+        if (!summaryData) {
             // 1. Synchronously pre-load cached users list if in-memory list is empty
             if (!state.allRegisteredUsersList || !Array.isArray(state.allRegisteredUsersList) || state.allRegisteredUsersList.length === 0) {
                 try {

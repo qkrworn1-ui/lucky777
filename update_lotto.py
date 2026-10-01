@@ -196,6 +196,12 @@ def main():
 
     if updated_any:
         print(f"\n완료! {next_round - 1}회까지 업데이트되었습니다.")
+        try:
+            print("\n[*] 최신 추첨 회차 반영에 따른 서버 사전 판별 및 대시보드 요약 갱신 실행 중...")
+            import batch_evaluate_winnings
+            batch_evaluate_winnings.run_evaluation_batch()
+        except Exception as e:
+            print(f"[!] 서버 사전 판별 배치 실행 중 오류 (무시됨): {e}")
 
 if __name__ == '__main__':
     main()

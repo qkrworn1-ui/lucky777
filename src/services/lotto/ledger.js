@@ -1407,6 +1407,12 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                     }
                 }
             }
+            if (data.winningEvaluations && typeof data.winningEvaluations === 'object') {
+                if (!state.userWinningEvaluations) state.userWinningEvaluations = {};
+                for (const rKey in data.winningEvaluations) {
+                    state.userWinningEvaluations[`${userId}_${parseInt(rKey, 10)}`] = data.winningEvaluations[rKey];
+                }
+            }
             let rawUserLedger = data.ledger || {};
             if (typeof rawUserLedger === 'string') {
                 try { rawUserLedger = JSON.parse(rawUserLedger); } catch(e) { rawUserLedger = {}; }

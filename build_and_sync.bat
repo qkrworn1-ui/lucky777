@@ -25,6 +25,10 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
+echo [*] 서버 사전 판별 및 대시보드 요약 동기화 실행 중...
+python batch_evaluate_winnings.py
+
+echo.
 echo ========================================================
 echo  [3/3] 빌드 및 파이어베이스 실시간 동기화 완료!
 echo  변경된 파일들을 GitHub에 push하시면 사용자에게 즉시 배포됩니다:
