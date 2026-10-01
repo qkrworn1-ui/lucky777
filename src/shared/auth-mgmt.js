@@ -134,6 +134,9 @@ export function handleLogout(skipConfirm = false) {
         if (typeof window.clearUser70ReviewCache === 'function') {
             try { window.clearUser70ReviewCache(); } catch(e) {}
         }
+        if (typeof window.clearAlgoPerfCache === 'function') {
+            try { window.clearAlgoPerfCache(); } catch(e) {}
+        }
         if (window.lottoState) {
             window.lottoState.globalLedger = {};
             window.lottoState.allUsersPurchasesMap = {};
@@ -6925,6 +6928,9 @@ window.startBatchWinningSend = async function() {
             if (typeof window.clearUser70ReviewCache === 'function') {
                 try { window.clearUser70ReviewCache(); } catch(e) {}
             }
+            if (typeof window.clearAlgoPerfCache === 'function') {
+                try { window.clearAlgoPerfCache(); } catch(e) {}
+            }
             if (typeof window.clearHomeReviewDashboardCache === 'function') {
                 try { window.clearHomeReviewDashboardCache(); } catch(e) {}
             }
@@ -6985,6 +6991,9 @@ window.startBatchWinningSend = async function() {
             if (typeof window.clearUser70ReviewCache === 'function') {
                 try { window.clearUser70ReviewCache(); } catch(e) {}
             }
+            if (typeof window.clearAlgoPerfCache === 'function') {
+                try { window.clearAlgoPerfCache(); } catch(e) {}
+            }
             if (typeof window.clearHomeReviewDashboardCache === 'function') {
                 try { window.clearHomeReviewDashboardCache(); } catch(e) {}
             }
@@ -7043,6 +7052,9 @@ window.startBatchWinningSend = async function() {
             // ⚡ 캐시 무효화 및 전체회원 당첨금액 즉시 자동 차감/재계산
             if (typeof window.clearUser70ReviewCache === 'function') {
                 try { window.clearUser70ReviewCache(); } catch(e) {}
+            }
+            if (typeof window.clearAlgoPerfCache === 'function') {
+                try { window.clearAlgoPerfCache(); } catch(e) {}
             }
             if (typeof window.clearHomeReviewDashboardCache === 'function') {
                 try { window.clearHomeReviewDashboardCache(); } catch(e) {}
@@ -7107,6 +7119,9 @@ window.startBatchWinningSend = async function() {
             // ⚡ 캐시 무효화 및 전체회원 당첨금액 즉시 자동 차감/재계산
             if (typeof window.clearUser70ReviewCache === 'function') {
                 try { window.clearUser70ReviewCache(); } catch(e) {}
+            }
+            if (typeof window.clearAlgoPerfCache === 'function') {
+                try { window.clearAlgoPerfCache(); } catch(e) {}
             }
             if (typeof window.clearHomeReviewDashboardCache === 'function') {
                 try { window.clearHomeReviewDashboardCache(); } catch(e) {}

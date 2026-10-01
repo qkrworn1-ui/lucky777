@@ -335,21 +335,14 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
     }
     const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : fromRound;
 
-    // 전수 검증 대상 사용자 ID 수집 (전체 등록 회원 목록과 100% 동기화)
+    // 전수 검증 대상 사용자 ID 수집 (전체 등록 회원 목록과 100% 동기화 - SSOT 단일 기준 적용)
     const allUserIdsSet = new Set();
     if (isAll) {
         baseList.forEach(u => {
-            if (u && u.id && !isSystemOrDummyUser(u.id)) {
+            if (u && u.id && !isSystemOrDummyUser(u.id) && u.isDeleted !== true && u.status !== 'trash') {
                 allUserIdsSet.add(String(u.id).toLowerCase().trim());
             }
         });
-        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
-            state.allRegisteredUsersList.forEach(u => {
-                if (u && u.id && !isSystemOrDummyUser(u.id)) {
-                    allUserIdsSet.add(String(u.id).toLowerCase().trim());
-                }
-            });
-        }
     } else {
         allUserIdsSet.add(cleanUser);
     }
@@ -421,11 +414,13 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
                     combos = pack ? (pack.combos || []) : [];
                 }
 
-                if (!evalData || !Array.isArray(combos) || combos.length === 0) return;
+                if (!evalData) return;
+                const gameCount = (Array.isArray(combos) && combos.length > 0) ? combos.length : ((evalData.items && evalData.items.length > 0) ? evalData.items.length : 10);
+                if (gameCount <= 0 && (!evalData.totalPrize || evalData.totalPrize <= 0)) return;
 
-                roundCombosCount += combos.length;
-                totalGames += combos.length;
-                totalInvest += combos.length * 1000;
+                roundCombosCount += gameCount;
+                totalGames += gameCount;
+                totalInvest += gameCount * 1000;
 
                 for (let rk = 1; rk <= 5; rk++) {
                     const count = (evalData.hits && evalData.hits[rk]) || 0;

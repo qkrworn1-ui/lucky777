@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.01.1645",
+  "version": "v2026.10.01.1707",
   "buildDate": "2026-10-01",
   "description": "feat: all members server precomputed evaluations and dashboard summary",
-  "buildTimestamp": "2026-10-01T16:45:40.614511",
+  "buildTimestamp": "2026-10-01T17:07:00.037059",
   "buildHistory": [
-    {
-      "version": "v2026.10.01.1332",
-      "buildDate": "2026-10-01",
-      "buildTime": "13:32",
-      "buildDateTime": "2026-10-01 13:32",
-      "buildTimestamp": "2026-10-01T13:32:02.599758",
-      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
-    },
-    {
-      "version": "v2026.10.01.1334",
-      "buildDate": "2026-10-01",
-      "buildTime": "13:34",
-      "buildDateTime": "2026-10-01 13:34",
-      "buildTimestamp": "2026-10-01T13:34:17.340705",
-      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
-    },
     {
       "version": "v2026.10.01.1334.52",
       "buildDate": "2026-10-01",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-01 16:45",
       "buildTimestamp": "2026-10-01T16:45:40.614511",
       "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.01.1705",
+      "buildDate": "2026-10-01",
+      "buildTime": "17:05",
+      "buildDateTime": "2026-10-01 17:05",
+      "buildTimestamp": "2026-10-01T17:05:41.908416",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.01.1707",
+      "buildDate": "2026-10-01",
+      "buildTime": "17:07",
+      "buildDateTime": "2026-10-01 17:07",
+      "buildTimestamp": "2026-10-01T17:07:00.037059",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
     }
   ],
-  "buildTime": "16:45",
-  "buildDateTime": "2026-10-01 16:45"
+  "buildTime": "17:07",
+  "buildDateTime": "2026-10-01 17:07"
 }

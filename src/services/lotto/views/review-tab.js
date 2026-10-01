@@ -687,8 +687,8 @@ export async function renderReviewTab() {
             if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
                 reviewAdminViewingUser = window.selectedAdminViewingUser;
             } else if (!reviewAdminViewingUser) {
-                reviewAdminViewingUser = authId;
-                if (typeof window !== 'undefined') window.selectedAdminViewingUser = authId;
+                reviewAdminViewingUser = (typeof window !== 'undefined' && window.algoAdminViewingUser) ? window.algoAdminViewingUser : 'all';
+                if (typeof window !== 'undefined') window.selectedAdminViewingUser = reviewAdminViewingUser;
             }
             // 관리자이며 회원 목록이 전혀 로드되지 않은 경우에만 1회 백그라운드 지연 로드
             if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
@@ -727,8 +727,8 @@ export async function renderReviewTab() {
             }
 
             const registeredUsers = getAllUnifiedRegisteredUsers();
-            let userOptionsHtml = `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
-            userOptionsHtml += `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 당첨 결과 종합</option>`;
+            let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 당첨 결과 종합 (기본)</option>`;
+            userOptionsHtml += `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
 
             registeredUsers.forEach(u => {
                 const uClean = (u.id || '').toLowerCase().trim();

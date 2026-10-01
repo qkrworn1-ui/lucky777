@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.01.1645 - BUILD_DATE: 2026-10-01] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.01.1707 - BUILD_DATE: 2026-10-01] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.01.1645)
+ * Lucky777 Smart Bundle (v2026.10.01.1707)
  */
 
 
@@ -1561,6 +1561,9 @@ function handleLogout(skipConfirm = false) {
         }
         if (typeof window.clearUser70ReviewCache === 'function') {
             try { window.clearUser70ReviewCache(); } catch(e) {}
+        }
+        if (typeof window.clearAlgoPerfCache === 'function') {
+            try { window.clearAlgoPerfCache(); } catch(e) {}
         }
         if (window.lottoState) {
             window.lottoState.globalLedger = {};
@@ -8353,6 +8356,9 @@ window.startBatchWinningSend = async function() {
             if (typeof window.clearUser70ReviewCache === 'function') {
                 try { window.clearUser70ReviewCache(); } catch(e) {}
             }
+            if (typeof window.clearAlgoPerfCache === 'function') {
+                try { window.clearAlgoPerfCache(); } catch(e) {}
+            }
             if (typeof window.clearHomeReviewDashboardCache === 'function') {
                 try { window.clearHomeReviewDashboardCache(); } catch(e) {}
             }
@@ -8413,6 +8419,9 @@ window.startBatchWinningSend = async function() {
             if (typeof window.clearUser70ReviewCache === 'function') {
                 try { window.clearUser70ReviewCache(); } catch(e) {}
             }
+            if (typeof window.clearAlgoPerfCache === 'function') {
+                try { window.clearAlgoPerfCache(); } catch(e) {}
+            }
             if (typeof window.clearHomeReviewDashboardCache === 'function') {
                 try { window.clearHomeReviewDashboardCache(); } catch(e) {}
             }
@@ -8471,6 +8480,9 @@ window.startBatchWinningSend = async function() {
             // ⚡ 캐시 무효화 및 전체회원 당첨금액 즉시 자동 차감/재계산
             if (typeof window.clearUser70ReviewCache === 'function') {
                 try { window.clearUser70ReviewCache(); } catch(e) {}
+            }
+            if (typeof window.clearAlgoPerfCache === 'function') {
+                try { window.clearAlgoPerfCache(); } catch(e) {}
             }
             if (typeof window.clearHomeReviewDashboardCache === 'function') {
                 try { window.clearHomeReviewDashboardCache(); } catch(e) {}
@@ -8535,6 +8547,9 @@ window.startBatchWinningSend = async function() {
             // ⚡ 캐시 무효화 및 전체회원 당첨금액 즉시 자동 차감/재계산
             if (typeof window.clearUser70ReviewCache === 'function') {
                 try { window.clearUser70ReviewCache(); } catch(e) {}
+            }
+            if (typeof window.clearAlgoPerfCache === 'function') {
+                try { window.clearAlgoPerfCache(); } catch(e) {}
             }
             if (typeof window.clearHomeReviewDashboardCache === 'function') {
                 try { window.clearHomeReviewDashboardCache(); } catch(e) {}
@@ -18100,8 +18115,8 @@ async function renderReviewTab() {
             if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
                 reviewAdminViewingUser = window.selectedAdminViewingUser;
             } else if (!reviewAdminViewingUser) {
-                reviewAdminViewingUser = authId;
-                if (typeof window !== 'undefined') window.selectedAdminViewingUser = authId;
+                reviewAdminViewingUser = (typeof window !== 'undefined' && window.algoAdminViewingUser) ? window.algoAdminViewingUser : 'all';
+                if (typeof window !== 'undefined') window.selectedAdminViewingUser = reviewAdminViewingUser;
             }
             // 관리자이며 회원 목록이 전혀 로드되지 않은 경우에만 1회 백그라운드 지연 로드
             if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
@@ -18140,8 +18155,8 @@ async function renderReviewTab() {
             }
 
             const registeredUsers = getAllUnifiedRegisteredUsers();
-            let userOptionsHtml = `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
-            userOptionsHtml += `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 당첨 결과 종합</option>`;
+            let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 당첨 결과 종합 (기본)</option>`;
+            userOptionsHtml += `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
 
             registeredUsers.forEach(u => {
                 const uClean = (u.id || '').toLowerCase().trim();
@@ -21730,21 +21745,14 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
     }
     const maxRound = drawnRounds.length > 0 ? Math.max(...drawnRounds) : fromRound;
 
-    // 전수 검증 대상 사용자 ID 수집 (전체 등록 회원 목록과 100% 동기화)
+    // 전수 검증 대상 사용자 ID 수집 (전체 등록 회원 목록과 100% 동기화 - SSOT 단일 기준 적용)
     const allUserIdsSet = new Set();
     if (isAll) {
         baseList.forEach(u => {
-            if (u && u.id && !isSystemOrDummyUser(u.id)) {
+            if (u && u.id && !isSystemOrDummyUser(u.id) && u.isDeleted !== true && u.status !== 'trash') {
                 allUserIdsSet.add(String(u.id).toLowerCase().trim());
             }
         });
-        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
-            state.allRegisteredUsersList.forEach(u => {
-                if (u && u.id && !isSystemOrDummyUser(u.id)) {
-                    allUserIdsSet.add(String(u.id).toLowerCase().trim());
-                }
-            });
-        }
     } else {
         allUserIdsSet.add(cleanUser);
     }
@@ -21816,11 +21824,13 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
                     combos = pack ? (pack.combos || []) : [];
                 }
 
-                if (!evalData || !Array.isArray(combos) || combos.length === 0) return;
+                if (!evalData) return;
+                const gameCount = (Array.isArray(combos) && combos.length > 0) ? combos.length : ((evalData.items && evalData.items.length > 0) ? evalData.items.length : 10);
+                if (gameCount <= 0 && (!evalData.totalPrize || evalData.totalPrize <= 0)) return;
 
-                roundCombosCount += combos.length;
-                totalGames += combos.length;
-                totalInvest += combos.length * 1000;
+                roundCombosCount += gameCount;
+                totalGames += gameCount;
+                totalInvest += gameCount * 1000;
 
                 for (let rk = 1; rk <= 5; rk++) {
                     const count = (evalData.hits && evalData.hits[rk]) || 0;
