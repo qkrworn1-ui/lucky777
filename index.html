@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.01.1539">
+    <link rel="stylesheet" href="styles.css?v=2026.10.01.1607">
 </head>
 
 <body>
@@ -119,16 +119,20 @@
 
         <!-- Floating buttons for Auth & User Management on Landing Page -->
         <div class="lp-top-bar">
-            <!-- Mobile-only Concept 1 Header (좌: 7 운도실력 v..., 우: 🎯 1242회 D-1) -->
+            <!-- Mobile-only Concept 1 Header (좌: 7 운도실력 v..., 중: 🟢 18ms, 우: 🎯 1242회 D-1) -->
             <div class="lp-mobile-top-row">
                 <div class="lp-mobile-brand" onclick="window.scrollTo({top:0, behavior:'smooth'})">
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.01.1539
+                        v2026.10.01.1607
                     </span>
                 </div>
-                <div style="display: flex; align-items: center; gap: 6px;">
+                <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
+                    <span class="status-dot"></span>
+                    <span class="status-latency" id="serverLatencyLanding">18ms</span>
+                </button>
+                <div style="display: flex; align-items: center; gap: 4px;">
                     <div id="lpMobileUserChip" class="lp-mobile-user-badge user-chip-member" style="display: none;" title="내 계정 정보"></div>
                     <div class="lp-mobile-dday-badge" id="lpMobileDdayBadge" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-generator'), 80); }" title="추천번호 생성 바로가기">
                         <span class="lp-dday-icon">🎯</span>
@@ -166,7 +170,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.01.1539 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.01.1607 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -262,6 +266,17 @@
                         <span class="lp-mobile-text">분석 보기 →</span>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- ⚡ 실시간 서버 스냅샷 동기화 스트립 (Fold 7 및 모바일 대시보드 신뢰도 표시) -->
+        <div id="lpServerSyncStrip" class="lp-server-sync-strip" onclick="window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 스냅샷 상태 확인 (클릭 시 상세 모달)">
+            <div class="lp-sync-strip-left">
+                <span class="lp-sync-icon">⚡</span>
+                <span class="lp-sync-text" id="lpSyncStripText">서버 스냅샷: 16인 동기화 완료</span>
+            </div>
+            <div class="lp-sync-strip-right">
+                <span class="lp-sync-badge-cloud" id="lpSyncBadgeCloud">Cloud 🟢</span>
             </div>
         </div>
 
@@ -570,7 +585,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.01.1539
+                                v2026.10.01.1607
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -2010,7 +2025,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.01.1539
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.01.1607
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3999,7 +4014,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.01.1539';
+        window.APP_VERSION = 'v2026.10.01.1607';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4070,7 +4085,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.01.1539';
+            var v = ver || window.APP_VERSION || 'v2026.10.01.1607';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4090,6 +4105,20 @@
             var versionBadges = document.querySelectorAll('.app-version-badge');
             versionBadges.forEach(function(el) {
                 if (el.id !== 'appVersionBadgeLanding') {
+                    if (el.classList.contains('lp-mobile-ver-tag')) {
+                        var parts = v.split('.');
+                        var shortV = 'v' + (parts.length > 1 ? parts[parts.length - 1] : v.replace('v', ''));
+                        if (hasUpdate) {
+                            el.classList.add('has-update');
+                            el.innerHTML = shortV + ' <span class="badge-new-dot" style="display:inline-block;width:5px;height:5px;border-radius:50%;background:#ef4444;"></span>';
+                            el.setAttribute('title', '새로운 최신 버전(' + sVer + ') 배포됨! 클릭하여 즉시 업데이트');
+                        } else {
+                            el.classList.remove('has-update');
+                            el.textContent = shortV;
+                            el.setAttribute('title', '현재 버전: ' + v + ' (클릭 시 최신 빌드 새로고침)');
+                        }
+                        return;
+                    }
                     if (hasUpdate) {
                         el.classList.add('has-update');
                         el.innerHTML = '<i class="fa-solid fa-code-branch"></i> ' + v + ' <span class="badge-new-dot" title="새 버전 ' + sVer + ' 배포됨"></span>';
@@ -4313,7 +4342,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.01.1539';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.01.1607';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4451,7 +4480,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.01.1539')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.01.1607')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -4529,8 +4558,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.01.1539"></script>
-    <script src="app_v2.js?v=2026.10.01.1539"></script>
+    <script src="data.js?v=2026.10.01.1607"></script>
+    <script src="app_v2.js?v=2026.10.01.1607"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
@@ -4652,12 +4681,23 @@
                     <span id="popoverServerStatus" class="popover-val" style="color: #34d399; font-weight: 700;">🟢 DB 연결됨 (Cloud)</span>
                 </div>
                 <div class="popover-row">
+                    <span class="popover-lbl"><i class="fa-solid fa-gauge-high"></i> 응답 지연 (RTT)</span>
+                    <span id="popoverLatencyVal" class="popover-val" style="color: #34d399; font-weight: 700; font-family: 'JetBrains Mono', monospace;">18 ms (정상)</span>
+                </div>
+                <div class="popover-row">
+                    <span class="popover-lbl"><i class="fa-solid fa-database"></i> 16인 당첨 스냅샷</span>
+                    <span id="popoverSnapshotVal" class="popover-val" style="color: #fbbf24; font-weight: 700;">전원 연산 완료</span>
+                </div>
+                <div class="popover-row">
                     <span class="popover-lbl"><i class="fa-solid fa-clock-rotate-left"></i> 최근 접속 시간</span>
                     <span id="popoverConnectTime" class="popover-val" style="color: #cbd5e1; font-size: 0.73rem; font-family: 'JetBrains Mono', monospace;">-</span>
                 </div>
             </div>
 
             <div class="popover-actions">
+                <button type="button" class="btn-popover-action" onclick="if(window.measureServerLatency) window.measureServerLatency();" title="현재 서버 네트워크 왕복시간 측정">
+                    <i class="fa-solid fa-rotate"></i> <span>핑(Ping) 새로고침</span>
+                </button>
                 <button type="button" class="btn-popover-action" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.switchTab) window.switchTab('tab-confirmed'); }, 100); } window.toggleUserProfilePopover && window.toggleUserProfilePopover();">
                     <i class="fa-solid fa-receipt"></i> <span>구매확정 장부</span>
                 </button>

@@ -1,33 +1,9 @@
 {
-  "version": "v2026.10.01.1539",
+  "version": "v2026.10.01.1607",
   "buildDate": "2026-10-01",
-  "description": "feat: server precomputed winning evaluations and 0.05s dashboard summary loader",
-  "buildTimestamp": "2026-10-01T15:39:35.814173",
+  "description": "feat: all members server precomputed evaluations and dashboard summary",
+  "buildTimestamp": "2026-10-01T16:07:22.757273",
   "buildHistory": [
-    {
-      "version": "v2026.09.30.1451",
-      "buildDate": "2026-09-30",
-      "buildTime": "14:51",
-      "buildDateTime": "2026-09-30 14:51",
-      "buildTimestamp": "2026-09-30T14:51:08.464663",
-      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
-    },
-    {
-      "version": "v2026.09.30.1824",
-      "buildDate": "2026-09-30",
-      "buildTime": "18:24",
-      "buildDateTime": "2026-09-30 18:24",
-      "buildTimestamp": "2026-09-30T18:24:33.908728",
-      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
-    },
-    {
-      "version": "v2026.09.30.1830",
-      "buildDate": "2026-09-30",
-      "buildTime": "18:30",
-      "buildDateTime": "2026-09-30 18:30",
-      "buildTimestamp": "2026-09-30T18:30:10.003161",
-      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
-    },
     {
       "version": "v2026.09.30.1837",
       "buildDate": "2026-09-30",
@@ -123,8 +99,32 @@
       "buildDateTime": "2026-10-01 15:39",
       "buildTimestamp": "2026-10-01T15:39:35.814173",
       "description": "feat: server precomputed winning evaluations and 0.05s dashboard summary loader"
+    },
+    {
+      "version": "v2026.10.01.1548",
+      "buildDate": "2026-10-01",
+      "buildTime": "15:48",
+      "buildDateTime": "2026-10-01 15:48",
+      "buildTimestamp": "2026-10-01T15:48:54.025318",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.01.1605",
+      "buildDate": "2026-10-01",
+      "buildTime": "16:05",
+      "buildDateTime": "2026-10-01 16:05",
+      "buildTimestamp": "2026-10-01T16:05:45.546818",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.01.1607",
+      "buildDate": "2026-10-01",
+      "buildTime": "16:07",
+      "buildDateTime": "2026-10-01 16:07",
+      "buildTimestamp": "2026-10-01T16:07:22.757273",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
     }
   ],
-  "buildTime": "15:39",
-  "buildDateTime": "2026-10-01 15:39"
+  "buildTime": "16:07",
+  "buildDateTime": "2026-10-01 16:07"
 }

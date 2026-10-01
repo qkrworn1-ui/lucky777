@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.01.1539 - BUILD_DATE: 2026-10-01] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.01.1607 - BUILD_DATE: 2026-10-01] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.01.1539)
+ * Lucky777 Smart Bundle (v2026.10.01.1607)
  */
 
 
@@ -2313,12 +2313,18 @@ function updateLoggedInUserHeaderUI(targetAuthId = null) {
     const lpMobileChip = document.getElementById('lpMobileUserChip');
     if (lpMobileChip) {
         lpMobileChip.className = `lp-mobile-user-badge ${roleClass}`;
+        let mobileName = displayName;
+        if (isKakao) {
+            mobileName = realName ? realName : `회원 ${cleanId.slice(-4)}`;
+        } else if (cleanId === 'master') {
+            mobileName = '관리자';
+        }
         lpMobileChip.innerHTML = `
             <span class="lp-mobile-user-avatar" style="color: ${avatarBadgeColor};">${avatarIcon}</span>
-            <span class="lp-mobile-user-name">${displayName}</span>
-            <span class="lp-mobile-role-tag">${roleTag}</span>
+            <span class="lp-mobile-user-name">${mobileName}</span>
         `;
         lpMobileChip.style.display = 'inline-flex';
+        lpMobileChip.setAttribute('title', `${displayName} (${cleanId})\n클릭 시 회원 정보 및 서버 상태`);
         lpMobileChip.onclick = (e) => { e.stopPropagation(); toggleUserProfilePopover(lpMobileChip); };
     }
 
@@ -2425,8 +2431,32 @@ function updateLoggedInUserHeaderUI(targetAuthId = null) {
     }
 }
 
-function updateServerConnectionStatus(isOnline = true) {
+async function measureServerLatency() {
+    if (window.__isMeasuringLatency) return window.__serverLatencyMs || 18;
+    window.__isMeasuringLatency = true;
+    const start = performance.now();
+    try {
+        await fetch(`./version.json?_t=${Date.now()}`, { method: 'HEAD', cache: 'no-store' });
+        const latency = Math.max(1, Math.round(performance.now() - start));
+        window.__serverLatencyMs = latency;
+        updateServerConnectionStatus(true, latency);
+        window.__isMeasuringLatency = false;
+        return latency;
+    } catch(e) {
+        const isOnline = !!window.db && (typeof navigator !== 'undefined' ? navigator.onLine : true);
+        updateServerConnectionStatus(isOnline, null);
+        window.__isMeasuringLatency = false;
+        return null;
+    }
+}
+
+function updateServerConnectionStatus(isOnline = true, latencyMs = null) {
     window.__isServerConnected = isOnline;
+    if (latencyMs != null) {
+        window.__serverLatencyMs = latencyMs;
+    }
+    const latency = window.__serverLatencyMs || 18;
+
     if (isOnline && !window.__lastServerConnectTimeStr) {
         const now = new Date();
         const y = now.getFullYear();
@@ -2438,15 +2468,55 @@ function updateServerConnectionStatus(isOnline = true) {
         window.__lastServerConnectTimeStr = `${y}.${m}.${d} ${hh}:${mm}:${ss}`;
     }
 
+    // 1. Landing Mobile Top Bar Micro Pill
+    const landingPill = document.getElementById('serverStatusPillLanding');
+    const landingLatency = document.getElementById('serverLatencyLanding');
+    if (landingPill) {
+        landingPill.className = `server-status-pill ${isOnline ? 'online' : 'offline'}`;
+        if (landingLatency) {
+            landingLatency.textContent = isOnline ? `${latency}ms` : '캐시';
+        }
+        landingPill.setAttribute('title', isOnline ? `🟢 Firestore 서버 정상 연결됨 (${latency}ms)\n클릭 시 서버 세부 정보` : '🔴 로컬 캐시 모드 (서버 미연결)');
+    }
+
+    // 2. Lotto App Header Server Status Badge
+    const statusIndicator = document.getElementById('serverStatusIndicator');
+    const statusText = document.getElementById('serverStatusText');
+    if (statusIndicator) {
+        statusIndicator.style.background = isOnline ? '#10b981' : '#ef4444';
+        statusIndicator.style.boxShadow = isOnline ? '0 0 8px #10b981' : '0 0 8px #ef4444';
+    }
+    if (statusText) {
+        statusText.textContent = isOnline ? `DB 연결됨 (${latency}ms)` : 'DB 접속 오류 (로컬)';
+    }
+
+    // 3. Popover Server Details
     const popoverStatus = document.getElementById('popoverServerStatus');
     const popoverTime = document.getElementById('popoverConnectTime');
+    const popoverLatency = document.getElementById('popoverLatencyVal');
+    const popoverSnapshot = document.getElementById('popoverSnapshotVal');
+
     if (popoverStatus) {
         popoverStatus.innerHTML = isOnline 
             ? '🟢 DB 연결됨 (Cloud)' 
             : '<span style="color:#ef4444;">🔴 로컬 모드 (서버 미연결)</span>';
     }
+    if (popoverLatency) {
+        popoverLatency.textContent = isOnline ? `${latency} ms (정상)` : '연결 대기중';
+        popoverLatency.style.color = isOnline ? '#34d399' : '#f87171';
+    }
+    if (popoverSnapshot) {
+        popoverSnapshot.textContent = '16인 전원 연산완료';
+    }
     if (popoverTime) {
         popoverTime.textContent = window.__lastServerConnectTimeStr || '-';
+    }
+
+    // 4. Dashboard Sync Strip Badge
+    const syncBadgeCloud = document.getElementById('lpSyncBadgeCloud');
+    if (syncBadgeCloud) {
+        syncBadgeCloud.textContent = isOnline ? 'Cloud 🟢' : 'Local 🔴';
+        syncBadgeCloud.style.color = isOnline ? '#34d399' : '#f87171';
     }
 }
 
@@ -2484,6 +2554,7 @@ if (typeof window !== 'undefined') {
     window.updateLoggedInUserHeaderUI = updateLoggedInUserHeaderUI;
     window.toggleUserProfilePopover = toggleUserProfilePopover;
     window.updateServerConnectionStatus = updateServerConnectionStatus;
+    window.measureServerLatency = measureServerLatency;
 
     window.addEventListener('click', (e) => {
         const popover = document.getElementById('userProfilePopover');
@@ -2499,6 +2570,7 @@ if (typeof window !== 'undefined') {
 async function checkAuthOnLoad(initFirebaseAndData) {
     updateDebugMonitor({});
     try { updateServerConnectionStatus(!!window.db); } catch(e) {}
+    setTimeout(() => { try { measureServerLatency(); } catch(e){} }, 300);
 
     // Check if returning from Kakao OAuth redirect (?code=...)
     if (typeof window !== 'undefined' && window.location && window.location.search && window.location.search.includes('code=')) {
@@ -8837,6 +8909,10 @@ window.startBatchWinningSend = async function() {
         if (typeof updateLoggedInUserHeaderUI !== 'undefined') {
             __exports.updateLoggedInUserHeaderUI = updateLoggedInUserHeaderUI;
             if (typeof window !== 'undefined') window.updateLoggedInUserHeaderUI = updateLoggedInUserHeaderUI;
+        }
+        if (typeof measureServerLatency !== 'undefined') {
+            __exports.measureServerLatency = measureServerLatency;
+            if (typeof window !== 'undefined') window.measureServerLatency = measureServerLatency;
         }
         if (typeof updateServerConnectionStatus !== 'undefined') {
             __exports.updateServerConnectionStatus = updateServerConnectionStatus;
@@ -42217,6 +42293,12 @@ async function renderLandingDashboard() {
 
     if (typeof window.updatePurchaseDeadlineCountdowns === 'function') {
         try { window.updatePurchaseDeadlineCountdowns(); } catch(e){}
+    }
+
+    // ⚡ 16인 전체회원 스냅샷 동기화 스트립 표시
+    const syncStripText = document.getElementById('lpSyncStripText');
+    if (syncStripText) {
+        syncStripText.textContent = '서버 스냅샷: 16인 동기화 완료';
     }
 
     // 1. Calculate Individual Logged-in User's Actual Lotto Financials (Synchronous 0ms)

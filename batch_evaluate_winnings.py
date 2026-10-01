@@ -1,10 +1,11 @@
 """
 batch_evaluate_winnings.py
 서버 사전 판별 및 대시보드 요약 배치 엔진
-- Firestore에서 모든 회원의 불변 스냅샷(recommendationSnapshots) 및 실구매 영수증(ledger) 조회
+- Firestore에서 모든 회원의 불변 스냅샷(recommendationSnapshots) 및 실구매 영수증(ledger) 조회 (nextPageToken 전수 페이징)
+- 사용자별 가입일(joinRound) 이전 회차는 100% 원천 배제 (가입 전 발급 불가 정책 준수)
 - 회차별 공식 당첨번호(data.js)와 1:1 전수 대조하여 등수 및 상금 계산
 - lotto_purchases/dashboard_summary_latest 및 각 회원 문서의 winningEvaluations 필드에 안전하게 저장 (기존 데이터 100% 보존)
-- 클라이언트(스마트폰/노트북)가 0.05초 만에 단일 문서 조회로 대시보드를 렌더링하도록 지원
+- 관리자 계정 및 일반 계정 대시보드에서 0.05초 초고속 렌더링 지원
 """
 
 import os
@@ -27,6 +28,41 @@ if sys.platform == 'win32':
 API_KEY = "AIzaSyAnkGVAlO39p6rnTEibygeQTBYDbp505dA"
 PROJECT_ID = "sonamu-jokgu-club"
 BASE_URL = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents"
+
+KST = datetime.timezone(datetime.timedelta(hours=9))
+FIRST_CUTOFF = datetime.datetime(2002, 12, 7, 20, 0, 0, tzinfo=KST)
+
+def calc_round_from_date(dt_input):
+    if not dt_input:
+        return 1235
+    if isinstance(dt_input, str):
+        try:
+            s = dt_input.replace('Z', '+00:00')
+            dt = datetime.datetime.fromisoformat(s)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=KST)
+            else:
+                dt = dt.astimezone(KST)
+        except Exception:
+            return 1235
+    elif isinstance(dt_input, (int, float)):
+        ts = dt_input if dt_input > 1e11 else dt_input * 1000
+        dt = datetime.datetime.fromtimestamp(ts / 1000, tz=KST)
+    else:
+        dt = dt_input
+    diff = dt - FIRST_CUTOFF
+    if diff.total_seconds() < 0:
+        return 1
+    weeks = int(diff.total_seconds() // (7 * 24 * 3600))
+    return max(1235, 2 + weeks)
+
+def get_user_join_round(user_id, created_at=None, is_admin=False):
+    clean_id = (user_id or '').lower().strip()
+    if clean_id in ('master', 'admin', 'guest') or is_admin:
+        return 1235
+    if not created_at:
+        return 1235
+    return calc_round_from_date(created_at)
 
 def decode_firestore_field(val):
     if not isinstance(val, dict):
@@ -69,24 +105,30 @@ def encode_to_firestore_dict(py_obj):
         return {"mapValue": {"fields": {k: encode_to_firestore_dict(v) for k, v in py_obj.items()}}}
     return {"stringValue": str(py_obj)}
 
-def fetch_firestore_collection(collection_name):
-    url = f"{BASE_URL}/{collection_name}?pageSize=100&key={API_KEY}"
-    req = urllib.request.Request(url, headers={'User-Agent': 'Lucky777-Evaluator'})
-    try:
-        with urllib.request.urlopen(req, timeout=12) as resp:
-            data = json.loads(resp.read().decode('utf-8'))
-            docs = data.get('documents', [])
-            result = []
-            for d in docs:
-                name = d.get('name', '').split('/')[-1]
-                fields = d.get('fields', {})
-                clean_fields = {k: decode_firestore_field(v) for k, v in fields.items()}
-                clean_fields['id'] = name
-                result.append(clean_fields)
-            return result
-    except Exception as e:
-        print(f"[!] Error fetching {collection_name}: {e}")
-        return []
+def fetch_firestore_collection_paginated(collection_name):
+    page_token = ''
+    result = []
+    while True:
+        token_param = f"&pageToken={page_token}" if page_token else ""
+        url = f"{BASE_URL}/{collection_name}?pageSize=100{token_param}&key={API_KEY}"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Lucky777-Evaluator'})
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+                docs = data.get('documents', [])
+                for d in docs:
+                    name = d.get('name', '').split('/')[-1]
+                    fields = d.get('fields', {})
+                    clean_fields = {k: decode_firestore_field(v) for k, v in fields.items()}
+                    clean_fields['id'] = name
+                    result.append(clean_fields)
+                page_token = data.get('nextPageToken')
+                if not page_token:
+                    break
+        except Exception as e:
+            print(f"[!] Error fetching {collection_name}: {e}")
+            break
+    return result
 
 def patch_document_field(collection_name, doc_id, field_name, value):
     url = f"{BASE_URL}/{collection_name}/{doc_id}?updateMask.fieldPaths={field_name}&key={API_KEY}"
@@ -175,7 +217,7 @@ def extract_combo_numbers(c):
 
 def run_evaluation_batch():
     print("=" * 60)
-    print("[Lucky777] 서버 사전 판별 및 대시보드 요약 배치 엔진 가동")
+    print("🚀 [Lucky777] 서버 사전 판별 및 대시보드 요약 배치 엔진 가동")
     print("=" * 60)
     
     draws = parse_data_js('data.js')
@@ -187,15 +229,25 @@ def run_evaluation_batch():
     max_round = max(drawn_rounds) if drawn_rounds else 1242
     print(f"[*] 공식 추첨 회차: {len(drawn_rounds)}개 회차 (최신: {max_round}회)")
     
-    print("[*] Firestore 사용자 및 구매/스냅샷 데이터 수신 중...")
-    users = fetch_firestore_collection('lotto_users')
-    purchases = fetch_firestore_collection('lotto_purchases')
+    print("[*] Firestore 사용자 및 구매/스냅샷 데이터 수신 중 (전수 페이징)...")
+    users = fetch_firestore_collection_paginated('lotto_users')
+    purchases = fetch_firestore_collection_paginated('lotto_purchases')
     print(f"[+] lotto_users: {len(users)}명, lotto_purchases: {len(purchases)}건 수신 완료")
     
-    user_names = {}
+    user_metadata = {}
     for u in users:
         uid = u.get('id', '')
-        user_names[uid] = u.get('realName') or u.get('name') or uid
+        if uid in ('app_latest_version', 'dashboard_summary_latest', 'test_write_perm', 'sample', 'test_alpha'):
+            continue
+        if u.get('isDeleted') is True or u.get('status') in ('trash', 'deleted'):
+            continue
+        
+        user_metadata[uid] = {
+            "realName": u.get('realName') or u.get('name') or uid,
+            "createdAt": u.get('createdAt') or '2026-08-01T00:00:00Z',
+            "isAdmin": bool(u.get('isAdmin') or uid in ('master', 'admin')),
+            "joinRound": get_user_join_round(uid, u.get('createdAt'), bool(u.get('isAdmin') or uid in ('master', 'admin')))
+        }
     
     # Evaluate per user
     user_evaluations_by_user = {}
@@ -206,7 +258,15 @@ def run_evaluation_batch():
         if uid in ('app_latest_version', 'dashboard_summary_latest', 'test_write_perm', 'sample', 'test_alpha'):
             continue
         
-        real_name = user_names.get(uid) or p.get('realName') or uid
+        u_meta = user_metadata.get(uid) or {
+            "realName": p.get('realName') or uid,
+            "createdAt": p.get('createdAt') or '2026-08-01T00:00:00Z',
+            "isAdmin": (uid in ('master', 'admin')),
+            "joinRound": get_user_join_round(uid, p.get('createdAt'), uid in ('master', 'admin'))
+        }
+        
+        real_name = u_meta['realName']
+        join_round = u_meta['joinRound']
         snaps = p.get('recommendationSnapshots') or {}
         ledger = p.get('ledger') or {}
         if isinstance(ledger, str):
@@ -223,6 +283,31 @@ def run_evaluation_batch():
             r_str = str(rnd)
             draw = draws.get(rnd)
             if not draw:
+                continue
+            
+            # 🔒 회원 가입일 이전 회차는 100% 집계 배제 (isPreJoin: true)
+            if rnd < join_round:
+                user_rounds_eval[r_str] = {
+                    "round": rnd,
+                    "userId": uid,
+                    "realName": real_name,
+                    "isPreJoin": True,
+                    "joinRound": join_round,
+                    "recSummary": {
+                        "totalGames": 0,
+                        "totalPrize": 0,
+                        "totalWins": 0,
+                        "roi": 0.0,
+                        "hits": {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0}
+                    },
+                    "realSummary": {
+                        "totalGames": 0,
+                        "receiptCount": 0,
+                        "totalPrize": 0,
+                        "totalWins": 0,
+                        "hits": {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0}
+                    }
+                }
                 continue
             
             # Check snapshot
@@ -292,6 +377,7 @@ def run_evaluation_batch():
                 "round": rnd,
                 "userId": uid,
                 "realName": real_name,
+                "isPreJoin": False,
                 "drawNumbers": draw['numbers'],
                 "drawBonus": draw['bonus'],
                 "recSummary": {
@@ -325,7 +411,7 @@ def run_evaluation_batch():
     for uid, r_map in user_evaluations_by_user.items():
         if patch_document_field('lotto_purchases', uid, 'winningEvaluations', r_map):
             success_users += 1
-            print(f"  [+] {uid}: {len(r_map)}개 회차 판별 완료")
+            print(f"  [+] {uid} ({user_metadata.get(uid, {}).get('realName', uid)}): {len(r_map)}개 회차 판별 완료")
     
     # 3. Build global dashboard summaries
     print("[*] 전체 회원 대시보드 종합 KPI 생성 및 푸시 중...")
@@ -344,6 +430,8 @@ def run_evaluation_batch():
             continue
         records = evaluations_by_round.get(rnd, [])
         for rec in records:
+            if rec.get('isPreJoin'):
+                continue
             r_sum = rec['recSummary']
             hits = r_sum['hits']
             grand_rank1 += hits.get('1', 0)
@@ -393,7 +481,8 @@ def run_evaluation_batch():
     s1 = push_whole_document('lotto_purchases', 'dashboard_summary_latest', dashboard_payload)
     
     if s1 and success_users > 0:
-        print("[+] [SUCCESS] 서버 사전 판별 및 대시보드 요약 동기화 100% 완료!")
+        print("[+] [SUCCESS] 전체 회원 서버 사전 판별 및 대시보드 요약 동기화 100% 완료!")
+        print(f"    - 활성 회원 수: {len(user_ranking_map)}명")
         print(f"    - 총 게임 수: {grand_total_games:,}게임")
         print(f"    - 총 당첨금: {grand_total_prize:,}원")
         print(f"    - 적중 내역: 1등={grand_rank1}, 2등={grand_rank2}, 3등={grand_rank3}, 4등={grand_rank4}, 5등={grand_rank5} (총 {grand_total_wins}건)")

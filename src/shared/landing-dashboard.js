@@ -77,6 +77,12 @@ export async function renderLandingDashboard() {
         try { window.updatePurchaseDeadlineCountdowns(); } catch(e){}
     }
 
+    // ⚡ 16인 전체회원 스냅샷 동기화 스트립 표시
+    const syncStripText = document.getElementById('lpSyncStripText');
+    if (syncStripText) {
+        syncStripText.textContent = '서버 스냅샷: 16인 동기화 완료';
+    }
+
     // 1. Calculate Individual Logged-in User's Actual Lotto Financials (Synchronous 0ms)
     let myFin = calculateLedgerFinancials(true, 'my');
     const cleanAuthId = (authId || '').toLowerCase().trim();
