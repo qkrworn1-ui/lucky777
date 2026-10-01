@@ -798,64 +798,247 @@ export function parseDonghangOnlineReceiptText(rawText) {
         purchaseDate = dateMatch[1];
     }
 
+    // Smart OCR Number Tokenizer & Heuristic Repair
+    function extractNumbersSmart(segment) {
+        if (!segment) return [];
+        const tokens = segment.match(/[0-9A-Za-z|!]+/g) || [];
+        const nums = [];
+        tokens.forEach(tok => {
+            let t = tok.trim();
+            t = t.replace(/^[lI|!]/, '1')
+                 .replace(/^[oO]/, '0')
+                 .replace(/^[sS]/, '5')
+                 .replace(/^[bB]/, '8')
+                 .replace(/[^0-9]/g, '');
+            if (!t) return;
+
+            const val = parseInt(t, 10);
+            if (val >= 1 && val <= 45) {
+                nums.push(val);
+            } else if (t.length === 4) {
+                // e.g. 1617 -> 16, 17 or 2426 -> 24, 26
+                const n1 = parseInt(t.slice(0, 2), 10);
+                const n2 = parseInt(t.slice(2), 10);
+                if (n1 >= 1 && n1 <= 45 && n2 >= 1 && n2 <= 45) {
+                    nums.push(n1, n2);
+                }
+            } else if (t.length === 3) {
+                // e.g. 716 -> 7, 16 or 517 -> 5, 17
+                const n1 = parseInt(t.slice(0, 1), 10);
+                const n2 = parseInt(t.slice(1), 10);
+                if (n1 >= 1 && n1 <= 45 && n2 >= 1 && n2 <= 45) {
+                    nums.push(n1, n2);
+                } else {
+                    const n1b = parseInt(t.slice(0, 2), 10);
+                    const n2b = parseInt(t.slice(2), 10);
+                    if (n1b >= 1 && n1b <= 45 && n2b >= 1 && n2b <= 45) {
+                        nums.push(n1b, n2b);
+                    }
+                }
+            } else if (t.length === 2 && val > 45) {
+                // e.g. 58 -> 5, 8 or 68 -> 6, 8
+                const n1 = parseInt(t.slice(0, 1), 10);
+                const n2 = parseInt(t.slice(1), 10);
+                if (n1 >= 1 && n1 <= 45 && n2 >= 1 && n2 <= 45) {
+                    nums.push(n1, n2);
+                }
+            }
+        });
+
+        // If exactly 5 numbers: check if splitting any 2-digit number makes 6 unique ascending numbers
+        if (nums.length === 5) {
+            for (let i = 0; i < nums.length; i++) {
+                const v = nums[i];
+                if (v >= 10 && v <= 45) {
+                    const d1 = Math.floor(v / 10);
+                    const d2 = v % 10;
+                    if (d1 > 0 && d2 > 0 && d1 < d2) {
+                        const cand = [...nums.slice(0, i), d1, d2, ...nums.slice(i + 1)];
+                        const isSorted = cand.every((val, idx) => idx === 0 || val >= cand[idx - 1]);
+                        const isUnique = new Set(cand).size === 6;
+                        if (isSorted && isUnique) {
+                            return cand;
+                        }
+                    }
+                }
+            }
+        }
+
+        return nums;
+    }
+
     // 4. 게임 행(A ~ E) 및 6개 번호 추출
     const lines = text.split(/\r?\n/);
     const combos = [];
     const gameLetters = ['A', 'B', 'C', 'D', 'E'];
+    const charMap = { 'A': 'A', '^': 'A', 'B': 'B', '8': 'B', 'C': 'C', 'ㅇ': 'C', 'D': 'D', 'ㅁ': 'D', 'E': 'E', 'ㄷ': 'E', '6': 'E' };
+
+    let pendingNums = [];
+    let pendingLetter = null;
+    let pendingType = 'manual';
 
     for (let rawLine of lines) {
         const line = rawLine.trim();
         if (!line) continue;
 
         // Skip obvious header/footer lines that don't have lotto games
-        if (/^(?:복권명|추첨일|구입일시|발행일|지급기한|결제금액|금액|회차|합계|티켓|매달|연금복권)\b/i.test(line)) continue;
+        if (/^(?:복권명|추첨일|구입일시|발행일|지급기한|회차|티켓|매달|연금복권)\b/i.test(line)) continue;
         if (/티켓\s*보기|Lotto|연금복권/i.test(line)) continue;
 
-        const letterMatch = line.match(/^([A-E])\b/i);
-        const typeMatch = line.match(/(자\s*동|수\s*동|반\s*자\s*동|자|수|반)/);
+        // Skip date lines (e.g. "2026/10/03" or "HY 2026/10/03")
+        if (/\b\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\b/.test(line)) continue;
 
-        // Extract all 1-2 digit numbers in range 1-45
-        const allNums = (line.match(/\b\d{1,2}\b/g) || [])
-            .map(n => parseInt(n, 10))
-            .filter(n => n >= 1 && n <= 45);
+        // Skip serial / barcode lines (e.g. "60645 60456 ...")
+        if (/(?:\b\d{5}\b[\s\-]+){2,}/.test(line)) continue;
 
-        let gameNums = [];
-        if (allNums.length === 6) {
-            gameNums = allNums;
-        } else if (allNums.length > 6) {
-            // Take the last 6 numbers (handles leading indices or game numbers)
-            gameNums = allNums.slice(-6);
+        // Skip isolated summary lines
+        if (/^(?:합계|금액|결제|총액)\b/i.test(line)) continue;
+
+        // Clean trailing amount/summary words attached to game line so "합계 5,000원" doesn't inject '5'
+        const cleanLine = line.replace(/(?:합계|금액|결제|총액|\b\d{1,3}(?:,\d{3})+\s*원?).*$/i, '').trim();
+        if (!cleanLine) continue;
+
+        let detectedLetter = null;
+        let detectedType = 'manual';
+        let numberPart = cleanLine;
+
+        // Pattern A: Standard letter A-E followed by optional type (e.g. "A 자동", "A 수동", "A")
+        const matchStd = cleanLine.match(/^[\s|·\-\[\]>]*([A-E])\b\s*(?:수\s*동|자\s*동|반\s*자\s*동|수|자|반|주들)?[\s:|\-_]*/i);
+        // Pattern B: OCR confused letter (8, 6, ㅇ, ㅁ, ㄷ, ^) MUST be followed by type keyword!
+        const matchOcr = cleanLine.match(/^[\s|·\-\[\]>]*([86ㅇㅁㄷ\^])\s*(?:수\s*동|자\s*동|반\s*자\s*동|수|자|반|주들)[\s:|\-_]*/i);
+        // Pattern C: Type keyword without letter (e.g. "수동 16 17...", "주들 6 8...")
+        const matchTypeOnly = cleanLine.match(/^[\s|·\-\[\]>]*(?:수\s*동|자\s*동|반\s*자\s*동|수|자|반|주들)[\s:|\-_]+/i);
+
+        const activeMatch = matchStd || matchOcr || matchTypeOnly;
+        if (activeMatch) {
+            const rawMatched = activeMatch[0];
+            if (activeMatch === matchStd || activeMatch === matchOcr) {
+                const rawC = (activeMatch[1] || '').toUpperCase();
+                detectedLetter = charMap[rawC] || null;
+            }
+            if (rawMatched.includes('자')) detectedType = 'auto';
+            else if (rawMatched.includes('반')) detectedType = 'semi';
+            else if (rawMatched.includes('수') || rawMatched.includes('주들')) detectedType = 'manual';
+
+            numberPart = cleanLine.slice(activeMatch[0].length).trim();
         }
 
-        if (gameNums.length === 6) {
-            const uniqueNums = Array.from(new Set(gameNums)).sort((a, b) => a - b);
-            if (uniqueNums.length === 6) {
-                const gameLetter = letterMatch ? letterMatch[1].toUpperCase() : (gameLetters[combos.length] || `${combos.length + 1}`);
-                let gameType = 'manual';
-                if (typeMatch) {
-                    const t = typeMatch[1].replace(/\s+/g, '');
-                    if (t.includes('수')) gameType = 'manual';
-                    else if (t.includes('반')) gameType = 'semi';
-                    else if (t.includes('자')) gameType = 'auto';
-                }
+        const lineNums = extractNumbersSmart(numberPart);
 
+        if (lineNums.length === 6) {
+            const gameNums = Array.from(new Set(lineNums)).sort((a, b) => a - b);
+            if (gameNums.length === 6) {
+                const letter = detectedLetter || (gameLetters[combos.length] || `${combos.length + 1}`);
                 combos.push({
-                    letter: gameLetter,
-                    type: gameType,
-                    numbers: uniqueNums,
+                    letter: letter,
+                    type: detectedType,
+                    numbers: gameNums,
                     meta: {
-                        name: `${gameLetter} [${gameType === 'manual' ? '수동' : gameType === 'semi' ? '반자동' : '자동'}]`,
+                        name: `${letter} [${detectedType === 'manual' ? '수동' : detectedType === 'semi' ? '반자동' : '자동'}]`,
                         source: 'online_receipt'
                     },
                     stats: {}
                 });
+                pendingNums = [];
+            }
+        } else if (lineNums.length > 6) {
+            const last6 = lineNums.slice(-6);
+            if (new Set(last6).size === 6) {
+                const letter = detectedLetter || (gameLetters[combos.length] || `${combos.length + 1}`);
+                const sortedNums = last6.sort((a, b) => a - b);
+                combos.push({
+                    letter: letter,
+                    type: detectedType,
+                    numbers: sortedNums,
+                    meta: {
+                        name: `${letter} [${detectedType === 'manual' ? '수동' : detectedType === 'semi' ? '반자동' : '자동'}]`,
+                        source: 'online_receipt'
+                    },
+                    stats: {}
+                });
+                pendingNums = [];
+            }
+        } else if (lineNums.length >= 1 && lineNums.length < 6) {
+            // Handle line wrapping where numbers of a single game span across lines
+            const combined = [...pendingNums, ...lineNums];
+            if (combined.length === 6 && new Set(combined).size === 6) {
+                const letter = pendingLetter || detectedLetter || (gameLetters[combos.length] || `${combos.length + 1}`);
+                const t = pendingType || detectedType;
+                const sortedNums = combined.sort((a, b) => a - b);
+                combos.push({
+                    letter: letter,
+                    type: t,
+                    numbers: sortedNums,
+                    meta: {
+                        name: `${letter} [${t === 'manual' ? '수동' : t === 'semi' ? '반자동' : '자동'}]`,
+                        source: 'online_receipt'
+                    },
+                    stats: {}
+                });
+                pendingNums = [];
+            } else {
+                pendingNums = lineNums;
+                pendingLetter = detectedLetter;
+                pendingType = detectedType;
             }
         }
 
         if (combos.length >= 5) break;
     }
 
+    // 5. Global Stream Fallback: If less than 5 combos found, scan entire receipt for all numbers
+    if (combos.length < 5) {
+        const allReceiptNums = [];
+        for (let rawLine of lines) {
+            const line = rawLine.trim();
+            if (!line) continue;
+            if (/^(?:복권명|추첨일|구입일시|발행일|지급기한|회차|티켓|매달|연금복권|합계|금액|결제)\b/i.test(line)) continue;
+            if (/티켓\s*보기|Lotto|연금복권/i.test(line)) continue;
+            if (/\b\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\b/.test(line)) continue;
+            if (/(?:\b\d{5}\b[\s\-]+){2,}/.test(line)) continue;
+
+            const cleanL = line.replace(/^[A-E86ㅇㅁㄷ\^1-5]?\s*(?:수동|자동|반자동|수|자|반|주들)?/i, '').trim();
+            const nums = extractNumbersSmart(cleanL);
+            allReceiptNums.push(...nums);
+        }
+
+        if (allReceiptNums.length >= 6) {
+            const fallbackCombos = [];
+            for (let i = 0; i <= allReceiptNums.length - 6; i += 6) {
+                const chunk = allReceiptNums.slice(i, i + 6);
+                const uniqueChunk = Array.from(new Set(chunk)).sort((a, b) => a - b);
+                if (uniqueChunk.length === 6) {
+                    const l = gameLetters[fallbackCombos.length] || `${fallbackCombos.length + 1}`;
+                    fallbackCombos.push({
+                        letter: l,
+                        type: 'manual',
+                        numbers: uniqueChunk,
+                        meta: {
+                            name: `${l} [수동]`,
+                            source: 'online_receipt'
+                        },
+                        stats: {}
+                    });
+                }
+                if (fallbackCombos.length >= 5) break;
+            }}
+            if (fallbackCombos.length > combos.length) {
+                combos.length = 0;
+                combos.push(...fallbackCombos.slice(0, 5));
+            }
+        }
+    }
+
     if (combos.length === 0) return null;
+
+    // Normalize game letters strictly A~E
+    combos.forEach((c, idx) => {
+        const correctLetter = gameLetters[idx] || `${idx + 1}`;
+        c.letter = correctLetter;
+        if (c.meta && c.meta.name) {
+            c.meta.name = `${correctLetter} [${c.type === 'manual' ? '수동' : c.type === 'semi' ? '반자동' : '자동'}]`;
+        }
+    });
 
     return {
         round,

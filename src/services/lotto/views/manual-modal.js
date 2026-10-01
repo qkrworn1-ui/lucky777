@@ -735,10 +735,20 @@ export async function preprocessReceiptImage(fileOrBlob) {
             const img = new Image();
             img.onload = () => {
                 try {
-                    const scale = (img.width < 1200) ? 2 : 1;
+                    // Standardize canvas width to optimal OCR range: ~1200px
+                    let targetWidth = 1200;
+                    let scale = targetWidth / img.width;
+                    if (img.width >= 1000 && img.width <= 1400) {
+                        scale = 1;
+                    } else if (scale > 2.5) {
+                        scale = 2.5;
+                    } else if (scale < 0.5) {
+                        scale = 0.5;
+                    }
+
                     const canvas = document.createElement('canvas');
-                    canvas.width = img.width * scale;
-                    canvas.height = img.height * scale;
+                    canvas.width = Math.round(img.width * scale);
+                    canvas.height = Math.round(img.height * scale);
                     const ctx = canvas.getContext('2d');
                     ctx.imageSmoothingEnabled = true;
                     ctx.imageSmoothingQuality = 'high';
@@ -747,8 +757,10 @@ export async function preprocessReceiptImage(fileOrBlob) {
                     const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     const data = imgData.data;
 
-                    // Sample border / corner brightness to detect dark theme
-                    let borderBrightness = 0;
+                    // Sample border corners and ticket central area to reliably detect dark theme
+                    let totalBrightness = 0;
+                    let sampleCount = 0;
+
                     const samplePoints = [
                         0,
                         4 * (canvas.width - 1),
@@ -757,12 +769,22 @@ export async function preprocessReceiptImage(fileOrBlob) {
                         4 * Math.floor(canvas.width / 2),
                         4 * Math.floor(canvas.width * (canvas.height - 1) + canvas.width / 2)
                     ];
+
+                    for (let py = 0.3; py <= 0.7; py += 0.2) {
+                        for (let px = 0.3; px <= 0.7; px += 0.2) {
+                            const idx = 4 * Math.floor(canvas.width * Math.floor(canvas.height * py) + canvas.width * px);
+                            samplePoints.push(idx);
+                        }
+                    }
+
                     samplePoints.forEach(p => {
-                        if (p < data.length - 3) {
-                            borderBrightness += (data[p] * 0.299 + data[p+1] * 0.587 + data[p+2] * 0.114);
+                        if (p >= 0 && p < data.length - 3) {
+                            totalBrightness += (data[p] * 0.299 + data[p+1] * 0.587 + data[p+2] * 0.114);
+                            sampleCount++;
                         }
                     });
-                    const isDarkBg = (borderBrightness / samplePoints.length) < 128;
+                    const avgBrightness = sampleCount > 0 ? (totalBrightness / sampleCount) : 128;
+                    const isDarkBg = avgBrightness < 135;
 
                     for (let i = 0; i < data.length; i += 4) {
                         const r = data[i], g = data[i+1], b = data[i+2];
@@ -773,12 +795,12 @@ export async function preprocessReceiptImage(fileOrBlob) {
                             gray = 255 - gray;
                         }
 
-                        // Contrast enhancement: stretch values
+                        // Moderate contrast stretch to preserve stroke connectivity without washing out
                         let enhanced = gray;
-                        if (enhanced < 130) {
-                            enhanced = Math.max(0, enhanced - 30);
-                        } else if (enhanced > 160) {
-                            enhanced = Math.min(255, enhanced + 30);
+                        if (enhanced < 120) {
+                            enhanced = Math.max(0, enhanced - 25);
+                        } else if (enhanced > 170) {
+                            enhanced = Math.min(255, enhanced + 25);
                         }
 
                         data[i] = enhanced;
@@ -787,7 +809,7 @@ export async function preprocessReceiptImage(fileOrBlob) {
                     }
 
                     ctx.putImageData(imgData, 0, 0);
-                    resolve(canvas.toDataURL('image/jpeg', 0.92));
+                    resolve(canvas.toDataURL('image/jpeg', 0.95));
                 } catch(err) {
                     console.warn('[Preprocessing fallback]', err);
                     resolve(e.target.result);
