@@ -1,17 +1,9 @@
 {
-  "version": "v2026.10.01.1317",
+  "version": "v2026.10.01.1321",
   "buildDate": "2026-10-01",
   "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline",
-  "buildTimestamp": "2026-10-01T13:17:35.842404",
+  "buildTimestamp": "2026-10-01T13:21:57.254363",
   "buildHistory": [
-    {
-      "version": "v2026.09.28.1756",
-      "buildDate": "2026-09-28",
-      "buildTime": "17:56",
-      "buildDateTime": "2026-09-28 17:56",
-      "buildTimestamp": "2026-09-28T17:56:03.669948",
-      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
-    },
     {
       "version": "v2026.09.28.1756.13",
       "buildDate": "2026-09-28",
@@ -123,8 +115,16 @@
       "buildDateTime": "2026-10-01 13:17",
       "buildTimestamp": "2026-10-01T13:17:35.842404",
       "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
+    },
+    {
+      "version": "v2026.10.01.1321",
+      "buildDate": "2026-10-01",
+      "buildTime": "13:21",
+      "buildDateTime": "2026-10-01 13:21",
+      "buildTimestamp": "2026-10-01T13:21:57.254363",
+      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
     }
   ],
-  "buildTime": "13:17",
-  "buildDateTime": "2026-10-01 13:17"
+  "buildTime": "13:21",
+  "buildDateTime": "2026-10-01 13:21"
 }
