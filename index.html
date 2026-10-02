@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.02.1932">
+    <link rel="stylesheet" href="styles.css?v=2026.10.02.2020">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.02.1932
+                        v2026.10.02.2020
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -170,7 +170,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.02.1932 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.02.2020 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -396,11 +396,17 @@
                     <div>
                         <h4 id="lpReviewSectionTitle" style="margin: 0; color: #c4b5fd; font-size: 0.92rem; font-weight: 800; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                             <span class="lp-desktop-text">🔮 전체 회원 AI 추천번호 당첨 결과 종합 요약</span>
-                            <span class="lp-mobile-text"><span id="lpReviewMobileRound">1241</span>회 전체 회원 AI추천 복기 요약</span>
-                            <span id="lpReviewRoundBadge" class="lp-desktop-only" style="font-size: 0.72rem; color: #fbbf24; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); padding: 1px 7px; border-radius: 4px; font-weight: 800;">제 --회차</span>
+                            <span class="lp-mobile-text">🔮 제 <span id="lpReviewMobileRound">1242</span>회 AI추천 당첨결과 요약</span>
+                            <span id="lpReviewLatestBadge" style="font-size: 0.72rem; color: #34d399; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); padding: 1px 7px; border-radius: 4px; font-weight: 800;">최신 1242회 +90,000원</span>
+                            <span id="lpReviewRoundBadge" class="lp-desktop-only" style="font-size: 0.72rem; color: #fbbf24; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); padding: 1px 7px; border-radius: 4px; font-weight: 800;">제 1235~1242회차 누적</span>
                         </h4>
                         <div id="lpReviewSectionSub" class="lp-desktop-only" style="font-size: 0.72rem; color: #94a3b8; margin-top: 2px;">
                             전체 등록 회원 대상 7대 알고리즘(회원당 70조합) 영구 스냅샷 기준 실제 적중 집계
+                        </div>
+                        <div class="lp-mobile-text" style="font-size: 0.70rem; margin-top: 3px; display: flex; gap: 6px; flex-wrap: wrap;">
+                            <span style="color: #34d399; font-weight: 700;">최신 <span id="lpReviewMobileRoundSub">1242</span>회: +<span id="lpReviewMobilePrize">90,000</span>원 (<span id="lpReviewMobileHits">18건</span>)</span>
+                            <span style="color: #64748b;">|</span>
+                            <span style="color: #fbbf24; font-weight: 700;">누적: +<span id="lpReviewMobileCumPrize">510,000</span>원 (<span id="lpReviewMobileCumHits">84건</span>)</span>
                         </div>
                     </div>
                 </div>
@@ -419,11 +425,26 @@
                     </button>
                 </div>
 
-                <!-- 전체 합계 KPI 요약 바 -->
+                <!-- 🎯 1. 최신 회차(1242회) 단일 실적 KPI 바 -->
+                <div style="font-size: 0.75rem; font-weight: 800; color: #34d399; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                    <span><i class="fa-solid fa-bullseye"></i> 최신 제 <span id="lpReviewLatestRoundNum">1242</span>회차 당첨 실적 (단일 회차)</span>
+                    <span id="lpReviewLatestSub" style="color: #94a3b8; font-size: 0.70rem; font-weight: normal;">1인당 70조합 영구 스냅샷 기준</span>
+                </div>
+                <div id="lpReviewLatestKpiBar" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                    <span id="lpReviewLatestGames" style="font-weight: 700; color: #a7f3d0;">0명 회원 · 0게임</span>
+                    <span id="lpReviewLatestHits" style="color: #6ee7b7; font-weight: 700;">1등 0 · 2등 0 · 3등 0 · 4등 0 · 5등 0</span>
+                    <span id="lpReviewLatestPrize" style="color: #34d399; font-weight: 800; font-size: 0.88rem;">최신 당첨금 +0원</span>
+                </div>
+
+                <!-- 📊 2. 전회차 누적 실적 KPI 바 -->
+                <div style="font-size: 0.75rem; font-weight: 800; color: #fbbf24; margin-bottom: 5px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+                    <span><i class="fa-solid fa-chart-line"></i> 제 1235회 ~ <span id="lpReviewCumRoundNum">1242</span>회 누적 성과 (전체 회차)</span>
+                    <span id="lpReviewCumSub" style="color: #94a3b8; font-size: 0.70rem; font-weight: normal;">전체 회차 누적 종합</span>
+                </div>
                 <div id="lpReviewKpiBar" style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 10px 14px; font-size: 0.78rem; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                    <span id="lpReviewKpiGames" style="font-weight: 700;">총 0명 회원 · 0게임</span>
+                    <span id="lpReviewKpiGames" style="font-weight: 700;">총 0게임</span>
                     <span id="lpReviewKpiHits" style="color: #60a5fa; font-weight: 700;">1등 0 · 2등 0 · 3등 0 · 4등 0 · 5등 0</span>
-                    <span id="lpReviewKpiPrize" style="color: #34d399; font-weight: 800; font-size: 0.88rem;">총 당첨금 +0원</span>
+                    <span id="lpReviewKpiPrize" style="color: #fbbf24; font-weight: 800; font-size: 0.88rem;">누적 당첨금 +0원</span>
                 </div>
 
                 <!-- ℹ️ 복기 당첨 및 실제 구매 권리 안내 문구 -->
@@ -585,7 +606,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.02.1932
+                                v2026.10.02.2020
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -2046,7 +2067,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.02.1932
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.02.2020
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -4035,7 +4056,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.02.1932';
+        window.APP_VERSION = 'v2026.10.02.2020';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4106,7 +4127,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.02.1932';
+            var v = ver || window.APP_VERSION || 'v2026.10.02.2020';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4363,7 +4384,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.02.1932';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.02.2020';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4501,7 +4522,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.02.1932')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.02.2020')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -4579,8 +4600,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.02.1932"></script>
-    <script src="app_v2.js?v=2026.10.02.1932"></script>
+    <script src="data.js?v=2026.10.02.2020"></script>
+    <script src="app_v2.js?v=2026.10.02.2020"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->

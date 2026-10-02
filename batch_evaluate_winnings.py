@@ -465,10 +465,34 @@ def run_evaluation_batch():
     
     grand_total_wins = grand_rank1 + grand_rank2 + grand_rank3 + grand_rank4 + grand_rank5
     
+    # 최신 회차(max_round) 단일 실적 별도 추출
+    latest_records = [rec for rec in evaluations_by_round.get(max_round, []) if not rec.get('isPreJoin')]
+    latest_rank1 = sum(rec['recSummary']['hits'].get('1', 0) for rec in latest_records)
+    latest_rank2 = sum(rec['recSummary']['hits'].get('2', 0) for rec in latest_records)
+    latest_rank3 = sum(rec['recSummary']['hits'].get('3', 0) for rec in latest_records)
+    latest_rank4 = sum(rec['recSummary']['hits'].get('4', 0) for rec in latest_records)
+    latest_rank5 = sum(rec['recSummary']['hits'].get('5', 0) for rec in latest_records)
+    latest_total_prize = sum(rec['recSummary'].get('totalPrize', 0) for rec in latest_records)
+    latest_total_games = sum(rec['recSummary'].get('totalGames', 0) for rec in latest_records)
+    latest_total_wins = latest_rank1 + latest_rank2 + latest_rank3 + latest_rank4 + latest_rank5
+    latest_active_members = len(latest_records)
+    
     dashboard_payload = {
         "maxRound": max_round,
         "fromRound": 1235,
         "roundRangeLabel": f"1235회 ~ {max_round}회",
+        # 🎯 최신 회차(단일) 요약
+        "latestRound": max_round,
+        "latestTotalPrize": latest_total_prize,
+        "latestTotalGames": latest_total_games,
+        "latestTotalWins": latest_total_wins,
+        "latestActiveMemberCount": latest_active_members,
+        "latestRank1": latest_rank1,
+        "latestRank2": latest_rank2,
+        "latestRank3": latest_rank3,
+        "latestRank4": latest_rank4,
+        "latestRank5": latest_rank5,
+        # 📊 전회차 누적 요약
         "grandRank1": grand_rank1,
         "grandRank2": grand_rank2,
         "grandRank3": grand_rank3,

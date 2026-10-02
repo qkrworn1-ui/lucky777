@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.02.1932 - BUILD_DATE: 2026-10-02] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.02.2020 - BUILD_DATE: 2026-10-02] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.02.1932)
+ * Lucky777 Smart Bundle (v2026.10.02.2020)
  */
 
 
@@ -42969,14 +42969,14 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
         const roundRangeLabel = `제 ${fromRound}~${maxRound}회차 누적`;
 
         let summaryData = null;
-        if (!forceRefresh && _homeReviewDashboardCache && (Date.now() - _homeReviewDashboardCacheTime < 25000) && _homeReviewDashboardCache.maxRound === maxRound) {
+        if (!forceRefresh && _homeReviewDashboardCache && (Date.now() - _homeReviewDashboardCacheTime < 25000) && _homeReviewDashboardCache.maxRound === maxRound && _homeReviewDashboardCache.latestTotalPrize !== undefined) {
             summaryData = _homeReviewDashboardCache;
         } else if (!forceRefresh) {
             try {
                 const localRev = SafeLocalStorage.getItem('lotto_home_review_dashboard_cache');
                 if (localRev) {
                     const parsed = JSON.parse(localRev);
-                    if (parsed && parsed.maxRound === maxRound) {
+                    if (parsed && parsed.maxRound === maxRound && parsed.latestTotalPrize !== undefined) {
                         summaryData = parsed;
                         _homeReviewDashboardCache = parsed;
                         _homeReviewDashboardCacheTime = Date.now();
@@ -42996,6 +42996,8 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
                         if (sData && sData.maxRound && sData.maxRound >= (maxRound - 1)) {
                             summaryData = {
                                 maxRound: sData.maxRound || maxRound,
+                                fromRound: sData.fromRound || fromRound,
+                                roundRangeLabel: sData.roundRangeLabel || roundRangeLabel,
                                 grandRank1: Number(sData.grandRank1 || 0),
                                 grandRank2: Number(sData.grandRank2 || 0),
                                 grandRank3: Number(sData.grandRank3 || 0),
@@ -43003,7 +43005,17 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
                                 grandRank5: Number(sData.grandRank5 || 0),
                                 grandTotalPrize: Number(sData.grandTotalPrize || 0),
                                 grandTotalGames: Number(sData.grandTotalGames || 0),
-                                grandTotalWins: Number(sData.grandTotalWins || 0)
+                                grandTotalWins: Number(sData.grandTotalWins || 0),
+                                latestRound: Number(sData.latestRound || sData.maxRound || maxRound),
+                                latestTotalPrize: Number(sData.latestTotalPrize || 0),
+                                latestTotalGames: Number(sData.latestTotalGames || 0),
+                                latestTotalWins: Number(sData.latestTotalWins || 0),
+                                latestActiveMemberCount: Number(sData.latestActiveMemberCount || 0),
+                                latestRank1: Number(sData.latestRank1 || 0),
+                                latestRank2: Number(sData.latestRank2 || 0),
+                                latestRank3: Number(sData.latestRank3 || 0),
+                                latestRank4: Number(sData.latestRank4 || 0),
+                                latestRank5: Number(sData.latestRank5 || 0)
                             };
                             _homeReviewDashboardCache = summaryData;
                             _homeReviewDashboardCacheTime = Date.now();
@@ -43037,13 +43049,6 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
                 }
             }
 
-            let perf = null;
-            if (typeof calculate7AlgorithmsPerformance === 'function') {
-                perf = await calculate7AlgorithmsPerformance(fromRound, 'all');
-            } else if (typeof window !== 'undefined' && window.calculate7AlgorithmsPerformance) {
-                perf = await window.calculate7AlgorithmsPerformance(fromRound, 'all');
-            }
-
             let grandRank1 = 0;
             let grandRank2 = 0;
             let grandRank3 = 0;
@@ -43053,44 +43058,68 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             let grandTotalGames = 0;
             let grandTotalWins = 0;
 
-            if (perf) {
-                grandRank1 = perf.grandRankCounts ? (perf.grandRankCounts[1] || 0) : 0;
-                grandRank2 = perf.grandRankCounts ? (perf.grandRankCounts[2] || 0) : 0;
-                grandRank3 = perf.grandRankCounts ? (perf.grandRankCounts[3] || 0) : 0;
-                grandRank4 = perf.grandRankCounts ? (perf.grandRankCounts[4] || 0) : 0;
-                grandRank5 = perf.grandRankCounts ? (perf.grandRankCounts[5] || 0) : 0;
-                grandTotalPrize = perf.grandTotalPrize || 0;
-                grandTotalGames = perf.grandTotalGames || 0;
-                grandTotalWins = perf.grandTotalWins || (grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5);
-            } else {
-                // Fallback direct calculation across rounds 1235..maxRound and registered users
-                const userList = getAllUnifiedRegisteredUsers();
+            let latestRank1 = 0;
+            let latestRank2 = 0;
+            let latestRank3 = 0;
+            let latestRank4 = 0;
+            let latestRank5 = 0;
+            let latestTotalPrize = 0;
+            let latestTotalGames = 0;
+            let latestTotalWins = 0;
+            let latestActiveMemberCount = 0;
 
-                const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240].filter(r => r <= maxRound);
+            const userList = getAllUnifiedRegisteredUsers();
+            const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242].filter(r => r <= maxRound);
 
-                rounds.forEach(rnd => {
-                    userList.forEach(u => {
-                        const rev = (typeof computeUser70RecommendationsReview === 'function')
-                            ? computeUser70RecommendationsReview(u.id, rnd)
-                            : (typeof window !== 'undefined' && window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, rnd) : null);
-                        if (rev && !rev.isPreJoin) {
-                            grandTotalGames += (rev.totalGames || 70);
-                            grandTotalPrize += (rev.totalPrize || 0);
+            rounds.forEach(rnd => {
+                userList.forEach(u => {
+                    const rev = (typeof computeUser70RecommendationsReview === 'function')
+                        ? computeUser70RecommendationsReview(u.id, rnd)
+                        : (typeof window !== 'undefined' && window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, rnd) : null);
+                    if (rev && !rev.isPreJoin) {
+                        const games = (rev.totalGames || 70);
+                        const prize = (rev.totalPrize || 0);
+                        grandTotalGames += games;
+                        grandTotalPrize += prize;
+                        if (rev.grandHits) {
+                            grandRank1 += (rev.grandHits[1] || 0);
+                            grandRank2 += (rev.grandHits[2] || 0);
+                            grandRank3 += (rev.grandHits[3] || 0);
+                            grandRank4 += (rev.grandHits[4] || 0);
+                            grandRank5 += (rev.grandHits[5] || 0);
+                        }
+                        if (rnd === maxRound) {
+                            latestTotalGames += games;
+                            latestTotalPrize += prize;
+                            latestActiveMemberCount++;
                             if (rev.grandHits) {
-                                grandRank1 += (rev.grandHits[1] || 0);
-                                grandRank2 += (rev.grandHits[2] || 0);
-                                grandRank3 += (rev.grandHits[3] || 0);
-                                grandRank4 += (rev.grandHits[4] || 0);
-                                grandRank5 += (rev.grandHits[5] || 0);
+                                latestRank1 += (rev.grandHits[1] || 0);
+                                latestRank2 += (rev.grandHits[2] || 0);
+                                latestRank3 += (rev.grandHits[3] || 0);
+                                latestRank4 += (rev.grandHits[4] || 0);
+                                latestRank5 += (rev.grandHits[5] || 0);
                             }
                         }
-                    });
+                    }
                 });
-                grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
-            }
+            });
+            grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
+            latestTotalWins = latestRank1 + latestRank2 + latestRank3 + latestRank4 + latestRank5;
 
             summaryData = {
                 maxRound,
+                fromRound,
+                roundRangeLabel: `제 ${fromRound}~${maxRound}회차 누적`,
+                latestRound: maxRound,
+                latestTotalPrize,
+                latestTotalGames,
+                latestTotalWins,
+                latestActiveMemberCount,
+                latestRank1,
+                latestRank2,
+                latestRank3,
+                latestRank4,
+                latestRank5,
                 grandRank1,
                 grandRank2,
                 grandRank3,
@@ -43119,14 +43148,24 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
         }
 
         const {
-            grandRank1,
-            grandRank2,
-            grandRank3,
-            grandRank4,
-            grandRank5,
-            grandTotalPrize,
-            grandTotalGames,
-            grandTotalWins
+            latestRound = maxRound,
+            latestTotalPrize = 0,
+            latestTotalGames = 0,
+            latestTotalWins = 0,
+            latestActiveMemberCount = 0,
+            latestRank1 = 0,
+            latestRank2 = 0,
+            latestRank3 = 0,
+            latestRank4 = 0,
+            latestRank5 = 0,
+            grandRank1 = 0,
+            grandRank2 = 0,
+            grandRank3 = 0,
+            grandRank4 = 0,
+            grandRank5 = 0,
+            grandTotalPrize = 0,
+            grandTotalGames = 0,
+            grandTotalWins = 0
         } = summaryData;
 
         // 1. Update Card 3: All Members AI Recommended Review (🔮 전체 회원 추천 당첨 결과)
@@ -43135,21 +43174,15 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
         const elRevHits = document.getElementById('lp-review-mini-hits');
 
         if (elRevSub) {
-            elRevSub.textContent = `${roundRangeLabel} (${grandTotalGames.toLocaleString()}게임)`;
+            elRevSub.textContent = `${roundRangeLabel} (총 ${grandTotalGames.toLocaleString()}게임)`;
         }
         if (elRevPrize) {
-            elRevPrize.textContent = `총 당첨 ${grandTotalPrize.toLocaleString()}원`;
+            elRevPrize.textContent = `누적 당첨 +${grandTotalPrize.toLocaleString()}원`;
             elRevPrize.style.color = grandTotalPrize > 0 ? '#fbbf24' : '#cbd5e1';
         }
         if (elRevHits) {
-            if (grandTotalWins > 0) {
-                const parts = [];
-                if (grandRank1 > 0) parts.push(`1등 ${grandRank1}`);
-                if (grandRank2 > 0) parts.push(`2등 ${grandRank2}`);
-                if (grandRank3 > 0) parts.push(`3등 ${grandRank3}`);
-                if (grandRank4 > 0) parts.push(`4등 ${grandRank4}`);
-                if (grandRank5 > 0) parts.push(`5등 ${grandRank5}`);
-                elRevHits.textContent = `전체 ${grandTotalWins}건 적중 (${parts.join(', ')})`;
+            if (latestTotalWins > 0 || grandTotalWins > 0) {
+                elRevHits.textContent = `최신 ${latestRound}회: +${latestTotalPrize.toLocaleString()}원 (${latestTotalWins}건) · 누적 ${grandTotalWins}건`;
                 elRevHits.style.color = '#c4b5fd';
             } else {
                 elRevHits.textContent = '당첨 내역 없음';
@@ -43159,12 +43192,61 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
 
         // 2. Update Table & Dashboard Section (🔮 전체 회원 AI 추천번호 당첨 결과 종합 요약)
         const elRoundBadge = document.getElementById('lpReviewRoundBadge');
-        if (elRoundBadge) elRoundBadge.textContent = roundRangeLabel;
+        if (elRoundBadge) elRoundBadge.textContent = `${roundRangeLabel} +${grandTotalPrize.toLocaleString()}원`;
+
+        const elLatestBadge = document.getElementById('lpReviewLatestBadge');
+        if (elLatestBadge) elLatestBadge.textContent = `최신 ${latestRound}회 +${latestTotalPrize.toLocaleString()}원`;
 
         const elMobileRevRound = document.getElementById('lpReviewMobileRound');
-        if (elMobileRevRound && maxRound) {
-            elMobileRevRound.textContent = maxRound;
+        if (elMobileRevRound && latestRound) {
+            elMobileRevRound.textContent = latestRound;
         }
+
+        const elMobileRoundSub = document.getElementById('lpReviewMobileRoundSub');
+        if (elMobileRoundSub && latestRound) {
+            elMobileRoundSub.textContent = latestRound;
+        }
+
+        const elMobilePrize = document.getElementById('lpReviewMobilePrize');
+        if (elMobilePrize) elMobilePrize.textContent = latestTotalPrize.toLocaleString();
+
+        const elMobileHits = document.getElementById('lpReviewMobileHits');
+        if (elMobileHits) elMobileHits.textContent = `${latestTotalWins}건`;
+
+        const elMobileCumPrize = document.getElementById('lpReviewMobileCumPrize');
+        if (elMobileCumPrize) elMobileCumPrize.textContent = grandTotalPrize.toLocaleString();
+
+        const elMobileCumHits = document.getElementById('lpReviewMobileCumHits');
+        if (elMobileCumHits) elMobileCumHits.textContent = `${grandTotalWins}건`;
+
+        // 최신 회차 (단일) KPI 바 갱신
+        const elLatestRoundNum = document.getElementById('lpReviewLatestRoundNum');
+        if (elLatestRoundNum) elLatestRoundNum.textContent = latestRound;
+
+        const elLatestGames = document.getElementById('lpReviewLatestGames');
+        if (elLatestGames) elLatestGames.textContent = `${latestActiveMemberCount}명 참여 · 총 ${latestTotalGames.toLocaleString()}게임 (1인당 70조합)`;
+
+        const elLatestHits = document.getElementById('lpReviewLatestHits');
+        if (elLatestHits) {
+            elLatestHits.innerHTML = `
+                <span style="color:${latestRank1>0?'#fbbf24':'#64748b'}; font-weight:700;">1등 ${latestRank1}</span> · 
+                <span style="color:${latestRank2>0?'#f87171':'#64748b'}; font-weight:700;">2등 ${latestRank2}</span> · 
+                <span style="color:${latestRank3>0?'#60a5fa':'#64748b'}; font-weight:700;">3등 ${latestRank3}</span> · 
+                <span style="color:${latestRank4>0?'#34d399':'#64748b'}; font-weight:700;">4등 ${latestRank4}</span> · 
+                <span style="color:${latestRank5>0?'#a78bfa':'#64748b'}; font-weight:700;">5등 ${latestRank5}</span>
+                <span style="color:#ddd6fe; margin-left:4px;">(총 ${latestTotalWins}건 적중)</span>
+            `;
+        }
+
+        const elLatestPrize = document.getElementById('lpReviewLatestPrize');
+        if (elLatestPrize) {
+            elLatestPrize.textContent = `최신 당첨금 +${latestTotalPrize.toLocaleString()}원`;
+            elLatestPrize.style.color = latestTotalPrize > 0 ? '#34d399' : '#cbd5e1';
+        }
+
+        // 전회차 누적 KPI 바 갱신
+        const elCumRoundNum = document.getElementById('lpReviewCumRoundNum');
+        if (elCumRoundNum) elCumRoundNum.textContent = maxRound;
 
         const elKpiGames = document.getElementById('lpReviewKpiGames');
         const elKpiHits = document.getElementById('lpReviewKpiHits');
@@ -43182,8 +43264,8 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             `;
         }
         if (elKpiPrize) {
-            elKpiPrize.textContent = `총 당첨금 +${grandTotalPrize.toLocaleString()}원`;
-            elKpiPrize.style.color = grandTotalPrize > 0 ? '#34d399' : '#cbd5e1';
+            elKpiPrize.textContent = `누적 당첨금 +${grandTotalPrize.toLocaleString()}원`;
+            elKpiPrize.style.color = grandTotalPrize > 0 ? '#fbbf24' : '#cbd5e1';
         }
     } catch(err) {
         console.error('[Home Review Dashboard Error]', err);

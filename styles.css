@@ -12545,6 +12545,7 @@ html, body {
         transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
     }
 
+    #lpReviewLatestKpiBar,
     #lpReviewKpiBar {
         display: flex !important;
         flex-direction: column !important;
@@ -12556,12 +12557,14 @@ html, body {
         width: 100% !important;
     }
 
+    #lpReviewLatestGames,
     #lpReviewKpiGames {
         font-size: 0.72rem !important;
         color: #94a3b8 !important;
         white-space: nowrap !important;
     }
 
+    #lpReviewLatestHits,
     #lpReviewKpiHits {
         font-size: 0.72rem !important;
         padding: 4px 6px !important;
@@ -12572,6 +12575,12 @@ html, body {
         line-height: 1.4 !important;
     }
 
+    #lpReviewLatestHits {
+        background: rgba(16, 185, 129, 0.1) !important;
+        border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    }
+
+    #lpReviewLatestPrize,
     #lpReviewKpiPrize {
         font-size: 0.88rem !important;
         font-weight: 800 !important;
