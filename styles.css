@@ -3059,8 +3059,10 @@ html, body {
         color: #022c22 !important;
     }
 
-    /* Header Compact Action Icons on Mobile */
-    .btn-home-compact {
+    /* Header Compact Action Icons on Mobile (Home, Logout, User Mgmt) */
+    .btn-home-compact,
+    .btn-logout-compact,
+    .btn-user-mgmt-compact {
         width: 25px !important;
         height: 25px !important;
         min-width: 25px !important;
@@ -3068,32 +3070,60 @@ html, body {
         padding: 0 !important;
         font-size: 0.72rem !important;
         border-radius: 7px !important;
-        display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        background: rgba(30, 41, 59, 0.8) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        color: #cbd5e1 !important;
         flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+        cursor: pointer !important;
+        transition: transform 0.15s ease, background 0.15s ease !important;
     }
 
-    /* On Mobile, admin buttons, standalone logout, and redundant status badge are hidden from the top bar to prevent clutter; accessible via User Profile Popover */
-    .header-top-right #serverStatusBadge,
+    .btn-home-compact:active,
+    .btn-logout-compact:active,
+    .btn-user-mgmt-compact:active {
+        transform: scale(0.92) !important;
+    }
+
+    .btn-home-compact {
+        display: inline-flex !important;
+        background: rgba(30, 41, 59, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        color: #cbd5e1 !important;
+    }
+
+    /* 나가기(로그아웃) 아이콘: 모바일 상단 바에 상시 노출 */
+    .btn-logout-compact {
+        display: inline-flex !important;
+        background: rgba(239, 68, 68, 0.14) !important;
+        border: 1px solid rgba(239, 68, 68, 0.4) !important;
+        color: #f87171 !important;
+    }
+
+    /* 사용자관리 아이콘: 관리자(body.is-admin)에게 깔끔하게 노출 */
     .btn-user-mgmt-compact,
-    .btn-snapshot-audit-compact,
-    .btn-logout-compact,
-    #btnUserManagementApp,
-    #btnAdminSnapshotAudit,
-    body.is-admin .header-top-right .btn-user-mgmt-compact,
-    body.is-admin .header-top-right .btn-snapshot-audit-compact,
-    body.is-admin .header-top-right #btnUserManagementApp,
-    body.is-admin .header-top-right #btnAdminSnapshotAudit,
-    body.is-admin .header-top-right .btn-logout-compact,
+    #btnUserManagementApp {
+        display: none;
+    }
+
     body.is-admin .btn-user-mgmt-compact,
-    body.is-admin .btn-snapshot-audit-compact,
     body.is-admin #btnUserManagementApp,
-    body.is-admin #btnAdminSnapshotAudit,
-    body.is-admin .btn-logout-compact {
+    body.is-admin .header-top-right .btn-user-mgmt-compact,
+    body.is-admin .header-top-right #btnUserManagementApp {
+        display: inline-flex !important;
+        background: rgba(59, 130, 246, 0.14) !important;
+        border: 1px solid rgba(59, 130, 246, 0.45) !important;
+        color: #60a5fa !important;
+    }
+
+    /* 중복 상태 뱃지 및 스냅샷 감사는 모바일 상단바에서 숨김 (하단 2행 및 팝오버에서 확인 가능) */
+    .header-top-right #serverStatusBadge,
+    .btn-snapshot-audit-compact,
+    #btnAdminSnapshotAudit,
+    body.is-admin .header-top-right #serverStatusBadge,
+    body.is-admin .header-top-right .btn-snapshot-audit-compact,
+    body.is-admin .header-top-right #btnAdminSnapshotAudit,
+    body.is-admin .btn-snapshot-audit-compact,
+    body.is-admin #btnAdminSnapshotAudit {
         display: none !important;
     }
 
@@ -3299,12 +3329,15 @@ html, body {
         .btn-mobile-header-qr span {
             display: none !important;
         }
-        .btn-home-compact {
+        .btn-home-compact,
+        .btn-logout-compact,
+        .btn-user-mgmt-compact {
             width: 22px !important;
             height: 22px !important;
             min-width: 22px !important;
             min-height: 22px !important;
             font-size: 0.65rem !important;
+            border-radius: 6px !important;
         }
         .lotto-ball.sm-ball {
             width: 18px !important;
@@ -18845,18 +18878,59 @@ body.is-admin .btn-snapshot-audit-compact {
         gap: 4px !important;
     }
 
-    /* Suppress admin top-level buttons on mobile (accessible via User Profile Popover) */
+    /* Mobile Action Buttons Safeguard: Home, Logout, and User Management (Admin) */
+    header.app-header .header-top-right .btn-home-compact,
+    header.app-header .header-top-right .btn-logout-compact {
+        display: inline-flex !important;
+        width: 25px !important;
+        height: 25px !important;
+        min-width: 25px !important;
+        min-height: 25px !important;
+        padding: 0 !important;
+        font-size: 0.72rem !important;
+        border-radius: 7px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    header.app-header .header-top-right .btn-logout-compact {
+        background: rgba(239, 68, 68, 0.14) !important;
+        border: 1px solid rgba(239, 68, 68, 0.4) !important;
+        color: #f87171 !important;
+    }
+
+    header.app-header .header-top-right #btnUserManagementApp,
+    header.app-header .header-top-right .btn-user-mgmt-compact {
+        display: none;
+    }
+
+    body.is-admin header.app-header .header-top-right #btnUserManagementApp,
+    body.is-admin header.app-header .header-top-right .btn-user-mgmt-compact {
+        display: inline-flex !important;
+        width: 25px !important;
+        height: 25px !important;
+        min-width: 25px !important;
+        min-height: 25px !important;
+        padding: 0 !important;
+        font-size: 0.72rem !important;
+        border-radius: 7px !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        box-sizing: border-box !important;
+        background: rgba(59, 130, 246, 0.14) !important;
+        border: 1px solid rgba(59, 130, 246, 0.45) !important;
+        color: #60a5fa !important;
+    }
+
+    /* Redundant status badge & snapshot audit button hidden on mobile header */
     header.app-header .header-top-right #serverStatusBadge,
-    body.is-admin header.app-header .btn-user-mgmt-compact,
     body.is-admin header.app-header .btn-snapshot-audit-compact,
-    body.is-admin header.app-header #btnUserManagementApp,
     body.is-admin header.app-header #btnAdminSnapshotAudit,
-    body.is-admin header.app-header .btn-logout-compact,
-    header.app-header .btn-user-mgmt-compact,
     header.app-header .btn-snapshot-audit-compact,
-    header.app-header #btnUserManagementApp,
-    header.app-header #btnAdminSnapshotAudit,
-    header.app-header .btn-logout-compact {
+    header.app-header #btnAdminSnapshotAudit {
         display: none !important;
     }
 }
