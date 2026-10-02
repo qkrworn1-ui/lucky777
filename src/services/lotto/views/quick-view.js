@@ -39,8 +39,13 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
     const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);
     const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
+    const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
+        state.fixedTop5Combinations_v3_userId === effectiveUserId && state.fixedTop5Combinations_v3_round === targetRound);
+    const isV4Valid = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10 &&
+        state.fixedTop5Combinations_v4_userId === effectiveUserId && state.fixedTop5Combinations_v4_round === targetRound);
+
     if (algo === 'v3') {
-        const v3Combos = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10)
+        const v3Combos = isV3Valid
             ? state.fixedTop5Combinations_v3
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
         return {
@@ -52,7 +57,7 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             isLocked: false
         };
     } else if (algo === 'v4') {
-        const v4Combos = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10)
+        const v4Combos = isV4Valid
             ? state.fixedTop5Combinations_v4
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
         return {
@@ -90,10 +95,10 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
         };
     } else {
         // 'all' -> Combines V3 + V4 (+ all active Extra Packs if eligible)
-        const v3Combos = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10)
+        const v3Combos = isV3Valid
             ? state.fixedTop5Combinations_v3
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
-        const v4Combos = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10)
+        const v4Combos = isV4Valid
             ? state.fixedTop5Combinations_v4
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
 

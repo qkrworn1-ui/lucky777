@@ -29,7 +29,11 @@ export const state = {
     savedCombinations: [],
     fixedTop5Combinations: [],
     fixedTop5Combinations_v3: [],
+    fixedTop5Combinations_v3_userId: null,
+    fixedTop5Combinations_v3_round: null,
     fixedTop5Combinations_v4: [],
+    fixedTop5Combinations_v4_userId: null,
+    fixedTop5Combinations_v4_round: null,
     extraPacks: [], // Up to 5 additional 10-combo packs: [{ packId: 1, name: '추가 1', combos: [...] }]
     editingLedgerInfo: null,
     selectedWheelingPool: [3, 7, 12, 18, 21, 27, 34, 38, 42, 45],
@@ -68,15 +72,13 @@ export function initHistory() {
 
 /**
  * Save global state to database
+ * (User recommendations are strictly personalized per user/round and never persisted to shared global_state)
  */
 export function saveGlobalState() {
     const currentRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
     db.set('lotto_app_state', 'global_state', removeUndefined({
         round: currentRound,
         aiState: state.aiState,
-        fixedTop5Combinations: state.fixedTop5Combinations,
-        fixedTop5Combinations_v3: state.fixedTop5Combinations_v3,
-        fixedTop5Combinations_v4: state.fixedTop5Combinations_v4,
         extraPacks: state.extraPacks || [],
         updatedAt: new Date().toISOString()
     }));

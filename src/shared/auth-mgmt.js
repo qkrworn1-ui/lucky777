@@ -1273,13 +1273,13 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
 
         if (typeof initFirebaseAndData === 'function') {
             try {
-                initFirebaseAndData();
+                initFirebaseAndData(true);
             } catch (err) {
                 console.error('[AUTH] Error during service init (non-blocking):', err);
             }
         } else if (typeof window.initLottoService === 'function') {
             try {
-                window.initLottoService();
+                window.initLottoService(true);
             } catch (err) {
                 console.error('[AUTH] Error during lotto service init (non-blocking):', err);
             }
@@ -1645,7 +1645,7 @@ export function processKakaoLoginSuccess(res, authObj = {}) {
             setTimeout(() => {
                 try {
                     if (typeof window.initLottoService === 'function') {
-                        window.initLottoService();
+                        window.initLottoService(true);
                     }
                 } catch(ex) {}
                 try { if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard(); } catch(ex) {}
@@ -3028,9 +3028,9 @@ export function setupAuthEvents(initFirebaseAndData) {
                 setTimeout(async function() {
                     try {
                         if (typeof initFirebaseAndData === 'function') {
-                            await initFirebaseAndData();
+                            await initFirebaseAndData(true);
                         } else if (typeof window.initLottoService === 'function') {
-                            await window.initLottoService();
+                            await window.initLottoService(true);
                         }
                     } catch(ex) {}
                     try { if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard(); } catch(ex) {}
@@ -3123,10 +3123,10 @@ export function setupAuthEvents(initFirebaseAndData) {
                         if (typeof checkAuthOnLoad === 'function') {
                             await checkAuthOnLoad(initFirebaseAndData);
                         } else if (typeof initFirebaseAndData === 'function') {
-                            await initFirebaseAndData();
+                            await initFirebaseAndData(true);
                             if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
                         } else if (typeof window.initLottoService === 'function') {
-                            await window.initLottoService();
+                            await window.initLottoService(true);
                             if (typeof window.renderLandingDashboard === 'function') await window.renderLandingDashboard();
                         }
                     } catch(ex) {
@@ -5735,9 +5735,9 @@ export function setupAuthEvents(initFirebaseAndData) {
         if (modal) modal.style.display = 'none';
     };
 
-    // ========================================================
-    // 💬 [관리자] 카카오톡 알림 메시지 발송 테스트 기능
-    // ========================================================
+// ========================================================
+// 💬 [관리자] 카카오톡 알림 메시지 발송 테스트 기능
+// ========================================================
 
 // ========================================================
 // 🎰 [실구매 당첨 채점 & 카카오톡 맞춤형 리포트 발송 엔진]
@@ -6157,7 +6157,7 @@ window.queueKakaoNotificationForUser = async function(userId, notificationData) 
 /**
  * 회원이 스마트폰/PC로 로그인했을 때 대기 중인 카카오톡 알림을 본인 카카오톡으로 자동 발송
  */
-export async function processPendingUserKakaoMessages(authId) {
+async function processPendingUserKakaoMessages(authId) {
     if (!authId || !window.db) return;
     if (window.__processingPendingKakao) return;
     window.__processingPendingKakao = true;
@@ -6251,7 +6251,7 @@ export async function processPendingUserKakaoMessages(authId) {
  * 🎯 [약관 동의 회원 전용] 로그인 시 본인의 실구매 당첨 결과만 검사하여,
  * 과거 가입일 이후 미전송된 당첨 회차가 있을 경우 카카오톡 [나와의 채팅]으로 자동 전송
  */
-export async function autoCheckAndDispatchUserWinningReports(authId) {
+async function autoCheckAndDispatchUserWinningReports(authId) {
     if (!authId || !window.db) return;
     if (window.__checkingUnsentWinning) return;
     window.__checkingUnsentWinning = true;
@@ -7516,18 +7516,20 @@ window.startBatchWinningSend = async function() {
             if (lottoBanner && lottoBanner.style.display !== 'none') lottoBanner.innerHTML = updatedHtml;
         }, 1000);
     }
-    window.updatePurchaseDeadlineCountdowns = updatePurchaseDeadlineCountdowns;
+    if (typeof window !== 'undefined') {
+        window.updatePurchaseDeadlineCountdowns = updatePurchaseDeadlineCountdowns;
 
-    // 카카오톡 실구매 당첨 리포트 발송 전역 노출
-    window.getUnsentWinningRoundsForUser = getUnsentWinningRoundsForUser;
-    window.scoreUserRoundPurchases = scoreUserRoundPurchases;
-    window.buildUserWinningReportTemplate = buildUserWinningReportTemplate;
-    window.autoCheckAndDispatchUserWinningReports = autoCheckAndDispatchUserWinningReports;
-    window.processPendingUserKakaoMessages = processPendingUserKakaoMessages;
+        // 카카오톡 실구매 당첨 리포트 발송 전역 노출
+        window.getUnsentWinningRoundsForUser = getUnsentWinningRoundsForUser;
+        window.scoreUserRoundPurchases = scoreUserRoundPurchases;
+        window.buildUserWinningReportTemplate = buildUserWinningReportTemplate;
+        window.autoCheckAndDispatchUserWinningReports = autoCheckAndDispatchUserWinningReports;
+        window.processPendingUserKakaoMessages = processPendingUserKakaoMessages;
 
-    // 사용자 관리 UI 제어 및 필터 전역 노출
-    if (typeof toggleAddUserSection !== 'undefined') window.toggleAddUserSection = toggleAddUserSection;
-    if (typeof toggleKakaoDiagSection !== 'undefined') window.toggleKakaoDiagSection = toggleKakaoDiagSection;
-    if (typeof setUserFilterTab !== 'undefined') window.setUserFilterTab = setUserFilterTab;
-    if (typeof filterUserList !== 'undefined') window.filterUserList = filterUserList;
+        // 사용자 관리 UI 제어 및 필터 전역 노출
+        if (typeof toggleAddUserSection !== 'undefined') window.toggleAddUserSection = toggleAddUserSection;
+        if (typeof toggleKakaoDiagSection !== 'undefined') window.toggleKakaoDiagSection = toggleKakaoDiagSection;
+        if (typeof setUserFilterTab !== 'undefined') window.setUserFilterTab = setUserFilterTab;
+        if (typeof filterUserList !== 'undefined') window.filterUserList = filterUserList;
+    }
 }

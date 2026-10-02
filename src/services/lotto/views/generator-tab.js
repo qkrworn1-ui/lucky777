@@ -635,12 +635,16 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                 allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
             }
             state.fixedTop5Combinations_v4 = allCombos;
+            state.fixedTop5Combinations_v4_userId = effectiveUserId;
+            state.fixedTop5Combinations_v4_round = curUpcomingRound;
         } else {
             allCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
             if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
                 allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
             }
             state.fixedTop5Combinations_v3 = allCombos;
+            state.fixedTop5Combinations_v3_userId = effectiveUserId;
+            state.fixedTop5Combinations_v3_round = curUpcomingRound;
         }
 
         if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
@@ -1277,14 +1281,12 @@ export function handleGenerateAllClick() {
     
     // Force recalculate both v3 and v4 distinctly and explicitly for the current effective user & round
     state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
+    state.fixedTop5Combinations_v3_userId = effectiveUserId;
+    state.fixedTop5Combinations_v3_round = curUpcomingRound;
     state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
+    state.fixedTop5Combinations_v4_userId = effectiveUserId;
+    state.fixedTop5Combinations_v4_round = curUpcomingRound;
     state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
-    
-    try {
-        if (typeof saveGlobalState === 'function') {
-            saveGlobalState();
-        }
-    } catch (e) {}
     
     renderTop5Combinations(true);
 
@@ -1306,14 +1308,24 @@ export async function handleConfirmPurchaseHeroClick() {
     const versionStr = useV4 ? 'V4.0 행동경제학 알고리즘' : 'V3.0 하이브리드 알고리즘';
     
     const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
-    const rawCombos = state.fixedTop5Combinations || (useV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3) || [];
+    const nextRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
+    const effectiveUserId = getEffectiveGeneratorUserId();
+
+    const isV4Valid = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10 &&
+        state.fixedTop5Combinations_v4_userId === effectiveUserId && state.fixedTop5Combinations_v4_round === nextRound);
+    const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
+        state.fixedTop5Combinations_v3_userId === effectiveUserId && state.fixedTop5Combinations_v3_round === nextRound);
+
+    const rawCombos = (useV4
+        ? (isV4Valid ? state.fixedTop5Combinations_v4 : computeAbsoluteTop10Combinations(false, nextRound, 'v4', true, effectiveUserId))
+        : (isV3Valid ? state.fixedTop5Combinations_v3 : computeAbsoluteTop10Combinations(false, nextRound, 'v3', true, effectiveUserId))
+    ) || [];
     const currentCombos = rawCombos.length > 0 ? rawCombos.slice(0, comboCount) : [];
     if (!currentCombos || currentCombos.length === 0) {
         alert('구매 확정할 추천 번호 조합이 없습니다. 먼저 번호를 생성해주세요.');
         return;
     }
 
-    const nextRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
     const gameCount = currentCombos.length;
     const receiptCount = Math.ceil(gameCount / 5);
 
@@ -1343,23 +1355,22 @@ export function setupGeneratorTabEvents() {
             const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
             const effectiveUserId = getEffectiveGeneratorUserId();
 
+            const isV4Valid = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10 &&
+                state.fixedTop5Combinations_v4_userId === effectiveUserId && state.fixedTop5Combinations_v4_round === curUpcomingRound);
+            const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
+                state.fixedTop5Combinations_v3_userId === effectiveUserId && state.fixedTop5Combinations_v3_round === curUpcomingRound);
+
             if (isV4) {
-                if (!state.fixedTop5Combinations_v4 || state.fixedTop5Combinations_v4.length === 0) {
-                    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
-                }
+                state.fixedTop5Combinations_v4 = isV4Valid
+                    ? state.fixedTop5Combinations_v4
+                    : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
                 state.fixedTop5Combinations = state.fixedTop5Combinations_v4;
             } else {
-                if (!state.fixedTop5Combinations_v3 || state.fixedTop5Combinations_v3.length === 0) {
-                    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
-                }
+                state.fixedTop5Combinations_v3 = isV3Valid
+                    ? state.fixedTop5Combinations_v3
+                    : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
                 state.fixedTop5Combinations = state.fixedTop5Combinations_v3;
             }
-
-            try {
-                if (typeof saveGlobalState === 'function') {
-                    saveGlobalState();
-                }
-            } catch (e) {}
 
             renderTop5Combinations(false);
             updateSavedCount();
@@ -2209,7 +2220,11 @@ export async function selectGeneratorAlgo(algoId) {
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
         if (chkReportLogic) chkReportLogic.checked = true;
         localStorage.setItem('lotto_pref_v4', 'true');
-        state.fixedTop5Combinations = state.fixedTop5Combinations_v4 || computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
+        const isV4Valid = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10 &&
+            state.fixedTop5Combinations_v4_userId === effectiveUserId && state.fixedTop5Combinations_v4_round === curUpcomingRound);
+        state.fixedTop5Combinations = isV4Valid
+            ? state.fixedTop5Combinations_v4
+            : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
         renderTop5Combinations(true);
         updateTop7AlgoUI();
         const compactModal = document.getElementById('compactViewModal');
@@ -2226,7 +2241,11 @@ export async function selectGeneratorAlgo(algoId) {
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
         if (chkReportLogic) chkReportLogic.checked = false;
         localStorage.setItem('lotto_pref_v4', 'false');
-        state.fixedTop5Combinations = state.fixedTop5Combinations_v3 || computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
+        const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
+            state.fixedTop5Combinations_v3_userId === effectiveUserId && state.fixedTop5Combinations_v3_round === curUpcomingRound);
+        state.fixedTop5Combinations = isV3Valid
+            ? state.fixedTop5Combinations_v3
+            : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
         renderTop5Combinations(true);
         updateTop7AlgoUI();
         const compactModal = document.getElementById('compactViewModal');

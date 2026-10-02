@@ -74,12 +74,15 @@ export function generatePredictionReport() {
     const sortedAlgos = [...results].sort((a, b) => (b.totalWins - a.totalWins) || (b.totalPrize - a.totalPrize));
     const bestAlgo = sortedAlgos[0] || null;
 
-    // 3. Assemble User's Active Combinations for Upcoming Round
-    let v4Combos = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length > 0)
+    const isV4Valid = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10 &&
+        state.fixedTop5Combinations_v4_userId === targetCombosUser && state.fixedTop5Combinations_v4_round === curUpcomingRound);
+    let v4Combos = isV4Valid
         ? state.fixedTop5Combinations_v4
         : (typeof computeAbsoluteTop10Combinations === 'function' ? computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, targetCombosUser) : []);
     
-    let v3Combos = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length > 0)
+    const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
+        state.fixedTop5Combinations_v3_userId === targetCombosUser && state.fixedTop5Combinations_v3_round === curUpcomingRound);
+    let v3Combos = isV3Valid
         ? state.fixedTop5Combinations_v3
         : (typeof computeAbsoluteTop10Combinations === 'function' ? computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, targetCombosUser) : []);
 

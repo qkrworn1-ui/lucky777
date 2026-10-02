@@ -27,6 +27,7 @@ let _activePurchasesUnsub = null;
 let _activeExtraHistoryUnsub = null;
 let _activeAppStateUnsub = null;
 let _activePurchasesAuthId = null;
+let _activeLottoAuthId = null;
 
 export function resetLottoServiceState() {
     window.__lottoInitialized = false;
@@ -37,6 +38,14 @@ export function resetLottoServiceState() {
         _activePurchasesUnsub = null;
     }
     _activePurchasesAuthId = null;
+    _activeLottoAuthId = null;
+    state.fixedTop5Combinations_v3 = [];
+    state.fixedTop5Combinations_v3_userId = null;
+    state.fixedTop5Combinations_v3_round = null;
+    state.fixedTop5Combinations_v4 = [];
+    state.fixedTop5Combinations_v4_userId = null;
+    state.fixedTop5Combinations_v4_round = null;
+    state.fixedTop5Combinations = [];
 }
 
 export async function initLottoService(force = false) {
@@ -45,9 +54,10 @@ export async function initLottoService(force = false) {
     const currentAuthId = (SafeAuth.get() || '').trim().toLowerCase();
 
     // If user changed or force re-init requested, clean previous active listener
-    if (force || (_activePurchasesAuthId && _activePurchasesAuthId !== currentAuthId)) {
+    if (force || (_activeLottoAuthId !== null && _activeLottoAuthId !== currentAuthId)) {
         resetLottoServiceState();
     }
+    _activeLottoAuthId = currentAuthId;
 
     if (_isLottoInitializing && _lottoInitPromise) {
         return _lottoInitPromise;
@@ -79,11 +89,20 @@ export async function initLottoService(force = false) {
             // ⚡ Immediate baseline synchronous generation & rendering (Zero waiting time for 10 combos & admin banner)
             try {
                 const earlyUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243);
-                if (!state.fixedTop5Combinations_v3 || state.fixedTop5Combinations_v3.length === 0) {
-                    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(false, earlyUpcomingRound, 'v3');
+                const effectiveAuth = currentAuthId || 'guest';
+                const isV3EarlyValid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
+                    state.fixedTop5Combinations_v3_userId === effectiveAuth && state.fixedTop5Combinations_v3_round === earlyUpcomingRound);
+                if (!isV3EarlyValid) {
+                    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(false, earlyUpcomingRound, 'v3', true, effectiveAuth);
+                    state.fixedTop5Combinations_v3_userId = effectiveAuth;
+                    state.fixedTop5Combinations_v3_round = earlyUpcomingRound;
                 }
-                if (!state.fixedTop5Combinations_v4 || state.fixedTop5Combinations_v4.length === 0) {
-                    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(false, earlyUpcomingRound, 'v4');
+                const isV4EarlyValid = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10 &&
+                    state.fixedTop5Combinations_v4_userId === effectiveAuth && state.fixedTop5Combinations_v4_round === earlyUpcomingRound);
+                if (!isV4EarlyValid) {
+                    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(false, earlyUpcomingRound, 'v4', true, effectiveAuth);
+                    state.fixedTop5Combinations_v4_userId = effectiveAuth;
+                    state.fixedTop5Combinations_v4_round = earlyUpcomingRound;
                 }
                 const useV4Early = chkReportLogicEarly ? chkReportLogicEarly.checked : true;
                 state.fixedTop5Combinations = useV4Early ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
@@ -319,14 +338,15 @@ export async function initLottoService(force = false) {
         if (stateDoc) {
             if (stateDoc.aiState) state.aiState = stateDoc.aiState;
             if (!stateDoc.round || stateDoc.round === upcomingRound) {
-                if (stateDoc.fixedTop5Combinations) state.fixedTop5Combinations = stateDoc.fixedTop5Combinations;
-                if (stateDoc.fixedTop5Combinations_v3) state.fixedTop5Combinations_v3 = stateDoc.fixedTop5Combinations_v3;
-                if (stateDoc.fixedTop5Combinations_v4) state.fixedTop5Combinations_v4 = stateDoc.fixedTop5Combinations_v4;
                 if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks;
             } else {
                 state.fixedTop5Combinations = [];
                 state.fixedTop5Combinations_v3 = [];
+                state.fixedTop5Combinations_v3_userId = null;
+                state.fixedTop5Combinations_v3_round = null;
                 state.fixedTop5Combinations_v4 = [];
+                state.fixedTop5Combinations_v4_userId = null;
+                state.fixedTop5Combinations_v4_round = null;
                 state.extraPacks = [];
             }
         }
@@ -353,23 +373,10 @@ export async function initLottoService(force = false) {
 
                     let changed = false;
                     if (data.aiState) state.aiState = data.aiState;
-                    if (data.fixedTop5Combinations_v3 && data.fixedTop5Combinations_v3.length > 0) {
-                        state.fixedTop5Combinations_v3 = data.fixedTop5Combinations_v3;
-                        changed = true;
-                    }
-                    if (data.fixedTop5Combinations_v4 && data.fixedTop5Combinations_v4.length > 0) {
-                        state.fixedTop5Combinations_v4 = data.fixedTop5Combinations_v4;
-                        changed = true;
-                    }
                     if (Array.isArray(data.extraPacks)) {
                         state.extraPacks = data.extraPacks;
                         changed = true;
                     }
-
-                    const chkReport = document.getElementById('chkUseV4ReportLogic');
-                    state.fixedTop5Combinations = (chkReport && chkReport.checked) 
-                        ? state.fixedTop5Combinations_v4 
-                        : state.fixedTop5Combinations_v3;
 
                     if (changed) {
                         renderTop5Combinations(false);
@@ -398,28 +405,21 @@ export async function initLottoService(force = false) {
 
     const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
 
-    // Initialize v3 and v4 current week recommendations if missing in global state
-    let stateChanged = false;
-    if (!state.fixedTop5Combinations_v3 || state.fixedTop5Combinations_v3.length === 0) {
-        state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3');
-        stateChanged = true;
+    // Initialize v3 and v4 current week recommendations for effective user if missing
+    const effectiveAuth = currentAuthId || 'guest';
+    const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
+        state.fixedTop5Combinations_v3_userId === effectiveAuth && state.fixedTop5Combinations_v3_round === curUpcomingRound);
+    if (!isV3Valid) {
+        state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveAuth);
+        state.fixedTop5Combinations_v3_userId = effectiveAuth;
+        state.fixedTop5Combinations_v3_round = curUpcomingRound;
     }
-    if (!state.fixedTop5Combinations_v4 || state.fixedTop5Combinations_v4.length === 0) {
-        state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4');
-        stateChanged = true;
-    }
-
-    // Safety check: Ensure V3 and V4 are truly distinct
-    const v3Str = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3[0] && state.fixedTop5Combinations_v3[0].numbers) ? state.fixedTop5Combinations_v3[0].numbers.join(',') : '';
-    const v4Str = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4[0] && state.fixedTop5Combinations_v4[0].numbers) ? state.fixedTop5Combinations_v4[0].numbers.join(',') : '';
-    if (v3Str && v4Str && v3Str === v4Str) {
-        state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3');
-        state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4');
-        stateChanged = true;
-    }
-
-    if (stateChanged) {
-        saveGlobalState();
+    const isV4Valid = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10 &&
+        state.fixedTop5Combinations_v4_userId === effectiveAuth && state.fixedTop5Combinations_v4_round === curUpcomingRound);
+    if (!isV4Valid) {
+        state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveAuth);
+        state.fixedTop5Combinations_v4_userId = effectiveAuth;
+        state.fixedTop5Combinations_v4_round = curUpcomingRound;
     }
 
     state.fixedTop5Combinations = (chkReportLogic && chkReportLogic.checked) ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;

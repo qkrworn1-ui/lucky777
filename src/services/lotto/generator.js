@@ -684,17 +684,16 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
 
     if (isCurrentRound) {
         if (useReportLogic) {
-            if (!state.fixedTop5Combinations_v4 || state.fixedTop5Combinations_v4.length === 0 || forceRegenerate) {
-                state.fixedTop5Combinations_v4 = generated;
-            }
+            state.fixedTop5Combinations_v4 = generated;
+            state.fixedTop5Combinations_v4_userId = effectiveUserId;
+            state.fixedTop5Combinations_v4_round = roundForSeed;
         } else {
-            if (!state.fixedTop5Combinations_v3 || state.fixedTop5Combinations_v3.length === 0 || forceRegenerate) {
-                state.fixedTop5Combinations_v3 = generated;
-            }
+            state.fixedTop5Combinations_v3 = generated;
+            state.fixedTop5Combinations_v3_userId = effectiveUserId;
+            state.fixedTop5Combinations_v3_round = roundForSeed;
         }
         if (!overrideVersion && !ignoreLedger) {
             state.fixedTop5Combinations = generated;
-            saveGlobalState();
         }
     }
 

@@ -460,12 +460,20 @@ export function applyOptimizedCombinationToApp() {
         const chkReport = document.getElementById('chkUseV4ReportLogic');
         if (chkReport) chkReport.checked = true;
         localStorage.setItem('lotto_pref_v4', 'true');
-        state.fixedTop5Combinations = state.fixedTop5Combinations_v4 || computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
+        const isV4Valid = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10 &&
+            state.fixedTop5Combinations_v4_userId === effectiveUserId && state.fixedTop5Combinations_v4_round === curUpcomingRound);
+        state.fixedTop5Combinations = isV4Valid
+            ? state.fixedTop5Combinations_v4
+            : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
     } else if (v3Selected) {
         const chkReport = document.getElementById('chkUseV4ReportLogic');
         if (chkReport) chkReport.checked = false;
         localStorage.setItem('lotto_pref_v4', 'false');
-        state.fixedTop5Combinations = state.fixedTop5Combinations_v3 || computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
+        const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
+            state.fixedTop5Combinations_v3_userId === effectiveUserId && state.fixedTop5Combinations_v3_round === curUpcomingRound);
+        state.fixedTop5Combinations = isV3Valid
+            ? state.fixedTop5Combinations_v3
+            : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId);
     }
 
     // 3. Close modal
