@@ -2802,20 +2802,21 @@ html, body {
         display: none !important;
     }
 
-    /* ── [Concept 1] Ultra-Slim Glassmorphism Mobile Header (Height ~44px) ── */
+    /* ── [Option 2] Unified 2-Row Mobile Header (Fold 7 & Narrow Screen Optimized) ── */
     .app-header {
-        padding: 6px 10px !important;
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        gap: 6px !important;
-        border-radius: 12px !important;
-        background: rgba(15, 23, 42, 0.92) !important;
+        padding: 7px 10px 6px 10px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: stretch !important;
+        gap: 5px !important;
+        border-radius: 13px !important;
+        background: rgba(15, 23, 42, 0.94) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
         border: 1px solid rgba(251, 191, 36, 0.22) !important;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
-        min-height: 44px !important;
+        min-height: auto !important;
     }
 
     .header-top-row {
@@ -2825,6 +2826,7 @@ html, body {
         align-items: center !important;
         width: 100% !important;
         gap: 6px !important;
+        min-width: 0 !important;
     }
 
     .logo-area {
@@ -2836,15 +2838,15 @@ html, body {
     }
 
     .logo-emblem {
-        width: 28px !important;
-        height: 28px !important;
-        min-width: 28px !important;
+        width: 27px !important;
+        height: 27px !important;
+        min-width: 27px !important;
         border-radius: 8px !important;
         box-shadow: 0 0 10px rgba(99, 102, 241, 0.35) !important;
     }
 
     .logo-num-badge {
-        font-size: 0.65rem !important;
+        font-size: 0.63rem !important;
     }
 
     .logo-text {
@@ -2870,16 +2872,35 @@ html, body {
         display: none !important;
     }
 
+    /* ── Option 2: Full-Width Unified Mobile Countdown & Info Strip (Row 2) ── */
     .mobile-header-countdown {
         display: flex !important;
         align-items: center !important;
-        gap: 3px !important;
-        font-size: 0.62rem !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        padding: 3px 8px !important;
+        border-radius: 7px !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        gap: 4px !important;
+    }
+
+    .mobile-cd-left {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        font-size: 0.64rem !important;
         color: #94a3b8 !important;
-        font-weight: 600 !important;
-        line-height: 1 !important;
-        margin-top: 2px !important;
+        font-weight: 700 !important;
         white-space: nowrap !important;
+        min-width: 0 !important;
+    }
+
+    .mobile-cd-tag {
+        color: #f59e0b !important;
+        font-size: 0.58rem !important;
     }
 
     .mobile-header-countdown .mobile-cd-round {
@@ -2889,19 +2910,69 @@ html, body {
 
     .mobile-header-countdown .mobile-cd-dday {
         color: #fcd34d !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
+        background: rgba(245, 158, 11, 0.2) !important;
+        padding: 1px 4px !important;
+        border-radius: 4px !important;
+        font-size: 0.58rem !important;
+        border: 1px solid rgba(245, 158, 11, 0.3) !important;
     }
 
-    .mobile-header-countdown .mobile-cd-dot {
+    .mobile-cd-divider {
         color: #475569 !important;
         font-size: 0.55rem !important;
+        margin: 0 1px !important;
+    }
+
+    .mobile-cd-clock {
+        color: #34d399 !important;
+        font-size: 0.6rem !important;
     }
 
     .mobile-header-countdown .mobile-cd-time {
         color: #34d399 !important;
         font-family: 'JetBrains Mono', monospace !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
+        font-size: 0.65rem !important;
+        letter-spacing: 0.3px !important;
+    }
+
+    .mobile-cd-right {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
         font-size: 0.62rem !important;
+        color: #94a3b8 !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        padding: 2px 5px !important;
+        border-radius: 5px !important;
+        background: rgba(16, 185, 129, 0.1) !important;
+        border: 1px solid rgba(16, 185, 129, 0.25) !important;
+        cursor: pointer !important;
+        flex-shrink: 0 !important;
+        transition: all 0.2s ease !important;
+    }
+
+    .mobile-cd-right:hover {
+        background: rgba(16, 185, 129, 0.2) !important;
+        border-color: rgba(16, 185, 129, 0.45) !important;
+    }
+
+    .mobile-sync-dot {
+        width: 5px !important;
+        height: 5px !important;
+        border-radius: 50% !important;
+        background: #10b981 !important;
+        box-shadow: 0 0 6px #10b981 !important;
+        display: inline-block !important;
+        flex-shrink: 0 !important;
+    }
+
+    .mobile-sync-text {
+        color: #6ee7b7 !important;
+        font-size: 0.58rem !important;
+        font-weight: 800 !important;
     }
 
     .header-top-right {
@@ -2909,29 +2980,30 @@ html, body {
         align-items: center !important;
         justify-content: flex-end !important;
         gap: 4px !important;
-        flex: 1 1 auto !important;
+        flex: 0 1 auto !important;
         min-width: 0 !important;
         flex-wrap: nowrap !important;
     }
 
     /* User Profile Chip Compact Pill */
     .header-top-right .header-user-chip {
-        padding: 2px 6px 2px 4px !important;
+        padding: 2px 7px 2px 5px !important;
         border-radius: 9999px !important;
-        gap: 4px !important;
+        gap: 3px !important;
         background: rgba(30, 41, 59, 0.85) !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        max-width: 95px !important;
+        border: 1px solid rgba(251, 191, 36, 0.35) !important;
+        max-width: 82px !important;
         display: inline-flex !important;
         align-items: center !important;
-        flex-shrink: 1 !important;
+        flex-shrink: 0 !important;
         min-width: 0 !important;
+        box-sizing: border-box !important;
     }
 
     .header-top-right .user-chip-avatar {
-        width: 18px !important;
-        height: 18px !important;
-        font-size: 0.58rem !important;
+        width: 17px !important;
+        height: 17px !important;
+        font-size: 0.62rem !important;
         flex-shrink: 0 !important;
     }
 
@@ -2944,10 +3016,10 @@ html, body {
     }
 
     .header-top-right .user-chip-name {
-        font-size: 0.68rem !important;
+        font-size: 0.66rem !important;
         font-weight: 800 !important;
         color: #f1f5f9 !important;
-        max-width: 48px !important;
+        max-width: 44px !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
@@ -2967,7 +3039,7 @@ html, body {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
         color: #022c22 !important;
         font-weight: 900 !important;
-        font-size: 0.68rem !important;
+        font-size: 0.66rem !important;
         padding: 4px 7px !important;
         border-radius: 7px !important;
         border: 1px solid rgba(52, 211, 153, 0.5) !important;
@@ -2983,16 +3055,16 @@ html, body {
     }
 
     .btn-mobile-header-qr i.fa-qrcode {
-        font-size: 0.74rem !important;
+        font-size: 0.72rem !important;
         color: #022c22 !important;
     }
 
     /* Header Compact Action Icons on Mobile */
     .btn-home-compact {
-        width: 26px !important;
-        height: 26px !important;
-        min-width: 26px !important;
-        min-height: 26px !important;
+        width: 25px !important;
+        height: 25px !important;
+        min-width: 25px !important;
+        min-height: 25px !important;
         padding: 0 !important;
         font-size: 0.72rem !important;
         border-radius: 7px !important;
@@ -3005,28 +3077,23 @@ html, body {
         flex-shrink: 0 !important;
     }
 
-    /* On Mobile, admin buttons and standalone logout are hidden from the top bar to prevent clutter; accessible via User Profile Popover */
+    /* On Mobile, admin buttons, standalone logout, and redundant status badge are hidden from the top bar to prevent clutter; accessible via User Profile Popover */
+    .header-top-right #serverStatusBadge,
     .btn-user-mgmt-compact,
     .btn-snapshot-audit-compact,
     .btn-logout-compact,
     #btnUserManagementApp,
-    #btnAdminSnapshotAudit {
-        display: none !important;
-    }
-
-    .header-top-right #serverStatusBadge {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        padding: 4px 6px !important;
-        border-radius: 7px !important;
-        background: rgba(15, 23, 42, 0.75) !important;
-        border: 1px solid rgba(51, 65, 85, 0.8) !important;
-        cursor: pointer !important;
-        flex-shrink: 0 !important;
-    }
-
-    .header-top-right #serverStatusBadge #serverStatusText {
+    #btnAdminSnapshotAudit,
+    body.is-admin .header-top-right .btn-user-mgmt-compact,
+    body.is-admin .header-top-right .btn-snapshot-audit-compact,
+    body.is-admin .header-top-right #btnUserManagementApp,
+    body.is-admin .header-top-right #btnAdminSnapshotAudit,
+    body.is-admin .header-top-right .btn-logout-compact,
+    body.is-admin .btn-user-mgmt-compact,
+    body.is-admin .btn-snapshot-audit-compact,
+    body.is-admin #btnUserManagementApp,
+    body.is-admin #btnAdminSnapshotAudit,
+    body.is-admin .btn-logout-compact {
         display: none !important;
     }
 
@@ -3194,7 +3261,7 @@ html, body {
 
     @media (max-width: 340px) {
         .app-header {
-            padding: 4px 6px !important;
+            padding: 5px 6px !important;
         }
         .logo-emblem {
             width: 24px !important;
@@ -3205,7 +3272,17 @@ html, body {
             font-size: 0.76rem !important;
         }
         .mobile-header-countdown {
-            font-size: 0.56rem !important;
+            padding: 2px 5px !important;
+        }
+        .mobile-cd-left {
+            font-size: 0.58rem !important;
+            gap: 2px !important;
+        }
+        .mobile-header-countdown .mobile-cd-time {
+            font-size: 0.6rem !important;
+        }
+        .mobile-sync-text {
+            font-size: 0.52rem !important;
         }
         .header-top-right .header-user-chip {
             padding: 1px 4px !important;
@@ -3213,7 +3290,7 @@ html, body {
         }
         .header-top-right .user-chip-name {
             font-size: 0.62rem !important;
-            max-width: 38px !important;
+            max-width: 36px !important;
         }
         .btn-mobile-header-qr {
             padding: 3px 5px !important;

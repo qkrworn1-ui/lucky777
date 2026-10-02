@@ -138,14 +138,20 @@ export async function initLottoService(force = false) {
                 console.error("Firebase not initialized.");
                 state.lottoExtraHistory = {};
                 state.savedCombinations = [];
-                if (statusIndicator) { statusIndicator.style.background = '#ef4444'; statusIndicator.style.boxShadow = '0 0 8px #ef4444'; }
-                if (statusText) statusText.textContent = 'DB 접속 오류 (로컬)';
+                const mDot = document.getElementById('mobileServerStatusDot');
+                const mText = document.getElementById('mobileServerStatusText');
+                if (mDot) { mDot.style.background = '#ef4444'; mDot.style.boxShadow = '0 0 6px #ef4444'; }
+                if (mText) { mText.textContent = '오프라인'; mText.style.color = '#f87171'; }
                 if (typeof window.updateServerConnectionStatus === 'function') {
                     window.updateServerConnectionStatus(false);
                 }
             } else {
                 if (statusIndicator) { statusIndicator.style.background = '#10b981'; statusIndicator.style.boxShadow = '0 0 8px #10b981'; }
                 if (statusText) statusText.textContent = 'DB 접속 완료 (Cloud)';
+                const mDot = document.getElementById('mobileServerStatusDot');
+                const mText = document.getElementById('mobileServerStatusText');
+                if (mDot) { mDot.style.background = '#10b981'; mDot.style.boxShadow = '0 0 6px #10b981'; }
+                if (mText) { mText.textContent = '서버 정상'; mText.style.color = '#6ee7b7'; }
                 if (typeof window.updateServerConnectionStatus === 'function') {
                     window.updateServerConnectionStatus(true);
                 }
