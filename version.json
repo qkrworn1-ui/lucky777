@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.01.1707",
-  "buildDate": "2026-10-01",
+  "version": "v2026.10.02.1415",
+  "buildDate": "2026-10-02",
   "description": "feat: all members server precomputed evaluations and dashboard summary",
-  "buildTimestamp": "2026-10-01T17:07:00.037059",
+  "buildTimestamp": "2026-10-02T14:15:03.638291",
   "buildHistory": [
-    {
-      "version": "v2026.10.01.1334.52",
-      "buildDate": "2026-10-01",
-      "buildTime": "13:34",
-      "buildDateTime": "2026-10-01 13:34",
-      "buildTimestamp": "2026-10-01T13:34:52.671057",
-      "description": "perf(dashboard): eliminate smartphone login lag via staggered background computation and local review cache without touching kakao auth pipeline"
-    },
-    {
-      "version": "v2026.10.01.1532",
-      "buildDate": "2026-10-01",
-      "buildTime": "15:32",
-      "buildDateTime": "2026-10-01 15:32",
-      "buildTimestamp": "2026-10-01T15:32:48.898128",
-      "description": "feat(perf): implement server precomputed winning evaluations and 0.05s dashboard summary loader"
-    },
     {
       "version": "v2026.10.01.1538",
       "buildDate": "2026-10-01",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-01 17:07",
       "buildTimestamp": "2026-10-01T17:07:00.037059",
       "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.02.1410",
+      "buildDate": "2026-10-02",
+      "buildTime": "14:10",
+      "buildDateTime": "2026-10-02 14:10",
+      "buildTimestamp": "2026-10-02T14:10:31.910338",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.02.1415",
+      "buildDate": "2026-10-02",
+      "buildTime": "14:15",
+      "buildDateTime": "2026-10-02 14:15",
+      "buildTimestamp": "2026-10-02T14:15:03.638291",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
     }
   ],
-  "buildTime": "17:07",
-  "buildDateTime": "2026-10-01 17:07"
+  "buildTime": "14:15",
+  "buildDateTime": "2026-10-02 14:15"
 }

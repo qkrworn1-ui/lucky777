@@ -206,6 +206,7 @@ if __name__ == '__main__':
         'src/services/lotto/views/algorithms-tab.js',
         'src/services/lotto/views/confirmed-tab.js',
         'src/services/lotto/views/snapshot-audit-modal.js',
+        'src/services/lotto/views/quick-view.js',
         'sw.js',
         'netlify/functions/kakao-token.js',
         'netlify/functions/lotto.js',
