@@ -3510,16 +3510,13 @@ html, body {
         gap: 6px !important;
     }
 
-    .btn-home-compact,
-    .btn-share-compact,
-    .btn-user-mgmt-compact,
-    .btn-logout-compact {
-        width: 32px !important;
-        height: 32px !important;
-        min-width: 32px !important;
-        min-height: 32px !important;
+    .btn-home-compact {
+        width: 25px !important;
+        height: 25px !important;
+        min-width: 25px !important;
+        min-height: 25px !important;
         padding: 0 !important;
-        font-size: 0.85rem !important;
+        font-size: 0.72rem !important;
     }
 
     .tab-btn {
@@ -3540,16 +3537,13 @@ html, body {
 
 /* ── 4. Ultra-Narrow Devices (max-width: 360px) ── */
 @media (max-width: 360px) {
-    .btn-home-compact,
-    .btn-share-compact,
-    .btn-user-mgmt-compact,
-    .btn-logout-compact {
-        width: 30px !important;
-        height: 30px !important;
-        min-width: 30px !important;
-        min-height: 30px !important;
+    .btn-home-compact {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        min-height: 24px !important;
         padding: 0 !important;
-        font-size: 0.8rem !important;
+        font-size: 0.7rem !important;
     }
 
     .lotto-ball {
@@ -10144,32 +10138,66 @@ html, body {
         overflow-x: hidden !important;
     }
 
-    /* 1. Mobile Header (Concept 1 Ultra-Slim Glass) */
+    /* 1. Mobile Header (Option 2 Unified 2-Row Layout) */
     .app-header {
-        padding: 6px 10px !important;
-        flex-direction: row !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-        gap: 6px !important;
-        border-radius: 12px !important;
-        background: rgba(15, 23, 42, 0.92) !important;
+        padding: 7px 10px 6px 10px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: stretch !important;
+        gap: 5px !important;
+        border-radius: 13px !important;
+        background: rgba(15, 23, 42, 0.94) !important;
         backdrop-filter: blur(16px) !important;
         -webkit-backdrop-filter: blur(16px) !important;
         border: 1px solid rgba(251, 191, 36, 0.22) !important;
         box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45) !important;
-        min-height: 44px !important;
+        min-height: auto !important;
+    }
+
+    .header-top-row {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        gap: 6px !important;
+        min-width: 0 !important;
     }
 
     .logo-area {
+        display: flex !important;
+        align-items: center !important;
         gap: 6px !important;
+        flex: 0 0 auto !important;
+        min-width: 0 !important;
     }
 
     .logo-text h1 {
         font-size: 0.84rem !important;
+        line-height: 1.1 !important;
+        margin: 0 !important;
+        font-weight: 900 !important;
+        white-space: nowrap !important;
     }
 
-    .logo-text .subtitle {
+    .logo-text .subtitle,
+    .logo-text .app-version-badge {
         display: none !important;
+    }
+
+    .mobile-header-countdown {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        padding: 3px 8px !important;
+        border-radius: 7px !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        gap: 4px !important;
     }
 
     .header-right-group {
@@ -18757,6 +18785,79 @@ body.is-admin .btn-snapshot-audit-compact {
     }
     .lp-flip-item span {
         font-size: 10px !important;
+    }
+}
+
+/* ==========================================================================
+   🚨 Mobile Header Option 2 Final Safeguard (Ensures 2-Row Stack on Mobile/Fold)
+   ========================================================================== */
+@media (max-width: 768px) {
+    header.app-header {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-start !important;
+        align-items: stretch !important;
+        padding: 7px 10px 6px 10px !important;
+        gap: 5px !important;
+        min-height: auto !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    header.app-header .header-top-row {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    header.app-header .logo-area {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        flex: 0 0 auto !important;
+        min-width: 0 !important;
+    }
+
+    header.app-header .header-top-right {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-end !important;
+        gap: 4px !important;
+        flex: 0 1 auto !important;
+        min-width: 0 !important;
+        flex-wrap: nowrap !important;
+    }
+
+    header.app-header .mobile-header-countdown {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        width: 100% !important;
+        padding: 3px 8px !important;
+        border-radius: 7px !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        gap: 4px !important;
+    }
+
+    /* Suppress admin top-level buttons on mobile (accessible via User Profile Popover) */
+    header.app-header .header-top-right #serverStatusBadge,
+    body.is-admin header.app-header .btn-user-mgmt-compact,
+    body.is-admin header.app-header .btn-snapshot-audit-compact,
+    body.is-admin header.app-header #btnUserManagementApp,
+    body.is-admin header.app-header #btnAdminSnapshotAudit,
+    body.is-admin header.app-header .btn-logout-compact,
+    header.app-header .btn-user-mgmt-compact,
+    header.app-header .btn-snapshot-audit-compact,
+    header.app-header #btnUserManagementApp,
+    header.app-header #btnAdminSnapshotAudit,
+    header.app-header .btn-logout-compact {
+        display: none !important;
     }
 }
 
