@@ -349,10 +349,8 @@ export function renderQuickViewContent() {
         `;
     });
 
-    const markingGrid = document.getElementById('compactMarkingGrid');
     if (markingGrid) markingGrid.innerHTML = gridHtml;
 
-    const titleSub = document.getElementById('quickViewSubTitle');
     if (titleSub) {
         titleSub.innerHTML = `<span style="color: #fbbf24; font-weight: 800;">[${(effectiveUserId || 'guest').toUpperCase()}] 회원 전용 배정</span> · 제 <strong>${targetRound}</strong>회차 · ${versionLabel} (${combos.length}조합)`;
     }

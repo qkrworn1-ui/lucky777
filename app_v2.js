@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.02.1415 - BUILD_DATE: 2026-10-02] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.02.1431.45 - BUILD_DATE: 2026-10-02] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.02.1415)
+ * Lucky777 Smart Bundle (v2026.10.02.1431.45)
  */
 
 
@@ -7585,7 +7585,7 @@ window.queueKakaoNotificationForUser = async function(userId, notificationData) 
 /**
  * 회원이 스마트폰/PC로 로그인했을 때 대기 중인 카카오톡 알림을 본인 카카오톡으로 자동 발송
  */
-window.processPendingUserKakaoMessages = async function(authId) {
+async function processPendingUserKakaoMessages(authId) {
     if (!authId || !window.db) return;
     if (window.__processingPendingKakao) return;
     window.__processingPendingKakao = true;
@@ -7679,7 +7679,7 @@ window.processPendingUserKakaoMessages = async function(authId) {
  * 🎯 [약관 동의 회원 전용] 로그인 시 본인의 실구매 당첨 결과만 검사하여,
  * 과거 가입일 이후 미전송된 당첨 회차가 있을 경우 카카오톡 [나와의 채팅]으로 자동 전송
  */
-window.autoCheckAndDispatchUserWinningReports = async function(authId) {
+async function autoCheckAndDispatchUserWinningReports(authId) {
     if (!authId || !window.db) return;
     if (window.__checkingUnsentWinning) return;
     window.__checkingUnsentWinning = true;
@@ -8954,10 +8954,10 @@ window.startBatchWinningSend = async function() {
     window.processPendingUserKakaoMessages = processPendingUserKakaoMessages;
 
     // 사용자 관리 UI 제어 및 필터 전역 노출
-    window.toggleAddUserSection = toggleAddUserSection;
-    window.toggleKakaoDiagSection = toggleKakaoDiagSection;
-    window.setUserFilterTab = setUserFilterTab;
-    window.filterUserList = filterUserList;
+    if (typeof toggleAddUserSection !== 'undefined') window.toggleAddUserSection = toggleAddUserSection;
+    if (typeof toggleKakaoDiagSection !== 'undefined') window.toggleKakaoDiagSection = toggleKakaoDiagSection;
+    if (typeof setUserFilterTab !== 'undefined') window.setUserFilterTab = setUserFilterTab;
+    if (typeof filterUserList !== 'undefined') window.filterUserList = filterUserList;
 }
 
         if (typeof SafeAuth !== 'undefined') {
@@ -9087,6 +9087,14 @@ window.startBatchWinningSend = async function() {
         if (typeof setupAuthEvents !== 'undefined') {
             __exports.setupAuthEvents = setupAuthEvents;
             if (typeof window !== 'undefined') window.setupAuthEvents = setupAuthEvents;
+        }
+        if (typeof processPendingUserKakaoMessages !== 'undefined') {
+            __exports.processPendingUserKakaoMessages = processPendingUserKakaoMessages;
+            if (typeof window !== 'undefined') window.processPendingUserKakaoMessages = processPendingUserKakaoMessages;
+        }
+        if (typeof autoCheckAndDispatchUserWinningReports !== 'undefined') {
+            __exports.autoCheckAndDispatchUserWinningReports = autoCheckAndDispatchUserWinningReports;
+            if (typeof window !== 'undefined') window.autoCheckAndDispatchUserWinningReports = autoCheckAndDispatchUserWinningReports;
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/shared/auth-mgmt.js]:', modErr);
@@ -20178,9 +20186,11 @@ window.onAdmin1235ModalUserChange = function(val) {
 /**
  * 🔄 모달에서 특정 회원 선택 바로가기
  */
-window.selectAdmin1235ModalSpecificUser = function(userId) {
-    window.onAdmin1235ModalUserChange(userId);
-};
+function selectAdmin1235ModalSpecificUser(userId) {
+    if (typeof window !== 'undefined' && typeof window.onAdmin1235ModalUserChange === 'function') {
+        window.onAdmin1235ModalUserChange(userId);
+    }
+}
 
 /**
  * 🔄 모달 알고리즘 필터 변경
@@ -21378,6 +21388,10 @@ if (typeof window !== 'undefined') {
         if (typeof openAdmin1235ReviewModal !== 'undefined') {
             __exports.openAdmin1235ReviewModal = openAdmin1235ReviewModal;
             if (typeof window !== 'undefined') window.openAdmin1235ReviewModal = openAdmin1235ReviewModal;
+        }
+        if (typeof selectAdmin1235ModalSpecificUser !== 'undefined') {
+            __exports.selectAdmin1235ModalSpecificUser = selectAdmin1235ModalSpecificUser;
+            if (typeof window !== 'undefined') window.selectAdmin1235ModalSpecificUser = selectAdmin1235ModalSpecificUser;
         }
         if (typeof renderAdmin1235ReviewModalContent !== 'undefined') {
             __exports.renderAdmin1235ReviewModalContent = renderAdmin1235ReviewModalContent;
@@ -30107,10 +30121,8 @@ function renderQuickViewContent() {
         `;
     });
 
-    const markingGrid = document.getElementById('compactMarkingGrid');
     if (markingGrid) markingGrid.innerHTML = gridHtml;
 
-    const titleSub = document.getElementById('quickViewSubTitle');
     if (titleSub) {
         titleSub.innerHTML = `<span style="color: #fbbf24; font-weight: 800;">[${(effectiveUserId || 'guest').toUpperCase()}] 회원 전용 배정</span> · 제 <strong>${targetRound}</strong>회차 · ${versionLabel} (${combos.length}조합)`;
     }

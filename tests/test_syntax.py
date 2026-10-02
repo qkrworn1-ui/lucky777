@@ -26,5 +26,16 @@ class TestSyntaxIntegrity(unittest.TestCase):
                 ok, msg = check_js_syntax(f)
                 self.assertTrue(ok, f"Syntax error in {f}: {msg}")
 
+    def test_node_syntax_check(self):
+        import shutil, subprocess
+        node_bin = shutil.which('node')
+        if not node_bin:
+            adobe_node = r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+            if os.path.exists(adobe_node):
+                node_bin = adobe_node
+        if node_bin and os.path.exists('app_v2.js'):
+            res = subprocess.run([node_bin, '--check', 'app_v2.js'], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0, f"Node syntax check failed on app_v2.js: {res.stderr or res.stdout}")
+
 if __name__ == '__main__':
     unittest.main()

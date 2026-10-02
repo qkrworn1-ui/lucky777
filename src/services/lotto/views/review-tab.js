@@ -2750,9 +2750,11 @@ window.onAdmin1235ModalUserChange = function(val) {
 /**
  * 🔄 모달에서 특정 회원 선택 바로가기
  */
-window.selectAdmin1235ModalSpecificUser = function(userId) {
-    window.onAdmin1235ModalUserChange(userId);
-};
+export function selectAdmin1235ModalSpecificUser(userId) {
+    if (typeof window !== 'undefined' && typeof window.onAdmin1235ModalUserChange === 'function') {
+        window.onAdmin1235ModalUserChange(userId);
+    }
+}
 
 /**
  * 🔄 모달 알고리즘 필터 변경

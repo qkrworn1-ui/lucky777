@@ -6157,7 +6157,7 @@ window.queueKakaoNotificationForUser = async function(userId, notificationData) 
 /**
  * 회원이 스마트폰/PC로 로그인했을 때 대기 중인 카카오톡 알림을 본인 카카오톡으로 자동 발송
  */
-window.processPendingUserKakaoMessages = async function(authId) {
+export async function processPendingUserKakaoMessages(authId) {
     if (!authId || !window.db) return;
     if (window.__processingPendingKakao) return;
     window.__processingPendingKakao = true;
@@ -6251,7 +6251,7 @@ window.processPendingUserKakaoMessages = async function(authId) {
  * 🎯 [약관 동의 회원 전용] 로그인 시 본인의 실구매 당첨 결과만 검사하여,
  * 과거 가입일 이후 미전송된 당첨 회차가 있을 경우 카카오톡 [나와의 채팅]으로 자동 전송
  */
-window.autoCheckAndDispatchUserWinningReports = async function(authId) {
+export async function autoCheckAndDispatchUserWinningReports(authId) {
     if (!authId || !window.db) return;
     if (window.__checkingUnsentWinning) return;
     window.__checkingUnsentWinning = true;
@@ -7526,8 +7526,8 @@ window.startBatchWinningSend = async function() {
     window.processPendingUserKakaoMessages = processPendingUserKakaoMessages;
 
     // 사용자 관리 UI 제어 및 필터 전역 노출
-    window.toggleAddUserSection = toggleAddUserSection;
-    window.toggleKakaoDiagSection = toggleKakaoDiagSection;
-    window.setUserFilterTab = setUserFilterTab;
-    window.filterUserList = filterUserList;
+    if (typeof toggleAddUserSection !== 'undefined') window.toggleAddUserSection = toggleAddUserSection;
+    if (typeof toggleKakaoDiagSection !== 'undefined') window.toggleKakaoDiagSection = toggleKakaoDiagSection;
+    if (typeof setUserFilterTab !== 'undefined') window.setUserFilterTab = setUserFilterTab;
+    if (typeof filterUserList !== 'undefined') window.filterUserList = filterUserList;
 }
