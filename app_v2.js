@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.02.2020 - BUILD_DATE: 2026-10-02] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.02.2031 - BUILD_DATE: 2026-10-02] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.02.2020)
+ * Lucky777 Smart Bundle (v2026.10.02.2031)
  */
 
 
@@ -2295,7 +2295,7 @@ function updateLoggedInUserHeaderUI(targetAuthId = null) {
         joinRound = window.getUserJoinRound(cleanId);
     }
 
-    const targetRound = (typeof getUpcomingLottoRound === 'function') ? getUpcomingLottoRound() : 1242;
+    const targetRound = (typeof getUpcomingLottoRound === 'function') ? getUpcomingLottoRound() : 1244;
 
     let hasVerified = false;
     let verifiedText = '실구매 미인증';
@@ -9356,7 +9356,7 @@ function getUserConfirmedGameCountForRound(userId = null, targetRound = null) {
 
         } else {
 
-            roundToCheck = 1242;
+            roundToCheck = 1243;
 
         }
 
@@ -12958,7 +12958,9 @@ function getSafeActualDraw(round) {
 
         1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-12' },
 
-        1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-19' }
+        1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-19' },
+
+        1243: { numbers: [9, 18, 24, 38, 43, 44], bonus: 35, rank1Winners: 12, rank1Prize: 2592525282, rank2Winners: 115, rank2Prize: 45087397, rank3Winners: 3591, rank3Prize: 1443902, rank4Winners: 174306, rank4Prize: 50000, rank5Winners: 2853501, rank5Prize: 5000, date: '2026-09-26' }
 
     };
 
@@ -18211,7 +18213,7 @@ function updateReviewRoundSelector(selectedRound = null) {
         .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1242;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -18341,7 +18343,7 @@ async function renderAllRoundsReviewDetail() {
         .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1242;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -21740,7 +21742,7 @@ async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUserId = 
 
     const baseList = isAll ? getAllUnifiedRegisteredUsers() : [];
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1242;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, fallbackLatest)
         : (state.latestRoundNum || fallbackLatest);
@@ -24101,7 +24103,7 @@ function renderExtraAddonPacksSection() {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     // ☁️ Seamless Multi-Device Sync: Fetch from cloud in background once per session
     if (effectiveUserId !== 'guest' && (!state._extraPacksCloudSynced || !state._extraPacksCloudSynced[`${effectiveUserId}_${curUpcomingRound}`])) {
@@ -24285,7 +24287,7 @@ async function handleToggleSpecificExtraPack(packId) {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
         ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
@@ -24338,7 +24340,7 @@ function handleRemoveSingleExtraPack(packId) {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     let activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
     if (!activePackIds.includes(pIdx)) return;
@@ -24358,7 +24360,7 @@ function handleGenerateAllExtraPacks() {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
         ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
@@ -24384,7 +24386,7 @@ async function handleAddExtraPack() {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     const activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
     if (activePackIds.length >= 5) {
@@ -24405,7 +24407,7 @@ function handleClearExtraPacks() {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     const activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
     if (activePackIds.length === 0) {
@@ -24508,7 +24510,7 @@ function updateTop7AlgoUI() {
         const effectiveUserId = getEffectiveGeneratorUserId();
         const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
             ? window.getUpcomingLottoRound()
-            : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+            : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
         const cleanEffUser = String(effectiveUserId || '').toLowerCase().trim();
         const isViewerAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
@@ -24905,7 +24907,7 @@ function openBudgetOptimizerModal() {
 
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     const isEligible = isAdmin || (typeof isUserEligibleForExtraPacks === 'function'
         ? isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
@@ -33218,7 +33220,8 @@ const OFFICIAL_DRAWS = {
     1239: { numbers: [1, 3, 17, 26, 33, 42], bonus: 41, rank1Prize: 1980500000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.08.29' },
     1240: { numbers: [11, 13, 19, 20, 31, 44], bonus: 27, rank1Prize: 2000000000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.05' },
     1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.12' },
-    1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.19' }
+    1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.19' },
+    1243: { numbers: [9, 18, 24, 38, 43, 44], bonus: 35, rank1Winners: 12, rank1Prize: 2592525282, rank2Winners: 115, rank2Prize: 45087397, rank3Winners: 3591, rank3Prize: 1443902, rank4Winners: 174306, rank4Prize: 50000, rank5Winners: 2853501, rank5Prize: 5000, date: '2026.09.26' }
 };
 
 function getDrawDataForAudit(round) {
@@ -33395,7 +33398,7 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
 
     // Process Purchases & Snapshots
     const processedUsers = [];
-    const allRoundsSet = new Set([1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242]);
+    const allRoundsSet = new Set([1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243]);
 
     const purchasesMap = {};
     purchasesDocs.forEach(p => {
@@ -42961,7 +42964,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             .filter(n => !isNaN(n) && n >= fromRound && Array.isArray(history[n]?.numbers) && history[n].numbers.length === 6)
             .sort((a, b) => a - b);
 
-        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
+        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
         const maxRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);
@@ -43069,7 +43072,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             let latestActiveMemberCount = 0;
 
             const userList = getAllUnifiedRegisteredUsers();
-            const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242].filter(r => r <= maxRound);
+            const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243].filter(r => r <= maxRound);
 
             rounds.forEach(rnd => {
                 userList.forEach(u => {

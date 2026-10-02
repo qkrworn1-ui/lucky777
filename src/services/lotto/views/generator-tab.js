@@ -1682,7 +1682,7 @@ export function renderExtraAddonPacksSection() {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     // ☁️ Seamless Multi-Device Sync: Fetch from cloud in background once per session
     if (effectiveUserId !== 'guest' && (!state._extraPacksCloudSynced || !state._extraPacksCloudSynced[`${effectiveUserId}_${curUpcomingRound}`])) {
@@ -1866,7 +1866,7 @@ export async function handleToggleSpecificExtraPack(packId) {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
         ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
@@ -1919,7 +1919,7 @@ export function handleRemoveSingleExtraPack(packId) {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     let activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
     if (!activePackIds.includes(pIdx)) return;
@@ -1939,7 +1939,7 @@ export function handleGenerateAllExtraPacks() {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
         ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
@@ -1965,7 +1965,7 @@ export async function handleAddExtraPack() {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     const activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
     if (activePackIds.length >= 5) {
@@ -1986,7 +1986,7 @@ export function handleClearExtraPacks() {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     const activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
     if (activePackIds.length === 0) {
@@ -2089,7 +2089,7 @@ export function updateTop7AlgoUI() {
         const effectiveUserId = getEffectiveGeneratorUserId();
         const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
             ? window.getUpcomingLottoRound()
-            : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+            : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
         const cleanEffUser = String(effectiveUserId || '').toLowerCase().trim();
         const isViewerAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));

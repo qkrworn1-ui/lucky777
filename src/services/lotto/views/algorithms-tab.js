@@ -321,7 +321,7 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
 
     const baseList = isAll ? getAllUnifiedRegisteredUsers() : [];
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1242;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, fallbackLatest)
         : (state.latestRoundNum || fallbackLatest);

@@ -867,7 +867,7 @@ export function updateLoggedInUserHeaderUI(targetAuthId = null) {
         joinRound = window.getUserJoinRound(cleanId);
     }
 
-    const targetRound = (typeof getUpcomingLottoRound === 'function') ? getUpcomingLottoRound() : 1242;
+    const targetRound = (typeof getUpcomingLottoRound === 'function') ? getUpcomingLottoRound() : 1244;
 
     let hasVerified = false;
     let verifiedText = '실구매 미인증';

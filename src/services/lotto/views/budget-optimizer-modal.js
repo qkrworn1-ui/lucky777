@@ -26,7 +26,7 @@ export function openBudgetOptimizerModal() {
 
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1242));
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
     const isEligible = isAdmin || (typeof isUserEligibleForExtraPacks === 'function'
         ? isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)

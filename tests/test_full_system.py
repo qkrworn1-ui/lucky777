@@ -1873,11 +1873,18 @@ class TestFullSystem(unittest.TestCase):
         modal_code = code[code.find('function openDonghangVerifyModal'):]
         self.assertNotIn("backdrop-filter: blur", modal_code)
 
-        # Ensure Round 1242 is present in STATIC_DRAWS in ledger.js
+        # Ensure Round 1242 and 1243 are present in STATIC_DRAWS in ledger.js
         ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
         with open(ledger_file, 'r', encoding='utf-8') as f:
             ledger_code = f.read()
         self.assertIn('1242: { numbers: [2, 4, 10, 16, 31, 41]', ledger_code)
+        self.assertIn('1243: { numbers: [9, 18, 24, 38, 43, 44]', ledger_code)
+
+        data_file = os.path.join(self.root_dir, 'data.js')
+        with open(data_file, 'r', encoding='utf-8') as f:
+            data_code = f.read()
+        self.assertIn('"1243"', data_code)
+        self.assertIn('[9, 18, 24, 38, 43, 44]', data_code)
     def test_50_mobile_back_navigation_integrity(self):
         """Test 50: Verify mobile back button history and exit confirmation in main.js."""
         main_file = os.path.join(self.root_dir, 'src', 'main.js')
