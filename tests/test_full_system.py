@@ -2917,6 +2917,49 @@ Lotto 6/45
         self.assertIn("운도실력 서비스 안내 공유", html_code)
         self.assertIn("동행복권 역대 공식 통계 분석 및 건전한 구매 영수증(QR) 기록 관리 서비스", html_code)
 
+    # [Test 82] Confirmed Purchases Smart Viewport UX Integrity
+    def test_82_confirmed_purchases_smart_viewport_ux(self):
+        """Test 82: Verify Confirmed Purchases Smart Viewport UX (Auto-fold, Filter Chips, Global Toggles)."""
+        conf_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        styles_file = os.path.join(self.root_dir, 'styles.css')
+        app_file = os.path.join(self.root_dir, 'app_v2.js')
+
+        with open(conf_file, 'r', encoding='utf-8') as f:
+            conf_code = f.read()
+        with open(styles_file, 'r', encoding='utf-8') as f:
+            styles_code = f.read()
+        with open(app_file, 'r', encoding='utf-8') as f:
+            app_code = f.read()
+
+        # 1. Global Fold / Unfold buttons present in confirmed-tab.js
+        self.assertIn("btnCollapseAllConfirmedRounds", conf_code)
+        self.assertIn("btnExpandAllConfirmedRounds", conf_code)
+
+        # 2. Quick Filter Chips Bar present
+        self.assertIn("confirmed-quick-filter-bar", conf_code)
+        self.assertIn("confirmed-filter-chip", conf_code)
+        self.assertIn("confirmed-fold-hint-pill", conf_code)
+
+        # 3. Essential window helper functions exported & defined
+        self.assertIn("export function toggleConfirmedRound", conf_code)
+        self.assertIn("export function toggleAllConfirmedRounds", conf_code)
+        self.assertIn("export function filterConfirmedByRound", conf_code)
+        self.assertIn("window.toggleConfirmedRound = toggleConfirmedRound;", conf_code)
+        self.assertIn("window.toggleAllConfirmedRounds = toggleAllConfirmedRounds;", conf_code)
+        self.assertIn("window.filterConfirmedByRound = filterConfirmedByRound;", conf_code)
+
+        # 4. styles.css contains confirmed viewport UX classes
+        self.assertIn(".confirmed-quick-filter-bar", styles_code)
+        self.assertIn(".confirmed-filter-chip", styles_code)
+        self.assertIn(".confirmed-filter-chip.active", styles_code)
+        self.assertIn(".confirmed-fold-hint-pill", styles_code)
+
+        # 5. Bundle app_v2.js contains smart viewport functions and classes
+        self.assertIn("toggleConfirmedRound", app_code)
+        self.assertIn("toggleAllConfirmedRounds", app_code)
+        self.assertIn("filterConfirmedByRound", app_code)
+        self.assertIn("confirmed-quick-filter-bar", app_code)
+
 
 if __name__ == '__main__':
     unittest.main()

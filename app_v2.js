@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1742.30 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1807 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1742.30)
+ * Lucky777 Smart Bundle (v2026.10.03.1807)
  */
 
 
@@ -26355,7 +26355,16 @@ async function renderConfirmedPurchasesList() {
 
     // Only render actual confirmed rounds saved in ledger (e.g. 1239+)
     const ledgerRounds = Object.keys(ledger).map(Number).filter(r => !isNaN(r) && r > 0 && Array.isArray(ledger[r]) && ledger[r].length > 0);
-    const rounds = ledgerRounds.sort((a,b) => b - a); // descending order: newest first!
+    const allRounds = ledgerRounds.sort((a,b) => b - a); // descending order: newest first!
+
+    // Filter rounds to those having valid purchases for the current viewing target
+    const rounds = allRounds.filter(r => {
+        let pList = (ledger[r] || []).map(syncPurchaseWithQrUrl);
+        if (!isAdmin && currentTarget !== 'all') {
+            pList = pList.filter(p => ((p.user || p.userId || '').trim().toLowerCase() === cleanAuthId));
+        }
+        return pList && pList.length > 0;
+    });
 
     // --- 💰 Financial & Chart Calculation (Optimized & Memoized) ---
     const fin = calculateLedgerFinancials(true, currentTarget);
@@ -26828,10 +26837,79 @@ async function renderConfirmedPurchasesList() {
                         <i class="fa-solid fa-broom" style="color: #f87171;"></i> 초기화
                     </button>
                 ` : ''}
+                <button type="button" id="btnCollapseAllConfirmedRounds" class="btn-dark-pill" title="모든 회차를 요약 접기합니다." onclick="window.toggleAllConfirmedRounds && window.toggleAllConfirmedRounds(false)" style="height: 26px; box-sizing: border-box; font-size: 0.72rem; padding: 0 8px;">
+                    <i class="fa-solid fa-compress" style="color: #fbbf24;"></i> 전체 접기
+                </button>
+                <button type="button" id="btnExpandAllConfirmedRounds" class="btn-dark-pill" title="모든 회차의 상세 번호를 펼칩니다." onclick="window.toggleAllConfirmedRounds && window.toggleAllConfirmedRounds(true)" style="height: 26px; box-sizing: border-box; font-size: 0.72rem; padding: 0 8px;">
+                    <i class="fa-solid fa-expand" style="color: #38bdf8;"></i> 전체 펼치기
+                </button>
                 <span style="font-size: 0.72rem; color: #94a3b8; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); padding: 3px 8px; border-radius: 6px; white-space: nowrap;">총 ${rounds.length}개 회차</span>
             </div>
         </div>
     `;
+
+    // --- 🚀 Build Quick Round Filter Chips Bar ---
+    if (rounds.length > 0) {
+        const activeFilter = state.confirmedActiveRoundFilter || 'all';
+        const chips = [];
+
+        // All rounds chip
+        chips.push(`
+            <button type="button" class="confirmed-filter-chip ${activeFilter === 'all' ? 'active' : ''}" data-round-filter="all" onclick="window.filterConfirmedByRound && window.filterConfirmedByRound('all')">
+                <i class="fa-solid fa-list-ul"></i> 전체 (${rounds.length})
+            </button>
+        `);
+
+        // Individual round chips
+        rounds.forEach(rnd => {
+            const actDraw = getSafeActualDraw(rnd);
+            const isWaiting = !actDraw;
+            let statusBadge = '';
+            if (isWaiting) {
+                statusBadge = '<span class="confirmed-chip-dot dot-waiting"></span> ';
+            } else {
+                let roundPurchases = (ledger[rnd] || []).map(syncPurchaseWithQrUrl);
+                if (!isAdmin && currentTarget !== 'all') {
+                    roundPurchases = roundPurchases.filter(p => ((p.user || p.userId || '').trim().toLowerCase() === cleanAuthId));
+                }
+                let hasWin = false;
+                const winSet = new Set(actDraw.numbers);
+                for (const p of roundPurchases) {
+                    for (const combo of (p.combos || [])) {
+                        const mCount = getComboNumbers(combo).filter(n => winSet.has(n)).length;
+                        if (mCount >= 3) { hasWin = true; break; }
+                    }
+                    if (hasWin) break;
+                }
+                if (hasWin) {
+                    statusBadge = '<span style="color: #fbbf24; font-size: 0.75rem;">★</span> ';
+                }
+            }
+
+            const labelSuffix = isWaiting ? ' (대기)' : '';
+            chips.push(`
+                <button type="button" class="confirmed-filter-chip ${String(activeFilter) === String(rnd) ? 'active' : ''}" data-round-filter="${rnd}" onclick="window.filterConfirmedByRound && window.filterConfirmedByRound(${rnd})">
+                    ${statusBadge}${rnd}회${labelSuffix}
+                </button>
+            `);
+        });
+
+        html += `
+            <div class="confirmed-quick-filter-bar">
+                <div class="confirmed-filter-header-row">
+                    <span class="confirmed-filter-title">
+                        <i class="fa-solid fa-filter" style="color: #fbbf24;"></i> 회차 퀵 필터 바로가기
+                    </span>
+                    <span id="confirmedActiveFilterLabel" class="confirmed-filter-active-desc">
+                        ${activeFilter === 'all' ? `전체 회차 (${rounds.length}개)` : `${activeFilter}회차 선택됨`}
+                    </span>
+                </div>
+                <div class="confirmed-filter-chips-scroller custom-scrollbar">
+                    ${chips.join('')}
+                </div>
+            </div>
+        `;
+    }
 
     if (rounds.length === 0) {
         const emptyUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
@@ -26847,7 +26925,7 @@ async function renderConfirmedPurchasesList() {
         return;
     }
 
-    rounds.forEach(round => {
+    rounds.forEach((round, roundIndex) => {
         const actualDraw = getSafeActualDraw(round);
         let purchases = (ledger[round] || []).map(syncPurchaseWithQrUrl);
         if (!purchases || purchases.length === 0) return;
@@ -26869,6 +26947,26 @@ async function renderConfirmedPurchasesList() {
         if (purchases.length === 0) return;
 
         const isWaiting = !actualDraw;
+
+        const activeFilter = state.confirmedActiveRoundFilter || 'all';
+        const isFilterMatched = (activeFilter === 'all' || String(activeFilter) === String(round));
+
+        // Smart auto-fold rule:
+        // Top 1~2 latest rounds stay expanded by default.
+        // Older past rounds (index >= 2, or index >= 1 if latest round already completed) start collapsed!
+        let isDefaultExpanded = false;
+        if (activeFilter !== 'all') {
+            isDefaultExpanded = (String(activeFilter) === String(round));
+        } else {
+            if (roundIndex === 0) {
+                isDefaultExpanded = true;
+            } else if (roundIndex === 1) {
+                const round0HasDraw = !!getSafeActualDraw(rounds[0]);
+                isDefaultExpanded = !round0HasDraw;
+            } else {
+                isDefaultExpanded = false;
+            }
+        }
 
         // Summarize outcomes for past draws
         let summaryHTML = '';
@@ -26954,16 +27052,20 @@ async function renderConfirmedPurchasesList() {
         }
 
         html += `
-            <div class="confirmed-round-card" style="box-sizing: border-box; max-width: 100%; overflow: hidden;">
-                <div class="confirmed-round-header" style="display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; cursor:pointer;" onclick="const content = this.nextElementSibling; const icon = this.querySelector('.chevron-icon'); if (content.style.display === 'none') { content.style.display = 'block'; icon.style.transform = 'rotate(180deg)'; } else { content.style.display = 'none'; icon.style.transform = 'rotate(0deg)'; }">
+            <div class="confirmed-round-card" data-round="${round}" style="box-sizing: border-box; max-width: 100%; overflow: hidden; margin-bottom: 14px; ${isFilterMatched ? '' : 'display: none;'}">
+                <div class="confirmed-round-header" style="display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; cursor:pointer;" onclick="window.toggleConfirmedRound && window.toggleConfirmedRound(this, ${round})">
                     <div class="confirmed-round-title-row" style="display:flex; align-items:center; flex-wrap: wrap; gap: 6px; width: 100%;">
                         <strong style="font-size: 1.02rem; color: #fff; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                            <i class="fa-solid fa-chevron-down chevron-icon" style="transition: transform 0.3s; font-size:0.9rem; color: var(--text-secondary); transform: rotate(180deg);"></i>
+                            <i class="fa-solid fa-chevron-down chevron-icon" style="transition: transform 0.3s; font-size:0.9rem; color: var(--text-secondary); transform: ${isDefaultExpanded ? 'rotate(180deg)' : 'rotate(0deg)'};"></i>
                             제 ${round}회차 구매 확정 내역
                         </strong>
                         ${usersBadge}
                         ${winCountSummary}
                         ${allPurchasesLocked ? '<span style="color: #fbbf24; font-size: 0.74rem; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); padding: 2px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-lock"></i> 전체 잠금됨</span>' : ''}
+                        <span class="confirmed-fold-hint-pill" style="font-size: 0.72rem; color: #94a3b8; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); padding: 2px 7px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; margin-left: auto; transition: all 0.2s; ${isDefaultExpanded ? 'opacity: 0.5;' : 'opacity: 1;'}">
+                            <i class="fa-solid ${isDefaultExpanded ? 'fa-angle-up' : 'fa-angle-down'}"></i>
+                            <span>${isDefaultExpanded ? '접기' : '펼치기'}</span>
+                        </span>
                     </div>
                     <div class="confirmed-round-sub-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px 10px; width: 100%; margin-top: 3px;">
                         <div style="display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap;">
@@ -26994,7 +27096,7 @@ async function renderConfirmedPurchasesList() {
                 </div>
 
                 <!-- Combinations detailed list -->
-                <div class="confirmed-round-body" style="margin-top: 10px; display: block;">
+                <div class="confirmed-round-body" style="margin-top: 10px; display: ${isDefaultExpanded ? 'block' : 'none'};">
         `;
 
         // Precompute V3 and V4 maps for this round for fast cross-checking
@@ -27483,6 +27585,7 @@ async function renderConfirmedPurchasesList() {
             selTarget.onchange = async (e) => {
                 state.adminViewingTarget = e.target.value;
                 state.ledgerFinancialsCache = null;
+                state.confirmedActiveRoundFilter = 'all';
                 await renderConfirmedPurchasesList();
                 if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
             };
@@ -27492,9 +27595,28 @@ async function renderConfirmedPurchasesList() {
             showToast('🔄 전체 회원 구매 내역 새로고침 중...');
             await fetchAllUsersPurchases();
             state.ledgerFinancialsCache = null;
+            state.confirmedActiveRoundFilter = 'all';
             await renderConfirmedPurchasesList();
             if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
         };
+
+        const btnCollapseAll = document.getElementById('btnCollapseAllConfirmedRounds');
+        if (btnCollapseAll) {
+            btnCollapseAll.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                toggleAllConfirmedRounds(false);
+            };
+        }
+
+        const btnExpandAll = document.getElementById('btnExpandAllConfirmedRounds');
+        if (btnExpandAll) {
+            btnExpandAll.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                toggleAllConfirmedRounds(true);
+            };
+        }
 
         const btnExport = document.getElementById('btnExportLedgerBackup');
         if (btnExport) {
@@ -28078,6 +28200,7 @@ function renderWinningHistoryModal() {
 async function changeConfirmedAdminUser(userId) {
     state.adminViewingTarget = userId;
     state.ledgerFinancialsCache = null;
+    state.confirmedActiveRoundFilter = 'all';
     const selTarget = document.getElementById('selAdminLedgerTarget');
     if (selTarget) selTarget.value = userId;
     await renderConfirmedPurchasesList();
@@ -28372,6 +28495,20 @@ function toggleRoundAllReceipts(btn, round) {
     if (!btn) return;
     const roundCard = btn.closest('.confirmed-round-card');
     if (!roundCard) return;
+
+    // If the round card itself was folded, expand it first
+    const roundBody = roundCard.querySelector('.confirmed-round-body');
+    if (roundBody && (roundBody.style.display === 'none' || getComputedStyle(roundBody).display === 'none')) {
+        roundBody.style.display = 'block';
+        const chevron = roundCard.querySelector('.chevron-icon');
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+        const hintPill = roundCard.querySelector('.confirmed-fold-hint-pill');
+        if (hintPill) {
+            hintPill.innerHTML = '<i class="fa-solid fa-angle-up"></i> <span>접기</span>';
+            hintPill.style.opacity = '0.5';
+        }
+    }
+
     const allGamesLists = roundCard.querySelectorAll('.confirmed-games-list');
     const allPerfLines = roundCard.querySelectorAll('.confirmed-receipt-perforation');
     const allFooters = roundCard.querySelectorAll('.confirmed-receipt-footer');
@@ -28406,6 +28543,111 @@ function toggleRoundAllReceipts(btn, round) {
     const roundToggleText = btn.querySelector('.toggle-all-text');
     if (roundToggleText) {
         roundToggleText.textContent = isCurrentlyCollapsed ? '전체 번호 접기' : '전체 번호 펼치기';
+    }
+}
+
+/**
+ * 📱 단일 회차 아코디언 접힘/펼침 토글
+ */
+function toggleConfirmedRound(headerEl, roundNum) {
+    if (!headerEl) return;
+    const card = headerEl.closest('.confirmed-round-card') || headerEl.parentElement;
+    const body = card ? card.querySelector('.confirmed-round-body') : headerEl.nextElementSibling;
+    const chevron = headerEl.querySelector('.chevron-icon');
+    const hintPill = headerEl.querySelector('.confirmed-fold-hint-pill');
+    if (!body) return;
+
+    const isHidden = (body.style.display === 'none' || getComputedStyle(body).display === 'none');
+    if (isHidden) {
+        body.style.display = 'block';
+        if (chevron) chevron.style.transform = 'rotate(180deg)';
+        if (hintPill) {
+            hintPill.innerHTML = '<i class="fa-solid fa-angle-up"></i> <span>접기</span>';
+            hintPill.style.opacity = '0.5';
+        }
+    } else {
+        body.style.display = 'none';
+        if (chevron) chevron.style.transform = 'rotate(0deg)';
+        if (hintPill) {
+            hintPill.innerHTML = '<i class="fa-solid fa-angle-down"></i> <span>펼치기</span>';
+            hintPill.style.opacity = '1';
+        }
+    }
+}
+
+/**
+ * 🌐 전체 회차 일괄 접기/펼치기
+ */
+function toggleAllConfirmedRounds(expand = true) {
+    const cards = document.querySelectorAll('.confirmed-round-card');
+    cards.forEach(card => {
+        const body = card.querySelector('.confirmed-round-body');
+        const chevron = card.querySelector('.chevron-icon');
+        const hintPill = card.querySelector('.confirmed-fold-hint-pill');
+        if (body) {
+            body.style.display = expand ? 'block' : 'none';
+        }
+        if (chevron) {
+            chevron.style.transform = expand ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+        if (hintPill) {
+            hintPill.innerHTML = expand 
+                ? '<i class="fa-solid fa-angle-up"></i> <span>접기</span>' 
+                : '<i class="fa-solid fa-angle-down"></i> <span>펼치기</span>';
+            hintPill.style.opacity = expand ? '0.5' : '1';
+        }
+    });
+}
+
+/**
+ * ⚡ 회차 퀵 칩 필터링
+ */
+function filterConfirmedByRound(targetRound) {
+    state.confirmedActiveRoundFilter = targetRound;
+    const chips = document.querySelectorAll('.confirmed-filter-chip');
+    chips.forEach(chip => {
+        const f = chip.getAttribute('data-round-filter');
+        if (String(f) === String(targetRound)) {
+            chip.classList.add('active');
+        } else {
+            chip.classList.remove('active');
+        }
+    });
+
+    const labelEl = document.getElementById('confirmedActiveFilterLabel');
+    if (labelEl) {
+        labelEl.textContent = (targetRound === 'all') 
+            ? `전체 회차 (${chips.length > 1 ? chips.length - 1 : 0}개)` 
+            : `${targetRound}회차 선택됨`;
+    }
+
+    const cards = document.querySelectorAll('.confirmed-round-card');
+    let matchedCard = null;
+    cards.forEach(card => {
+        const r = card.getAttribute('data-round');
+        if (targetRound === 'all' || String(r) === String(targetRound)) {
+            card.style.display = 'block';
+            if (targetRound !== 'all') {
+                matchedCard = card;
+                const body = card.querySelector('.confirmed-round-body');
+                const chevron = card.querySelector('.chevron-icon');
+                const hintPill = card.querySelector('.confirmed-fold-hint-pill');
+                if (body) body.style.display = 'block';
+                if (chevron) chevron.style.transform = 'rotate(180deg)';
+                if (hintPill) {
+                    hintPill.innerHTML = '<i class="fa-solid fa-angle-up"></i> <span>접기</span>';
+                    hintPill.style.opacity = '0.5';
+                }
+            }
+        } else {
+            card.style.display = 'none';
+        }
+    });
+
+    if (matchedCard && typeof matchedCard.scrollIntoView === 'function') {
+        try {
+            matchedCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } catch(e) {}
     }
 }
 
@@ -28455,6 +28697,9 @@ if (typeof window !== 'undefined') {
     window.renderReceiptTrashModalContent = renderReceiptTrashModalContent;
     window.toggleReceiptCombos = toggleReceiptCombos;
     window.toggleRoundAllReceipts = toggleRoundAllReceipts;
+    window.toggleConfirmedRound = toggleConfirmedRound;
+    window.toggleAllConfirmedRounds = toggleAllConfirmedRounds;
+    window.filterConfirmedByRound = filterConfirmedByRound;
     window.toggleConfirmedStats = toggleConfirmedStats;
 }
 
@@ -28839,6 +29084,18 @@ if (typeof window !== 'undefined') {
         if (typeof toggleRoundAllReceipts !== 'undefined') {
             __exports.toggleRoundAllReceipts = toggleRoundAllReceipts;
             if (typeof window !== 'undefined') window.toggleRoundAllReceipts = toggleRoundAllReceipts;
+        }
+        if (typeof toggleConfirmedRound !== 'undefined') {
+            __exports.toggleConfirmedRound = toggleConfirmedRound;
+            if (typeof window !== 'undefined') window.toggleConfirmedRound = toggleConfirmedRound;
+        }
+        if (typeof toggleAllConfirmedRounds !== 'undefined') {
+            __exports.toggleAllConfirmedRounds = toggleAllConfirmedRounds;
+            if (typeof window !== 'undefined') window.toggleAllConfirmedRounds = toggleAllConfirmedRounds;
+        }
+        if (typeof filterConfirmedByRound !== 'undefined') {
+            __exports.filterConfirmedByRound = filterConfirmedByRound;
+            if (typeof window !== 'undefined') window.filterConfirmedByRound = filterConfirmedByRound;
         }
         if (typeof toggleConfirmedStats !== 'undefined') {
             __exports.toggleConfirmedStats = toggleConfirmedStats;

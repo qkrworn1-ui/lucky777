@@ -19008,5 +19008,123 @@ body.is-admin .btn-snapshot-audit-compact {
     }
 }
 
+/* ==========================================================================
+   Confirmed Purchases Smart Viewport UX (Auto-fold, Filter Chips, Global Toggles)
+   ========================================================================== */
+.confirmed-quick-filter-bar {
+    margin: 8px 0 12px 0;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 9px 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.confirmed-filter-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 7px;
+    font-size: 0.74rem;
+}
+
+.confirmed-filter-title {
+    color: #94a3b8;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.confirmed-filter-active-desc {
+    color: #fbbf24;
+    font-weight: 800;
+    font-size: 0.72rem;
+}
+
+.confirmed-filter-chips-scroller {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.confirmed-filter-chips-scroller::-webkit-scrollbar {
+    height: 5px;
+}
+
+.confirmed-filter-chips-scroller::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+}
+
+.confirmed-filter-chip {
+    flex-shrink: 0;
+    padding: 4px 11px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
+    font-size: 0.74rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.confirmed-filter-chip:hover {
+    background: rgba(51, 65, 85, 0.9);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #f8fafc;
+}
+
+.confirmed-filter-chip.active {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.22) 0%, rgba(245, 158, 11, 0.14) 100%) !important;
+    border-color: #fbbf24 !important;
+    color: #fde047 !important;
+    font-weight: 800 !important;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+}
+
+.confirmed-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.confirmed-chip-dot.dot-waiting {
+    background: #38bdf8;
+    box-shadow: 0 0 6px #38bdf8;
+}
+
+.confirmed-fold-hint-pill {
+    cursor: pointer;
+    user-select: none;
+}
+
+.confirmed-fold-hint-pill:hover {
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #f8fafc !important;
+}
+
+@media (max-width: 640px) {
+    .confirmed-filter-chip {
+        padding: 5px 9px;
+        font-size: 0.72rem;
+    }
+    .confirmed-quick-filter-bar {
+        padding: 8px 10px;
+        margin: 6px 0 10px 0;
+    }
+}
+
+
 
 
