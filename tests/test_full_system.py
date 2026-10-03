@@ -2856,9 +2856,48 @@ Lotto 6/45
         self.assertIn("class=\"quick-algo-btn locked\"", quick_code)
         self.assertIn("fa-lock", quick_code)
 
+    def test_86_recommendation_history_consistency_and_server_document_sync(self):
+        """Test 86: Verify recommendation winning history consistency and automatic server document sync triggers."""
+        manual_draw_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'manual-draw-modal.js')
+        sync_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'sync.js')
+        landing_file = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+        batch_file = os.path.join(self.root_dir, 'batch_evaluate_winnings.py')
+        update_file = os.path.join(self.root_dir, 'update_lotto.py')
+
+        with open(manual_draw_file, 'r', encoding='utf-8') as f:
+            manual_code = f.read()
+        with open(sync_file, 'r', encoding='utf-8') as f:
+            sync_code = f.read()
+        with open(landing_file, 'r', encoding='utf-8') as f:
+            landing_code = f.read()
+        with open(batch_file, 'r', encoding='utf-8') as f:
+            batch_code = f.read()
+        with open(update_file, 'r', encoding='utf-8') as f:
+            update_code = f.read()
+
+        # 1. manual-draw-modal.js invalidates cache and triggers dashboard summary update
+        self.assertIn("clearUser70ReviewCache", manual_code)
+        self.assertIn("updateHomeReviewDashboard(true)", manual_code)
+
+        # 2. sync.js invalidates cache and triggers dashboard summary update
+        self.assertIn("clearUser70ReviewCache", sync_code)
+        self.assertIn("updateHomeReviewDashboard(true)", sync_code)
+
+        # 3. landing-dashboard.js loads lightweight summary doc and persists on forceRefresh
+        self.assertIn("dashboard_summary_latest", landing_code)
+        self.assertIn("doc('dashboard_summary_latest').set(summaryData, { merge: true })", landing_code)
+
+        # 4. update_lotto.py triggers batch evaluation on new round scrape
+        self.assertIn("batch_evaluate_winnings.run_evaluation_batch()", update_code)
+
+        # 5. batch_evaluate_winnings.py saves both dashboard_summary_latest and winningEvaluations
+        self.assertIn("dashboard_summary_latest", batch_code)
+        self.assertIn("winningEvaluations", batch_code)
+
 
 if __name__ == '__main__':
     unittest.main()
+
 
 
 

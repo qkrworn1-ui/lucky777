@@ -17,8 +17,8 @@ import { renderVerificationTab } from './verification.js';
 import { renderSimulationTab } from './simulation-tab.js';
 import { renderDashboardCharts } from './dashboard-tab.js';
 import { renderLatestDrawBanner } from './draw-banner.js';
-import { renderConfirmedPurchasesList } from './confirmed-tab.js';
-import { renderReviewTab } from './review-tab.js';
+import { renderReviewTab, clearUser70ReviewCache } from './review-tab.js';
+import { updateHomeReviewDashboard, renderLandingDashboard } from '../../../shared/landing-dashboard.js';
 
 /**
  * Scan registered rounds (1238회 이후 및 수동 등록 회차) and repair/backfill missing prize information
@@ -202,7 +202,20 @@ export async function autoSyncMissingDraws(showModal = false) {
         if (typeof renderConfirmedPurchasesList === 'function') {
             renderConfirmedPurchasesList();
         }
-        if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+        // ⚡ 신규 회차 수집/복구 시 추천 평가 캐시 초기화 및 대시보드 요약 문서(dashboard_summary_latest) 실시간 동기화
+        if (typeof clearUser70ReviewCache === 'function') {
+            clearUser70ReviewCache();
+        } else if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
+            window.clearUser70ReviewCache();
+        }
+        if (typeof updateHomeReviewDashboard === 'function') {
+            updateHomeReviewDashboard(true).catch(console.warn);
+        } else if (typeof window !== 'undefined' && typeof window.updateHomeReviewDashboard === 'function') {
+            window.updateHomeReviewDashboard(true).catch(console.warn);
+        }
+        if (typeof renderLandingDashboard === 'function') {
+            try { renderLandingDashboard(); } catch(e){}
+        } else if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
             try { window.renderLandingDashboard(); } catch(e){}
         }
 

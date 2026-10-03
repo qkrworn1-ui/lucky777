@@ -8,7 +8,8 @@ import { renderTop5Combinations } from './generator-tab.js';
 import { populateSimRoundSelector, renderSimulationTab } from './simulation-tab.js';
 import { getHistoricalTop10Combinations } from '../ledger.js';
 import { renderConfirmedPurchasesList } from './confirmed-tab.js';
-import { renderReviewTab } from './review-tab.js';
+import { renderReviewTab, clearUser70ReviewCache } from './review-tab.js';
+import { updateHomeReviewDashboard, renderLandingDashboard } from '../../../shared/landing-dashboard.js';
 import { checkRoundWinningPurchases, showCelebrationOverlay } from './celebration.js';
 import { fetchFullPrizeDetailsFromHTML, generateFallbackPrizeDetails } from '../scraper.js';
 
@@ -225,6 +226,23 @@ export function setupManualDrawModal() {
             }
             if (typeof renderReviewTab === 'function') {
                 renderReviewTab();
+            }
+
+            // ⚡ 신규 회차 수동 등록 시 캐시 무효화 및 대시보드 요약 문서(dashboard_summary_latest) 실시간 동기화
+            if (typeof clearUser70ReviewCache === 'function') {
+                clearUser70ReviewCache();
+            } else if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
+                window.clearUser70ReviewCache();
+            }
+            if (typeof updateHomeReviewDashboard === 'function') {
+                updateHomeReviewDashboard(true).catch(console.warn);
+            } else if (typeof window !== 'undefined' && typeof window.updateHomeReviewDashboard === 'function') {
+                window.updateHomeReviewDashboard(true).catch(console.warn);
+            }
+            if (typeof renderLandingDashboard === 'function') {
+                renderLandingDashboard().catch(console.warn);
+            } else if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+                window.renderLandingDashboard().catch(console.warn);
             }
 
             closeManualModal();

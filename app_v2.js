@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1553.35 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1612.58 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1553.35)
+ * Lucky777 Smart Bundle (v2026.10.03.1612.58)
  */
 
 
@@ -33363,7 +33363,8 @@ const { renderTop5Combinations } = (typeof __M_services_lotto_views_generator_ta
 const { populateSimRoundSelector, renderSimulationTab } = (typeof __M_services_lotto_views_simulation_tab !== 'undefined' ? __M_services_lotto_views_simulation_tab : {});
 const { getHistoricalTop10Combinations } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { renderConfirmedPurchasesList } = (typeof __M_services_lotto_views_confirmed_tab !== 'undefined' ? __M_services_lotto_views_confirmed_tab : {});
-const { renderReviewTab } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
+const { renderReviewTab, clearUser70ReviewCache } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
+const { updateHomeReviewDashboard, renderLandingDashboard } = (typeof __M_shared_landing_dashboard !== 'undefined' ? __M_shared_landing_dashboard : {});
 const { checkRoundWinningPurchases, showCelebrationOverlay } = (typeof __M_services_lotto_views_celebration !== 'undefined' ? __M_services_lotto_views_celebration : {});
 const { fetchFullPrizeDetailsFromHTML, generateFallbackPrizeDetails } = (typeof __M_services_lotto_scraper !== 'undefined' ? __M_services_lotto_scraper : {});
 
@@ -33580,6 +33581,23 @@ function setupManualDrawModal() {
             }
             if (typeof renderReviewTab === 'function') {
                 renderReviewTab();
+            }
+
+            // ⚡ 신규 회차 수동 등록 시 캐시 무효화 및 대시보드 요약 문서(dashboard_summary_latest) 실시간 동기화
+            if (typeof clearUser70ReviewCache === 'function') {
+                clearUser70ReviewCache();
+            } else if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
+                window.clearUser70ReviewCache();
+            }
+            if (typeof updateHomeReviewDashboard === 'function') {
+                updateHomeReviewDashboard(true).catch(console.warn);
+            } else if (typeof window !== 'undefined' && typeof window.updateHomeReviewDashboard === 'function') {
+                window.updateHomeReviewDashboard(true).catch(console.warn);
+            }
+            if (typeof renderLandingDashboard === 'function') {
+                renderLandingDashboard().catch(console.warn);
+            } else if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+                window.renderLandingDashboard().catch(console.warn);
             }
 
             closeManualModal();
@@ -34806,8 +34824,8 @@ const { renderVerificationTab } = (typeof __M_services_lotto_views_verification 
 const { renderSimulationTab } = (typeof __M_services_lotto_views_simulation_tab !== 'undefined' ? __M_services_lotto_views_simulation_tab : {});
 const { renderDashboardCharts } = (typeof __M_services_lotto_views_dashboard_tab !== 'undefined' ? __M_services_lotto_views_dashboard_tab : {});
 const { renderLatestDrawBanner } = (typeof __M_services_lotto_views_draw_banner !== 'undefined' ? __M_services_lotto_views_draw_banner : {});
-const { renderConfirmedPurchasesList } = (typeof __M_services_lotto_views_confirmed_tab !== 'undefined' ? __M_services_lotto_views_confirmed_tab : {});
-const { renderReviewTab } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
+const { renderReviewTab, clearUser70ReviewCache } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
+const { updateHomeReviewDashboard, renderLandingDashboard } = (typeof __M_shared_landing_dashboard !== 'undefined' ? __M_shared_landing_dashboard : {});
 
 /**
  * Scan registered rounds (1238회 이후 및 수동 등록 회차) and repair/backfill missing prize information
@@ -34991,7 +35009,20 @@ async function autoSyncMissingDraws(showModal = false) {
         if (typeof renderConfirmedPurchasesList === 'function') {
             renderConfirmedPurchasesList();
         }
-        if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
+        // ⚡ 신규 회차 수집/복구 시 추천 평가 캐시 초기화 및 대시보드 요약 문서(dashboard_summary_latest) 실시간 동기화
+        if (typeof clearUser70ReviewCache === 'function') {
+            clearUser70ReviewCache();
+        } else if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
+            window.clearUser70ReviewCache();
+        }
+        if (typeof updateHomeReviewDashboard === 'function') {
+            updateHomeReviewDashboard(true).catch(console.warn);
+        } else if (typeof window !== 'undefined' && typeof window.updateHomeReviewDashboard === 'function') {
+            window.updateHomeReviewDashboard(true).catch(console.warn);
+        }
+        if (typeof renderLandingDashboard === 'function') {
+            try { renderLandingDashboard(); } catch(e){}
+        } else if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
             try { window.renderLandingDashboard(); } catch(e){}
         }
 
