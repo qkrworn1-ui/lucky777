@@ -244,10 +244,22 @@ export function renderDigitalReceiptCard(round, parsedCombos, check, serial) {
             : `${parsedCombos.length}개 게임 (${totalAmount.toLocaleString()}원) · AI 추천 일치 확인`;
     }
 
+    let memberPrefix = '';
+    const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
+    const masterUserRow = document.getElementById('manualLedgerMasterUserRow');
+    if (masterUserRow && masterUserRow.style.display !== 'none' && masterUserSelect && masterUserSelect.value) {
+        const currentLoggedAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '').toLowerCase().trim();
+        const targetUId = masterUserSelect.value.trim().toLowerCase();
+        if (targetUId && targetUId !== currentLoggedAuthId) {
+            const uName = (typeof getUserRealName === 'function' ? getUserRealName(targetUId) : '') || targetUId;
+            memberPrefix = `[${uName}] 님 `;
+        }
+    }
+
     if (saveBtnText) {
         saveBtnText.innerHTML = isOnline
-            ? `<strong>온라인 실구매 구매확정 (+${totalAmount.toLocaleString()}원)</strong>`
-            : `실구매 등록하기 (+${totalAmount.toLocaleString()}원)`;
+            ? `<strong>${memberPrefix}온라인 실구매 구매확정 (+${totalAmount.toLocaleString()}원)</strong>`
+            : `${memberPrefix}실구매 등록하기 (+${totalAmount.toLocaleString()}원)`;
     }
 
     // Direct Instant Purchase Confirmation Action Button right inside the card
@@ -261,7 +273,7 @@ export function renderDigitalReceiptCard(round, parsedCombos, check, serial) {
     if (confirmBtnEl) {
         confirmBtnEl.innerHTML = `
             <button type="button" onclick="window.handleSaveManualLedger && window.handleSaveManualLedger()" class="btn-primary" style="width: 100%; height: 44px; background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; font-size: 0.92rem; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); color: white;">
-                <i class="fa-solid fa-circle-check" style="font-size: 1.05rem;"></i> 제 ${round}회 실구매 구매확정 (${totalAmount.toLocaleString()}원)
+                <i class="fa-solid fa-circle-check" style="font-size: 1.05rem;"></i> ${memberPrefix}제 ${round}회 실구매 구매확정 (${totalAmount.toLocaleString()}원)
             </button>
         `;
     }
@@ -1121,9 +1133,19 @@ export function setupManualLedgerModal() {
                 combosEl._cachedCrossCheck = null;
             }
             updateManualModalCrossCheck();
-            const selectedUId = masterUserSelect.value;
+            const selectedUId = (masterUserSelect.value || '').trim().toLowerCase();
             const uName = (typeof getUserRealName === 'function' ? getUserRealName(selectedUId) : '') || selectedUId;
             showToast(`👤 대리 등록 대상 회원: [${uName}] 지정됨`);
+
+            const saveBtnText = document.getElementById('btnSaveManualLedgerText');
+            const currentLoggedAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '').toLowerCase().trim();
+            const memberPrefix = (selectedUId && selectedUId !== currentLoggedAuthId) ? `[${uName}] 님 ` : '';
+            const isOnline = combosEl && (combosEl.dataset.isOnlineReceipt === 'true');
+            if (saveBtnText) {
+                saveBtnText.innerHTML = isOnline
+                    ? `<strong>${memberPrefix}온라인 실구매 구매확정</strong>`
+                    : `${memberPrefix}실구매 등록하기`;
+            }
         });
     }
 

@@ -17997,8 +17997,10 @@ body.is-admin .btn-snapshot-audit-compact {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 200px;
-    height: 200px;
+    width: 190px;
+    height: 190px;
+    max-width: 85%;
+    max-height: 85%;
     border: 1px dashed rgba(52, 211, 153, 0.4);
     border-radius: 14px;
     pointer-events: none;
@@ -18255,6 +18257,29 @@ body.is-admin .btn-snapshot-audit-compact {
     .ball-keypad-grid {
         grid-template-columns: repeat(9, 1fr);
         gap: 4px;
+    }
+}
+
+@media (max-width: 380px) {
+    .ball-keypad-grid {
+        grid-template-columns: repeat(9, 1fr);
+        gap: 3px;
+    }
+    .ball-keypad-btn {
+        font-size: 0.74rem;
+    }
+    .qr-viewfinder-target {
+        width: 165px;
+        height: 165px;
+    }
+    .manual-mode-tabs {
+        padding: 3px;
+        gap: 4px;
+    }
+    .manual-tab-btn {
+        padding: 6px 4px;
+        font-size: 0.74rem;
+        gap: 3px;
     }
 }
 
