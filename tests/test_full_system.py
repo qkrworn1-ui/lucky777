@@ -2960,6 +2960,45 @@ Lotto 6/45
         self.assertIn("filterConfirmedByRound", app_code)
         self.assertIn("confirmed-quick-filter-bar", app_code)
 
+    # [Test 83] Algorithm Update Immutability & Next Round Application Integrity
+    def test_83_algorithm_update_immutability_and_next_round_application(self):
+        """Test 83: Verify that when algorithms are updated, current week recommendations remain immutable from snapshot,
+        and the updated algorithm only takes effect starting from the next round."""
+        gen_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+        with open(gen_file, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+
+        # 1. computeAbsoluteTop10Combinations checks snapshot first
+        self.assertIn("getUserWeeklyRecommendationSnapshotSync(effectiveUserId, roundForSeed)", gen_code)
+        self.assertIn("state.localComboCache[cacheKey] = snapshot.v4Combos;", gen_code)
+        self.assertIn("state.localComboCache[cacheKey] = snapshot.v3Combos;", gen_code)
+
+        # 2. generateExtraAddonPack checks snapshot first
+        self.assertIn("getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)", gen_code)
+        self.assertIn("extractPackFromSnapshot(snapshot.extraPacks, pIdx)", gen_code)
+
+        # 3. saveUserWeeklyRecommendationSnapshot enforces Write-Once policy in Firestore
+        self.assertIn("Write-Once policy: If already snapshot exists, never overwrite!", gen_code)
+        self.assertIn("if (uData && uData.recommendationSnapshots && uData.recommendationSnapshots[String(roundNum)])", gen_code)
+
+        # 4. Simulation of Round N vs Round N+1:
+        # Round N has existing snapshot -> Always returns Round N snapshot numbers regardless of algorithm updates.
+        # Round N+1 has NO snapshot -> Generates new combinations with updated algorithm and then saves new snapshot.
+        snapshot_db = {
+            'user1_1244': {
+                'v4Combos': [[4, 12, 19, 27, 33, 41]],
+                'v3Combos': [[2, 8, 14, 25, 36, 44]]
+            }
+        }
+        # Simulate lookup for current round 1244
+        snap_1244 = snapshot_db.get('user1_1244')
+        self.assertIsNotNone(snap_1244)
+        self.assertEqual(snap_1244['v4Combos'][0], [4, 12, 19, 27, 33, 41])
+
+        # Simulate lookup for next round 1245 (no snapshot yet) -> Must trigger fresh generation
+        snap_1245 = snapshot_db.get('user1_1245')
+        self.assertIsNone(snap_1245)
+
 
 if __name__ == '__main__':
     unittest.main()

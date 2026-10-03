@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1807 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1851.58 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1807)
+ * Lucky777 Smart Bundle (v2026.10.03.1851.58)
  */
 
 
@@ -15743,6 +15743,24 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
     if (!forceRegenerate && state.localComboCache[cacheKey] && Array.isArray(state.localComboCache[cacheKey]) && state.localComboCache[cacheKey].length > 0) {
         return state.localComboCache[cacheKey];
     }
+
+    // 🔒 1순위: 이미 저장된 불변 추천번호 스냅샷이 존재하는 경우, 알고리즘 업데이트와 무관하게 기존 스냅샷 반환
+    if (!forceRegenerate && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
+        const snapshot = (typeof getUserWeeklyRecommendationSnapshotSync === 'function')
+            ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, roundForSeed)
+            : null;
+        if (snapshot) {
+            if (useReportLogic && Array.isArray(snapshot.v4Combos) && snapshot.v4Combos.length > 0) {
+                if (!state.localComboCache) state.localComboCache = {};
+                state.localComboCache[cacheKey] = snapshot.v4Combos;
+                return snapshot.v4Combos;
+            } else if (!useReportLogic && Array.isArray(snapshot.v3Combos) && snapshot.v3Combos.length > 0) {
+                if (!state.localComboCache) state.localComboCache = {};
+                state.localComboCache[cacheKey] = snapshot.v3Combos;
+                return snapshot.v3Combos;
+            }
+        }
+    }
     
     const needHistoryIsolation = enterHistoryIsolation(targetRound, maxKnownDrawnRound);
     const generated = [];
@@ -16501,6 +16519,18 @@ function crossCheckCombosWithRecommendations(round, rawCombosList, targetUserId 
  * @param {number} packIndex - Pack ID (1 to 5)
  * @param {number} targetRound - Target Round (e.g., 1239)
  */
+function extractPackFromSnapshot(extraPacks, pId) {
+    if (!extraPacks) return null;
+    const targetId = Number(pId);
+    if (Array.isArray(extraPacks)) {
+        return extraPacks.find(p => p && (Number(p.packId) === targetId || Number(p.id) === targetId)) || extraPacks[targetId - 1] || null;
+    }
+    if (typeof extraPacks === 'object') {
+        return extraPacks[targetId] || extraPacks[String(targetId)] || null;
+    }
+    return null;
+}
+
 function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId = null) {
     const pIdx = Math.max(1, Math.min(5, parseInt(packIndex, 10) || 1));
     const curUpcomingRound = targetRound || (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
@@ -16510,6 +16540,20 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
     const cacheKey = `extra_${pIdx}_${curUpcomingRound}_${effectiveUserId}`;
     if (state.extraPackCache[cacheKey]) {
         return state.extraPackCache[cacheKey];
+    }
+
+    // 🔒 1순위: 이미 저장된 불변 추천번호 스냅샷에 해당 추가팩이 존재하는 경우, 스냅샷 팩 번호 반환
+    if (effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
+        const snapshot = (typeof getUserWeeklyRecommendationSnapshotSync === 'function')
+            ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)
+            : null;
+        if (snapshot && snapshot.extraPacks) {
+            const snapPack = extractPackFromSnapshot(snapshot.extraPacks, pIdx);
+            if (snapPack && Array.isArray(snapPack.combos) && snapPack.combos.length > 0) {
+                state.extraPackCache[cacheKey] = snapPack;
+                return snapPack;
+            }
+        }
     }
 
     // Deterministic PRNG seed unique to user, round and packIndex
