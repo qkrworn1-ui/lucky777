@@ -68,6 +68,7 @@ export function openScrapingLogModal() {
     if (pulse) {
         pulse.style.background = '#10b981';
         pulse.style.boxShadow = '0 0 10px #10b981';
+        pulse.style.animation = 'pulse 1.5s infinite';
     }
     if (btnRetry) btnRetry.style.display = 'none';
 }
@@ -137,12 +138,19 @@ export function updateScrapingStatus(statusText, isCompleted = false) {
     const btnRetry = document.getElementById('btnRetryScraping');
 
     if (elText) elText.textContent = statusText;
-    if (isCompleted && pulse) {
-        pulse.style.background = '#38bdf8';
-        pulse.style.boxShadow = '0 0 10px #38bdf8';
+    if (pulse) {
+        if (isCompleted) {
+            pulse.style.background = '#38bdf8';
+            pulse.style.boxShadow = '0 0 10px #38bdf8';
+            pulse.style.animation = 'none';
+        } else {
+            pulse.style.background = '#10b981';
+            pulse.style.boxShadow = '0 0 10px #10b981';
+            pulse.style.animation = 'pulse 1.5s infinite';
+        }
     }
-    if (isCompleted && btnRetry) {
-        btnRetry.style.display = 'inline-block';
+    if (btnRetry) {
+        btnRetry.style.display = isCompleted ? 'inline-block' : 'none';
     }
 }
 
@@ -151,7 +159,7 @@ export function updateScrapingStatus(statusText, isCompleted = false) {
  * Supports multiple high-availability proxies with intelligent fallback
  */
 export async function fetchWithProxyFailover(targetUrl, expectedType = 'json', logDescription = '') {
-    const fetchWithTimeout = async (url, options = {}, timeoutMs = 3500) => {
+    const fetchWithTimeout = async (url, options = {}, timeoutMs = 2500) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         try {
@@ -165,7 +173,7 @@ export async function fetchWithProxyFailover(targetUrl, expectedType = 'json', l
     };
 
     const proxies = [
-        // 1. Direct Browser Gateway
+        // 1. Direct Browser Gateway (Native / Electron / Local)
         {
             name: 'Direct Gateway',
             fn: async (url) => {
@@ -174,39 +182,29 @@ export async function fetchWithProxyFailover(targetUrl, expectedType = 'json', l
                     headers: {
                         'Accept': 'application/json, text/javascript, */*; q=0.01'
                     }
-                }, 3000);
+                }, 2000);
                 if (!res.ok) throw new Error(`Status ${res.status}`);
                 return expectedType === 'json' ? await res.json() : await res.text();
             }
         },
-        // 3. AllOrigins JSON Wrapper (Cloudflare edge)
+        // 2. AllOrigins Edge Proxy
         {
             name: 'AllOrigins Edge Proxy',
             fn: async (url) => {
                 const pUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&_=${Date.now()}`;
-                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 3500);
+                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 2500);
                 if (!res.ok) throw new Error(`Status ${res.status}`);
                 const json = await res.json();
                 if (!json.contents) throw new Error('Empty contents');
                 return expectedType === 'json' ? JSON.parse(json.contents) : json.contents;
             }
         },
-        // 4. CorsProxy.org
-        {
-            name: 'CorsProxy.org Gateway',
-            fn: async (url) => {
-                const pUrl = `https://corsproxy.org/?url=${encodeURIComponent(url)}`;
-                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 3500);
-                if (!res.ok) throw new Error(`Status ${res.status}`);
-                return expectedType === 'json' ? await res.json() : await res.text();
-            }
-        },
-        // 5. CodeTabs Proxy
+        // 3. CodeTabs Proxy
         {
             name: 'CodeTabs Proxy',
             fn: async (url) => {
                 const pUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
-                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 3500);
+                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 2500);
                 if (!res.ok) throw new Error(`Status ${res.status}`);
                 return expectedType === 'json' ? await res.json() : await res.text();
             }
@@ -217,8 +215,9 @@ export async function fetchWithProxyFailover(targetUrl, expectedType = 'json', l
         const p = proxies[i];
         try {
             if (logDescription) {
-                appendScrapingLog(`${logDescription} (${i + 1}차: ${p.name} 연결 시도)...`, 'info');
+                appendScrapingLog(`${logDescription} (${i + 1}/${proxies.length}차: ${p.name} 연결 시도)...`, 'info');
             }
+            updateScrapingStatus(`서버 통신 중 (${i + 1}/${proxies.length}차: ${p.name})...`);
             const result = await p.fn(targetUrl);
             if (result) {
                 if (logDescription) {
@@ -385,6 +384,25 @@ export async function scrapeCompleteRoundResult(roundNum) {
             isAutoSynced: true
         };
     }
+
+    // 1-1. Check in-memory extra history
+    if (typeof window !== 'undefined' && window.state && window.state.lottoExtraHistory && window.state.lottoExtraHistory[roundNum]) {
+        const h = window.state.lottoExtraHistory[roundNum];
+        appendScrapingLog(`제 ${roundNum}회 로컬 기록 확인 완료: [${(h.numbers || []).join(', ')}] + [${h.bonus}]`, 'success');
+        return h;
+    }
+
+    // 1-2. Cloud Firestore check (fast, no CORS issues, mobile-friendly)
+    try {
+        if (typeof window !== 'undefined' && window.db && typeof window.db.get === 'function') {
+            const extraDoc = await window.db.get('lotto_draw_history', 'extra_history', 1500);
+            if (extraDoc && extraDoc[roundNum]) {
+                const h = extraDoc[roundNum];
+                appendScrapingLog(`제 ${roundNum}회 클라우드 동기화 서버에서 데이터 수신 성공!`, 'success');
+                return h;
+            }
+        }
+    } catch(e) {}
 
     // 2. Try Multi-tiered CORS proxies with new 2026 official API
     let jsonData = null;

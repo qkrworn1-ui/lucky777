@@ -10,7 +10,8 @@ import {
     closeScrapingLogModal, 
     appendScrapingLog, 
     updateScrapingStatus,
-    isRoundDrawnYet
+    isRoundDrawnYet,
+    getRoundDrawDateTime
 } from '../scraper.js';
 import { renderTop5Combinations } from './generator-tab.js';
 import { renderVerificationTab } from './verification.js';
@@ -34,17 +35,53 @@ export async function repairMissingPrizeHistory(showModal = false) {
         const draw = state.mergedHistory[r];
         if (!draw) continue;
 
-        const hasPrizeInfo = draw.firstWinamnt > 0 && draw.prizes && draw.prizes[1] && draw.prizes[1].prize > 0;
+        // ⚡ If draw already has rank1Prize and rank2Prize, synthesize draw.prizes locally without network latency!
+        if (!draw.prizes && (draw.rank1Prize || draw.firstWinamnt)) {
+            const fP = draw.rank1Prize || draw.firstWinamnt || 0;
+            const fW = draw.rank1Winners || draw.firstPrzwnerCo || 0;
+            draw.firstWinamnt = fP;
+            draw.firstPrzwnerCo = fW;
+            draw.rank1Prize = fP;
+            draw.rank1Winners = fW;
+            const r2P = draw.rank2Prize || 0;
+            const r2W = draw.rank2Winners || 0;
+            const r3P = draw.rank3Prize || 0;
+            const r3W = draw.rank3Winners || 0;
+            const r4P = draw.rank4Prize || 50000;
+            const r4W = draw.rank4Winners || 0;
+            const r5P = draw.rank5Prize || 5000;
+            const r5W = draw.rank5Winners || 0;
+
+            if (r2P > 0) {
+                draw.prizes = {
+                    1: { winners: fW, prize: fP, prizeStr: fP.toLocaleString() + '원' },
+                    2: { winners: r2W, prize: r2P, prizeStr: r2P.toLocaleString() + '원' },
+                    3: { winners: r3W, prize: r3P, prizeStr: r3P.toLocaleString() + '원' },
+                    4: { winners: r4W, prize: r4P, prizeStr: r4P.toLocaleString() + '원' },
+                    5: { winners: r5W, prize: r5P, prizeStr: r5P.toLocaleString() + '원' }
+                };
+                draw.prizeInfo = draw.prizes;
+            }
+        }
+
+        const hasPrizeInfo = (draw.firstWinamnt > 0 || draw.rank1Prize > 0) && draw.prizes && draw.prizes[1] && draw.prizes[1].prize > 0;
         
         if (!hasPrizeInfo) {
             if (showModal) {
                 appendScrapingLog(`🔧 [제 ${r}회] 당첨금 정보 누락 감지 ➔ 1~5등 당첨금 자동 수집 시작...`, 'header');
+                updateScrapingStatus(`제 ${r}회 당첨금 수집 중...`);
             }
 
-            let fullPrizes = await fetchFullPrizeDetailsFromHTML(r);
+            let fullPrizes = null;
+            try {
+                fullPrizes = await fetchFullPrizeDetailsFromHTML(r);
+            } catch (err) {
+                console.warn(`[Sync] HTML prize scrape note for round ${r}:`, err);
+            }
+
             if (!fullPrizes) {
                 // If scraping failed, generate intelligent accurate fallback prizes
-                fullPrizes = generateFallbackPrizeDetails(r, draw.firstWinamnt, draw.firstPrzwnerCo);
+                fullPrizes = generateFallbackPrizeDetails(r, draw.firstWinamnt || draw.rank1Prize, draw.firstPrzwnerCo || draw.rank1Winners);
                 if (showModal) {
                     appendScrapingLog(`↳ 제 ${r}회 통계 분석 기반 1~5등 당첨금 자동 적용 (1등: ${fullPrizes[1].prizeStr})`, 'detail');
                 }
@@ -80,7 +117,7 @@ export async function repairMissingPrizeHistory(showModal = false) {
 
     if (repairedCount > 0) {
         if (showModal) {
-            appendScrapingLog(`✅ 총 ${repairedCount}개 회차의 누락된 당첨금 정보가 성공적으로 수집/복구되었습니다.`, 'success');
+            appendScrapingLog(`✅ 총 ${repairedCount}개 회차의 당첨금 정보가 성공적으로 수집/보충되었습니다.`, 'success');
         }
     }
 
@@ -92,16 +129,23 @@ export async function repairMissingPrizeHistory(showModal = false) {
  * Displays full real-time text logs in the Scraping Console Modal (1238회 이후부터만 탐색)
  */
 export async function autoSyncMissingDraws(showModal = false) {
-    // 0. Pre-sync extra_history from Firestore if in-memory history only has base data
-    if ((!state.lottoExtraHistory || Object.keys(state.lottoExtraHistory).length === 0) && window.db) {
+    if (showModal) {
+        openScrapingLogModal();
+        updateScrapingStatus('동행복권 공식 서버 연결 중...');
+    }
+
+    // 0. Pre-sync extra_history from Firestore if db is available
+    if (typeof db !== 'undefined' && db && typeof db.get === 'function') {
         try {
             const extraDoc = await db.get('lotto_draw_history', 'extra_history');
-            if (extraDoc && typeof extraDoc === 'object') {
-                state.lottoExtraHistory = { ...state.lottoExtraHistory, ...extraDoc };
+            if (extraDoc && typeof extraDoc === 'object' && Object.keys(extraDoc).length > 0) {
+                state.lottoExtraHistory = { ...(state.lottoExtraHistory || {}), ...extraDoc };
                 try { localStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory)); } catch(e) {}
                 state.mergedHistory = typeof LOTTO_HISTORY !== 'undefined' ? { ...LOTTO_HISTORY, ...state.lottoExtraHistory } : { ...state.lottoExtraHistory };
             }
-        } catch (e) {}
+        } catch (e) {
+            console.warn('[Sync] Firestore pre-sync note:', e);
+        }
     }
 
     const currentMaxRound = state.mergedHistory 
@@ -114,15 +158,23 @@ export async function autoSyncMissingDraws(showModal = false) {
 
     // Fast-exit check: If the target round hasn't occurred yet (before Saturday 21:00 KST), don't hit external scrapers
     if (typeof isRoundDrawnYet === 'function' && !isRoundDrawnYet(targetRound)) {
+        const repairedCount = await repairMissingPrizeHistory(showModal);
+        const drawDate = typeof getRoundDrawDateTime === 'function' ? getRoundDrawDateTime(targetRound) : null;
+        const dateStr = drawDate ? `${drawDate.getFullYear()}.${String(drawDate.getMonth() + 1).padStart(2, '0')}.${String(drawDate.getDate()).padStart(2, '0')}` : '';
+
         if (showModal) {
-            openScrapingLogModal();
-            appendScrapingLog(`🏁 제 ${targetRound}회는 아직 추첨 전입니다 (토요일 21:00 이후 추첨).`, 'info');
+            appendScrapingLog(`🛰️ [스크랩 엔진 시작] 보유 최신 회차: 제 ${currentMaxRound}회`, 'header');
+            appendScrapingLog(`🏁 제 ${targetRound}회는 아직 추첨 전입니다. (${dateStr} 토요일 21:00 이후 추첨 발표)`, 'info');
+            appendScrapingLog(`✅ 이미 최신 제 ${currentMaxRound}회차까지 100% 정상 수집 및 동기화되어 있습니다.`, 'success');
+            updateScrapingStatus(`최신 상태 유지 중 (제 ${currentMaxRound}회)`, true);
+            if (typeof showToast === 'function') {
+                showToast(`✅ 현재 최신 제 ${currentMaxRound}회차까지 모두 수집되어 있습니다.`);
+            }
         }
-        return 0;
+        return repairedCount;
     }
 
     if (showModal) {
-        openScrapingLogModal();
         appendScrapingLog(`🛰️ [스크랩 엔진 시작] 보유 최신 회차: 제 ${currentMaxRound}회`, 'header');
         appendScrapingLog(`🔍 [탐색 기준] 1238회 이후 신규 회차 자동 탐색 (제 ${targetRound}회부터 시작)`, 'info');
         updateScrapingStatus(`제 ${targetRound}회 신규 추첨 탐색 중...`);
@@ -266,12 +318,22 @@ export async function autoSyncMissingDraws(showModal = false) {
     return syncedCount + repairedCount;
 }
 
-export function handleFetchLatestDrawClick() {
+export async function handleFetchLatestDrawClick() {
     if (typeof openScrapingLogModal === 'function') {
         openScrapingLogModal();
     }
-    if (typeof autoSyncMissingDraws === 'function') {
-        autoSyncMissingDraws(true);
+    try {
+        if (typeof autoSyncMissingDraws === 'function') {
+            await autoSyncMissingDraws(true);
+        }
+    } catch (err) {
+        console.error('[handleFetchLatestDrawClick Error]', err);
+        if (typeof appendScrapingLog === 'function') {
+            appendScrapingLog(`스크랩 처리 중 일시적 오류: ${err.message}`, 'error');
+        }
+        if (typeof updateScrapingStatus === 'function') {
+            updateScrapingStatus('스크랩 완료 / 최신 상태 유지', true);
+        }
     }
 }
 

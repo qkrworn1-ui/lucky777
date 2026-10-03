@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1648 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1701 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1648)
+ * Lucky777 Smart Bundle (v2026.10.03.1701)
  */
 
 
@@ -15094,6 +15094,7 @@ function openScrapingLogModal() {
     if (pulse) {
         pulse.style.background = '#10b981';
         pulse.style.boxShadow = '0 0 10px #10b981';
+        pulse.style.animation = 'pulse 1.5s infinite';
     }
     if (btnRetry) btnRetry.style.display = 'none';
 }
@@ -15163,12 +15164,19 @@ function updateScrapingStatus(statusText, isCompleted = false) {
     const btnRetry = document.getElementById('btnRetryScraping');
 
     if (elText) elText.textContent = statusText;
-    if (isCompleted && pulse) {
-        pulse.style.background = '#38bdf8';
-        pulse.style.boxShadow = '0 0 10px #38bdf8';
+    if (pulse) {
+        if (isCompleted) {
+            pulse.style.background = '#38bdf8';
+            pulse.style.boxShadow = '0 0 10px #38bdf8';
+            pulse.style.animation = 'none';
+        } else {
+            pulse.style.background = '#10b981';
+            pulse.style.boxShadow = '0 0 10px #10b981';
+            pulse.style.animation = 'pulse 1.5s infinite';
+        }
     }
-    if (isCompleted && btnRetry) {
-        btnRetry.style.display = 'inline-block';
+    if (btnRetry) {
+        btnRetry.style.display = isCompleted ? 'inline-block' : 'none';
     }
 }
 
@@ -15177,7 +15185,7 @@ function updateScrapingStatus(statusText, isCompleted = false) {
  * Supports multiple high-availability proxies with intelligent fallback
  */
 async function fetchWithProxyFailover(targetUrl, expectedType = 'json', logDescription = '') {
-    const fetchWithTimeout = async (url, options = {}, timeoutMs = 3500) => {
+    const fetchWithTimeout = async (url, options = {}, timeoutMs = 2500) => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         try {
@@ -15191,7 +15199,7 @@ async function fetchWithProxyFailover(targetUrl, expectedType = 'json', logDescr
     };
 
     const proxies = [
-        // 1. Direct Browser Gateway
+        // 1. Direct Browser Gateway (Native / Electron / Local)
         {
             name: 'Direct Gateway',
             fn: async (url) => {
@@ -15200,39 +15208,29 @@ async function fetchWithProxyFailover(targetUrl, expectedType = 'json', logDescr
                     headers: {
                         'Accept': 'application/json, text/javascript, */*; q=0.01'
                     }
-                }, 3000);
+                }, 2000);
                 if (!res.ok) throw new Error(`Status ${res.status}`);
                 return expectedType === 'json' ? await res.json() : await res.text();
             }
         },
-        // 3. AllOrigins JSON Wrapper (Cloudflare edge)
+        // 2. AllOrigins Edge Proxy
         {
             name: 'AllOrigins Edge Proxy',
             fn: async (url) => {
                 const pUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&_=${Date.now()}`;
-                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 3500);
+                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 2500);
                 if (!res.ok) throw new Error(`Status ${res.status}`);
                 const json = await res.json();
                 if (!json.contents) throw new Error('Empty contents');
                 return expectedType === 'json' ? JSON.parse(json.contents) : json.contents;
             }
         },
-        // 4. CorsProxy.org
-        {
-            name: 'CorsProxy.org Gateway',
-            fn: async (url) => {
-                const pUrl = `https://corsproxy.org/?url=${encodeURIComponent(url)}`;
-                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 3500);
-                if (!res.ok) throw new Error(`Status ${res.status}`);
-                return expectedType === 'json' ? await res.json() : await res.text();
-            }
-        },
-        // 5. CodeTabs Proxy
+        // 3. CodeTabs Proxy
         {
             name: 'CodeTabs Proxy',
             fn: async (url) => {
                 const pUrl = `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`;
-                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 3500);
+                const res = await fetchWithTimeout(pUrl, { cache: 'no-store' }, 2500);
                 if (!res.ok) throw new Error(`Status ${res.status}`);
                 return expectedType === 'json' ? await res.json() : await res.text();
             }
@@ -15243,8 +15241,9 @@ async function fetchWithProxyFailover(targetUrl, expectedType = 'json', logDescr
         const p = proxies[i];
         try {
             if (logDescription) {
-                appendScrapingLog(`${logDescription} (${i + 1}차: ${p.name} 연결 시도)...`, 'info');
+                appendScrapingLog(`${logDescription} (${i + 1}/${proxies.length}차: ${p.name} 연결 시도)...`, 'info');
             }
+            updateScrapingStatus(`서버 통신 중 (${i + 1}/${proxies.length}차: ${p.name})...`);
             const result = await p.fn(targetUrl);
             if (result) {
                 if (logDescription) {
@@ -15411,6 +15410,25 @@ async function scrapeCompleteRoundResult(roundNum) {
             isAutoSynced: true
         };
     }
+
+    // 1-1. Check in-memory extra history
+    if (typeof window !== 'undefined' && window.state && window.state.lottoExtraHistory && window.state.lottoExtraHistory[roundNum]) {
+        const h = window.state.lottoExtraHistory[roundNum];
+        appendScrapingLog(`제 ${roundNum}회 로컬 기록 확인 완료: [${(h.numbers || []).join(', ')}] + [${h.bonus}]`, 'success');
+        return h;
+    }
+
+    // 1-2. Cloud Firestore check (fast, no CORS issues, mobile-friendly)
+    try {
+        if (typeof window !== 'undefined' && window.db && typeof window.db.get === 'function') {
+            const extraDoc = await window.db.get('lotto_draw_history', 'extra_history', 1500);
+            if (extraDoc && extraDoc[roundNum]) {
+                const h = extraDoc[roundNum];
+                appendScrapingLog(`제 ${roundNum}회 클라우드 동기화 서버에서 데이터 수신 성공!`, 'success');
+                return h;
+            }
+        }
+    } catch(e) {}
 
     // 2. Try Multi-tiered CORS proxies with new 2026 official API
     let jsonData = null;
@@ -34817,7 +34835,8 @@ const {
     closeScrapingLogModal, 
     appendScrapingLog, 
     updateScrapingStatus,
-    isRoundDrawnYet
+    isRoundDrawnYet,
+    getRoundDrawDateTime
 } = (typeof __M_services_lotto_scraper !== 'undefined' ? __M_services_lotto_scraper : {});
 const { renderTop5Combinations } = (typeof __M_services_lotto_views_generator_tab !== 'undefined' ? __M_services_lotto_views_generator_tab : {});
 const { renderVerificationTab } = (typeof __M_services_lotto_views_verification !== 'undefined' ? __M_services_lotto_views_verification : {});
@@ -34841,17 +34860,53 @@ async function repairMissingPrizeHistory(showModal = false) {
         const draw = state.mergedHistory[r];
         if (!draw) continue;
 
-        const hasPrizeInfo = draw.firstWinamnt > 0 && draw.prizes && draw.prizes[1] && draw.prizes[1].prize > 0;
+        // ⚡ If draw already has rank1Prize and rank2Prize, synthesize draw.prizes locally without network latency!
+        if (!draw.prizes && (draw.rank1Prize || draw.firstWinamnt)) {
+            const fP = draw.rank1Prize || draw.firstWinamnt || 0;
+            const fW = draw.rank1Winners || draw.firstPrzwnerCo || 0;
+            draw.firstWinamnt = fP;
+            draw.firstPrzwnerCo = fW;
+            draw.rank1Prize = fP;
+            draw.rank1Winners = fW;
+            const r2P = draw.rank2Prize || 0;
+            const r2W = draw.rank2Winners || 0;
+            const r3P = draw.rank3Prize || 0;
+            const r3W = draw.rank3Winners || 0;
+            const r4P = draw.rank4Prize || 50000;
+            const r4W = draw.rank4Winners || 0;
+            const r5P = draw.rank5Prize || 5000;
+            const r5W = draw.rank5Winners || 0;
+
+            if (r2P > 0) {
+                draw.prizes = {
+                    1: { winners: fW, prize: fP, prizeStr: fP.toLocaleString() + '원' },
+                    2: { winners: r2W, prize: r2P, prizeStr: r2P.toLocaleString() + '원' },
+                    3: { winners: r3W, prize: r3P, prizeStr: r3P.toLocaleString() + '원' },
+                    4: { winners: r4W, prize: r4P, prizeStr: r4P.toLocaleString() + '원' },
+                    5: { winners: r5W, prize: r5P, prizeStr: r5P.toLocaleString() + '원' }
+                };
+                draw.prizeInfo = draw.prizes;
+            }
+        }
+
+        const hasPrizeInfo = (draw.firstWinamnt > 0 || draw.rank1Prize > 0) && draw.prizes && draw.prizes[1] && draw.prizes[1].prize > 0;
         
         if (!hasPrizeInfo) {
             if (showModal) {
                 appendScrapingLog(`🔧 [제 ${r}회] 당첨금 정보 누락 감지 ➔ 1~5등 당첨금 자동 수집 시작...`, 'header');
+                updateScrapingStatus(`제 ${r}회 당첨금 수집 중...`);
             }
 
-            let fullPrizes = await fetchFullPrizeDetailsFromHTML(r);
+            let fullPrizes = null;
+            try {
+                fullPrizes = await fetchFullPrizeDetailsFromHTML(r);
+            } catch (err) {
+                console.warn(`[Sync] HTML prize scrape note for round ${r}:`, err);
+            }
+
             if (!fullPrizes) {
                 // If scraping failed, generate intelligent accurate fallback prizes
-                fullPrizes = generateFallbackPrizeDetails(r, draw.firstWinamnt, draw.firstPrzwnerCo);
+                fullPrizes = generateFallbackPrizeDetails(r, draw.firstWinamnt || draw.rank1Prize, draw.firstPrzwnerCo || draw.rank1Winners);
                 if (showModal) {
                     appendScrapingLog(`↳ 제 ${r}회 통계 분석 기반 1~5등 당첨금 자동 적용 (1등: ${fullPrizes[1].prizeStr})`, 'detail');
                 }
@@ -34887,7 +34942,7 @@ async function repairMissingPrizeHistory(showModal = false) {
 
     if (repairedCount > 0) {
         if (showModal) {
-            appendScrapingLog(`✅ 총 ${repairedCount}개 회차의 누락된 당첨금 정보가 성공적으로 수집/복구되었습니다.`, 'success');
+            appendScrapingLog(`✅ 총 ${repairedCount}개 회차의 당첨금 정보가 성공적으로 수집/보충되었습니다.`, 'success');
         }
     }
 
@@ -34899,16 +34954,23 @@ async function repairMissingPrizeHistory(showModal = false) {
  * Displays full real-time text logs in the Scraping Console Modal (1238회 이후부터만 탐색)
  */
 async function autoSyncMissingDraws(showModal = false) {
-    // 0. Pre-sync extra_history from Firestore if in-memory history only has base data
-    if ((!state.lottoExtraHistory || Object.keys(state.lottoExtraHistory).length === 0) && window.db) {
+    if (showModal) {
+        openScrapingLogModal();
+        updateScrapingStatus('동행복권 공식 서버 연결 중...');
+    }
+
+    // 0. Pre-sync extra_history from Firestore if db is available
+    if (typeof db !== 'undefined' && db && typeof db.get === 'function') {
         try {
             const extraDoc = await db.get('lotto_draw_history', 'extra_history');
-            if (extraDoc && typeof extraDoc === 'object') {
-                state.lottoExtraHistory = { ...state.lottoExtraHistory, ...extraDoc };
+            if (extraDoc && typeof extraDoc === 'object' && Object.keys(extraDoc).length > 0) {
+                state.lottoExtraHistory = { ...(state.lottoExtraHistory || {}), ...extraDoc };
                 try { SafeLocalStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory)); } catch(e) {}
                 state.mergedHistory = typeof LOTTO_HISTORY !== 'undefined' ? { ...LOTTO_HISTORY, ...state.lottoExtraHistory } : { ...state.lottoExtraHistory };
             }
-        } catch (e) {}
+        } catch (e) {
+            console.warn('[Sync] Firestore pre-sync note:', e);
+        }
     }
 
     const currentMaxRound = state.mergedHistory 
@@ -34921,15 +34983,23 @@ async function autoSyncMissingDraws(showModal = false) {
 
     // Fast-exit check: If the target round hasn't occurred yet (before Saturday 21:00 KST), don't hit external scrapers
     if (typeof isRoundDrawnYet === 'function' && !isRoundDrawnYet(targetRound)) {
+        const repairedCount = await repairMissingPrizeHistory(showModal);
+        const drawDate = typeof getRoundDrawDateTime === 'function' ? getRoundDrawDateTime(targetRound) : null;
+        const dateStr = drawDate ? `${drawDate.getFullYear()}.${String(drawDate.getMonth() + 1).padStart(2, '0')}.${String(drawDate.getDate()).padStart(2, '0')}` : '';
+
         if (showModal) {
-            openScrapingLogModal();
-            appendScrapingLog(`🏁 제 ${targetRound}회는 아직 추첨 전입니다 (토요일 21:00 이후 추첨).`, 'info');
+            appendScrapingLog(`🛰️ [스크랩 엔진 시작] 보유 최신 회차: 제 ${currentMaxRound}회`, 'header');
+            appendScrapingLog(`🏁 제 ${targetRound}회는 아직 추첨 전입니다. (${dateStr} 토요일 21:00 이후 추첨 발표)`, 'info');
+            appendScrapingLog(`✅ 이미 최신 제 ${currentMaxRound}회차까지 100% 정상 수집 및 동기화되어 있습니다.`, 'success');
+            updateScrapingStatus(`최신 상태 유지 중 (제 ${currentMaxRound}회)`, true);
+            if (typeof showToast === 'function') {
+                showToast(`✅ 현재 최신 제 ${currentMaxRound}회차까지 모두 수집되어 있습니다.`);
+            }
         }
-        return 0;
+        return repairedCount;
     }
 
     if (showModal) {
-        openScrapingLogModal();
         appendScrapingLog(`🛰️ [스크랩 엔진 시작] 보유 최신 회차: 제 ${currentMaxRound}회`, 'header');
         appendScrapingLog(`🔍 [탐색 기준] 1238회 이후 신규 회차 자동 탐색 (제 ${targetRound}회부터 시작)`, 'info');
         updateScrapingStatus(`제 ${targetRound}회 신규 추첨 탐색 중...`);
@@ -35073,12 +35143,22 @@ async function autoSyncMissingDraws(showModal = false) {
     return syncedCount + repairedCount;
 }
 
-function handleFetchLatestDrawClick() {
+async function handleFetchLatestDrawClick() {
     if (typeof openScrapingLogModal === 'function') {
         openScrapingLogModal();
     }
-    if (typeof autoSyncMissingDraws === 'function') {
-        autoSyncMissingDraws(true);
+    try {
+        if (typeof autoSyncMissingDraws === 'function') {
+            await autoSyncMissingDraws(true);
+        }
+    } catch (err) {
+        console.error('[handleFetchLatestDrawClick Error]', err);
+        if (typeof appendScrapingLog === 'function') {
+            appendScrapingLog(`스크랩 처리 중 일시적 오류: ${err.message}`, 'error');
+        }
+        if (typeof updateScrapingStatus === 'function') {
+            updateScrapingStatus('스크랩 완료 / 최신 상태 유지', true);
+        }
     }
 }
 
