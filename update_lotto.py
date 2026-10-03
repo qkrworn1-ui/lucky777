@@ -44,7 +44,8 @@ def fetch_from_dhlottery(draw_no):
         res = requests.get(url, headers=headers, timeout=10)
         
         data = res.json()
-        item = data.get('data', {}).get('list', [None])[0] if isinstance(data, dict) else None
+        item_list = data.get('data', {}).get('list', []) if isinstance(data, dict) else []
+        item = item_list[0] if (isinstance(item_list, list) and len(item_list) > 0) else None
         if item and item.get('tm1WnNo'):
             numbers = [
                 item['tm1WnNo'], item['tm2WnNo'], item['tm3WnNo'],
@@ -77,9 +78,11 @@ def fetch_from_dhlottery(draw_no):
 
 def fetch_from_naver(draw_no):
     """네이버 검색을 통해 데이터를 가져옵니다 (예비/Fallback)."""
-    url = f"https://search.naver.com/search.naver?query=로또+{draw_no}회+당첨번호"
+    import urllib.parse
+    q = urllib.parse.quote(f"로또 {draw_no}회 당첨번호")
+    url = f"https://search.naver.com/search.naver?query={q}"
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
     }
     
     try:
@@ -87,45 +90,73 @@ def fetch_from_naver(draw_no):
         res = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(res.text, 'html.parser')
         
-        num_box = soup.select_one('.num_box')
-        if not num_box:
+        lotto_box = soup.select_one('.cs_lotto') or soup.select_one('._lotto') or soup.select_one('.num_box')
+        if not lotto_box:
             print("네이버 검색결과에서 로또 번호 영역을 찾을 수 없습니다.")
             return None
             
-        spans = num_box.select('.num')
-        if len(spans) < 7:
+        # 회차 일치 여부 정밀 검증 (네이버는 아직 추첨 전인 회차 검색 시 직전 회차 결과를 노출함)
+        m = re.search(r'(\d+)\s*회', lotto_box.get_text())
+        if m:
+            found_round = int(m.group(1))
+            if found_round != draw_no:
+                print(f"네이버 검색결과가 요청 회차({draw_no}회)가 아닌 {found_round}회차 정보입니다. (아직 추첨 전)")
+                return None
+            
+        ball_elements = lotto_box.select('.ball')
+        numbers = []
+        bonus = 0
+
+        if len(ball_elements) >= 7:
+            numbers = [int(b.text.strip()) for b in ball_elements[:6]]
+            bonus = int(ball_elements[6].text.strip())
+        elif len(ball_elements) == 6:
+            numbers = [int(b.text.strip()) for b in ball_elements[:6]]
+            bonus_el = lotto_box.select_one('.bonus_number') or lotto_box.select_one('.bonus')
+            bonus = int(bonus_el.text.strip()) if bonus_el else 0
+        else:
+            num_elements = lotto_box.select('.num')
+            if len(num_elements) >= 7:
+                numbers = [int(b.text.strip()) for b in num_elements[:6]]
+                bonus = int(num_elements[6].text.strip())
+
+        if len(numbers) != 6 or not bonus:
             print("당첨번호 또는 보너스 번호 파싱 실패.")
             return None
             
-        numbers = [int(span.text) for span in spans[:6]]
-        bonus = int(spans[6].text)
-        
         winners = 0
         prize = 0
+        rank2_prize = 50000000
+        rank3_prize = 1500000
         
         try:
-            info_table = soup.select('.lotto_info table tbody tr')
-            for tr in info_table:
-                th = tr.select_one('th')
-                if th and '1등' in th.text:
-                    tds = tr.select('td')
-                    if len(tds) >= 3:
-                        prize_text = tds[1].text.replace(',', '').replace('원', '').strip()
-                        winners_text = tds[2].text.replace('명', '').strip()
-                        prize = int(prize_text) if prize_text.isdigit() else 0
-                        winners = int(winners_text) if winners_text.isdigit() else 0
-                        break
+            rows = lotto_box.select('tr')
+            for tr in rows:
+                texts = [td.text.replace(',', '').strip() for td in tr.find_all(['td', 'th'])]
+                row_str = ' '.join(texts)
+                if '1등 당첨금' in row_str:
+                    digits = [int(t.replace('원', '')) for t in texts if t.replace('원', '').isdigit()]
+                    if digits: prize = digits[0]
+                elif '당첨자 수' in row_str and winners == 0:
+                    digits = [int(t.replace('명', '')) for t in texts if t.replace('명', '').isdigit()]
+                    if digits: winners = digits[0]
+                elif '2등' in row_str and '당첨금' in row_str:
+                    digits = [int(t.replace('원', '')) for t in texts if t.replace('원', '').isdigit()]
+                    if digits: rank2_prize = digits[0]
+                elif '3등' in row_str and '당첨금' in row_str:
+                    digits = [int(t.replace('원', '')) for t in texts if t.replace('원', '').isdigit()]
+                    if digits: rank3_prize = digits[0]
         except Exception as e:
             print(f"당첨금/당첨자 정보 파싱 중 무시된 오류: {e}")
             
-        print(f"네이버 파싱 성공! 번호: {numbers}, 보너스: {bonus}")
+        print(f"네이버 파싱 성공! 번호: {numbers}, 보너스: {bonus} (1등: {prize:,}원, {winners}명)")
         return {
             "numbers": sorted(numbers),
             "bonus": bonus,
             "rank1Winners": winners,
             "rank1Prize": prize,
-            "rank2Prize": 50000000,
-            "rank3Prize": 1500000,
+            "rank2Prize": rank2_prize,
+            "rank3Prize": rank3_prize,
             "date": ""
         }
     except Exception as e:
