@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1234.33 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1315.58 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1234.33)
+ * Lucky777 Smart Bundle (v2026.10.03.1315.58)
  */
 
 
@@ -10366,7 +10366,10 @@ function syncPurchaseWithQrUrl(purchase) {
 
         if (parsed && Array.isArray(parsed.combos) && parsed.combos.length > 0) {
 
-            const canonicalSerial = parsed.serial || (purchase.qrMeta && purchase.qrMeta.qrSerial) || purchase.qrSerial || purchase.receiptId || `${String(parsed.round || purchase.round).padStart(4, '0')}00000014142041`;
+            let canonicalSerial = parsed.serial || (purchase.qrMeta && purchase.qrMeta.qrSerial) || purchase.qrSerial || purchase.receiptId;
+            if (!canonicalSerial || canonicalSerial.includes('00000014142041')) {
+                canonicalSerial = `${String(parsed.round || purchase.round).padStart(4, '0')}${Date.now()}${Math.floor(1000 + Math.random() * 9000)}`;
+            }
 
             const canonicalUrl = buildDonghangLotteryQrUrl(parsed.round || purchase.round, parsed.combos, canonicalSerial, rawUrl);
 
@@ -11258,7 +11261,11 @@ async function saveLedgerDirectly(ledger, user = null, successMsg = null, target
 
     const currentLoggedUser = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest').toLowerCase();
 
-    if (currentLoggedUser === authId || currentLoggedUser === 'master' || currentLoggedUser === 'admin') {
+    if (currentLoggedUser === authId) {
+
+        state.globalLedger = protectedLedger;
+
+    } else if (state.adminViewingTarget && state.adminViewingTarget.toLowerCase().trim() === authId) {
 
         state.globalLedger = protectedLedger;
 
@@ -11270,9 +11277,17 @@ async function saveLedgerDirectly(ledger, user = null, successMsg = null, target
 
     _allUsersFinancialsCache = null;
 
-    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[authId]) {
+    if (state.allUsersPurchasesMap) {
 
-        state.allUsersPurchasesMap[authId].ledger = protectedLedger;
+        if (!state.allUsersPurchasesMap[authId]) {
+
+            state.allUsersPurchasesMap[authId] = { ledger: protectedLedger };
+
+        } else {
+
+            state.allUsersPurchasesMap[authId].ledger = protectedLedger;
+
+        }
 
     }
 
@@ -11588,7 +11603,7 @@ async function saveToLedger(round, combos, versionStr, user = null, qrMeta = nul
 
         let chunkSerial = (qrMeta && qrMeta.qrSerial && i === 0) ? qrMeta.qrSerial : null;
 
-        if (!chunkSerial || chunkSerial.startsWith('TR-')) {
+        if (!chunkSerial || chunkSerial.startsWith('TR-') || chunkSerial.includes('00000014142041')) {
 
             const serialSuffix = String(Math.floor(10000000000000 + Math.random() * 90000000000000));
 
@@ -30593,8 +30608,7 @@ let currentScannerSessionId = 0;
  */
 function forceKillAllCameraTracks() {
     try {
-        const container = document.getElementById('qrScannerContainer') || document;
-        const videoEls = container.querySelectorAll('video');
+        const videoEls = document.querySelectorAll('video');
         videoEls.forEach(v => {
             try {
                 if (v.srcObject && typeof v.srcObject.getTracks === 'function') {
@@ -30611,12 +30625,75 @@ function forceKillAllCameraTracks() {
     } catch(e) {}
 }
 
+/**
+ * 🛡️ Safely stop Html5Qrcode instance with hard timeout to prevent deadlocks
+ */
+async function safeStopScanner(scannerInstance, timeoutMs = 350) {
+    if (!scannerInstance) return;
+    try {
+        const stopPromise = (async () => {
+            try {
+                const scannerState = (typeof scannerInstance.getState === 'function') ? scannerInstance.getState() : null;
+                if (scannerState === 2 || scannerState === 3 || scannerState === null) {
+                    await scannerInstance.stop();
+                }
+            } catch(e) {}
+            try {
+                await scannerInstance.clear();
+            } catch(e) {}
+        })();
+
+        await Promise.race([
+            stopPromise,
+            new Promise(res => setTimeout(res, timeoutMs))
+        ]);
+    } catch(err) {
+        console.warn('[QR Scanner safeStop note]:', err);
+    }
+}
+
+/**
+ * 🧹 Cleanly rebuild qrReader DOM node to purge any zombie Html5Qrcode internal listeners
+ */
+function resetQrReaderDOM() {
+    try {
+        const qrReader = document.getElementById('qrReader');
+        if (!qrReader) return null;
+        const parent = qrReader.parentNode;
+        if (!parent) {
+            qrReader.innerHTML = '';
+            return qrReader;
+        }
+
+        const newReader = document.createElement('div');
+        newReader.id = 'qrReader';
+        newReader.style.cssText = qrReader.style.cssText || 'width: 100%; height: 100%;';
+
+        // Defensively protect newReader against html5-qrcode's known removeChild(undefined) bug on stop()
+        const origRemoveChild = newReader.removeChild.bind(newReader);
+        newReader.removeChild = function(child) {
+            if (!child || child.parentNode !== newReader) {
+                return child;
+            }
+            return origRemoveChild(child);
+        };
+        newReader._removeChildProtected = true;
+
+        parent.replaceChild(newReader, qrReader);
+        return newReader;
+    } catch(e) {
+        const qrReader = document.getElementById('qrReader');
+        if (qrReader) qrReader.innerHTML = '';
+        return qrReader;
+    }
+}
+
 async function stopScanning() {
+    currentScannerSessionId++;
+
     if (stopScanningPromise) {
         return stopScanningPromise;
     }
-
-    currentScannerSessionId++;
 
     stopScanningPromise = (async () => {
         isStartingScanner = false;
@@ -30625,26 +30702,13 @@ async function stopScanning() {
         html5QrScanner = null;
 
         if (scanner) {
-            try {
-                const scannerState = (typeof scanner.getState === 'function') ? scanner.getState() : null;
-                if (scannerState === 2 || scannerState === 3 || scannerState === null) {
-                    await scanner.stop();
-                }
-            } catch(e) {
-                console.warn('[QR Scanner stop error, fallback to hardware track kill]:', e);
-            }
-            try {
-                await scanner.clear();
-            } catch(e) {}
+            await safeStopScanner(scanner, 350);
         }
 
         // Always guarantee all hardware camera tracks are killed
         forceKillAllCameraTracks();
+        resetQrReaderDOM();
 
-        const qrReader = document.getElementById('qrReader');
-        if (qrReader) {
-            qrReader.innerHTML = '';
-        }
         if (qrScannerContainer) {
             qrScannerContainer.style.display = 'none';
         }
@@ -30654,6 +30718,7 @@ async function stopScanning() {
         if (btnZoom) btnZoom.style.display = 'none';
     })().finally(() => {
         stopScanningPromise = null;
+        isStartingScanner = false;
     });
 
     return stopScanningPromise;
@@ -31206,7 +31271,7 @@ function switchManualLedgerMode(mode = 'qr') {
         try { SafeLocalStorage.setItem('lucky777_manual_reg_mode', 'qr'); } catch(e) {}
         setTimeout(() => {
             startLottoQrScanner();
-        }, 150);
+        }, 200);
     }
 }
 
@@ -31752,7 +31817,7 @@ function processLottoQrPayload(rawText) {
         if (parsed && parsed.round && Array.isArray(parsed.combos) && parsed.combos.length > 0) {
             const round = parsed.round;
             const combosText = parsed.combos.map(c => c.numbers.join(', ')).join('\n');
-            const serial = parsed.serial || `${String(round).padStart(4, '0')}00000014142041`;
+            const serial = parsed.serial || `${String(round).padStart(4, '0')}${Date.now()}${Math.floor(1000 + Math.random() * 9000)}`;
             const canonicalUrl = buildDonghangLotteryQrUrl(round, parsed.combos, serial, decodedText);
 
             // Automatically fill and sync round info
@@ -31819,57 +31884,43 @@ function processLottoQrPayload(rawText) {
  * 📷 Start QR Scanner with Universal Multi-tier Hardware/Camera Fallbacks
  */
 async function startLottoQrScanner() {
-    // 1. If a stop operation is currently underway, wait for hardware release to complete
+    // 1. If a stop operation is currently underway, wait for hardware release to complete (with safety timeout)
     if (stopScanningPromise) {
-        try { await stopScanningPromise; } catch(e) {}
+        try {
+            await Promise.race([
+                stopScanningPromise,
+                new Promise(r => setTimeout(r, 400))
+            ]);
+        } catch(e) {}
     }
+
+    // Force release any edge-case flag lock
+    isStartingScanner = false;
 
     // 2. Increment session ID so any obsolete callbacks/attempts are rejected
     currentScannerSessionId++;
     const thisSessionId = currentScannerSessionId;
-
-    if (isStartingScanner) {
-        console.log('[QR Scanner] Scanner launch already in progress, ignoring duplicate request.');
-        return;
-    }
     isStartingScanner = true;
 
     try {
         const qrScannerContainer = document.getElementById('qrScannerContainer');
-        const qrReader = document.getElementById('qrReader');
         const previewContainer = document.getElementById('qrScannedReceiptPreview');
         if (previewContainer) {
             previewContainer.style.display = 'none';
-        }
-        if (!qrReader) {
-            return;
-        }
-
-        // Defensively protect qrReader against html5-qrcode's known removeChild(undefined) bug on stop()
-        if (!qrReader._removeChildProtected) {
-            const origRemoveChild = qrReader.removeChild.bind(qrReader);
-            qrReader.removeChild = function(child) {
-                if (!child || child.parentNode !== qrReader) {
-                    return child;
-                }
-                return origRemoveChild(child);
-            };
-            qrReader._removeChildProtected = true;
         }
 
         if (qrScannerContainer) {
             qrScannerContainer.style.display = 'block';
         }
 
-        // Stop and completely clear any previous scanner & DOM
+        // Stop and completely clear any previous scanner & DOM safely
         if (html5QrScanner) {
             const prev = html5QrScanner;
             html5QrScanner = null;
-            try { await prev.stop(); } catch(e) {}
-            try { await prev.clear(); } catch(e) {}
+            await safeStopScanner(prev, 300);
         }
         forceKillAllCameraTracks();
-        qrReader.innerHTML = '';
+        resetQrReaderDOM();
 
         if (typeof Html5Qrcode === 'undefined') {
             alert('QR 스캔 엔진을 불러오는 중입니다. 1~2초 후 다시 시도해주세요.');
@@ -31906,11 +31957,10 @@ async function startLottoQrScanner() {
                 if (html5QrScanner) {
                     const prev = html5QrScanner;
                     html5QrScanner = null;
-                    try { await prev.stop(); } catch(e) {}
-                    try { await prev.clear(); } catch(e) {}
+                    await safeStopScanner(prev, 300);
                 }
                 forceKillAllCameraTracks();
-                if (qrReader) qrReader.innerHTML = '';
+                resetQrReaderDOM();
 
                 const scanner = new Html5Qrcode("qrReader", {
                     experimentalFeatures: { useBarCodeDetectorIfSupported: true },
@@ -31920,8 +31970,7 @@ async function startLottoQrScanner() {
                 await scanner.start(cameraSource, config, qrCodeSuccessCallback);
 
                 if (thisSessionId !== currentScannerSessionId) {
-                    try { await scanner.stop(); } catch(e) {}
-                    try { await scanner.clear(); } catch(e) {}
+                    await safeStopScanner(scanner, 300);
                     forceKillAllCameraTracks();
                     return false;
                 }
@@ -31931,21 +31980,25 @@ async function startLottoQrScanner() {
             } catch (err) {
                 console.warn('[QR Camera Attempt Failed]:', cameraSource, err);
                 forceKillAllCameraTracks();
-                if (qrReader) qrReader.innerHTML = '';
+                resetQrReaderDOM();
                 return false;
             }
         }
+
+        // Hardware driver cooldown: 200ms pause to ensure mobile camera HAL release
+        await new Promise(r => setTimeout(r, 200));
+        if (thisSessionId !== currentScannerSessionId) return;
 
         let started = false;
 
         // 1단계: facingMode environment (후면 카메라 기본 시도)
         started = await attemptStart({ facingMode: "environment" });
 
-        // 1.5단계: OS 카메라 드라이버 해제 대기(250ms Backoff Cooldown) 후 재시도
-        // 스마트폰에서 연속 등록 시 직전 카메라 스트림 해제가 100~200ms 지연될 수 있음
+        // 1.5단계: OS 카메라 드라이버 해제 대기(300ms Backoff Cooldown) 후 재시도
+        // 스마트폰에서 연속 등록 시 직전 카메라 스트림 해제가 100~300ms 지연될 수 있음
         if (!started && thisSessionId === currentScannerSessionId) {
-            console.log('[QR Scanner] Retrying environment camera with 250ms driver cooldown backoff...');
-            started = await attemptStart({ facingMode: "environment" }, 250);
+            console.log('[QR Scanner] Retrying environment camera with 300ms driver cooldown backoff...');
+            started = await attemptStart({ facingMode: "environment" }, 300);
         }
 
         // 2단계: 실패 시 카메라 목록 조회 후 최적 후면 카메라 ID 직접 선택
@@ -31961,7 +32014,7 @@ async function startLottoQrScanner() {
                         selectedCam = cameras[cameras.length - 1];
                     }
                     if (selectedCam && selectedCam.id) {
-                        started = await attemptStart(selectedCam.id, 150);
+                        started = await attemptStart(selectedCam.id, 200);
                     }
                 }
             } catch(camListErr) {
@@ -31971,7 +32024,7 @@ async function startLottoQrScanner() {
 
         // 3단계: 기본 카메라 facingMode user 시도
         if (!started && thisSessionId === currentScannerSessionId) {
-            started = await attemptStart({ facingMode: "user" }, 150);
+            started = await attemptStart({ facingMode: "user" }, 200);
         }
 
         if (thisSessionId !== currentScannerSessionId) {
@@ -32390,7 +32443,7 @@ async function handleSaveManualLedger() {
 
         const qrRawUrl = combosEl ? (combosEl.dataset.qrRawUrl || null) : null;
         const qrSerial = combosEl ? (combosEl.dataset.qrSerial || null) : null;
-        const fallbackSerial = `${String(roundInput).padStart(4, '0')}00000014142041`;
+        const fallbackSerial = `${String(roundInput).padStart(4, '0')}${Date.now()}${Math.floor(1000 + Math.random() * 9000)}`;
         const finalSerial = qrSerial || fallbackSerial;
         const finalQrUrl = qrRawUrl || buildDonghangLotteryQrUrl(roundInput, newCombos, finalSerial);
         const qrMeta = (combosEl && (combosEl.dataset.qrScanned === 'true' || qrRawUrl || qrSerial || isOnline)) ? {
@@ -32404,6 +32457,7 @@ async function handleSaveManualLedger() {
         console.log('[handleSaveManualLedger] Saving to ledger...', { roundInput, effectiveAuthId, qrSerial: qrMeta?.qrSerial, isOnline });
         const saveSuccess = await saveToLedger(roundInput, newCombos, finalVersionStr, effectiveAuthId, qrMeta, true);
         if (saveSuccess === false) {
+            showToast('⚠️ 장부 저장에 실패했습니다. 다시 시도해주세요.');
             return;
         }
 
@@ -32484,12 +32538,14 @@ function openManualLedgerModal() {
             combosInput.style.borderColor = '';
             combosInput.style.color = '#94a3b8';
             combosInput.style.cursor = 'not-allowed';
-            combosInput.placeholder = '📷 실물 복권 영수증의 QR코드를 카메라에 비추거나 사진 파일을 선택하면 번호가 자동 등록됩니다. (QR 인증 필수)';
-            combosInput.dataset.qrScanned = '';
-            combosInput.dataset.qrRawUrl = '';
-            combosInput.dataset.qrSerial = '';
+            delete combosInput.dataset.qrScanned;
+            delete combosInput.dataset.qrRawUrl;
+            delete combosInput.dataset.qrSerial;
+            delete combosInput.dataset.qrRound;
+            delete combosInput.dataset.isOnlineReceipt;
             combosInput._cachedCrossCheck = null;
         }
+        isStartingScanner = false;
         const previewContainer = document.getElementById('qrScannedReceiptPreview');
         if (previewContainer) {
             previewContainer.style.display = 'none';
@@ -32615,6 +32671,8 @@ async function closeManualLedgerModal() {
     await stopScanning();
     const modal = document.getElementById('manualLedgerModal');
     if (modal) modal.style.display = 'none';
+    const overlay = document.getElementById('manualLedgerModalOverlay');
+    if (overlay) overlay.style.display = 'none';
 }
 
 if (typeof window !== 'undefined') {
@@ -32627,6 +32685,8 @@ if (typeof window !== 'undefined') {
     window.startLottoQrScanner = startLottoQrScanner;
     window.stopScanning = stopScanning;
     window.stopLottoScanning = stopScanning;
+    window.safeStopScanner = safeStopScanner;
+    window.resetQrReaderDOM = resetQrReaderDOM;
     window.forceKillAllCameraTracks = forceKillAllCameraTracks;
     window.switchManualLedgerMode = switchManualLedgerMode;
     window.pasteFromMobileClipboard = pasteFromMobileClipboard;
@@ -32645,6 +32705,14 @@ if (typeof window !== 'undefined') {
         if (typeof forceKillAllCameraTracks !== 'undefined') {
             __exports.forceKillAllCameraTracks = forceKillAllCameraTracks;
             if (typeof window !== 'undefined') window.forceKillAllCameraTracks = forceKillAllCameraTracks;
+        }
+        if (typeof safeStopScanner !== 'undefined') {
+            __exports.safeStopScanner = safeStopScanner;
+            if (typeof window !== 'undefined') window.safeStopScanner = safeStopScanner;
+        }
+        if (typeof resetQrReaderDOM !== 'undefined') {
+            __exports.resetQrReaderDOM = resetQrReaderDOM;
+            if (typeof window !== 'undefined') window.resetQrReaderDOM = resetQrReaderDOM;
         }
         if (typeof stopScanning !== 'undefined') {
             __exports.stopScanning = stopScanning;

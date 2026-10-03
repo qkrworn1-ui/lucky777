@@ -1078,7 +1078,10 @@ export function syncPurchaseWithQrUrl(purchase) {
 
         if (parsed && Array.isArray(parsed.combos) && parsed.combos.length > 0) {
 
-            const canonicalSerial = parsed.serial || (purchase.qrMeta && purchase.qrMeta.qrSerial) || purchase.qrSerial || purchase.receiptId || `${String(parsed.round || purchase.round).padStart(4, '0')}00000014142041`;
+            let canonicalSerial = parsed.serial || (purchase.qrMeta && purchase.qrMeta.qrSerial) || purchase.qrSerial || purchase.receiptId;
+            if (!canonicalSerial || canonicalSerial.includes('00000014142041')) {
+                canonicalSerial = `${String(parsed.round || purchase.round).padStart(4, '0')}${Date.now()}${Math.floor(1000 + Math.random() * 9000)}`;
+            }
 
             const canonicalUrl = buildDonghangLotteryQrUrl(parsed.round || purchase.round, parsed.combos, canonicalSerial, rawUrl);
 
@@ -1970,7 +1973,11 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
 
     const currentLoggedUser = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest').toLowerCase();
 
-    if (currentLoggedUser === authId || currentLoggedUser === 'master' || currentLoggedUser === 'admin') {
+    if (currentLoggedUser === authId) {
+
+        state.globalLedger = protectedLedger;
+
+    } else if (state.adminViewingTarget && state.adminViewingTarget.toLowerCase().trim() === authId) {
 
         state.globalLedger = protectedLedger;
 
@@ -1982,9 +1989,17 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
 
     _allUsersFinancialsCache = null;
 
-    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[authId]) {
+    if (state.allUsersPurchasesMap) {
 
-        state.allUsersPurchasesMap[authId].ledger = protectedLedger;
+        if (!state.allUsersPurchasesMap[authId]) {
+
+            state.allUsersPurchasesMap[authId] = { ledger: protectedLedger };
+
+        } else {
+
+            state.allUsersPurchasesMap[authId].ledger = protectedLedger;
+
+        }
 
     }
 
@@ -2300,7 +2315,7 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
 
         let chunkSerial = (qrMeta && qrMeta.qrSerial && i === 0) ? qrMeta.qrSerial : null;
 
-        if (!chunkSerial || chunkSerial.startsWith('TR-')) {
+        if (!chunkSerial || chunkSerial.startsWith('TR-') || chunkSerial.includes('00000014142041')) {
 
             const serialSuffix = String(Math.floor(10000000000000 + Math.random() * 90000000000000));
 
