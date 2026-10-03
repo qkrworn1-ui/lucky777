@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1711 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1733 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1711)
+ * Lucky777 Smart Bundle (v2026.10.03.1733)
  */
 
 
@@ -896,9 +896,11 @@ const db = {
         const fs = this.getFirestore();
         if (!fs) return null;
         try {
-            // ⚡ 캐시 우선 조회 (0ms 즉시 반환)
+            // ⚡ 캐시 우선 조회 (200ms 타임아웃 보호)
             try {
-                const cachedDoc = await fs.collection(collection).doc(docId).get({ source: 'cache' });
+                const cachePromise = fs.collection(collection).doc(docId).get({ source: 'cache' });
+                const cacheTimeout = new Promise(resolve => setTimeout(() => resolve(null), 200));
+                const cachedDoc = await Promise.race([cachePromise, cacheTimeout]);
                 if (cachedDoc && cachedDoc.exists) {
                     return cachedDoc.data();
                 }
@@ -34955,12 +34957,14 @@ async function autoSyncMissingDraws(showModal = false) {
     if (showModal) {
         openScrapingLogModal();
         updateScrapingStatus('동행복권 공식 서버 연결 중...');
+        appendScrapingLog('🛰️ [스크랩 엔진 가동] 동행복권 공식 서버 연결 시작...', 'header');
+        appendScrapingLog('🔍 최신 당첨 데이터베이스 및 서버 동기화 상태 점검 중...', 'detail');
     }
 
-    // 0. Pre-sync extra_history from Firestore if db is available
+    // 0. Pre-sync extra_history from Firestore if db is available (fast 800ms timeout)
     if (typeof db !== 'undefined' && db && typeof db.get === 'function') {
         try {
-            const extraDoc = await db.get('lotto_draw_history', 'extra_history');
+            const extraDoc = await db.get('lotto_draw_history', 'extra_history', 800);
             if (extraDoc && typeof extraDoc === 'object' && Object.keys(extraDoc).length > 0) {
                 state.lottoExtraHistory = { ...(state.lottoExtraHistory || {}), ...extraDoc };
                 try { SafeLocalStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory)); } catch(e) {}
@@ -34981,12 +34985,14 @@ async function autoSyncMissingDraws(showModal = false) {
 
     // Fast-exit check: If the target round hasn't occurred yet (before Saturday 21:00 KST), don't hit external scrapers
     if (typeof isRoundDrawnYet === 'function' && !isRoundDrawnYet(targetRound)) {
+        if (showModal) {
+            appendScrapingLog(`📡 [회차 검증] 보유 최신: 제 ${currentMaxRound}회 ➔ 차기 추첨 대상: 제 ${targetRound}회`, 'info');
+        }
         const repairedCount = await repairMissingPrizeHistory(showModal);
         const drawDate = typeof getRoundDrawDateTime === 'function' ? getRoundDrawDateTime(targetRound) : null;
         const dateStr = drawDate ? `${drawDate.getFullYear()}.${String(drawDate.getMonth() + 1).padStart(2, '0')}.${String(drawDate.getDate()).padStart(2, '0')}` : '';
 
         if (showModal) {
-            appendScrapingLog(`🛰️ [스크랩 엔진 시작] 보유 최신 회차: 제 ${currentMaxRound}회`, 'header');
             appendScrapingLog(`🏁 제 ${targetRound}회는 아직 추첨 전입니다. (${dateStr} 토요일 21:00 이후 추첨 발표)`, 'info');
             appendScrapingLog(`✅ 이미 최신 제 ${currentMaxRound}회차까지 100% 정상 수집 및 동기화되어 있습니다.`, 'success');
             updateScrapingStatus(`최신 상태 유지 중 (제 ${currentMaxRound}회)`, true);

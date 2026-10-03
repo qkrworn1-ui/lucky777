@@ -43,9 +43,11 @@ export const db = {
         const fs = this.getFirestore();
         if (!fs) return null;
         try {
-            // ⚡ 캐시 우선 조회 (0ms 즉시 반환)
+            // ⚡ 캐시 우선 조회 (200ms 타임아웃 보호)
             try {
-                const cachedDoc = await fs.collection(collection).doc(docId).get({ source: 'cache' });
+                const cachePromise = fs.collection(collection).doc(docId).get({ source: 'cache' });
+                const cacheTimeout = new Promise(resolve => setTimeout(() => resolve(null), 200));
+                const cachedDoc = await Promise.race([cachePromise, cacheTimeout]);
                 if (cachedDoc && cachedDoc.exists) {
                     return cachedDoc.data();
                 }
