@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1612.58 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1626.51 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1612.58)
+ * Lucky777 Smart Bundle (v2026.10.03.1626.51)
  */
 
 
@@ -218,8 +218,8 @@ function showToast(message, durationOrType = 2000) {
 }
 
 async function shareProgramApp(customData = {}) {
-    const shareTitle = customData.title || '운도실력 777 | AI 로또 7대 알고리즘 & 토토/프로토 분석 플랫폼';
-    const shareText = customData.text || '🍀 [운도실력 777] 빅데이터 & AI 퀀트 알고리즘 기반 로또 7대 알고리즘 & 토토/프로토 적중 분석 플랫폼!\n지금 바로 이번 주 추천 번호와 AI 적중 분석을 무료로 확인해보세요.';
+    const shareTitle = customData.title || '운도실력 | 복권 통계 분석 & 건전 장부 관리';
+    const shareText = customData.text || '📊 [운도실력 시스템 안내]\n공공 데이터 기반의 통계 분석 및 건전한 개인 구매 이력 기록·관리 웹 플랫폼입니다.\n\n• 회차별 공식 복권 통계 데이터 분석\n• 모바일 QR 영수증 기반 개인 구매 장부 보관\n\n※ 건전한 소액 취미 생활과 통계 분석 연구를 지향합니다.';
     const shareUrl = customData.url || (window.location.origin ? (window.location.origin + window.location.pathname) : window.location.href.split('#')[0]);
 
     // 1. 스마트폰 Web Share API (모바일 최우선 네이티브 공유창: 카카오톡, 문자메시지, 인스타그램, 페이스북, 링크복사 등)
@@ -247,7 +247,7 @@ async function shareProgramApp(customData = {}) {
                 objectType: 'feed',
                 content: {
                     title: shareTitle,
-                    description: shareText,
+                    description: '공공 데이터 기반 회차별 통계 분석 및 모바일 QR 구매 이력 기록 시스템 (건전한 소액 문화 지향)',
                     imageUrl: 'https://lucky777-lottery.web.app/icon-512.png',
                     link: {
                         mobileWebUrl: shareUrl,
@@ -256,7 +256,7 @@ async function shareProgramApp(customData = {}) {
                 },
                 buttons: [
                     {
-                        title: '운도실력 바로가기',
+                        title: '서비스 안내 보기',
                         link: {
                             mobileWebUrl: shareUrl,
                             webUrl: shareUrl
@@ -273,7 +273,7 @@ async function shareProgramApp(customData = {}) {
 
     // 3. PC 또는 미지원 브라우저 클립보드 복사 Fallback
     try {
-        const fullShareContent = `${shareTitle}\n${shareText}\n\n👉 바로가기: ${shareUrl}`;
+        const fullShareContent = `${shareTitle}\n\n${shareText}\n\n🔗 접속 링크: ${shareUrl}`;
         if (navigator.clipboard && navigator.clipboard.writeText) {
             await navigator.clipboard.writeText(fullShareContent);
             showToast('🔗 서비스 링크가 복사되었습니다! 카카오톡이나 SNS에 붙여넣어 공유하세요.');

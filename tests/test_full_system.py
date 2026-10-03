@@ -2894,6 +2894,29 @@ Lotto 6/45
         self.assertIn("dashboard_summary_latest", batch_code)
         self.assertIn("winningEvaluations", batch_code)
 
+    def test_87_dashboard_kakao_share_non_speculative_clean_text(self):
+        """Test 87: Verify that dashboard Kakao share contains zero gambling/speculation or spam advertising texts."""
+        utils_file = os.path.join(self.root_dir, 'src', 'shared', 'utils.js')
+        html_file = os.path.join(self.root_dir, 'index.html')
+
+        with open(utils_file, 'r', encoding='utf-8') as f:
+            utils_code = f.read()
+        with open(html_file, 'r', encoding='utf-8') as f:
+            html_code = f.read()
+
+        # 1. utils.js shareProgramApp strictly removes speculative keywords
+        self.assertNotIn("토토/프로토 적중 분석", utils_code)
+        self.assertNotIn("무료로 확인해보세요", utils_code)
+
+        # 2. utils.js promotes clean statistical analysis and responsible gaming notice
+        self.assertIn("공공 데이터 기반의 통계 분석", utils_code)
+        self.assertIn("건전한 소액 취미 생활과 통계 분석 연구를 지향합니다", utils_code)
+        self.assertIn("서비스 안내 보기", utils_code)
+
+        # 3. index.html dashboard share button contains clean professional copy
+        self.assertIn("운도실력 서비스 안내 공유", html_code)
+        self.assertIn("공공 데이터 기반 통계 분석 및 건전한 구매 영수증 기록 관리 서비스", html_code)
+
 
 if __name__ == '__main__':
     unittest.main()
