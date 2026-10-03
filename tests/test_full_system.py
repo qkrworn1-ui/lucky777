@@ -2999,6 +2999,22 @@ Lotto 6/45
         snap_1245 = snapshot_db.get('user1_1245')
         self.assertIsNone(snap_1245)
 
+    def test_83_generator_tab_preserves_immutable_snapshot_on_click(self):
+        """Test 83: Verify handleGenerateAllClick & handleGenerateAll70Games preserve immutable snapshots upon button clicks."""
+        gen_tab_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        with open(gen_tab_path, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+
+        # 1. Imports getUserWeeklyRecommendationSnapshotSync
+        self.assertIn("getUserWeeklyRecommendationSnapshotSync", gen_tab_code)
+
+        # 2. handleGenerateAllClick checks existingSnap and preserves existingSnap.v4Combos
+        self.assertIn("getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)", gen_tab_code)
+        self.assertIn("state.fixedTop5Combinations_v4 = existingSnap.v4Combos;", gen_tab_code)
+        self.assertIn("state.fixedTop5Combinations_v3 = existingSnap.v3Combos;", gen_tab_code)
+
+        # 3. Toast notifies snapshot preservation
+        self.assertIn("불변 추천번호 스냅샷이 확정 보존되어 있습니다", gen_tab_code)
 
 if __name__ == '__main__':
     unittest.main()

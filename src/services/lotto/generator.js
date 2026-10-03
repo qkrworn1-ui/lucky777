@@ -1383,25 +1383,36 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
 
     const docKey = `${cleanUser}_${roundNum}`;
 
-    // 1. Check Firestore first (Single Source of Truth for immutable snapshots)
+    // 1. Check Firestore first (Single Source of Truth for immutable snapshots: lotto_users with lotto_purchases fallback)
     const firestore = (db && typeof db.getFirestore === 'function') ? db.getFirestore() : window.db;
     if (firestore) {
         try {
-            const uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
-            if (uDoc && uDoc.exists) {
-                const uData = uDoc.data();
-                if (uData && uData.recommendationSnapshots && uData.recommendationSnapshots[String(roundNum)]) {
-                    const existingData = uData.recommendationSnapshots[String(roundNum)];
-                    if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks) {
-                        if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                        state.userRecommendationSnapshots[docKey] = existingData;
-                        try { localStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
-                        return existingData;
+            let uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
+            let uData = (uDoc && uDoc.exists) ? uDoc.data() : null;
+            let existingData = null;
+            if (uData && uData.recommendationSnapshots && uData.recommendationSnapshots[String(roundNum)]) {
+                existingData = uData.recommendationSnapshots[String(roundNum)];
+            }
+            
+            // Dual-check fallback to lotto_purchases
+            if (!existingData || !existingData.v4Combos) {
+                const pDoc = await firestore.collection('lotto_purchases').doc(cleanUser).get();
+                if (pDoc && pDoc.exists) {
+                    const pData = pDoc.data();
+                    if (pData?.recommendationSnapshots?.[String(roundNum)]) {
+                        existingData = pData.recommendationSnapshots[String(roundNum)];
                     }
                 }
             }
+
+            if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks) {
+                if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                state.userRecommendationSnapshots[docKey] = existingData;
+                try { localStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
+                return existingData;
+            }
         } catch(e) {
-            console.warn('[Snapshot Check from lotto_users Failed]', e);
+            console.warn('[Snapshot Check from Firestore Failed]', e);
         }
     }
 
@@ -1544,6 +1555,21 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey]) {
         return state.userRecommendationSnapshots[docKey];
+    }
+    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[String(roundNum)]) {
+        return state.userRecommendationSnapshots[String(roundNum)];
+    }
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
+        const pDoc = state.allUsersPurchasesMap[cleanUser];
+        if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[String(roundNum)]) {
+            return pDoc.recommendationSnapshots[String(roundNum)];
+        }
+    }
+    if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+        const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cleanUser);
+        if (u && u.recommendationSnapshots && u.recommendationSnapshots[String(roundNum)]) {
+            return u.recommendationSnapshots[String(roundNum)];
+        }
     }
     try {
         const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(`lotto_rec_snapshot_${docKey}`) : null;

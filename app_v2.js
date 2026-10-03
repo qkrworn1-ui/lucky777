@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1851.58 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.2355 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1851.58)
+ * Lucky777 Smart Bundle (v2026.10.03.2355)
  */
 
 
@@ -16975,25 +16975,36 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
 
     const docKey = `${cleanUser}_${roundNum}`;
 
-    // 1. Check Firestore first (Single Source of Truth for immutable snapshots)
+    // 1. Check Firestore first (Single Source of Truth for immutable snapshots: lotto_users with lotto_purchases fallback)
     const firestore = (db && typeof db.getFirestore === 'function') ? db.getFirestore() : window.db;
     if (firestore) {
         try {
-            const uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
-            if (uDoc && uDoc.exists) {
-                const uData = uDoc.data();
-                if (uData && uData.recommendationSnapshots && uData.recommendationSnapshots[String(roundNum)]) {
-                    const existingData = uData.recommendationSnapshots[String(roundNum)];
-                    if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks) {
-                        if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                        state.userRecommendationSnapshots[docKey] = existingData;
-                        try { SafeLocalStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
-                        return existingData;
+            let uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
+            let uData = (uDoc && uDoc.exists) ? uDoc.data() : null;
+            let existingData = null;
+            if (uData && uData.recommendationSnapshots && uData.recommendationSnapshots[String(roundNum)]) {
+                existingData = uData.recommendationSnapshots[String(roundNum)];
+            }
+            
+            // Dual-check fallback to lotto_purchases
+            if (!existingData || !existingData.v4Combos) {
+                const pDoc = await firestore.collection('lotto_purchases').doc(cleanUser).get();
+                if (pDoc && pDoc.exists) {
+                    const pData = pDoc.data();
+                    if (pData?.recommendationSnapshots?.[String(roundNum)]) {
+                        existingData = pData.recommendationSnapshots[String(roundNum)];
                     }
                 }
             }
+
+            if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks) {
+                if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                state.userRecommendationSnapshots[docKey] = existingData;
+                try { SafeLocalStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
+                return existingData;
+            }
         } catch(e) {
-            console.warn('[Snapshot Check from lotto_users Failed]', e);
+            console.warn('[Snapshot Check from Firestore Failed]', e);
         }
     }
 
@@ -17136,6 +17147,21 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey]) {
         return state.userRecommendationSnapshots[docKey];
+    }
+    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[String(roundNum)]) {
+        return state.userRecommendationSnapshots[String(roundNum)];
+    }
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
+        const pDoc = state.allUsersPurchasesMap[cleanUser];
+        if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[String(roundNum)]) {
+            return pDoc.recommendationSnapshots[String(roundNum)];
+        }
+    }
+    if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+        const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cleanUser);
+        if (u && u.recommendationSnapshots && u.recommendationSnapshots[String(roundNum)]) {
+            return u.recommendationSnapshots[String(roundNum)];
+        }
     }
     try {
         const raw = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem(`lotto_rec_snapshot_${docKey}`) : null;
@@ -22501,7 +22527,7 @@ var __M_services_lotto_views_generator_tab = (function() {
 const { state, saveGlobalState } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { createBallHtml } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
-const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getEffectiveGeneratorUserId } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPermanentUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getAllUnifiedRegisteredUsers } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
@@ -23779,6 +23805,35 @@ function handleGenerateAllClick() {
     const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
     const effectiveUserId = getEffectiveGeneratorUserId();
     
+    // 🔒 영구 불변 스냅샷 보호: 이미 해당 회차의 확정 스냅샷이 배정되어 있는 경우 불변 스냅샷 유지
+    const existingSnap = (typeof getUserWeeklyRecommendationSnapshotSync === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId))
+        ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)
+        : null;
+
+    if (existingSnap && Array.isArray(existingSnap.v4Combos) && existingSnap.v4Combos.length > 0 && Array.isArray(existingSnap.v3Combos) && existingSnap.v3Combos.length > 0) {
+        state.fixedTop5Combinations_v3 = existingSnap.v3Combos;
+        state.fixedTop5Combinations_v3_userId = effectiveUserId;
+        state.fixedTop5Combinations_v3_round = curUpcomingRound;
+        state.fixedTop5Combinations_v4 = existingSnap.v4Combos;
+        state.fixedTop5Combinations_v4_userId = effectiveUserId;
+        state.fixedTop5Combinations_v4_round = curUpcomingRound;
+        state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
+        
+        renderTop5Combinations(true);
+
+        const compactModal = document.getElementById('compactViewModal');
+        if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+            if (typeof renderQuickViewContent === 'function') {
+                renderQuickViewContent();
+            } else if (typeof window !== 'undefined' && typeof window.renderQuickViewContent === 'function') {
+                window.renderQuickViewContent();
+            }
+        }
+
+        showToast(`🔒 제${curUpcomingRound}회 불변 추천번호 스냅샷이 확정 보존되어 있습니다.`);
+        return;
+    }
+
     // Force recalculate both v3 and v4 distinctly and explicitly for the current effective user & round
     state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
     state.fixedTop5Combinations_v3_userId = effectiveUserId;
@@ -23788,6 +23843,11 @@ function handleGenerateAllClick() {
     state.fixedTop5Combinations_v4_round = curUpcomingRound;
     state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
     
+    // 🔒 즉시 영구 불변 스냅샷으로 저장하여 이후 변경 방지
+    if (typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
+        saveUserWeeklyRecommendationSnapshot(effectiveUserId, curUpcomingRound).catch(e => console.warn('[Auto Snapshot Error]', e));
+    }
+
     renderTop5Combinations(true);
 
     const compactModal = document.getElementById('compactViewModal');
@@ -23799,7 +23859,7 @@ function handleGenerateAllClick() {
         }
     }
 
-    showToast('이번 주 추천 번호 10게임이 새롭게 생성되었습니다.');
+    showToast('이번 주 추천 번호 10게임이 새롭게 생성되어 불변 저장되었습니다.');
 }
 
 async function handleConfirmPurchaseHeroClick() {
@@ -24790,10 +24850,29 @@ async function handleGenerateAll70Games() {
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function' ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
 
-    // 1. Force compute both V3 and V4 (20 Games)
-    state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
-    state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
-    state.fixedTop5Combinations = state.fixedTop5Combinations_v4;
+    // 🔒 영구 불변 스냅샷 보호
+    const existingSnap = (typeof getUserWeeklyRecommendationSnapshotSync === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId))
+        ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)
+        : null;
+
+    if (existingSnap && Array.isArray(existingSnap.v4Combos) && existingSnap.v4Combos.length > 0 && Array.isArray(existingSnap.v3Combos) && existingSnap.v3Combos.length > 0) {
+        state.fixedTop5Combinations_v3 = existingSnap.v3Combos;
+        state.fixedTop5Combinations_v3_userId = effectiveUserId;
+        state.fixedTop5Combinations_v3_round = curUpcomingRound;
+        state.fixedTop5Combinations_v4 = existingSnap.v4Combos;
+        state.fixedTop5Combinations_v4_userId = effectiveUserId;
+        state.fixedTop5Combinations_v4_round = curUpcomingRound;
+        state.fixedTop5Combinations = state.fixedTop5Combinations_v4;
+    } else {
+        // 1. Force compute both V3 and V4 (20 Games)
+        state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
+        state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
+        state.fixedTop5Combinations = state.fixedTop5Combinations_v4;
+
+        if (typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
+            saveUserWeeklyRecommendationSnapshot(effectiveUserId, curUpcomingRound).catch(e => console.warn('[Auto Snapshot Error]', e));
+        }
+    }
 
     const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
         ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
@@ -24805,12 +24884,14 @@ async function handleGenerateAll70Games() {
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
         updateTop7AlgoUI();
-        showToast(`🎉 7대 퀀트 알고리즘 70게임(기본 20G + 추가 50G) 전수가 생성되었습니다!`);
+        showToast(existingSnap 
+            ? `🔒 제${curUpcomingRound}회 확정 불변 70게임(기본 20G + 추가 50G)이 유지되었습니다!` 
+            : `🎉 7대 퀀트 알고리즘 70게임(기본 20G + 추가 50G) 전수가 생성되어 불변 저장되었습니다!`);
     } else {
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
         updateTop7AlgoUI();
-        const wantRegister = confirm(`⚡ 기본 20게임(V4.0 + V3.0)이 성공적으로 생성되었습니다!\n\n추가 5팩(50게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
+        const wantRegister = confirm(`⚡ 기본 20게임(V4.0 + V3.0)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 5팩(50게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();
