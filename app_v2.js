@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1626.51 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1632.37 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1626.51)
+ * Lucky777 Smart Bundle (v2026.10.03.1632.37)
  */
 
 
@@ -218,8 +218,8 @@ function showToast(message, durationOrType = 2000) {
 }
 
 async function shareProgramApp(customData = {}) {
-    const shareTitle = customData.title || '운도실력 | 복권 통계 분석 & 건전 장부 관리';
-    const shareText = customData.text || '📊 [운도실력 시스템 안내]\n공공 데이터 기반의 통계 분석 및 건전한 개인 구매 이력 기록·관리 웹 플랫폼입니다.\n\n• 회차별 공식 복권 통계 데이터 분석\n• 모바일 QR 영수증 기반 개인 구매 장부 보관\n\n※ 건전한 소액 취미 생활과 통계 분석 연구를 지향합니다.';
+    const shareTitle = customData.title || '운도실력 | 로또 통계 분석 & 건전 장부 관리';
+    const shareText = customData.text || '📊 [운도실력 시스템 안내]\n동행복권 역대 공식 발표 데이터 기반의 통계 분석 및 건전한 개인 구매 이력 기록·관리 웹 플랫폼입니다.\n\n• 회차별 공식 당첨 통계 및 분석 지표 확인\n• 모바일 QR 영수증 기반 개인 구매 장부 보관\n\n※ 건전한 소액 취미 생활과 통계 분석 연구를 지향합니다.';
     const shareUrl = customData.url || (window.location.origin ? (window.location.origin + window.location.pathname) : window.location.href.split('#')[0]);
 
     // 1. 스마트폰 Web Share API (모바일 최우선 네이티브 공유창: 카카오톡, 문자메시지, 인스타그램, 페이스북, 링크복사 등)
@@ -247,7 +247,7 @@ async function shareProgramApp(customData = {}) {
                 objectType: 'feed',
                 content: {
                     title: shareTitle,
-                    description: '공공 데이터 기반 회차별 통계 분석 및 모바일 QR 구매 이력 기록 시스템 (건전한 소액 문화 지향)',
+                    description: '동행복권 역대 공식 당첨 통계 분석 및 모바일 QR 구매 이력 기록 시스템 (건전한 소액 문화 지향)',
                     imageUrl: 'https://lucky777-lottery.web.app/icon-512.png',
                     link: {
                         mobileWebUrl: shareUrl,

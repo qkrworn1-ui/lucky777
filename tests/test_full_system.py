@@ -2909,13 +2909,13 @@ Lotto 6/45
         self.assertNotIn("무료로 확인해보세요", utils_code)
 
         # 2. utils.js promotes clean statistical analysis and responsible gaming notice
-        self.assertIn("공공 데이터 기반의 통계 분석", utils_code)
+        self.assertIn("동행복권 역대 공식 발표 데이터 기반의 통계 분석", utils_code)
         self.assertIn("건전한 소액 취미 생활과 통계 분석 연구를 지향합니다", utils_code)
         self.assertIn("서비스 안내 보기", utils_code)
 
         # 3. index.html dashboard share button contains clean professional copy
         self.assertIn("운도실력 서비스 안내 공유", html_code)
-        self.assertIn("공공 데이터 기반 통계 분석 및 건전한 구매 영수증 기록 관리 서비스", html_code)
+        self.assertIn("동행복권 역대 공식 통계 분석 및 건전한 구매 영수증(QR) 기록 관리 서비스", html_code)
 
 
 if __name__ == '__main__':
