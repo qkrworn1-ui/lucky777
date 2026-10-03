@@ -355,8 +355,16 @@ export function switchQuickViewAlgo(algo) {
     const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);
 
     if (!isEligible && algo.startsWith('extra_')) {
-        const pId = algo.replace('extra_', '');
-        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n추가 ${pId}팩(10게임)을 포함한 추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 20게임(V4.0 + V3.0)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
+        const pId = parseInt(algo.replace('extra_', ''), 10);
+        const extraNames = {
+            1: '추가 1: 빈틈제로 팩',
+            2: '추가 2: 슈퍼 잭팟 팩',
+            3: '추가 3: 멀티 히트 팩',
+            4: '추가 4: 흐름 부스터 팩',
+            5: '추가 5: 트리오 마스터 팩'
+        };
+        const packTitle = extraNames[pId] || `추가 ${pId}팩`;
+        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n${packTitle}(10게임)을 포함한 추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 20게임(올라운더 + 수학 퀀트)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             closeCompactView();
             if (typeof window.openManualLedgerModal === 'function') {
@@ -374,12 +382,19 @@ export function switchQuickViewAlgo(algo) {
     renderQuickViewContent();
 
     let label = '추천번호';
-    if (algo === 'v3') label = 'V3.0 하이브리드 (10조합)';
-    else if (algo === 'v4') label = 'V4.0 행동경제학 (10조합)';
+    if (algo === 'v4') label = '기본 1: 올라운더 팩 (10조합)';
+    else if (algo === 'v3') label = '기본 2: 수학 퀀트 팩 (10조합)';
     else if (algo === 'all') label = isEligible ? '전체 통합 조합 (70조합)' : '기본 통합 조합 (20조합)';
     else if (algo.startsWith('extra_')) {
-        const pId = algo.replace('extra_', '');
-        label = `추가팩 ${pId} (10조합)`;
+        const pId = parseInt(algo.replace('extra_', ''), 10);
+        const extraLabels = {
+            1: '추가 1: 빈틈제로 팩 (10조합)',
+            2: '추가 2: 슈퍼 잭팟 팩 (10조합)',
+            3: '추가 3: 멀티 히트 팩 (10조합)',
+            4: '추가 4: 흐름 부스터 팩 (10조합)',
+            5: '추가 5: 트리오 마스터 팩 (10조합)'
+        };
+        label = extraLabels[pId] || `추가팩 ${pId} (10조합)`;
     }
     showToast(`✅ [${label}] 보기로 전환되었습니다.`);
 }
@@ -400,30 +415,39 @@ export function updateQuickViewAlgoButtons() {
     const totalGames = isEligible ? 70 : 20;
 
     let buttonsHtml = `
-        <button type="button" onclick="window.switchQuickViewAlgo('v3')" class="quick-algo-btn ${currentQuickAlgo === 'v3' ? 'active' : ''}" style="flex: 1 1 70px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v3' ? '#fbbf24' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v3' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v3' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v3' ? '800' : '600'};">
-            <i class="fa-solid fa-bolt"></i> V3.0 (10)
+        <button type="button" onclick="window.switchQuickViewAlgo('v4')" class="quick-algo-btn ${currentQuickAlgo === 'v4' ? 'active' : ''}" style="flex: 1 1 72px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v4' ? '#10b981' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v4' ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v4' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v4' ? '800' : '600'};">
+            <i class="fa-solid fa-bullseye"></i> 올라운더 (10)
         </button>
-        <button type="button" onclick="window.switchQuickViewAlgo('v4')" class="quick-algo-btn ${currentQuickAlgo === 'v4' ? 'active' : ''}" style="flex: 1 1 70px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v4' ? '#fbbf24' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v4' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v4' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v4' ? '800' : '600'};">
-            <i class="fa-solid fa-brain"></i> V4.0 (10)
+        <button type="button" onclick="window.switchQuickViewAlgo('v3')" class="quick-algo-btn ${currentQuickAlgo === 'v3' ? 'active' : ''}" style="flex: 1 1 72px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v3' ? '#3b82f6' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v3' ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v3' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v3' ? '800' : '600'};">
+            <i class="fa-solid fa-calculator"></i> 수학퀀트 (10)
         </button>
     `;
 
     // Dynamic Extra Pack Buttons
+    const extraMeta = {
+        1: { name: '빈틈제로', icon: 'fa-shield-halved', color: '#10b981' },
+        2: { name: '슈퍼잭팟', icon: 'fa-trophy', color: '#f59e0b' },
+        3: { name: '멀티히트', icon: 'fa-chart-line', color: '#ec4899' },
+        4: { name: '흐름부스터', icon: 'fa-wave-square', color: '#8b5cf6' },
+        5: { name: '트리오마스터', icon: 'fa-cubes', color: '#06b6d4' }
+    };
+
     for (let pId = 1; pId <= 5; pId++) {
         const packKey = `extra_${pId}`;
         const isActive = currentQuickAlgo === packKey;
-        const color = pId === 1 ? '#10b981' : pId === 2 ? '#f59e0b' : pId === 3 ? '#ec4899' : pId === 4 ? '#8b5cf6' : '#06b6d4';
+        const meta = extraMeta[pId] || { name: `추가 ${pId}`, icon: 'fa-rocket', color: '#10b981' };
+        const color = meta.color;
 
         if (isEligible) {
             buttonsHtml += `
                 <button type="button" onclick="window.switchQuickViewAlgo('${packKey}')" class="quick-algo-btn ${isActive ? 'active' : ''}" style="flex: 1 1 75px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${isActive ? color : 'rgba(255,255,255,0.08)'}; background: ${isActive ? `linear-gradient(135deg, ${color}, #059669)` : 'rgba(30,41,59,0.6)'}; color: ${isActive ? '#fff' : '#cbd5e1'}; font-weight: ${isActive ? '800' : '600'};">
-                    <i class="fa-solid fa-rocket"></i> 추가 ${pId} (10)
+                    <i class="fa-solid ${meta.icon}"></i> ${meta.name} (10)
                 </button>
             `;
         } else {
             buttonsHtml += `
                 <button type="button" onclick="window.switchQuickViewAlgo('${packKey}')" class="quick-algo-btn locked" title="🔒 실구매 5게임 인증 시 잠금 해제" style="flex: 1 1 75px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px dashed rgba(251, 191, 36, 0.4); background: rgba(15, 23, 42, 0.7); color: #94a3b8; font-weight: 600;">
-                    <i class="fa-solid fa-lock" style="color: #fbbf24; font-size: 0.68rem;"></i> 추가 ${pId}
+                    <i class="fa-solid fa-lock" style="color: #fbbf24; font-size: 0.68rem;"></i> ${meta.name}
                 </button>
             `;
         }
@@ -431,7 +455,7 @@ export function updateQuickViewAlgoButtons() {
 
     // All Combined Button
     const isAllActive = currentQuickAlgo === 'all';
-    const allBtnLabel = isEligible ? `전체 (${totalGames})` : `전체 (${totalGames})`;
+    const allBtnLabel = `전체 (${totalGames})`;
     buttonsHtml += `
         <button type="button" onclick="window.switchQuickViewAlgo('all')" class="quick-algo-btn ${isAllActive ? 'active' : ''}" style="flex: 1 1 85px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${isAllActive ? '#fbbf24' : 'rgba(255,255,255,0.08)'}; background: ${isAllActive ? 'linear-gradient(135deg, #fbbf24, #f59e0b)' : 'rgba(30,41,59,0.6)'}; color: ${isAllActive ? '#0f172a' : '#cbd5e1'}; font-weight: ${isAllActive ? '800' : '600'};">
             <i class="fa-solid fa-layer-group"></i> ${allBtnLabel}
@@ -465,11 +489,11 @@ export function renderQuickViewContent() {
                         <i class="fa-solid fa-lock"></i>
                     </div>
                     <div style="font-size: 1rem; font-weight: 800; color: #f8fafc; margin-bottom: 6px;">
-                        🔒 실구매 인증 정회원 전용 [추가 5팩]
+                        🔒 실구매 인증 정회원 전용 [추가 5대 알고리즘 팩]
                     </div>
                     <p style="color: #cbd5e1; font-size: 0.82rem; line-height: 1.6; margin-bottom: 18px; max-width: 420px; margin-left: auto; margin-right: auto;">
-                        기본 20게임(V4.0 + V3.0)은 상시 무료로 열람 가능하며,<br>
-                        <strong style="color: #fbbf24;">추가 1~5팩(50게임)</strong>은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원님께 즉시 무료로 잠금 해제됩니다.
+                        기본 20게임(올라운더 + 수학 퀀트)은 상시 무료로 열람 가능하며,<br>
+                        <strong style="color: #fbbf24;">추가 1~5팩(빈틈제로·슈퍼잭팟·멀티히트·흐름부스터·트리오마스터)</strong>은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원님께 즉시 무료로 잠금 해제됩니다.
                     </p>
                     <button type="button" onclick="closeCompactView(); if(window.openManualLedgerModal) window.openManualLedgerModal(); else if(window.switchLottoTab) window.switchLottoTab('tab-confirmed-list');" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #0f172a; font-weight: 900; font-size: 0.85rem; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35); display: inline-flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-qrcode"></i> 실구매 영수증(5게임) 등록하고 잠금 해제

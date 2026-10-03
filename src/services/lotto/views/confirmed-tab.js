@@ -344,9 +344,9 @@ export async function renderConfirmedPurchasesList() {
                                     totalPrize += prize;
 
                                     // Determine Algorithm Origin from receipt's recorded version (Instant 0ms)
-                                    if (rVer.includes('v4') || rVer.includes('4.0') || rVer.includes('행동경제')) algoHits.v4++;
-                                    else if (rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
-                                    else if (rVer.includes('추가') || rVer.includes('extra') || rVer.includes('pack')) algoHits.extra++;
+                                    if (rVer.includes('올라운더') || rVer.includes('v4') || rVer.includes('4.0') || rVer.includes('행동경제')) algoHits.v4++;
+                                    else if (rVer.includes('수학') || rVer.includes('퀀트') || rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
+                                    else if (rVer.includes('추가') || rVer.includes('extra') || rVer.includes('pack') || rVer.includes('빈틈제로') || rVer.includes('슈퍼') || rVer.includes('멀티') || rVer.includes('흐름') || rVer.includes('트리오')) algoHits.extra++;
                                     else algoHits.manual++;
                                 }
                             }
@@ -413,8 +413,8 @@ export async function renderConfirmedPurchasesList() {
                             <span style="padding: 1px 5px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${m.rankHits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${m.rankHits[5]}</span>
                         </td>
                         <td style="padding: 8px 10px; text-align: center; white-space: nowrap; font-size: 0.72rem;">
-                            <span title="V4.0 적중" style="color: #c4b5fd; font-weight: 700;">V4:${m.algoHits.v4}</span> ·
-                            <span title="V3.0 적중" style="color: #fbbf24; font-weight: 700;">V3:${m.algoHits.v3}</span> ·
+                            <span title="올라운더 팩 적중" style="color: #c4b5fd; font-weight: 700;">올라운더:${m.algoHits.v4}</span> ·
+                            <span title="수학 퀀트 팩 적중" style="color: #fbbf24; font-weight: 700;">수학퀀트:${m.algoHits.v3}</span> ·
                             <span title="추가팩 적중" style="color: #6ee7b7; font-weight: 700;">추가:${m.algoHits.extra}</span> ·
                             <span title="수동 적중" style="color: #94a3b8;">수동:${m.algoHits.manual}</span>
                         </td>
@@ -492,8 +492,8 @@ export async function renderConfirmedPurchasesList() {
                                     <td style="padding: 10px; text-align: center; color: #34d399;">${grandR4}</td>
                                     <td style="padding: 10px; text-align: center; color: #a78bfa;">${grandR5}</td>
                                     <td style="padding: 10px; text-align: center; font-size: 0.74rem;">
-                                        <span style="color: #c4b5fd;">V4:${grandAlgoV4}</span> ·
-                                        <span style="color: #fbbf24;">V3:${grandAlgoV3}</span> ·
+                                        <span style="color: #c4b5fd;">올라운더:${grandAlgoV4}</span> ·
+                                        <span style="color: #fbbf24;">수학퀀트:${grandAlgoV3}</span> ·
                                         <span style="color: #6ee7b7;">추가:${grandAlgoExtra}</span> ·
                                         <span style="color: #94a3b8;">수동:${grandAlgoManual}</span>
                                     </td>
@@ -850,16 +850,26 @@ export async function renderConfirmedPurchasesList() {
             // Distinctive Algorithm Version Badge
             const pVer = purchase.version || '';
             let versionBadgeHtml = '';
-            if (pVer.includes('추가')) {
+            if (pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.65rem;"></i> 추가 1: 빈틈제로 팩</span>`;
+            } else if (pVer.includes('슈퍼 잭팟') || pVer.includes('슈퍼잭팟') || pVer.includes('추가 2') || pVer.includes('extra_2')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.65rem;"></i> 추가 2: 슈퍼 잭팟 팩</span>`;
+            } else if (pVer.includes('멀티 히트') || pVer.includes('멀티히트') || pVer.includes('추가 3') || pVer.includes('extra_3')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.25); color: #f472b6; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-chart-line" style="font-size: 0.65rem;"></i> 추가 3: 멀티 히트 팩</span>`;
+            } else if (pVer.includes('흐름 부스터') || pVer.includes('흐름부스터') || pVer.includes('추가 4') || pVer.includes('extra_4')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); color: #c4b5fd; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-wave-square" style="font-size: 0.65rem;"></i> 추가 4: 흐름 부스터 팩</span>`;
+            } else if (pVer.includes('트리오 마스터') || pVer.includes('트리오마스터') || pVer.includes('추가 5') || pVer.includes('extra_5')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); color: #22d3ee; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-cubes" style="font-size: 0.65rem;"></i> 추가 5: 트리오 마스터 팩</span>`;
+            } else if (pVer.includes('추가')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.65rem;"></i> ${pVer.split(' (')[0]}</span>`;
             } else if (pVer.includes('온라인') || (purchase.qrMeta && purchase.qrMeta.channel === 'online')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-globe" style="font-size: 0.65rem;"></i> 온라인영수증</span>`;
             } else if (pVer.includes('QR') || pVer.includes('qr')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-qrcode" style="font-size: 0.65rem;"></i> QR영수증</span>`;
             } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); color: #c4b5fd; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 올라운더 팩</span>`;
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 기본 1: 올라운더 팩</span>`;
             } else if (pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.65rem;"></i> 수학 퀀트 팩</span>`;
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.65rem;"></i> 기본 2: 수학 퀀트 팩</span>`;
             } else {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-weight: 600; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.65rem;"></i> 수동구매</span>`;
             }
@@ -1005,24 +1015,44 @@ export async function renderConfirmedPurchasesList() {
                 // Check if this combo matches an AI recommendation (Supported from round 1239 onwards)
                 let aiMatchTag = '';
                 const pVer = purchase.version || '';
-                if (pVer.includes('추가')) {
+                if (pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
+                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.6rem;"></i> 빈틈제로 #${cIdx+1}</span>`;
+                } else if (pVer.includes('슈퍼 잭팟') || pVer.includes('슈퍼잭팟') || pVer.includes('추가 2') || pVer.includes('extra_2')) {
+                    aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.6rem;"></i> 슈퍼잭팟 #${cIdx+1}</span>`;
+                } else if (pVer.includes('멀티 히트') || pVer.includes('멀티히트') || pVer.includes('추가 3') || pVer.includes('extra_3')) {
+                    aiMatchTag = `<span style="background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.4); color: #f472b6; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-chart-line" style="font-size: 0.6rem;"></i> 멀티히트 #${cIdx+1}</span>`;
+                } else if (pVer.includes('흐름 부스터') || pVer.includes('흐름부스터') || pVer.includes('추가 4') || pVer.includes('extra_4')) {
+                    aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-wave-square" style="font-size: 0.6rem;"></i> 흐름부스터 #${cIdx+1}</span>`;
+                } else if (pVer.includes('트리오 마스터') || pVer.includes('트리오마스터') || pVer.includes('추가 5') || pVer.includes('extra_5')) {
+                    aiMatchTag = `<span style="background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6, 182, 212, 0.4); color: #22d3ee; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-cubes" style="font-size: 0.6rem;"></i> 트리오마스터 #${cIdx+1}</span>`;
+                } else if (pVer.includes('추가')) {
                     const packName = pVer.split(' (')[0] || pVer;
                     aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${packName}</span>`;
-                } else if (pVer.includes('V4.0') || pVer.includes('4.0')) {
-                    aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> V4.0 #${cIdx+1}</span>`;
-                } else if (pVer.includes('V3.0') || pVer.includes('3.0')) {
-                    aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> V3.0 #${cIdx+1}</span>`;
+                } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
+                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.6rem;"></i> 올라운더 #${cIdx+1}</span>`;
+                } else if (pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
+                    aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> 수학퀀트 #${cIdx+1}</span>`;
                 } else if (round >= 1239) {
                     try {
                         const { uV4, uV3, extraPacks } = getMemoizedRecommendations(round, purchaseUser);
                         const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
                         if (match && match.isExact) {
-                            if (match.matchedVersion.includes('추가')) {
+                            if (match.matchedVersion.includes('빈틈제로') || match.matchedVersion.includes('추가 1')) {
+                                aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('슈퍼 잭팟') || match.matchedVersion.includes('슈퍼잭팟') || match.matchedVersion.includes('추가 2')) {
+                                aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('멀티 히트') || match.matchedVersion.includes('멀티히트') || match.matchedVersion.includes('추가 3')) {
+                                aiMatchTag = `<span style="background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.4); color: #f472b6; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-chart-line" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('흐름 부스터') || match.matchedVersion.includes('흐름부스터') || match.matchedVersion.includes('추가 4')) {
+                                aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-wave-square" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('트리오 마스터') || match.matchedVersion.includes('트리오마스터') || match.matchedVersion.includes('추가 5')) {
+                                aiMatchTag = `<span style="background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6, 182, 212, 0.4); color: #22d3ee; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-cubes" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('추가')) {
                                 aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
-                            } else if (match.matchedVersion.includes('V4.0')) {
-                                aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('V4.0') || match.matchedVersion.includes('4.0')) {
+                                aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
                             } else {
-                                aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                                aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
                             }
                         } else {
                             aiMatchTag = `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.6rem; color: #f87171;"></i> 수동</span>`;

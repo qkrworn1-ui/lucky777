@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.04.0107 - BUILD_DATE: 2026-10-04] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.04.0119 - BUILD_DATE: 2026-10-04] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.04.0107)
+ * Lucky777 Smart Bundle (v2026.10.04.0119)
  */
 
 
@@ -26758,9 +26758,9 @@ async function renderConfirmedPurchasesList() {
                                     totalPrize += prize;
 
                                     // Determine Algorithm Origin from receipt's recorded version (Instant 0ms)
-                                    if (rVer.includes('v4') || rVer.includes('4.0') || rVer.includes('행동경제')) algoHits.v4++;
-                                    else if (rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
-                                    else if (rVer.includes('추가') || rVer.includes('extra') || rVer.includes('pack')) algoHits.extra++;
+                                    if (rVer.includes('올라운더') || rVer.includes('v4') || rVer.includes('4.0') || rVer.includes('행동경제')) algoHits.v4++;
+                                    else if (rVer.includes('수학') || rVer.includes('퀀트') || rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
+                                    else if (rVer.includes('추가') || rVer.includes('extra') || rVer.includes('pack') || rVer.includes('빈틈제로') || rVer.includes('슈퍼') || rVer.includes('멀티') || rVer.includes('흐름') || rVer.includes('트리오')) algoHits.extra++;
                                     else algoHits.manual++;
                                 }
                             }
@@ -26827,8 +26827,8 @@ async function renderConfirmedPurchasesList() {
                             <span style="padding: 1px 5px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${m.rankHits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${m.rankHits[5]}</span>
                         </td>
                         <td style="padding: 8px 10px; text-align: center; white-space: nowrap; font-size: 0.72rem;">
-                            <span title="V4.0 적중" style="color: #c4b5fd; font-weight: 700;">V4:${m.algoHits.v4}</span> ·
-                            <span title="V3.0 적중" style="color: #fbbf24; font-weight: 700;">V3:${m.algoHits.v3}</span> ·
+                            <span title="올라운더 팩 적중" style="color: #c4b5fd; font-weight: 700;">올라운더:${m.algoHits.v4}</span> ·
+                            <span title="수학 퀀트 팩 적중" style="color: #fbbf24; font-weight: 700;">수학퀀트:${m.algoHits.v3}</span> ·
                             <span title="추가팩 적중" style="color: #6ee7b7; font-weight: 700;">추가:${m.algoHits.extra}</span> ·
                             <span title="수동 적중" style="color: #94a3b8;">수동:${m.algoHits.manual}</span>
                         </td>
@@ -26906,8 +26906,8 @@ async function renderConfirmedPurchasesList() {
                                     <td style="padding: 10px; text-align: center; color: #34d399;">${grandR4}</td>
                                     <td style="padding: 10px; text-align: center; color: #a78bfa;">${grandR5}</td>
                                     <td style="padding: 10px; text-align: center; font-size: 0.74rem;">
-                                        <span style="color: #c4b5fd;">V4:${grandAlgoV4}</span> ·
-                                        <span style="color: #fbbf24;">V3:${grandAlgoV3}</span> ·
+                                        <span style="color: #c4b5fd;">올라운더:${grandAlgoV4}</span> ·
+                                        <span style="color: #fbbf24;">수학퀀트:${grandAlgoV3}</span> ·
                                         <span style="color: #6ee7b7;">추가:${grandAlgoExtra}</span> ·
                                         <span style="color: #94a3b8;">수동:${grandAlgoManual}</span>
                                     </td>
@@ -27264,16 +27264,26 @@ async function renderConfirmedPurchasesList() {
             // Distinctive Algorithm Version Badge
             const pVer = purchase.version || '';
             let versionBadgeHtml = '';
-            if (pVer.includes('추가')) {
+            if (pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.65rem;"></i> 추가 1: 빈틈제로 팩</span>`;
+            } else if (pVer.includes('슈퍼 잭팟') || pVer.includes('슈퍼잭팟') || pVer.includes('추가 2') || pVer.includes('extra_2')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.65rem;"></i> 추가 2: 슈퍼 잭팟 팩</span>`;
+            } else if (pVer.includes('멀티 히트') || pVer.includes('멀티히트') || pVer.includes('추가 3') || pVer.includes('extra_3')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.25); color: #f472b6; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-chart-line" style="font-size: 0.65rem;"></i> 추가 3: 멀티 히트 팩</span>`;
+            } else if (pVer.includes('흐름 부스터') || pVer.includes('흐름부스터') || pVer.includes('추가 4') || pVer.includes('extra_4')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); color: #c4b5fd; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-wave-square" style="font-size: 0.65rem;"></i> 추가 4: 흐름 부스터 팩</span>`;
+            } else if (pVer.includes('트리오 마스터') || pVer.includes('트리오마스터') || pVer.includes('추가 5') || pVer.includes('extra_5')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); color: #22d3ee; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-cubes" style="font-size: 0.65rem;"></i> 추가 5: 트리오 마스터 팩</span>`;
+            } else if (pVer.includes('추가')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.65rem;"></i> ${pVer.split(' (')[0]}</span>`;
             } else if (pVer.includes('온라인') || (purchase.qrMeta && purchase.qrMeta.channel === 'online')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-globe" style="font-size: 0.65rem;"></i> 온라인영수증</span>`;
             } else if (pVer.includes('QR') || pVer.includes('qr')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-qrcode" style="font-size: 0.65rem;"></i> QR영수증</span>`;
             } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); color: #c4b5fd; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 올라운더 팩</span>`;
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 기본 1: 올라운더 팩</span>`;
             } else if (pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.65rem;"></i> 수학 퀀트 팩</span>`;
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.65rem;"></i> 기본 2: 수학 퀀트 팩</span>`;
             } else {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-weight: 600; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.65rem;"></i> 수동구매</span>`;
             }
@@ -27419,24 +27429,44 @@ async function renderConfirmedPurchasesList() {
                 // Check if this combo matches an AI recommendation (Supported from round 1239 onwards)
                 let aiMatchTag = '';
                 const pVer = purchase.version || '';
-                if (pVer.includes('추가')) {
+                if (pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
+                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.6rem;"></i> 빈틈제로 #${cIdx+1}</span>`;
+                } else if (pVer.includes('슈퍼 잭팟') || pVer.includes('슈퍼잭팟') || pVer.includes('추가 2') || pVer.includes('extra_2')) {
+                    aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.6rem;"></i> 슈퍼잭팟 #${cIdx+1}</span>`;
+                } else if (pVer.includes('멀티 히트') || pVer.includes('멀티히트') || pVer.includes('추가 3') || pVer.includes('extra_3')) {
+                    aiMatchTag = `<span style="background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.4); color: #f472b6; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-chart-line" style="font-size: 0.6rem;"></i> 멀티히트 #${cIdx+1}</span>`;
+                } else if (pVer.includes('흐름 부스터') || pVer.includes('흐름부스터') || pVer.includes('추가 4') || pVer.includes('extra_4')) {
+                    aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-wave-square" style="font-size: 0.6rem;"></i> 흐름부스터 #${cIdx+1}</span>`;
+                } else if (pVer.includes('트리오 마스터') || pVer.includes('트리오마스터') || pVer.includes('추가 5') || pVer.includes('extra_5')) {
+                    aiMatchTag = `<span style="background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6, 182, 212, 0.4); color: #22d3ee; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-cubes" style="font-size: 0.6rem;"></i> 트리오마스터 #${cIdx+1}</span>`;
+                } else if (pVer.includes('추가')) {
                     const packName = pVer.split(' (')[0] || pVer;
                     aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${packName}</span>`;
-                } else if (pVer.includes('V4.0') || pVer.includes('4.0')) {
-                    aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> V4.0 #${cIdx+1}</span>`;
-                } else if (pVer.includes('V3.0') || pVer.includes('3.0')) {
-                    aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> V3.0 #${cIdx+1}</span>`;
+                } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
+                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.6rem;"></i> 올라운더 #${cIdx+1}</span>`;
+                } else if (pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
+                    aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> 수학퀀트 #${cIdx+1}</span>`;
                 } else if (round >= 1239) {
                     try {
                         const { uV4, uV3, extraPacks } = getMemoizedRecommendations(round, purchaseUser);
                         const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
                         if (match && match.isExact) {
-                            if (match.matchedVersion.includes('추가')) {
+                            if (match.matchedVersion.includes('빈틈제로') || match.matchedVersion.includes('추가 1')) {
+                                aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('슈퍼 잭팟') || match.matchedVersion.includes('슈퍼잭팟') || match.matchedVersion.includes('추가 2')) {
+                                aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('멀티 히트') || match.matchedVersion.includes('멀티히트') || match.matchedVersion.includes('추가 3')) {
+                                aiMatchTag = `<span style="background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.4); color: #f472b6; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-chart-line" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('흐름 부스터') || match.matchedVersion.includes('흐름부스터') || match.matchedVersion.includes('추가 4')) {
+                                aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-wave-square" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('트리오 마스터') || match.matchedVersion.includes('트리오마스터') || match.matchedVersion.includes('추가 5')) {
+                                aiMatchTag = `<span style="background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6, 182, 212, 0.4); color: #22d3ee; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-cubes" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('추가')) {
                                 aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
-                            } else if (match.matchedVersion.includes('V4.0')) {
-                                aiMatchTag = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid rgba(139, 92, 246, 0.4); color: #c4b5fd; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('V4.0') || match.matchedVersion.includes('4.0')) {
+                                aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
                             } else {
-                                aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                                aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
                             }
                         } else {
                             aiMatchTag = `<span style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.6rem; color: #f87171;"></i> 수동</span>`;
@@ -30577,8 +30607,16 @@ function switchQuickViewAlgo(algo) {
     const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);
 
     if (!isEligible && algo.startsWith('extra_')) {
-        const pId = algo.replace('extra_', '');
-        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n추가 ${pId}팩(10게임)을 포함한 추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 20게임(V4.0 + V3.0)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
+        const pId = parseInt(algo.replace('extra_', ''), 10);
+        const extraNames = {
+            1: '추가 1: 빈틈제로 팩',
+            2: '추가 2: 슈퍼 잭팟 팩',
+            3: '추가 3: 멀티 히트 팩',
+            4: '추가 4: 흐름 부스터 팩',
+            5: '추가 5: 트리오 마스터 팩'
+        };
+        const packTitle = extraNames[pId] || `추가 ${pId}팩`;
+        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n${packTitle}(10게임)을 포함한 추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 20게임(올라운더 + 수학 퀀트)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             closeCompactView();
             if (typeof window.openManualLedgerModal === 'function') {
@@ -30596,12 +30634,19 @@ function switchQuickViewAlgo(algo) {
     renderQuickViewContent();
 
     let label = '추천번호';
-    if (algo === 'v3') label = 'V3.0 하이브리드 (10조합)';
-    else if (algo === 'v4') label = 'V4.0 행동경제학 (10조합)';
+    if (algo === 'v4') label = '기본 1: 올라운더 팩 (10조합)';
+    else if (algo === 'v3') label = '기본 2: 수학 퀀트 팩 (10조합)';
     else if (algo === 'all') label = isEligible ? '전체 통합 조합 (70조합)' : '기본 통합 조합 (20조합)';
     else if (algo.startsWith('extra_')) {
-        const pId = algo.replace('extra_', '');
-        label = `추가팩 ${pId} (10조합)`;
+        const pId = parseInt(algo.replace('extra_', ''), 10);
+        const extraLabels = {
+            1: '추가 1: 빈틈제로 팩 (10조합)',
+            2: '추가 2: 슈퍼 잭팟 팩 (10조합)',
+            3: '추가 3: 멀티 히트 팩 (10조합)',
+            4: '추가 4: 흐름 부스터 팩 (10조합)',
+            5: '추가 5: 트리오 마스터 팩 (10조합)'
+        };
+        label = extraLabels[pId] || `추가팩 ${pId} (10조합)`;
     }
     showToast(`✅ [${label}] 보기로 전환되었습니다.`);
 }
@@ -30622,30 +30667,39 @@ function updateQuickViewAlgoButtons() {
     const totalGames = isEligible ? 70 : 20;
 
     let buttonsHtml = `
-        <button type="button" onclick="window.switchQuickViewAlgo('v3')" class="quick-algo-btn ${currentQuickAlgo === 'v3' ? 'active' : ''}" style="flex: 1 1 70px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v3' ? '#fbbf24' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v3' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v3' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v3' ? '800' : '600'};">
-            <i class="fa-solid fa-bolt"></i> V3.0 (10)
+        <button type="button" onclick="window.switchQuickViewAlgo('v4')" class="quick-algo-btn ${currentQuickAlgo === 'v4' ? 'active' : ''}" style="flex: 1 1 72px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v4' ? '#10b981' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v4' ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v4' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v4' ? '800' : '600'};">
+            <i class="fa-solid fa-bullseye"></i> 올라운더 (10)
         </button>
-        <button type="button" onclick="window.switchQuickViewAlgo('v4')" class="quick-algo-btn ${currentQuickAlgo === 'v4' ? 'active' : ''}" style="flex: 1 1 70px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v4' ? '#fbbf24' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v4' ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v4' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v4' ? '800' : '600'};">
-            <i class="fa-solid fa-brain"></i> V4.0 (10)
+        <button type="button" onclick="window.switchQuickViewAlgo('v3')" class="quick-algo-btn ${currentQuickAlgo === 'v3' ? 'active' : ''}" style="flex: 1 1 72px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v3' ? '#3b82f6' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v3' ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v3' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v3' ? '800' : '600'};">
+            <i class="fa-solid fa-calculator"></i> 수학퀀트 (10)
         </button>
     `;
 
     // Dynamic Extra Pack Buttons
+    const extraMeta = {
+        1: { name: '빈틈제로', icon: 'fa-shield-halved', color: '#10b981' },
+        2: { name: '슈퍼잭팟', icon: 'fa-trophy', color: '#f59e0b' },
+        3: { name: '멀티히트', icon: 'fa-chart-line', color: '#ec4899' },
+        4: { name: '흐름부스터', icon: 'fa-wave-square', color: '#8b5cf6' },
+        5: { name: '트리오마스터', icon: 'fa-cubes', color: '#06b6d4' }
+    };
+
     for (let pId = 1; pId <= 5; pId++) {
         const packKey = `extra_${pId}`;
         const isActive = currentQuickAlgo === packKey;
-        const color = pId === 1 ? '#10b981' : pId === 2 ? '#f59e0b' : pId === 3 ? '#ec4899' : pId === 4 ? '#8b5cf6' : '#06b6d4';
+        const meta = extraMeta[pId] || { name: `추가 ${pId}`, icon: 'fa-rocket', color: '#10b981' };
+        const color = meta.color;
 
         if (isEligible) {
             buttonsHtml += `
                 <button type="button" onclick="window.switchQuickViewAlgo('${packKey}')" class="quick-algo-btn ${isActive ? 'active' : ''}" style="flex: 1 1 75px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${isActive ? color : 'rgba(255,255,255,0.08)'}; background: ${isActive ? `linear-gradient(135deg, ${color}, #059669)` : 'rgba(30,41,59,0.6)'}; color: ${isActive ? '#fff' : '#cbd5e1'}; font-weight: ${isActive ? '800' : '600'};">
-                    <i class="fa-solid fa-rocket"></i> 추가 ${pId} (10)
+                    <i class="fa-solid ${meta.icon}"></i> ${meta.name} (10)
                 </button>
             `;
         } else {
             buttonsHtml += `
                 <button type="button" onclick="window.switchQuickViewAlgo('${packKey}')" class="quick-algo-btn locked" title="🔒 실구매 5게임 인증 시 잠금 해제" style="flex: 1 1 75px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px dashed rgba(251, 191, 36, 0.4); background: rgba(15, 23, 42, 0.7); color: #94a3b8; font-weight: 600;">
-                    <i class="fa-solid fa-lock" style="color: #fbbf24; font-size: 0.68rem;"></i> 추가 ${pId}
+                    <i class="fa-solid fa-lock" style="color: #fbbf24; font-size: 0.68rem;"></i> ${meta.name}
                 </button>
             `;
         }
@@ -30653,7 +30707,7 @@ function updateQuickViewAlgoButtons() {
 
     // All Combined Button
     const isAllActive = currentQuickAlgo === 'all';
-    const allBtnLabel = isEligible ? `전체 (${totalGames})` : `전체 (${totalGames})`;
+    const allBtnLabel = `전체 (${totalGames})`;
     buttonsHtml += `
         <button type="button" onclick="window.switchQuickViewAlgo('all')" class="quick-algo-btn ${isAllActive ? 'active' : ''}" style="flex: 1 1 85px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${isAllActive ? '#fbbf24' : 'rgba(255,255,255,0.08)'}; background: ${isAllActive ? 'linear-gradient(135deg, #fbbf24, #f59e0b)' : 'rgba(30,41,59,0.6)'}; color: ${isAllActive ? '#0f172a' : '#cbd5e1'}; font-weight: ${isAllActive ? '800' : '600'};">
             <i class="fa-solid fa-layer-group"></i> ${allBtnLabel}
@@ -30687,11 +30741,11 @@ function renderQuickViewContent() {
                         <i class="fa-solid fa-lock"></i>
                     </div>
                     <div style="font-size: 1rem; font-weight: 800; color: #f8fafc; margin-bottom: 6px;">
-                        🔒 실구매 인증 정회원 전용 [추가 5팩]
+                        🔒 실구매 인증 정회원 전용 [추가 5대 알고리즘 팩]
                     </div>
                     <p style="color: #cbd5e1; font-size: 0.82rem; line-height: 1.6; margin-bottom: 18px; max-width: 420px; margin-left: auto; margin-right: auto;">
-                        기본 20게임(V4.0 + V3.0)은 상시 무료로 열람 가능하며,<br>
-                        <strong style="color: #fbbf24;">추가 1~5팩(50게임)</strong>은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원님께 즉시 무료로 잠금 해제됩니다.
+                        기본 20게임(올라운더 + 수학 퀀트)은 상시 무료로 열람 가능하며,<br>
+                        <strong style="color: #fbbf24;">추가 1~5팩(빈틈제로·슈퍼잭팟·멀티히트·흐름부스터·트리오마스터)</strong>은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원님께 즉시 무료로 잠금 해제됩니다.
                     </p>
                     <button type="button" onclick="closeCompactView(); if(window.openManualLedgerModal) window.openManualLedgerModal(); else if(window.switchLottoTab) window.switchLottoTab('tab-confirmed-list');" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #0f172a; font-weight: 900; font-size: 0.85rem; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35); display: inline-flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-qrcode"></i> 실구매 영수증(5게임) 등록하고 잠금 해제
