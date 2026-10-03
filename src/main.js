@@ -32,6 +32,7 @@ function _closeAnyActiveModal() {
         '#agreementModalOverlay',
         '#modalReceiptTrash',
         '#confirmedWinningHistoryModal',
+        '#compactViewModal',
         '#modalQuickView',
         '#modalManual',
         '#modalManualDraw',
@@ -50,12 +51,15 @@ function _closeAnyActiveModal() {
     for (const sel of modalSelectors) {
         const el = document.querySelector(sel);
         if (el && el.style.display !== 'none' && el.style.display !== '' && !el.classList.contains('hidden')) {
-            const closeBtn = el.querySelector('.btn-close, .modal-close, [data-dismiss="modal"], .btn-close-receipt-trash, #btnCloseLoginModal, #btnCloseQuickView, .btn-close-user-mgmt');
+            const closeBtn = el.querySelector('.btn-close, .modal-close, .close-modal, #closeCompactModal, [data-dismiss="modal"], .btn-close-receipt-trash, #btnCloseLoginModal, #btnCloseQuickView, .btn-close-user-mgmt');
             if (closeBtn && typeof closeBtn.click === 'function') {
                 closeBtn.click();
             } else {
                 el.style.display = 'none';
                 el.classList.remove('active');
+                if (el.id === 'compactViewModal' && typeof window.releaseQuickViewWakeLock === 'function') {
+                    window.releaseQuickViewWakeLock();
+                }
             }
             return true;
         }

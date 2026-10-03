@@ -5,6 +5,112 @@ import { getComboNumbers, isUserEligibleForExtraPacks } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId } from '../generator.js';
 
 let currentQuickAlgo = 'v4'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
+let quickViewWakeLock = null;
+let isWakeLockUserDisabled = false;
+
+/**
+ * Acquire Screen Wake Lock to prevent mobile screen from sleeping during quick view
+ */
+export async function acquireQuickViewWakeLock() {
+    if (isWakeLockUserDisabled) {
+        updateWakeLockUI(false);
+        return;
+    }
+
+    if (typeof navigator === 'undefined' || !('wakeLock' in navigator) || typeof navigator.wakeLock.request !== 'function') {
+        updateWakeLockUI(false, true);
+        return;
+    }
+
+    try {
+        if (quickViewWakeLock && !quickViewWakeLock.released) {
+            updateWakeLockUI(true);
+            return;
+        }
+
+        quickViewWakeLock = await navigator.wakeLock.request('screen');
+        quickViewWakeLock.addEventListener('release', () => {
+            quickViewWakeLock = null;
+            const modal = document.getElementById('compactViewModal');
+            if (!modal || modal.style.display === 'none' || !modal.classList.contains('active')) {
+                updateWakeLockUI(false);
+            }
+        });
+        updateWakeLockUI(true);
+    } catch (err) {
+        console.warn('[QuickView] Screen wake lock request failed or denied:', err);
+        quickViewWakeLock = null;
+        updateWakeLockUI(false);
+    }
+}
+
+/**
+ * Release Screen Wake Lock to restore standard device power saving
+ */
+export function releaseQuickViewWakeLock() {
+    if (quickViewWakeLock) {
+        try {
+            quickViewWakeLock.release().catch(() => {});
+        } catch (e) {
+            // ignore
+        }
+        quickViewWakeLock = null;
+    }
+    updateWakeLockUI(false);
+}
+
+/**
+ * Toggle Screen Wake Lock manually from the UI badge
+ */
+export async function toggleQuickViewWakeLock() {
+    if (typeof navigator === 'undefined' || !('wakeLock' in navigator) || typeof navigator.wakeLock.request !== 'function') {
+        showToast('⚠️ 현재 브라우저는 화면 항상 켜기 기능을 지원하지 않습니다.');
+        updateWakeLockUI(false, true);
+        return;
+    }
+
+    if (quickViewWakeLock && !quickViewWakeLock.released) {
+        isWakeLockUserDisabled = true;
+        releaseQuickViewWakeLock();
+        showToast('🌙 화면 꺼짐 방지가 해제되었습니다.');
+    } else {
+        isWakeLockUserDisabled = false;
+        await acquireQuickViewWakeLock();
+        if (quickViewWakeLock && !quickViewWakeLock.released) {
+            showToast('☀️ 화면 켜짐 유지(꺼짐 방지)가 활성화되었습니다.');
+        } else {
+            showToast('⚠️ 화면 켜짐 유지 요청이 거부되었거나 지원되지 않습니다.');
+        }
+    }
+}
+
+/**
+ * Update UI Indicator for Screen Wake Lock
+ */
+export function updateWakeLockUI(isActive, notSupported = false) {
+    const btn = document.getElementById('btnToggleWakeLock');
+    if (!btn) return;
+
+    if (notSupported) {
+        btn.style.display = 'none';
+        return;
+    }
+
+    btn.style.display = 'inline-flex';
+    if (isActive) {
+        btn.style.background = 'rgba(16, 185, 129, 0.15)';
+        btn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        btn.style.color = '#34d399';
+        btn.title = '화면 꺼짐 방지 활성화됨 (클릭 시 끄기)';
+        btn.innerHTML = `<i class="fa-solid fa-sun" style="font-size: 0.78rem;"></i> <span id="quickViewWakeLockText">화면 켜짐 유지</span>`;
+    } else {
+        btn.style.background = 'rgba(100, 116, 139, 0.15)';
+        btn.style.borderColor = 'rgba(100, 116, 139, 0.3)';
+        btn.style.color = '#94a3b8';
+        btn.title = '화면 꺼짐 방지 해제됨 (클릭 시 켜기)';
+        btn.innerHTML = `<i class="fa-regular fa-moon" style="font-size: 0.78rem;"></i> <span id="quickViewWakeLockText">화면 켜짐 꺼짐</span>`;
+    }
+}
 
 /**
  * Check if the effective user is eligible for extra booster packs in quick view
@@ -176,6 +282,10 @@ export function openCompactView(algo = null) {
     compactViewModal.style.display = 'flex';
     compactViewModal.classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    // Request Screen Wake Lock so mobile screen stays awake during paper marking
+    isWakeLockUserDisabled = false;
+    acquireQuickViewWakeLock();
 }
 
 /**
@@ -188,6 +298,8 @@ export function closeCompactView() {
         compactViewModal.classList.remove('active');
         document.body.style.overflow = '';
     }
+    // Release Screen Wake Lock to restore standard power saving
+    releaseQuickViewWakeLock();
 }
 
 /**
@@ -389,6 +501,14 @@ export function setupQuickView() {
         }
     });
 
+    // Visibility change handler to re-acquire wake lock if tab becomes visible while modal is open
+    document.addEventListener('visibilitychange', async () => {
+        const compactViewModal = document.getElementById('compactViewModal');
+        if (compactViewModal && (compactViewModal.classList.contains('active') || compactViewModal.style.display === 'flex') && document.visibilityState === 'visible') {
+            await acquireQuickViewWakeLock();
+        }
+    });
+
     // Expose globally for inline onclick handlers
     if (typeof window !== 'undefined') {
         window.openCompactView = openCompactView;
@@ -398,6 +518,10 @@ export function setupQuickView() {
         window.renderQuickViewContent = renderQuickViewContent;
         window.getQuickCombos = getQuickCombos;
         window.checkQuickViewExtraPackEligibility = checkQuickViewExtraPackEligibility;
+        window.acquireQuickViewWakeLock = acquireQuickViewWakeLock;
+        window.releaseQuickViewWakeLock = releaseQuickViewWakeLock;
+        window.toggleQuickViewWakeLock = toggleQuickViewWakeLock;
+        window.updateWakeLockUI = updateWakeLockUI;
     }
 }
 
@@ -410,4 +534,17 @@ if (typeof window !== 'undefined') {
     window.renderQuickViewContent = renderQuickViewContent;
     window.getQuickCombos = getQuickCombos;
     window.checkQuickViewExtraPackEligibility = checkQuickViewExtraPackEligibility;
+    window.acquireQuickViewWakeLock = acquireQuickViewWakeLock;
+    window.releaseQuickViewWakeLock = releaseQuickViewWakeLock;
+    window.toggleQuickViewWakeLock = toggleQuickViewWakeLock;
+    window.updateWakeLockUI = updateWakeLockUI;
+
+    if (typeof document !== 'undefined') {
+        document.addEventListener('visibilitychange', async () => {
+            const compactViewModal = document.getElementById('compactViewModal');
+            if (compactViewModal && (compactViewModal.classList.contains('active') || compactViewModal.style.display === 'flex') && document.visibilityState === 'visible') {
+                await acquireQuickViewWakeLock();
+            }
+        });
+    }
 }
