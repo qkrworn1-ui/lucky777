@@ -17,15 +17,15 @@ let algoAdminViewingUser = 'all';
 export const SEVEN_ALGORITHMS_INFO = [
     {
         id: 'v4',
-        name: 'V4.0 행동경제학 포트폴리오',
-        shortName: 'V4.0 행동경제학',
-        tag: '마킹 심리 회피 · 밸런스 방어 · 치트키 과적합 융합 (10게임)',
+        name: '기본 1: 올라운더 팩 (10게임)',
+        shortName: '올라운더 팩',
+        tag: '안정 방어 & 대박 포트폴리오 · 올인원 균형 융합 (10게임)',
         icon: 'fa-brain',
-        badge: 'V4.0 BEHAVIORAL',
+        badge: 'ALL-ROUNDER',
         badgeColor: '#a78bfa',
         bgGradient: 'linear-gradient(135deg, rgba(167, 139, 250, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(167, 139, 250, 0.45)',
-        corePhilosophy: '대중의 번호 마킹 편향(생일·연속·기하학 패턴)을 역이용하여 당첨 시 독점 수령금을 극대화하고, 통계적 안정망으로 4·5등 당첨을 방어하는 포트폴리오 모델',
+        corePhilosophy: '대중의 번호 마킹 편향(생일·연속·기하학 패턴)을 역이용하여 당첨 시 독점 수령금을 극대화하고, 통계적 안정망으로 4·5등 당첨을 방어하는 올라운더 균형 포트폴리오 모델',
         comboMethod: [
             {
                 step: '그룹 1: 통계적 밸런스 추종 (게임 1~4)',
@@ -49,15 +49,15 @@ export const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'v3',
-        name: 'V3.0 하이브리드 정통 수학 알고리즘',
-        shortName: 'V3.0 하이브리드',
+        name: '기본 2: 수학 퀀트 팩 (10게임)',
+        shortName: '수학 퀀트 팩',
         tag: '마르코프 전이행렬 · 누적 빈도 · Pair 궁합 · EV 극대화 (10게임)',
         icon: 'fa-gears',
-        badge: 'V3.0 HYBRID MATH',
+        badge: 'MATH QUANT',
         badgeColor: '#60a5fa',
         bgGradient: 'linear-gradient(135deg, rgba(96, 165, 250, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(96, 165, 250, 0.45)',
-        corePhilosophy: '동행복권 1회부터의 역대 누적 빈도, 직전 회차 마르코프 전이 확률, 2수 동반출현 빈도, 기대가치(EV)를 종합 연산하여 개별 게임의 적중 확률을 극대화한 정통 수학 통계 모델',
+        corePhilosophy: '동행복권 1회부터의 역대 누적 빈도, 직전 회차 마르코프 전이 확률, 2수 동반출현 빈도, 기대가치(EV)를 종합 연산하여 개별 게임의 적중 확률을 극대화한 정통 수학 퀀트 모델',
         comboMethod: [
             {
                 step: '전반 5게임 (공격형 앙상블: 게임 1~5)',
@@ -77,15 +77,15 @@ export const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra1',
-        name: '추가 1: 30게임 완성형 100% 전수 커버리지팩',
-        shortName: '추가 1: 전수 커버리지',
+        name: '추가 1: 빈틈제로 팩 (10게임)',
+        shortName: '추가 1: 빈틈제로',
         tag: '기본 20게임 누락 번호 100% 포섭 + 핫 앵커 직교 결합 (10게임)',
         icon: 'fa-shield-halved',
-        badge: '추가 1 KEYSTONE 100%',
+        badge: 'ZERO-GAP 100%',
         badgeColor: '#10b981',
         bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(16, 185, 129, 0.45)',
-        corePhilosophy: 'V3.0(10게임) + V4.0(10게임)의 20게임에서 한 번도 선택되지 않은 0회 출현 사각지대 번호를 100% 추출하여 결합함으로써, 30게임 구매 시 1~45번 모든 번호가 단 하나도 누락되지 않도록 완성하는 무결점 커버리지 모델',
+        corePhilosophy: '기본 20게임(올라운더 10G + 수학 퀀트 10G)에서 한 번도 선택되지 않은 0회 출현 사각지대 번호를 100% 추출하여 결합함으로써, 30게임 구매 시 1~45번 모든 번호가 단 하나도 누락되지 않도록 완성하는 빈틈없는 전수 커버리지 모델',
         comboMethod: [
             {
                 step: '누락 번호 전수 분할 (Missing Partition)',
@@ -109,15 +109,15 @@ export const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra2',
-        name: '추가 2: 초고배당 EV 독점 수령팩',
-        shortName: '추가 2: 초고배당 EV',
+        name: '추가 2: 슈퍼 잭팟 팩 (10게임)',
+        shortName: '추가 2: 슈퍼 잭팟',
         tag: '30~45번대 고번호 집중 + 2연번 강제 주입 당첨금 극대화 (10게임)',
         icon: 'fa-sack-dollar',
-        badge: '추가 2 HIGH EV MONOPOLY',
+        badge: 'SUPER JACKPOT',
         badgeColor: '#f59e0b',
         bgGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(245, 158, 11, 0.45)',
-        corePhilosophy: '대부분의 구매자가 생일(1~31) 및 저번호대를 선호한다는 점에 착안, 30~45번대 고번호와 2연번을 고의로 다수 배치하여 1등 당첨 시 당첨자 수가 급감하고 1인당 수령금이 30~50억 이상으로 폭등하도록 설계한 초고배당 특화 모델',
+        corePhilosophy: '대부분의 구매자가 생일(1~31) 및 저번호대를 선호한다는 점에 착안, 30~45번대 고번호와 2연번을 고의로 다수 배치하여 1등 당첨 시 당첨자 수가 급감하고 1인당 수령금이 30~50억 이상으로 폭등하도록 설계한 슈퍼 잭팟 초고배당 특화 모델',
         comboMethod: [
             {
                 step: '고번호(30~45) 대역 4개 이상 집중 배치',
@@ -141,15 +141,15 @@ export const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra3',
-        name: '추가 3: 기하학적 휠링 하모닉팩',
-        shortName: '추가 3: 기하학 휠링',
+        name: '추가 3: 멀티 히트 팩 (10게임)',
+        shortName: '추가 3: 멀티 히트',
         tag: '45각형 5구간 대칭 분산 휠링 · 3~4등 다중 적중 방어망 (10게임)',
         icon: 'fa-dharmachakra',
-        badge: '추가 3 HARMONIC WHEELING',
+        badge: 'MULTI-HIT WHEEL',
         badgeColor: '#8b5cf6',
         bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(139, 92, 246, 0.45)',
-        corePhilosophy: '로또 번호 45개를 기하학적 5개 구역으로 균등 분할하고, 각 구역에서 번호를 대칭 추출하여 결합하는 휠링 시스템(Wheeling Matrix). 특정 구간 쏠림을 원천 차단하여 3등(150만원), 4등(5만원) 복수 다중 적중 확률을 극대화한 구조적 모델',
+        corePhilosophy: '로또 번호 45개를 기하학적 5개 구역으로 균등 분할하고, 각 구역에서 번호를 대칭 추출하여 결합하는 휠링 시스템(Wheeling Matrix). 특정 구간 쏠림을 원천 차단하여 3등(150만원), 4등(5만원) 복수 다중 적중 확률을 극대화한 멀티 히트 구조적 모델',
         comboMethod: [
             {
                 step: '45개 번호 5대 하모닉 구역 분할',
@@ -173,15 +173,15 @@ export const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra4',
-        name: '추가 4: 마르코프 2차 전이 & 페어 부스터팩',
-        shortName: '추가 4: 마르코프&페어',
+        name: '추가 4: 흐름 부스터 팩 (10게임)',
+        shortName: '추가 4: 흐름 부스터',
         tag: '직전 회차 전이 확률 + 역대 최다 동반출현 Pair 집중 타격 (10게임)',
         icon: 'fa-bolt',
-        badge: '추가 4 MARKOV & PAIR',
+        badge: 'FLOW BOOSTER',
         badgeColor: '#06b6d4',
         bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(6, 182, 212, 0.45)',
-        corePhilosophy: '로또 추첨의 강력한 연속성을 포착하기 위해 직전 회차 당첨 번호로부터의 마르코프 1/2차 전이 확률과 역대 1,200여 회차 중 가장 높은 빈도로 함께 출현한 2수 페어(Co-occurrence Pair)를 결합한 모멘텀 집중 타격 모델',
+        corePhilosophy: '로또 추첨의 강력한 연속성을 포착하기 위해 직전 회차 당첨 번호로부터의 마르코프 1/2차 전이 확률과 역대 1,200여 회차 중 가장 높은 빈도로 함께 출현한 2수 페어(Co-occurrence Pair)를 결합한 흐름 부스터 모멘텀 타격 모델',
         comboMethod: [
             {
                 step: '직전 회차 번호 1수 순환 시드 주입',
@@ -205,15 +205,15 @@ export const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra5',
-        name: '추가 5: 골든 클러스터 올인팩',
-        shortName: '추가 5: 골든 클러스터',
+        name: '추가 5: 트리오 마스터 팩 (10게임)',
+        shortName: '추가 5: 트리오 마스터',
         tag: '역대 최다 동시 출현 3수 고정틀(Golden Trios) 마스터 조합 (10게임)',
         icon: 'fa-crown',
-        badge: '추가 5 GOLDEN CLIQUE',
+        badge: 'TRIO MASTER',
         badgeColor: '#ec4899',
         bgGradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(236, 72, 153, 0.45)',
-        corePhilosophy: '역대 1,200여 회의 전수 데이터 중 3개 번호가 동시에 출현한 빈도가 통계적으로 가장 높은 상위 10대 "황금 트리오(Golden Trios)"를 각 게임의 3수 고정틀로 채택하고, 나머지 3수를 퀀트 최적화하여 3수가 적중되는 즉시 5등(3수)→4등(4수)→3등(5수)→1등으로 이어지는 연쇄 당첨 폭발력을 노리는 마스터 모델',
+        corePhilosophy: '역대 1,200여 회의 전수 데이터 중 3개 번호가 동시에 출현한 빈도가 통계적으로 가장 높은 상위 10대 "황금 트리오(Golden Trios)"를 각 게임의 3수 고정틀로 채택하고, 나머지 3수를 퀀트 최적화하여 3수가 적중되는 즉시 5등(3수)→4등(4수)→3등(5수)→1등으로 이어지는 연쇄 당첨 폭발력을 노리는 트리오 마스터 모델',
         comboMethod: [
             {
                 step: '10대 황금 3수 클러스터 고정틀 배치',
@@ -773,7 +773,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     로또 6/45 <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 AI 알고리즘</span> 정밀 해설 &amp; 실적
                 </h2>
                 <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; max-width: 800px; word-break: keep-all; overflow-wrap: break-word;">
-                    단순한 무작위 번호 생성이 아닙니다. 행동경제학적 마킹 심리 회피, 마르코프 전이 확률, 직교 전수 커버리지, 휠링 하모닉 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
+                    단순한 무작위 번호 생성이 아닙니다. 올라운더 팩(포트폴리오), 수학 퀀트 팩(확률 전이), 빈틈제로 팩(전수 커버리지), 슈퍼 잭팟(고배당), 멀티 히트(휠링) 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
                 </p>
             </div>
 

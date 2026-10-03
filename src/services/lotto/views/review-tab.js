@@ -940,13 +940,13 @@ export async function renderAllRoundsReviewDetail() {
 
     // 7대 알고리즘 메타데이터 및 누적 통계 객체
     const algoPacks = [
-        { id: 'v4', name: 'V4.0 행동경제학 포트폴리오', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6' },
-        { id: 'v3', name: 'V3.0 하이브리드 정통 수학', badge: 'HYBRID MATH', color: '#3b82f6' },
-        { id: 'extra_1', name: '추가1팩: 고주기 빈도 앙상블', badge: 'EXTRA 1', color: '#10b981' },
-        { id: 'extra_2', name: '추가2팩: 저주기 미출 회귀', badge: 'EXTRA 2', color: '#f59e0b' },
-        { id: 'extra_3', name: '추가3팩: AC 밸런스 퀀트', badge: 'EXTRA 3', color: '#8b5cf6' },
-        { id: 'extra_4', name: '추가4팩: 구간 연속 대칭', badge: 'EXTRA 4', color: '#06b6d4' },
-        { id: 'extra_5', name: '추가5팩: 극한 홀짝 가중치', badge: 'EXTRA 5', color: '#ec4899' }
+        { id: 'v4', name: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#8b5cf6' },
+        { id: 'v3', name: '기본 2: 수학 퀀트 팩 (10게임)', badge: 'MATH QUANT', color: '#3b82f6' },
+        { id: 'extra_1', name: '추가 1: 빈틈제로 팩 (10게임)', badge: 'ZERO-GAP', color: '#10b981' },
+        { id: 'extra_2', name: '추가 2: 슈퍼 잭팟 팩 (10게임)', badge: 'SUPER JACKPOT', color: '#f59e0b' },
+        { id: 'extra_3', name: '추가 3: 멀티 히트 팩 (10게임)', badge: 'MULTI-HIT', color: '#8b5cf6' },
+        { id: 'extra_4', name: '추가 4: 흐름 부스터 팩 (10게임)', badge: 'FLOW BOOSTER', color: '#06b6d4' },
+        { id: 'extra_5', name: '추가 5: 트리오 마스터 팩 (10게임)', badge: 'TRIO MASTER', color: '#ec4899' }
     ];
     const algoSummaryMap = {};
     algoPacks.forEach(p => {
@@ -2641,13 +2641,13 @@ export async function openAdmin1235ReviewModal(initialRound = null, initialUser 
                     <!-- Filter Pills (Visible when single user or pack filtered) -->
                     <div id="admin1235ModalFilterPills" style="display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px;">
                         <button type="button" class="admin1235-filter-btn active" data-filter="all" onclick="window.setAdmin1235ModalFilter('all')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: 1px solid #f59e0b; background: #f59e0b; color: #0f172a; white-space: nowrap;">전체 (70G)</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="v4" onclick="window.setAdmin1235ModalFilter('v4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #c4b5fd; white-space: nowrap;">V4.0 (10G)</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="v3" onclick="window.setAdmin1235ModalFilter('v3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.15); color: #93c5fd; white-space: nowrap;">V3.0 (10G)</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">추가1팩</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_2" onclick="window.setAdmin1235ModalFilter('extra_2')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.15); color: #fde047; white-space: nowrap;">추가2팩</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_3" onclick="window.setAdmin1235ModalFilter('extra_3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #d8b4fe; white-space: nowrap;">추가3팩</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_4" onclick="window.setAdmin1235ModalFilter('extra_4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(6,182,212,0.4); background: rgba(6,182,212,0.15); color: #67e8f9; white-space: nowrap;">추가4팩</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_5" onclick="window.setAdmin1235ModalFilter('extra_5')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(236,72,153,0.4); background: rgba(236,72,153,0.15); color: #f472b6; white-space: nowrap;">추가5팩</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="v4" onclick="window.setAdmin1235ModalFilter('v4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #c4b5fd; white-space: nowrap;">올라운더 (10G)</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="v3" onclick="window.setAdmin1235ModalFilter('v3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.15); color: #93c5fd; white-space: nowrap;">수학퀀트 (10G)</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">추가1 빈틈제로</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_2" onclick="window.setAdmin1235ModalFilter('extra_2')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.15); color: #fde047; white-space: nowrap;">추가2 슈퍼잭팟</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_3" onclick="window.setAdmin1235ModalFilter('extra_3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #d8b4fe; white-space: nowrap;">추가3 멀티히트</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_4" onclick="window.setAdmin1235ModalFilter('extra_4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(6,182,212,0.4); background: rgba(6,182,212,0.15); color: #67e8f9; white-space: nowrap;">추가4 흐름부스터</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_5" onclick="window.setAdmin1235ModalFilter('extra_5')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(236,72,153,0.4); background: rgba(236,72,153,0.15); color: #f472b6; white-space: nowrap;">추가5 트리오마스터</button>
                     </div>
                 </div>
 

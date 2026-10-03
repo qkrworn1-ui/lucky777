@@ -207,7 +207,7 @@ export function generatePredictionReport() {
                     • <strong>등급별 적중:</strong> 1등:${grandRankCounts[1]} | 2등:${grandRankCounts[2]} | 3등:${grandRankCounts[3]} | 4등:${grandRankCounts[4]} | <strong style="color:#fbbf24;">5등:${grandRankCounts[5]}회</strong><br>
                     ${bestAlgo ? `• <strong>최고 성과 알고리즘:</strong> <span style="color:#fbbf24; font-weight:800;">[${bestAlgo.shortName || bestAlgo.name}]</span> (총 ${bestAlgo.totalWins}회 적중, 회수율 ${bestAlgo.roi}%)` : ''}
                     <div style="margin-top: 6px; font-size: 0.78rem; color: #94a3b8;">
-                        💡 <em>AI 진단: 회원님의 과거 추천 조합에서 가장 높은 적중 밀도를 증명한 <strong>[${bestAlgo ? (bestAlgo.shortName || bestAlgo.name) : 'V4.0 행동경제학'}]</strong>의 통계 모멘텀 가중치를 이번 제 ${curUpcomingRound}회차 앵커에 최우선 가중 반영했습니다.</em>
+                        💡 <em>AI 진단: 회원님의 과거 추천 조합에서 가장 높은 적중 밀도를 증명한 <strong>[${bestAlgo ? (bestAlgo.shortName || bestAlgo.name) : '기본 1: 올라운더 팩'}]</strong>의 통계 모멘텀 가중치를 이번 제 ${curUpcomingRound}회차 앵커에 최우선 가중 반영했습니다.</em>
                     </div>
                 </div>
             </div>
@@ -224,7 +224,7 @@ export function generatePredictionReport() {
                     </span>
                 </div>
                 <div style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.55;">
-                    • 시스템 전체 실데이터 복기 분석 결과, 1235회 이후 <strong style="color:#34d399;">5등 적중률 7.27% (무작위 대비 3.27배 초과)</strong>를 기록 중인 <strong>V4.0 웜 넘버 밸런스</strong> 및 <strong>V3.0 마르코프 전이행렬</strong> 엔진을 [${displayName}] 님 고유 시드로 완벽 배치했습니다.
+                    • 시스템 전체 실데이터 복기 분석 결과, 1235회 이후 <strong style="color:#34d399;">5등 적중률 7.27% (무작위 대비 3.27배 초과)</strong>를 기록 중인 <strong>올라운더 팩 웜 넘버 밸런스</strong> 및 <strong>수학 퀀트 팩 마르코프 전이행렬</strong> 엔진을 [${displayName}] 님 고유 시드로 완벽 배치했습니다.
                 </div>
             </div>
         `;

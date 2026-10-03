@@ -9,13 +9,13 @@ import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 let currentOptimizedResult = null;
 
 export const ALL_PACK_DEFS = [
-    { id: 'v4', type: 'engine', version: 'v4', name: 'V4.0 행동경제학 포트폴리오', shortName: 'V4.0(10)', games: 10, color: '#10b981' },
-    { id: 'v3', type: 'engine', version: 'v3', name: 'V3.0 하이브리드 앙상블', shortName: 'V3.0(10)', games: 10, color: '#3b82f6' },
-    { id: 'extra1', type: 'extra', packId: 1, name: '추가 1 (30게임 전수 커버리지)', shortName: '추가 1(10)', games: 10, color: '#10b981' },
-    { id: 'extra2', type: 'extra', packId: 2, name: '추가 2 (초고배당 EV 독점)', shortName: '추가 2(10)', games: 10, color: '#f59e0b' },
-    { id: 'extra3', type: 'extra', packId: 3, name: '추가 3 (기하학적 휠링)', shortName: '추가 3(10)', games: 10, color: '#8b5cf6' },
-    { id: 'extra4', type: 'extra', packId: 4, name: '추가 4 (마르코프 & 페어)', shortName: '추가 4(10)', games: 10, color: '#06b6d4' },
-    { id: 'extra5', type: 'extra', packId: 5, name: '추가 5 (골든 클러스터)', shortName: '추가 5(10)', games: 10, color: '#ec4899' }
+    { id: 'v4', type: 'engine', version: 'v4', name: '기본 1: 올라운더 팩 (10게임)', shortName: '올라운더(10)', games: 10, color: '#10b981' },
+    { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 수학 퀀트 팩 (10게임)', shortName: '수학퀀트(10)', games: 10, color: '#3b82f6' },
+    { id: 'extra1', type: 'extra', packId: 1, name: '추가 1: 빈틈제로 팩 (10게임)', shortName: '빈틈제로(10)', games: 10, color: '#10b981' },
+    { id: 'extra2', type: 'extra', packId: 2, name: '추가 2: 슈퍼 잭팟 팩 (10게임)', shortName: '슈퍼잭팟(10)', games: 10, color: '#f59e0b' },
+    { id: 'extra3', type: 'extra', packId: 3, name: '추가 3: 멀티 히트 팩 (10게임)', shortName: '멀티히트(10)', games: 10, color: '#8b5cf6' },
+    { id: 'extra4', type: 'extra', packId: 4, name: '추가 4: 흐름 부스터 팩 (10게임)', shortName: '흐름부스터(10)', games: 10, color: '#06b6d4' },
+    { id: 'extra5', type: 'extra', packId: 5, name: '추가 5: 트리오 마스터 팩 (10게임)', shortName: '트리오마스터(10)', games: 10, color: '#ec4899' }
 ];
 
 export function openBudgetOptimizerModal() {

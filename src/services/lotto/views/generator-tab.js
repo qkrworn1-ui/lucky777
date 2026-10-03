@@ -1339,7 +1339,7 @@ export function handleGenerateAllClick() {
 export async function handleConfirmPurchaseHeroClick() {
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
     const useV4 = chkReportLogic ? chkReportLogic.checked : false;
-    const versionStr = useV4 ? 'V4.0 행동경제학 알고리즘' : 'V3.0 하이브리드 알고리즘';
+    const versionStr = useV4 ? '기본 1: 올라운더 팩 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)';
     
     const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
     const nextRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
@@ -1419,7 +1419,7 @@ export function setupGeneratorTabEvents() {
                 }
             }
 
-            showToast(isV4 ? '🧠 [V4.0 행동경제학 포트폴리오] 10게임이 적용되었습니다.' : '⚡ [V3.0 하이브리드 알고리즘] 10게임이 적용되었습니다.');
+            showToast(isV4 ? '🎯 [올라운더 팩] 10게임이 적용되었습니다.' : '⚡ [수학 퀀트 팩] 10게임이 적용되었습니다.');
         };
     }
 
@@ -1741,8 +1741,8 @@ export function renderExtraAddonPacksSection() {
                     🔒 실구매 인증 회원 전용 [추가 5팩 50게임]
                 </div>
                 <p class="locked-desc">
-                    기본 20게임(V4.0 + V3.0)은 상시 무료로 열람 가능하며,<br>
-                    <strong style="color: #fbbf24;">추가 1~5팩(전수 커버리지, 초고배당 EV 등 50게임)</strong>은<br>
+                    기본 20게임(올라운더 + 수학 퀀트)은 상시 무료로 열람 가능하며,<br>
+                    <strong style="color: #fbbf24;">추가 1~5팩(빈틈제로, 슈퍼 잭팟, 멀티 히트 등 50게임)</strong>은<br>
                     <strong>매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원</strong>님께 무료로 잠금 해제됩니다.
                 </p>
                 <button type="button" onclick="if(window.openManualLedgerModal) { window.openManualLedgerModal(); } else if(window.switchLottoTab) { window.switchLottoTab('tab-confirmed-list'); }" class="btn-locked-qr">
@@ -1765,7 +1765,7 @@ export function renderExtraAddonPacksSection() {
 
     // Update Header Pill Buttons State (추가 1 ~ 추가 5)
     const packColors = { 1: '#10b981', 2: '#f59e0b', 3: '#8b5cf6', 4: '#06b6d4', 5: '#ec4899' };
-    const packNames = { 1: '추가 1 (30게임 커버리지)', 2: '추가 2 (초고배당 EV)', 3: '추가 3 (기하학 휠링)', 4: '추가 4 (마르코프&페어)', 5: '추가 5 (골든클러스터)' };
+    const packNames = { 1: '추가 1: 빈틈제로', 2: '추가 2: 슈퍼잭팟', 3: '추가 3: 멀티히트', 4: '추가 4: 흐름부스터', 5: '추가 5: 트리오마스터' };
 
     for (let p = 1; p <= 5; p++) {
         const btn = document.getElementById(`btnQuickPack_${p}`);
@@ -2266,7 +2266,7 @@ export async function selectGeneratorAlgo(algoId) {
             if (typeof openCompactView === 'function') openCompactView('v4');
             else if (typeof window !== 'undefined' && window.openCompactView) window.openCompactView('v4');
         }
-        showToast('🧠 V4.0 행동경제학 포트폴리오 (10게임)가 선택되었습니다.');
+        showToast('🎯 기본 1: 올라운더 팩 (10게임)이 선택되었습니다.');
         return;
     }
 
@@ -2287,7 +2287,7 @@ export async function selectGeneratorAlgo(algoId) {
             if (typeof openCompactView === 'function') openCompactView('v3');
             else if (typeof window !== 'undefined' && window.openCompactView) window.openCompactView('v3');
         }
-        showToast('⚡ V3.0 하이브리드 알고리즘 (10게임)이 선택되었습니다.');
+        showToast('⚡ 기본 2: 수학 퀀트 팩 (10게임)이 선택되었습니다.');
         return;
     }
 
@@ -2365,7 +2365,7 @@ export async function handleGenerateAll70Games() {
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
         updateTop7AlgoUI();
-        const wantRegister = confirm(`⚡ 기본 20게임(V4.0 + V3.0)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 5팩(50게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
+        const wantRegister = confirm(`⚡ 기본 20게임(올라운더 + 수학 퀀트)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 5팩(50게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();

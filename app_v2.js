@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.04.0020 - BUILD_DATE: 2026-10-04] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.04.0107 - BUILD_DATE: 2026-10-04] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.04.0020)
+ * Lucky777 Smart Bundle (v2026.10.04.0107)
  */
 
 
@@ -15739,7 +15739,7 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
             useReportLogic = (localPref !== null) ? (localPref === 'true') : true;
         }
     }
-    const versionStr = useReportLogic ? 'V4.0 행동경제학 포트폴리오' : 'V3.0 하이브리드 알고리즘';
+    const versionStr = useReportLogic ? '올라운더 팩 (10게임)' : '수학 퀀트 팩 (10게임)';
 
     const isCurrentRound = (targetRound === null || targetRound === defaultRound);
 
@@ -15926,7 +15926,7 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
                 
                 generated.push({
                     id: `V4-G1-${i + 1}`,
-                    name: `[행동경제학] 통계적 밸런스 방어 (소액당첨 확보)`,
+                    name: `[올라운더] 통계적 밸런스 방어 (소액당첨 확보)`,
                     numbers: bestCandidateObj.nums,
                     stats: bestCandidateObj.stats,
                     meta: {
@@ -16005,7 +16005,7 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
 
                 generated.push({
                     id: `V4-G2-${i - 3}`,
-                    name: `[행동경제학] 클러스터링 믹스 (다수당첨 회피)`,
+                    name: `[올라운더] 클러스터링 믹스 (다수당첨 회피)`,
                     numbers: bestCandidateObj.nums,
                     stats: bestCandidateObj.stats,
                     meta: {
@@ -16053,7 +16053,7 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
                 
                 generated.push({
                     id: `V4-G3-${i - 6}`,
-                    name: `[행동경제학] 역사적 과적합 (치트키 포트폴리오)`,
+                    name: `[올라운더] 역사적 과적합 (치트키 포트폴리오)`,
                     numbers: bestCandidateObj.nums,
                     stats: bestCandidateObj.stats,
                     meta: {
@@ -16369,9 +16369,9 @@ function findBestRecommendationMatch(userNums, v4Combos = [], v3Combos = [], ext
         const cNums = v4Combos[i].numbers || v4Combos[i];
         if (Array.isArray(cNums) && toKey(cNums) === userKey) {
             return {
-                matchedVersion: 'V4.0 행동경제학 포트폴리오',
-                label: `V4.0 #${i + 1}`,
-                shortLabel: `V4.0 #${i + 1}`,
+                matchedVersion: '올라운더 팩 (10게임)',
+                label: `올라운더 #${i + 1}`,
+                shortLabel: `올라운더 #${i + 1}`,
                 index: i + 1,
                 matchCount: 6,
                 isExact: true,
@@ -16387,9 +16387,9 @@ function findBestRecommendationMatch(userNums, v4Combos = [], v3Combos = [], ext
         const cNums = v3Combos[i].numbers || v3Combos[i];
         if (Array.isArray(cNums) && toKey(cNums) === userKey) {
             return {
-                matchedVersion: 'V3.0 하이브리드 알고리즘',
-                label: `V3.0 #${i + 1}`,
-                shortLabel: `V3.0 #${i + 1}`,
+                matchedVersion: '수학 퀀트 팩 (10게임)',
+                label: `수학퀀트 #${i + 1}`,
+                shortLabel: `수학퀀트 #${i + 1}`,
                 index: i + 1,
                 matchCount: 6,
                 isExact: true,
@@ -16463,10 +16463,10 @@ function crossCheckCombosWithRecommendations(round, rawCombosList, targetUserId 
                 extraMatchCount++;
                 if (match.isExact) extraExactCount++;
                 if (!matchedExtraPackName) matchedExtraPackName = match.matchedVersion;
-            } else if (match.matchedVersion.includes('V4.0')) {
+            } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('V4.0')) {
                 v4MatchCount++;
                 if (match.isExact) v4ExactCount++;
-            } else if (match.matchedVersion.includes('V3.0')) {
+            } else if (match.matchedVersion.includes('수학 퀀트') || match.matchedVersion.includes('수학퀀트') || match.matchedVersion.includes('V3.0')) {
                 v3MatchCount++;
                 if (match.isExact) v3ExactCount++;
             }
@@ -16485,20 +16485,20 @@ function crossCheckCombosWithRecommendations(round, rawCombosList, targetUserId 
             summaryMessage = `🚀 [추가 팩 감지] [${detectedVersion}] ${extraMatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else if (v4MatchCount > 0 && v4MatchCount >= v3MatchCount) {
-        detectedVersion = 'V4.0 행동경제학 포트폴리오';
+        detectedVersion = '기본 1: 올라운더 팩 (10게임)';
         if (v4ExactCount === rawCombosList.length) {
-            summaryMessage = `🧠 [V4.0 자동 감지] 총 ${rawCombosList.length}게임 모두 V4.0 추천번호와 100% 일치!`;
+            summaryMessage = `🎯 [올라운더 팩 자동 감지] 총 ${rawCombosList.length}게임 모두 올라운더 추천번호와 100% 일치!`;
         } else {
             const manualCount = matchDetails.filter(m => m.isManual).length;
-            summaryMessage = `🧠 [V4.0 감지] V4.0 추천 ${v4MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
+            summaryMessage = `🎯 [올라운더 팩 감지] 올라운더 추천 ${v4MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else if (v3MatchCount > 0) {
-        detectedVersion = 'V3.0 하이브리드 알고리즘';
+        detectedVersion = '기본 2: 수학 퀀트 팩 (10게임)';
         if (v3ExactCount === rawCombosList.length) {
-            summaryMessage = `⚡ [V3.0 자동 감지] 총 ${rawCombosList.length}게임 모두 V3.0 추천번호와 100% 일치!`;
+            summaryMessage = `⚡ [수학 퀀트 팩 자동 감지] 총 ${rawCombosList.length}게임 모두 수학 퀀트 추천번호와 100% 일치!`;
         } else {
             const manualCount = matchDetails.filter(m => m.isManual).length;
-            summaryMessage = `⚡ [V3.0 감지] V3.0 추천 ${v3MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
+            summaryMessage = `⚡ [수학 퀀트 팩 감지] 수학 퀀트 추천 ${v3MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else {
         detectedVersion = '수동/직접입력';
@@ -16568,44 +16568,44 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
 
     const packMetas = {
         1: {
-            name: '추가 1: 30게임 완성형 100% 전수 커버리지팩',
-            shortName: '추가 1',
-            badge: '30-GAME KEYSTONE 100%',
+            name: '추가 1: 빈틈제로 팩 (10게임)',
+            shortName: '추가 1: 빈틈제로',
+            badge: 'ZERO-GAP 100%',
             color: '#10b981',
-            desc: '기본 20게임(V3+V4)의 누락 번호 100% 포섭 + 핫 앵커 직교 결합으로 30게임 무결점 포트폴리오 완성',
-            tag: '30게임 완성형 | 45개 번호 100% 전수 커버리지 | 핫 앵커 직교 결합'
+            desc: '기본 20게임(올라운더+수학퀀트)의 누락 번호 100% 포섭으로 사각지대 없는 30게임 완성 포트폴리오',
+            tag: '30게임 완성형 | 45개 번호 100% 전수 포섭 | 사각지대 제로'
         },
         2: {
-            name: '추가 2: 초고배당 EV 독점 수령팩',
-            shortName: '추가 2',
-            badge: 'HIGH EV MONOPOLY',
+            name: '추가 2: 슈퍼 잭팟 팩 (10게임)',
+            shortName: '추가 2: 슈퍼 잭팟',
+            badge: 'SUPER JACKPOT',
             color: '#f59e0b',
             desc: '30~45번대 고번호 + 2연번 집중으로 1등 당첨 시 1인 독점 수령금 극대화',
             tag: '초고배당 EV | 2연번 | 3040 고번호 집중'
         },
         3: {
-            name: '추가 3: 기하학적 휠링 하모닉팩',
-            shortName: '추가 3',
-            badge: 'HARMONIC WHEELING',
+            name: '추가 3: 멀티 히트 팩 (10게임)',
+            shortName: '추가 3: 멀티 히트',
+            badge: 'MULTI-HIT WHEEL',
             color: '#8b5cf6',
             desc: '45각형 5구간 대칭 분산형 휠링 매트릭스로 3~4등 다중 복수 적중 방어망 구축',
-            tag: '기하학적 휠링 | 5구간 균등 분산 | 4등 다중 적중'
+            tag: '기하학적 휠링 | 5구간 균등 분산 | 3·4등 다중 적중'
         },
         4: {
-            name: '추가 4: 마르코프 2차 전이 & 페어 부스터팩',
-            shortName: '추가 4',
-            badge: 'MARKOV 2ND & PAIR',
+            name: '추가 4: 흐름 부스터 팩 (10게임)',
+            shortName: '추가 4: 흐름 부스터',
+            badge: 'FLOW BOOSTER',
             color: '#06b6d4',
-            desc: '직전 회차 1/2차 마르코프 전이 확률 및 역대 최다 동반 출현 페어 듀오 집중 타격',
-            tag: '마르코프 2차 전이 | 최다 페어 듀오 | 핫 모멘텀'
+            desc: '직전 회차 1/2차 마르코프 전이 확률 및 역대 최다 동반 출현 최강 단짝 콤비 집중 타격',
+            tag: '마르코프 전이 모멘텀 | 최다 페어 듀오 | 핫 모멘텀'
         },
         5: {
-            name: '추가 5: 골든 클러스터 올인팩',
-            shortName: '추가 5',
-            badge: 'GOLDEN CLIQUE ALL-IN',
+            name: '추가 5: 트리오 마스터 팩 (10게임)',
+            shortName: '추가 5: 트리오 마스터',
+            badge: 'TRIO MASTER',
             color: '#ec4899',
-            desc: '역대 1등 추첨 데이터 최다 중복 출현 3수 고정틀(Golden Trios) 기반 마스터 조합',
-            tag: '역대 최다 동시 출현 3수 고정틀 | 마스터 클러스터'
+            desc: '역대 1등 추첨 데이터 최다 중복 출현 황금 3수 고정틀(Golden Trios) 기반 연쇄 당첨 마스터 조합',
+            tag: '역대 최다 동시 출현 3수 고정틀 | 연쇄 당첨 폭발력'
         }
     };
 
@@ -17064,8 +17064,8 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
         }
 
         const algorithmsMetadata = [
-            { algoId: 'v4', algoName: 'V4.0 행동경제학 포트폴리오 (10게임)', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6' },
-            { algoId: 'v3', algoName: 'V3.0 하이브리드 정통 수학 알고리즘 (10게임)', badge: 'HYBRID MATH', color: '#3b82f6' }
+            { algoId: 'v4', algoName: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#8b5cf6' },
+            { algoId: 'v3', algoName: '기본 2: 수학 퀀트 팩 (10게임)', badge: 'MATH QUANT', color: '#3b82f6' }
         ];
         for (let p = 1; p <= 5; p++) {
             if (extraPacks[p]) {
@@ -18484,13 +18484,13 @@ async function renderAllRoundsReviewDetail() {
 
     // 7대 알고리즘 메타데이터 및 누적 통계 객체
     const algoPacks = [
-        { id: 'v4', name: 'V4.0 행동경제학 포트폴리오', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6' },
-        { id: 'v3', name: 'V3.0 하이브리드 정통 수학', badge: 'HYBRID MATH', color: '#3b82f6' },
-        { id: 'extra_1', name: '추가1팩: 고주기 빈도 앙상블', badge: 'EXTRA 1', color: '#10b981' },
-        { id: 'extra_2', name: '추가2팩: 저주기 미출 회귀', badge: 'EXTRA 2', color: '#f59e0b' },
-        { id: 'extra_3', name: '추가3팩: AC 밸런스 퀀트', badge: 'EXTRA 3', color: '#8b5cf6' },
-        { id: 'extra_4', name: '추가4팩: 구간 연속 대칭', badge: 'EXTRA 4', color: '#06b6d4' },
-        { id: 'extra_5', name: '추가5팩: 극한 홀짝 가중치', badge: 'EXTRA 5', color: '#ec4899' }
+        { id: 'v4', name: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#8b5cf6' },
+        { id: 'v3', name: '기본 2: 수학 퀀트 팩 (10게임)', badge: 'MATH QUANT', color: '#3b82f6' },
+        { id: 'extra_1', name: '추가 1: 빈틈제로 팩 (10게임)', badge: 'ZERO-GAP', color: '#10b981' },
+        { id: 'extra_2', name: '추가 2: 슈퍼 잭팟 팩 (10게임)', badge: 'SUPER JACKPOT', color: '#f59e0b' },
+        { id: 'extra_3', name: '추가 3: 멀티 히트 팩 (10게임)', badge: 'MULTI-HIT', color: '#8b5cf6' },
+        { id: 'extra_4', name: '추가 4: 흐름 부스터 팩 (10게임)', badge: 'FLOW BOOSTER', color: '#06b6d4' },
+        { id: 'extra_5', name: '추가 5: 트리오 마스터 팩 (10게임)', badge: 'TRIO MASTER', color: '#ec4899' }
     ];
     const algoSummaryMap = {};
     algoPacks.forEach(p => {
@@ -20185,13 +20185,13 @@ async function openAdmin1235ReviewModal(initialRound = null, initialUser = null)
                     <!-- Filter Pills (Visible when single user or pack filtered) -->
                     <div id="admin1235ModalFilterPills" style="display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px;">
                         <button type="button" class="admin1235-filter-btn active" data-filter="all" onclick="window.setAdmin1235ModalFilter('all')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: 1px solid #f59e0b; background: #f59e0b; color: #0f172a; white-space: nowrap;">전체 (70G)</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="v4" onclick="window.setAdmin1235ModalFilter('v4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #c4b5fd; white-space: nowrap;">V4.0 (10G)</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="v3" onclick="window.setAdmin1235ModalFilter('v3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.15); color: #93c5fd; white-space: nowrap;">V3.0 (10G)</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">추가1팩</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_2" onclick="window.setAdmin1235ModalFilter('extra_2')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.15); color: #fde047; white-space: nowrap;">추가2팩</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_3" onclick="window.setAdmin1235ModalFilter('extra_3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #d8b4fe; white-space: nowrap;">추가3팩</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_4" onclick="window.setAdmin1235ModalFilter('extra_4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(6,182,212,0.4); background: rgba(6,182,212,0.15); color: #67e8f9; white-space: nowrap;">추가4팩</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_5" onclick="window.setAdmin1235ModalFilter('extra_5')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(236,72,153,0.4); background: rgba(236,72,153,0.15); color: #f472b6; white-space: nowrap;">추가5팩</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="v4" onclick="window.setAdmin1235ModalFilter('v4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #c4b5fd; white-space: nowrap;">올라운더 (10G)</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="v3" onclick="window.setAdmin1235ModalFilter('v3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.15); color: #93c5fd; white-space: nowrap;">수학퀀트 (10G)</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">추가1 빈틈제로</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_2" onclick="window.setAdmin1235ModalFilter('extra_2')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.15); color: #fde047; white-space: nowrap;">추가2 슈퍼잭팟</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_3" onclick="window.setAdmin1235ModalFilter('extra_3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #d8b4fe; white-space: nowrap;">추가3 멀티히트</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_4" onclick="window.setAdmin1235ModalFilter('extra_4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(6,182,212,0.4); background: rgba(6,182,212,0.15); color: #67e8f9; white-space: nowrap;">추가4 흐름부스터</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_5" onclick="window.setAdmin1235ModalFilter('extra_5')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(236,72,153,0.4); background: rgba(236,72,153,0.15); color: #f472b6; white-space: nowrap;">추가5 트리오마스터</button>
                     </div>
                 </div>
 
@@ -21549,15 +21549,15 @@ let algoAdminViewingUser = 'all';
 const SEVEN_ALGORITHMS_INFO = [
     {
         id: 'v4',
-        name: 'V4.0 행동경제학 포트폴리오',
-        shortName: 'V4.0 행동경제학',
-        tag: '마킹 심리 회피 · 밸런스 방어 · 치트키 과적합 융합 (10게임)',
+        name: '기본 1: 올라운더 팩 (10게임)',
+        shortName: '올라운더 팩',
+        tag: '안정 방어 & 대박 포트폴리오 · 올인원 균형 융합 (10게임)',
         icon: 'fa-brain',
-        badge: 'V4.0 BEHAVIORAL',
+        badge: 'ALL-ROUNDER',
         badgeColor: '#a78bfa',
         bgGradient: 'linear-gradient(135deg, rgba(167, 139, 250, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(167, 139, 250, 0.45)',
-        corePhilosophy: '대중의 번호 마킹 편향(생일·연속·기하학 패턴)을 역이용하여 당첨 시 독점 수령금을 극대화하고, 통계적 안정망으로 4·5등 당첨을 방어하는 포트폴리오 모델',
+        corePhilosophy: '대중의 번호 마킹 편향(생일·연속·기하학 패턴)을 역이용하여 당첨 시 독점 수령금을 극대화하고, 통계적 안정망으로 4·5등 당첨을 방어하는 올라운더 균형 포트폴리오 모델',
         comboMethod: [
             {
                 step: '그룹 1: 통계적 밸런스 추종 (게임 1~4)',
@@ -21581,15 +21581,15 @@ const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'v3',
-        name: 'V3.0 하이브리드 정통 수학 알고리즘',
-        shortName: 'V3.0 하이브리드',
+        name: '기본 2: 수학 퀀트 팩 (10게임)',
+        shortName: '수학 퀀트 팩',
         tag: '마르코프 전이행렬 · 누적 빈도 · Pair 궁합 · EV 극대화 (10게임)',
         icon: 'fa-gears',
-        badge: 'V3.0 HYBRID MATH',
+        badge: 'MATH QUANT',
         badgeColor: '#60a5fa',
         bgGradient: 'linear-gradient(135deg, rgba(96, 165, 250, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(96, 165, 250, 0.45)',
-        corePhilosophy: '동행복권 1회부터의 역대 누적 빈도, 직전 회차 마르코프 전이 확률, 2수 동반출현 빈도, 기대가치(EV)를 종합 연산하여 개별 게임의 적중 확률을 극대화한 정통 수학 통계 모델',
+        corePhilosophy: '동행복권 1회부터의 역대 누적 빈도, 직전 회차 마르코프 전이 확률, 2수 동반출현 빈도, 기대가치(EV)를 종합 연산하여 개별 게임의 적중 확률을 극대화한 정통 수학 퀀트 모델',
         comboMethod: [
             {
                 step: '전반 5게임 (공격형 앙상블: 게임 1~5)',
@@ -21609,15 +21609,15 @@ const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra1',
-        name: '추가 1: 30게임 완성형 100% 전수 커버리지팩',
-        shortName: '추가 1: 전수 커버리지',
+        name: '추가 1: 빈틈제로 팩 (10게임)',
+        shortName: '추가 1: 빈틈제로',
         tag: '기본 20게임 누락 번호 100% 포섭 + 핫 앵커 직교 결합 (10게임)',
         icon: 'fa-shield-halved',
-        badge: '추가 1 KEYSTONE 100%',
+        badge: 'ZERO-GAP 100%',
         badgeColor: '#10b981',
         bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(16, 185, 129, 0.45)',
-        corePhilosophy: 'V3.0(10게임) + V4.0(10게임)의 20게임에서 한 번도 선택되지 않은 0회 출현 사각지대 번호를 100% 추출하여 결합함으로써, 30게임 구매 시 1~45번 모든 번호가 단 하나도 누락되지 않도록 완성하는 무결점 커버리지 모델',
+        corePhilosophy: '기본 20게임(올라운더 10G + 수학 퀀트 10G)에서 한 번도 선택되지 않은 0회 출현 사각지대 번호를 100% 추출하여 결합함으로써, 30게임 구매 시 1~45번 모든 번호가 단 하나도 누락되지 않도록 완성하는 빈틈없는 전수 커버리지 모델',
         comboMethod: [
             {
                 step: '누락 번호 전수 분할 (Missing Partition)',
@@ -21641,15 +21641,15 @@ const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra2',
-        name: '추가 2: 초고배당 EV 독점 수령팩',
-        shortName: '추가 2: 초고배당 EV',
+        name: '추가 2: 슈퍼 잭팟 팩 (10게임)',
+        shortName: '추가 2: 슈퍼 잭팟',
         tag: '30~45번대 고번호 집중 + 2연번 강제 주입 당첨금 극대화 (10게임)',
         icon: 'fa-sack-dollar',
-        badge: '추가 2 HIGH EV MONOPOLY',
+        badge: 'SUPER JACKPOT',
         badgeColor: '#f59e0b',
         bgGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(245, 158, 11, 0.45)',
-        corePhilosophy: '대부분의 구매자가 생일(1~31) 및 저번호대를 선호한다는 점에 착안, 30~45번대 고번호와 2연번을 고의로 다수 배치하여 1등 당첨 시 당첨자 수가 급감하고 1인당 수령금이 30~50억 이상으로 폭등하도록 설계한 초고배당 특화 모델',
+        corePhilosophy: '대부분의 구매자가 생일(1~31) 및 저번호대를 선호한다는 점에 착안, 30~45번대 고번호와 2연번을 고의로 다수 배치하여 1등 당첨 시 당첨자 수가 급감하고 1인당 수령금이 30~50억 이상으로 폭등하도록 설계한 슈퍼 잭팟 초고배당 특화 모델',
         comboMethod: [
             {
                 step: '고번호(30~45) 대역 4개 이상 집중 배치',
@@ -21673,15 +21673,15 @@ const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra3',
-        name: '추가 3: 기하학적 휠링 하모닉팩',
-        shortName: '추가 3: 기하학 휠링',
+        name: '추가 3: 멀티 히트 팩 (10게임)',
+        shortName: '추가 3: 멀티 히트',
         tag: '45각형 5구간 대칭 분산 휠링 · 3~4등 다중 적중 방어망 (10게임)',
         icon: 'fa-dharmachakra',
-        badge: '추가 3 HARMONIC WHEELING',
+        badge: 'MULTI-HIT WHEEL',
         badgeColor: '#8b5cf6',
         bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(139, 92, 246, 0.45)',
-        corePhilosophy: '로또 번호 45개를 기하학적 5개 구역으로 균등 분할하고, 각 구역에서 번호를 대칭 추출하여 결합하는 휠링 시스템(Wheeling Matrix). 특정 구간 쏠림을 원천 차단하여 3등(150만원), 4등(5만원) 복수 다중 적중 확률을 극대화한 구조적 모델',
+        corePhilosophy: '로또 번호 45개를 기하학적 5개 구역으로 균등 분할하고, 각 구역에서 번호를 대칭 추출하여 결합하는 휠링 시스템(Wheeling Matrix). 특정 구간 쏠림을 원천 차단하여 3등(150만원), 4등(5만원) 복수 다중 적중 확률을 극대화한 멀티 히트 구조적 모델',
         comboMethod: [
             {
                 step: '45개 번호 5대 하모닉 구역 분할',
@@ -21705,15 +21705,15 @@ const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra4',
-        name: '추가 4: 마르코프 2차 전이 & 페어 부스터팩',
-        shortName: '추가 4: 마르코프&페어',
+        name: '추가 4: 흐름 부스터 팩 (10게임)',
+        shortName: '추가 4: 흐름 부스터',
         tag: '직전 회차 전이 확률 + 역대 최다 동반출현 Pair 집중 타격 (10게임)',
         icon: 'fa-bolt',
-        badge: '추가 4 MARKOV & PAIR',
+        badge: 'FLOW BOOSTER',
         badgeColor: '#06b6d4',
         bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(6, 182, 212, 0.45)',
-        corePhilosophy: '로또 추첨의 강력한 연속성을 포착하기 위해 직전 회차 당첨 번호로부터의 마르코프 1/2차 전이 확률과 역대 1,200여 회차 중 가장 높은 빈도로 함께 출현한 2수 페어(Co-occurrence Pair)를 결합한 모멘텀 집중 타격 모델',
+        corePhilosophy: '로또 추첨의 강력한 연속성을 포착하기 위해 직전 회차 당첨 번호로부터의 마르코프 1/2차 전이 확률과 역대 1,200여 회차 중 가장 높은 빈도로 함께 출현한 2수 페어(Co-occurrence Pair)를 결합한 흐름 부스터 모멘텀 타격 모델',
         comboMethod: [
             {
                 step: '직전 회차 번호 1수 순환 시드 주입',
@@ -21737,15 +21737,15 @@ const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra5',
-        name: '추가 5: 골든 클러스터 올인팩',
-        shortName: '추가 5: 골든 클러스터',
+        name: '추가 5: 트리오 마스터 팩 (10게임)',
+        shortName: '추가 5: 트리오 마스터',
         tag: '역대 최다 동시 출현 3수 고정틀(Golden Trios) 마스터 조합 (10게임)',
         icon: 'fa-crown',
-        badge: '추가 5 GOLDEN CLIQUE',
+        badge: 'TRIO MASTER',
         badgeColor: '#ec4899',
         bgGradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(236, 72, 153, 0.45)',
-        corePhilosophy: '역대 1,200여 회의 전수 데이터 중 3개 번호가 동시에 출현한 빈도가 통계적으로 가장 높은 상위 10대 "황금 트리오(Golden Trios)"를 각 게임의 3수 고정틀로 채택하고, 나머지 3수를 퀀트 최적화하여 3수가 적중되는 즉시 5등(3수)→4등(4수)→3등(5수)→1등으로 이어지는 연쇄 당첨 폭발력을 노리는 마스터 모델',
+        corePhilosophy: '역대 1,200여 회의 전수 데이터 중 3개 번호가 동시에 출현한 빈도가 통계적으로 가장 높은 상위 10대 "황금 트리오(Golden Trios)"를 각 게임의 3수 고정틀로 채택하고, 나머지 3수를 퀀트 최적화하여 3수가 적중되는 즉시 5등(3수)→4등(4수)→3등(5수)→1등으로 이어지는 연쇄 당첨 폭발력을 노리는 트리오 마스터 모델',
         comboMethod: [
             {
                 step: '10대 황금 3수 클러스터 고정틀 배치',
@@ -22305,7 +22305,7 @@ async function renderAlgorithmsTab(fromRound = null) {
                     로또 6/45 <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 AI 알고리즘</span> 정밀 해설 &amp; 실적
                 </h2>
                 <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; max-width: 800px; word-break: keep-all; overflow-wrap: break-word;">
-                    단순한 무작위 번호 생성이 아닙니다. 행동경제학적 마킹 심리 회피, 마르코프 전이 확률, 직교 전수 커버리지, 휠링 하모닉 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
+                    단순한 무작위 번호 생성이 아닙니다. 올라운더 팩(포트폴리오), 수학 퀀트 팩(확률 전이), 빈틈제로 팩(전수 커버리지), 슈퍼 잭팟(고배당), 멀티 히트(휠링) 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
                 </p>
             </div>
 
@@ -23871,7 +23871,7 @@ function handleGenerateAllClick() {
 async function handleConfirmPurchaseHeroClick() {
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
     const useV4 = chkReportLogic ? chkReportLogic.checked : false;
-    const versionStr = useV4 ? 'V4.0 행동경제학 알고리즘' : 'V3.0 하이브리드 알고리즘';
+    const versionStr = useV4 ? '기본 1: 올라운더 팩 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)';
     
     const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
     const nextRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
@@ -23951,7 +23951,7 @@ function setupGeneratorTabEvents() {
                 }
             }
 
-            showToast(isV4 ? '🧠 [V4.0 행동경제학 포트폴리오] 10게임이 적용되었습니다.' : '⚡ [V3.0 하이브리드 알고리즘] 10게임이 적용되었습니다.');
+            showToast(isV4 ? '🎯 [올라운더 팩] 10게임이 적용되었습니다.' : '⚡ [수학 퀀트 팩] 10게임이 적용되었습니다.');
         };
     }
 
@@ -24273,8 +24273,8 @@ function renderExtraAddonPacksSection() {
                     🔒 실구매 인증 회원 전용 [추가 5팩 50게임]
                 </div>
                 <p class="locked-desc">
-                    기본 20게임(V4.0 + V3.0)은 상시 무료로 열람 가능하며,<br>
-                    <strong style="color: #fbbf24;">추가 1~5팩(전수 커버리지, 초고배당 EV 등 50게임)</strong>은<br>
+                    기본 20게임(올라운더 + 수학 퀀트)은 상시 무료로 열람 가능하며,<br>
+                    <strong style="color: #fbbf24;">추가 1~5팩(빈틈제로, 슈퍼 잭팟, 멀티 히트 등 50게임)</strong>은<br>
                     <strong>매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원</strong>님께 무료로 잠금 해제됩니다.
                 </p>
                 <button type="button" onclick="if(window.openManualLedgerModal) { window.openManualLedgerModal(); } else if(window.switchLottoTab) { window.switchLottoTab('tab-confirmed-list'); }" class="btn-locked-qr">
@@ -24297,7 +24297,7 @@ function renderExtraAddonPacksSection() {
 
     // Update Header Pill Buttons State (추가 1 ~ 추가 5)
     const packColors = { 1: '#10b981', 2: '#f59e0b', 3: '#8b5cf6', 4: '#06b6d4', 5: '#ec4899' };
-    const packNames = { 1: '추가 1 (30게임 커버리지)', 2: '추가 2 (초고배당 EV)', 3: '추가 3 (기하학 휠링)', 4: '추가 4 (마르코프&페어)', 5: '추가 5 (골든클러스터)' };
+    const packNames = { 1: '추가 1: 빈틈제로', 2: '추가 2: 슈퍼잭팟', 3: '추가 3: 멀티히트', 4: '추가 4: 흐름부스터', 5: '추가 5: 트리오마스터' };
 
     for (let p = 1; p <= 5; p++) {
         const btn = document.getElementById(`btnQuickPack_${p}`);
@@ -24798,7 +24798,7 @@ async function selectGeneratorAlgo(algoId) {
             if (typeof openCompactView === 'function') openCompactView('v4');
             else if (typeof window !== 'undefined' && window.openCompactView) window.openCompactView('v4');
         }
-        showToast('🧠 V4.0 행동경제학 포트폴리오 (10게임)가 선택되었습니다.');
+        showToast('🎯 기본 1: 올라운더 팩 (10게임)이 선택되었습니다.');
         return;
     }
 
@@ -24819,7 +24819,7 @@ async function selectGeneratorAlgo(algoId) {
             if (typeof openCompactView === 'function') openCompactView('v3');
             else if (typeof window !== 'undefined' && window.openCompactView) window.openCompactView('v3');
         }
-        showToast('⚡ V3.0 하이브리드 알고리즘 (10게임)이 선택되었습니다.');
+        showToast('⚡ 기본 2: 수학 퀀트 팩 (10게임)이 선택되었습니다.');
         return;
     }
 
@@ -24897,7 +24897,7 @@ async function handleGenerateAll70Games() {
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
         updateTop7AlgoUI();
-        const wantRegister = confirm(`⚡ 기본 20게임(V4.0 + V3.0)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 5팩(50게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
+        const wantRegister = confirm(`⚡ 기본 20게임(올라운더 + 수학 퀀트)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 5팩(50게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();
@@ -25056,13 +25056,13 @@ const { SafeAuth, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ?
 let currentOptimizedResult = null;
 
 const ALL_PACK_DEFS = [
-    { id: 'v4', type: 'engine', version: 'v4', name: 'V4.0 행동경제학 포트폴리오', shortName: 'V4.0(10)', games: 10, color: '#10b981' },
-    { id: 'v3', type: 'engine', version: 'v3', name: 'V3.0 하이브리드 앙상블', shortName: 'V3.0(10)', games: 10, color: '#3b82f6' },
-    { id: 'extra1', type: 'extra', packId: 1, name: '추가 1 (30게임 전수 커버리지)', shortName: '추가 1(10)', games: 10, color: '#10b981' },
-    { id: 'extra2', type: 'extra', packId: 2, name: '추가 2 (초고배당 EV 독점)', shortName: '추가 2(10)', games: 10, color: '#f59e0b' },
-    { id: 'extra3', type: 'extra', packId: 3, name: '추가 3 (기하학적 휠링)', shortName: '추가 3(10)', games: 10, color: '#8b5cf6' },
-    { id: 'extra4', type: 'extra', packId: 4, name: '추가 4 (마르코프 & 페어)', shortName: '추가 4(10)', games: 10, color: '#06b6d4' },
-    { id: 'extra5', type: 'extra', packId: 5, name: '추가 5 (골든 클러스터)', shortName: '추가 5(10)', games: 10, color: '#ec4899' }
+    { id: 'v4', type: 'engine', version: 'v4', name: '기본 1: 올라운더 팩 (10게임)', shortName: '올라운더(10)', games: 10, color: '#10b981' },
+    { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 수학 퀀트 팩 (10게임)', shortName: '수학퀀트(10)', games: 10, color: '#3b82f6' },
+    { id: 'extra1', type: 'extra', packId: 1, name: '추가 1: 빈틈제로 팩 (10게임)', shortName: '빈틈제로(10)', games: 10, color: '#10b981' },
+    { id: 'extra2', type: 'extra', packId: 2, name: '추가 2: 슈퍼 잭팟 팩 (10게임)', shortName: '슈퍼잭팟(10)', games: 10, color: '#f59e0b' },
+    { id: 'extra3', type: 'extra', packId: 3, name: '추가 3: 멀티 히트 팩 (10게임)', shortName: '멀티히트(10)', games: 10, color: '#8b5cf6' },
+    { id: 'extra4', type: 'extra', packId: 4, name: '추가 4: 흐름 부스터 팩 (10게임)', shortName: '흐름부스터(10)', games: 10, color: '#06b6d4' },
+    { id: 'extra5', type: 'extra', packId: 5, name: '추가 5: 트리오 마스터 팩 (10게임)', shortName: '트리오마스터(10)', games: 10, color: '#ec4899' }
 ];
 
 function openBudgetOptimizerModal() {
@@ -27270,10 +27270,10 @@ async function renderConfirmedPurchasesList() {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-globe" style="font-size: 0.65rem;"></i> 온라인영수증</span>`;
             } else if (pVer.includes('QR') || pVer.includes('qr')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-qrcode" style="font-size: 0.65rem;"></i> QR영수증</span>`;
-            } else if (pVer.includes('V4.0') || pVer.includes('4.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); color: #c4b5fd; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.65rem;"></i> V4.0 행동경제학</span>`;
-            } else if (pVer.includes('V3.0') || pVer.includes('3.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.65rem;"></i> V3.0 하이브리드</span>`;
+            } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); color: #c4b5fd; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 올라운더 팩</span>`;
+            } else if (pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.65rem;"></i> 수학 퀀트 팩</span>`;
             } else {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-weight: 600; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.65rem;"></i> 수동구매</span>`;
             }
@@ -29957,7 +29957,7 @@ function generatePredictionReport() {
                     • <strong>등급별 적중:</strong> 1등:${grandRankCounts[1]} | 2등:${grandRankCounts[2]} | 3등:${grandRankCounts[3]} | 4등:${grandRankCounts[4]} | <strong style="color:#fbbf24;">5등:${grandRankCounts[5]}회</strong><br>
                     ${bestAlgo ? `• <strong>최고 성과 알고리즘:</strong> <span style="color:#fbbf24; font-weight:800;">[${bestAlgo.shortName || bestAlgo.name}]</span> (총 ${bestAlgo.totalWins}회 적중, 회수율 ${bestAlgo.roi}%)` : ''}
                     <div style="margin-top: 6px; font-size: 0.78rem; color: #94a3b8;">
-                        💡 <em>AI 진단: 회원님의 과거 추천 조합에서 가장 높은 적중 밀도를 증명한 <strong>[${bestAlgo ? (bestAlgo.shortName || bestAlgo.name) : 'V4.0 행동경제학'}]</strong>의 통계 모멘텀 가중치를 이번 제 ${curUpcomingRound}회차 앵커에 최우선 가중 반영했습니다.</em>
+                        💡 <em>AI 진단: 회원님의 과거 추천 조합에서 가장 높은 적중 밀도를 증명한 <strong>[${bestAlgo ? (bestAlgo.shortName || bestAlgo.name) : '기본 1: 올라운더 팩'}]</strong>의 통계 모멘텀 가중치를 이번 제 ${curUpcomingRound}회차 앵커에 최우선 가중 반영했습니다.</em>
                     </div>
                 </div>
             </div>
@@ -29974,7 +29974,7 @@ function generatePredictionReport() {
                     </span>
                 </div>
                 <div style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.55;">
-                    • 시스템 전체 실데이터 복기 분석 결과, 1235회 이후 <strong style="color:#34d399;">5등 적중률 7.27% (무작위 대비 3.27배 초과)</strong>를 기록 중인 <strong>V4.0 웜 넘버 밸런스</strong> 및 <strong>V3.0 마르코프 전이행렬</strong> 엔진을 [${displayName}] 님 고유 시드로 완벽 배치했습니다.
+                    • 시스템 전체 실데이터 복기 분석 결과, 1235회 이후 <strong style="color:#34d399;">5등 적중률 7.27% (무작위 대비 3.27배 초과)</strong>를 기록 중인 <strong>올라운더 팩 웜 넘버 밸런스</strong> 및 <strong>수학 퀀트 팩 마르코프 전이행렬</strong> 엔진을 [${displayName}] 님 고유 시드로 완벽 배치했습니다.
                 </div>
             </div>
         `;
@@ -30418,9 +30418,9 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             ? state.fixedTop5Combinations_v3
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
         return {
-            versionLabel: 'V3.0 하이브리드',
+            versionLabel: '기본 2: 수학 퀀트 팩',
             badgeColor: '#3b82f6',
-            combos: v3Combos.map((c, i) => ({ ...c, customLabel: `V3-${alphabet[i] || (i + 1)}` })),
+            combos: v3Combos.map((c, i) => ({ ...c, customLabel: `수학퀀트-${alphabet[i] || (i + 1)}` })),
             effectiveUserId,
             targetRound,
             isLocked: false
@@ -30430,9 +30430,9 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             ? state.fixedTop5Combinations_v4
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
         return {
-            versionLabel: 'V4.0 행동경제학',
+            versionLabel: '기본 1: 올라운더 팩',
             badgeColor: '#10b981',
-            combos: v4Combos.map((c, i) => ({ ...c, customLabel: `V4-${alphabet[i] || (i + 1)}` })),
+            combos: v4Combos.map((c, i) => ({ ...c, customLabel: `올라운더-${alphabet[i] || (i + 1)}` })),
             effectiveUserId,
             targetRound,
             isLocked: false
@@ -30472,8 +30472,8 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
 
         const allCombos = [
-            ...v3Combos.map((c, i) => ({ ...c, customLabel: `V3-${alphabet[i] || (i + 1)}`, groupTag: 'V3.0 하이브리드 (10조합)' })),
-            ...v4Combos.map((c, i) => ({ ...c, customLabel: `V4-${alphabet[i] || (i + 1)}`, groupTag: 'V4.0 행동경제학 (10조합)' }))
+            ...v3Combos.map((c, i) => ({ ...c, customLabel: `수학퀀트-${alphabet[i] || (i + 1)}`, groupTag: '기본 2: 수학 퀀트 팩 (10조합)' })),
+            ...v4Combos.map((c, i) => ({ ...c, customLabel: `올라운더-${alphabet[i] || (i + 1)}`, groupTag: '기본 1: 올라운더 팩 (10조합)' }))
         ];
 
         // Include all 5 Booster Add-on packs ONLY if eligible
@@ -31384,7 +31384,7 @@ function updateManualModalCrossCheck() {
                     <div style="display:flex; align-items:center; gap:8px;">
                         <i class="fa-solid fa-brain" style="color: #a78bfa; font-size: 1.1rem;"></i>
                         <div>
-                            <span style="color:#c4b5fd; font-weight:800;">🧠 AI 크로스체크: V4.0 행동경제학 포트폴리오 감지</span>
+                            <span style="color:#c4b5fd; font-weight:800;">🎯 AI 크로스체크: 기본 1: 올라운더 팩 감지</span>
                             <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
                                 ${check.summaryMessage}
                             </div>
@@ -31402,9 +31402,9 @@ function updateManualModalCrossCheck() {
             resultBox.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-bolt" style="color: #fbbf24; font-size: 1.1rem;"></i>
+                        <i class="fa-solid fa-calculator" style="color: #fbbf24; font-size: 1.1rem;"></i>
                         <div>
-                            <span style="color:#fde047; font-weight:800;">⚡ AI 크로스체크: V3.0 하이브리드 알고리즘 감지</span>
+                            <span style="color:#fde047; font-weight:800;">⚡ AI 크로스체크: 기본 2: 수학 퀀트 팩 감지</span>
                             <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
                                 ${check.summaryMessage}
                             </div>

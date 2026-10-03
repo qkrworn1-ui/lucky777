@@ -385,7 +385,7 @@ export function updateManualModalCrossCheck() {
                     <div style="display:flex; align-items:center; gap:8px;">
                         <i class="fa-solid fa-brain" style="color: #a78bfa; font-size: 1.1rem;"></i>
                         <div>
-                            <span style="color:#c4b5fd; font-weight:800;">🧠 AI 크로스체크: V4.0 행동경제학 포트폴리오 감지</span>
+                            <span style="color:#c4b5fd; font-weight:800;">🎯 AI 크로스체크: 기본 1: 올라운더 팩 감지</span>
                             <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
                                 ${check.summaryMessage}
                             </div>
@@ -403,9 +403,9 @@ export function updateManualModalCrossCheck() {
             resultBox.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-bolt" style="color: #fbbf24; font-size: 1.1rem;"></i>
+                        <i class="fa-solid fa-calculator" style="color: #fbbf24; font-size: 1.1rem;"></i>
                         <div>
-                            <span style="color:#fde047; font-weight:800;">⚡ AI 크로스체크: V3.0 하이브리드 알고리즘 감지</span>
+                            <span style="color:#fde047; font-weight:800;">⚡ AI 크로스체크: 기본 2: 수학 퀀트 팩 감지</span>
                             <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
                                 ${check.summaryMessage}
                             </div>

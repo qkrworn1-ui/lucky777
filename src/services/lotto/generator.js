@@ -141,7 +141,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
             useReportLogic = (localPref !== null) ? (localPref === 'true') : true;
         }
     }
-    const versionStr = useReportLogic ? 'V4.0 행동경제학 포트폴리오' : 'V3.0 하이브리드 알고리즘';
+    const versionStr = useReportLogic ? '올라운더 팩 (10게임)' : '수학 퀀트 팩 (10게임)';
 
     const isCurrentRound = (targetRound === null || targetRound === defaultRound);
 
@@ -328,7 +328,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                 
                 generated.push({
                     id: `V4-G1-${i + 1}`,
-                    name: `[행동경제학] 통계적 밸런스 방어 (소액당첨 확보)`,
+                    name: `[올라운더] 통계적 밸런스 방어 (소액당첨 확보)`,
                     numbers: bestCandidateObj.nums,
                     stats: bestCandidateObj.stats,
                     meta: {
@@ -407,7 +407,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
 
                 generated.push({
                     id: `V4-G2-${i - 3}`,
-                    name: `[행동경제학] 클러스터링 믹스 (다수당첨 회피)`,
+                    name: `[올라운더] 클러스터링 믹스 (다수당첨 회피)`,
                     numbers: bestCandidateObj.nums,
                     stats: bestCandidateObj.stats,
                     meta: {
@@ -455,7 +455,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                 
                 generated.push({
                     id: `V4-G3-${i - 6}`,
-                    name: `[행동경제학] 역사적 과적합 (치트키 포트폴리오)`,
+                    name: `[올라운더] 역사적 과적합 (치트키 포트폴리오)`,
                     numbers: bestCandidateObj.nums,
                     stats: bestCandidateObj.stats,
                     meta: {
@@ -771,9 +771,9 @@ export function findBestRecommendationMatch(userNums, v4Combos = [], v3Combos = 
         const cNums = v4Combos[i].numbers || v4Combos[i];
         if (Array.isArray(cNums) && toKey(cNums) === userKey) {
             return {
-                matchedVersion: 'V4.0 행동경제학 포트폴리오',
-                label: `V4.0 #${i + 1}`,
-                shortLabel: `V4.0 #${i + 1}`,
+                matchedVersion: '올라운더 팩 (10게임)',
+                label: `올라운더 #${i + 1}`,
+                shortLabel: `올라운더 #${i + 1}`,
                 index: i + 1,
                 matchCount: 6,
                 isExact: true,
@@ -789,9 +789,9 @@ export function findBestRecommendationMatch(userNums, v4Combos = [], v3Combos = 
         const cNums = v3Combos[i].numbers || v3Combos[i];
         if (Array.isArray(cNums) && toKey(cNums) === userKey) {
             return {
-                matchedVersion: 'V3.0 하이브리드 알고리즘',
-                label: `V3.0 #${i + 1}`,
-                shortLabel: `V3.0 #${i + 1}`,
+                matchedVersion: '수학 퀀트 팩 (10게임)',
+                label: `수학퀀트 #${i + 1}`,
+                shortLabel: `수학퀀트 #${i + 1}`,
                 index: i + 1,
                 matchCount: 6,
                 isExact: true,
@@ -865,10 +865,10 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
                 extraMatchCount++;
                 if (match.isExact) extraExactCount++;
                 if (!matchedExtraPackName) matchedExtraPackName = match.matchedVersion;
-            } else if (match.matchedVersion.includes('V4.0')) {
+            } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('V4.0')) {
                 v4MatchCount++;
                 if (match.isExact) v4ExactCount++;
-            } else if (match.matchedVersion.includes('V3.0')) {
+            } else if (match.matchedVersion.includes('수학 퀀트') || match.matchedVersion.includes('수학퀀트') || match.matchedVersion.includes('V3.0')) {
                 v3MatchCount++;
                 if (match.isExact) v3ExactCount++;
             }
@@ -887,20 +887,20 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
             summaryMessage = `🚀 [추가 팩 감지] [${detectedVersion}] ${extraMatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else if (v4MatchCount > 0 && v4MatchCount >= v3MatchCount) {
-        detectedVersion = 'V4.0 행동경제학 포트폴리오';
+        detectedVersion = '기본 1: 올라운더 팩 (10게임)';
         if (v4ExactCount === rawCombosList.length) {
-            summaryMessage = `🧠 [V4.0 자동 감지] 총 ${rawCombosList.length}게임 모두 V4.0 추천번호와 100% 일치!`;
+            summaryMessage = `🎯 [올라운더 팩 자동 감지] 총 ${rawCombosList.length}게임 모두 올라운더 추천번호와 100% 일치!`;
         } else {
             const manualCount = matchDetails.filter(m => m.isManual).length;
-            summaryMessage = `🧠 [V4.0 감지] V4.0 추천 ${v4MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
+            summaryMessage = `🎯 [올라운더 팩 감지] 올라운더 추천 ${v4MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else if (v3MatchCount > 0) {
-        detectedVersion = 'V3.0 하이브리드 알고리즘';
+        detectedVersion = '기본 2: 수학 퀀트 팩 (10게임)';
         if (v3ExactCount === rawCombosList.length) {
-            summaryMessage = `⚡ [V3.0 자동 감지] 총 ${rawCombosList.length}게임 모두 V3.0 추천번호와 100% 일치!`;
+            summaryMessage = `⚡ [수학 퀀트 팩 자동 감지] 총 ${rawCombosList.length}게임 모두 수학 퀀트 추천번호와 100% 일치!`;
         } else {
             const manualCount = matchDetails.filter(m => m.isManual).length;
-            summaryMessage = `⚡ [V3.0 감지] V3.0 추천 ${v3MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
+            summaryMessage = `⚡ [수학 퀀트 팩 감지] 수학 퀀트 추천 ${v3MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else {
         detectedVersion = '수동/직접입력';
@@ -970,44 +970,44 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
 
     const packMetas = {
         1: {
-            name: '추가 1: 30게임 완성형 100% 전수 커버리지팩',
-            shortName: '추가 1',
-            badge: '30-GAME KEYSTONE 100%',
+            name: '추가 1: 빈틈제로 팩 (10게임)',
+            shortName: '추가 1: 빈틈제로',
+            badge: 'ZERO-GAP 100%',
             color: '#10b981',
-            desc: '기본 20게임(V3+V4)의 누락 번호 100% 포섭 + 핫 앵커 직교 결합으로 30게임 무결점 포트폴리오 완성',
-            tag: '30게임 완성형 | 45개 번호 100% 전수 커버리지 | 핫 앵커 직교 결합'
+            desc: '기본 20게임(올라운더+수학퀀트)의 누락 번호 100% 포섭으로 사각지대 없는 30게임 완성 포트폴리오',
+            tag: '30게임 완성형 | 45개 번호 100% 전수 포섭 | 사각지대 제로'
         },
         2: {
-            name: '추가 2: 초고배당 EV 독점 수령팩',
-            shortName: '추가 2',
-            badge: 'HIGH EV MONOPOLY',
+            name: '추가 2: 슈퍼 잭팟 팩 (10게임)',
+            shortName: '추가 2: 슈퍼 잭팟',
+            badge: 'SUPER JACKPOT',
             color: '#f59e0b',
             desc: '30~45번대 고번호 + 2연번 집중으로 1등 당첨 시 1인 독점 수령금 극대화',
             tag: '초고배당 EV | 2연번 | 3040 고번호 집중'
         },
         3: {
-            name: '추가 3: 기하학적 휠링 하모닉팩',
-            shortName: '추가 3',
-            badge: 'HARMONIC WHEELING',
+            name: '추가 3: 멀티 히트 팩 (10게임)',
+            shortName: '추가 3: 멀티 히트',
+            badge: 'MULTI-HIT WHEEL',
             color: '#8b5cf6',
             desc: '45각형 5구간 대칭 분산형 휠링 매트릭스로 3~4등 다중 복수 적중 방어망 구축',
-            tag: '기하학적 휠링 | 5구간 균등 분산 | 4등 다중 적중'
+            tag: '기하학적 휠링 | 5구간 균등 분산 | 3·4등 다중 적중'
         },
         4: {
-            name: '추가 4: 마르코프 2차 전이 & 페어 부스터팩',
-            shortName: '추가 4',
-            badge: 'MARKOV 2ND & PAIR',
+            name: '추가 4: 흐름 부스터 팩 (10게임)',
+            shortName: '추가 4: 흐름 부스터',
+            badge: 'FLOW BOOSTER',
             color: '#06b6d4',
-            desc: '직전 회차 1/2차 마르코프 전이 확률 및 역대 최다 동반 출현 페어 듀오 집중 타격',
-            tag: '마르코프 2차 전이 | 최다 페어 듀오 | 핫 모멘텀'
+            desc: '직전 회차 1/2차 마르코프 전이 확률 및 역대 최다 동반 출현 최강 단짝 콤비 집중 타격',
+            tag: '마르코프 전이 모멘텀 | 최다 페어 듀오 | 핫 모멘텀'
         },
         5: {
-            name: '추가 5: 골든 클러스터 올인팩',
-            shortName: '추가 5',
-            badge: 'GOLDEN CLIQUE ALL-IN',
+            name: '추가 5: 트리오 마스터 팩 (10게임)',
+            shortName: '추가 5: 트리오 마스터',
+            badge: 'TRIO MASTER',
             color: '#ec4899',
-            desc: '역대 1등 추첨 데이터 최다 중복 출현 3수 고정틀(Golden Trios) 기반 마스터 조합',
-            tag: '역대 최다 동시 출현 3수 고정틀 | 마스터 클러스터'
+            desc: '역대 1등 추첨 데이터 최다 중복 출현 황금 3수 고정틀(Golden Trios) 기반 연쇄 당첨 마스터 조합',
+            tag: '역대 최다 동시 출현 3수 고정틀 | 연쇄 당첨 폭발력'
         }
     };
 
@@ -1466,8 +1466,8 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
         }
 
         const algorithmsMetadata = [
-            { algoId: 'v4', algoName: 'V4.0 행동경제학 포트폴리오 (10게임)', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6' },
-            { algoId: 'v3', algoName: 'V3.0 하이브리드 정통 수학 알고리즘 (10게임)', badge: 'HYBRID MATH', color: '#3b82f6' }
+            { algoId: 'v4', algoName: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#8b5cf6' },
+            { algoId: 'v3', algoName: '기본 2: 수학 퀀트 팩 (10게임)', badge: 'MATH QUANT', color: '#3b82f6' }
         ];
         for (let p = 1; p <= 5; p++) {
             if (extraPacks[p]) {

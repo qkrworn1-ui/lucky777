@@ -196,9 +196,9 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             ? state.fixedTop5Combinations_v3
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
         return {
-            versionLabel: 'V3.0 하이브리드',
+            versionLabel: '기본 2: 수학 퀀트 팩',
             badgeColor: '#3b82f6',
-            combos: v3Combos.map((c, i) => ({ ...c, customLabel: `V3-${alphabet[i] || (i + 1)}` })),
+            combos: v3Combos.map((c, i) => ({ ...c, customLabel: `수학퀀트-${alphabet[i] || (i + 1)}` })),
             effectiveUserId,
             targetRound,
             isLocked: false
@@ -208,9 +208,9 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             ? state.fixedTop5Combinations_v4
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
         return {
-            versionLabel: 'V4.0 행동경제학',
+            versionLabel: '기본 1: 올라운더 팩',
             badgeColor: '#10b981',
-            combos: v4Combos.map((c, i) => ({ ...c, customLabel: `V4-${alphabet[i] || (i + 1)}` })),
+            combos: v4Combos.map((c, i) => ({ ...c, customLabel: `올라운더-${alphabet[i] || (i + 1)}` })),
             effectiveUserId,
             targetRound,
             isLocked: false
@@ -250,8 +250,8 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
 
         const allCombos = [
-            ...v3Combos.map((c, i) => ({ ...c, customLabel: `V3-${alphabet[i] || (i + 1)}`, groupTag: 'V3.0 하이브리드 (10조합)' })),
-            ...v4Combos.map((c, i) => ({ ...c, customLabel: `V4-${alphabet[i] || (i + 1)}`, groupTag: 'V4.0 행동경제학 (10조합)' }))
+            ...v3Combos.map((c, i) => ({ ...c, customLabel: `수학퀀트-${alphabet[i] || (i + 1)}`, groupTag: '기본 2: 수학 퀀트 팩 (10조합)' })),
+            ...v4Combos.map((c, i) => ({ ...c, customLabel: `올라운더-${alphabet[i] || (i + 1)}`, groupTag: '기본 1: 올라운더 팩 (10조합)' }))
         ];
 
         // Include all 5 Booster Add-on packs ONLY if eligible
