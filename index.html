@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.03.1315.58">
+    <link rel="stylesheet" href="styles.css?v=2026.10.03.1323.35">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.03.1315.58
+                        v2026.10.03.1323.35
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -170,7 +170,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.03.1315.58 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.03.1323.35 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -606,7 +606,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.03.1315.58
+                                v2026.10.03.1323.35
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -2067,7 +2067,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.03.1315.58
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.03.1323.35
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3777,6 +3777,31 @@
         </div>
     </div>
 
+    <!-- 📲 PWA App Install Guide Modal (카카오톡, 삼성인터넷, 크롬, 사파리 맞춤형 안내) -->
+    <div id="pwaInstallGuideModal" class="modal-overlay" onclick="if(event.target===this) window.closePwaInstallModal && window.closePwaInstallModal()" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 10, 20, 0.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 100000; align-items: center; justify-content: center; padding: 14px; box-sizing: border-box;">
+        <div class="modal-content" style="max-width: 440px; width: 100%; background: linear-gradient(155deg, #0f172a 0%, #070d18 100%); border: 1.5px solid rgba(251, 191, 36, 0.45); border-radius: 20px; box-shadow: 0 25px 60px -12px rgba(0,0,0,0.9), 0 0 25px rgba(251, 191, 36, 0.2); overflow: hidden; display: flex; flex-direction: column;">
+            <!-- Modal Header -->
+            <div style="background: rgba(15, 23, 42, 0.95); padding: 16px 20px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.25rem;">📲</span>
+                    <span id="pwaModalHeaderTitle" style="color: #f8fafc; font-weight: 800; font-size: 1.05rem;">홈 화면 앱(PWA) 설치 안내</span>
+                </div>
+                <button type="button" onclick="window.closePwaInstallModal && window.closePwaInstallModal()" style="background: rgba(255,255,255,0.08); border: none; color: #94a3b8; font-size: 1rem; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s;">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <!-- Modal Body (Dynamic Environment-specific UI) -->
+            <div id="pwaModalBodyContent" style="padding: 20px; color: #cbd5e1; font-size: 0.9rem; line-height: 1.6; max-height: 75vh; overflow-y: auto;">
+            </div>
+            <!-- Modal Footer -->
+            <div style="padding: 12px 20px; background: rgba(15, 23, 42, 0.95); border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="window.closePwaInstallModal && window.closePwaInstallModal()" class="btn-secondary" style="padding: 8px 18px; border-radius: 8px; border: 1px solid #475569; background: rgba(30, 41, 59, 0.8); color: #cbd5e1; font-size: 0.88rem; font-weight: 700; cursor: pointer;">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase SDK (v8.10.1) -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -4070,7 +4095,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.03.1315.58';
+        window.APP_VERSION = 'v2026.10.03.1323.35';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4141,7 +4166,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.03.1315.58';
+            var v = ver || window.APP_VERSION || 'v2026.10.03.1323.35';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4398,7 +4423,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.03.1315.58';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.03.1323.35';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4536,7 +4561,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.03.1315.58')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.03.1323.35')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -4566,15 +4591,190 @@
             if (btnPwa) btnPwa.style.display = 'inline-flex';
         });
 
-        window.installPwaApp = async function() {
-            if (deferredInstallPrompt) {
-                deferredInstallPrompt.prompt();
-                var result = await deferredInstallPrompt.userChoice;
-                console.log('[PWA Install Outcome]:', result.outcome);
-                deferredInstallPrompt = null;
+        window.openPwaInstallGuideModal = function() {
+            var modal = document.getElementById('pwaInstallGuideModal');
+            var body = document.getElementById('pwaModalBodyContent');
+            var headerTitle = document.getElementById('pwaModalHeaderTitle');
+            if (!modal || !body) return;
+
+            var ua = navigator.userAgent || '';
+            var isKakao = /KAKAOTALK/i.test(ua);
+            var isSamsung = /SamsungBrowser/i.test(ua);
+            var isIOS = /iPhone|iPad|iPod/i.test(ua);
+            var isChrome = /Chrome/i.test(ua) && !isSamsung && !isKakao && !/Edge|Edg|Whale/i.test(ua);
+
+            var html = '';
+
+            if (isKakao) {
+                if (headerTitle) headerTitle.textContent = '카카오톡 앱 설치 안내';
+                html = '<div style="text-align: center; margin-bottom: 18px;">' +
+                    '<div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(254, 229, 0, 0.15); border: 1px solid rgba(254, 229, 0, 0.4); color: #fde047; padding: 5px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 800; margin-bottom: 12px;">' +
+                        '<i class="fa-solid fa-comment"></i> 카카오톡 인앱 브라우저 감지' +
+                    '</div>' +
+                    '<div style="font-weight: 800; font-size: 1.05rem; color: #ffffff; margin-bottom: 8px;">' +
+                        '외부 브라우저에서 1초 만에 설치할 수 있습니다' +
+                    '</div>' +
+                    '<div style="font-size: 0.84rem; color: #94a3b8; line-height: 1.55;">' +
+                        '카카오톡 내부에서는 보안 정책상 홈 화면 바로가기/앱 설치가 제한됩니다.<br>' +
+                        '아래 버튼을 눌러 <strong>크롬 또는 삼성인터넷</strong>으로 열면 즉시 설치가 가능합니다.' +
+                    '</div>' +
+                '</div>' +
+                '<button type="button" onclick="window.openInExternalBrowser && window.openInExternalBrowser()" style="width: 100%; padding: 13px; border-radius: 12px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; font-size: 0.95rem; font-weight: 900; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4); margin-bottom: 16px;">' +
+                    '<i class="fa-solid fa-arrow-up-right-from-square"></i> 크롬 / 삼성인터넷으로 열기' +
+                '</button>' +
+                '<div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px 14px; font-size: 0.82rem; color: #cbd5e1;">' +
+                    '<div style="font-weight: 800; color: #fde047; margin-bottom: 4px;">' +
+                        '<i class="fa-solid fa-hand-pointer"></i> 수동으로 여는 방법:' +
+                    '</div>' +
+                    '화면 우측 상단(또는 하단) <strong>[ ⋮ 또는 ⋯ ]</strong> 메뉴 ➔ <strong>[다른 브라우저로 열기]</strong>를 누르시면 됩니다.' +
+                '</div>';
+            } else if (isSamsung) {
+                if (headerTitle) headerTitle.textContent = '삼성인터넷 앱 설치 안내';
+                html = '<div style="text-align: center; margin-bottom: 16px;">' +
+                    '<div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; padding: 5px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 800; margin-bottom: 10px;">' +
+                        '<i class="fa-solid fa-compass"></i> 삼성인터넷 (Galaxy)' +
+                    '</div>' +
+                    '<div style="font-weight: 800; font-size: 1.05rem; color: #ffffff; margin-bottom: 6px;">' +
+                        '홈 화면에 앱을 추가하는 2가지 방법' +
+                    '</div>' +
+                    '<div style="font-size: 0.84rem; color: #94a3b8;">' +
+                        '바탕화면에 아이콘을 추가하면 별도 로그인 없이 1초 접속이 가능합니다.' +
+                    '</div>' +
+                '</div>' +
+                '<div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">' +
+                    '<div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid rgba(16, 185, 129, 0.4); border-radius: 14px; padding: 14px;">' +
+                        '<div style="font-weight: 900; color: #34d399; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">' +
+                            '<i class="fa-solid fa-bolt"></i> 방법 1. 주소창 설치 아이콘 (가장 빠름 ⚡)' +
+                        '</div>' +
+                        '<div style="font-size: 0.84rem; color: #f1f5f9; line-height: 1.55;">' +
+                            '화면 상단 <strong>주소창(URL) 오른쪽의 [ ⬇️ (다운로드) 또는 + ]</strong> 아이콘을 누르면 즉시 앱이 설치됩니다.' +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px;">' +
+                        '<div style="font-weight: 900; color: #fbbf24; font-size: 0.9rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">' +
+                            '<i class="fa-solid fa-bars"></i> 방법 2. 하단 툴바 메뉴 이용' +
+                        '</div>' +
+                        '<div style="font-size: 0.84rem; color: #cbd5e1; line-height: 1.55;">' +
+                            '화면 우측 하단의 <strong>[ ≡ ]</strong> 메뉴 ➔ <strong>[현재 페이지 추가]</strong> ➔ <strong>[홈 화면]</strong>을 선택하세요.' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+            } else if (isIOS && !isChrome) {
+                if (headerTitle) headerTitle.textContent = '아이폰 사파리 앱 추가 안내';
+                html = '<div style="text-align: center; margin-bottom: 16px;">' +
+                    '<div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; padding: 5px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 800; margin-bottom: 10px;">' +
+                        '<i class="fa-brands fa-apple"></i> 아이폰 / 아이패드 Safari' +
+                    '</div>' +
+                    '<div style="font-weight: 800; font-size: 1.05rem; color: #ffffff; margin-bottom: 6px;">' +
+                        '홈 화면에 바로가기 앱 추가' +
+                    '</div>' +
+                    '<div style="font-size: 0.84rem; color: #94a3b8;">' +
+                        '사파리 브라우저 기능을 통해 홈 화면에 아이콘을 추가할 수 있습니다.' +
+                    '</div>' +
+                '</div>' +
+                '<div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 16px; margin-bottom: 16px;">' +
+                    '<div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">' +
+                        '<span style="background: #38bdf8; color: #0f172a; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.8rem; flex-shrink: 0;">1</span>' +
+                        '<span style="font-size: 0.88rem; color: #f1f5f9; line-height: 1.5;">사파리 화면 하단 중앙의 <strong>공유 버튼 [ <i class="fa-solid fa-arrow-up-from-bracket" style="color: #38bdf8;"></i> ]</strong>을 터치합니다.</span>' +
+                    '</div>' +
+                    '<div style="display: flex; align-items: flex-start; gap: 12px;">' +
+                        '<span style="background: #38bdf8; color: #0f172a; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.8rem; flex-shrink: 0;">2</span>' +
+                        '<span style="font-size: 0.88rem; color: #f1f5f9; line-height: 1.5;">메뉴 목록을 내려 <strong>[ 홈 화면에 추가 ⊞ ]</strong> 선택 후 우측 상단의 <strong>[추가]</strong>를 누릅니다.</span>' +
+                    '</div>' +
+                '</div>';
             } else {
-                alert('📱 [스마트폰 홈 화면에 앱 추가 방법]\n\n• 사파리(아이폰): 화면 하단 공유 버튼 [↑] ➔ [홈 화면에 추가] 선택\n• 크롬 / 삼성인터넷: 화면 상단 메뉴 [⋮] ➔ [앱 설치] 또는 [홈 화면에 추가] 선택');
+                // Chrome or standard PWA browsers
+                if (headerTitle) headerTitle.textContent = '크롬 브라우저 앱 설치 안내';
+                html = '<div style="text-align: center; margin-bottom: 16px;">' +
+                    '<div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; padding: 5px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 800; margin-bottom: 10px;">' +
+                        '<i class="fa-brands fa-chrome"></i> 크롬 (Chrome) 브라우저' +
+                    '</div>' +
+                    '<div style="font-weight: 800; font-size: 1.05rem; color: #ffffff; margin-bottom: 6px;">' +
+                        '스마트폰 바탕화면에 앱을 추가하세요' +
+                    '</div>' +
+                    '<div style="font-size: 0.84rem; color: #94a3b8;">' +
+                        '바탕화면의 바로가기 아이콘을 통해 전체 화면 앱으로 언제든 접속할 수 있습니다.' +
+                    '</div>' +
+                '</div>' +
+                '<div style="background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 16px; margin-bottom: 16px;">' +
+                    '<div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px;">' +
+                        '<span style="background: #fbbf24; color: #0f172a; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.8rem; flex-shrink: 0;">1</span>' +
+                        '<span style="font-size: 0.88rem; color: #f1f5f9; line-height: 1.5;">화면 우측 상단 <strong>메뉴 [ ⋮ ]</strong> (점 3개)를 터치합니다.</span>' +
+                    '</div>' +
+                    '<div style="display: flex; align-items: flex-start; gap: 12px;">' +
+                        '<span style="background: #fbbf24; color: #0f172a; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.8rem; flex-shrink: 0;">2</span>' +
+                        '<span style="font-size: 0.88rem; color: #f1f5f9; line-height: 1.5;">메뉴 중 <strong>[앱 설치]</strong> 또는 <strong>[홈 화면에 추가]</strong>를 터치합니다.</span>' +
+                    '</div>' +
+                '</div>' +
+                '<div style="font-size: 0.8rem; color: #94a3b8; text-align: center;">' +
+                    '💡 데스크톱(PC)인 경우 주소창 오른쪽의 [ ⊕ 설치 ] 아이콘을 누르시면 됩니다.' +
+                '</div>';
             }
+
+            body.innerHTML = html;
+            modal.style.display = 'flex';
+        };
+
+        window.closePwaInstallModal = function() {
+            var modal = document.getElementById('pwaInstallGuideModal');
+            if (modal) modal.style.display = 'none';
+        };
+
+        window.openInExternalBrowser = function(targetUrl) {
+            var url = targetUrl || window.location.href;
+            var cleanUrl = url.replace(/https?:\/\//i, '');
+            var isAndroid = /Android/i.test(navigator.userAgent);
+
+            if (isAndroid) {
+                // 1. Android Intent: Opens default browser (Samsung Internet / Chrome)
+                var intentUrl = 'intent://' + cleanUrl + '#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end;';
+                window.location.href = intentUrl;
+
+                // 2. KakaoTalk web open external fallback
+                setTimeout(function() {
+                    window.location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url);
+                }, 350);
+            } else {
+                // iOS: open in external Safari
+                window.location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url);
+            }
+        };
+
+        window.installPwaApp = async function() {
+            var isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                               window.navigator.standalone === true || 
+                               document.referrer.includes('android-app://');
+
+            // 1. 이미 홈 화면 PWA로 설치되어 실행 중인 경우
+            if (isStandalone) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast('🎉 이미 스마트폰 홈 화면에 앱이 설치되어 실행 중입니다!');
+                } else {
+                    alert('🎉 [설치 완료 안내]\n\n이미 스마트폰 홈 화면에 운도실력 777 앱이 설치되어 앱 모드로 실행 중입니다.');
+                }
+                return;
+            }
+
+            // 2. 브라우저 네이티브 설치 프롬프트가 대기 중인 경우 (크롬, 삼성인터넷 등)
+            if (deferredInstallPrompt) {
+                try {
+                    deferredInstallPrompt.prompt();
+                    var choice = await deferredInstallPrompt.userChoice;
+                    console.log('[PWA Install Outcome]:', choice.outcome);
+                    if (choice.outcome === 'accepted') {
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('🎉 앱 설치가 시작되었습니다. 홈 화면을 확인해주세요!');
+                        }
+                    }
+                    deferredInstallPrompt = null;
+                    return;
+                } catch (e) {
+                    console.warn('[PWA Prompt Error, showing guide modal]:', e);
+                }
+            }
+
+            // 3. 네이티브 프롬프트가 없거나(카카오톡, 사파리, 프롬프트 소진된 삼성인터넷/크롬 등), 맞춤 안내 모달 오픈
+            window.openPwaInstallGuideModal();
         };
 
         window.downloadUserManual = async function(e) {
@@ -4614,8 +4814,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.03.1315.58"></script>
-    <script src="app_v2.js?v=2026.10.03.1315.58"></script>
+    <script src="data.js?v=2026.10.03.1323.35"></script>
+    <script src="app_v2.js?v=2026.10.03.1323.35"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
