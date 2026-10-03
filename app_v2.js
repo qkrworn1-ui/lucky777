@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1135 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1204 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1135)
+ * Lucky777 Smart Bundle (v2026.10.03.1204)
  */
 
 
@@ -29806,6 +29806,47 @@ const { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGe
 let currentQuickAlgo = 'v4'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
 let quickViewWakeLock = null;
 let isWakeLockUserDisabled = false;
+let currentSlipPage = 1;
+const markedComboKeys = new Set();
+
+/**
+ * Switch Slip Page in Quick View (1 = 1장, 2 = 2장...)
+ */
+function switchQuickViewSlipPage(page) {
+    const quickData = getQuickCombos(currentQuickAlgo);
+    const totalCombos = (quickData && quickData.combos) ? quickData.combos.length : 10;
+    const totalPages = Math.max(1, Math.ceil(totalCombos / 5));
+
+    let targetPage = page;
+    if (targetPage < 1) targetPage = 1;
+    if (targetPage > totalPages) targetPage = totalPages;
+
+    currentSlipPage = targetPage;
+    renderQuickViewContent();
+}
+
+/**
+ * Toggle Marking State for a combination row (Option 3 touch-to-mark)
+ */
+function toggleQuickViewMarkCombo(markKey) {
+    if (markedComboKeys.has(markKey)) {
+        markedComboKeys.delete(markKey);
+    } else {
+        markedComboKeys.add(markKey);
+    }
+    renderQuickViewContent();
+}
+
+/**
+ * Reset all marked checks in Quick View
+ */
+function resetQuickViewMarks() {
+    markedComboKeys.clear();
+    renderQuickViewContent();
+    if (typeof showToast === 'function') {
+        showToast('🔄 마킹 체크가 초기화되었습니다.');
+    }
+}
 
 /**
  * Acquire Screen Wake Lock to prevent mobile screen from sleeping during quick view
@@ -30075,6 +30116,7 @@ function openCompactView(algo = null) {
         currentQuickAlgo = 'v4';
     }
 
+    currentSlipPage = 1;
     updateQuickViewAlgoButtons();
     renderQuickViewContent();
 
@@ -30126,6 +30168,7 @@ function switchQuickViewAlgo(algo) {
     }
 
     currentQuickAlgo = algo;
+    currentSlipPage = 1;
     updateQuickViewAlgoButtons();
     renderQuickViewContent();
 
@@ -30198,7 +30241,7 @@ function updateQuickViewAlgoButtons() {
 }
 
 /**
- * Render Modal Content based on Current Algorithm
+ * Render Modal Content based on Current Algorithm and 5-Combo Slip Pagination
  */
 function renderQuickViewContent() {
     const quickData = getQuickCombos(currentQuickAlgo);
@@ -30206,8 +30249,14 @@ function renderQuickViewContent() {
 
     const markingGrid = document.getElementById('compactMarkingGrid');
     const titleSub = document.getElementById('quickViewSubTitle');
+    const slipNav = document.getElementById('quickViewSlipNav');
+    const slipGuidance = document.getElementById('quickViewSlipGuidance');
+    const slipBottomAction = document.getElementById('quickViewSlipBottomAction');
 
     if (isLocked) {
+        if (slipNav) slipNav.innerHTML = '';
+        if (slipGuidance) slipGuidance.innerHTML = '';
+        if (slipBottomAction) slipBottomAction.innerHTML = '';
         if (markingGrid) {
             markingGrid.innerHTML = `
                 <div style="text-align: center; padding: 36px 16px; background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 1.5px solid rgba(251, 191, 36, 0.4); border-radius: 12px; margin: 12px 0;">
@@ -30233,32 +30282,110 @@ function renderQuickViewContent() {
         return;
     }
 
-    // 1. Grid Mode Rendering
-    let gridHtml = '';
-    let lastRenderedGroup = '';
+    const totalCombos = combos ? combos.length : 0;
+    const totalPages = Math.max(1, Math.ceil(totalCombos / 5));
 
-    combos.forEach((combo, idx) => {
-        if (combo.groupTag && combo.groupTag !== lastRenderedGroup) {
-            lastRenderedGroup = combo.groupTag;
-            gridHtml += `
-                <div style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 800; color: #fbbf24; margin-top: 6px; display: flex; align-items: center; gap: 4px;">
-                    <i class="fa-solid fa-circle-notch"></i> ${lastRenderedGroup}
+    if (currentSlipPage > totalPages) currentSlipPage = 1;
+    if (currentSlipPage < 1) currentSlipPage = 1;
+
+    const startIdx = (currentSlipPage - 1) * 5;
+    const pageCombos = combos.slice(startIdx, startIdx + 5);
+
+    // 1. Slip Navigation Tabs Render
+    if (slipNav) {
+        if (totalPages === 2) {
+            slipNav.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+                    <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.35); padding: 3px; border-radius: 9px; border: 1px solid rgba(255,255,255,0.08); flex: 1;">
+                        <button type="button" onclick="window.switchQuickViewSlipPage(1)" style="flex: 1; padding: 7px 4px; font-size: 0.77rem; font-weight: ${currentSlipPage === 1 ? '800' : '600'}; border-radius: 7px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s; background: ${currentSlipPage === 1 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'transparent'}; color: ${currentSlipPage === 1 ? '#0f172a' : '#94a3b8'}; box-shadow: ${currentSlipPage === 1 ? '0 2px 6px rgba(245,158,11,0.35)' : 'none'};">
+                            <i class="fa-solid fa-file-lines"></i> 📄 제 1장 (A~E)
+                        </button>
+                        <button type="button" onclick="window.switchQuickViewSlipPage(2)" style="flex: 1; padding: 7px 4px; font-size: 0.77rem; font-weight: ${currentSlipPage === 2 ? '800' : '600'}; border-radius: 7px; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s; background: ${currentSlipPage === 2 ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'transparent'}; color: ${currentSlipPage === 2 ? '#0f172a' : '#94a3b8'}; box-shadow: ${currentSlipPage === 2 ? '0 2px 6px rgba(245,158,11,0.35)' : 'none'};">
+                            <i class="fa-solid fa-file-lines"></i> 📄 제 2장 (F~J)
+                        </button>
+                    </div>
+                    <button type="button" onclick="window.resetQuickViewMarks()" title="마킹 체크 전체 초기화" style="padding: 7px 9px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #94a3b8; font-size: 0.72rem; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                        <i class="fa-solid fa-rotate-left"></i> 초기화
+                    </button>
+                </div>
+            `;
+        } else {
+            slipNav.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; background: rgba(0,0,0,0.35); padding: 5px 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
+                    <button type="button" onclick="window.switchQuickViewSlipPage(${currentSlipPage - 1})" ${currentSlipPage <= 1 ? 'disabled style="opacity: 0.3; cursor: not-allowed; padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: #64748b; font-size: 0.72rem;"' : 'style="cursor: pointer; padding: 6px 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #cbd5e1; font-size: 0.72rem; font-weight: 700;"'}>
+                        <i class="fa-solid fa-chevron-left"></i> 이전 장
+                    </button>
+                    <div style="text-align: center;">
+                        <span style="font-size: 0.8rem; font-weight: 800; color: #fbbf24; display: block;">
+                            📄 제 ${currentSlipPage}장 / 총 ${totalPages}장
+                        </span>
+                        <span style="font-size: 0.68rem; color: #94a3b8;">
+                            (${startIdx + 1}~${Math.min(startIdx + 5, totalCombos)}게임 마킹)
+                        </span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <button type="button" onclick="window.switchQuickViewSlipPage(${currentSlipPage + 1})" ${currentSlipPage >= totalPages ? 'disabled style="opacity: 0.3; cursor: not-allowed; padding: 6px 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; color: #64748b; font-size: 0.72rem;"' : 'style="cursor: pointer; padding: 6px 10px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #cbd5e1; font-size: 0.72rem; font-weight: 700;"'}>
+                            다음 장 <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                        <button type="button" onclick="window.resetQuickViewMarks()" title="마킹 체크 초기화" style="padding: 6px 8px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #94a3b8; font-size: 0.7rem; cursor: pointer;">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+                    </div>
                 </div>
             `;
         }
+    }
 
-        const label = combo.customLabel || `${idx + 1}`;
+    // 2. Guidance Banner
+    if (slipGuidance) {
+        const isSecondSlip = currentSlipPage === 2;
+        slipGuidance.innerHTML = `
+            <div style="padding: 4px 8px; border-radius: 7px; background: ${isSecondSlip ? 'rgba(59, 130, 246, 0.1)' : 'rgba(255,255,255,0.04)'}; border: 1px solid ${isSecondSlip ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255,255,255,0.07)'}; display: flex; justify-content: space-between; align-items: center; font-size: 0.7rem;">
+                <span style="color: ${isSecondSlip ? '#93c5fd' : '#94a3b8'}; display: flex; align-items: center; gap: 4px;">
+                    <i class="fa-solid ${isSecondSlip ? 'fa-circle-info' : 'fa-hand-pointer'}" style="color: ${isSecondSlip ? '#60a5fa' : '#10b981'};"></i>
+                    ${isSecondSlip ? '새 로또 용지의 <strong>A, B, C, D, E</strong> 칸에 마킹하세요.' : '마킹한 줄을 터치하면 완료(흐림) 체크됩니다.'}
+                </span>
+                <span style="font-weight: 700; color: #fbbf24;">
+                    5,000원 (5게임)
+                </span>
+            </div>
+        `;
+    }
+
+    // 3. Grid Mode Rendering (5 Combos for current slip page)
+    let gridHtml = '';
+    pageCombos.forEach((combo, idx) => {
+        const actualIdx = startIdx + idx;
+        const markKey = `${currentQuickAlgo}_${actualIdx}`;
+        const isMarked = markedComboKeys.has(markKey);
+        const slotLetter = ['A', 'B', 'C', 'D', 'E'][idx] || `${idx + 1}`;
+        const originalLabel = combo.customLabel || `${actualIdx + 1}번`;
         const nums = getComboNumbers(combo);
+
         const ballsHtml = nums.map(n => {
             const bgColor = getBallHexColor(n);
             const textColor = n <= 10 ? '#0f172a' : '#ffffff';
-            return `<span class="lotto-ball sm-ball ${getBallColorClass(n)}" style="background: ${bgColor}; width: 28px; height: 28px; line-height: 28px; text-align: center; border-radius: 50%; color: ${textColor}; font-size: 0.78rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.35); flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
+            return `<span class="lotto-ball sm-ball ${getBallColorClass(n)}" style="background: ${bgColor}; width: 29px; height: 29px; line-height: 29px; text-align: center; border-radius: 50%; color: ${textColor}; font-size: 0.8rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.35); flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
         }).join('');
 
         gridHtml += `
-            <div class="quick-view-row" style="display: grid; grid-template-columns: 85px 1fr; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 6px 4px; gap: 8px;">
-                <span style="font-weight: 800; color: #fbbf24; font-size: 0.78rem; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${label}</span>
-                <div class="balls-row" style="display: inline-flex; gap: 5px; justify-content: flex-end; align-items: center; flex-wrap: nowrap; flex-shrink: 0;">
+            <div onclick="window.toggleQuickViewMarkCombo('${markKey}')" 
+                 class="quick-view-row ${isMarked ? 'marked-done' : ''}" 
+                 style="display: flex; align-items: center; justify-content: space-between; padding: 7px 9px; border-radius: 9px; cursor: pointer; transition: all 0.2s; background: ${isMarked ? 'rgba(16, 185, 129, 0.08)' : 'rgba(30, 41, 59, 0.75)'}; border: 1px solid ${isMarked ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.07)'}; opacity: ${isMarked ? '0.45' : '1'};">
+                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                    <span style="width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.78rem; background: ${isMarked ? '#10b981' : 'rgba(251, 191, 36, 0.18)'}; color: ${isMarked ? '#0f172a' : '#fbbf24'}; border: 1px solid ${isMarked ? '#10b981' : 'rgba(251, 191, 36, 0.4)'}; flex-shrink: 0;">
+                        ${isMarked ? '<i class="fa-solid fa-check" style="font-size: 0.75rem;"></i>' : slotLetter}
+                    </span>
+                    <div style="display: flex; flex-direction: column; min-width: 0;">
+                        <span style="font-weight: 800; font-size: 0.76rem; color: ${isMarked ? '#34d399' : '#e2e8f0'}; white-space: nowrap; ${isMarked ? 'text-decoration: line-through;' : ''}">
+                            ${isMarked ? '마킹 완료' : originalLabel}
+                        </span>
+                        <span style="font-size: 0.67rem; color: #94a3b8; white-space: nowrap;">
+                            ${isMarked ? originalLabel : (currentSlipPage > 1 ? `용지 ${slotLetter}열 (${originalLabel})` : `용지 ${slotLetter}열`)}
+                        </span>
+                    </div>
+                </div>
+                <div class="balls-row" style="display: inline-flex; gap: 4px; justify-content: flex-end; align-items: center; flex-wrap: nowrap; flex-shrink: 0;">
                     ${ballsHtml}
                 </div>
             </div>
@@ -30267,8 +30394,32 @@ function renderQuickViewContent() {
 
     if (markingGrid) markingGrid.innerHTML = gridHtml;
 
+    // 4. Bottom Quick-Action Navigation
+    if (slipBottomAction) {
+        if (totalPages >= 2) {
+            if (currentSlipPage < totalPages) {
+                const nextLabel = currentSlipPage === 1 ? '제 2장(F~J)' : `제 ${currentSlipPage + 1}장`;
+                slipBottomAction.innerHTML = `
+                    <button type="button" onclick="window.switchQuickViewSlipPage(${currentSlipPage + 1})" style="width: 100%; padding: 10px 14px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; border-radius: 9px; color: #0f172a; font-weight: 900; font-size: 0.84rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 3px 10px rgba(245, 158, 11, 0.35); transition: all 0.2s;">
+                        <span>제 ${currentSlipPage}장 마킹 완료 ➔ ${nextLabel} 넘어가기</span>
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                `;
+            } else {
+                slipBottomAction.innerHTML = `
+                    <button type="button" onclick="window.switchQuickViewSlipPage(1)" style="width: 100%; padding: 9px 14px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255,255,255,0.12); border-radius: 9px; color: #cbd5e1; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+                        <i class="fa-solid fa-rotate-left text-xs"></i>
+                        <span>제 1장(A~E) 처음으로 돌아가기</span>
+                    </button>
+                `;
+            }
+        } else {
+            slipBottomAction.innerHTML = '';
+        }
+    }
+
     if (titleSub) {
-        titleSub.innerHTML = `<span style="color: #fbbf24; font-weight: 800;">[${(effectiveUserId || 'guest').toUpperCase()}] 회원 전용 배정</span> · 제 <strong>${targetRound}</strong>회차 · ${versionLabel} (${combos.length}조합)`;
+        titleSub.innerHTML = `<span style="color: #fbbf24; font-weight: 800;">[${(effectiveUserId || 'guest').toUpperCase()}] 회원</span> · 제 <strong>${targetRound}</strong>회차 · ${versionLabel} (${currentSlipPage}/${totalPages}장)`;
     }
 }
 
@@ -30321,6 +30472,9 @@ function setupQuickView() {
         window.releaseQuickViewWakeLock = releaseQuickViewWakeLock;
         window.toggleQuickViewWakeLock = toggleQuickViewWakeLock;
         window.updateWakeLockUI = updateWakeLockUI;
+        window.switchQuickViewSlipPage = switchQuickViewSlipPage;
+        window.toggleQuickViewMarkCombo = toggleQuickViewMarkCombo;
+        window.resetQuickViewMarks = resetQuickViewMarks;
     }
 }
 
@@ -30337,6 +30491,9 @@ if (typeof window !== 'undefined') {
     window.releaseQuickViewWakeLock = releaseQuickViewWakeLock;
     window.toggleQuickViewWakeLock = toggleQuickViewWakeLock;
     window.updateWakeLockUI = updateWakeLockUI;
+    window.switchQuickViewSlipPage = switchQuickViewSlipPage;
+    window.toggleQuickViewMarkCombo = toggleQuickViewMarkCombo;
+    window.resetQuickViewMarks = resetQuickViewMarks;
 
     if (typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', async () => {
@@ -30348,6 +30505,18 @@ if (typeof window !== 'undefined') {
     }
 }
 
+        if (typeof switchQuickViewSlipPage !== 'undefined') {
+            __exports.switchQuickViewSlipPage = switchQuickViewSlipPage;
+            if (typeof window !== 'undefined') window.switchQuickViewSlipPage = switchQuickViewSlipPage;
+        }
+        if (typeof toggleQuickViewMarkCombo !== 'undefined') {
+            __exports.toggleQuickViewMarkCombo = toggleQuickViewMarkCombo;
+            if (typeof window !== 'undefined') window.toggleQuickViewMarkCombo = toggleQuickViewMarkCombo;
+        }
+        if (typeof resetQuickViewMarks !== 'undefined') {
+            __exports.resetQuickViewMarks = resetQuickViewMarks;
+            if (typeof window !== 'undefined') window.resetQuickViewMarks = resetQuickViewMarks;
+        }
         if (typeof acquireQuickViewWakeLock !== 'undefined') {
             __exports.acquireQuickViewWakeLock = acquireQuickViewWakeLock;
             if (typeof window !== 'undefined') window.acquireQuickViewWakeLock = acquireQuickViewWakeLock;
