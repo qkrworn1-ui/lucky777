@@ -10684,36 +10684,57 @@ html, body {
     }
 }
 
-/* Mobile Responsive Fit for Manual Ledger & QR Scanner Modal */
-@media (max-width: 640px) {
+/* Mobile Full-Screen Responsive Fit for Manual Ledger & QR Scanner Modal (Fold 7 & All Smartphone Models) */
+@media (max-width: 768px) {
     #manualLedgerModal {
-        padding: 10px !important;
-        align-items: center !important;
-        justify-content: center !important;
+        padding: 0 !important;
+        width: 100vw !important;
+        width: 100dvw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        align-items: stretch !important;
+        justify-content: flex-start !important;
+        border-radius: 0 !important;
     }
     
     #manualLedgerModal .modal-content {
-        max-height: 92vh !important;
-        max-height: 92dvh !important;
-        border-radius: 14px !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        margin: 0 auto !important;
+        width: 100vw !important;
+        width: 100dvw !important;
+        max-width: 100vw !important;
+        max-width: 100dvw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        max-height: 100vh !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        background: linear-gradient(155deg, #0b1120 0%, #030712 100%) !important;
     }
     
     #manualLedgerModal .modal-header {
-        padding: 12px 16px !important;
+        padding: max(10px, env(safe-area-inset-top)) 14px 10px 14px !important;
+        border-radius: 0 !important;
+        flex-shrink: 0 !important;
+        background: rgba(15, 23, 42, 0.98) !important;
     }
     
     #manualLedgerModal .modal-header h2 {
-        font-size: 1.08rem !important;
+        font-size: 1.05rem !important;
         font-weight: 800 !important;
     }
     
     #manualLedgerModal .modal-body {
-        padding: 12px 14px !important;
+        padding: 10px 12px !important;
+        flex: 1 1 auto !important;
         overflow-y: auto !important;
-        gap: 10px !important;
+        -webkit-overflow-scrolling: touch !important;
+        gap: 8px !important;
     }
     
     #manualLedgerModal .modal-body p {
@@ -10724,14 +10745,14 @@ html, body {
     
     #manualLedgerRound, #manualLedgerVersion {
         padding: 6px 10px !important;
-        font-size: 0.9rem !important;
-        height: 40px !important;
+        font-size: 0.88rem !important;
+        height: 38px !important;
         border-radius: 8px !important;
     }
 
     #btnOpenQrScanner {
         padding: 8px 12px !important;
-        font-size: 0.9rem !important;
+        font-size: 0.88rem !important;
         height: 42px !important;
         border-radius: 8px !important;
         font-weight: 800 !important;
@@ -10739,17 +10760,16 @@ html, body {
 
     #qrScannerContainer {
         margin-top: 0px !important;
-        margin-bottom: 8px !important;
-        padding: 8px 10px !important;
-        border-radius: 10px !important;
+        margin-bottom: 6px !important;
+        padding: 6px !important;
+        border-radius: 12px !important;
     }
 
     #qrReader {
         width: 100% !important;
         max-width: 100% !important;
-        height: 220px !important;
+        height: 100% !important;
         min-height: 180px !important;
-        max-height: 240px !important;
         margin: 0 auto !important;
         border-radius: 8px !important;
         overflow: hidden !important;
@@ -10758,16 +10778,15 @@ html, body {
     #qrReader video {
         width: 100% !important;
         height: 100% !important;
-        max-height: 240px !important;
         object-fit: cover !important;
         border-radius: 8px !important;
     }
 
     #btnStopQrScanner {
-        margin-top: 8px !important;
-        padding: 6px 10px !important;
-        font-size: 0.82rem !important;
-        height: 34px !important;
+        margin-top: 0px !important;
+        padding: 4px 10px !important;
+        font-size: 0.76rem !important;
+        height: 30px !important;
         border-radius: 6px !important;
     }
 
@@ -10782,8 +10801,11 @@ html, body {
     }
 
     #manualLedgerModal .modal-footer {
-        padding: 10px 14px !important;
+        padding: 10px 14px max(12px, env(safe-area-inset-bottom)) 14px !important;
+        border-radius: 0 !important;
+        flex-shrink: 0 !important;
         gap: 8px !important;
+        background: rgba(11, 16, 30, 0.98) !important;
     }
 
     #manualLedgerModal .modal-footer button {
@@ -10791,6 +10813,23 @@ html, body {
         font-size: 0.92rem !important;
         height: 44px !important;
         border-radius: 8px !important;
+    }
+}
+
+@media (max-width: 380px) {
+    #manualLedgerModal .modal-body {
+        padding: 8px 10px !important;
+        gap: 7px !important;
+    }
+    #manualLedgerModal .modal-header {
+        padding: max(8px, env(safe-area-inset-top)) 10px 8px 10px !important;
+    }
+    #manualLedgerModal .modal-footer {
+        padding: 8px 10px max(10px, env(safe-area-inset-bottom)) 10px !important;
+    }
+    #manualLedgerModal .modal-footer button {
+        height: 42px !important;
+        font-size: 0.86rem !important;
     }
 }
 
