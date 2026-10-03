@@ -9,7 +9,6 @@ import { populateSimRoundSelector, renderSimulationTab } from './simulation-tab.
 import { getHistoricalTop10Combinations } from '../ledger.js';
 import { renderConfirmedPurchasesList } from './confirmed-tab.js';
 import { renderReviewTab, clearUser70ReviewCache } from './review-tab.js';
-import { updateHomeReviewDashboard, renderLandingDashboard } from '../../../shared/landing-dashboard.js';
 import { checkRoundWinningPurchases, showCelebrationOverlay } from './celebration.js';
 import { fetchFullPrizeDetailsFromHTML, generateFallbackPrizeDetails } from '../scraper.js';
 

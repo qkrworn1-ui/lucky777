@@ -19,7 +19,6 @@ import { renderSimulationTab } from './simulation-tab.js';
 import { renderDashboardCharts } from './dashboard-tab.js';
 import { renderLatestDrawBanner } from './draw-banner.js';
 import { renderReviewTab, clearUser70ReviewCache } from './review-tab.js';
-import { updateHomeReviewDashboard, renderLandingDashboard } from '../../../shared/landing-dashboard.js';
 
 /**
  * Scan registered rounds (1238회 이후 및 수동 등록 회차) and repair/backfill missing prize information

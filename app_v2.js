@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1701 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1711 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1701)
+ * Lucky777 Smart Bundle (v2026.10.03.1711)
  */
 
 
@@ -18,7 +18,7 @@ const SafeLocalStorage = {
     removeItem(key) { try { localStorage.removeItem(key); } catch (e) { if (window.__lMock) delete window.__lMock[key]; } }
 };
 
-const __M_shared_utils = (function() {
+var __M_shared_utils = (function() {
     const __exports = {};
     try {
 window.onerror = function(message, source, lineno, colno, error) {
@@ -399,7 +399,7 @@ window.copyToClipboard = copyToClipboard;
     return __exports;
 })();
 
-const __M_shared_crypto_utils = (function() {
+var __M_shared_crypto_utils = (function() {
     const __exports = {};
     try {
 // ==========================================
@@ -657,7 +657,7 @@ function generateAgreementProofCertificate(docData, winningAuditData) {
     return __exports;
 })();
 
-const __M_shared_components = (function() {
+var __M_shared_components = (function() {
     const __exports = {};
     try {
 const { getBallHexColor, getBallColorClass, getBallTextColor } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
@@ -848,7 +848,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_shared_db = (function() {
+var __M_shared_db = (function() {
     const __exports = {};
     try {
 async function reconnectFirebaseNetwork(timeoutMs = 2500) {
@@ -953,7 +953,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_shared_event_bus = (function() {
+var __M_shared_event_bus = (function() {
     const __exports = {};
     try {
 const listeners = new Map();
@@ -982,7 +982,7 @@ const EventBus = {
     return __exports;
 })();
 
-const __M_shared_user_context = (function() {
+var __M_shared_user_context = (function() {
     const __exports = {};
     try {
 /**
@@ -1423,7 +1423,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_shared_auth_mgmt = (function() {
+var __M_shared_auth_mgmt = (function() {
     const __exports = {};
     try {
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
@@ -9096,7 +9096,7 @@ window.startBatchWinningSend = async function() {
     return __exports;
 })();
 
-const __M_services_lotto_state = (function() {
+var __M_services_lotto_state = (function() {
     const __exports = {};
     try {
 const { removeUndefined } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
@@ -9283,7 +9283,7 @@ function applyNewDrawData(drawObj) {
     return __exports;
 })();
 
-const __M_services_lotto_ledger = (function() {
+var __M_services_lotto_ledger = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -14854,7 +14854,7 @@ async function calculateAllUsersTotalFinancials() {
     return __exports;
 })();
 
-const __M_services_lotto_statistics = (function() {
+var __M_services_lotto_statistics = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -14931,7 +14931,7 @@ function recalculateGroups() {
     return __exports;
 })();
 
-const __M_services_lotto_scoring = (function() {
+var __M_services_lotto_scoring = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -15021,7 +15021,7 @@ function calculateStats(numbers) {
     return __exports;
 })();
 
-const __M_services_lotto_scraper = (function() {
+var __M_services_lotto_scraper = (function() {
     const __exports = {};
     try {
 /**
@@ -15585,7 +15585,7 @@ async function scrapeCompleteRoundResult(roundNum) {
     return __exports;
 })();
 
-const __M_services_lotto_generator = (function() {
+var __M_services_lotto_generator = (function() {
     const __exports = {};
     try {
 const { state, getHistoricalDrawData, saveGlobalState } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -17169,7 +17169,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_draw_banner = (function() {
+var __M_services_lotto_views_draw_banner = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -17461,7 +17461,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_review_tab = (function() {
+var __M_services_lotto_views_review_tab = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -21449,7 +21449,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_algorithms_tab = (function() {
+var __M_services_lotto_views_algorithms_tab = (function() {
     const __exports = {};
     try {
 const { state, initHistory } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -22449,7 +22449,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_generator_tab = (function() {
+var __M_services_lotto_views_generator_tab = (function() {
     const __exports = {};
     try {
 const { state, saveGlobalState } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -24909,7 +24909,7 @@ async function handleGenerateAll70Games() {
     return __exports;
 })();
 
-const __M_services_lotto_views_budget_optimizer_modal = (function() {
+var __M_services_lotto_views_budget_optimizer_modal = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -25447,7 +25447,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_simulation_tab = (function() {
+var __M_services_lotto_views_simulation_tab = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -26276,7 +26276,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_confirmed_tab = (function() {
+var __M_services_lotto_views_confirmed_tab = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -28860,7 +28860,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_dashboard_tab = (function() {
+var __M_services_lotto_views_dashboard_tab = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -29070,7 +29070,7 @@ function renderDashboardCharts() {
     return __exports;
 })();
 
-const __M_services_lotto_views_wheeling = (function() {
+var __M_services_lotto_views_wheeling = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -29238,7 +29238,7 @@ function setupWheelingTab() {
     return __exports;
 })();
 
-const __M_services_lotto_views_verification = (function() {
+var __M_services_lotto_views_verification = (function() {
     const __exports = {};
     try {
 const { state, saveGlobalState } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -29355,7 +29355,7 @@ function setupEvolutionButton() {
     return __exports;
 })();
 
-const __M_services_lotto_views_prediction_report = (function() {
+var __M_services_lotto_views_prediction_report = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -29827,7 +29827,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_quick_view = (function() {
+var __M_services_lotto_views_quick_view = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -30604,7 +30604,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_manual_modal = (function() {
+var __M_services_lotto_views_manual_modal = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -32880,7 +32880,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_celebration = (function() {
+var __M_services_lotto_views_celebration = (function() {
     const __exports = {};
     try {
 const { getBallColorClass, getBallHexColor } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
@@ -33368,7 +33368,7 @@ function showCelebrationOverlay(celebrationData) {
     return __exports;
 })();
 
-const __M_services_lotto_views_manual_draw_modal = (function() {
+var __M_services_lotto_views_manual_draw_modal = (function() {
     const __exports = {};
     try {
 const { state, applyNewDrawData } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -33382,7 +33382,6 @@ const { populateSimRoundSelector, renderSimulationTab } = (typeof __M_services_l
 const { getHistoricalTop10Combinations } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { renderConfirmedPurchasesList } = (typeof __M_services_lotto_views_confirmed_tab !== 'undefined' ? __M_services_lotto_views_confirmed_tab : {});
 const { renderReviewTab, clearUser70ReviewCache } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
-const { updateHomeReviewDashboard, renderLandingDashboard } = (typeof __M_shared_landing_dashboard !== 'undefined' ? __M_shared_landing_dashboard : {});
 const { checkRoundWinningPurchases, showCelebrationOverlay } = (typeof __M_services_lotto_views_celebration !== 'undefined' ? __M_services_lotto_views_celebration : {});
 const { fetchFullPrizeDetailsFromHTML, generateFallbackPrizeDetails } = (typeof __M_services_lotto_scraper !== 'undefined' ? __M_services_lotto_scraper : {});
 
@@ -33668,7 +33667,7 @@ function setupManualDrawModal() {
     return __exports;
 })();
 
-const __M_services_lotto_views_snapshot_audit_modal = (function() {
+var __M_services_lotto_views_snapshot_audit_modal = (function() {
     const __exports = {};
     try {
 /**
@@ -34820,7 +34819,7 @@ if (typeof document !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_sync = (function() {
+var __M_services_lotto_views_sync = (function() {
     const __exports = {};
     try {
 const { state, applyNewDrawData } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -34844,7 +34843,6 @@ const { renderSimulationTab } = (typeof __M_services_lotto_views_simulation_tab 
 const { renderDashboardCharts } = (typeof __M_services_lotto_views_dashboard_tab !== 'undefined' ? __M_services_lotto_views_dashboard_tab : {});
 const { renderLatestDrawBanner } = (typeof __M_services_lotto_views_draw_banner !== 'undefined' ? __M_services_lotto_views_draw_banner : {});
 const { renderReviewTab, clearUser70ReviewCache } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
-const { updateHomeReviewDashboard, renderLandingDashboard } = (typeof __M_shared_landing_dashboard !== 'undefined' ? __M_shared_landing_dashboard : {});
 
 /**
  * Scan registered rounds (1238회 이후 및 수동 등록 회차) and repair/backfill missing prize information
@@ -35246,7 +35244,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_views_hex_map = (function() {
+var __M_services_lotto_views_hex_map = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -36037,7 +36035,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_lotto_index = (function() {
+var __M_services_lotto_index = (function() {
     const __exports = {};
     try {
 const { state, initHistory, saveGlobalState } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -36749,7 +36747,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_services_toto_data_mock_fixtures = (function() {
+var __M_services_toto_data_mock_fixtures = (function() {
     const __exports = {};
     try {
 /**
@@ -38210,7 +38208,7 @@ const PROTO_FIXTURES = [
     return __exports;
 })();
 
-const __M_services_toto_data_standings_data = (function() {
+var __M_services_toto_data_standings_data = (function() {
     const __exports = {};
     try {
 /**
@@ -38495,7 +38493,7 @@ function evaluateDynamicSeasonMetadata(leagueKey, date = new Date()) {
     return __exports;
 })();
 
-const __M_services_toto_state = (function() {
+var __M_services_toto_state = (function() {
     const __exports = {};
     try {
 const { PROTO_FIXTURES } = (typeof __M_services_toto_data_mock_fixtures !== 'undefined' ? __M_services_toto_data_mock_fixtures : {});
@@ -38905,7 +38903,7 @@ function updatePipelineStatus(status, details = {}) {
     return __exports;
 })();
 
-const __M_services_toto_engine = (function() {
+var __M_services_toto_engine = (function() {
     const __exports = {};
     try {
 /**
@@ -39742,7 +39740,7 @@ function buildPortfolioSummary(picks, label) {
     return __exports;
 })();
 
-const __M_services_toto_scraper = (function() {
+var __M_services_toto_scraper = (function() {
     const __exports = {};
     try {
 const { getTotoState } = (typeof __M_services_toto_state !== 'undefined' ? __M_services_toto_state : {});
@@ -40067,7 +40065,7 @@ window.startRealtimePipelineSyncDaemon = startRealtimePipelineSyncDaemon;
     return __exports;
 })();
 
-const __M_services_toto_views_toto_dashboard = (function() {
+var __M_services_toto_views_toto_dashboard = (function() {
     const __exports = {};
     try {
 const { 
@@ -42998,7 +42996,7 @@ window.switchStandingsLeague = function(leagueKey) {
     return __exports;
 })();
 
-const __M_services_toto_index = (function() {
+var __M_services_toto_index = (function() {
     const __exports = {};
     try {
 const { renderTotoDashboard } = (typeof __M_services_toto_views_toto_dashboard !== 'undefined' ? __M_services_toto_views_toto_dashboard : {});
@@ -43078,7 +43076,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_shared_landing_dashboard = (function() {
+var __M_shared_landing_dashboard = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
@@ -44371,7 +44369,7 @@ if (typeof window !== 'undefined') {
     return __exports;
 })();
 
-const __M_main = (function() {
+var __M_main = (function() {
     const __exports = {};
     try {
 const { checkAuthOnLoad, setupAuthEvents, SafeAuth, getUserPermissions } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});

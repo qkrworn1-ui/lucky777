@@ -355,7 +355,7 @@ def bundle_core(version):
             content = re.sub(r'import\([^\)]+\)\.then\([^\)]+\)\.catch\([^\)]+\);?', '', content)
             
             # Wrap in Safe IIFE with Module Fault Isolation
-            iife = f"const {mod_name} = (function() {{\n"
+            iife = f"var {mod_name} = (function() {{\n"
             iife += "    const __exports = {};\n"
             iife += "    try {\n"
             iife += content + "\n"
