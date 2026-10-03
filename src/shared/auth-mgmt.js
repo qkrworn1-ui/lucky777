@@ -3400,9 +3400,11 @@ export function setupAuthEvents(initFirebaseAndData) {
         if (typeof authId === 'string' && authId.startsWith('{')) {
             try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
         }
-        const isMaster = ((authId || '').toLowerCase().trim() === 'master');
-        if (tab === 'trash' && !isMaster) {
-            alert('🔒 회원 휴지통은 최고 관리자(Master) 전용 기능입니다.');
+        const hasAdminPerm = (typeof canManageUserDeletion === 'function' && canManageUserDeletion(authId)) ||
+                             (typeof isAdminUser === 'function' && isAdminUser(authId)) ||
+                             ((authId || '').toLowerCase().trim() === 'master');
+        if (tab === 'trash' && !hasAdminPerm) {
+            alert('🔒 회원 휴지통은 관리자 전용 기능입니다.');
             return;
         }
 
@@ -3897,10 +3899,12 @@ export function setupAuthEvents(initFirebaseAndData) {
             try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
         }
         const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
-        const isMaster = ((authId || '').toLowerCase().trim() === 'master');
+        const hasAdminPerm = (typeof canManageUserDeletion === 'function' && canManageUserDeletion(authId)) ||
+                             (typeof isAdminUser === 'function' && isAdminUser(authId)) ||
+                             ((authId || '').toLowerCase().trim() === 'master');
 
         if (btnFilterTrash) {
-            btnFilterTrash.style.display = isMaster ? 'inline-flex' : 'none';
+            btnFilterTrash.style.display = hasAdminPerm ? 'inline-flex' : 'none';
         }
 
         if (!isAdmin) {
@@ -3915,11 +3919,11 @@ export function setupAuthEvents(initFirebaseAndData) {
             const trashUsers = __cachedUsersWithStatus.filter(u => u.isDeleted);
             const purchasedCount = activeUsers.filter(u => u.pStatus && u.pStatus.hasPurchased).length;
             const kakaoCount = activeUsers.filter(u => u.userId.startsWith('kakao_') || (u.data && u.data.kakaoAuth && u.data.kakaoAuth.hasTalkMessageScope)).length;
-            const trashText = (isMaster && trashUsers.length > 0) ? ` · <span style="color:#fca5a5; font-weight:700;"><i class="fa-solid fa-trash-can"></i> 휴지통 ${trashUsers.length}</span>` : '';
+            const trashText = (hasAdminPerm && trashUsers.length > 0) ? ` · <span style="color:#fca5a5; font-weight:700;"><i class="fa-solid fa-trash-can"></i> 휴지통 ${trashUsers.length}</span>` : '';
             const syncIcon = isSyncing ? ` <span style="font-size:0.7rem; color:#93c5fd; margin-left:4px;"><i class="fa-solid fa-arrows-rotate fa-spin"></i></span>` : '';
             summaryBadge.innerHTML = `총 <strong style="color:#fff;">${activeUsers.length}</strong>명 (실구매 ${purchasedCount} · 카카오 ${kakaoCount}${trashText})${syncIcon}`;
             if (trashBadge) {
-                trashBadge.textContent = isMaster ? trashUsers.length : '0';
+                trashBadge.textContent = hasAdminPerm ? trashUsers.length : '0';
             }
         };
 
@@ -6838,7 +6842,8 @@ window.startBatchWinningSend = async function() {
     /**
      * 🔒 회원 삭제 및 휴지통 관리 권한 보유 여부 판정
      * - 최고 관리자: 'master', 'admin'
-     * - 카카오 박재구 관리자: 'kakao_5070244665' 또는 실명이 '박재구'인 관리자
+     * - 모든 관리자: isAdminUser(cleanId) === true (일반 관리자 포함 전원 휴지통 확인 및 삭제 권한 부여)
+     * - 카카오 박재구 관리자: 'kakao_5070244665' 및 등록 관리자
      */
     function canManageUserDeletion(authId) {
         let cleanId = (authId || '').trim();
@@ -6851,26 +6856,27 @@ window.startBatchWinningSend = async function() {
         // 1. 최고 관리자 (master, admin)
         if (cleanId === 'master' || cleanId === 'admin') return true;
 
-        // 2. 카카오 박재구 관리자 (kakao_5070244665)
+        // 2. 일반 관리자 포함 모든 관리자 권한 확인 (isAdminUser)
+        if (typeof isAdminUser === 'function' && isAdminUser(cleanId)) return true;
+        if (typeof window !== 'undefined' && typeof window.isAdminUser === 'function' && window.isAdminUser(cleanId)) return true;
+
+        // 3. 카카오 박재구 관리자 (kakao_5070244665)
         if (cleanId === 'kakao_5070244665') return true;
 
-        // 3. 런타임 현재 사용자 또는 캐시 확인 (실명이 '박재구'인 관리자)
+        // 4. 런타임 현재 사용자 또는 캐시 확인
         if (typeof window !== 'undefined') {
             if (window.__currentUser) {
                 const curId = String(window.__currentUser.userId || window.__currentUser.id || '').toLowerCase().trim();
-                const curName = String(window.__currentUser.realName || window.__currentUser.name || '').trim();
-                if ((curId === cleanId || curId === 'kakao_5070244665') && curName.includes('박재구')) {
+                const isAdm = window.__currentUser.isAdmin === true || window.__currentUser.role === 'admin' || window.__currentUser.userType === 'admin';
+                if (curId === cleanId && isAdm) {
                     return true;
                 }
             }
             if (Array.isArray(window.__cachedUsersWithStatus)) {
                 const cached = window.__cachedUsersWithStatus.find(u => (u.userId || '').toLowerCase().trim() === cleanId);
                 if (cached && cached.data) {
-                    const rName = String(cached.data.realName || '').trim();
-                    const isAdm = cached.data.isAdmin === true || cached.data.role === 'admin';
-                    if (rName.includes('박재구') && (isAdm || cleanId.startsWith('kakao_'))) {
-                        return true;
-                    }
+                    const isAdm = cached.data.isAdmin === true || cached.data.role === 'admin' || cached.data.userType === 'admin';
+                    if (isAdm) return true;
                 }
             }
         }
@@ -6885,7 +6891,7 @@ window.startBatchWinningSend = async function() {
             try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
         }
         if (!canManageUserDeletion(authId)) {
-            alert('🔒 회원 삭제(휴지통 이동) 권한이 없습니다.\n(최고 관리자 및 박재구 관리자 전용 권한)');
+            alert('🔒 회원 삭제(휴지통 이동) 권한이 없습니다.\n(관리자 전용 권한)');
             return;
         }
 
@@ -6956,7 +6962,7 @@ window.startBatchWinningSend = async function() {
             try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
         }
         if (!canManageUserDeletion(authId)) {
-            alert('🔒 회원 복구 권한이 없습니다.\n(최고 관리자 및 박재구 관리자 전용 권한)');
+            alert('🔒 회원 복구 권한이 없습니다.\n(관리자 전용 권한)');
             return;
         }
 
@@ -7018,7 +7024,7 @@ window.startBatchWinningSend = async function() {
             try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
         }
         if (!canManageUserDeletion(authId)) {
-            alert('🔒 회원 영구 삭제 권한이 없습니다.\n(최고 관리자 및 박재구 관리자 전용 권한)');
+            alert('🔒 회원 영구 삭제 권한이 없습니다.\n(관리자 전용 권한)');
             return;
         }
 
@@ -7083,7 +7089,7 @@ window.startBatchWinningSend = async function() {
             try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
         }
         if (!canManageUserDeletion(authId)) {
-            alert('🔒 회원 휴지통 전체 비우기 권한이 없습니다.\n(최고 관리자 및 박재구 관리자 전용 권한)');
+            alert('🔒 회원 휴지통 전체 비우기 권한이 없습니다.\n(관리자 전용 권한)');
             return;
         }
 
@@ -7143,7 +7149,7 @@ window.startBatchWinningSend = async function() {
             try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
         }
         if (!canManageUserDeletion(authId)) {
-            if (!silent) alert('🔒 테스트 데이터 정리 권한이 없습니다.\n(최고 관리자 및 박재구 관리자 전용 권한)');
+            if (!silent) alert('🔒 테스트 데이터 정리 권한이 없습니다.\n(관리자 전용 권한)');
             return { success: false, reason: 'Unauthorized' };
         }
 

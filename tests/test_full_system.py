@@ -3016,6 +3016,22 @@ Lotto 6/45
         # 3. Toast notifies snapshot preservation
         self.assertIn("불변 추천번호 스냅샷이 확정 보존되어 있습니다", gen_tab_code)
 
+    def test_84_all_admins_can_access_trash_and_manage_deletion(self):
+        """Test 84: Verify all administrators (not just master) have permission to view trash and perform deletion/restoration."""
+        auth_path = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        with open(auth_path, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+
+        # 1. canManageUserDeletion checks isAdminUser for general administrators
+        self.assertIn("typeof isAdminUser === 'function' && isAdminUser(cleanId)", auth_code)
+
+        # 2. setUserFilterTab allows any admin to access 'trash' tab
+        self.assertIn("if (tab === 'trash' && !hasAdminPerm)", auth_code)
+
+        # 3. loadUserList displays btnFilterTrash and badge for any admin
+        self.assertIn("btnFilterTrash.style.display = hasAdminPerm ? 'inline-flex' : 'none';", auth_code)
+        self.assertIn("trashBadge.textContent = hasAdminPerm ? trashUsers.length : '0';", auth_code)
+
 if __name__ == '__main__':
     unittest.main()
 
