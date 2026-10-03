@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1733 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1742.30 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1733)
+ * Lucky777 Smart Bundle (v2026.10.03.1742.30)
  */
 
 
@@ -43729,12 +43729,13 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
                 SafeLocalStorage.setItem('lotto_home_review_dashboard_cache', JSON.stringify(summaryData));
             } catch(e) {}
 
-            // ⚡ 관리자가 재계산(회원 삭제/복구/일괄정리 등)을 수행한 경우 Firestore 요약 문서 자동 동기화
+            // ⚡ 관리자 재계산 또는 신규 회차 스크랩 동기화(forceRefresh) 시 Firestore 요약 문서 자동 동기화
             try {
                 const fs = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
                 if (fs && typeof fs.collection === 'function') {
                     const auth = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '';
-                    if (auth === 'master' || auth === 'admin' || (typeof window.isAdminUser === 'function' && window.isAdminUser(auth))) {
+                    const isAdmin = auth === 'master' || auth === 'admin' || (typeof window.isAdminUser === 'function' && window.isAdminUser(auth)) || (typeof window.isAdminSession === 'function' && window.isAdminSession());
+                    if (isAdmin || forceRefresh) {
                         fs.collection('lotto_purchases').doc('dashboard_summary_latest').set(summaryData, { merge: true }).catch(console.warn);
                     }
                 }
