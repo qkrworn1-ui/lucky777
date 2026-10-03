@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1349 - BUILD_DATE: 2026-10-03] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.03.1553.35 - BUILD_DATE: 2026-10-03] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.03.1349)
+ * Lucky777 Smart Bundle (v2026.10.03.1553.35)
  */
 
 
@@ -43417,6 +43417,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
         const roundRangeLabel = `제 ${fromRound}~${maxRound}회차 누적`;
 
         let summaryData = null;
+        let fromLocalCache = false;
         if (!forceRefresh && _homeReviewDashboardCache && (Date.now() - _homeReviewDashboardCacheTime < 25000) && _homeReviewDashboardCache.maxRound === maxRound && _homeReviewDashboardCache.latestTotalPrize !== undefined) {
             summaryData = _homeReviewDashboardCache;
         } else if (!forceRefresh) {
@@ -43428,10 +43429,38 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
                         summaryData = parsed;
                         _homeReviewDashboardCache = parsed;
                         _homeReviewDashboardCacheTime = Date.now();
+                        fromLocalCache = true;
                     }
                 }
             } catch(e) {}
         }
+
+        const formatSummaryFromDoc = (sData) => {
+            if (!sData) return null;
+            return {
+                maxRound: sData.maxRound || maxRound,
+                fromRound: sData.fromRound || fromRound,
+                roundRangeLabel: sData.roundRangeLabel || roundRangeLabel,
+                grandRank1: Number(sData.grandRank1 || 0),
+                grandRank2: Number(sData.grandRank2 || 0),
+                grandRank3: Number(sData.grandRank3 || 0),
+                grandRank4: Number(sData.grandRank4 || 0),
+                grandRank5: Number(sData.grandRank5 || 0),
+                grandTotalPrize: Number(sData.grandTotalPrize || 0),
+                grandTotalGames: Number(sData.grandTotalGames || 0),
+                grandTotalWins: Number(sData.grandTotalWins || 0),
+                latestRound: Number(sData.latestRound || sData.maxRound || maxRound),
+                latestTotalPrize: Number(sData.latestTotalPrize || 0),
+                latestTotalGames: Number(sData.latestTotalGames || 0),
+                latestTotalWins: Number(sData.latestTotalWins || 0),
+                latestActiveMemberCount: Number(sData.latestActiveMemberCount || 0),
+                latestRank1: Number(sData.latestRank1 || 0),
+                latestRank2: Number(sData.latestRank2 || 0),
+                latestRank3: Number(sData.latestRank3 || 0),
+                latestRank4: Number(sData.latestRank4 || 0),
+                latestRank5: Number(sData.latestRank5 || 0)
+            };
+        };
 
         if (!summaryData && !forceRefresh) {
             // ⚡ 0순위: 서버 사전 판별 대시보드 요약 단일 문서(1~2KB) 초고속 조회 (0.05초 렌더링)
@@ -43442,29 +43471,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
                     if (snapDoc && snapDoc.exists) {
                         const sData = snapDoc.data();
                         if (sData && sData.maxRound && sData.maxRound >= (maxRound - 1)) {
-                            summaryData = {
-                                maxRound: sData.maxRound || maxRound,
-                                fromRound: sData.fromRound || fromRound,
-                                roundRangeLabel: sData.roundRangeLabel || roundRangeLabel,
-                                grandRank1: Number(sData.grandRank1 || 0),
-                                grandRank2: Number(sData.grandRank2 || 0),
-                                grandRank3: Number(sData.grandRank3 || 0),
-                                grandRank4: Number(sData.grandRank4 || 0),
-                                grandRank5: Number(sData.grandRank5 || 0),
-                                grandTotalPrize: Number(sData.grandTotalPrize || 0),
-                                grandTotalGames: Number(sData.grandTotalGames || 0),
-                                grandTotalWins: Number(sData.grandTotalWins || 0),
-                                latestRound: Number(sData.latestRound || sData.maxRound || maxRound),
-                                latestTotalPrize: Number(sData.latestTotalPrize || 0),
-                                latestTotalGames: Number(sData.latestTotalGames || 0),
-                                latestTotalWins: Number(sData.latestTotalWins || 0),
-                                latestActiveMemberCount: Number(sData.latestActiveMemberCount || 0),
-                                latestRank1: Number(sData.latestRank1 || 0),
-                                latestRank2: Number(sData.latestRank2 || 0),
-                                latestRank3: Number(sData.latestRank3 || 0),
-                                latestRank4: Number(sData.latestRank4 || 0),
-                                latestRank5: Number(sData.latestRank5 || 0)
-                            };
+                            summaryData = formatSummaryFromDoc(sData);
                             _homeReviewDashboardCache = summaryData;
                             _homeReviewDashboardCacheTime = Date.now();
                             try { SafeLocalStorage.setItem('lotto_home_review_dashboard_cache', JSON.stringify(summaryData)); } catch(e) {}
@@ -43474,6 +43481,30 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             } catch(srvErr) {
                 console.warn('[Server Dashboard Summary Fetch Fallback]', srvErr);
             }
+        } else if (fromLocalCache) {
+            // ⚡ SWR (Stale-While-Revalidate): 로컬 캐시 즉시 렌더링 후 백그라운드에서 최신 요약 동기화 검증
+            setTimeout(async () => {
+                try {
+                    const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+                    if (firestore) {
+                        const snapDoc = await firestore.collection('lotto_purchases').doc('dashboard_summary_latest').get();
+                        if (snapDoc && snapDoc.exists) {
+                            const freshSummary = formatSummaryFromDoc(snapDoc.data());
+                            if (freshSummary && (
+                                freshSummary.grandTotalPrize !== summaryData.grandTotalPrize ||
+                                freshSummary.latestTotalPrize !== summaryData.latestTotalPrize ||
+                                freshSummary.grandTotalWins !== summaryData.grandTotalWins ||
+                                freshSummary.maxRound !== summaryData.maxRound
+                            )) {
+                                _homeReviewDashboardCache = freshSummary;
+                                _homeReviewDashboardCacheTime = Date.now();
+                                try { SafeLocalStorage.setItem('lotto_home_review_dashboard_cache', JSON.stringify(freshSummary)); } catch(e) {}
+                                applyDashboardReviewSummaryToUI(freshSummary, freshSummary.maxRound || maxRound, freshSummary.roundRangeLabel || roundRangeLabel);
+                            }
+                        }
+                    }
+                } catch(e) {}
+            }, 100);
         }
 
         if (!summaryData) {
@@ -43595,129 +43626,142 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             } catch(e) {}
         }
 
-        const {
-            latestRound = maxRound,
-            latestTotalPrize = 0,
-            latestTotalGames = 0,
-            latestTotalWins = 0,
-            latestActiveMemberCount = 0,
-            latestRank1 = 0,
-            latestRank2 = 0,
-            latestRank3 = 0,
-            latestRank4 = 0,
-            latestRank5 = 0,
-            grandRank1 = 0,
-            grandRank2 = 0,
-            grandRank3 = 0,
-            grandRank4 = 0,
-            grandRank5 = 0,
-            grandTotalPrize = 0,
-            grandTotalGames = 0,
-            grandTotalWins = 0
-        } = summaryData;
-
-        // 1. Update Card 3: All Members AI Recommended Review (🔮 전체 회원 추천 당첨 결과)
-        const elRevSub = document.getElementById('lp-review-mini-sub');
-        const elRevPrize = document.getElementById('lp-review-mini-prize');
-        const elRevHits = document.getElementById('lp-review-mini-hits');
-
-        if (elRevSub) {
-            elRevSub.textContent = `${roundRangeLabel} (총 ${grandTotalGames.toLocaleString()}게임)`;
-        }
-        if (elRevPrize) {
-            elRevPrize.textContent = `누적 당첨 +${grandTotalPrize.toLocaleString()}원`;
-            elRevPrize.style.color = grandTotalPrize > 0 ? '#fbbf24' : '#cbd5e1';
-        }
-        if (elRevHits) {
-            if (latestTotalWins > 0 || grandTotalWins > 0) {
-                elRevHits.textContent = `최신 ${latestRound}회: +${latestTotalPrize.toLocaleString()}원 (${latestTotalWins}건) · 누적 ${grandTotalWins}건`;
-                elRevHits.style.color = '#c4b5fd';
-            } else {
-                elRevHits.textContent = '당첨 내역 없음';
-                elRevHits.style.color = '#94a3b8';
-            }
-        }
-
-        // 2. Update Table & Dashboard Section (🔮 전체 회원 AI 추천번호 당첨 결과 종합 요약)
-        const elRoundBadge = document.getElementById('lpReviewRoundBadge');
-        if (elRoundBadge) elRoundBadge.textContent = `${roundRangeLabel} +${grandTotalPrize.toLocaleString()}원`;
-
-        const elLatestBadge = document.getElementById('lpReviewLatestBadge');
-        if (elLatestBadge) elLatestBadge.textContent = `최신 ${latestRound}회 +${latestTotalPrize.toLocaleString()}원`;
-
-        const elMobileRevRound = document.getElementById('lpReviewMobileRound');
-        if (elMobileRevRound && latestRound) {
-            elMobileRevRound.textContent = latestRound;
-        }
-
-        const elMobileRoundSub = document.getElementById('lpReviewMobileRoundSub');
-        if (elMobileRoundSub && latestRound) {
-            elMobileRoundSub.textContent = latestRound;
-        }
-
-        const elMobilePrize = document.getElementById('lpReviewMobilePrize');
-        if (elMobilePrize) elMobilePrize.textContent = latestTotalPrize.toLocaleString();
-
-        const elMobileHits = document.getElementById('lpReviewMobileHits');
-        if (elMobileHits) elMobileHits.textContent = `${latestTotalWins}건`;
-
-        const elMobileCumPrize = document.getElementById('lpReviewMobileCumPrize');
-        if (elMobileCumPrize) elMobileCumPrize.textContent = grandTotalPrize.toLocaleString();
-
-        const elMobileCumHits = document.getElementById('lpReviewMobileCumHits');
-        if (elMobileCumHits) elMobileCumHits.textContent = `${grandTotalWins}건`;
-
-        // 최신 회차 (단일) KPI 바 갱신
-        const elLatestRoundNum = document.getElementById('lpReviewLatestRoundNum');
-        if (elLatestRoundNum) elLatestRoundNum.textContent = latestRound;
-
-        const elLatestGames = document.getElementById('lpReviewLatestGames');
-        if (elLatestGames) elLatestGames.textContent = `${latestActiveMemberCount}명 참여 · 총 ${latestTotalGames.toLocaleString()}게임 (1인당 70조합)`;
-
-        const elLatestHits = document.getElementById('lpReviewLatestHits');
-        if (elLatestHits) {
-            elLatestHits.innerHTML = `
-                <span style="color:${latestRank1>0?'#fbbf24':'#64748b'}; font-weight:700;">1등 ${latestRank1}</span> · 
-                <span style="color:${latestRank2>0?'#f87171':'#64748b'}; font-weight:700;">2등 ${latestRank2}</span> · 
-                <span style="color:${latestRank3>0?'#60a5fa':'#64748b'}; font-weight:700;">3등 ${latestRank3}</span> · 
-                <span style="color:${latestRank4>0?'#34d399':'#64748b'}; font-weight:700;">4등 ${latestRank4}</span> · 
-                <span style="color:${latestRank5>0?'#a78bfa':'#64748b'}; font-weight:700;">5등 ${latestRank5}</span>
-                <span style="color:#ddd6fe; margin-left:4px;">(총 ${latestTotalWins}건 적중)</span>
-            `;
-        }
-
-        const elLatestPrize = document.getElementById('lpReviewLatestPrize');
-        if (elLatestPrize) {
-            elLatestPrize.textContent = `최신 당첨금 +${latestTotalPrize.toLocaleString()}원`;
-            elLatestPrize.style.color = latestTotalPrize > 0 ? '#34d399' : '#cbd5e1';
-        }
-
-        // 전회차 누적 KPI 바 갱신
-        const elCumRoundNum = document.getElementById('lpReviewCumRoundNum');
-        if (elCumRoundNum) elCumRoundNum.textContent = maxRound;
-
-        const elKpiGames = document.getElementById('lpReviewKpiGames');
-        const elKpiHits = document.getElementById('lpReviewKpiHits');
-        const elKpiPrize = document.getElementById('lpReviewKpiPrize');
-
-        if (elKpiGames) elKpiGames.textContent = `${roundRangeLabel} · 총 ${grandTotalGames.toLocaleString()}게임 (1인당 70조합)`;
-        if (elKpiHits) {
-            elKpiHits.innerHTML = `
-                <span style="color:${grandRank1>0?'#fbbf24':'#64748b'}; font-weight:700;">1등 ${grandRank1}</span> · 
-                <span style="color:${grandRank2>0?'#f87171':'#64748b'}; font-weight:700;">2등 ${grandRank2}</span> · 
-                <span style="color:${grandRank3>0?'#60a5fa':'#64748b'}; font-weight:700;">3등 ${grandRank3}</span> · 
-                <span style="color:${grandRank4>0?'#34d399':'#64748b'}; font-weight:700;">4등 ${grandRank4}</span> · 
-                <span style="color:${grandRank5>0?'#a78bfa':'#64748b'}; font-weight:700;">5등 ${grandRank5}</span>
-                <span style="color:#ddd6fe; margin-left:4px;">(총 ${grandTotalWins}건 적중)</span>
-            `;
-        }
-        if (elKpiPrize) {
-            elKpiPrize.textContent = `누적 당첨금 +${grandTotalPrize.toLocaleString()}원`;
-            elKpiPrize.style.color = grandTotalPrize > 0 ? '#fbbf24' : '#cbd5e1';
-        }
+        applyDashboardReviewSummaryToUI(summaryData, maxRound, roundRangeLabel);
     } catch(err) {
         console.error('[Home Review Dashboard Error]', err);
     }
+}
+
+/**
+ * 🔮 전체 회원 AI 추천번호 당첨 요약 데이터(summaryData)를 대시보드 UI 엘리먼트에 즉시 반영
+ */
+function applyDashboardReviewSummaryToUI(summaryData, maxRound, roundRangeLabel) {
+    if (!summaryData) return;
+    const {
+        latestRound = maxRound,
+        latestTotalPrize = 0,
+        latestTotalGames = 0,
+        latestTotalWins = 0,
+        latestActiveMemberCount = 0,
+        latestRank1 = 0,
+        latestRank2 = 0,
+        latestRank3 = 0,
+        latestRank4 = 0,
+        latestRank5 = 0,
+        grandRank1 = 0,
+        grandRank2 = 0,
+        grandRank3 = 0,
+        grandRank4 = 0,
+        grandRank5 = 0,
+        grandTotalPrize = 0,
+        grandTotalGames = 0,
+        grandTotalWins = 0
+    } = summaryData;
+
+    const rRangeLabel = roundRangeLabel || summaryData.roundRangeLabel || `제 1235~${maxRound || latestRound}회차 누적`;
+
+    // 1. Update Card 3: All Members AI Recommended Review (🔮 전체 회원 추천 당첨 결과)
+    const elRevSub = document.getElementById('lp-review-mini-sub');
+    const elRevPrize = document.getElementById('lp-review-mini-prize');
+    const elRevHits = document.getElementById('lp-review-mini-hits');
+
+    if (elRevSub) {
+        elRevSub.textContent = `${rRangeLabel} (총 ${grandTotalGames.toLocaleString()}게임)`;
+    }
+    if (elRevPrize) {
+        elRevPrize.textContent = `누적 당첨 +${grandTotalPrize.toLocaleString()}원`;
+        elRevPrize.style.color = grandTotalPrize > 0 ? '#fbbf24' : '#cbd5e1';
+    }
+    if (elRevHits) {
+        if (latestTotalWins > 0 || grandTotalWins > 0) {
+            elRevHits.textContent = `최신 ${latestRound}회: +${latestTotalPrize.toLocaleString()}원 (${latestTotalWins}건) · 누적 ${grandTotalWins}건`;
+            elRevHits.style.color = '#c4b5fd';
+        } else {
+            elRevHits.textContent = '당첨 내역 없음';
+            elRevHits.style.color = '#94a3b8';
+        }
+    }
+
+    // 2. Update Table & Dashboard Section (🔮 전체 회원 AI 추천번호 당첨 결과 종합 요약)
+    const elRoundBadge = document.getElementById('lpReviewRoundBadge');
+    if (elRoundBadge) elRoundBadge.textContent = `${rRangeLabel} +${grandTotalPrize.toLocaleString()}원`;
+
+    const elLatestBadge = document.getElementById('lpReviewLatestBadge');
+    if (elLatestBadge) elLatestBadge.textContent = `최신 ${latestRound}회 +${latestTotalPrize.toLocaleString()}원`;
+
+    const elMobileRevRound = document.getElementById('lpReviewMobileRound');
+    if (elMobileRevRound && latestRound) {
+        elMobileRevRound.textContent = latestRound;
+    }
+
+    const elMobileRoundSub = document.getElementById('lpReviewMobileRoundSub');
+    if (elMobileRoundSub && latestRound) {
+        elMobileRoundSub.textContent = latestRound;
+    }
+
+    const elMobilePrize = document.getElementById('lpReviewMobilePrize');
+    if (elMobilePrize) elMobilePrize.textContent = latestTotalPrize.toLocaleString();
+
+    const elMobileHits = document.getElementById('lpReviewMobileHits');
+    if (elMobileHits) elMobileHits.textContent = `${latestTotalWins}건`;
+
+    const elMobileCumPrize = document.getElementById('lpReviewMobileCumPrize');
+    if (elMobileCumPrize) elMobileCumPrize.textContent = grandTotalPrize.toLocaleString();
+
+    const elMobileCumHits = document.getElementById('lpReviewMobileCumHits');
+    if (elMobileCumHits) elMobileCumHits.textContent = `${grandTotalWins}건`;
+
+    // 최신 회차 (단일) KPI 바 갱신
+    const elLatestRoundNum = document.getElementById('lpReviewLatestRoundNum');
+    if (elLatestRoundNum) elLatestRoundNum.textContent = latestRound;
+
+    const elLatestGames = document.getElementById('lpReviewLatestGames');
+    if (elLatestGames) elLatestGames.textContent = `${latestActiveMemberCount}명 참여 · 총 ${latestTotalGames.toLocaleString()}게임 (1인당 70조합)`;
+
+    const elLatestHits = document.getElementById('lpReviewLatestHits');
+    if (elLatestHits) {
+        elLatestHits.innerHTML = `
+            <span style="color:${latestRank1>0?'#fbbf24':'#64748b'}; font-weight:700;">1등 ${latestRank1}</span> · 
+            <span style="color:${latestRank2>0?'#f87171':'#64748b'}; font-weight:700;">2등 ${latestRank2}</span> · 
+            <span style="color:${latestRank3>0?'#60a5fa':'#64748b'}; font-weight:700;">3등 ${latestRank3}</span> · 
+            <span style="color:${latestRank4>0?'#34d399':'#64748b'}; font-weight:700;">4등 ${latestRank4}</span> · 
+            <span style="color:${latestRank5>0?'#a78bfa':'#64748b'}; font-weight:700;">5등 ${latestRank5}</span>
+            <span style="color:#ddd6fe; margin-left:4px;">(총 ${latestTotalWins}건 적중)</span>
+        `;
+    }
+
+    const elLatestPrize = document.getElementById('lpReviewLatestPrize');
+    if (elLatestPrize) {
+        elLatestPrize.textContent = `최신 당첨금 +${latestTotalPrize.toLocaleString()}원`;
+        elLatestPrize.style.color = latestTotalPrize > 0 ? '#34d399' : '#cbd5e1';
+    }
+
+    // 전회차 누적 KPI 바 갱신
+    const elCumRoundNum = document.getElementById('lpReviewCumRoundNum');
+    if (elCumRoundNum && (maxRound || latestRound)) elCumRoundNum.textContent = maxRound || latestRound;
+
+    const elKpiGames = document.getElementById('lpReviewKpiGames');
+    const elKpiHits = document.getElementById('lpReviewKpiHits');
+    const elKpiPrize = document.getElementById('lpReviewKpiPrize');
+
+    if (elKpiGames) elKpiGames.textContent = `${rRangeLabel} · 총 ${grandTotalGames.toLocaleString()}게임 (1인당 70조합)`;
+    if (elKpiHits) {
+        elKpiHits.innerHTML = `
+            <span style="color:${grandRank1>0?'#fbbf24':'#64748b'}; font-weight:700;">1등 ${grandRank1}</span> · 
+            <span style="color:${grandRank2>0?'#f87171':'#64748b'}; font-weight:700;">2등 ${grandRank2}</span> · 
+            <span style="color:${grandRank3>0?'#60a5fa':'#64748b'}; font-weight:700;">3등 ${grandRank3}</span> · 
+            <span style="color:${grandRank4>0?'#34d399':'#64748b'}; font-weight:700;">4등 ${grandRank4}</span> · 
+            <span style="color:${grandRank5>0?'#a78bfa':'#64748b'}; font-weight:700;">5등 ${grandRank5}</span>
+            <span style="color:#ddd6fe; margin-left:4px;">(총 ${grandTotalWins}건 적중)</span>
+        `;
+    }
+    if (elKpiPrize) {
+        elKpiPrize.textContent = `누적 당첨금 +${grandTotalPrize.toLocaleString()}원`;
+        elKpiPrize.style.color = grandTotalPrize > 0 ? '#fbbf24' : '#cbd5e1';
+    }
+}
+if (typeof window !== 'undefined') {
+    window.applyDashboardReviewSummaryToUI = applyDashboardReviewSummaryToUI;
 }
 
 /**
@@ -44185,6 +44229,10 @@ if (typeof window !== 'undefined') {
         if (typeof updateHomeReviewDashboard !== 'undefined') {
             __exports.updateHomeReviewDashboard = updateHomeReviewDashboard;
             if (typeof window !== 'undefined') window.updateHomeReviewDashboard = updateHomeReviewDashboard;
+        }
+        if (typeof applyDashboardReviewSummaryToUI !== 'undefined') {
+            __exports.applyDashboardReviewSummaryToUI = applyDashboardReviewSummaryToUI;
+            if (typeof window !== 'undefined') window.applyDashboardReviewSummaryToUI = applyDashboardReviewSummaryToUI;
         }
         if (typeof updateHomeWinningTicker !== 'undefined') {
             __exports.updateHomeWinningTicker = updateHomeWinningTicker;
