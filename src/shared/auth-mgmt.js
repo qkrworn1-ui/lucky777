@@ -3725,6 +3725,8 @@ export function setupAuthEvents(initFirebaseAndData) {
         // 3. Populate Form Fields
         const inputRealName = document.getElementById('detailRealName');
         const inputPhone = document.getElementById('detailPhone');
+        const inputBirthDate = document.getElementById('detailBirthDate');
+        const selectCalendarType = document.getElementById('detailCalendarType');
         const selectStatus = document.getElementById('detailStatusSelect');
         const toggleLotto = document.getElementById('detailToggleAllowLotto');
         const toggleToto = document.getElementById('detailToggleAllowToto');
@@ -3733,6 +3735,8 @@ export function setupAuthEvents(initFirebaseAndData) {
 
         if (inputRealName) inputRealName.value = data.realName || '';
         if (inputPhone) inputPhone.value = data.phoneNumber || data.phone || '';
+        if (inputBirthDate) inputBirthDate.value = data.birthDate || '';
+        if (selectCalendarType) selectCalendarType.value = data.calendarType || 'solar';
         if (selectStatus) selectStatus.value = status || 'active';
         if (toggleLotto) toggleLotto.checked = allowLotto !== false;
         if (toggleToto) toggleToto.checked = allowToto !== false;
@@ -3783,6 +3787,8 @@ export function setupAuthEvents(initFirebaseAndData) {
 
         const inputRealName = document.getElementById('detailRealName');
         const inputPhone = document.getElementById('detailPhone');
+        const inputBirthDate = document.getElementById('detailBirthDate');
+        const selectCalendarType = document.getElementById('detailCalendarType');
         const selectStatus = document.getElementById('detailStatusSelect');
         const toggleLotto = document.getElementById('detailToggleAllowLotto');
         const toggleToto = document.getElementById('detailToggleAllowToto');
@@ -3792,6 +3798,8 @@ export function setupAuthEvents(initFirebaseAndData) {
 
         const realName = inputRealName ? inputRealName.value.trim() : '';
         const phone = inputPhone ? inputPhone.value.trim() : '';
+        const birthDate = inputBirthDate ? inputBirthDate.value.trim() : '';
+        const calendarType = selectCalendarType ? selectCalendarType.value : 'solar';
         const status = selectStatus ? selectStatus.value : 'active';
         const allowLotto = toggleLotto ? toggleLotto.checked : true;
         const allowToto = toggleToto ? toggleToto.checked : true;
@@ -3808,6 +3816,8 @@ export function setupAuthEvents(initFirebaseAndData) {
                 realName: realName || userId,
                 phoneNumber: phone,
                 phone: phone,
+                birthDate: birthDate,
+                calendarType: calendarType,
                 status: status,
                 allowLotto: allowLotto,
                 allowToto: allowToto,
@@ -3824,10 +3834,24 @@ export function setupAuthEvents(initFirebaseAndData) {
             setIsPermanentCache(userId, isPermanent || isAdmin);
             setUserPermissionsCache(userId, { allowLotto, allowToto });
 
+            if (window.__currentUser && (window.__currentUser.userId === userId || String(SafeAuth.get()).toLowerCase() === userId.toLowerCase())) {
+                window.__currentUser.birthDate = birthDate;
+                window.__currentUser.calendarType = calendarType;
+                try {
+                    localStorage.setItem('user_birthdate_' + userId, birthDate);
+                    localStorage.setItem('user_calendartype_' + userId, calendarType);
+                } catch(e){}
+                if (typeof window.renderFortuneAdvisorCard === 'function') {
+                    window.renderFortuneAdvisorCard();
+                }
+            }
+
             if (__cachedUsersWithStatus) {
                 const idx = __cachedUsersWithStatus.findIndex(u => u.userId === userId);
                 if (idx !== -1) {
                     __cachedUsersWithStatus[idx].data = { ...__cachedUsersWithStatus[idx].data, ...updateData };
+                    __cachedUsersWithStatus[idx].data.birthDate = birthDate;
+                    __cachedUsersWithStatus[idx].data.calendarType = calendarType;
                     __cachedUsersWithStatus[idx].allowLotto = allowLotto;
                     __cachedUsersWithStatus[idx].allowToto = allowToto;
                     __cachedUsersWithStatus[idx].isPermanent = isPermanent || isAdmin;
@@ -5372,6 +5396,11 @@ export function setupAuthEvents(initFirebaseAndData) {
             if (elPhone) elPhone.value = data.phoneNumber || '';
             if (elPw) elPw.value = '';
 
+            const elBirth = document.getElementById('editUserBirthDate');
+            const elCalType = document.getElementById('editUserCalendarType');
+            if (elBirth) elBirth.value = data.birthDate || '';
+            if (elCalType) elCalType.value = data.calendarType || 'solar';
+
             // Determine Role
             const isUserAdmin = !!(data.isAdmin === true || data.role === 'admin' || userId === 'master' || userId === 'admin');
             const isPermanent = !!(data.isPermanent === true || data.userType === 'permanent');
@@ -5411,6 +5440,8 @@ export function setupAuthEvents(initFirebaseAndData) {
 
         const realName = (document.getElementById('editUserRealName')?.value || '').trim();
         const phone = (document.getElementById('editUserPhone')?.value || '').trim();
+        const birthDate = (document.getElementById('editUserBirthDate')?.value || '').trim();
+        const calendarType = document.getElementById('editUserCalendarType')?.value || 'solar';
         const newPw = (document.getElementById('editUserNewPassword')?.value || '').trim();
         const roleVal = document.getElementById('editUserRole')?.value || 'regular';
         const statusVal = document.getElementById('editUserStatus')?.value || 'active';
@@ -5431,6 +5462,8 @@ export function setupAuthEvents(initFirebaseAndData) {
             const updatePayload = {
                 realName: realName || userId,
                 phoneNumber: phone || '',
+                birthDate: birthDate,
+                calendarType: calendarType,
                 allowLotto: allowLotto,
                 allowToto: allowToto,
                 status: statusVal,
@@ -5484,7 +5517,19 @@ export function setupAuthEvents(initFirebaseAndData) {
             setIsPermanentCache(userId, updatePayload.isPermanent || updatePayload.isAdmin);
             setUserPermissionsCache(userId, { allowLotto, allowToto });
 
-            showToast(`✅ [${userId}] 회원 정보(이름/비밀번호/권한)가 성공적으로 수정되었습니다.`);
+            if (window.__currentUser && (window.__currentUser.userId === userId || String(SafeAuth.get()).toLowerCase() === userId.toLowerCase())) {
+                window.__currentUser.birthDate = birthDate;
+                window.__currentUser.calendarType = calendarType;
+                try {
+                    localStorage.setItem('user_birthdate_' + userId, birthDate);
+                    localStorage.setItem('user_calendartype_' + userId, calendarType);
+                } catch(e){}
+                if (typeof window.renderFortuneAdvisorCard === 'function') {
+                    window.renderFortuneAdvisorCard();
+                }
+            }
+
+            showToast(`✅ [${userId}] 회원 정보(이름/생년월일/권한)가 성공적으로 수정되었습니다.`);
             
             const modal = document.getElementById('editUserModal');
             if (modal) modal.style.display = 'none';
@@ -5499,6 +5544,102 @@ export function setupAuthEvents(initFirebaseAndData) {
             if (btnSubmit) {
                 btnSubmit.disabled = false;
                 btnSubmit.innerHTML = `<i class="fa-solid fa-check"></i> 변경사항 저장하기`;
+            }
+        }
+    };
+
+    // ==========================================
+    // 🔮 사용자 생년월일 간편 등록 모달 제어 (Self-service Birthdate Modal)
+    // ==========================================
+    window.openUserBirthInputModal = function(defaultDate, defaultType) {
+        const modal = document.getElementById('modalUserBirthInput');
+        if (!modal) return;
+        const inputDate = document.getElementById('inputUserBirthDate');
+        const selectType = document.getElementById('selectUserCalendarType');
+        let authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '');
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
+        }
+        const currentBirth = defaultDate || (window.__currentUser ? window.__currentUser.birthDate : null) || (authId ? localStorage.getItem('user_birthdate_' + authId) : '') || '';
+        const currentType = defaultType || (window.__currentUser ? window.__currentUser.calendarType : null) || 'solar';
+        if (inputDate) inputDate.value = currentBirth;
+        if (selectType) selectType.value = currentType;
+        modal.style.display = 'flex';
+    };
+
+    window.closeUserBirthInputModal = function() {
+        const modal = document.getElementById('modalUserBirthInput');
+        if (modal) modal.style.display = 'none';
+    };
+
+    window.saveUserBirthInput = async function() {
+        let authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '');
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
+        }
+        if (!authId) {
+            alert('로그인이 필요한 기능입니다.');
+            return;
+        }
+        const inputDate = document.getElementById('inputUserBirthDate');
+        const selectType = document.getElementById('selectUserCalendarType');
+        const selectHour = document.getElementById('selectUserBirthHour');
+        const btnSave = document.getElementById('btnSaveUserBirthDate');
+
+        const birthDate = inputDate ? inputDate.value.trim() : '';
+        const calendarType = selectType ? selectType.value : 'solar';
+        const birthHour = selectHour ? selectHour.value : 'unknown';
+
+        if (!birthDate) {
+            alert('⚠️ 생년월일을 선택해주세요.');
+            if (inputDate) inputDate.focus();
+            return;
+        }
+
+        try {
+            if (btnSave) {
+                btnSave.disabled = true;
+                btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 저장 중...';
+            }
+
+            if (window.db) {
+                await window.db.collection('lotto_users').doc(authId).set({
+                    birthDate: birthDate,
+                    calendarType: calendarType,
+                    birthHour: birthHour,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+            }
+
+            if (window.__currentUser) {
+                window.__currentUser.birthDate = birthDate;
+                window.__currentUser.calendarType = calendarType;
+                window.__currentUser.birthHour = birthHour;
+            }
+
+            try {
+                localStorage.setItem('user_birthdate_' + authId, birthDate);
+                localStorage.setItem('user_calendartype_' + authId, calendarType);
+            } catch(e) {}
+
+            window.closeUserBirthInputModal();
+
+            if (typeof window.renderFortuneAdvisorCard === 'function') {
+                window.renderFortuneAdvisorCard();
+            }
+
+            if (typeof showToast === 'function') {
+                showToast('✨ 회원님의 생년월일이 등록되었습니다. 황금 구매 요일 및 길시가 분석되었습니다.');
+            } else {
+                alert('✨ 회원님의 생년월일이 등록되었습니다. 황금 구매 요일 및 길시가 분석되었습니다.');
+            }
+        } catch(err) {
+            console.error('[saveUserBirthInput Error]', err);
+            alert('생년월일 저장 중 오류가 발생했습니다: ' + err.message);
+        } finally {
+            if (btnSave) {
+                btnSave.disabled = false;
+                btnSave.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>분석 및 저장하기</span>';
             }
         }
     };
