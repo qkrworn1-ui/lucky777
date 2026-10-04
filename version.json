@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.04.1244.57",
+  "version": "v2026.10.04.1251.50",
   "buildDate": "2026-10-04",
   "description": "feat: all members server precomputed evaluations and dashboard summary",
-  "buildTimestamp": "2026-10-04T12:44:57.286645",
+  "buildTimestamp": "2026-10-04T12:51:50.186923",
   "buildHistory": [
-    {
-      "version": "v2026.10.04.0106",
-      "buildDate": "2026-10-04",
-      "buildTime": "01:06",
-      "buildDateTime": "2026-10-04 01:06",
-      "buildTimestamp": "2026-10-04T01:06:56.754226",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
-    {
-      "version": "v2026.10.04.0107",
-      "buildDate": "2026-10-04",
-      "buildTime": "01:07",
-      "buildDateTime": "2026-10-04 01:07",
-      "buildTimestamp": "2026-10-04T01:07:33.550039",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
     {
       "version": "v2026.10.04.0118",
       "buildDate": "2026-10-04",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-04 12:44",
       "buildTimestamp": "2026-10-04T12:44:57.286645",
       "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.04.1251",
+      "buildDate": "2026-10-04",
+      "buildTime": "12:51",
+      "buildDateTime": "2026-10-04 12:51",
+      "buildTimestamp": "2026-10-04T12:51:26.407586",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.04.1251.50",
+      "buildDate": "2026-10-04",
+      "buildTime": "12:51",
+      "buildDateTime": "2026-10-04 12:51",
+      "buildTimestamp": "2026-10-04T12:51:50.186923",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
     }
   ],
-  "buildTime": "12:44",
-  "buildDateTime": "2026-10-04 12:44"
+  "buildTime": "12:51",
+  "buildDateTime": "2026-10-04 12:51"
 }

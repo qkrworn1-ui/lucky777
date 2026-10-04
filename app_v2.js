@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.04.1244.57 - BUILD_DATE: 2026-10-04] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.04.1251.50 - BUILD_DATE: 2026-10-04] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.04.1244.57)
+ * Lucky777 Smart Bundle (v2026.10.04.1251.50)
  */
 
 
@@ -30026,9 +30026,48 @@ function renderDashboardCharts() {
     }
 }
 
+let isFortuneAdvisorExpanded = false;
+
+/**
+ * 🔮 사주명리학 어드바이저 아코디언 접기/펼치기 토글러 (기본: 접힘)
+ */
+function toggleFortuneAdvisorAccordion(forceState = null) {
+    if (typeof forceState === 'boolean') {
+        isFortuneAdvisorExpanded = forceState;
+    } else {
+        isFortuneAdvisorExpanded = !isFortuneAdvisorExpanded;
+    }
+    if (typeof window !== 'undefined') {
+        window.__fortuneAdvisorExpanded = isFortuneAdvisorExpanded;
+    }
+
+    const wraps = document.querySelectorAll('.fortune-advisor-collapsible-wrap');
+    wraps.forEach(wrap => {
+        const toggleBar = wrap.querySelector('.fortune-toggle-bar');
+        const content = wrap.querySelector('.fortune-collapsible-content');
+        const btnText = wrap.querySelector('.fortune-toggle-btn-text');
+        const icon = wrap.querySelector('.fortune-toggle-icon');
+
+        if (toggleBar) {
+            if (isFortuneAdvisorExpanded) toggleBar.classList.add('expanded');
+            else toggleBar.classList.remove('expanded');
+        }
+        if (content) {
+            content.style.display = isFortuneAdvisorExpanded ? 'block' : 'none';
+        }
+        if (btnText) {
+            const hasBirth = wrap.dataset.hasBirth === 'true';
+            btnText.textContent = isFortuneAdvisorExpanded ? '접기' : (hasBirth ? '상세보기' : '입력하기');
+        }
+        if (icon) {
+            icon.className = isFortuneAdvisorExpanded ? 'fa-solid fa-chevron-up fortune-toggle-icon' : 'fa-solid fa-chevron-down fortune-toggle-icon';
+        }
+    });
+}
+
 /**
  * 🔮 개인 생년월일 기반 로또 구매 추천 요일 및 길시 렌더링 (사주명리학 어드바이저)
- * 사용자관리에 생년월일이 등록되어 있지 않으면 0ms 즉각 대시보드 인라인 입력 위젯 렌더링
+ * 기본은 접힘(Folded) 상태로 슬림한 요약 정보만 노출되며, 클릭 시 아코디언 형태로 펼쳐짐
  */
 function renderFortuneAdvisorCard(forceShowInput = false) {
     const targets = [
@@ -30037,6 +30076,11 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
     ].filter(Boolean);
 
     if (targets.length === 0) return;
+
+    if (forceShowInput) {
+        isFortuneAdvisorExpanded = true;
+        if (typeof window !== 'undefined') window.__fortuneAdvisorExpanded = true;
+    }
 
     let authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '');
     if (typeof authId === 'string' && authId.startsWith('{')) {
@@ -30142,18 +30186,34 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
         }
     }
 
-    let htmlContent = '';
+    const isExpanded = !!(isFortuneAdvisorExpanded || (typeof window !== 'undefined' && window.__fortuneAdvisorExpanded));
+    let summaryLeftHtml = '';
+    let detailedContentHtml = '';
 
-    // 3. 입력 위젯 렌더링 (미등록, 변경 버튼 클릭, 또는 계산 불가 시)
+    // 3. 입력 위젯 또는 분석 결과 HTML 구성
     if (shouldShowInput) {
         const todayStr = new Date().toISOString().split('T')[0];
         const defaultDateValue = (birthDate && birthDate !== 'null' && birthDate !== 'undefined') ? birthDate : '1990-01-01';
 
-        htmlContent = `
-            <div class="dash-inline-birth-form" style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%); border:1.5px solid rgba(245, 158, 11, 0.4); border-radius:16px; padding:18px 22px; box-shadow:0 8px 24px rgba(0,0,0,0.35); position:relative; overflow:hidden;">
+        summaryLeftHtml = `
+            <span class="fortune-toggle-badge badge-pending">
+                <i class="fa-solid fa-compass"></i> 사주명리학 횡재수 분석
+            </span>
+            <div class="fortune-quick-pills">
+                <span class="fortune-mini-pill" style="color: #94a3b8;">
+                    <i class="fa-regular fa-calendar" style="color: #fbbf24;"></i> 생년월일 미입력
+                </span>
+                <span class="fortune-mini-pill pill-gold">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> 제 ${currentRound}회 맞춤 구매 길시 & 요일 확인
+                </span>
+            </div>
+        `;
+
+        detailedContentHtml = `
+            <div class="dash-inline-birth-form" style="position:relative;">
                 <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px;">
                     <div style="display:flex; align-items:flex-start; gap:14px;">
-                        <div style="width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.1) 100%); border:1px solid rgba(245, 158, 11, 0.4); display:flex; align-items:center; justify-content:center; color:#fbbf24; font-size:1.4rem; flex-shrink:0;">
+                        <div style="width:44px; height:44px; border-radius:12px; background:linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.1) 100%); border:1px solid rgba(245, 158, 11, 0.4); display:flex; align-items:center; justify-content:center; color:#fbbf24; font-size:1.3rem; flex-shrink:0;">
                             <i class="fa-solid fa-compass"></i>
                         </div>
                         <div>
@@ -30174,7 +30234,7 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
                 </div>
 
                 <!-- 📅 대시보드 인라인 생년월일 입력 폼 위젯 -->
-                <div style="margin-top:16px; padding:14px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255, 255, 255, 0.08); border-radius:12px; display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px;">
+                <div style="margin-top:14px; padding:12px 14px; background:rgba(15, 23, 42, 0.7); border:1px solid rgba(255, 255, 255, 0.08); border-radius:12px; display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px;">
                     <div style="flex:1 1 180px; min-width:160px;">
                         <label style="display:block; font-size:0.75rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">
                             <i class="fa-regular fa-calendar" style="color:#fbbf24; margin-right:4px;"></i>생년월일 (YYYY-MM-DD)
@@ -30220,12 +30280,32 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
         const s = profile.stem;
         const calLabel = calendarType === 'lunar' ? '음력' : '양력';
 
-        htmlContent = `
-            <div style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%); border:1.5px solid rgba(16, 185, 129, 0.35); border-radius:16px; padding:18px 22px; box-shadow:0 10px 30px rgba(0,0,0,0.45); position:relative; overflow:hidden;">
+        summaryLeftHtml = `
+            <span class="fortune-toggle-badge badge-analyzed">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> 황금 구매 가이드
+            </span>
+            <div class="fortune-quick-pills">
+                <span class="fortune-mini-pill">
+                    <strong style="color:#34d399;">${s.name}</strong> (${s.elementKo.split(' ')[0]})
+                </span>
+                <span class="fortune-mini-pill pill-gold">
+                    <i class="fa-solid fa-calendar-check" style="color:#fbbf24;"></i> 1순위 <strong>${s.primaryDay}</strong>
+                </span>
+                <span class="fortune-mini-pill pill-time">
+                    <i class="fa-solid fa-clock" style="color:#818cf8;"></i> <strong>${s.timeSlot1.split(' ')[0]}</strong>
+                </span>
+                <span class="fortune-mini-pill pill-score">
+                    <i class="fa-solid fa-star" style="color:#fbbf24;"></i> <strong>${profile.fortuneScore}점</strong>
+                </span>
+            </div>
+        `;
+
+        detailedContentHtml = `
+            <div style="position:relative;">
                 <!-- Header Strip -->
-                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08);">
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-bottom:12px; border-bottom:1px solid rgba(255,255,255,0.08);">
                     <div style="display:flex; align-items:center; gap:12px;">
-                        <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(13, 148, 136, 0.1) 100%); border:1px solid rgba(16, 185, 129, 0.4); display:flex; align-items:center; justify-content:center; color:#34d399; font-size:1.3rem; flex-shrink:0;">
+                        <div style="width:40px; height:40px; border-radius:12px; background:linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(13, 148, 136, 0.1) 100%); border:1px solid rgba(16, 185, 129, 0.4); display:flex; align-items:center; justify-content:center; color:#34d399; font-size:1.2rem; flex-shrink:0;">
                             <i class="fa-solid fa-certificate"></i>
                         </div>
                         <div>
@@ -30235,7 +30315,7 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
                                 </span>
                                 <span style="font-size:0.74rem; color:#94a3b8; font-weight:600;">출생: ${birthDate} (${calLabel})</span>
                             </div>
-                            <h4 style="margin:2px 0 0 0; font-size:1.02rem; font-weight:800; color:#fff;">
+                            <h4 style="margin:2px 0 0 0; font-size:1rem; font-weight:800; color:#fff;">
                                 <span style="color:#fbbf24;">${realName}</span> 회원님의 제 ${currentRound}회차 로또 황금 구매 가이드
                             </h4>
                         </div>
@@ -30281,7 +30361,7 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
                 </div>
 
                 <!-- Golden Day & Auspicious Time Highlight Boxes -->
-                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
                     <!-- 추천 요일 박스 -->
                     <div style="background:linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%); border:1.5px solid rgba(245, 158, 11, 0.35); border-radius:14px; padding:14px; box-shadow:0 4px 14px rgba(0,0,0,0.3);">
                         <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
@@ -30352,9 +30432,32 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
         `;
     }
 
+    // 🔮 아코디언 래퍼 결합 (기본 접힘, 컴팩트 요약 바 상시 노출)
+    const finalHtml = `
+        <div class="fortune-advisor-collapsible-wrap" data-has-birth="${shouldShowInput ? 'false' : 'true'}">
+            <!-- 🔮 Compact Summary Bar (기본 접힘, 클릭 시 펼치기 토글) -->
+            <div class="fortune-toggle-bar ${isExpanded ? 'expanded' : ''} ${shouldShowInput ? '' : 'analyzed'}" onclick="window.toggleFortuneAdvisorAccordion && window.toggleFortuneAdvisorAccordion();" title="클릭 시 ${isExpanded ? '접기' : '상세보기'}">
+                <div class="fortune-toggle-left">
+                    ${summaryLeftHtml}
+                </div>
+                <div class="fortune-toggle-right">
+                    <button type="button" class="btn-toggle-fortune-view" onclick="event.stopPropagation(); window.toggleFortuneAdvisorAccordion && window.toggleFortuneAdvisorAccordion();">
+                        <span class="fortune-toggle-btn-text">${isExpanded ? '접기' : (shouldShowInput ? '입력하기' : '상세보기')}</span>
+                        <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} fortune-toggle-icon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 📂 Collapsible Body (기본 display: none) -->
+            <div class="fortune-collapsible-content" style="display: ${isExpanded ? 'block' : 'none'};">
+                ${detailedContentHtml}
+            </div>
+        </div>
+    `;
+
     // 모든 대상 컨테이너(랜딩 페이지 대시보드 및 통계분석 탭 대시보드)에 일괄 반영
     targets.forEach(el => {
-        el.innerHTML = htmlContent;
+        el.innerHTML = finalHtml;
     });
 }
 
@@ -30450,6 +30553,7 @@ async function saveAndApplyDashboardBirthDate(triggerBtn) {
 if (typeof window !== 'undefined') {
     window.renderFortuneAdvisorCard = renderFortuneAdvisorCard;
     window.saveAndApplyDashboardBirthDate = saveAndApplyDashboardBirthDate;
+    window.toggleFortuneAdvisorAccordion = toggleFortuneAdvisorAccordion;
 }
 
 
@@ -30457,6 +30561,10 @@ if (typeof window !== 'undefined') {
         if (typeof renderDashboardCharts !== 'undefined') {
             __exports.renderDashboardCharts = renderDashboardCharts;
             if (typeof window !== 'undefined') window.renderDashboardCharts = renderDashboardCharts;
+        }
+        if (typeof toggleFortuneAdvisorAccordion !== 'undefined') {
+            __exports.toggleFortuneAdvisorAccordion = toggleFortuneAdvisorAccordion;
+            if (typeof window !== 'undefined') window.toggleFortuneAdvisorAccordion = toggleFortuneAdvisorAccordion;
         }
         if (typeof renderFortuneAdvisorCard !== 'undefined') {
             __exports.renderFortuneAdvisorCard = renderFortuneAdvisorCard;
@@ -37478,7 +37586,7 @@ const { renderTop5Combinations, updateSavedCount, renderSavedList, setupGenerato
 const { populateSimRoundSelector, renderSimulationTab, setupSimulationEvents } = (typeof __M_services_lotto_views_simulation_tab !== 'undefined' ? __M_services_lotto_views_simulation_tab : {});
 const { renderWheelingSelector, renderWheelingResults, setupWheelingTab } = (typeof __M_services_lotto_views_wheeling !== 'undefined' ? __M_services_lotto_views_wheeling : {});
 const { renderVerificationTab, setupEvolutionButton } = (typeof __M_services_lotto_views_verification !== 'undefined' ? __M_services_lotto_views_verification : {});
-const { renderDashboardCharts, renderFortuneAdvisorCard } = (typeof __M_services_lotto_views_dashboard_tab !== 'undefined' ? __M_services_lotto_views_dashboard_tab : {});
+const { renderDashboardCharts, renderFortuneAdvisorCard, toggleFortuneAdvisorAccordion } = (typeof __M_services_lotto_views_dashboard_tab !== 'undefined' ? __M_services_lotto_views_dashboard_tab : {});
 const { renderReviewTab, renderReviewDetail } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
 const { renderAlgorithmsTab } = (typeof __M_services_lotto_views_algorithms_tab !== 'undefined' ? __M_services_lotto_views_algorithms_tab : {});
 const { renderConfirmedPurchasesList } = (typeof __M_services_lotto_views_confirmed_tab !== 'undefined' ? __M_services_lotto_views_confirmed_tab : {});

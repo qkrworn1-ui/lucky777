@@ -69,5 +69,21 @@ class TestMyeongriService(unittest.TestCase):
         self.assertIn('shouldShowInput = !birthDate || forceShowInput', content)
         self.assertIn('saveAndApplyDashboardBirthDate', content)
 
+    def test_05_accordion_collapsible_feature(self):
+        dash_js_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'services', 'lotto', 'views', 'dashboard-tab.js')
+        with open(dash_js_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        self.assertIn('toggleFortuneAdvisorAccordion', content)
+        self.assertIn('fortune-advisor-collapsible-wrap', content)
+        self.assertIn('fortune-toggle-bar', content)
+        self.assertIn('fortune-collapsible-content', content)
+
+        styles_path = os.path.join(os.path.dirname(__file__), '..', 'styles.css')
+        with open(styles_path, 'r', encoding='utf-8') as f:
+            styles_content = f.read()
+        self.assertIn('.fortune-advisor-collapsible-wrap', styles_content)
+        self.assertIn('.fortune-toggle-bar', styles_content)
+        self.assertIn('.fortune-collapsible-content', styles_content)
+
 if __name__ == '__main__':
     unittest.main()

@@ -19125,6 +19125,186 @@ body.is-admin .btn-snapshot-audit-compact {
     }
 }
 
+/* ==========================================================================
+   🔮 사주명리학 횡재수 어드바이저 아코디언 (접기/펼치기 및 슬림 요약 바)
+   ========================================================================== */
+.fortune-advisor-collapsible-wrap {
+    width: 100%;
+    margin-bottom: 14px;
+    box-sizing: border-box;
+}
+
+.fortune-toggle-bar {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.98) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    gap: 10px;
+    user-select: none;
+}
+
+.fortune-toggle-bar:hover {
+    border-color: rgba(245, 158, 11, 0.6);
+    background: linear-gradient(135deg, rgba(40, 53, 76, 0.95) 0%, rgba(19, 29, 52, 0.98) 100%);
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);
+}
+
+.fortune-toggle-bar.expanded {
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+
+.fortune-toggle-bar.analyzed {
+    border-color: rgba(16, 185, 129, 0.35);
+}
+
+.fortune-toggle-bar.analyzed:hover {
+    border-color: rgba(16, 185, 129, 0.6);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+}
+
+.fortune-toggle-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    min-width: 0;
+    flex: 1;
+}
+
+.fortune-toggle-badge {
+    font-size: 0.8rem;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.fortune-toggle-badge.badge-pending {
+    background: rgba(245, 158, 11, 0.18);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+}
+
+.fortune-toggle-badge.badge-analyzed {
+    background: rgba(16, 185, 129, 0.18);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #34d399;
+}
+
+.fortune-quick-pills {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.fortune-mini-pill {
+    font-size: 0.73rem;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.fortune-mini-pill strong {
+    font-weight: 700;
+}
+
+.fortune-mini-pill.pill-gold {
+    background: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: #fde68a;
+}
+.fortune-mini-pill.pill-gold strong { color: #fbbf24; }
+
+.fortune-mini-pill.pill-time {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: #c7d2fe;
+}
+.fortune-mini-pill.pill-time strong { color: #818cf8; }
+
+.fortune-mini-pill.pill-score {
+    background: rgba(251, 191, 36, 0.12);
+    border-color: rgba(251, 191, 36, 0.35);
+    color: #fef08a;
+}
+.fortune-mini-pill.pill-score strong { color: #fbbf24; }
+
+.fortune-toggle-right {
+    flex-shrink: 0;
+}
+
+.btn-toggle-fortune-view {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #e2e8f0;
+    padding: 5px 12px;
+    border-radius: 7px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.btn-toggle-fortune-view:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #ffffff;
+}
+
+.fortune-collapsible-content {
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: none;
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    padding: 16px 18px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 640px) {
+    .fortune-toggle-bar {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+    .fortune-toggle-badge {
+        font-size: 0.74rem;
+        padding: 2px 6px;
+    }
+    .fortune-mini-pill {
+        font-size: 0.68rem;
+        padding: 2px 6px;
+    }
+    .btn-toggle-fortune-view {
+        padding: 4px 8px;
+        font-size: 0.72rem;
+    }
+    .fortune-collapsible-content {
+        padding: 12px 14px;
+    }
+}
+
 
 
 
