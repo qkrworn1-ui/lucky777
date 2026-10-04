@@ -53,5 +53,21 @@ class TestMyeongriService(unittest.TestCase):
                 self.assertEqual(wealth, 'fire')
                 self.assertEqual(p_day, '화요일')
 
+    def test_03_dashboard_containers_in_index_html(self):
+        index_path = os.path.join(os.path.dirname(__file__), '..', 'index.html')
+        with open(index_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        self.assertIn('landingFortuneAdvisorContainer', content, "landingFortuneAdvisorContainer must exist on landing page")
+        self.assertIn('dashboardFortuneAdvisorContainer', content, "dashboardFortuneAdvisorContainer must exist on tab-dashboard")
+
+    def test_04_fallback_to_input_widget_when_birthdate_missing(self):
+        dash_js_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'services', 'lotto', 'views', 'dashboard-tab.js')
+        with open(dash_js_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        self.assertIn('dash-inline-birth-form', content)
+        self.assertIn('btn-dash-submit-birth', content)
+        self.assertIn('shouldShowInput = !birthDate || forceShowInput', content)
+        self.assertIn('saveAndApplyDashboardBirthDate', content)
+
 if __name__ == '__main__':
     unittest.main()

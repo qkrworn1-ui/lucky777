@@ -209,8 +209,12 @@ export function renderDashboardCharts() {
  * 사용자관리에 생년월일이 등록되어 있지 않으면 0ms 즉각 대시보드 인라인 입력 위젯 렌더링
  */
 export function renderFortuneAdvisorCard(forceShowInput = false) {
-    const container = document.getElementById('dashboardFortuneAdvisorContainer');
-    if (!container) return;
+    const targets = [
+        document.getElementById('landingFortuneAdvisorContainer'),
+        document.getElementById('dashboardFortuneAdvisorContainer')
+    ].filter(Boolean);
+
+    if (targets.length === 0) return;
 
     let authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '');
     if (typeof authId === 'string' && authId.startsWith('{')) {
@@ -223,11 +227,18 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
     let calendarType = (window.__currentUser && window.__currentUser.calendarType) || 'solar';
     let realName = (window.__currentUser && window.__currentUser.realName) || (authId ? authId : '회원');
 
+    if (birthDate === 'null' || birthDate === 'undefined' || !birthDate || !String(birthDate).trim()) {
+        birthDate = null;
+    }
+
     if (!birthDate && authId && Array.isArray(window.__cachedUsersWithStatus)) {
         const cached = window.__cachedUsersWithStatus.find(u => (u.id === authId || u.userId === authId));
         if (cached) {
-            birthDate = cached.birthDate || (cached.data && cached.data.birthDate) || null;
-            calendarType = cached.calendarType || (cached.data && cached.data.calendarType) || calendarType;
+            const rawB = cached.birthDate || (cached.data && cached.data.birthDate);
+            if (rawB && rawB !== 'null' && rawB !== 'undefined' && String(rawB).trim()) {
+                birthDate = String(rawB).trim();
+                calendarType = cached.calendarType || (cached.data && cached.data.calendarType) || calendarType;
+            }
             if (cached.realName || (cached.data && cached.data.realName)) {
                 realName = cached.realName || cached.data.realName;
             }
@@ -237,31 +248,54 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
     if (!birthDate) {
         try {
             if (authId) {
-                birthDate = localStorage.getItem('user_birthdate_' + authId);
-                calendarType = localStorage.getItem('user_calendartype_' + authId) || calendarType;
-            }
-            if (!birthDate) {
-                birthDate = localStorage.getItem('user_birthdate_last') || localStorage.getItem('user_birthdate_guest') || null;
-                calendarType = localStorage.getItem('user_calendartype_last') || localStorage.getItem('user_calendartype_guest') || calendarType;
+                const rawStored = localStorage.getItem('user_birthdate_' + authId);
+                if (rawStored && rawStored !== 'null' && rawStored !== 'undefined' && String(rawStored).trim()) {
+                    birthDate = String(rawStored).trim();
+                    calendarType = localStorage.getItem('user_calendartype_' + authId) || calendarType;
+                }
+            } else {
+                // 비로그인(게스트)인 경우에만 이전/게스트 캐시 참조
+                const rawLast = localStorage.getItem('user_birthdate_guest') || localStorage.getItem('user_birthdate_last');
+                if (rawLast && rawLast !== 'null' && rawLast !== 'undefined' && String(rawLast).trim()) {
+                    birthDate = String(rawLast).trim();
+                    calendarType = localStorage.getItem('user_calendartype_guest') || localStorage.getItem('user_calendartype_last') || calendarType;
+                }
             }
         } catch(e){}
     }
 
-    // 비동기 백그라운드 DB 보정 (초기 렌더링 블로킹 절대 금지)
-    if (!birthDate && authId && window.db) {
+    // 비동기 백그라운드 DB 보정 (초기 렌더링 블로킹 절대 금지, 사용자관리 DB 기준 무결점 동기화)
+    if (authId && window.db) {
         window.db.collection('lotto_users').doc(authId).get().then(doc => {
             if (doc && doc.exists) {
-                const udata = doc.data();
-                if (udata && udata.birthDate) {
+                const udata = doc.data() || {};
+                const freshBirth = (udata.birthDate && udata.birthDate !== 'null' && udata.birthDate !== 'undefined' && String(udata.birthDate).trim()) ? String(udata.birthDate).trim() : null;
+                const freshCal = udata.calendarType || 'solar';
+
+                if (freshBirth) {
                     if (window.__currentUser) {
-                        window.__currentUser.birthDate = udata.birthDate;
-                        window.__currentUser.calendarType = udata.calendarType || 'solar';
+                        window.__currentUser.birthDate = freshBirth;
+                        window.__currentUser.calendarType = freshCal;
                     }
                     try {
-                        localStorage.setItem('user_birthdate_' + authId, udata.birthDate);
-                        localStorage.setItem('user_calendartype_' + authId, udata.calendarType || 'solar');
+                        localStorage.setItem('user_birthdate_' + authId, freshBirth);
+                        localStorage.setItem('user_calendartype_' + authId, freshCal);
                     } catch(e){}
-                    renderFortuneAdvisorCard(false);
+                    if (birthDate !== freshBirth) {
+                        renderFortuneAdvisorCard(false);
+                    }
+                } else {
+                    // 사용자관리 DB에 생년월일이 미등록된 경우 로컬 잔존값도 즉시 정리 후 입력 위젯 강제 표시
+                    if (window.__currentUser) {
+                        window.__currentUser.birthDate = null;
+                    }
+                    try {
+                        localStorage.removeItem('user_birthdate_' + authId);
+                        localStorage.removeItem('user_calendartype_' + authId);
+                    } catch(e){}
+                    if (birthDate) {
+                        renderFortuneAdvisorCard(false);
+                    }
                 }
             }
         }).catch(err => {
@@ -269,15 +303,32 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
         });
     }
 
-    const currentRound = (state && state.CURRENT_ROUND) ? state.CURRENT_ROUND : 1239;
+    const currentRound = (typeof state !== 'undefined' && state && state.CURRENT_ROUND) ? state.CURRENT_ROUND : (window.state && window.state.CURRENT_ROUND ? window.state.CURRENT_ROUND : 1239);
 
-    // 2. 생년월일이 없거나 사용자가 '생년월일 변경'을 누른 경우 -> 대시보드 인라인 입력 위젯 즉각 렌더링!
-    if (!birthDate || forceShowInput) {
+    // 2. 생년월일 유효성 및 프로필 산출 판별
+    let shouldShowInput = !birthDate || forceShowInput;
+    let profile = null;
+
+    if (!shouldShowInput && birthDate) {
+        const service = (typeof MyeongriService !== 'undefined') ? MyeongriService : (window.MyeongriService || null);
+        if (service && typeof service.calculateMyeongriProfile === 'function') {
+            profile = service.calculateMyeongriProfile(birthDate, { calendarType, currentRound });
+        }
+        if (!profile || !profile.stem) {
+            // 계산 불가한 비정상 생년월일 포맷인 경우 빈 화면 대신 반드시 인라인 입력창 렌더링
+            shouldShowInput = true;
+        }
+    }
+
+    let htmlContent = '';
+
+    // 3. 입력 위젯 렌더링 (미등록, 변경 버튼 클릭, 또는 계산 불가 시)
+    if (shouldShowInput) {
         const todayStr = new Date().toISOString().split('T')[0];
-        const defaultDateValue = birthDate || '1990-01-01';
+        const defaultDateValue = (birthDate && birthDate !== 'null' && birthDate !== 'undefined') ? birthDate : '1990-01-01';
 
-        container.innerHTML = `
-            <div style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%); border:1.5px solid rgba(245, 158, 11, 0.4); border-radius:16px; padding:18px 22px; box-shadow:0 8px 24px rgba(0,0,0,0.35); position:relative; overflow:hidden;">
+        htmlContent = `
+            <div class="dash-inline-birth-form" style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%); border:1.5px solid rgba(245, 158, 11, 0.4); border-radius:16px; padding:18px 22px; box-shadow:0 8px 24px rgba(0,0,0,0.35); position:relative; overflow:hidden;">
                 <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px;">
                     <div style="display:flex; align-items:flex-start; gap:14px;">
                         <div style="width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.1) 100%); border:1px solid rgba(245, 158, 11, 0.4); display:flex; align-items:center; justify-content:center; color:#fbbf24; font-size:1.4rem; flex-shrink:0;">
@@ -303,24 +354,24 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
                 <!-- 📅 대시보드 인라인 생년월일 입력 폼 위젯 -->
                 <div style="margin-top:16px; padding:14px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255, 255, 255, 0.08); border-radius:12px; display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px;">
                     <div style="flex:1 1 180px; min-width:160px;">
-                        <label for="dashInlineBirthDate" style="display:block; font-size:0.75rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">
+                        <label style="display:block; font-size:0.75rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">
                             <i class="fa-regular fa-calendar" style="color:#fbbf24; margin-right:4px;"></i>생년월일 (YYYY-MM-DD)
                         </label>
-                        <input type="date" id="dashInlineBirthDate" value="${defaultDateValue}" max="${todayStr}" style="width:100%; box-sizing:border-box; background:rgba(30, 41, 59, 0.9); border:1.5px solid #475569; border-radius:10px; color:#fff; padding:9px 12px; font-size:0.88rem; font-weight:700; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#475569'" />
+                        <input type="date" class="dash-inline-birth-date" value="${defaultDateValue}" max="${todayStr}" style="width:100%; box-sizing:border-box; background:rgba(30, 41, 59, 0.9); border:1.5px solid #475569; border-radius:10px; color:#fff; padding:9px 12px; font-size:0.88rem; font-weight:700; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#475569'" onchange="document.querySelectorAll('.dash-inline-birth-date').forEach(el => el.value = this.value);" />
                     </div>
 
                     <div style="flex:0 1 130px; min-width:110px;">
-                        <label for="dashInlineCalendarType" style="display:block; font-size:0.75rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">
+                        <label style="display:block; font-size:0.75rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">
                             <i class="fa-solid fa-moon" style="color:#fbbf24; margin-right:4px;"></i>양력 / 음력
                         </label>
-                        <select id="dashInlineCalendarType" style="width:100%; box-sizing:border-box; background:rgba(30, 41, 59, 0.9); border:1.5px solid #475569; border-radius:10px; color:#fff; padding:9px 12px; font-size:0.88rem; font-weight:700; outline:none; cursor:pointer;">
+                        <select class="dash-inline-calendar-type" style="width:100%; box-sizing:border-box; background:rgba(30, 41, 59, 0.9); border:1.5px solid #475569; border-radius:10px; color:#fff; padding:9px 12px; font-size:0.88rem; font-weight:700; outline:none; cursor:pointer;" onchange="document.querySelectorAll('.dash-inline-calendar-type').forEach(el => el.value = this.value);">
                             <option value="solar" ${calendarType !== 'lunar' ? 'selected' : ''}>양력 (Solar)</option>
                             <option value="lunar" ${calendarType === 'lunar' ? 'selected' : ''}>음력 (Lunar)</option>
                         </select>
                     </div>
 
                     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                        <button type="button" id="btnDashSubmitBirth" onclick="window.saveAndApplyDashboardBirthDate && window.saveAndApplyDashboardBirthDate();" style="padding:10px 20px; border-radius:10px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border:none; color:#111827; font-weight:800; font-size:0.86rem; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(245, 158, 11, 0.35); transition:transform 0.15s ease;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'">
+                        <button type="button" class="btn-dash-submit-birth" onclick="window.saveAndApplyDashboardBirthDate && window.saveAndApplyDashboardBirthDate(this);" style="padding:10px 20px; border-radius:10px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border:none; color:#111827; font-weight:800; font-size:0.86rem; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(245, 158, 11, 0.35); transition:transform 0.15s ease;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'">
                             <i class="fa-solid fa-wand-magic-sparkles"></i>
                             <span>분석 및 추천받기</span>
                         </button>
@@ -342,164 +393,157 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
                 </div>
             </div>
         `;
-        return;
-    }
+    } else {
+        // 4. 생년월일 등록 완료 -> 실시간 사주 분석 결과 렌더링
+        const s = profile.stem;
+        const calLabel = calendarType === 'lunar' ? '음력' : '양력';
 
-    // 3. 생년월일 등록 완료 -> 실시간 사주 분석 결과 렌더링
-    const service = (typeof MyeongriService !== 'undefined') ? MyeongriService : (window.MyeongriService || null);
-    if (!service || typeof service.calculateMyeongriProfile !== 'function') {
-        console.warn('[renderFortuneAdvisorCard] MyeongriService is not ready');
-        return;
-    }
-
-    const profile = service.calculateMyeongriProfile(birthDate, { calendarType, currentRound });
-    if (!profile || !profile.stem) {
-        console.warn('[renderFortuneAdvisorCard] Invalid profile for birthDate:', birthDate);
-        return;
-    }
-
-    const s = profile.stem;
-    const calLabel = calendarType === 'lunar' ? '음력' : '양력';
-
-    container.innerHTML = `
-        <div style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%); border:1.5px solid rgba(16, 185, 129, 0.35); border-radius:16px; padding:18px 22px; box-shadow:0 10px 30px rgba(0,0,0,0.45); position:relative; overflow:hidden;">
-            <!-- Header Strip -->
-            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08);">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(13, 148, 136, 0.1) 100%); border:1px solid rgba(16, 185, 129, 0.4); display:flex; align-items:center; justify-content:center; color:#34d399; font-size:1.3rem; flex-shrink:0;">
-                        <i class="fa-solid fa-certificate"></i>
+        htmlContent = `
+            <div style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.98) 100%); border:1.5px solid rgba(16, 185, 129, 0.35); border-radius:16px; padding:18px 22px; box-shadow:0 10px 30px rgba(0,0,0,0.45); position:relative; overflow:hidden;">
+                <!-- Header Strip -->
+                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08);">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(13, 148, 136, 0.1) 100%); border:1px solid rgba(16, 185, 129, 0.4); display:flex; align-items:center; justify-content:center; color:#34d399; font-size:1.3rem; flex-shrink:0;">
+                            <i class="fa-solid fa-certificate"></i>
+                        </div>
+                        <div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="background:rgba(16, 185, 129, 0.2); border:1px solid rgba(16, 185, 129, 0.4); color:#34d399; font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:6px;">
+                                    <i class="fa-solid fa-check"></i> 분석 완료
+                                </span>
+                                <span style="font-size:0.74rem; color:#94a3b8; font-weight:600;">출생: ${birthDate} (${calLabel})</span>
+                            </div>
+                            <h4 style="margin:2px 0 0 0; font-size:1.02rem; font-weight:800; color:#fff;">
+                                <span style="color:#fbbf24;">${realName}</span> 회원님의 제 ${currentRound}회차 로또 황금 구매 가이드
+                            </h4>
+                        </div>
                     </div>
-                    <div>
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="background:rgba(16, 185, 129, 0.2); border:1px solid rgba(16, 185, 129, 0.4); color:#34d399; font-size:0.68rem; font-weight:800; padding:2px 7px; border-radius:6px;">
-                                <i class="fa-solid fa-check"></i> 분석 완료
+                    <button type="button" onclick="window.renderFortuneAdvisorCard && window.renderFortuneAdvisorCard(true);" style="padding:6px 12px; border-radius:8px; background:rgba(30, 41, 59, 0.8); border:1px solid #475569; color:#cbd5e1; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.15s;" onmouseover="this.style.borderColor='#f59e0b'; this.style.color='#fbbf24';" onmouseout="this.style.borderColor='#475569'; this.style.color='#cbd5e1';">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                        <span>생년월일 변경</span>
+                    </button>
+                </div>
+
+                <!-- Profile Summary 4 Pills -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin:14px 0;">
+                    <div style="background:rgba(15, 23, 42, 0.65); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 12px;">
+                        <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:3px;">나의 본원 일간</div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:0.92rem; font-weight:800; color:#34d399;">${s.name}</span>
+                            <span style="font-size:0.65rem; background:rgba(16, 185, 129, 0.15); color:#34d399; padding:1px 5px; border-radius:4px;">${s.elementKo.split(' ')[0]}</span>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(15, 23, 42, 0.65); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 12px;">
+                        <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:3px;">나의 재물 오행 (아극재)</div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:0.92rem; font-weight:800; color:#fbbf24;">${s.wealthElementKo}</span>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(15, 23, 42, 0.65); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 12px;">
+                        <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:3px;">이번 주 횡재수 지수</div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="font-size:0.92rem; font-weight:800; color:#fbbf24;">${profile.fortuneScore}점</span>
+                            <span style="font-size:0.7rem; color:#f59e0b;">${profile.starRating}</span>
+                        </div>
+                    </div>
+
+                    <div style="background:rgba(15, 23, 42, 0.65); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 12px;">
+                        <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:3px;">행운의 보완 컬러</div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${s.colorHex}; box-shadow:0 0 6px ${s.colorHex};"></span>
+                            <span style="font-size:0.75rem; font-weight:700; color:#e2e8f0;">${s.luckyColor}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Golden Day & Auspicious Time Highlight Boxes -->
+                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+                    <!-- 추천 요일 박스 -->
+                    <div style="background:linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%); border:1.5px solid rgba(245, 158, 11, 0.35); border-radius:14px; padding:14px; box-shadow:0 4px 14px rgba(0,0,0,0.3);">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                            <span style="font-size:0.78rem; font-weight:800; color:#fbbf24; display:flex; align-items:center; gap:6px;">
+                                <i class="fa-solid fa-calendar-check"></i> 이번 회차 추천 구매 요일
                             </span>
-                            <span style="font-size:0.74rem; color:#94a3b8; font-weight:600;">출생: ${birthDate} (${calLabel})</span>
+                            <span style="font-size:0.68rem; color:#94a3b8;">동양 칠요(七曜) 매핑</span>
                         </div>
-                        <h4 style="margin:2px 0 0 0; font-size:1.02rem; font-weight:800; color:#fff;">
-                            <span style="color:#fbbf24;">${realName}</span> 회원님의 제 ${currentRound}회차 로또 황금 구매 가이드
-                        </h4>
-                    </div>
-                </div>
-                <button type="button" onclick="window.renderFortuneAdvisorCard && window.renderFortuneAdvisorCard(true);" style="padding:6px 12px; border-radius:8px; background:rgba(30, 41, 59, 0.8); border:1px solid #475569; color:#cbd5e1; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.15s;" onmouseover="this.style.borderColor='#f59e0b'; this.style.color='#fbbf24';" onmouseout="this.style.borderColor='#475569'; this.style.color='#cbd5e1';">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                    <span>생년월일 변경</span>
-                </button>
-            </div>
-
-            <!-- Profile Summary 4 Pills -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin:14px 0;">
-                <div style="background:rgba(15, 23, 42, 0.65); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 12px;">
-                    <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:3px;">나의 본원 일간</div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:0.92rem; font-weight:800; color:#34d399;">${s.name}</span>
-                        <span style="font-size:0.65rem; background:rgba(16, 185, 129, 0.15); color:#34d399; padding:1px 5px; border-radius:4px;">${s.elementKo.split(' ')[0]}</span>
-                    </div>
-                </div>
-
-                <div style="background:rgba(15, 23, 42, 0.65); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 12px;">
-                    <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:3px;">나의 재물 오행 (아극재)</div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:0.92rem; font-weight:800; color:#fbbf24;">${s.wealthElementKo}</span>
-                    </div>
-                </div>
-
-                <div style="background:rgba(15, 23, 42, 0.65); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 12px;">
-                    <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:3px;">이번 주 횡재수 지수</div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:0.92rem; font-weight:800; color:#fbbf24;">${profile.fortuneScore}점</span>
-                        <span style="font-size:0.7rem; color:#f59e0b;">${profile.starRating}</span>
-                    </div>
-                </div>
-
-                <div style="background:rgba(15, 23, 42, 0.65); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:10px 12px;">
-                    <div style="font-size:0.68rem; color:#94a3b8; margin-bottom:3px;">행운의 보완 컬러</div>
-                    <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${s.colorHex}; box-shadow:0 0 6px ${s.colorHex};"></span>
-                        <span style="font-size:0.75rem; font-weight:700; color:#e2e8f0;">${s.luckyColor}</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Golden Day & Auspicious Time Highlight Boxes -->
-            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
-                <!-- 추천 요일 박스 -->
-                <div style="background:linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%); border:1.5px solid rgba(245, 158, 11, 0.35); border-radius:14px; padding:14px; box-shadow:0 4px 14px rgba(0,0,0,0.3);">
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                        <span style="font-size:0.78rem; font-weight:800; color:#fbbf24; display:flex; align-items:center; gap:6px;">
-                            <i class="fa-solid fa-calendar-check"></i> 이번 회차 추천 구매 요일
-                        </span>
-                        <span style="font-size:0.68rem; color:#94a3b8;">동양 칠요(七曜) 매핑</span>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:8px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(245, 158, 11, 0.12); border:1px solid rgba(245, 158, 11, 0.3);">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#111827; font-size:0.7rem; font-weight:800; padding:2px 7px; border-radius:5px;">1순위</span>
-                                <span style="font-size:0.86rem; font-weight:800; color:#fff;">${s.primaryDay}</span>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(245, 158, 11, 0.12); border:1px solid rgba(245, 158, 11, 0.3);">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#111827; font-size:0.7rem; font-weight:800; padding:2px 7px; border-radius:5px;">1순위</span>
+                                    <span style="font-size:0.86rem; font-weight:800; color:#fff;">${s.primaryDay}</span>
+                                </div>
+                                <span style="font-size:0.72rem; color:#fde68a; font-weight:700;">${s.primaryDayDesc}</span>
                             </div>
-                            <span style="font-size:0.72rem; color:#fde68a; font-weight:700;">${s.primaryDayDesc}</span>
-                        </div>
-                        <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(99, 102, 241, 0.1); border:1px solid rgba(99, 102, 241, 0.25);">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="background:rgba(99, 102, 241, 0.25); color:#c7d2fe; font-size:0.7rem; font-weight:800; padding:2px 7px; border-radius:5px;">2순위</span>
-                                <span style="font-size:0.84rem; font-weight:700; color:#cbd5e1;">${s.secondaryDay}</span>
+                            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(99, 102, 241, 0.1); border:1px solid rgba(99, 102, 241, 0.25);">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="background:rgba(99, 102, 241, 0.25); color:#c7d2fe; font-size:0.7rem; font-weight:800; padding:2px 7px; border-radius:5px;">2순위</span>
+                                    <span style="font-size:0.84rem; font-weight:700; color:#cbd5e1;">${s.secondaryDay}</span>
+                                </div>
+                                <span style="font-size:0.7rem; color:#a5b4fc;">${s.secondaryDayDesc}</span>
                             </div>
-                            <span style="font-size:0.7rem; color:#a5b4fc;">${s.secondaryDayDesc}</span>
+                        </div>
+                    </div>
+
+                    <!-- 구매 길시(吉時) 박스 -->
+                    <div style="background:linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%); border:1.5px solid rgba(99, 102, 241, 0.35); border-radius:14px; padding:14px; box-shadow:0 4px 14px rgba(0,0,0,0.3);">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                            <span style="font-size:0.78rem; font-weight:800; color:#a5b4fc; display:flex; align-items:center; gap:6px;">
+                                <i class="fa-solid fa-clock"></i> 구매 골든 타임 (진태양시 보정)
+                            </span>
+                            <span style="font-size:0.68rem; color:#94a3b8;">판매시간(06~24시) 연동</span>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(99, 102, 241, 0.12); border:1px solid rgba(99, 102, 241, 0.3);">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="background:linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color:#fff; font-size:0.7rem; font-weight:800; padding:2px 7px; border-radius:5px;">집중 길시</span>
+                                    <span style="font-size:0.86rem; font-weight:800; color:#fff;">${s.timeSlot1}</span>
+                                </div>
+                                <span style="font-size:0.72rem; color:#c7d2fe; font-weight:600;">${s.timeSlot1Desc}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255,255,255,0.06);">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="background:rgba(255,255,255,0.1); color:#94a3b8; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:5px;">보조 길시</span>
+                                    <span style="font-size:0.84rem; font-weight:700; color:#cbd5e1;">${s.timeSlot2}</span>
+                                </div>
+                                <span style="font-size:0.7rem; color:#94a3b8;">${s.timeSlot2Desc}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 구매 길시(吉時) 박스 -->
-                <div style="background:linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.85) 100%); border:1.5px solid rgba(99, 102, 241, 0.35); border-radius:14px; padding:14px; box-shadow:0 4px 14px rgba(0,0,0,0.3);">
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                        <span style="font-size:0.78rem; font-weight:800; color:#a5b4fc; display:flex; align-items:center; gap:6px;">
-                            <i class="fa-solid fa-clock"></i> 구매 골든 타임 (진태양시 보정)
-                        </span>
-                        <span style="font-size:0.68rem; color:#94a3b8;">판매시간(06~24시) 연동</span>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:8px;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(99, 102, 241, 0.12); border:1px solid rgba(99, 102, 241, 0.3);">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="background:linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color:#fff; font-size:0.7rem; font-weight:800; padding:2px 7px; border-radius:5px;">집중 길시</span>
-                                <span style="font-size:0.86rem; font-weight:800; color:#fff;">${s.timeSlot1}</span>
-                            </div>
-                            <span style="font-size:0.72rem; color:#c7d2fe; font-weight:600;">${s.timeSlot1Desc}</span>
-                        </div>
-                        <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-radius:8px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255,255,255,0.06);">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="background:rgba(255,255,255,0.1); color:#94a3b8; font-size:0.7rem; font-weight:700; padding:2px 7px; border-radius:5px;">보조 길시</span>
-                                <span style="font-size:0.84rem; font-weight:700; color:#cbd5e1;">${s.timeSlot2}</span>
-                            </div>
-                            <span style="font-size:0.7rem; color:#94a3b8;">${s.timeSlot2Desc}</span>
-                        </div>
+                <!-- Custom Advice -->
+                <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:flex-start; gap:10px;">
+                    <i class="fa-solid fa-lightbulb" style="color:#fbbf24; font-size:0.95rem; margin-top:2px; flex-shrink:0;"></i>
+                    <div style="font-size:0.74rem; color:#cbd5e1; line-height:1.5;">
+                        <strong style="color:#fff;">역학적 실천 팁:</strong> ${s.advice}
                     </div>
                 </div>
-            </div>
 
-            <!-- Custom Advice -->
-            <div style="margin-top:12px; padding:10px 14px; background:rgba(15, 23, 42, 0.7); border:1px solid rgba(255,255,255,0.08); border-radius:10px; display:flex; align-items:flex-start; gap:10px;">
-                <i class="fa-solid fa-lightbulb" style="color:#fbbf24; font-size:0.95rem; margin-top:2px; flex-shrink:0;"></i>
-                <div style="font-size:0.74rem; color:#cbd5e1; line-height:1.5;">
-                    <strong style="color:#fff;">역학적 실천 팁:</strong> ${s.advice}
+                <!-- Disclaimer -->
+                <div style="margin-top:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:0.68rem; color:#64748b;">
+                    <span>* 본 추천은 복권 구매의 재미와 심리적 기대를 돕는 역학 통계 가이드이며, 기존 7대 알고리즘 추천번호와 함께 독립적으로 참고하실 수 있습니다.</span>
+                    <span>한반도 표준 127.5° 진태양시 기준</span>
                 </div>
             </div>
+        `;
+    }
 
-            <!-- Disclaimer -->
-            <div style="margin-top:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:0.68rem; color:#64748b;">
-                <span>* 본 추천은 복권 구매의 재미와 심리적 기대를 돕는 역학 통계 가이드이며, 기존 7대 알고리즘 추천번호와 함께 독립적으로 참고하실 수 있습니다.</span>
-                <span>한반도 표준 127.5° 진태양시 기준</span>
-            </div>
-        </div>
-    `;
+    // 모든 대상 컨테이너(랜딩 페이지 대시보드 및 통계분석 탭 대시보드)에 일괄 반영
+    targets.forEach(el => {
+        el.innerHTML = htmlContent;
+    });
 }
 
 /**
  * 🔮 대시보드 인라인 생년월일 분석 및 저장 핸들러
  */
-export async function saveAndApplyDashboardBirthDate() {
-    const inputDate = document.getElementById('dashInlineBirthDate');
-    const selectType = document.getElementById('dashInlineCalendarType');
-    const btnSubmit = document.getElementById('btnDashSubmitBirth');
+export async function saveAndApplyDashboardBirthDate(triggerBtn) {
+    let parentForm = triggerBtn ? triggerBtn.closest('.dash-inline-birth-form') : null;
+    let inputDate = parentForm ? parentForm.querySelector('.dash-inline-birth-date') : document.querySelector('.dash-inline-birth-date');
+    let selectType = parentForm ? parentForm.querySelector('.dash-inline-calendar-type') : document.querySelector('.dash-inline-calendar-type');
+    let btnSubmit = triggerBtn || (parentForm ? parentForm.querySelector('.btn-dash-submit-birth') : document.querySelector('.btn-dash-submit-birth'));
 
     const birthDate = inputDate ? inputDate.value.trim() : '';
     const calendarType = selectType ? selectType.value : 'solar';
@@ -564,7 +608,7 @@ export async function saveAndApplyDashboardBirthDate() {
             }
         }
 
-        // 5. 대시보드 추천 가이드 즉각 렌더링
+        // 5. 대시보드 추천 가이드 즉각 렌더링 (모든 타겟 일괄 갱신)
         renderFortuneAdvisorCard(false);
 
         if (typeof showToast === 'function') {

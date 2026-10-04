@@ -77,6 +77,10 @@ export async function renderLandingDashboard() {
         try { window.updatePurchaseDeadlineCountdowns(); } catch(e){}
     }
 
+    if (typeof window.renderFortuneAdvisorCard === 'function') {
+        try { window.renderFortuneAdvisorCard(); } catch(e){}
+    }
+
     // ⚡ 16인 전체회원 스냅샷 동기화 스트립 표시
     const syncStripText = document.getElementById('lpSyncStripText');
     if (syncStripText) {

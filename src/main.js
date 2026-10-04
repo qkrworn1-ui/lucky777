@@ -2,6 +2,7 @@ import { checkAuthOnLoad, setupAuthEvents, SafeAuth, getUserPermissions } from '
 import { initLottoService } from './services/lotto/index.js';
 import { initTotoService } from './services/toto/index.js';
 import { renderLandingDashboard } from './shared/landing-dashboard.js';
+import { renderFortuneAdvisorCard } from './services/lotto/views/dashboard-tab.js';
 import { showToast } from './shared/utils.js';
 import { reconnectFirebaseNetwork } from './shared/db.js';
 
@@ -116,6 +117,9 @@ window.showLanding = function(pushHistory = true) {
         } else if (typeof window.renderLandingDashboard === 'function') {
             window.renderLandingDashboard();
         }
+        if (typeof window.renderFortuneAdvisorCard === 'function') {
+            try { window.renderFortuneAdvisorCard(); } catch(e){}
+        }
     } catch(e) {
         console.warn('[Landing Safe Load Exception]', e);
     }
@@ -167,6 +171,9 @@ window.showLotto = function(pushHistory = true) {
             initLottoService();
         } else if (typeof window !== 'undefined' && typeof window.initLottoService === 'function') {
             window.initLottoService();
+        }
+        if (typeof window.renderFortuneAdvisorCard === 'function') {
+            try { window.renderFortuneAdvisorCard(); } catch(e){}
         }
     } catch(e) {
         console.warn('[Lotto Safe Load Exception]', e);
@@ -287,6 +294,19 @@ function runInit() {
             console.error('[Landing Dashboard Init Error - Isolated]:', e);
         }
     }, 20);
+
+    // 4. Render Fortune Advisor Card immediately on both Landing & Tab Dashboards
+    setTimeout(() => {
+        try {
+            if (typeof renderFortuneAdvisorCard === 'function') {
+                renderFortuneAdvisorCard();
+            } else if (typeof window.renderFortuneAdvisorCard === 'function') {
+                window.renderFortuneAdvisorCard();
+            }
+        } catch(e) {
+            console.error('[Fortune Advisor Init Error - Isolated]:', e);
+        }
+    }, 25);
 }
 
 let _lastResumeWakeupTime = 0;

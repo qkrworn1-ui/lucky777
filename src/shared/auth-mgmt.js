@@ -1288,6 +1288,9 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
         if (typeof window.renderLandingDashboard === 'function') {
             try { window.renderLandingDashboard(); } catch(e) {}
         }
+        if (typeof window.renderFortuneAdvisorCard === 'function') {
+            try { window.renderFortuneAdvisorCard(); } catch(e) {}
+        }
         if (typeof window.updateTop7AlgoUI === 'function') {
             try { window.updateTop7AlgoUI(); } catch(e) {}
         }
@@ -1371,11 +1374,19 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                             birthDate: uData.birthDate || null,
                             calendarType: uData.calendarType || 'solar'
                         };
-                        if (uData.birthDate) {
+                        if (uData.birthDate && uData.birthDate !== 'null' && String(uData.birthDate).trim()) {
                             try {
-                                localStorage.setItem('user_birthdate_' + authId, uData.birthDate);
+                                localStorage.setItem('user_birthdate_' + authId, String(uData.birthDate).trim());
                                 localStorage.setItem('user_calendartype_' + authId, uData.calendarType || 'solar');
                             } catch(e){}
+                        } else {
+                            try {
+                                localStorage.removeItem('user_birthdate_' + authId);
+                                localStorage.removeItem('user_calendartype_' + authId);
+                            } catch(e){}
+                        }
+                        if (typeof window.renderFortuneAdvisorCard === 'function') {
+                            try { window.renderFortuneAdvisorCard(); } catch(e){}
                         }
 
                         if (freshAdmin !== isUserAdmin) {
@@ -3857,11 +3868,16 @@ export function setupAuthEvents(initFirebaseAndData) {
             setUserPermissionsCache(userId, { allowLotto, allowToto });
 
             if (window.__currentUser && (window.__currentUser.userId === userId || String(SafeAuth.get()).toLowerCase() === userId.toLowerCase())) {
-                window.__currentUser.birthDate = birthDate;
+                window.__currentUser.birthDate = birthDate ? birthDate : null;
                 window.__currentUser.calendarType = calendarType;
                 try {
-                    localStorage.setItem('user_birthdate_' + userId, birthDate);
-                    localStorage.setItem('user_calendartype_' + userId, calendarType);
+                    if (birthDate) {
+                        localStorage.setItem('user_birthdate_' + userId, birthDate);
+                        localStorage.setItem('user_calendartype_' + userId, calendarType);
+                    } else {
+                        localStorage.removeItem('user_birthdate_' + userId);
+                        localStorage.removeItem('user_calendartype_' + userId);
+                    }
                 } catch(e){}
                 if (typeof window.renderFortuneAdvisorCard === 'function') {
                     window.renderFortuneAdvisorCard();
