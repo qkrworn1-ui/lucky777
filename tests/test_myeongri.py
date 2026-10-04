@@ -85,5 +85,42 @@ class TestMyeongriService(unittest.TestCase):
         self.assertIn('.fortune-toggle-bar', styles_content)
         self.assertIn('.fortune-collapsible-content', styles_content)
 
+    def test_06_round_fortune_adaptation(self):
+        myeongri_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'services', 'lotto', 'myeongri-service.js')
+        with open(myeongri_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        self.assertIn('analyzeRoundFortune', content)
+        self.assertIn('EARTHLY_BRANCHES', content)
+        self.assertIn('NOBLEMAN_BRANCHES', content)
+        self.assertIn('STEM_ELEMENT_INDEX', content)
+        self.assertIn('BRANCH_ELEMENT_INDEX', content)
+        self.assertIn('WEEKDAY_ELEMENT_INDEX', content)
+        self.assertIn('TWELVE_HOURS', content)
+        self.assertIn('targetRound', content)
+        self.assertIn('luckyRoundDays', content)
+
+    def test_07_dashboard_round_calc_uses_getUpcomingLottoRound(self):
+        dash_js_path = os.path.join(os.path.dirname(__file__), '..', 'src', 'services', 'lotto', 'views', 'dashboard-tab.js')
+        with open(dash_js_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        self.assertIn('getUpcomingLottoRound', content)
+        self.assertNotIn(': 1239', content, "Stale fallback 1239 must not be hardcoded in dashboard-tab.js")
+        self.assertIn('currentRound = (typeof getUpcomingLottoRound === \'function\')', content)
+
+    def test_08_canonical_round_advancement_and_dynamic_dates(self):
+        # 2002-12-07 was Round 1 (Saturday)
+        round_1_draw = date(2002, 12, 7)
+        from datetime import timedelta
+        round_1244_draw = round_1_draw + timedelta(days=(1244 - 1) * 7)
+        round_1245_draw = round_1_draw + timedelta(days=(1245 - 1) * 7)
+        self.assertEqual(round_1244_draw.isoformat(), '2026-10-03')
+        self.assertEqual(round_1245_draw.isoformat(), '2026-10-10')
+
+        # Round 1245 purchase window: Sunday 2026-10-04 to Saturday 2026-10-10
+        r1245_start = round_1245_draw - timedelta(days=6)
+        self.assertEqual(r1245_start.isoformat(), '2026-10-04')
+        self.assertEqual(r1245_start.weekday(), 6) # Sunday in Python datetime (0=Mon, 6=Sun)
+        self.assertEqual(round_1245_draw.weekday(), 5) # Saturday in Python datetime
+
 if __name__ == '__main__':
     unittest.main()

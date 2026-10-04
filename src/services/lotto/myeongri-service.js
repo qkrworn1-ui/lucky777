@@ -260,6 +260,67 @@ const HEAVENLY_STEMS = [
     }
 ];
 
+// 12지지 (Earthly Branches)
+const EARTHLY_BRANCHES = [
+    { ji: '자(子)', hanja: '子', animal: '쥐', element: 'water', elementKo: '수 (水)' },
+    { ji: '축(丑)', hanja: '丑', animal: '소', element: 'earth', elementKo: '토 (土)' },
+    { ji: '인(寅)', hanja: '寅', animal: '호랑이', element: 'wood', elementKo: '목 (木)' },
+    { ji: '묘(卯)', hanja: '卯', animal: '토끼', element: 'wood', elementKo: '목 (木)' },
+    { ji: '진(辰)', hanja: '辰', animal: '용', element: 'earth', elementKo: '토 (土)' },
+    { ji: '사(巳)', hanja: '巳', animal: '뱀', element: 'fire', elementKo: '화 (火)' },
+    { ji: '오(午)', hanja: '午', animal: '말', element: 'fire', elementKo: '화 (火)' },
+    { ji: '미(未)', hanja: '未', animal: '양', element: 'earth', elementKo: '토 (土)' },
+    { ji: '신(申)', hanja: '申', animal: '원숭이', element: 'metal', elementKo: '금 (金)' },
+    { ji: '유(酉)', hanja: '酉', animal: '닭', element: 'metal', elementKo: '금 (金)' },
+    { ji: '술(戌)', hanja: '戌', animal: '개', element: 'earth', elementKo: '토 (土)' },
+    { ji: '해(亥)', hanja: '亥', animal: '돼지', element: 'water', elementKo: '수 (水)' }
+];
+
+// 천간 오행 인덱스: 0:목, 1:화, 2:토, 3:금, 4:수
+const STEM_ELEMENT_INDEX = [0, 0, 1, 1, 2, 2, 3, 3, 4, 4];
+
+// 지지 오행 인덱스: 자(4), 축(2), 인(0), 묘(0), 진(2), 사(1), 오(1), 미(2), 신(3), 유(3), 술(2), 해(4)
+const BRANCH_ELEMENT_INDEX = [4, 2, 0, 0, 2, 1, 1, 2, 3, 3, 2, 4];
+
+// 요일(0:일 ~ 6:토) 동양 칠요(七曜) 오행 매핑
+const WEEKDAY_ELEMENT_INDEX = [1, 0, 1, 4, 0, 3, 2];
+const WEEKDAY_NAMES_KO = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+
+// 천을귀인(天乙貴人) 지지 매핑
+const NOBLEMAN_BRANCHES = [
+    [1, 7],   // 0: 갑 -> 축, 미
+    [0, 8],   // 1: 을 -> 자, 신
+    [11, 9],  // 2: 병 -> 해, 유
+    [11, 9],  // 3: 정 -> 해, 유
+    [1, 7],   // 4: 무 -> 축, 미
+    [0, 8],   // 5: 기 -> 자, 신
+    [1, 7],   // 6: 경 -> 축, 미
+    [2, 6],   // 7: 신 -> 인, 오
+    [5, 3],   // 8: 임 -> 사, 묘
+    [5, 3]    // 9: 계 -> 사, 묘
+];
+
+const STEM_NAMES_SHORT = ['갑', '을', '병', '정', '무', '기', '경', '신', '임', '계'];
+const STEM_NAMES_HANJA = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
+const BRANCH_NAMES_SHORT = ['자', '축', '인', '묘', '진', '사', '오', '미', '신', '유', '술', '해'];
+const BRANCH_NAMES_HANJA = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
+
+// 진태양시 30분 보정 적용 12시진 시간대 정의 (표준시 기준)
+const TWELVE_HOURS = [
+    { jiIdx: 0, name: '자시 (子時)', range: '23:30 ~ 01:30' },
+    { jiIdx: 1, name: '축시 (丑時)', range: '01:30 ~ 03:30' },
+    { jiIdx: 2, name: '인시 (寅時)', range: '03:30 ~ 05:30' },
+    { jiIdx: 3, name: '묘시 (卯時)', range: '05:30 ~ 07:30' },
+    { jiIdx: 4, name: '진시 (辰時)', range: '07:30 ~ 09:30' },
+    { jiIdx: 5, name: '사시 (巳時)', range: '09:30 ~ 11:30' },
+    { jiIdx: 6, name: '오시 (午時)', range: '11:30 ~ 13:30' },
+    { jiIdx: 7, name: '미시 (未時)', range: '13:30 ~ 15:30' },
+    { jiIdx: 8, name: '신시 (申時)', range: '15:30 ~ 17:30' },
+    { jiIdx: 9, name: '유시 (酉時)', range: '17:30 ~ 19:30' },
+    { jiIdx: 10, name: '술시 (戌時)', range: '19:30 ~ 21:30' },
+    { jiIdx: 11, name: '해시 (亥時)', range: '21:30 ~ 23:30' }
+];
+
 // 기준일 Anchor Date: 1900-01-31 (양력 1900년 1월 31일 = 갑진(甲辰)일)
 const ANCHOR_DATE = new Date('1900-01-31T00:00:00Z');
 
@@ -297,6 +358,236 @@ export const MyeongriService = {
     },
 
     /**
+     * 특정 회차(targetRound)의 주간 7일(일~토)을 사주명리학(십신·천을귀인·천간합·칠요)으로 정밀 채점하여
+     * 해당 회차에 특화된 1·2순위 추천 요일, 진태양시 보정 길시(시두법), 및 맞춤 조언을 동적으로 도출
+     */
+    analyzeRoundFortune(ganIdx, targetRound = 1245) {
+        if (ganIdx === null || ganIdx === undefined || ganIdx < 0 || ganIdx >= HEAVENLY_STEMS.length) {
+            return null;
+        }
+
+        const stem = HEAVENLY_STEMS[ganIdx];
+        const uElem = STEM_ELEMENT_INDEX[ganIdx];
+        const uPol = ganIdx % 2; // 0: 양, 1: 음
+        const wElem = (uElem + 2) % 5; // 재성 (아극재)
+        const oElem = (uElem + 1) % 5; // 식상 (아생자)
+        const nobleBranches = NOBLEMAN_BRANCHES[ganIdx] || [];
+
+        // 회차 추첨일(토요일) 및 구매 기간(일~토) 산출
+        // 로또 1회 추첨일: 2002년 12월 7일 (토)
+        const roundDrawDate = new Date(Date.UTC(2002, 11, 7 + (targetRound - 1) * 7));
+
+        const daysScored = [];
+        for (let k = 0; k < 7; k++) {
+            // k=0: 일요일 (추첨 6일 전), ..., k=6: 토요일 (추첨 당일)
+            const curDate = new Date(roundDrawDate.getTime() - (6 - k) * 86400000);
+            const diffDays = Math.floor((curDate.getTime() - ANCHOR_DATE.getTime()) / 86400000);
+            const dayGan = ((diffDays % 10) + 10) % 10;
+            const dayJi = (((diffDays + 4) % 12) + 12) % 12;
+            const wDay = curDate.getUTCDay(); // 0:일 ~ 6:토
+            const wDayElem = WEEKDAY_ELEMENT_INDEX[wDay];
+
+            let score = 50;
+            const reasons = [];
+
+            const dStemElem = STEM_ELEMENT_INDEX[dayGan];
+            const dStemPol = dayGan % 2;
+            const dJiElem = BRANCH_ELEMENT_INDEX[dayJi];
+
+            // 1) 천간 십신 판별
+            if (dStemElem === wElem) {
+                if (dStemPol === uPol) {
+                    score += 45;
+                    reasons.push('천간 편재(偏財) 횡재수 감응');
+                } else {
+                    score += 38;
+                    reasons.push('천간 정재(正財) 안정 재물운');
+                }
+            } else if (dStemElem === oElem) {
+                score += 32;
+                reasons.push('천간 식상생재(食傷生財) 발복');
+            } else if (dStemElem === uElem) {
+                score += 15;
+                reasons.push('본원 비견·겁재 조력');
+            } else {
+                score += 10;
+            }
+
+            // 2) 천을귀인(天乙貴人)
+            if (nobleBranches.includes(dayJi)) {
+                score += 26;
+                reasons.push(`천을귀인(${BRANCH_NAMES_SHORT[dayJi]}) 길조`);
+            }
+
+            // 3) 지지 재성/식상
+            if (dJiElem === wElem) {
+                score += 28;
+                reasons.push('지지 재성(財星) 결실');
+            } else if (dJiElem === oElem) {
+                score += 20;
+                reasons.push('지지 식상(食傷) 생조');
+            }
+
+            // 4) 천간합(天干合)
+            if ((ganIdx + 5) % 10 === dayGan) {
+                score += 18;
+                reasons.push('천간합(天干合) 상생화합');
+            }
+
+            // 5) 동양 칠요(七曜) 공명
+            if (wDayElem === wElem) {
+                score += 16;
+                reasons.push('칠요(七曜) 재물 오행 합치');
+            } else if (wDayElem === oElem) {
+                score += 10;
+                reasons.push('칠요(七曜) 식상 오행 조화');
+            }
+
+            // 주말 가중치(금·토 발권 편의)
+            if (wDay === 6) score += 4;
+            else if (wDay === 5) score += 2;
+
+            const m = curDate.getUTCMonth() + 1;
+            const d = curDate.getUTCDate();
+            const dateStr = `${m < 10 ? '0' + m : m}.${d < 10 ? '0' + d : d}`;
+            const iljinKo = `${STEM_NAMES_SHORT[dayGan]}${BRANCH_NAMES_SHORT[dayJi]}일 (${STEM_NAMES_HANJA[dayGan]}${BRANCH_NAMES_HANJA[dayJi]}日)`;
+            const iljinShort = `${STEM_NAMES_SHORT[dayGan]}${BRANCH_NAMES_SHORT[dayJi]}일`;
+
+            daysScored.push({
+                curDate,
+                month: m,
+                date: d,
+                dateStr,
+                weekdayIdx: wDay,
+                weekdayKo: WEEKDAY_NAMES_KO[wDay],
+                dayGan,
+                dayJi,
+                iljinKo,
+                iljinShort,
+                score,
+                reasons
+            });
+        }
+
+        // 높은 점수 순으로 정렬
+        daysScored.sort((a, b) => b.score - a.score);
+
+        const top1 = daysScored[0];
+        const top2 = daysScored[1];
+
+        // 1순위 및 2순위 요일 정보 포맷
+        const primaryDay = `${top1.weekdayKo} (${top1.dateStr}, ${top1.iljinShort})`;
+        const primaryDayShort = `${top1.weekdayKo} (${top1.dateStr})`;
+        const primaryDayDesc = top1.reasons.slice(0, 2).join(' 및 ') || '재물운 왕성 길일';
+
+        const secondaryDay = `${top2.weekdayKo} (${top2.dateStr}, ${top2.iljinShort})`;
+        const secondaryDayShort = `${top2.weekdayKo} (${top2.dateStr})`;
+        const secondaryDayDesc = top2.reasons.slice(0, 2).join(' 및 ') || '보조 안정 재물일';
+
+        // 1순위 추천일 기준 시두법(오서둔법) 시간대(길시) 동적 도출
+        // 시작 자시 천간: ((일간 % 5) * 2) % 10
+        const startHourGan = ((top1.dayGan % 5) * 2) % 10;
+        const isSaturday = top1.weekdayIdx === 6;
+
+        const hoursScored = [];
+        for (let j = 0; j < 12; j++) {
+            const hDef = TWELVE_HOURS[j];
+            // 로또 발권 가능 시간: 06:00 ~ 24:00 (묘시~해시)
+            if (j < 3) continue; // 자시, 축시, 인시 제외
+            if (isSaturday && j > 9) continue; // 토요일은 술시(마감 20:00 한정) 또는 유시까지
+
+            const hGan = (startHourGan + j) % 10;
+            const hJi = j;
+            const hStemElem = STEM_ELEMENT_INDEX[hGan];
+            const hStemPol = hGan % 2;
+            const hJiElem = BRANCH_ELEMENT_INDEX[hJi];
+
+            let hScore = 40;
+            const hReasons = [];
+
+            // 시진 천간 십신
+            if (hStemElem === wElem) {
+                if (hStemPol === uPol) {
+                    hScore += 35;
+                    hReasons.push('시진 편재(偏財) 횡재수');
+                } else {
+                    hScore += 28;
+                    hReasons.push('시진 정재(正財) 재물운');
+                }
+            } else if (hStemElem === oElem) {
+                hScore += 24;
+                hReasons.push('식상생재 행동 촉진');
+            }
+
+            // 시진 지지 귀인 및 재성
+            if (nobleBranches.includes(hJi)) {
+                hScore += 25;
+                hReasons.push(`천을귀인(${BRANCH_NAMES_SHORT[hJi]}) 시진`);
+            }
+            if (hJiElem === wElem) {
+                hScore += 20;
+                hReasons.push('지지 재성 결실');
+            } else if (hJiElem === oElem) {
+                hScore += 15;
+                hReasons.push('지지 식상 조화');
+            }
+
+            // 천간합 시진
+            if ((ganIdx + 5) % 10 === hGan) {
+                hScore += 16;
+                hReasons.push('천간합 시간대');
+            }
+
+            // 구매 선호 시간대 가중치 (오후 골든타임 15:30~19:30 및 점심 11:30~13:30)
+            if (hJi === 8 || hJi === 9) hScore += 8; // 신시, 유시
+            else if (hJi === 6) hScore += 5; // 오시
+
+            hoursScored.push({
+                jiIdx: j,
+                name: hDef.name,
+                range: hDef.range,
+                score: hScore,
+                reasons: hReasons
+            });
+        }
+
+        hoursScored.sort((a, b) => b.score - a.score);
+
+        const h1 = hoursScored[0] || TWELVE_HOURS[8];
+        const h2 = hoursScored[1] || TWELVE_HOURS[9];
+
+        const timeSlot1 = `${h1.name} ${h1.range}`;
+        const timeSlot1Desc = h1.reasons.slice(0, 2).join(' · ') || '최적의 재물 집중 길시';
+        const timeSlot2 = `${h2.name} ${h2.range}`;
+        const timeSlot2Desc = h2.reasons.slice(0, 2).join(' · ') || '보조 안정 재물 길시';
+
+        // 맞춤형 역학 조언 (Dynamic Advice)
+        const advice = `제 ${targetRound}회차는 ${top1.month}월 ${top1.date}일 ${top1.weekdayKo}(${top1.iljinShort})에 ${top1.reasons[0] || '최상의 재물운'} 흐름이 가장 왕성합니다. ${h1.name.split(' ')[0]} ${h1.range} 시간대를 활용하여 구매하시면 본원(${stem.name})의 기운과 상응하여 최적의 횡재 파동을 이끌어낼 수 있습니다.`;
+
+        // 횡재수 점수 (92 ~ 98점 범위의 활력형 스코어)
+        const fortuneScore = 92 + (top1.score % 7);
+        const starRating = fortuneScore >= 96 ? '★★★★★' : '★★★★☆';
+
+        return {
+            targetRound,
+            primaryDay,
+            primaryDayShort,
+            primaryDayDesc,
+            secondaryDay,
+            secondaryDayShort,
+            secondaryDayDesc,
+            timeSlot1,
+            timeSlot1Desc,
+            timeSlot2,
+            timeSlot2Desc,
+            advice,
+            fortuneScore,
+            starRating,
+            daysScored
+        };
+    },
+
+    /**
      * 생년월일을 기반으로 종합 명리학 프로필 및 길일/길시 분석 객체 반환
      */
     calculateMyeongriProfile(birthDateStr, options = {}) {
@@ -309,19 +600,34 @@ export const MyeongriService = {
         const stem = HEAVENLY_STEMS[ganIdx];
         const calendarType = options.calendarType || 'solar';
         const birthHour = options.birthHour || 'unknown';
+        const targetRound = options.currentRound || ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 1245);
 
-        // 횡재수 점수 (92 ~ 98점 범위의 격려형 스코어)
-        const dateHash = (String(birthDateStr).split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) + (options.currentRound || 1239)) % 7;
-        const fortuneScore = 92 + dateHash;
+        // 회차별 동적 사주 명리학 분석 (해당 회차 주간 7일 및 시두법 길시)
+        const dynamic = this.analyzeRoundFortune(ganIdx, targetRound);
 
         return {
             birthDate: birthDateStr,
             calendarType: calendarType,
             birthHour: birthHour,
             ganIndex: ganIdx,
-            stem: stem,
-            fortuneScore: fortuneScore,
-            starRating: fortuneScore >= 96 ? '★★★★★' : '★★★★☆',
+            targetRound: targetRound,
+            stem: Object.assign({}, stem, {
+                primaryDay: dynamic ? dynamic.primaryDay : stem.primaryDay,
+                primaryDayShort: dynamic ? dynamic.primaryDayShort : stem.primaryDayShort,
+                primaryDayDesc: dynamic ? dynamic.primaryDayDesc : stem.primaryDayDesc,
+                secondaryDay: dynamic ? dynamic.secondaryDay : stem.secondaryDay,
+                secondaryDayShort: dynamic ? dynamic.secondaryDayShort : stem.secondaryDayShort,
+                secondaryDayDesc: dynamic ? dynamic.secondaryDayDesc : stem.secondaryDayDesc,
+                timeSlot1: dynamic ? dynamic.timeSlot1 : stem.timeSlot1,
+                timeSlot1Desc: dynamic ? dynamic.timeSlot1Desc : stem.timeSlot1Desc,
+                timeSlot2: dynamic ? dynamic.timeSlot2 : stem.timeSlot2,
+                timeSlot2Desc: dynamic ? dynamic.timeSlot2Desc : stem.timeSlot2Desc,
+                advice: dynamic ? dynamic.advice : stem.advice,
+                luckyRoundDays: dynamic ? dynamic.daysScored : []
+            }),
+            fortuneScore: dynamic ? dynamic.fortuneScore : (92 + ((ganIdx + targetRound) % 7)),
+            starRating: (dynamic && dynamic.fortuneScore >= 96) ? '★★★★★' : '★★★★☆',
+            dynamicAnalysis: dynamic,
             calculatedAt: new Date().toISOString()
         };
     }

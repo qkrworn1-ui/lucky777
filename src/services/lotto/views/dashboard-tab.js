@@ -4,7 +4,7 @@ import { computeAbsoluteTop10Combinations } from '../generator.js';
 import { recalculateGroups } from '../statistics.js';
 import { calculateStats, getNeighborMatches } from '../scoring.js';
 import { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations } from '../ledger.js';
-import { updateLoggedInUserHeaderUI } from '../../../shared/auth-mgmt.js';
+import { updateLoggedInUserHeaderUI, getUpcomingLottoRound } from '../../../shared/auth-mgmt.js';
 import { db } from '../../../shared/db.js';
 import { MyeongriService } from '../myeongri-service.js';
 
@@ -347,7 +347,13 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
         });
     }
 
-    const currentRound = (typeof state !== 'undefined' && state && state.CURRENT_ROUND) ? state.CURRENT_ROUND : (window.state && window.state.CURRENT_ROUND ? window.state.CURRENT_ROUND : 1239);
+    const currentRound = (typeof getUpcomingLottoRound === 'function')
+        ? getUpcomingLottoRound()
+        : ((typeof window !== 'undefined' && window.getUpcomingLottoRound)
+            ? window.getUpcomingLottoRound()
+            : ((typeof state !== 'undefined' && state && (state.nextRoundNum || (state.latestDrawData && state.latestDrawData.drwNo + 1)))
+                ? (state.nextRoundNum || state.latestDrawData.drwNo + 1)
+                : 1245));
 
     // 2. 생년월일 유효성 및 프로필 산출 판별
     let shouldShowInput = !birthDate || forceShowInput;
