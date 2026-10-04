@@ -1320,7 +1320,9 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                             isAdmin: cAdmin,
                             isPermanent: cPerm,
                             createdAt: cachedData.createdAt || null,
-                            authProvider: cachedData.authProvider || 'password'
+                            authProvider: cachedData.authProvider || 'password',
+                            birthDate: cachedData.birthDate || null,
+                            calendarType: cachedData.calendarType || 'solar'
                         };
                     }
 
@@ -1365,8 +1367,16 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                             isAdmin: freshAdmin,
                             isPermanent: isPerm,
                             createdAt: uData.createdAt || null,
-                            authProvider: uData.authProvider || 'password'
+                            authProvider: uData.authProvider || 'password',
+                            birthDate: uData.birthDate || null,
+                            calendarType: uData.calendarType || 'solar'
                         };
+                        if (uData.birthDate) {
+                            try {
+                                localStorage.setItem('user_birthdate_' + authId, uData.birthDate);
+                                localStorage.setItem('user_calendartype_' + authId, uData.calendarType || 'solar');
+                            } catch(e){}
+                        }
 
                         if (freshAdmin !== isUserAdmin) {
                             if (freshAdmin) {
@@ -3244,11 +3254,23 @@ export function setupAuthEvents(initFirebaseAndData) {
                         role: data.role || (isAdm ? 'admin' : 'user'),
                         isAdmin: isAdm,
                         createdAt: userCreatedAt,
-                        authProvider: data.authProvider || 'password'
+                        authProvider: data.authProvider || 'password',
+                        birthDate: data.birthDate || null,
+                        calendarType: data.calendarType || 'solar'
                     };
+                    if (data.birthDate) {
+                        try {
+                            localStorage.setItem('user_birthdate_' + rawId, data.birthDate);
+                            localStorage.setItem('user_calendartype_' + rawId, data.calendarType || 'solar');
+                        } catch(e){}
+                    }
 
                     // ✅ Instant UI Unlock without waiting for network round-trips
                     unlockUIImmediately(rawId, `👋 ${userRealName}님 환영합니다!`);
+
+                    if (typeof window.renderFortuneAdvisorCard === 'function') {
+                        try { window.renderFortuneAdvisorCard(); } catch(e){}
+                    }
 
                     // Reset fail count & migrate legacy plaintext in background
                     const updatePayload = {

@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.04.1212 - BUILD_DATE: 2026-10-04] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.04.1225.24 - BUILD_DATE: 2026-10-04] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.04.1212)
+ * Lucky777 Smart Bundle (v2026.10.04.1225.24)
  */
 
 
@@ -2750,7 +2750,9 @@ async function checkAuthOnLoad(initFirebaseAndData) {
                             isAdmin: cAdmin,
                             isPermanent: cPerm,
                             createdAt: cachedData.createdAt || null,
-                            authProvider: cachedData.authProvider || 'password'
+                            authProvider: cachedData.authProvider || 'password',
+                            birthDate: cachedData.birthDate || null,
+                            calendarType: cachedData.calendarType || 'solar'
                         };
                     }
 
@@ -2795,8 +2797,16 @@ async function checkAuthOnLoad(initFirebaseAndData) {
                             isAdmin: freshAdmin,
                             isPermanent: isPerm,
                             createdAt: uData.createdAt || null,
-                            authProvider: uData.authProvider || 'password'
+                            authProvider: uData.authProvider || 'password',
+                            birthDate: uData.birthDate || null,
+                            calendarType: uData.calendarType || 'solar'
                         };
+                        if (uData.birthDate) {
+                            try {
+                                localStorage.setItem('user_birthdate_' + authId, uData.birthDate);
+                                localStorage.setItem('user_calendartype_' + authId, uData.calendarType || 'solar');
+                            } catch(e){}
+                        }
 
                         if (freshAdmin !== isUserAdmin) {
                             if (freshAdmin) {
@@ -4674,11 +4684,23 @@ function setupAuthEvents(initFirebaseAndData) {
                         role: data.role || (isAdm ? 'admin' : 'user'),
                         isAdmin: isAdm,
                         createdAt: userCreatedAt,
-                        authProvider: data.authProvider || 'password'
+                        authProvider: data.authProvider || 'password',
+                        birthDate: data.birthDate || null,
+                        calendarType: data.calendarType || 'solar'
                     };
+                    if (data.birthDate) {
+                        try {
+                            localStorage.setItem('user_birthdate_' + rawId, data.birthDate);
+                            localStorage.setItem('user_calendartype_' + rawId, data.calendarType || 'solar');
+                        } catch(e){}
+                    }
 
                     // ✅ Instant UI Unlock without waiting for network round-trips
                     unlockUIImmediately(rawId, `👋 ${userRealName}님 환영합니다!`);
+
+                    if (typeof window.renderFortuneAdvisorCard === 'function') {
+                        try { window.renderFortuneAdvisorCard(); } catch(e){}
+                    }
 
                     // Reset fail count & migrate legacy plaintext in background
                     const updatePayload = {
@@ -29798,8 +29820,12 @@ let sumChartInstance = null;
 
 function renderDashboardCharts() {
     const tabDashEl = document.getElementById('tab-dashboard');
-    if (!tabDashEl || (!tabDashEl.classList.contains('active') && tabDashEl.style.display === 'none')) {
-        return;
+    if (!tabDashEl) return;
+
+    if (typeof renderFortuneAdvisorCard === 'function') {
+        try { renderFortuneAdvisorCard(); } catch(e) {}
+    } else if (typeof window.renderFortuneAdvisorCard === 'function') {
+        try { window.renderFortuneAdvisorCard(); } catch(e) {}
     }
 
     if (typeof updateLoggedInUserHeaderUI === 'function') {
@@ -29808,8 +29834,8 @@ function renderDashboardCharts() {
         try { window.updateLoggedInUserHeaderUI(); } catch(e) {}
     }
 
-    if (typeof renderFortuneAdvisorCard === 'function') {
-        try { renderFortuneAdvisorCard(); } catch(e) {}
+    if (!tabDashEl.classList.contains('active') && tabDashEl.style.display === 'none') {
+        return;
     }
 
     if (state.HOT_GROUP && state.HOT_GROUP.length > 0) {
@@ -29986,126 +30012,153 @@ function renderDashboardCharts() {
 
 /**
  * 🔮 개인 생년월일 기반 로또 구매 추천 요일 및 길시 렌더링 (사주명리학 어드바이저)
+ * 사용자관리에 생년월일이 등록되어 있지 않으면 0ms 즉각 대시보드 인라인 입력 위젯 렌더링
  */
-async function renderFortuneAdvisorCard() {
+function renderFortuneAdvisorCard(forceShowInput = false) {
     const container = document.getElementById('dashboardFortuneAdvisorContainer');
     if (!container) return;
 
-    let authId = '';
-    if (typeof SafeAuth !== 'undefined' && SafeAuth.get) {
-        authId = SafeAuth.get();
-    } else if (window.SafeAuth && window.SafeAuth.get) {
-        authId = window.SafeAuth.get();
-    }
+    let authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '');
     if (typeof authId === 'string' && authId.startsWith('{')) {
         try { authId = JSON.parse(authId).userid || authId; } catch(e){}
     }
     authId = (authId || '').trim();
 
-    // 1. 비로그인 상태
-    if (!authId) {
-        container.innerHTML = `
-            <div style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.75) 0%, rgba(15, 23, 42, 0.9) 100%); border:1.5px solid rgba(245, 158, 11, 0.3); border-radius:16px; padding:18px 20px; box-shadow:0 8px 24px rgba(0,0,0,0.35); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px;">
-                <div style="display:flex; align-items:center; gap:14px;">
-                    <div style="width:48px; height:48px; border-radius:12px; background:rgba(245, 158, 11, 0.15); border:1px solid rgba(245, 158, 11, 0.3); display:flex; align-items:center; justify-content:center; color:#fbbf24; font-size:1.4rem; flex-shrink:0;">
-                        <i class="fa-solid fa-compass"></i>
-                    </div>
-                    <div>
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:3px;">
-                            <span style="background:rgba(245, 158, 11, 0.2); border:1px solid rgba(245, 158, 11, 0.4); color:#fbbf24; font-size:0.7rem; font-weight:800; padding:2px 8px; border-radius:6px;">사주명리학 횡재수 분석</span>
-                            <span style="font-size:0.72rem; color:#94a3b8;">제 ${state.CURRENT_ROUND || 1239}회차</span>
-                        </div>
-                        <h4 style="margin:0; font-size:0.98rem; font-weight:800; color:#fff;">이번 회차 나만의 황금 구매 요일 & 길시</h4>
-                        <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">로그인 후 생년월일을 등록하시면 회원님의 <strong style="color:#fbbf24;">일간 오행과 재물운(아극재)</strong>에 맞는 최적의 구매 요일과 길시를 안내합니다.</div>
-                    </div>
-                </div>
-                <button type="button" onclick="if(window.openAuthModal) window.openAuthModal();" style="padding:10px 18px; border-radius:10px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border:none; color:#111827; font-weight:800; font-size:0.82rem; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(245, 158, 11, 0.35);">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    <span>로그인하고 확인하기</span>
-                </button>
-            </div>
-        `;
-        return;
-    }
-
-    // 2. 로그인 상태: 생년월일 조회
+    // 1. 생년월일 및 캘린더 타입 조회 (캐시 및 로컬스토리지 우선, 0ms 즉시 응답)
     let birthDate = (window.__currentUser && window.__currentUser.birthDate) || null;
     let calendarType = (window.__currentUser && window.__currentUser.calendarType) || 'solar';
-    let realName = (window.__currentUser && window.__currentUser.realName) || authId;
+    let realName = (window.__currentUser && window.__currentUser.realName) || (authId ? authId : '회원');
 
-    if (!birthDate) {
-        try {
-            birthDate = SafeLocalStorage.getItem('user_birthdate_' + authId) || null;
-            calendarType = SafeLocalStorage.getItem('user_calendartype_' + authId) || calendarType;
-        } catch(e){}
-    }
-
-    // DB 캐시 비동기 보정
-    if (!birthDate && window.db) {
-        try {
-            const doc = await window.db.collection('lotto_users').doc(authId).get();
-            if (doc.exists) {
-                const udata = doc.data();
-                if (udata.birthDate) {
-                    birthDate = udata.birthDate;
-                    calendarType = udata.calendarType || 'solar';
-                    if (window.__currentUser) {
-                        window.__currentUser.birthDate = birthDate;
-                        window.__currentUser.calendarType = calendarType;
-                    }
-                    try {
-                        SafeLocalStorage.setItem('user_birthdate_' + authId, birthDate);
-                        SafeLocalStorage.setItem('user_calendartype_' + authId, calendarType);
-                    } catch(e){}
-                }
+    if (!birthDate && authId && Array.isArray(window.__cachedUsersWithStatus)) {
+        const cached = window.__cachedUsersWithStatus.find(u => (u.id === authId || u.userId === authId));
+        if (cached) {
+            birthDate = cached.birthDate || (cached.data && cached.data.birthDate) || null;
+            calendarType = cached.calendarType || (cached.data && cached.data.calendarType) || calendarType;
+            if (cached.realName || (cached.data && cached.data.realName)) {
+                realName = cached.realName || cached.data.realName;
             }
-        } catch(err) {
-            console.warn('[renderFortuneAdvisorCard] DB lookup skipped:', err);
         }
     }
 
-    // 3. 생년월일 미입력 상태 -> 등록 유도 뷰 (상태 1)
     if (!birthDate) {
+        try {
+            if (authId) {
+                birthDate = SafeLocalStorage.getItem('user_birthdate_' + authId);
+                calendarType = SafeLocalStorage.getItem('user_calendartype_' + authId) || calendarType;
+            }
+            if (!birthDate) {
+                birthDate = SafeLocalStorage.getItem('user_birthdate_last') || SafeLocalStorage.getItem('user_birthdate_guest') || null;
+                calendarType = SafeLocalStorage.getItem('user_calendartype_last') || SafeLocalStorage.getItem('user_calendartype_guest') || calendarType;
+            }
+        } catch(e){}
+    }
+
+    // 비동기 백그라운드 DB 보정 (초기 렌더링 블로킹 절대 금지)
+    if (!birthDate && authId && window.db) {
+        window.db.collection('lotto_users').doc(authId).get().then(doc => {
+            if (doc && doc.exists) {
+                const udata = doc.data();
+                if (udata && udata.birthDate) {
+                    if (window.__currentUser) {
+                        window.__currentUser.birthDate = udata.birthDate;
+                        window.__currentUser.calendarType = udata.calendarType || 'solar';
+                    }
+                    try {
+                        SafeLocalStorage.setItem('user_birthdate_' + authId, udata.birthDate);
+                        SafeLocalStorage.setItem('user_calendartype_' + authId, udata.calendarType || 'solar');
+                    } catch(e){}
+                    renderFortuneAdvisorCard(false);
+                }
+            }
+        }).catch(err => {
+            console.warn('[renderFortuneAdvisorCard] Background DB lookup skipped:', err);
+        });
+    }
+
+    const currentRound = (state && state.CURRENT_ROUND) ? state.CURRENT_ROUND : 1239;
+
+    // 2. 생년월일이 없거나 사용자가 '생년월일 변경'을 누른 경우 -> 대시보드 인라인 입력 위젯 즉각 렌더링!
+    if (!birthDate || forceShowInput) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const defaultDateValue = birthDate || '1990-01-01';
+
         container.innerHTML = `
-            <div style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); border:1.5px solid rgba(245, 158, 11, 0.35); border-radius:16px; padding:18px 22px; box-shadow:0 8px 24px rgba(0,0,0,0.35); position:relative; overflow:hidden;">
-                <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
-                    <div style="display:flex; align-items:center; gap:14px;">
+            <div style="background:linear-gradient(135deg, rgba(30, 41, 59, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%); border:1.5px solid rgba(245, 158, 11, 0.4); border-radius:16px; padding:18px 22px; box-shadow:0 8px 24px rgba(0,0,0,0.35); position:relative; overflow:hidden;">
+                <div style="display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:14px;">
+                    <div style="display:flex; align-items:flex-start; gap:14px;">
                         <div style="width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.1) 100%); border:1px solid rgba(245, 158, 11, 0.4); display:flex; align-items:center; justify-content:center; color:#fbbf24; font-size:1.4rem; flex-shrink:0;">
-                            <i class="fa-solid fa-calendar-star"></i>
+                            <i class="fa-solid fa-compass"></i>
                         </div>
                         <div>
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:3px;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; flex-wrap:wrap;">
                                 <span style="background:rgba(245, 158, 11, 0.2); border:1px solid rgba(245, 158, 11, 0.4); color:#fbbf24; font-size:0.7rem; font-weight:800; padding:2px 8px; border-radius:6px;">
-                                    <i class="fa-solid fa-compass"></i> 명리학 횡재수 분석
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> 사주명리학 횡재수 분석
                                 </span>
-                                <span style="font-size:0.72rem; color:#94a3b8;">제 ${state.CURRENT_ROUND || 1239}회차 전용</span>
+                                <span style="font-size:0.72rem; color:#94a3b8;">제 ${currentRound}회차 맞춤형</span>
                             </div>
-                            <h4 style="margin:0; font-size:1.02rem; font-weight:800; color:#fff;">이번 회차 나만의 황금 구매 요일 & 길시</h4>
-                            <div style="font-size:0.76rem; color:#cbd5e1; margin-top:3px; line-height:1.4;">
-                                생년월일을 등록하시면 회원님의 <strong style="color:#fbbf24;">일간(日干) 오행과 재물운(아극재)</strong>을 분석하여 최적의 구매 요일과 길시를 안내합니다.
+                            <h4 style="margin:0; font-size:1.02rem; font-weight:800; color:#fff;">
+                                ${authId ? `<span style="color:#fbbf24;">${realName}</span> 회원님의 ` : ''}로또 황금 구매 요일 & 길시 분석
+                            </h4>
+                            <div style="font-size:0.76rem; color:#cbd5e1; margin-top:4px; line-height:1.4;">
+                                생년월일을 입력하시면 회원님의 <strong style="color:#fbbf24;">일간(日干) 오행과 재물운(아극재)</strong>을 분석하여 최적의 요일과 구매 길시를 즉시 안내합니다.
                             </div>
                         </div>
                     </div>
-                    <button type="button" onclick="window.openUserBirthInputModal && window.openUserBirthInputModal();" style="padding:10px 20px; border-radius:10px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border:none; color:#111827; font-weight:800; font-size:0.84rem; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(245, 158, 11, 0.35); transition:transform 0.15s ease;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span>생년월일 간편 등록하기</span>
-                    </button>
                 </div>
+
+                <!-- 📅 대시보드 인라인 생년월일 입력 폼 위젯 -->
+                <div style="margin-top:16px; padding:14px; background:rgba(15, 23, 42, 0.6); border:1px solid rgba(255, 255, 255, 0.08); border-radius:12px; display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px;">
+                    <div style="flex:1 1 180px; min-width:160px;">
+                        <label for="dashInlineBirthDate" style="display:block; font-size:0.75rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">
+                            <i class="fa-regular fa-calendar" style="color:#fbbf24; margin-right:4px;"></i>생년월일 (YYYY-MM-DD)
+                        </label>
+                        <input type="date" id="dashInlineBirthDate" value="${defaultDateValue}" max="${todayStr}" style="width:100%; box-sizing:border-box; background:rgba(30, 41, 59, 0.9); border:1.5px solid #475569; border-radius:10px; color:#fff; padding:9px 12px; font-size:0.88rem; font-weight:700; outline:none; transition:border-color 0.2s;" onfocus="this.style.borderColor='#f59e0b'" onblur="this.style.borderColor='#475569'" />
+                    </div>
+
+                    <div style="flex:0 1 130px; min-width:110px;">
+                        <label for="dashInlineCalendarType" style="display:block; font-size:0.75rem; color:#cbd5e1; font-weight:700; margin-bottom:6px;">
+                            <i class="fa-solid fa-moon" style="color:#fbbf24; margin-right:4px;"></i>양력 / 음력
+                        </label>
+                        <select id="dashInlineCalendarType" style="width:100%; box-sizing:border-box; background:rgba(30, 41, 59, 0.9); border:1.5px solid #475569; border-radius:10px; color:#fff; padding:9px 12px; font-size:0.88rem; font-weight:700; outline:none; cursor:pointer;">
+                            <option value="solar" ${calendarType !== 'lunar' ? 'selected' : ''}>양력 (Solar)</option>
+                            <option value="lunar" ${calendarType === 'lunar' ? 'selected' : ''}>음력 (Lunar)</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                        <button type="button" id="btnDashSubmitBirth" onclick="window.saveAndApplyDashboardBirthDate && window.saveAndApplyDashboardBirthDate();" style="padding:10px 20px; border-radius:10px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border:none; color:#111827; font-weight:800; font-size:0.86rem; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 4px 14px rgba(245, 158, 11, 0.35); transition:transform 0.15s ease;" onmousedown="this.style.transform='scale(0.97)'" onmouseup="this.style.transform='scale(1)'">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>분석 및 추천받기</span>
+                        </button>
+                        ${forceShowInput && birthDate ? `
+                            <button type="button" onclick="window.renderFortuneAdvisorCard(false);" style="padding:10px 14px; border-radius:10px; background:rgba(30, 41, 59, 0.8); border:1px solid #475569; color:#cbd5e1; font-weight:700; font-size:0.82rem; cursor:pointer; transition:all 0.15s;" onmouseover="this.style.borderColor='#94a3b8';" onmouseout="this.style.borderColor='#475569';">
+                                취소
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <!-- 안내 푸터 -->
                 <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:0.72rem; color:#94a3b8;">
                     <div style="display:flex; align-items:center; gap:6px;">
                         <i class="fa-solid fa-shield-halved" style="color:#10b981;"></i>
                         <span>기존 7대 알고리즘 및 추천번호 추출 로직에는 전혀 영향을 미치지 않는 독립 통계 가이드입니다.</span>
                     </div>
-                    <span style="color:#64748b;">소요 시간 약 3초</span>
+                    <span style="color:#64748b;"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> 즉시 연산 (소요시간 0.1초)</span>
                 </div>
             </div>
         `;
         return;
     }
 
-    // 4. 생년월일 등록 완료 -> 실시간 사주 분석 결과 렌더링 (상태 2)
-    const currentRound = state.CURRENT_ROUND || 1239;
-    const profile = MyeongriService.calculateMyeongriProfile(birthDate, { calendarType, currentRound });
+    // 3. 생년월일 등록 완료 -> 실시간 사주 분석 결과 렌더링
+    const service = (typeof MyeongriService !== 'undefined') ? MyeongriService : (window.MyeongriService || null);
+    if (!service || typeof service.calculateMyeongriProfile !== 'function') {
+        console.warn('[renderFortuneAdvisorCard] MyeongriService is not ready');
+        return;
+    }
+
+    const profile = service.calculateMyeongriProfile(birthDate, { calendarType, currentRound });
     if (!profile || !profile.stem) {
         console.warn('[renderFortuneAdvisorCard] Invalid profile for birthDate:', birthDate);
         return;
@@ -30134,7 +30187,7 @@ async function renderFortuneAdvisorCard() {
                         </h4>
                     </div>
                 </div>
-                <button type="button" onclick="window.openUserBirthInputModal && window.openUserBirthInputModal('${birthDate}', '${calendarType}');" style="padding:6px 12px; border-radius:8px; background:rgba(30, 41, 59, 0.8); border:1px solid #475569; color:#cbd5e1; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.15s;" onmouseover="this.style.borderColor='#f59e0b'; this.style.color='#fbbf24';" onmouseout="this.style.borderColor='#475569'; this.style.color='#cbd5e1';">
+                <button type="button" onclick="window.renderFortuneAdvisorCard && window.renderFortuneAdvisorCard(true);" style="padding:6px 12px; border-radius:8px; background:rgba(30, 41, 59, 0.8); border:1px solid #475569; color:#cbd5e1; font-size:0.75rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:5px; transition:all 0.15s;" onmouseover="this.style.borderColor='#f59e0b'; this.style.color='#fbbf24';" onmouseout="this.style.borderColor='#475569'; this.style.color='#cbd5e1';">
                     <i class="fa-solid fa-pen-to-square"></i>
                     <span>생년월일 변경</span>
                 </button>
@@ -30246,7 +30299,99 @@ async function renderFortuneAdvisorCard() {
     `;
 }
 
-window.renderFortuneAdvisorCard = renderFortuneAdvisorCard;
+/**
+ * 🔮 대시보드 인라인 생년월일 분석 및 저장 핸들러
+ */
+async function saveAndApplyDashboardBirthDate() {
+    const inputDate = document.getElementById('dashInlineBirthDate');
+    const selectType = document.getElementById('dashInlineCalendarType');
+    const btnSubmit = document.getElementById('btnDashSubmitBirth');
+
+    const birthDate = inputDate ? inputDate.value.trim() : '';
+    const calendarType = selectType ? selectType.value : 'solar';
+
+    if (!birthDate) {
+        alert('⚠️ 생년월일을 선택해주세요.');
+        if (inputDate) inputDate.focus();
+        return;
+    }
+
+    let authId = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '');
+    if (typeof authId === 'string' && authId.startsWith('{')) {
+        try { authId = JSON.parse(authId).userid || authId; } catch(e){}
+    }
+    authId = (authId || '').trim();
+
+    try {
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 분석 중...';
+        }
+
+        // 1. LocalStorage 동기화 (authId 및 공통 fallback)
+        const storageKeyDate = authId ? ('user_birthdate_' + authId) : 'user_birthdate_guest';
+        const storageKeyType = authId ? ('user_calendartype_' + authId) : 'user_calendartype_guest';
+        try {
+            SafeLocalStorage.setItem(storageKeyDate, birthDate);
+            SafeLocalStorage.setItem(storageKeyType, calendarType);
+            SafeLocalStorage.setItem('user_birthdate_last', birthDate);
+            SafeLocalStorage.setItem('user_calendartype_last', calendarType);
+        } catch(e) {}
+
+        // 2. window.__currentUser 세션 동기화
+        if (window.__currentUser) {
+            window.__currentUser.birthDate = birthDate;
+            window.__currentUser.calendarType = calendarType;
+        }
+
+        // 3. 관리자 회원 관리 캐시 동기화 (__cachedUsersWithStatus)
+        if (Array.isArray(window.__cachedUsersWithStatus) && authId) {
+            const cachedUser = window.__cachedUsersWithStatus.find(u => (u.id === authId || u.userId === authId));
+            if (cachedUser) {
+                cachedUser.birthDate = birthDate;
+                cachedUser.calendarType = calendarType;
+                if (cachedUser.data) {
+                    cachedUser.data.birthDate = birthDate;
+                    cachedUser.data.calendarType = calendarType;
+                }
+            }
+        }
+
+        // 4. Firestore DB 동기화 (로그인 상태인 경우)
+        if (authId && window.db) {
+            try {
+                await window.db.collection('lotto_users').doc(authId).set({
+                    birthDate: birthDate,
+                    calendarType: calendarType,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+            } catch(dbErr) {
+                console.warn('[saveAndApplyDashboardBirthDate] DB write warning:', dbErr);
+            }
+        }
+
+        // 5. 대시보드 추천 가이드 즉각 렌더링
+        renderFortuneAdvisorCard(false);
+
+        if (typeof showToast === 'function') {
+            showToast('✨ 생년월일이 등록되었습니다. 황금 구매 요일 및 길시가 분석되었습니다.');
+        }
+    } catch(err) {
+        console.error('[saveAndApplyDashboardBirthDate Error]', err);
+        alert('생년월일 분석 및 저장 중 오류가 발생했습니다: ' + err.message);
+    } finally {
+        if (btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>분석 및 추천받기</span>';
+        }
+    }
+}
+
+if (typeof window !== 'undefined') {
+    window.renderFortuneAdvisorCard = renderFortuneAdvisorCard;
+    window.saveAndApplyDashboardBirthDate = saveAndApplyDashboardBirthDate;
+}
+
 
 
         if (typeof renderDashboardCharts !== 'undefined') {
@@ -30256,6 +30401,10 @@ window.renderFortuneAdvisorCard = renderFortuneAdvisorCard;
         if (typeof renderFortuneAdvisorCard !== 'undefined') {
             __exports.renderFortuneAdvisorCard = renderFortuneAdvisorCard;
             if (typeof window !== 'undefined') window.renderFortuneAdvisorCard = renderFortuneAdvisorCard;
+        }
+        if (typeof saveAndApplyDashboardBirthDate !== 'undefined') {
+            __exports.saveAndApplyDashboardBirthDate = saveAndApplyDashboardBirthDate;
+            if (typeof window !== 'undefined') window.saveAndApplyDashboardBirthDate = saveAndApplyDashboardBirthDate;
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/services/lotto/views/dashboard-tab.js]:', modErr);
@@ -37269,7 +37418,7 @@ const { renderTop5Combinations, updateSavedCount, renderSavedList, setupGenerato
 const { populateSimRoundSelector, renderSimulationTab, setupSimulationEvents } = (typeof __M_services_lotto_views_simulation_tab !== 'undefined' ? __M_services_lotto_views_simulation_tab : {});
 const { renderWheelingSelector, renderWheelingResults, setupWheelingTab } = (typeof __M_services_lotto_views_wheeling !== 'undefined' ? __M_services_lotto_views_wheeling : {});
 const { renderVerificationTab, setupEvolutionButton } = (typeof __M_services_lotto_views_verification !== 'undefined' ? __M_services_lotto_views_verification : {});
-const { renderDashboardCharts } = (typeof __M_services_lotto_views_dashboard_tab !== 'undefined' ? __M_services_lotto_views_dashboard_tab : {});
+const { renderDashboardCharts, renderFortuneAdvisorCard } = (typeof __M_services_lotto_views_dashboard_tab !== 'undefined' ? __M_services_lotto_views_dashboard_tab : {});
 const { renderReviewTab, renderReviewDetail } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
 const { renderAlgorithmsTab } = (typeof __M_services_lotto_views_algorithms_tab !== 'undefined' ? __M_services_lotto_views_algorithms_tab : {});
 const { renderConfirmedPurchasesList } = (typeof __M_services_lotto_views_confirmed_tab !== 'undefined' ? __M_services_lotto_views_confirmed_tab : {});
@@ -37790,11 +37939,17 @@ function switchLottoTab(target) {
         }
     });
 
-    // 4. Safely execute tab-specific render routines (Immediate 0ms render for generator, async for heavy tabs)
+    // 4. Safely execute tab-specific render routines (Immediate 0ms render for generator & dashboard, async for heavy tabs)
     if (target === 'tab-generator' && typeof renderTop5Combinations === 'function') {
         try { renderTop5Combinations(false); } catch(e){}
         if (typeof updateTop7AlgoUI === 'function') {
             try { updateTop7AlgoUI(); } catch(e){}
+        }
+    } else if (target === 'tab-dashboard') {
+        if (typeof renderFortuneAdvisorCard === 'function') {
+            try { renderFortuneAdvisorCard(); } catch(e){}
+        } else if (typeof window.renderFortuneAdvisorCard === 'function') {
+            try { window.renderFortuneAdvisorCard(); } catch(e){}
         }
     }
 

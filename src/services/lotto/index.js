@@ -8,7 +8,7 @@ import { renderTop5Combinations, updateSavedCount, renderSavedList, setupGenerat
 import { populateSimRoundSelector, renderSimulationTab, setupSimulationEvents } from './views/simulation-tab.js';
 import { renderWheelingSelector, renderWheelingResults, setupWheelingTab } from './views/wheeling.js';
 import { renderVerificationTab, setupEvolutionButton } from './views/verification.js';
-import { renderDashboardCharts } from './views/dashboard-tab.js';
+import { renderDashboardCharts, renderFortuneAdvisorCard } from './views/dashboard-tab.js';
 import { renderReviewTab, renderReviewDetail } from './views/review-tab.js';
 import { renderAlgorithmsTab } from './views/algorithms-tab.js';
 import { renderConfirmedPurchasesList } from './views/confirmed-tab.js';
@@ -529,11 +529,17 @@ export function switchLottoTab(target) {
         }
     });
 
-    // 4. Safely execute tab-specific render routines (Immediate 0ms render for generator, async for heavy tabs)
+    // 4. Safely execute tab-specific render routines (Immediate 0ms render for generator & dashboard, async for heavy tabs)
     if (target === 'tab-generator' && typeof renderTop5Combinations === 'function') {
         try { renderTop5Combinations(false); } catch(e){}
         if (typeof updateTop7AlgoUI === 'function') {
             try { updateTop7AlgoUI(); } catch(e){}
+        }
+    } else if (target === 'tab-dashboard') {
+        if (typeof renderFortuneAdvisorCard === 'function') {
+            try { renderFortuneAdvisorCard(); } catch(e){}
+        } else if (typeof window.renderFortuneAdvisorCard === 'function') {
+            try { window.renderFortuneAdvisorCard(); } catch(e){}
         }
     }
 
