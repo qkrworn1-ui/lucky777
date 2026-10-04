@@ -195,12 +195,12 @@ export function renderDigitalReceiptCard(round, parsedCombos, check, serial) {
 
         let badgeHtml = '';
         if (matchDetail && matchDetail.isExact) {
-            if (matchDetail.matchedVersion.includes('추가')) {
+            if (matchDetail.matchedVersion.includes('추가') || matchDetail.matchedVersion.includes('빈틈제로') || matchDetail.matchedVersion.includes('슈퍼') || matchDetail.matchedVersion.includes('멀티') || matchDetail.matchedVersion.includes('흐름') || matchDetail.matchedVersion.includes('트리오')) {
                 badgeHtml = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #a7f3d0; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
-            } else if (matchDetail.matchedVersion.includes('V4.0')) {
-                badgeHtml = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
+            } else if (matchDetail.matchedVersion.includes('올라운더') || matchDetail.matchedVersion.includes('V4.0')) {
+                badgeHtml = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
             } else {
-                badgeHtml = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fef08a; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
+                badgeHtml = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #93c5fd; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
             }
         } else {
             badgeHtml = `<span style="background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.6rem;"></i> 수동</span>`;
@@ -341,12 +341,12 @@ export function updateManualModalCrossCheck() {
     // Badges HTML for each game (1개라도 틀리면 수동입력)
     const pillsHtml = check.matchDetails.map((d, i) => {
         if (d.isExact) {
-            if (d.matchedVersion.includes('추가')) {
+            if (d.matchedVersion.includes('추가') || d.matchedVersion.includes('빈틈제로') || d.matchedVersion.includes('슈퍼') || d.matchedVersion.includes('멀티') || d.matchedVersion.includes('흐름') || d.matchedVersion.includes('트리오')) {
                 return `<span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; color: #a7f3d0; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rocket" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
-            } else if (d.matchedVersion.includes('V4.0')) {
-                return `<span style="background: rgba(139, 92, 246, 0.25); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-brain" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
+            } else if (d.matchedVersion.includes('올라운더') || d.matchedVersion.includes('V4.0')) {
+                return `<span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; color: #34d399; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-bullseye" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
             } else {
-                return `<span style="background: rgba(245, 158, 11, 0.25); border: 1px solid #f59e0b; color: #fef08a; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-bolt" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
+                return `<span style="background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; color: #93c5fd; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-calculator" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
             }
         } else {
             return `<span style="background: rgba(239, 68, 68, 0.2); border: 1px solid #f87171; color: #fca5a5; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.62rem;"></i> 게임 ${i+1}: 수동입력</span>`;

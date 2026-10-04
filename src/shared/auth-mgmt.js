@@ -6806,7 +6806,7 @@ window.startBatchWinningSend = async function() {
                       `[C] 02, 14, 21, 29, 36, 44\n` +
                       `[D] 05, 16, 23, 31, 39, 41\n` +
                       `[E] 09, 18, 25, 30, 37, 43\n\n` +
-                      `💡 V4.0 통계 분산 커버리지 & 기댓값(EV) 가중 모델 엄선 조합입니다.`,
+                      `💡 기본 1: 올라운더 팩(10게임) 통계 분산 커버리지 & 기댓값(EV) 가중 모델 엄선 조합입니다.`,
                 link: {
                     web_url: window.location.origin + window.location.pathname,
                     mobile_web_url: window.location.origin + window.location.pathname

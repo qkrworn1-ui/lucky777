@@ -35,7 +35,7 @@ export function openBudgetOptimizerModal() {
             : false));
 
     if (!isEligible) {
-        const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 2조합인 V4.0 / V3.0 추천번호 20게임이 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);
+        const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 20게임(올라운더 + 수학 퀀트) 추천번호가 상시 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();

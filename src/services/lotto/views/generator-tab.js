@@ -390,7 +390,10 @@ export function getEnsembleWinningHistory(comboObj, comboIndex) {
 
         const purchases = getHistoricalTop10Combinations(round) || [];
         purchases.forEach(p => {
-            const isMatchingVersion = p.version && p.version.includes(targetVersionKeyword);
+            const isMatchingVersion = p.version && (
+                p.version.includes(targetVersionKeyword) ||
+                (useV4 ? (p.version.includes('올라운더') || p.version.includes('V4.0')) : (p.version.includes('수학 퀀트') || p.version.includes('수학퀀트') || p.version.includes('V3.0')))
+            );
             if (!isMatchingVersion && purchases.length > 1) return;
 
             const combos = p.combos || [];
@@ -892,7 +895,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                             <div style="margin: 8px 0; padding-left: 4px;">
                                 <strong style="font-size:0.78rem; color:var(--primary-light);"><i class="fa-solid fa-list-check"></i> 번호별 상세 추출 근거:</strong>
                                 <ul style="list-style:none; padding: 4px 0 0 10px; font-size:0.75rem; color:var(--text-secondary); line-height:1.6;">
-                                    ${(strat.numReasons || ['과거 당첨 패턴 및 통계 기반 하이브리드 추출']).map(r => `<li>• ${r}</li>`).join('')}
+                                    ${(strat.numReasons || ['올라운더 및 수학 퀀트 정밀 통계 기반 추출']).map(r => `<li>• ${r}</li>`).join('')}
                                 </ul>
                             </div>
 
@@ -2028,7 +2031,7 @@ export function handleClearExtraPacks() {
         return;
     }
 
-    if (confirm(`[${effectiveUserId}] 회원의 모든 추가 팩을 초기화하시겠습니까?\n(기본 추천 V3.0/V4.0 번호는 전혀 영향을 받지 않습니다)`)) {
+    if (confirm(`[${effectiveUserId}] 회원의 모든 추가 팩을 초기화하시겠습니까?\n(기본 추천 20게임(올라운더·수학퀀트)은 전혀 영향을 받지 않습니다)`)) {
         saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, []);
         renderExtraAddonPacksSection();
         showToast('모든 추가 팩이 초기화되었습니다.');

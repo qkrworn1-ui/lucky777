@@ -478,11 +478,11 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         const receipts = userLedger ? (userLedger[roundNum] || []) : [];
         receipts.forEach(rcpt => {
             const vStr = (rcpt.version || '');
-            if (vStr.includes('V4') || vStr.includes('행동경제학')) {
+            if (vStr.includes('V4') || vStr.includes('올라운더') || vStr.includes('행동경제학')) {
                 if (Array.isArray(rcpt.combos)) {
                     rcpt.combos.forEach(c => purchasedV4.push(c));
                 }
-            } else if (vStr.includes('V3') || vStr.includes('하이브리드')) {
+            } else if (vStr.includes('V3') || vStr.includes('수학 퀀트') || vStr.includes('수학퀀트') || vStr.includes('하이브리드')) {
                 if (Array.isArray(rcpt.combos)) {
                     rcpt.combos.forEach(c => purchasedV3.push(c));
                 }
@@ -565,8 +565,8 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         }
 
         const algorithmsMetadata = [
-            { algoId: 'v4', algoName: 'V4.0 행동경제학 포트폴리오 (10게임)', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6', combos: v4Combos },
-            { algoId: 'v3', algoName: 'V3.0 하이브리드 정통 수학 알고리즘 (10게임)', badge: 'HYBRID MATH', color: '#3b82f6', combos: v3Combos }
+            { algoId: 'v4', algoName: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#10b981', combos: v4Combos },
+            { algoId: 'v3', algoName: '기본 2: 수학 퀀트 팩 (10게임)', badge: 'MATH QUANT', color: '#3b82f6', combos: v3Combos }
         ];
         for (let p = 1; p <= 5; p++) {
             if (generatedExtraPacks[p]) {
@@ -1811,13 +1811,13 @@ export async function renderAllRoundsReviewDetail() {
         if (canvasAlgo && typeof canvasAlgo.getContext === 'function' && typeof window.Chart === 'function') {
             const ctxAlgo = canvasAlgo.getContext('2d');
             const algoLabels = [
-                ['V4.0', '행동경제'],
-                ['V3.0', '하이브리드'],
-                ['추가1', '고주기'],
-                ['추가2', '저주기'],
-                ['추가3', 'AC퀀트'],
-                ['추가4', '구간대칭'],
-                ['추가5', '극한홀짝']
+                ['기본1', '올라운더'],
+                ['기본2', '수학퀀트'],
+                ['추가1', '빈틈제로'],
+                ['추가2', '슈퍼잭팟'],
+                ['추가3', '멀티히트'],
+                ['추가4', '흐름부스터'],
+                ['추가5', '트리오마스터']
             ];
 
             state.reviewAlgoBarChartInstance = new window.Chart(ctxAlgo, {
@@ -2317,10 +2317,10 @@ export async function renderReviewDetail(r) {
         const singleRoundAlgoPacks = [
             {
                 id: 'v4',
-                name: 'V4.0 행동경제학 포트폴리오',
-                shortName: 'V4.0 행동경제',
-                badge: 'BEHAVIORAL QUANT',
-                color: '#8b5cf6',
+                name: '기본 1: 올라운더 팩 (10게임)',
+                shortName: '올라운더',
+                badge: 'ALL-ROUNDER',
+                color: '#10b981',
                 games: actualV4Combos.length || 10,
                 prize: v4Eval.totalPrize,
                 wins: v4Eval.totalWins,
@@ -2331,9 +2331,9 @@ export async function renderReviewDetail(r) {
             },
             {
                 id: 'v3',
-                name: 'V3.0 하이브리드 정통 수학',
-                shortName: 'V3.0 하이브리드',
-                badge: 'HYBRID MATH',
+                name: '기본 2: 수학 퀀트 팩 (10게임)',
+                shortName: '수학퀀트',
+                badge: 'MATH QUANT',
                 color: '#3b82f6',
                 games: actualV3Combos.length || 10,
                 prize: v3Eval.totalPrize,
@@ -2345,6 +2345,14 @@ export async function renderReviewDetail(r) {
             }
         ];
 
+        const extraPackShortNames = {
+            1: '빈틈제로',
+            2: '슈퍼잭팟',
+            3: '멀티히트',
+            4: '흐름부스터',
+            5: '트리오마스터'
+        };
+
         extraPackEvals.forEach(ep => {
             const epCount = ep.combos.length || 10;
             const epPrize = ep.evalData.totalPrize;
@@ -2353,7 +2361,7 @@ export async function renderReviewDetail(r) {
             singleRoundAlgoPacks.push({
                 id: `extra_${ep.packId}`,
                 name: ep.name,
-                shortName: ep.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/추가\s*(\d):?\s*/, '추가$1 ').replace(/ 포트폴리오| 알고리즘/g, ''),
+                shortName: ep.shortName || extraPackShortNames[ep.packId] || `추가 ${ep.packId}`,
                 badge: ep.badge,
                 color: ep.color,
                 games: epCount,
@@ -3246,16 +3254,16 @@ export async function renderAdmin1235ReviewModalContent() {
             const packsToRender = [];
             if (filterKey === 'all' || filterKey === 'v4') {
                 packsToRender.push({
-                    name: 'V4.0 행동경제학 포트폴리오 (10게임)',
-                    badge: 'BEHAVIORAL QUANT',
-                    color: '#8b5cf6',
+                    name: '기본 1: 올라운더 팩 (10게임)',
+                    badge: 'ALL-ROUNDER',
+                    color: '#10b981',
                     evalData: reviewData.v4Eval
                 });
             }
             if (filterKey === 'all' || filterKey === 'v3') {
                 packsToRender.push({
-                    name: 'V3.0 하이브리드 정통 수학 알고리즘 (10게임)',
-                    badge: 'HYBRID MATH',
+                    name: '기본 2: 수학 퀀트 팩 (10게임)',
+                    badge: 'MATH QUANT',
                     color: '#3b82f6',
                     evalData: reviewData.v3Eval
                 });

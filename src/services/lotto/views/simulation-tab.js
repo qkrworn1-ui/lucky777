@@ -330,10 +330,10 @@ export function renderSimulationTab(targetRound = null) {
     const totalDraws = maxR;
     const totalCombosEvaluated = totalDraws * evaluatedGamesPerRound;
 
-    const packNames = { 1: '추가1(전수)', 2: '추가2(EV)', 3: '추가3(휠링)', 4: '추가4(마르코프)', 5: '추가5(골든)' };
+    const packNames = { 1: '빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
     const engineParts = [];
-    if (cfg.includeV4) engineParts.push('V4(10G)');
-    if (cfg.includeV3) engineParts.push('V3(10G)');
+    if (cfg.includeV4) engineParts.push('올라운더(10G)');
+    if (cfg.includeV3) engineParts.push('수학퀀트(10G)');
     cfg.selectedExtraPacks.forEach(p => {
         engineParts.push(`${packNames[p] || `추가${p}`}(10G)`);
     });

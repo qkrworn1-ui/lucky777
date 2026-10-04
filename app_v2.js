@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.04.0119 - BUILD_DATE: 2026-10-04] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.04.1145.56 - BUILD_DATE: 2026-10-04] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.04.0119)
+ * Lucky777 Smart Bundle (v2026.10.04.1145.56)
  */
 
 
@@ -8236,7 +8236,7 @@ window.startBatchWinningSend = async function() {
                       `[C] 02, 14, 21, 29, 36, 44\n` +
                       `[D] 05, 16, 23, 31, 39, 41\n` +
                       `[E] 09, 18, 25, 30, 37, 43\n\n` +
-                      `💡 V4.0 통계 분산 커버리지 & 기댓값(EV) 가중 모델 엄선 조합입니다.`,
+                      `💡 기본 1: 올라운더 팩(10게임) 통계 분산 커버리지 & 기댓값(EV) 가중 모델 엄선 조합입니다.`,
                 link: {
                     web_url: window.location.origin + window.location.pathname,
                     mobile_web_url: window.location.origin + window.location.pathname
@@ -15821,7 +15821,7 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
         { id: 5, name: '수식 기대가치(EV) 극대화 패턴', desc: '고번호(30~45) 및 구간 배치 기대수익률(EV 96.5pt+) 극대화' },
         { id: 6, name: '이웃수(Neighbor) 포획 알고리즘', desc: '직전 회차 출현 번호의 ±1 인접 오차 범위 정밀 포획' },
         { id: 7, name: '거울수 대칭 반전 알고리즘', desc: '직전 회차 번호의 대칭 거울수(46 - N) 패턴 분석' },
-        { id: 8, name: '단기/장기 모멘텀 하이브리드', desc: '최근 핫(Hot) 번호와 쿨(Cold) 번호의 황금비율 조합' },
+        { id: 8, name: '단기/장기 모멘텀 균형 조합', desc: '최근 핫(Hot) 번호와 쿨(Cold) 번호의 황금비율 조합' },
         { id: 9, name: '소수 & 3의 배수 수학적 조합', desc: '소수와 3의 배수 분포 밸런스 밀도 최적화' }
     ];
 
@@ -16141,7 +16141,7 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
                     if (mirror1 >= 1 && mirror1 <= 45) candidate.add(mirror1);
                     if (mirror2 >= 1 && mirror2 <= 45) candidate.add(mirror2);
                 } else if (strat.id === 8) {
-                    // 모멘텀 하이브리드: HOT 1개 + COLD 1개 시드 → 단기·장기 모멘텀 교차
+                    // 모멘텀 균형: HOT 1개 + COLD 1개 시드 → 단기·장기 모멘텀 교차
                     if (state.HOT_GROUP.length > 0) {
                         let shuffledHot = seededShuffle(state.HOT_GROUP, seededRandom);
                         candidate.add(shuffledHot[0]);
@@ -18022,11 +18022,11 @@ function computeUser70RecommendationsReview(userId, roundNum) {
         const receipts = userLedger ? (userLedger[roundNum] || []) : [];
         receipts.forEach(rcpt => {
             const vStr = (rcpt.version || '');
-            if (vStr.includes('V4') || vStr.includes('행동경제학')) {
+            if (vStr.includes('V4') || vStr.includes('올라운더') || vStr.includes('행동경제학')) {
                 if (Array.isArray(rcpt.combos)) {
                     rcpt.combos.forEach(c => purchasedV4.push(c));
                 }
-            } else if (vStr.includes('V3') || vStr.includes('하이브리드')) {
+            } else if (vStr.includes('V3') || vStr.includes('수학 퀀트') || vStr.includes('수학퀀트') || vStr.includes('하이브리드')) {
                 if (Array.isArray(rcpt.combos)) {
                     rcpt.combos.forEach(c => purchasedV3.push(c));
                 }
@@ -18109,8 +18109,8 @@ function computeUser70RecommendationsReview(userId, roundNum) {
         }
 
         const algorithmsMetadata = [
-            { algoId: 'v4', algoName: 'V4.0 행동경제학 포트폴리오 (10게임)', badge: 'BEHAVIORAL QUANT', color: '#8b5cf6', combos: v4Combos },
-            { algoId: 'v3', algoName: 'V3.0 하이브리드 정통 수학 알고리즘 (10게임)', badge: 'HYBRID MATH', color: '#3b82f6', combos: v3Combos }
+            { algoId: 'v4', algoName: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#10b981', combos: v4Combos },
+            { algoId: 'v3', algoName: '기본 2: 수학 퀀트 팩 (10게임)', badge: 'MATH QUANT', color: '#3b82f6', combos: v3Combos }
         ];
         for (let p = 1; p <= 5; p++) {
             if (generatedExtraPacks[p]) {
@@ -19355,13 +19355,13 @@ async function renderAllRoundsReviewDetail() {
         if (canvasAlgo && typeof canvasAlgo.getContext === 'function' && typeof window.Chart === 'function') {
             const ctxAlgo = canvasAlgo.getContext('2d');
             const algoLabels = [
-                ['V4.0', '행동경제'],
-                ['V3.0', '하이브리드'],
-                ['추가1', '고주기'],
-                ['추가2', '저주기'],
-                ['추가3', 'AC퀀트'],
-                ['추가4', '구간대칭'],
-                ['추가5', '극한홀짝']
+                ['기본1', '올라운더'],
+                ['기본2', '수학퀀트'],
+                ['추가1', '빈틈제로'],
+                ['추가2', '슈퍼잭팟'],
+                ['추가3', '멀티히트'],
+                ['추가4', '흐름부스터'],
+                ['추가5', '트리오마스터']
             ];
 
             state.reviewAlgoBarChartInstance = new window.Chart(ctxAlgo, {
@@ -19861,10 +19861,10 @@ async function renderReviewDetail(r) {
         const singleRoundAlgoPacks = [
             {
                 id: 'v4',
-                name: 'V4.0 행동경제학 포트폴리오',
-                shortName: 'V4.0 행동경제',
-                badge: 'BEHAVIORAL QUANT',
-                color: '#8b5cf6',
+                name: '기본 1: 올라운더 팩 (10게임)',
+                shortName: '올라운더',
+                badge: 'ALL-ROUNDER',
+                color: '#10b981',
                 games: actualV4Combos.length || 10,
                 prize: v4Eval.totalPrize,
                 wins: v4Eval.totalWins,
@@ -19875,9 +19875,9 @@ async function renderReviewDetail(r) {
             },
             {
                 id: 'v3',
-                name: 'V3.0 하이브리드 정통 수학',
-                shortName: 'V3.0 하이브리드',
-                badge: 'HYBRID MATH',
+                name: '기본 2: 수학 퀀트 팩 (10게임)',
+                shortName: '수학퀀트',
+                badge: 'MATH QUANT',
                 color: '#3b82f6',
                 games: actualV3Combos.length || 10,
                 prize: v3Eval.totalPrize,
@@ -19889,6 +19889,14 @@ async function renderReviewDetail(r) {
             }
         ];
 
+        const extraPackShortNames = {
+            1: '빈틈제로',
+            2: '슈퍼잭팟',
+            3: '멀티히트',
+            4: '흐름부스터',
+            5: '트리오마스터'
+        };
+
         extraPackEvals.forEach(ep => {
             const epCount = ep.combos.length || 10;
             const epPrize = ep.evalData.totalPrize;
@@ -19897,7 +19905,7 @@ async function renderReviewDetail(r) {
             singleRoundAlgoPacks.push({
                 id: `extra_${ep.packId}`,
                 name: ep.name,
-                shortName: ep.name.replace(/추가(\d)팩:\s*/, '추가$1 ').replace(/추가\s*(\d):?\s*/, '추가$1 ').replace(/ 포트폴리오| 알고리즘/g, ''),
+                shortName: ep.shortName || extraPackShortNames[ep.packId] || `추가 ${ep.packId}`,
                 badge: ep.badge,
                 color: ep.color,
                 games: epCount,
@@ -20790,16 +20798,16 @@ async function renderAdmin1235ReviewModalContent() {
             const packsToRender = [];
             if (filterKey === 'all' || filterKey === 'v4') {
                 packsToRender.push({
-                    name: 'V4.0 행동경제학 포트폴리오 (10게임)',
-                    badge: 'BEHAVIORAL QUANT',
-                    color: '#8b5cf6',
+                    name: '기본 1: 올라운더 팩 (10게임)',
+                    badge: 'ALL-ROUNDER',
+                    color: '#10b981',
                     evalData: reviewData.v4Eval
                 });
             }
             if (filterKey === 'all' || filterKey === 'v3') {
                 packsToRender.push({
-                    name: 'V3.0 하이브리드 정통 수학 알고리즘 (10게임)',
-                    badge: 'HYBRID MATH',
+                    name: '기본 2: 수학 퀀트 팩 (10게임)',
+                    badge: 'MATH QUANT',
                     color: '#3b82f6',
                     evalData: reviewData.v3Eval
                 });
@@ -22922,7 +22930,10 @@ function getEnsembleWinningHistory(comboObj, comboIndex) {
 
         const purchases = getHistoricalTop10Combinations(round) || [];
         purchases.forEach(p => {
-            const isMatchingVersion = p.version && p.version.includes(targetVersionKeyword);
+            const isMatchingVersion = p.version && (
+                p.version.includes(targetVersionKeyword) ||
+                (useV4 ? (p.version.includes('올라운더') || p.version.includes('V4.0')) : (p.version.includes('수학 퀀트') || p.version.includes('수학퀀트') || p.version.includes('V3.0')))
+            );
             if (!isMatchingVersion && purchases.length > 1) return;
 
             const combos = p.combos || [];
@@ -23424,7 +23435,7 @@ async function renderTop5Combinations(isRollingAnimation = false) {
                             <div style="margin: 8px 0; padding-left: 4px;">
                                 <strong style="font-size:0.78rem; color:var(--primary-light);"><i class="fa-solid fa-list-check"></i> 번호별 상세 추출 근거:</strong>
                                 <ul style="list-style:none; padding: 4px 0 0 10px; font-size:0.75rem; color:var(--text-secondary); line-height:1.6;">
-                                    ${(strat.numReasons || ['과거 당첨 패턴 및 통계 기반 하이브리드 추출']).map(r => `<li>• ${r}</li>`).join('')}
+                                    ${(strat.numReasons || ['올라운더 및 수학 퀀트 정밀 통계 기반 추출']).map(r => `<li>• ${r}</li>`).join('')}
                                 </ul>
                             </div>
 
@@ -24560,7 +24571,7 @@ function handleClearExtraPacks() {
         return;
     }
 
-    if (confirm(`[${effectiveUserId}] 회원의 모든 추가 팩을 초기화하시겠습니까?\n(기본 추천 V3.0/V4.0 번호는 전혀 영향을 받지 않습니다)`)) {
+    if (confirm(`[${effectiveUserId}] 회원의 모든 추가 팩을 초기화하시겠습니까?\n(기본 추천 20게임(올라운더·수학퀀트)은 전혀 영향을 받지 않습니다)`)) {
         saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, []);
         renderExtraAddonPacksSection();
         showToast('모든 추가 팩이 초기화되었습니다.');
@@ -25082,7 +25093,7 @@ function openBudgetOptimizerModal() {
             : false));
 
     if (!isEligible) {
-        const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 2조합인 V4.0 / V3.0 추천번호 20게임이 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);
+        const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 20게임(올라운더 + 수학 퀀트) 추천번호가 상시 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();
@@ -25915,10 +25926,10 @@ function renderSimulationTab(targetRound = null) {
     const totalDraws = maxR;
     const totalCombosEvaluated = totalDraws * evaluatedGamesPerRound;
 
-    const packNames = { 1: '추가1(전수)', 2: '추가2(EV)', 3: '추가3(휠링)', 4: '추가4(마르코프)', 5: '추가5(골든)' };
+    const packNames = { 1: '빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
     const engineParts = [];
-    if (cfg.includeV4) engineParts.push('V4(10G)');
-    if (cfg.includeV3) engineParts.push('V3(10G)');
+    if (cfg.includeV4) engineParts.push('올라운더(10G)');
+    if (cfg.includeV3) engineParts.push('수학퀀트(10G)');
     cfg.selectedExtraPacks.forEach(p => {
         engineParts.push(`${packNames[p] || `추가${p}`}(10G)`);
     });
@@ -30064,8 +30075,8 @@ function generatePredictionReport() {
                 <i class="fa-solid fa-lightbulb"></i> 💡 [${displayName}] 님을 위한 이번 주 최적 포트폴리오 운영 전략
             </strong>
             <div style="font-size: 0.82rem; color: #e2e8f0; line-height: 1.55;">
-                1. <strong>기본 20게임(V4.0 + V3.0) 필수 운영</strong>: 4·5등 고정 배당 방어망(V4.0 1~4번)과 마르코프 딥러닝 공격망(V3.0 1~5번)이 상호 결합되어 매주 투입 자금을 탄탄하게 방어합니다.<br>
-                2. <strong>예산 맞춤 추가팩 확장 권장</strong>: 과거 복기 실적상 다중 적중을 극대화하려면 <span style="color:#34d399; font-weight:700;">추가 1(전수 커버리지)</span> 또는 <span style="color:#f59e0b; font-weight:700;">추가 3(기하학 휠링)</span>을 병행하여 3등·4등 연쇄 적중 포획망을 가동하는 것을 권장합니다.
+                1. <strong>기본 20게임(올라운더 + 수학 퀀트) 필수 운영</strong>: 전구간 균형 방어망(올라운더 팩 1~4번)과 마르코프 딥러닝 공격망(수학 퀀트 팩 1~5번)이 상호 결합되어 매주 투입 자금을 탄탄하게 방어합니다.<br>
+                2. <strong>예산 맞춤 추가팩 확장 권장</strong>: 과거 복기 실적상 다중 적중을 극대화하려면 <span style="color:#10b981; font-weight:700;">추가 1(빈틈제로 팩)</span> 또는 <span style="color:#8b5cf6; font-weight:700;">추가 3(멀티 히트 팩)</span>을 병행하여 3등·4등 연쇄 적중 포획망을 가동하는 것을 권장합니다.
             </div>
         </div>
     `;
@@ -31248,12 +31259,12 @@ function renderDigitalReceiptCard(round, parsedCombos, check, serial) {
 
         let badgeHtml = '';
         if (matchDetail && matchDetail.isExact) {
-            if (matchDetail.matchedVersion.includes('추가')) {
+            if (matchDetail.matchedVersion.includes('추가') || matchDetail.matchedVersion.includes('빈틈제로') || matchDetail.matchedVersion.includes('슈퍼') || matchDetail.matchedVersion.includes('멀티') || matchDetail.matchedVersion.includes('흐름') || matchDetail.matchedVersion.includes('트리오')) {
                 badgeHtml = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #a7f3d0; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
-            } else if (matchDetail.matchedVersion.includes('V4.0')) {
-                badgeHtml = `<span style="background: rgba(139, 92, 246, 0.2); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-brain" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
+            } else if (matchDetail.matchedVersion.includes('올라운더') || matchDetail.matchedVersion.includes('V4.0')) {
+                badgeHtml = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
             } else {
-                badgeHtml = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fef08a; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-bolt" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
+                badgeHtml = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; color: #93c5fd; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> ${matchDetail.label}</span>`;
             }
         } else {
             badgeHtml = `<span style="background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; padding: 2px 6px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.6rem;"></i> 수동</span>`;
@@ -31394,12 +31405,12 @@ function updateManualModalCrossCheck() {
     // Badges HTML for each game (1개라도 틀리면 수동입력)
     const pillsHtml = check.matchDetails.map((d, i) => {
         if (d.isExact) {
-            if (d.matchedVersion.includes('추가')) {
+            if (d.matchedVersion.includes('추가') || d.matchedVersion.includes('빈틈제로') || d.matchedVersion.includes('슈퍼') || d.matchedVersion.includes('멀티') || d.matchedVersion.includes('흐름') || d.matchedVersion.includes('트리오')) {
                 return `<span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; color: #a7f3d0; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-rocket" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
-            } else if (d.matchedVersion.includes('V4.0')) {
-                return `<span style="background: rgba(139, 92, 246, 0.25); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-brain" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
+            } else if (d.matchedVersion.includes('올라운더') || d.matchedVersion.includes('V4.0')) {
+                return `<span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; color: #34d399; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-bullseye" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
             } else {
-                return `<span style="background: rgba(245, 158, 11, 0.25); border: 1px solid #f59e0b; color: #fef08a; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-bolt" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
+                return `<span style="background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; color: #93c5fd; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-calculator" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
             }
         } else {
             return `<span style="background: rgba(239, 68, 68, 0.2); border: 1px solid #f87171; color: #fca5a5; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.62rem;"></i> 게임 ${i+1}: 수동입력</span>`;

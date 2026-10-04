@@ -223,7 +223,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
         { id: 5, name: '수식 기대가치(EV) 극대화 패턴', desc: '고번호(30~45) 및 구간 배치 기대수익률(EV 96.5pt+) 극대화' },
         { id: 6, name: '이웃수(Neighbor) 포획 알고리즘', desc: '직전 회차 출현 번호의 ±1 인접 오차 범위 정밀 포획' },
         { id: 7, name: '거울수 대칭 반전 알고리즘', desc: '직전 회차 번호의 대칭 거울수(46 - N) 패턴 분석' },
-        { id: 8, name: '단기/장기 모멘텀 하이브리드', desc: '최근 핫(Hot) 번호와 쿨(Cold) 번호의 황금비율 조합' },
+        { id: 8, name: '단기/장기 모멘텀 균형 조합', desc: '최근 핫(Hot) 번호와 쿨(Cold) 번호의 황금비율 조합' },
         { id: 9, name: '소수 & 3의 배수 수학적 조합', desc: '소수와 3의 배수 분포 밸런스 밀도 최적화' }
     ];
 
@@ -543,7 +543,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                     if (mirror1 >= 1 && mirror1 <= 45) candidate.add(mirror1);
                     if (mirror2 >= 1 && mirror2 <= 45) candidate.add(mirror2);
                 } else if (strat.id === 8) {
-                    // 모멘텀 하이브리드: HOT 1개 + COLD 1개 시드 → 단기·장기 모멘텀 교차
+                    // 모멘텀 균형: HOT 1개 + COLD 1개 시드 → 단기·장기 모멘텀 교차
                     if (state.HOT_GROUP.length > 0) {
                         let shuffledHot = seededShuffle(state.HOT_GROUP, seededRandom);
                         candidate.add(shuffledHot[0]);
