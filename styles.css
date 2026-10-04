@@ -11756,6 +11756,8 @@ html, body {
 
     .extra-combo-row .balls-row,
     .quick-view-row .balls-row,
+    .quick-view-row .qv-balls-row,
+    .qv-balls-row,
     .confirmed-game-row .balls-row,
     .balls-row {
         flex-wrap: nowrap !important;
@@ -11767,6 +11769,8 @@ html, body {
 
     .extra-combo-row .lotto-ball,
     .quick-view-row .lotto-ball,
+    .quick-view-row .qv-ball,
+    .qv-ball,
     .confirmed-game-row .lotto-ball {
         width: 27px !important;
         height: 27px !important;
@@ -19305,6 +19309,146 @@ body.is-admin .btn-snapshot-audit-compact {
     }
 }
 
-
-
-
+/* 📱 간편 마킹 뷰 (Quick View) 글자·번호 겹침 방지 및 모바일 반응형 전용 스타일 */
+.quick-view-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 7px 9px !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    background: rgba(30, 41, 59, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    gap: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    min-height: 44px !important;
+}
+.quick-view-row.marked-done {
+    background: rgba(16, 185, 129, 0.08) !important;
+    border-color: rgba(16, 185, 129, 0.35) !important;
+    opacity: 0.45 !important;
+}
+.qv-left-col {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 7px !important;
+    min-width: 0 !important;
+    flex: 0 1 auto !important;
+    overflow: hidden !important;
+}
+.qv-slot-badge {
+    width: 25px !important;
+    height: 25px !important;
+    min-width: 25px !important;
+    min-height: 25px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 900 !important;
+    font-size: 0.78rem !important;
+    background: rgba(251, 191, 36, 0.18) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(251, 191, 36, 0.4) !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+.qv-slot-badge.is-marked {
+    background: #10b981 !important;
+    color: #0f172a !important;
+    border-color: #10b981 !important;
+}
+.qv-label-box {
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    line-height: 1.25 !important;
+}
+.qv-algo-name {
+    font-weight: 800 !important;
+    font-size: 0.76rem !important;
+    color: #e2e8f0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+.qv-algo-name.is-marked {
+    color: #34d399 !important;
+    text-decoration: line-through !important;
+}
+.qv-slip-slot {
+    font-size: 0.67rem !important;
+    color: #94a3b8 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+.qv-balls-row {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex-wrap: nowrap !important;
+    gap: 4px !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+    margin-left: auto !important;
+    padding: 0 !important;
+}
+.qv-ball {
+    width: 29px !important;
+    height: 29px !important;
+    min-width: 29px !important;
+    min-height: 29px !important;
+    max-width: 29px !important;
+    max-height: 29px !important;
+    line-height: 29px !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 0.8rem !important;
+    font-weight: 900 !important;
+    font-family: monospace, -apple-system, sans-serif !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35) !important;
+    flex-shrink: 0 !important;
+    user-select: none !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6) !important;
+}
+.qv-ball::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 3px !important;
+    left: 6px !important;
+    width: 8px !important;
+    height: 5px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.4) !important;
+    pointer-events: none !important;
+}
+@media (max-width: 400px) {
+    .quick-view-row { padding: 6px 7px !important; gap: 5px !important; }
+    .qv-ball { width: 27px !important; height: 27px !important; min-width: 27px !important; min-height: 27px !important; font-size: 0.76rem !important; }
+    .qv-balls-row { gap: 3px !important; }
+    .qv-slot-badge { width: 23px !important; height: 23px !important; min-width: 23px !important; min-height: 23px !important; font-size: 0.74rem !important; }
+    .qv-algo-name { font-size: 0.72rem !important; }
+    .qv-slip-slot { font-size: 0.63rem !important; }
+}
+@media (max-width: 350px) {
+    .quick-view-row { padding: 5px 5px !important; gap: 4px !important; }
+    .qv-ball { width: 24px !important; height: 24px !important; min-width: 24px !important; min-height: 24px !important; font-size: 0.7rem !important; }
+    .qv-balls-row { gap: 2px !important; }
+    .qv-slot-badge { width: 20px !important; height: 20px !important; min-width: 20px !important; min-height: 20px !important; font-size: 0.68rem !important; }
+    .qv-algo-name { font-size: 0.68rem !important; }
+    .qv-slip-slot { font-size: 0.6rem !important; }
+}

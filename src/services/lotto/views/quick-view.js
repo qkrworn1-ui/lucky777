@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { getBallHexColor, getBallColorClass, showToast } from '../../../shared/utils.js';
-import { SafeAuth, isAdminUser, getUpcomingLottoRound } from '../../../shared/auth-mgmt.js';
+import { SafeAuth, isAdminUser, getUpcomingLottoRound, getUserRealName } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, isUserEligibleForExtraPacks } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId } from '../generator.js';
 
@@ -143,13 +143,13 @@ export function updateWakeLockUI(isActive, notSupported = false) {
         btn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
         btn.style.color = '#34d399';
         btn.title = '화면 꺼짐 방지 활성화됨 (클릭 시 끄기)';
-        btn.innerHTML = `<i class="fa-solid fa-sun" style="font-size: 0.78rem;"></i> <span id="quickViewWakeLockText">화면 켜짐 유지</span>`;
+        btn.innerHTML = `<i class="fa-solid fa-sun" style="font-size: 0.76rem;"></i> <span id="quickViewWakeLockText">화면 켜짐</span>`;
     } else {
         btn.style.background = 'rgba(100, 116, 139, 0.15)';
         btn.style.borderColor = 'rgba(100, 116, 139, 0.3)';
         btn.style.color = '#94a3b8';
         btn.title = '화면 꺼짐 방지 해제됨 (클릭 시 켜기)';
-        btn.innerHTML = `<i class="fa-regular fa-moon" style="font-size: 0.78rem;"></i> <span id="quickViewWakeLockText">화면 켜짐 꺼짐</span>`;
+        btn.innerHTML = `<i class="fa-regular fa-moon" style="font-size: 0.76rem;"></i> <span id="quickViewWakeLockText">꺼짐 방지</span>`;
     }
 }
 
@@ -502,7 +502,17 @@ export function renderQuickViewContent() {
             `;
         }
         if (titleSub) {
-            titleSub.innerHTML = `<span style="color: #fbbf24; font-weight: 800;">[${(effectiveUserId || 'guest').toUpperCase()}] 회원</span> · 제 <strong>${targetRound}</strong>회차 · <span style="color: #f59e0b; font-weight: 800;">🔒 실구매 미등록 잠김</span>`;
+            let displayUser = (effectiveUserId || 'guest').toUpperCase();
+            try {
+                if (typeof getUserRealName === 'function') {
+                    const rn = getUserRealName(effectiveUserId);
+                    if (rn && rn !== effectiveUserId) displayUser = rn;
+                }
+            } catch(e) {}
+            if (displayUser.length > 10) {
+                displayUser = displayUser.startsWith('KAKAO_') ? '카카오회원' : (displayUser.slice(0, 8) + '..');
+            }
+            titleSub.innerHTML = `<span style="color: #fbbf24; font-weight: 800;">[${displayUser}] 회원</span> · 제 <strong>${targetRound}</strong>회차 · <span style="color: #f59e0b; font-weight: 800;">🔒 실구매 미등록 잠김</span>`;
         }
         return;
     }
@@ -590,27 +600,26 @@ export function renderQuickViewContent() {
         const ballsHtml = nums.map(n => {
             const bgColor = getBallHexColor(n);
             const textColor = n <= 10 ? '#0f172a' : '#ffffff';
-            return `<span class="lotto-ball sm-ball ${getBallColorClass(n)}" style="background: ${bgColor}; width: 29px; height: 29px; line-height: 29px; text-align: center; border-radius: 50%; color: ${textColor}; font-size: 0.8rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.35); flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
+            return `<span class="qv-ball ${getBallColorClass(n)}" style="background: ${bgColor}; color: ${textColor};">${n.toString().padStart(2, '0')}</span>`;
         }).join('');
 
         gridHtml += `
             <div onclick="window.toggleQuickViewMarkCombo('${markKey}')" 
-                 class="quick-view-row ${isMarked ? 'marked-done' : ''}" 
-                 style="display: flex; align-items: center; justify-content: space-between; padding: 7px 9px; border-radius: 9px; cursor: pointer; transition: all 0.2s; background: ${isMarked ? 'rgba(16, 185, 129, 0.08)' : 'rgba(30, 41, 59, 0.75)'}; border: 1px solid ${isMarked ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255, 255, 255, 0.07)'}; opacity: ${isMarked ? '0.45' : '1'};">
-                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                    <span style="width: 25px; height: 25px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.78rem; background: ${isMarked ? '#10b981' : 'rgba(251, 191, 36, 0.18)'}; color: ${isMarked ? '#0f172a' : '#fbbf24'}; border: 1px solid ${isMarked ? '#10b981' : 'rgba(251, 191, 36, 0.4)'}; flex-shrink: 0;">
-                        ${isMarked ? '<i class="fa-solid fa-check" style="font-size: 0.75rem;"></i>' : slotLetter}
+                 class="quick-view-row ${isMarked ? 'marked-done' : ''}">
+                <div class="qv-left-col">
+                    <span class="qv-slot-badge ${isMarked ? 'is-marked' : ''}">
+                        ${isMarked ? '<i class="fa-solid fa-check"></i>' : slotLetter}
                     </span>
-                    <div style="display: flex; flex-direction: column; min-width: 0;">
-                        <span style="font-weight: 800; font-size: 0.76rem; color: ${isMarked ? '#34d399' : '#e2e8f0'}; white-space: nowrap; ${isMarked ? 'text-decoration: line-through;' : ''}">
+                    <div class="qv-label-box">
+                        <span class="qv-algo-name ${isMarked ? 'is-marked' : ''}">
                             ${isMarked ? '마킹 완료' : originalLabel}
                         </span>
-                        <span style="font-size: 0.67rem; color: #94a3b8; white-space: nowrap;">
+                        <span class="qv-slip-slot">
                             ${isMarked ? originalLabel : (currentSlipPage > 1 ? `용지 ${slotLetter}열 (${originalLabel})` : `용지 ${slotLetter}열`)}
                         </span>
                     </div>
                 </div>
-                <div class="balls-row" style="display: inline-flex; gap: 4px; justify-content: flex-end; align-items: center; flex-wrap: nowrap; flex-shrink: 0;">
+                <div class="qv-balls-row">
                     ${ballsHtml}
                 </div>
             </div>
@@ -644,7 +653,17 @@ export function renderQuickViewContent() {
     }
 
     if (titleSub) {
-        titleSub.innerHTML = `<span style="color: #fbbf24; font-weight: 800;">[${(effectiveUserId || 'guest').toUpperCase()}] 회원</span> · 제 <strong>${targetRound}</strong>회차 · ${versionLabel} (${currentSlipPage}/${totalPages}장)`;
+        let displayUser = (effectiveUserId || 'guest').toUpperCase();
+        try {
+            if (typeof getUserRealName === 'function') {
+                const rn = getUserRealName(effectiveUserId);
+                if (rn && rn !== effectiveUserId) displayUser = rn;
+            }
+        } catch(e) {}
+        if (displayUser.length > 10) {
+            displayUser = displayUser.startsWith('KAKAO_') ? '카카오회원' : (displayUser.slice(0, 8) + '..');
+        }
+        titleSub.innerHTML = `<span style="color: #fbbf24; font-weight: 800;">[${displayUser}] 회원</span> · 제 <strong>${targetRound}</strong>회차 · ${versionLabel} (${currentSlipPage}/${totalPages}장)`;
     }
 }
 
