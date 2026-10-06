@@ -157,10 +157,25 @@ function ensureWinProbModalInDOM() {
         `;
         document.body.appendChild(modal);
 
-        // Click on backdrop to close
+        // Click on backdrop to close and click on close/dismiss buttons
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
+            if (e.target === modal || e.target.classList.contains('win-prob-modal-overlay')) {
                 closeWinProbComparisonModal();
+                return;
+            }
+            if (e.target.closest('.win-prob-close-btn') || e.target.closest('.btn-win-prob-dismiss')) {
+                closeWinProbComparisonModal();
+                return;
+            }
+        });
+
+        // ESC key to close
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' || e.key === 'Esc') {
+                const m = document.getElementById('winProbComparisonModal');
+                if (m && (m.style.display !== 'none' || m.classList.contains('active') || m.classList.contains('show'))) {
+                    closeWinProbComparisonModal();
+                }
             }
         });
     }
@@ -173,7 +188,8 @@ function ensureWinProbModalInDOM() {
 export function openWinProbComparisonModal() {
     const modal = ensureWinProbModalInDOM();
     renderWinProbModalContent(currentProbTab);
-    modal.style.display = 'flex';
+    modal.classList.add('active', 'show', 'open');
+    modal.style.setProperty('display', 'flex', 'important');
     document.body.style.overflow = 'hidden';
 }
 
@@ -183,7 +199,8 @@ export function openWinProbComparisonModal() {
 export function closeWinProbComparisonModal() {
     const modal = document.getElementById('winProbComparisonModal');
     if (modal) {
-        modal.style.display = 'none';
+        modal.classList.remove('active', 'show', 'open');
+        modal.style.setProperty('display', 'none', 'important');
         document.body.style.overflow = '';
     }
 }

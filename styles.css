@@ -19529,11 +19529,16 @@ body.is-admin .btn-snapshot-audit-compact {
     backdrop-filter: blur(10px) !important;
     -webkit-backdrop-filter: blur(10px) !important;
     z-index: 100020 !important;
-    display: flex !important;
+    display: none;
     align-items: center !important;
     justify-content: center !important;
     padding: 16px !important;
     box-sizing: border-box !important;
+}
+.win-prob-modal-overlay.active,
+.win-prob-modal-overlay.show,
+.win-prob-modal-overlay.open {
+    display: flex !important;
 }
 .win-prob-modal-card {
     background: #0f172a !important;
