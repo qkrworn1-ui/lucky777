@@ -1404,6 +1404,15 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                             }
                         }
 
+                        // 🔒 삭제(휴지통) 회원 검증: 세션 즉시 종료 및 차단
+                        if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') {
+                            SafeAuth.clear();
+                            AuthStateMachine.setState(AuthState.UNAUTHENTICATED);
+                            alert('🚫 [계정 삭제 안내]\n\n관리자에 의해 삭제(휴지통 이동) 처리된 계정입니다.\n관리자에게 문의하여 계정 복구를 요청하세요.');
+                            location.reload();
+                            return;
+                        }
+
                         if (!freshAdmin && !isPerm) {
                             const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
 
@@ -1750,19 +1759,29 @@ export function processKakaoLoginSuccess(res, authObj = {}) {
                         try { await firestore.collection('lotto_agreements').doc(customUserId).set(agreementDocument); } catch(e){}
                         activeUserData = userData;
                     } else {
-                            await firestore.collection('lotto_users').doc(customUserId).set({
-                                kakaoAuth: kakaoAuthData,
-                                lastLoginAt: nowIso
-                            }, { merge: true });
-
-                            const existingData = userDoc.data() || {};
-                            const isAdm = !!(existingData.role === 'admin' || existingData.isAdmin === true);
-                            const isPerm = !!(isAdm || existingData.isPermanent === true || existingData.userType === 'permanent');
-                            if (isAdm) setIsAdminCache(customUserId, true);
-                            if (isPerm) setIsPermanentCache(customUserId, true);
-                            if (existingData.realName) setUserNameCache(customUserId, existingData.realName);
-                            activeUserData = { ...existingData, kakaoAuth: kakaoAuthData };
+                        const existingData = userDoc.data() || {};
+                        // 🔒 삭제(휴지통) 회원 검증: 카카오 로그인 차단
+                        if (existingData.isDeleted === true || existingData.status === 'trash' || existingData.status === 'deleted') {
+                            SafeAuth.clear();
+                            AuthStateMachine.setState(AuthState.UNAUTHENTICATED);
+                            window.__appUnlocked = false;
+                            alert('🚫 [계정 삭제 안내]\n\n관리자에 의해 삭제(휴지통 이동) 처리된 계정입니다.\n관리자에게 문의하여 계정 복구를 요청하세요.');
+                            location.reload();
+                            return;
                         }
+
+                        await firestore.collection('lotto_users').doc(customUserId).set({
+                            kakaoAuth: kakaoAuthData,
+                            lastLoginAt: nowIso
+                        }, { merge: true });
+
+                        const isAdm = !!(existingData.role === 'admin' || existingData.isAdmin === true);
+                        const isPerm = !!(isAdm || existingData.isPermanent === true || existingData.userType === 'permanent');
+                        if (isAdm) setIsAdminCache(customUserId, true);
+                        if (isPerm) setIsPermanentCache(customUserId, true);
+                        if (existingData.realName) setUserNameCache(customUserId, existingData.realName);
+                        activeUserData = { ...existingData, kakaoAuth: kakaoAuthData };
+                    }
 
                         // 🔒 [카카오 간편 가입자 필수 정보 & 전자 서명 검증 게이트]
                         const isRootMaster = (customUserId.toLowerCase() === 'master' || customUserId.toLowerCase() === 'admin');
@@ -7123,6 +7142,23 @@ window.startBatchWinningSend = async function() {
                 window.state.allUsersPurchasesMap[userId].isDeleted = true;
                 window.state.allUsersPurchasesMap[userId].status = 'trash';
             }
+            if (window.state && window.state.userRecommendationSnapshots) {
+                Object.keys(window.state.userRecommendationSnapshots).forEach(k => {
+                    if (k.toLowerCase().startsWith(userId.toLowerCase())) {
+                        delete window.state.userRecommendationSnapshots[k];
+                    }
+                });
+            }
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith('lotto_rec_snapshot_' + userId.toLowerCase()) || key.startsWith('lotto_review_v2_' + userId.toLowerCase()))) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                }
+            } catch(e) {}
             if (typeof window.loadUserList === 'function') await window.loadUserList();
             if (typeof window.updateHomeReviewDashboard === 'function') {
                 try { await window.updateHomeReviewDashboard(true); } catch(e) {}
@@ -7249,8 +7285,22 @@ window.startBatchWinningSend = async function() {
                 delete window.state.allUsersPurchasesMap[userId.toLowerCase()];
             }
             if (window.state && window.state.userRecommendationSnapshots) {
-                delete window.state.userRecommendationSnapshots[userId];
+                Object.keys(window.state.userRecommendationSnapshots).forEach(k => {
+                    if (k.toLowerCase().startsWith(userId.toLowerCase())) {
+                        delete window.state.userRecommendationSnapshots[k];
+                    }
+                });
             }
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith('lotto_rec_snapshot_' + userId.toLowerCase()) || key.startsWith('lotto_review_v2_' + userId.toLowerCase()))) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                }
+            } catch(e) {}
             if (typeof window.loadUserList === 'function') await window.loadUserList();
             if (typeof window.updateHomeReviewDashboard === 'function') {
                 try { await window.updateHomeReviewDashboard(true); } catch(e) {}

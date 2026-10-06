@@ -9,6 +9,7 @@
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { UserContextManager } from '../../../shared/user-context.js';
 import { getComboNumbers, getSafeActualDraw } from '../ledger.js';
+import { isSystemOrDummyUser } from '../../../shared/utils.js';
 
 let __auditData = null;
 let __auditLoading = false;
@@ -220,6 +221,14 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
         ...Object.keys(usersMap).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest')
     ])).filter(id => {
         const clean = (id || '').trim().toLowerCase();
+        if (isSystemOrDummyUser(clean)) return false;
+        const uMeta = usersMap[id] || {};
+        const pDoc = purchasesMap[id] || {};
+        const pData = pDoc.data || {};
+        if (uMeta.isDeleted === true || uMeta.status === 'trash' || uMeta.status === 'deleted' ||
+            pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted') {
+            return false;
+        }
         return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
     });
 

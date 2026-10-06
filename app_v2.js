@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.06.1518 - BUILD_DATE: 2026-10-06] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.06.1539 - BUILD_DATE: 2026-10-06] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.06.1518)
+ * Lucky777 Smart Bundle (v2026.10.06.1539)
  */
 
 
@@ -2849,6 +2849,15 @@ async function checkAuthOnLoad(initFirebaseAndData) {
                             }
                         }
 
+                        // 🔒 삭제(휴지통) 회원 검증: 세션 즉시 종료 및 차단
+                        if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') {
+                            SafeAuth.clear();
+                            AuthStateMachine.setState(AuthState.UNAUTHENTICATED);
+                            alert('🚫 [계정 삭제 안내]\n\n관리자에 의해 삭제(휴지통 이동) 처리된 계정입니다.\n관리자에게 문의하여 계정 복구를 요청하세요.');
+                            location.reload();
+                            return;
+                        }
+
                         if (!freshAdmin && !isPerm) {
                             const pStatus = await checkUserWeeklyPurchaseStatus(authId, uData);
 
@@ -3195,19 +3204,29 @@ function processKakaoLoginSuccess(res, authObj = {}) {
                         try { await firestore.collection('lotto_agreements').doc(customUserId).set(agreementDocument); } catch(e){}
                         activeUserData = userData;
                     } else {
-                            await firestore.collection('lotto_users').doc(customUserId).set({
-                                kakaoAuth: kakaoAuthData,
-                                lastLoginAt: nowIso
-                            }, { merge: true });
-
-                            const existingData = userDoc.data() || {};
-                            const isAdm = !!(existingData.role === 'admin' || existingData.isAdmin === true);
-                            const isPerm = !!(isAdm || existingData.isPermanent === true || existingData.userType === 'permanent');
-                            if (isAdm) setIsAdminCache(customUserId, true);
-                            if (isPerm) setIsPermanentCache(customUserId, true);
-                            if (existingData.realName) setUserNameCache(customUserId, existingData.realName);
-                            activeUserData = { ...existingData, kakaoAuth: kakaoAuthData };
+                        const existingData = userDoc.data() || {};
+                        // 🔒 삭제(휴지통) 회원 검증: 카카오 로그인 차단
+                        if (existingData.isDeleted === true || existingData.status === 'trash' || existingData.status === 'deleted') {
+                            SafeAuth.clear();
+                            AuthStateMachine.setState(AuthState.UNAUTHENTICATED);
+                            window.__appUnlocked = false;
+                            alert('🚫 [계정 삭제 안내]\n\n관리자에 의해 삭제(휴지통 이동) 처리된 계정입니다.\n관리자에게 문의하여 계정 복구를 요청하세요.');
+                            location.reload();
+                            return;
                         }
+
+                        await firestore.collection('lotto_users').doc(customUserId).set({
+                            kakaoAuth: kakaoAuthData,
+                            lastLoginAt: nowIso
+                        }, { merge: true });
+
+                        const isAdm = !!(existingData.role === 'admin' || existingData.isAdmin === true);
+                        const isPerm = !!(isAdm || existingData.isPermanent === true || existingData.userType === 'permanent');
+                        if (isAdm) setIsAdminCache(customUserId, true);
+                        if (isPerm) setIsPermanentCache(customUserId, true);
+                        if (existingData.realName) setUserNameCache(customUserId, existingData.realName);
+                        activeUserData = { ...existingData, kakaoAuth: kakaoAuthData };
+                    }
 
                         // 🔒 [카카오 간편 가입자 필수 정보 & 전자 서명 검증 게이트]
                         const isRootMaster = (customUserId.toLowerCase() === 'master' || customUserId.toLowerCase() === 'admin');
@@ -8568,6 +8587,23 @@ window.startBatchWinningSend = async function() {
                 window.state.allUsersPurchasesMap[userId].isDeleted = true;
                 window.state.allUsersPurchasesMap[userId].status = 'trash';
             }
+            if (window.state && window.state.userRecommendationSnapshots) {
+                Object.keys(window.state.userRecommendationSnapshots).forEach(k => {
+                    if (k.toLowerCase().startsWith(userId.toLowerCase())) {
+                        delete window.state.userRecommendationSnapshots[k];
+                    }
+                });
+            }
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith('lotto_rec_snapshot_' + userId.toLowerCase()) || key.startsWith('lotto_review_v2_' + userId.toLowerCase()))) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                }
+            } catch(e) {}
             if (typeof window.loadUserList === 'function') await window.loadUserList();
             if (typeof window.updateHomeReviewDashboard === 'function') {
                 try { await window.updateHomeReviewDashboard(true); } catch(e) {}
@@ -8694,8 +8730,22 @@ window.startBatchWinningSend = async function() {
                 delete window.state.allUsersPurchasesMap[userId.toLowerCase()];
             }
             if (window.state && window.state.userRecommendationSnapshots) {
-                delete window.state.userRecommendationSnapshots[userId];
+                Object.keys(window.state.userRecommendationSnapshots).forEach(k => {
+                    if (k.toLowerCase().startsWith(userId.toLowerCase())) {
+                        delete window.state.userRecommendationSnapshots[k];
+                    }
+                });
             }
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith('lotto_rec_snapshot_' + userId.toLowerCase()) || key.startsWith('lotto_review_v2_' + userId.toLowerCase()))) {
+                            localStorage.removeItem(key);
+                        }
+                    }
+                }
+            } catch(e) {}
             if (typeof window.loadUserList === 'function') await window.loadUserList();
             if (typeof window.updateHomeReviewDashboard === 'function') {
                 try { await window.updateHomeReviewDashboard(true); } catch(e) {}
@@ -17270,6 +17320,9 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
                 const pDoc = await firestore.collection('lotto_purchases').doc(cleanUser).get();
                 if (pDoc && pDoc.exists) {
                     const pData = pDoc.data();
+                    if (pData && (pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted')) {
+                        return null;
+                    }
                     if (pData?.recommendationSnapshots?.[String(roundNum)]) {
                         existingData = pData.recommendationSnapshots[String(roundNum)];
                     }
@@ -17440,6 +17493,7 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
+    if (isSystemOrDummyUser(cleanUser)) return null;
     const roundNum = parseInt(round, 10);
     const docKey = `${cleanUser}_${roundNum}`;
 
@@ -18139,6 +18193,7 @@ function getPackFromSnapshot(extraPacks, pId) {
 function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
     if (!userId || !roundNum) return null;
     const cleanUser = String(userId).toLowerCase().trim();
+    if (isSystemOrDummyUser(cleanUser)) return null;
     const cacheKey = `${cleanUser}_${roundNum}`;
     const rKey = String(roundNum);
 
@@ -18186,6 +18241,18 @@ async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotDa
     if (!firestore) return;
 
     try {
+        // 🔒 삭제(휴지통) 회원 차단: DB 조회 확인
+        const uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
+        if (uDoc && uDoc.exists) {
+            const uData = uDoc.data();
+            if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) return;
+        }
+        const pDoc = await firestore.collection('lotto_purchases').doc(cleanUser).get();
+        if (pDoc && pDoc.exists) {
+            const pData = pDoc.data();
+            if (pData && (pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted')) return;
+        }
+
         // 1. Save in lotto_purchases
         await firestore.collection('lotto_purchases').doc(cleanUser).set({
             userId: cleanUser,
@@ -18225,6 +18292,9 @@ function computeUser70RecommendationsReview(userId, roundNum) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
+    if (isSystemOrDummyUser(cleanUser)) {
+        return null;
+    }
     const cacheKey = `${cleanUser}_${roundNum}`;
     if (_user70ReviewCache[cacheKey]) {
         return _user70ReviewCache[cacheKey];
@@ -35683,6 +35753,7 @@ var __M_services_lotto_views_snapshot_audit_modal = (function() {
 const { SafeAuth, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { UserContextManager } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
 const { getComboNumbers, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
+const { isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 
 let __auditData = null;
 let __auditLoading = false;
@@ -35894,6 +35965,14 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
         ...Object.keys(usersMap).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest')
     ])).filter(id => {
         const clean = (id || '').trim().toLowerCase();
+        if (isSystemOrDummyUser(clean)) return false;
+        const uMeta = usersMap[id] || {};
+        const pDoc = purchasesMap[id] || {};
+        const pData = pDoc.data || {};
+        if (uMeta.isDeleted === true || uMeta.status === 'trash' || uMeta.status === 'deleted' ||
+            pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted') {
+            return false;
+        }
         return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
     });
 

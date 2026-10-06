@@ -1478,6 +1478,9 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
                 const pDoc = await firestore.collection('lotto_purchases').doc(cleanUser).get();
                 if (pDoc && pDoc.exists) {
                     const pData = pDoc.data();
+                    if (pData && (pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted')) {
+                        return null;
+                    }
                     if (pData?.recommendationSnapshots?.[String(roundNum)]) {
                         existingData = pData.recommendationSnapshots[String(roundNum)];
                     }
@@ -1648,6 +1651,7 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
+    if (isSystemOrDummyUser(cleanUser)) return null;
     const roundNum = parseInt(round, 10);
     const docKey = `${cleanUser}_${roundNum}`;
 

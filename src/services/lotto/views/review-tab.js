@@ -303,6 +303,7 @@ export function getPackFromSnapshot(extraPacks, pId) {
 export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
     if (!userId || !roundNum) return null;
     const cleanUser = String(userId).toLowerCase().trim();
+    if (isSystemOrDummyUser(cleanUser)) return null;
     const cacheKey = `${cleanUser}_${roundNum}`;
     const rKey = String(roundNum);
 
@@ -350,6 +351,18 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, sna
     if (!firestore) return;
 
     try {
+        // 🔒 삭제(휴지통) 회원 차단: DB 조회 확인
+        const uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
+        if (uDoc && uDoc.exists) {
+            const uData = uDoc.data();
+            if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) return;
+        }
+        const pDoc = await firestore.collection('lotto_purchases').doc(cleanUser).get();
+        if (pDoc && pDoc.exists) {
+            const pData = pDoc.data();
+            if (pData && (pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted')) return;
+        }
+
         // 1. Save in lotto_purchases
         await firestore.collection('lotto_purchases').doc(cleanUser).set({
             userId: cleanUser,
@@ -389,6 +402,9 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
+    if (isSystemOrDummyUser(cleanUser)) {
+        return null;
+    }
     const cacheKey = `${cleanUser}_${roundNum}`;
     if (_user70ReviewCache[cacheKey]) {
         return _user70ReviewCache[cacheKey];
