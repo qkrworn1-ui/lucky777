@@ -969,9 +969,8 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
             summaryMessage = `🎯 [올라운더 팩 감지] 올라운더 추천 ${v4MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else if (v3MatchCount > 0) {
-        const isV42Round = (parseInt(round, 10) >= 1245 || !round);
-        detectedVersion = isV42Round ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)';
-        const v3Label = isV42Round ? '올라운더 팩 2' : '수학 퀀트 팩';
+        detectedVersion = '기본 2: 올라운더 팩 2 (10게임)';
+        const v3Label = '올라운더 팩 2';
         if (v3ExactCount === rawCombosList.length) {
             summaryMessage = `⚡ [${v3Label} 자동 감지] 총 ${rawCombosList.length}게임 모두 ${v3Label} 추천번호와 100% 일치!`;
         } else {

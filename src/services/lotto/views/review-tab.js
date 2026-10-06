@@ -580,13 +580,12 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
             }
         }
 
-        const isV42 = roundNum >= 1245;
         const algorithmsMetadata = [
             { algoId: 'v4', algoName: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#10b981', combos: v4Combos },
             { 
                 algoId: 'v3', 
-                algoName: isV42 ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)', 
-                badge: isV42 ? 'ALL-ROUNDER 2' : 'MATH QUANT', 
+                algoName: '기본 2: 올라운더 팩 2 (10게임)', 
+                badge: 'ALL-ROUNDER 2', 
                 color: '#3b82f6', 
                 combos: v3Combos 
             }
@@ -2354,9 +2353,9 @@ export async function renderReviewDetail(r) {
             },
             {
                 id: 'v3',
-                name: roundNum >= 1245 ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)',
-                shortName: roundNum >= 1245 ? '올라운더2' : '수학퀀트',
-                badge: roundNum >= 1245 ? 'ALL-ROUNDER 2' : 'MATH QUANT',
+                name: '기본 2: 올라운더 팩 2 (10게임)',
+                shortName: '올라운더2',
+                badge: 'ALL-ROUNDER 2',
                 color: '#3b82f6',
                 games: actualV3Combos.length || 10,
                 prize: v3Eval.totalPrize,
@@ -3284,10 +3283,9 @@ export async function renderAdmin1235ReviewModalContent() {
                 });
             }
             if (filterKey === 'all' || filterKey === 'v3') {
-                const isV42 = targetRound >= 1245;
                 packsToRender.push({
-                    name: isV42 ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)',
-                    badge: isV42 ? 'ALL-ROUNDER 2' : 'MATH QUANT',
+                    name: '기본 2: 올라운더 팩 2 (10게임)',
+                    badge: 'ALL-ROUNDER 2',
                     color: '#3b82f6',
                     evalData: reviewData.v3Eval
                 });

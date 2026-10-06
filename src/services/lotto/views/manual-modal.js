@@ -346,8 +346,7 @@ export function updateManualModalCrossCheck() {
             } else if (d.matchedVersion.includes('올라운더') || d.matchedVersion.includes('V4.0')) {
                 return `<span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; color: #34d399; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-bullseye" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
             } else {
-                const isV42 = (round >= 1245 || !round);
-                const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                const v3Icon = 'fa-layer-group';
                 return `<span style="background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; color: #93c5fd; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid ${v3Icon}" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
             }
         } else {
@@ -402,10 +401,9 @@ export function updateManualModalCrossCheck() {
             resultBox.style.background = 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.18))';
             resultBox.style.border = '1px solid rgba(245,158,11,0.45)';
             resultBox.style.color = '#fef08a';
-                    const isV42 = (round >= 1245 || !round);
-                    const v3Title = isV42 ? '기본 2: 올라운더 팩 2' : '기본 2: 수학 퀀트 팩';
-                    const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
-                    resultBox.innerHTML = `
+            const v3Title = '기본 2: 올라운더 팩 2';
+            const v3Icon = 'fa-layer-group';
+            resultBox.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <i class="fa-solid ${v3Icon}" style="color: #fbbf24; font-size: 1.1rem;"></i>

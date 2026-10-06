@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.06.1539 - BUILD_DATE: 2026-10-06] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.06.1545.27 - BUILD_DATE: 2026-10-06] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.06.1539)
+ * Lucky777 Smart Bundle (v2026.10.06.1545.27)
  */
 
 
@@ -16811,9 +16811,8 @@ function crossCheckCombosWithRecommendations(round, rawCombosList, targetUserId 
             summaryMessage = `🎯 [올라운더 팩 감지] 올라운더 추천 ${v4MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else if (v3MatchCount > 0) {
-        const isV42Round = (parseInt(round, 10) >= 1245 || !round);
-        detectedVersion = isV42Round ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)';
-        const v3Label = isV42Round ? '올라운더 팩 2' : '수학 퀀트 팩';
+        detectedVersion = '기본 2: 올라운더 팩 2 (10게임)';
+        const v3Label = '올라운더 팩 2';
         if (v3ExactCount === rawCombosList.length) {
             summaryMessage = `⚡ [${v3Label} 자동 감지] 총 ${rawCombosList.length}게임 모두 ${v3Label} 추천번호와 100% 일치!`;
         } else {
@@ -18470,13 +18469,12 @@ function computeUser70RecommendationsReview(userId, roundNum) {
             }
         }
 
-        const isV42 = roundNum >= 1245;
         const algorithmsMetadata = [
             { algoId: 'v4', algoName: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#10b981', combos: v4Combos },
             { 
                 algoId: 'v3', 
-                algoName: isV42 ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)', 
-                badge: isV42 ? 'ALL-ROUNDER 2' : 'MATH QUANT', 
+                algoName: '기본 2: 올라운더 팩 2 (10게임)', 
+                badge: 'ALL-ROUNDER 2', 
                 color: '#3b82f6', 
                 combos: v3Combos 
             }
@@ -20244,9 +20242,9 @@ async function renderReviewDetail(r) {
             },
             {
                 id: 'v3',
-                name: roundNum >= 1245 ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)',
-                shortName: roundNum >= 1245 ? '올라운더2' : '수학퀀트',
-                badge: roundNum >= 1245 ? 'ALL-ROUNDER 2' : 'MATH QUANT',
+                name: '기본 2: 올라운더 팩 2 (10게임)',
+                shortName: '올라운더2',
+                badge: 'ALL-ROUNDER 2',
                 color: '#3b82f6',
                 games: actualV3Combos.length || 10,
                 prize: v3Eval.totalPrize,
@@ -21174,10 +21172,9 @@ async function renderAdmin1235ReviewModalContent() {
                 });
             }
             if (filterKey === 'all' || filterKey === 'v3') {
-                const isV42 = targetRound >= 1245;
                 packsToRender.push({
-                    name: isV42 ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)',
-                    badge: isV42 ? 'ALL-ROUNDER 2' : 'MATH QUANT',
+                    name: '기본 2: 올라운더 팩 2 (10게임)',
+                    badge: 'ALL-ROUNDER 2',
                     color: '#3b82f6',
                     evalData: reviewData.v3Eval
                 });
@@ -27671,9 +27668,8 @@ async function renderConfirmedPurchasesList() {
             } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 기본 1: 올라운더 팩</span>`;
             } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
-                const isV42 = round >= 1245;
-                const v3Title = isV42 ? '기본 2: 올라운더 팩 2' : '기본 2: 수학 퀀트 팩';
-                const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                const v3Title = '기본 2: 올라운더 팩 2';
+                const v3Icon = 'fa-layer-group';
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.65rem;"></i> ${v3Title}</span>`;
             } else {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-weight: 600; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.65rem;"></i> 수동구매</span>`;
@@ -27834,9 +27830,8 @@ async function renderConfirmedPurchasesList() {
                     const packName = pVer.split(' (')[0] || pVer;
                     aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${packName}</span>`;
                 } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
-                    const isV42 = round >= 1245;
-                    const v3Tag = isV42 ? `올라운더2 #${cIdx+1}` : `수학퀀트 #${cIdx+1}`;
-                    const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                    const v3Tag = `올라운더2 #${cIdx+1}`;
+                    const v3Icon = 'fa-layer-group';
                     aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.6rem;"></i> ${v3Tag}</span>`;
                 } else if (round >= 1239) {
                     try {
@@ -33022,8 +33017,7 @@ function updateManualModalCrossCheck() {
             } else if (d.matchedVersion.includes('올라운더') || d.matchedVersion.includes('V4.0')) {
                 return `<span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; color: #34d399; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-bullseye" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
             } else {
-                const isV42 = (round >= 1245 || !round);
-                const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                const v3Icon = 'fa-layer-group';
                 return `<span style="background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; color: #93c5fd; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid ${v3Icon}" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
             }
         } else {
@@ -33078,10 +33072,9 @@ function updateManualModalCrossCheck() {
             resultBox.style.background = 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.18))';
             resultBox.style.border = '1px solid rgba(245,158,11,0.45)';
             resultBox.style.color = '#fef08a';
-                    const isV42 = (round >= 1245 || !round);
-                    const v3Title = isV42 ? '기본 2: 올라운더 팩 2' : '기본 2: 수학 퀀트 팩';
-                    const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
-                    resultBox.innerHTML = `
+            const v3Title = '기본 2: 올라운더 팩 2';
+            const v3Icon = 'fa-layer-group';
+            resultBox.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     <div style="display:flex; align-items:center; gap:8px;">
                         <i class="fa-solid ${v3Icon}" style="color: #fbbf24; font-size: 1.1rem;"></i>

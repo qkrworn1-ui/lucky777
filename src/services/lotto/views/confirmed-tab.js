@@ -871,9 +871,8 @@ export async function renderConfirmedPurchasesList() {
             } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 기본 1: 올라운더 팩</span>`;
             } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
-                const isV42 = round >= 1245;
-                const v3Title = isV42 ? '기본 2: 올라운더 팩 2' : '기본 2: 수학 퀀트 팩';
-                const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                const v3Title = '기본 2: 올라운더 팩 2';
+                const v3Icon = 'fa-layer-group';
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.65rem;"></i> ${v3Title}</span>`;
             } else {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-weight: 600; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.65rem;"></i> 수동구매</span>`;
@@ -1034,9 +1033,8 @@ export async function renderConfirmedPurchasesList() {
                     const packName = pVer.split(' (')[0] || pVer;
                     aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${packName}</span>`;
                 } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
-                    const isV42 = round >= 1245;
-                    const v3Tag = isV42 ? `올라운더2 #${cIdx+1}` : `수학퀀트 #${cIdx+1}`;
-                    const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                    const v3Tag = `올라운더2 #${cIdx+1}`;
+                    const v3Icon = 'fa-layer-group';
                     aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.6rem;"></i> ${v3Tag}</span>`;
                 } else if (round >= 1239) {
                     try {
