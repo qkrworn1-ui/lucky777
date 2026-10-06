@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.06.2012 - BUILD_DATE: 2026-10-06] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.06.2148 - BUILD_DATE: 2026-10-06] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.06.2012)
+ * Lucky777 Smart Bundle (v2026.10.06.2148)
  */
 
 
@@ -25597,7 +25597,7 @@ async function runBudgetOptimizationSimulation() {
     if (candidatePool.length === 0) {
         candidatePool = ALL_PACK_DEFS.filter(p => p.type === 'extra');
     }
-    const neededPackCount = Math.max(1, Math.floor(additionalGames / 10));
+    const neededPackCount = Math.max(1, Math.min(candidatePool.length, Math.round(additionalGames / 10)));
 
     function getCombinations(arr, k) {
         const results = [];
@@ -25631,7 +25631,6 @@ async function runBudgetOptimizationSimulation() {
     await new Promise(r => setTimeout(r, 60));
 
     const evaluatedDrawCount = maxRound;
-    const totalPortfolioGames = ownedGames + additionalGames;
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
@@ -25723,8 +25722,10 @@ async function runBudgetOptimizationSimulation() {
             });
         }
 
+        const actualAdditionalGames = newPacks.reduce((sum, p) => sum + (p.games || 10), 0);
+        const actualPortfolioGames = ownedGames + actualAdditionalGames;
         const totalHits = hit1st + hit2nd + hit3rd + hit4th + hit5th;
-        const totalCost = evaluatedDrawCount * totalPortfolioGames * 1000;
+        const totalCost = evaluatedDrawCount * actualPortfolioGames * 1000;
         const roi = totalCost > 0 ? ((totalPrize / totalCost) * 100).toFixed(1) : 0;
         const hitScore = (hit1st * 5000000) + (hit2nd * 300000) + (hit3rd * 15000) + (hit4th * 200) + hit5th;
 
@@ -25739,7 +25740,11 @@ async function runBudgetOptimizationSimulation() {
             bestMetrics = {
                 hit1st, hit2nd, hit3rd, hit4th, hit5th,
                 totalHits, totalPrize, roi, totalCost,
-                ownedGames, additionalGames, totalPortfolioGames, additionalBudget
+                ownedGames,
+                additionalGames: actualAdditionalGames,
+                totalPortfolioGames: actualPortfolioGames,
+                additionalBudget: actualAdditionalGames * 1000,
+                userRequestedBudget: additionalBudget
             };
         }
     }
@@ -25757,7 +25762,9 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
     if (!resultContainer) return;
     resultContainer.style.display = 'block';
 
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1245));
     
     const ownedHtml = ownedPacks.length > 0 
         ? ownedPacks.map(p => `<span style="background: rgba(255,255,255,0.08); border: 1px solid #475569; color: #cbd5e1; padding: 3px 6px; border-radius: 5px; font-size: 0.72rem; white-space: nowrap;">✓ ${p.shortName}</span>`).join(' ')
@@ -25848,7 +25855,9 @@ function applyOptimizedCombinationToApp() {
         return;
     }
     const { bestNewPacks } = currentOptimizedResult;
-    const curUpcomingRound = state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1239);
+    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
+        ? window.getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1245));
 
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
@@ -25859,9 +25868,11 @@ function applyOptimizedCombinationToApp() {
     console.log('[applyOptimized] bestNewPacks:', JSON.stringify(bestNewPacks));
 
     // 1. Get current active pack IDs for this user
-    const currentActivePackIds = (typeof window.getUserActiveExtraPackIds === 'function')
-        ? window.getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound)
-        : [];
+    const currentActivePackIds = (typeof getUserActiveExtraPackIds === 'function')
+        ? getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound)
+        : ((typeof window !== 'undefined' && typeof window.getUserActiveExtraPackIds === 'function')
+            ? window.getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound)
+            : []);
     const activePackSet = new Set(currentActivePackIds);
 
     // 2. Add newly recommended extra packs
@@ -25881,7 +25892,9 @@ function applyOptimizedCombinationToApp() {
     console.log('[applyOptimized] Saving newActiveList:', newActiveList);
 
     // Save to user extra pack store
-    if (typeof window.saveUserActiveExtraPackIds === 'function') {
+    if (typeof saveUserActiveExtraPackIds === 'function') {
+        saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, newActiveList);
+    } else if (typeof window !== 'undefined' && typeof window.saveUserActiveExtraPackIds === 'function') {
         window.saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, newActiveList);
     }
 
