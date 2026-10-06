@@ -942,7 +942,7 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
             } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('V4.0')) {
                 v4MatchCount++;
                 if (match.isExact) v4ExactCount++;
-            } else if (match.matchedVersion.includes('수학 퀀트') || match.matchedVersion.includes('수학퀀트') || match.matchedVersion.includes('V3.0')) {
+            } else if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('수학 퀀트') || match.matchedVersion.includes('수학퀀트') || match.matchedVersion.includes('V3.0')) {
                 v3MatchCount++;
                 if (match.isExact) v3ExactCount++;
             }
@@ -969,12 +969,14 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
             summaryMessage = `🎯 [올라운더 팩 감지] 올라운더 추천 ${v4MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else if (v3MatchCount > 0) {
-        detectedVersion = '기본 2: 수학 퀀트 팩 (10게임)';
+        const isV42Round = (parseInt(round, 10) >= 1245 || !round);
+        detectedVersion = isV42Round ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)';
+        const v3Label = isV42Round ? '올라운더 팩 2' : '수학 퀀트 팩';
         if (v3ExactCount === rawCombosList.length) {
-            summaryMessage = `⚡ [수학 퀀트 팩 자동 감지] 총 ${rawCombosList.length}게임 모두 수학 퀀트 추천번호와 100% 일치!`;
+            summaryMessage = `⚡ [${v3Label} 자동 감지] 총 ${rawCombosList.length}게임 모두 ${v3Label} 추천번호와 100% 일치!`;
         } else {
             const manualCount = matchDetails.filter(m => m.isManual).length;
-            summaryMessage = `⚡ [수학 퀀트 팩 감지] 수학 퀀트 추천 ${v3MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
+            summaryMessage = `⚡ [${v3Label} 감지] ${v3Label} 추천 ${v3MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else {
         detectedVersion = '수동/직접입력';
@@ -1048,7 +1050,7 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
             shortName: '추가 1: 빈틈제로',
             badge: 'ZERO-GAP 100%',
             color: '#10b981',
-            desc: '기본 20게임(올라운더+수학퀀트)의 누락 번호 100% 포섭으로 사각지대 없는 30게임 완성 포트폴리오',
+            desc: '기본 20게임(올라운더 1+올라운더 2)의 누락 번호 100% 포섭으로 사각지대 없는 30게임 완성 포트폴리오',
             tag: '30게임 완성형 | 45개 번호 100% 전수 포섭 | 사각지대 제로'
         },
         2: {

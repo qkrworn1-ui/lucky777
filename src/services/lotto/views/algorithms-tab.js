@@ -777,7 +777,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     로또 6/45 <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 AI 알고리즘</span> 정밀 해설 &amp; 실적
                 </h2>
                 <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; max-width: 800px; word-break: keep-all; overflow-wrap: break-word;">
-                    단순한 무작위 번호 생성이 아닙니다. 올라운더 팩(포트폴리오), 수학 퀀트 팩(확률 전이), 빈틈제로 팩(전수 커버리지), 슈퍼 잭팟(고배당), 멀티 히트(휠링) 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
+                    단순한 무작위 번호 생성이 아닙니다. 올라운더 팩(포트폴리오), 올라운더 팩 2(다이나믹 모멘텀), 빈틈제로 팩(전수 커버리지), 슈퍼 잭팟(고배당), 멀티 히트(휠링) 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
                 </p>
             </div>
 

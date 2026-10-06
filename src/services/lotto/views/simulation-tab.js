@@ -333,7 +333,7 @@ export function renderSimulationTab(targetRound = null) {
     const packNames = { 1: '빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
     const engineParts = [];
     if (cfg.includeV4) engineParts.push('올라운더(10G)');
-    if (cfg.includeV3) engineParts.push('수학퀀트(10G)');
+    if (cfg.includeV3) engineParts.push('올라운더2(10G)');
     cfg.selectedExtraPacks.forEach(p => {
         engineParts.push(`${packNames[p] || `추가${p}`}(10G)`);
     });

@@ -224,7 +224,7 @@ export function generatePredictionReport() {
                     </span>
                 </div>
                 <div style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.55;">
-                    • 시스템 전체 실데이터 복기 분석 결과, 1235회 이후 <strong style="color:#34d399;">5등 적중률 7.27% (무작위 대비 3.27배 초과)</strong>를 기록 중인 <strong>올라운더 팩 웜 넘버 밸런스</strong> 및 <strong>수학 퀀트 팩 마르코프 전이행렬</strong> 엔진을 [${displayName}] 님 고유 시드로 완벽 배치했습니다.
+                    • 시스템 전체 실데이터 복기 분석 결과, 1235회 이후 <strong style="color:#34d399;">5등 적중률 7.27% (무작위 대비 3.27배 초과)</strong>를 기록 중인 <strong>올라운더 팩 1 웜 넘버 밸런스</strong> 및 <strong>올라운더 팩 2 다이나믹 모멘텀</strong> 엔진을 [${displayName}] 님 고유 시드로 완벽 배치했습니다.
                 </div>
             </div>
         `;
@@ -284,7 +284,7 @@ export function generatePredictionReport() {
                 <i class="fa-solid fa-lightbulb"></i> 💡 [${displayName}] 님을 위한 이번 주 최적 포트폴리오 운영 전략
             </strong>
             <div style="font-size: 0.82rem; color: #e2e8f0; line-height: 1.55;">
-                1. <strong>기본 20게임(올라운더 + 수학 퀀트) 필수 운영</strong>: 전구간 균형 방어망(올라운더 팩 1~4번)과 마르코프 딥러닝 공격망(수학 퀀트 팩 1~5번)이 상호 결합되어 매주 투입 자금을 탄탄하게 방어합니다.<br>
+                1. <strong>기본 20게임(올라운더 1 + 올라운더 2) 필수 운영</strong>: 전구간 균형 방어망(올라운더 1)과 다이나믹 모멘텀 공격망(올라운더 2)이 상호 결합되어 매주 투입 자금을 탄탄하게 방어합니다.<br>
                 2. <strong>예산 맞춤 추가팩 확장 권장</strong>: 과거 복기 실적상 다중 적중을 극대화하려면 <span style="color:#10b981; font-weight:700;">추가 1(빈틈제로 팩)</span> 또는 <span style="color:#8b5cf6; font-weight:700;">추가 3(멀티 히트 팩)</span>을 병행하여 3등·4등 연쇄 적중 포획망을 가동하는 것을 권장합니다.
             </div>
         </div>

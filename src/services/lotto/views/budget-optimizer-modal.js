@@ -10,7 +10,7 @@ let currentOptimizedResult = null;
 
 export const ALL_PACK_DEFS = [
     { id: 'v4', type: 'engine', version: 'v4', name: '기본 1: 올라운더 팩 (10게임)', shortName: '올라운더(10)', games: 10, color: '#10b981' },
-    { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 수학 퀀트 팩 (10게임)', shortName: '수학퀀트(10)', games: 10, color: '#3b82f6' },
+    { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 올라운더 팩 2 (10게임)', shortName: '올라운더2(10)', games: 10, color: '#3b82f6' },
     { id: 'extra1', type: 'extra', packId: 1, name: '추가 1: 빈틈제로 팩 (10게임)', shortName: '빈틈제로(10)', games: 10, color: '#10b981' },
     { id: 'extra2', type: 'extra', packId: 2, name: '추가 2: 슈퍼 잭팟 팩 (10게임)', shortName: '슈퍼잭팟(10)', games: 10, color: '#f59e0b' },
     { id: 'extra3', type: 'extra', packId: 3, name: '추가 3: 멀티 히트 팩 (10게임)', shortName: '멀티히트(10)', games: 10, color: '#8b5cf6' },
@@ -35,7 +35,7 @@ export function openBudgetOptimizerModal() {
             : false));
 
     if (!isEligible) {
-        const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 20게임(올라운더 + 수학 퀀트) 추천번호가 상시 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);
+        const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 20게임(올라운더 1 + 올라운더 2) 추천번호가 상시 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();

@@ -414,7 +414,7 @@ export async function renderConfirmedPurchasesList() {
                         </td>
                         <td style="padding: 8px 10px; text-align: center; white-space: nowrap; font-size: 0.72rem;">
                             <span title="올라운더 팩 적중" style="color: #c4b5fd; font-weight: 700;">올라운더:${m.algoHits.v4}</span> ·
-                            <span title="수학 퀀트 팩 적중" style="color: #fbbf24; font-weight: 700;">수학퀀트:${m.algoHits.v3}</span> ·
+                            <span title="올라운더 팩 2 적중" style="color: #fbbf24; font-weight: 700;">올라운더2:${m.algoHits.v3}</span> ·
                             <span title="추가팩 적중" style="color: #6ee7b7; font-weight: 700;">추가:${m.algoHits.extra}</span> ·
                             <span title="수동 적중" style="color: #94a3b8;">수동:${m.algoHits.manual}</span>
                         </td>
@@ -493,7 +493,7 @@ export async function renderConfirmedPurchasesList() {
                                     <td style="padding: 10px; text-align: center; color: #a78bfa;">${grandR5}</td>
                                     <td style="padding: 10px; text-align: center; font-size: 0.74rem;">
                                         <span style="color: #c4b5fd;">올라운더:${grandAlgoV4}</span> ·
-                                        <span style="color: #fbbf24;">수학퀀트:${grandAlgoV3}</span> ·
+                                        <span style="color: #fbbf24;">올라운더2:${grandAlgoV3}</span> ·
                                         <span style="color: #6ee7b7;">추가:${grandAlgoExtra}</span> ·
                                         <span style="color: #94a3b8;">수동:${grandAlgoManual}</span>
                                     </td>
@@ -868,8 +868,11 @@ export async function renderConfirmedPurchasesList() {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-qrcode" style="font-size: 0.65rem;"></i> QR영수증</span>`;
             } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 기본 1: 올라운더 팩</span>`;
-            } else if (pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.65rem;"></i> 기본 2: 수학 퀀트 팩</span>`;
+            } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
+                const isV42 = round >= 1245;
+                const v3Title = isV42 ? '기본 2: 올라운더 팩 2' : '기본 2: 수학 퀀트 팩';
+                const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.65rem;"></i> ${v3Title}</span>`;
             } else {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-weight: 600; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.65rem;"></i> 수동구매</span>`;
             }
@@ -1028,10 +1031,11 @@ export async function renderConfirmedPurchasesList() {
                 } else if (pVer.includes('추가')) {
                     const packName = pVer.split(' (')[0] || pVer;
                     aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${packName}</span>`;
-                } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
-                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.6rem;"></i> 올라운더 #${cIdx+1}</span>`;
-                } else if (pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
-                    aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> 수학퀀트 #${cIdx+1}</span>`;
+                } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
+                    const isV42 = round >= 1245;
+                    const v3Tag = isV42 ? `올라운더2 #${cIdx+1}` : `수학퀀트 #${cIdx+1}`;
+                    const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                    aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.6rem;"></i> ${v3Tag}</span>`;
                 } else if (round >= 1239) {
                     try {
                         const { uV4, uV3, extraPacks } = getMemoizedRecommendations(round, purchaseUser);

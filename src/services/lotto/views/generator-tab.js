@@ -392,7 +392,7 @@ export function getEnsembleWinningHistory(comboObj, comboIndex) {
         purchases.forEach(p => {
             const isMatchingVersion = p.version && (
                 p.version.includes(targetVersionKeyword) ||
-                (useV4 ? (p.version.includes('올라운더') || p.version.includes('V4.0')) : (p.version.includes('수학 퀀트') || p.version.includes('수학퀀트') || p.version.includes('V3.0')))
+                (useV4 ? (p.version.includes('올라운더') || p.version.includes('V4.0')) : (p.version.includes('올라운더 2') || p.version.includes('올라운더2') || p.version.includes('수학 퀀트') || p.version.includes('수학퀀트') || p.version.includes('V3.0')))
             );
             if (!isMatchingVersion && purchases.length > 1) return;
 
@@ -895,7 +895,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                             <div style="margin: 8px 0; padding-left: 4px;">
                                 <strong style="font-size:0.78rem; color:var(--primary-light);"><i class="fa-solid fa-list-check"></i> 번호별 상세 추출 근거:</strong>
                                 <ul style="list-style:none; padding: 4px 0 0 10px; font-size:0.75rem; color:var(--text-secondary); line-height:1.6;">
-                                    ${(strat.numReasons || ['올라운더 및 수학 퀀트 정밀 통계 기반 추출']).map(r => `<li>• ${r}</li>`).join('')}
+                                    ${(strat.numReasons || ['올라운더 1 및 올라운더 2 정밀 통계 기반 추출']).map(r => `<li>• ${r}</li>`).join('')}
                                 </ul>
                             </div>
 
@@ -1744,7 +1744,7 @@ export function renderExtraAddonPacksSection() {
                     🔒 실구매 인증 회원 전용 [추가 5팩 50게임]
                 </div>
                 <p class="locked-desc">
-                    기본 20게임(올라운더 + 수학 퀀트)은 상시 무료로 열람 가능하며,<br>
+                    기본 20게임(올라운더 1 + 올라운더 2)은 상시 무료로 열람 가능하며,<br>
                     <strong style="color: #fbbf24;">추가 1~5팩(빈틈제로, 슈퍼 잭팟, 멀티 히트 등 50게임)</strong>은<br>
                     <strong>매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원</strong>님께 무료로 잠금 해제됩니다.
                 </p>
@@ -2031,7 +2031,7 @@ export function handleClearExtraPacks() {
         return;
     }
 
-    if (confirm(`[${effectiveUserId}] 회원의 모든 추가 팩을 초기화하시겠습니까?\n(기본 추천 20게임(올라운더·수학퀀트)은 전혀 영향을 받지 않습니다)`)) {
+    if (confirm(`[${effectiveUserId}] 회원의 모든 추가 팩을 초기화하시겠습니까?\n(기본 추천 20게임(올라운더 1·2)은 전혀 영향을 받지 않습니다)`)) {
         saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, []);
         renderExtraAddonPacksSection();
         showToast('모든 추가 팩이 초기화되었습니다.');

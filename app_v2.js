@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.06.1459 - BUILD_DATE: 2026-10-06] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.06.1509.25 - BUILD_DATE: 2026-10-06] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.06.1459)
+ * Lucky777 Smart Bundle (v2026.10.06.1509.25)
  */
 
 
@@ -16719,7 +16719,7 @@ function crossCheckCombosWithRecommendations(round, rawCombosList, targetUserId 
             } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('V4.0')) {
                 v4MatchCount++;
                 if (match.isExact) v4ExactCount++;
-            } else if (match.matchedVersion.includes('수학 퀀트') || match.matchedVersion.includes('수학퀀트') || match.matchedVersion.includes('V3.0')) {
+            } else if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('수학 퀀트') || match.matchedVersion.includes('수학퀀트') || match.matchedVersion.includes('V3.0')) {
                 v3MatchCount++;
                 if (match.isExact) v3ExactCount++;
             }
@@ -16746,12 +16746,14 @@ function crossCheckCombosWithRecommendations(round, rawCombosList, targetUserId 
             summaryMessage = `🎯 [올라운더 팩 감지] 올라운더 추천 ${v4MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else if (v3MatchCount > 0) {
-        detectedVersion = '기본 2: 수학 퀀트 팩 (10게임)';
+        const isV42Round = (parseInt(round, 10) >= 1245 || !round);
+        detectedVersion = isV42Round ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)';
+        const v3Label = isV42Round ? '올라운더 팩 2' : '수학 퀀트 팩';
         if (v3ExactCount === rawCombosList.length) {
-            summaryMessage = `⚡ [수학 퀀트 팩 자동 감지] 총 ${rawCombosList.length}게임 모두 수학 퀀트 추천번호와 100% 일치!`;
+            summaryMessage = `⚡ [${v3Label} 자동 감지] 총 ${rawCombosList.length}게임 모두 ${v3Label} 추천번호와 100% 일치!`;
         } else {
             const manualCount = matchDetails.filter(m => m.isManual).length;
-            summaryMessage = `⚡ [수학 퀀트 팩 감지] 수학 퀀트 추천 ${v3MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
+            summaryMessage = `⚡ [${v3Label} 감지] ${v3Label} 추천 ${v3MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else {
         detectedVersion = '수동/직접입력';
@@ -16825,7 +16827,7 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
             shortName: '추가 1: 빈틈제로',
             badge: 'ZERO-GAP 100%',
             color: '#10b981',
-            desc: '기본 20게임(올라운더+수학퀀트)의 누락 번호 100% 포섭으로 사각지대 없는 30게임 완성 포트폴리오',
+            desc: '기본 20게임(올라운더 1+올라운더 2)의 누락 번호 100% 포섭으로 사각지대 없는 30게임 완성 포트폴리오',
             tag: '30게임 완성형 | 45개 번호 100% 전수 포섭 | 사각지대 제로'
         },
         2: {
@@ -22597,7 +22599,7 @@ async function renderAlgorithmsTab(fromRound = null) {
                     로또 6/45 <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 AI 알고리즘</span> 정밀 해설 &amp; 실적
                 </h2>
                 <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; max-width: 800px; word-break: keep-all; overflow-wrap: break-word;">
-                    단순한 무작위 번호 생성이 아닙니다. 올라운더 팩(포트폴리오), 수학 퀀트 팩(확률 전이), 빈틈제로 팩(전수 커버리지), 슈퍼 잭팟(고배당), 멀티 히트(휠링) 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
+                    단순한 무작위 번호 생성이 아닙니다. 올라운더 팩(포트폴리오), 올라운더 팩 2(다이나믹 모멘텀), 빈틈제로 팩(전수 커버리지), 슈퍼 잭팟(고배당), 멀티 히트(휠링) 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
                 </p>
             </div>
 
@@ -23216,7 +23218,7 @@ function getEnsembleWinningHistory(comboObj, comboIndex) {
         purchases.forEach(p => {
             const isMatchingVersion = p.version && (
                 p.version.includes(targetVersionKeyword) ||
-                (useV4 ? (p.version.includes('올라운더') || p.version.includes('V4.0')) : (p.version.includes('수학 퀀트') || p.version.includes('수학퀀트') || p.version.includes('V3.0')))
+                (useV4 ? (p.version.includes('올라운더') || p.version.includes('V4.0')) : (p.version.includes('올라운더 2') || p.version.includes('올라운더2') || p.version.includes('수학 퀀트') || p.version.includes('수학퀀트') || p.version.includes('V3.0')))
             );
             if (!isMatchingVersion && purchases.length > 1) return;
 
@@ -23719,7 +23721,7 @@ async function renderTop5Combinations(isRollingAnimation = false) {
                             <div style="margin: 8px 0; padding-left: 4px;">
                                 <strong style="font-size:0.78rem; color:var(--primary-light);"><i class="fa-solid fa-list-check"></i> 번호별 상세 추출 근거:</strong>
                                 <ul style="list-style:none; padding: 4px 0 0 10px; font-size:0.75rem; color:var(--text-secondary); line-height:1.6;">
-                                    ${(strat.numReasons || ['올라운더 및 수학 퀀트 정밀 통계 기반 추출']).map(r => `<li>• ${r}</li>`).join('')}
+                                    ${(strat.numReasons || ['올라운더 1 및 올라운더 2 정밀 통계 기반 추출']).map(r => `<li>• ${r}</li>`).join('')}
                                 </ul>
                             </div>
 
@@ -24568,7 +24570,7 @@ function renderExtraAddonPacksSection() {
                     🔒 실구매 인증 회원 전용 [추가 5팩 50게임]
                 </div>
                 <p class="locked-desc">
-                    기본 20게임(올라운더 + 수학 퀀트)은 상시 무료로 열람 가능하며,<br>
+                    기본 20게임(올라운더 1 + 올라운더 2)은 상시 무료로 열람 가능하며,<br>
                     <strong style="color: #fbbf24;">추가 1~5팩(빈틈제로, 슈퍼 잭팟, 멀티 히트 등 50게임)</strong>은<br>
                     <strong>매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원</strong>님께 무료로 잠금 해제됩니다.
                 </p>
@@ -24855,7 +24857,7 @@ function handleClearExtraPacks() {
         return;
     }
 
-    if (confirm(`[${effectiveUserId}] 회원의 모든 추가 팩을 초기화하시겠습니까?\n(기본 추천 20게임(올라운더·수학퀀트)은 전혀 영향을 받지 않습니다)`)) {
+    if (confirm(`[${effectiveUserId}] 회원의 모든 추가 팩을 초기화하시겠습니까?\n(기본 추천 20게임(올라운더 1·2)은 전혀 영향을 받지 않습니다)`)) {
         saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, []);
         renderExtraAddonPacksSection();
         showToast('모든 추가 팩이 초기화되었습니다.');
@@ -25352,7 +25354,7 @@ let currentOptimizedResult = null;
 
 const ALL_PACK_DEFS = [
     { id: 'v4', type: 'engine', version: 'v4', name: '기본 1: 올라운더 팩 (10게임)', shortName: '올라운더(10)', games: 10, color: '#10b981' },
-    { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 수학 퀀트 팩 (10게임)', shortName: '수학퀀트(10)', games: 10, color: '#3b82f6' },
+    { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 올라운더 팩 2 (10게임)', shortName: '올라운더2(10)', games: 10, color: '#3b82f6' },
     { id: 'extra1', type: 'extra', packId: 1, name: '추가 1: 빈틈제로 팩 (10게임)', shortName: '빈틈제로(10)', games: 10, color: '#10b981' },
     { id: 'extra2', type: 'extra', packId: 2, name: '추가 2: 슈퍼 잭팟 팩 (10게임)', shortName: '슈퍼잭팟(10)', games: 10, color: '#f59e0b' },
     { id: 'extra3', type: 'extra', packId: 3, name: '추가 3: 멀티 히트 팩 (10게임)', shortName: '멀티히트(10)', games: 10, color: '#8b5cf6' },
@@ -25377,7 +25379,7 @@ function openBudgetOptimizerModal() {
             : false));
 
     if (!isEligible) {
-        const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 20게임(올라운더 + 수학 퀀트) 추천번호가 상시 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);
+        const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 20게임(올라운더 1 + 올라운더 2) 추천번호가 상시 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();
@@ -26213,7 +26215,7 @@ function renderSimulationTab(targetRound = null) {
     const packNames = { 1: '빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
     const engineParts = [];
     if (cfg.includeV4) engineParts.push('올라운더(10G)');
-    if (cfg.includeV3) engineParts.push('수학퀀트(10G)');
+    if (cfg.includeV3) engineParts.push('올라운더2(10G)');
     cfg.selectedExtraPacks.forEach(p => {
         engineParts.push(`${packNames[p] || `추가${p}`}(10G)`);
     });
@@ -27123,7 +27125,7 @@ async function renderConfirmedPurchasesList() {
                         </td>
                         <td style="padding: 8px 10px; text-align: center; white-space: nowrap; font-size: 0.72rem;">
                             <span title="올라운더 팩 적중" style="color: #c4b5fd; font-weight: 700;">올라운더:${m.algoHits.v4}</span> ·
-                            <span title="수학 퀀트 팩 적중" style="color: #fbbf24; font-weight: 700;">수학퀀트:${m.algoHits.v3}</span> ·
+                            <span title="올라운더 팩 2 적중" style="color: #fbbf24; font-weight: 700;">올라운더2:${m.algoHits.v3}</span> ·
                             <span title="추가팩 적중" style="color: #6ee7b7; font-weight: 700;">추가:${m.algoHits.extra}</span> ·
                             <span title="수동 적중" style="color: #94a3b8;">수동:${m.algoHits.manual}</span>
                         </td>
@@ -27202,7 +27204,7 @@ async function renderConfirmedPurchasesList() {
                                     <td style="padding: 10px; text-align: center; color: #a78bfa;">${grandR5}</td>
                                     <td style="padding: 10px; text-align: center; font-size: 0.74rem;">
                                         <span style="color: #c4b5fd;">올라운더:${grandAlgoV4}</span> ·
-                                        <span style="color: #fbbf24;">수학퀀트:${grandAlgoV3}</span> ·
+                                        <span style="color: #fbbf24;">올라운더2:${grandAlgoV3}</span> ·
                                         <span style="color: #6ee7b7;">추가:${grandAlgoExtra}</span> ·
                                         <span style="color: #94a3b8;">수동:${grandAlgoManual}</span>
                                     </td>
@@ -27577,8 +27579,11 @@ async function renderConfirmedPurchasesList() {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-qrcode" style="font-size: 0.65rem;"></i> QR영수증</span>`;
             } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 기본 1: 올라운더 팩</span>`;
-            } else if (pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.65rem;"></i> 기본 2: 수학 퀀트 팩</span>`;
+            } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
+                const isV42 = round >= 1245;
+                const v3Title = isV42 ? '기본 2: 올라운더 팩 2' : '기본 2: 수학 퀀트 팩';
+                const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.65rem;"></i> ${v3Title}</span>`;
             } else {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-weight: 600; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.65rem;"></i> 수동구매</span>`;
             }
@@ -27737,10 +27742,11 @@ async function renderConfirmedPurchasesList() {
                 } else if (pVer.includes('추가')) {
                     const packName = pVer.split(' (')[0] || pVer;
                     aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${packName}</span>`;
-                } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
-                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.6rem;"></i> 올라운더 #${cIdx+1}</span>`;
-                } else if (pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
-                    aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> 수학퀀트 #${cIdx+1}</span>`;
+                } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
+                    const isV42 = round >= 1245;
+                    const v3Tag = isV42 ? `올라운더2 #${cIdx+1}` : `수학퀀트 #${cIdx+1}`;
+                    const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                    aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.6rem;"></i> ${v3Tag}</span>`;
                 } else if (round >= 1239) {
                     try {
                         const { uV4, uV3, extraPacks } = getMemoizedRecommendations(round, purchaseUser);
@@ -31511,7 +31517,7 @@ function generatePredictionReport() {
                     </span>
                 </div>
                 <div style="font-size: 0.85rem; color: #e2e8f0; line-height: 1.55;">
-                    • 시스템 전체 실데이터 복기 분석 결과, 1235회 이후 <strong style="color:#34d399;">5등 적중률 7.27% (무작위 대비 3.27배 초과)</strong>를 기록 중인 <strong>올라운더 팩 웜 넘버 밸런스</strong> 및 <strong>수학 퀀트 팩 마르코프 전이행렬</strong> 엔진을 [${displayName}] 님 고유 시드로 완벽 배치했습니다.
+                    • 시스템 전체 실데이터 복기 분석 결과, 1235회 이후 <strong style="color:#34d399;">5등 적중률 7.27% (무작위 대비 3.27배 초과)</strong>를 기록 중인 <strong>올라운더 팩 1 웜 넘버 밸런스</strong> 및 <strong>올라운더 팩 2 다이나믹 모멘텀</strong> 엔진을 [${displayName}] 님 고유 시드로 완벽 배치했습니다.
                 </div>
             </div>
         `;
@@ -31571,7 +31577,7 @@ function generatePredictionReport() {
                 <i class="fa-solid fa-lightbulb"></i> 💡 [${displayName}] 님을 위한 이번 주 최적 포트폴리오 운영 전략
             </strong>
             <div style="font-size: 0.82rem; color: #e2e8f0; line-height: 1.55;">
-                1. <strong>기본 20게임(올라운더 + 수학 퀀트) 필수 운영</strong>: 전구간 균형 방어망(올라운더 팩 1~4번)과 마르코프 딥러닝 공격망(수학 퀀트 팩 1~5번)이 상호 결합되어 매주 투입 자금을 탄탄하게 방어합니다.<br>
+                1. <strong>기본 20게임(올라운더 1 + 올라운더 2) 필수 운영</strong>: 전구간 균형 방어망(올라운더 1)과 다이나믹 모멘텀 공격망(올라운더 2)이 상호 결합되어 매주 투입 자금을 탄탄하게 방어합니다.<br>
                 2. <strong>예산 맞춤 추가팩 확장 권장</strong>: 과거 복기 실적상 다중 적중을 극대화하려면 <span style="color:#10b981; font-weight:700;">추가 1(빈틈제로 팩)</span> 또는 <span style="color:#8b5cf6; font-weight:700;">추가 3(멀티 히트 팩)</span>을 병행하여 3등·4등 연쇄 적중 포획망을 가동하는 것을 권장합니다.
             </div>
         </div>
@@ -32123,7 +32129,7 @@ function switchQuickViewAlgo(algo) {
             5: '추가 5: 트리오 마스터 팩'
         };
         const packTitle = extraNames[pId] || `추가 ${pId}팩`;
-        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n${packTitle}(10게임)을 포함한 추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 20게임(올라운더 + 수학 퀀트)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
+        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n${packTitle}(10게임)을 포함한 추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 20게임(올라운더 1 + 올라운더 2)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             closeCompactView();
             if (typeof window.openManualLedgerModal === 'function') {
@@ -32251,7 +32257,7 @@ function renderQuickViewContent() {
                         🔒 실구매 인증 정회원 전용 [추가 5대 알고리즘 팩]
                     </div>
                     <p style="color: #cbd5e1; font-size: 0.82rem; line-height: 1.6; margin-bottom: 18px; max-width: 420px; margin-left: auto; margin-right: auto;">
-                        기본 20게임(올라운더 + 수학 퀀트)은 상시 무료로 열람 가능하며,<br>
+                        기본 20게임(올라운더 1 + 올라운더 2)은 상시 무료로 열람 가능하며,<br>
                         <strong style="color: #fbbf24;">추가 1~5팩(빈틈제로·슈퍼잭팟·멀티히트·흐름부스터·트리오마스터)</strong>은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원님께 즉시 무료로 잠금 해제됩니다.
                     </p>
                     <button type="button" onclick="closeCompactView(); if(window.openManualLedgerModal) window.openManualLedgerModal(); else if(window.switchLottoTab) window.switchLottoTab('tab-confirmed-list');" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #0f172a; font-weight: 900; font-size: 0.85rem; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35); display: inline-flex; align-items: center; gap: 6px;">
@@ -32925,7 +32931,9 @@ function updateManualModalCrossCheck() {
             } else if (d.matchedVersion.includes('올라운더') || d.matchedVersion.includes('V4.0')) {
                 return `<span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; color: #34d399; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-bullseye" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
             } else {
-                return `<span style="background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; color: #93c5fd; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-calculator" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
+                const isV42 = (round >= 1245 || !round);
+                const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                return `<span style="background: rgba(59, 130, 246, 0.25); border: 1px solid #3b82f6; color: #93c5fd; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid ${v3Icon}" style="font-size: 0.62rem;"></i> 게임 ${i+1}: ${d.label}</span>`;
             }
         } else {
             return `<span style="background: rgba(239, 68, 68, 0.2); border: 1px solid #f87171; color: #fca5a5; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 3px;" title="수동입력"><i class="fa-solid fa-pen-to-square" style="font-size: 0.62rem;"></i> 게임 ${i+1}: 수동입력</span>`;
@@ -32979,12 +32987,15 @@ function updateManualModalCrossCheck() {
             resultBox.style.background = 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(217,119,6,0.18))';
             resultBox.style.border = '1px solid rgba(245,158,11,0.45)';
             resultBox.style.color = '#fef08a';
-            resultBox.innerHTML = `
+                    const isV42 = (round >= 1245 || !round);
+                    const v3Title = isV42 ? '기본 2: 올라운더 팩 2' : '기본 2: 수학 퀀트 팩';
+                    const v3Icon = isV42 ? 'fa-layer-group' : 'fa-calculator';
+                    resultBox.innerHTML = `
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-calculator" style="color: #fbbf24; font-size: 1.1rem;"></i>
+                        <i class="fa-solid ${v3Icon}" style="color: #fbbf24; font-size: 1.1rem;"></i>
                         <div>
-                            <span style="color:#fde047; font-weight:800;">⚡ AI 크로스체크: 기본 2: 수학 퀀트 팩 감지</span>
+                            <span style="color:#fde047; font-weight:800;">⚡ AI 크로스체크: ${v3Title} 감지</span>
                             <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px;">
                                 ${check.summaryMessage}
                             </div>

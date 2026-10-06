@@ -364,7 +364,7 @@ export function switchQuickViewAlgo(algo) {
             5: '추가 5: 트리오 마스터 팩'
         };
         const packTitle = extraNames[pId] || `추가 ${pId}팩`;
-        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n${packTitle}(10게임)을 포함한 추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 20게임(올라운더 + 수학 퀀트)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
+        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n${packTitle}(10게임)을 포함한 추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 20게임(올라운더 1 + 올라운더 2)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             closeCompactView();
             if (typeof window.openManualLedgerModal === 'function') {
@@ -492,7 +492,7 @@ export function renderQuickViewContent() {
                         🔒 실구매 인증 정회원 전용 [추가 5대 알고리즘 팩]
                     </div>
                     <p style="color: #cbd5e1; font-size: 0.82rem; line-height: 1.6; margin-bottom: 18px; max-width: 420px; margin-left: auto; margin-right: auto;">
-                        기본 20게임(올라운더 + 수학 퀀트)은 상시 무료로 열람 가능하며,<br>
+                        기본 20게임(올라운더 1 + 올라운더 2)은 상시 무료로 열람 가능하며,<br>
                         <strong style="color: #fbbf24;">추가 1~5팩(빈틈제로·슈퍼잭팟·멀티히트·흐름부스터·트리오마스터)</strong>은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원님께 즉시 무료로 잠금 해제됩니다.
                     </p>
                     <button type="button" onclick="closeCompactView(); if(window.openManualLedgerModal) window.openManualLedgerModal(); else if(window.switchLottoTab) window.switchLottoTab('tab-confirmed-list');" style="background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #0f172a; font-weight: 900; font-size: 0.85rem; padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35); display: inline-flex; align-items: center; gap: 6px;">
