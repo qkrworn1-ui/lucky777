@@ -19452,3 +19452,587 @@ body.is-admin .btn-snapshot-audit-compact {
     .qv-algo-name { font-size: 0.68rem !important; }
     .qv-slip-slot { font-size: 0.6rem !important; }
 }
+
+
+/* ==========================================================================
+   🎯 [NEW] 로또 6/45 공식 통계 확률 vs 프로그램 당첨 확률 비교 모달 & 버튼 스타일
+   ========================================================================== */
+
+/* 대시보드 비교 버튼 */
+.btn-win-prob-compare {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(5, 150, 105, 0.35) 100%) !important;
+    color: #f8fafc !important;
+    border: 1.5px solid #10b981 !important;
+    padding: 9px 18px !important;
+    border-radius: 10px !important;
+    font-size: 0.88rem !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+.btn-win-prob-compare:hover {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.35) 0%, rgba(5, 150, 105, 0.5) 100%) !important;
+    border-color: #34d399 !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45) !important;
+}
+
+/* 홈 랜딩 대시보드 컴팩트 버튼 */
+.lp-btn-prob-compare {
+    background: rgba(251, 191, 36, 0.12) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(251, 191, 36, 0.4) !important;
+    padding: 4px 10px !important;
+    border-radius: 8px !important;
+    font-size: 0.78rem !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+}
+.lp-btn-prob-compare:hover {
+    background: rgba(251, 191, 36, 0.25) !important;
+    border-color: #fbbf24 !important;
+    transform: scale(1.03) !important;
+}
+.lp-btn-prob-compare-sm {
+    background: rgba(251, 191, 36, 0.15) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(251, 191, 36, 0.4) !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+/* 비교 모달 오버레이 & 카드 */
+.win-prob-modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(5, 10, 24, 0.92) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    z-index: 100020 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 16px !important;
+    box-sizing: border-box !important;
+}
+.win-prob-modal-card {
+    background: #0f172a !important;
+    border: 1.5px solid rgba(251, 191, 36, 0.45) !important;
+    border-radius: 18px !important;
+    max-width: 900px !important;
+    width: 100% !important;
+    max-height: 94vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 0 25px 65px rgba(0, 0, 0, 0.9), 0 0 30px rgba(251, 191, 36, 0.15) !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    color: #f8fafc !important;
+}
+
+/* 모달 헤더 */
+.win-prob-modal-header {
+    padding: 16px 22px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%) !important;
+    flex-shrink: 0 !important;
+}
+.win-prob-header-left {
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    min-width: 0 !important;
+}
+.win-prob-header-icon {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+    background: rgba(251, 191, 36, 0.15) !important;
+    border: 1.5px solid rgba(251, 191, 36, 0.4) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: #fbbf24 !important;
+    font-size: 1.3rem !important;
+    flex-shrink: 0 !important;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2) !important;
+}
+.win-prob-header-titles {
+    min-width: 0 !important;
+}
+.win-prob-header-badge-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-bottom: 3px !important;
+    flex-wrap: wrap !important;
+}
+.win-prob-title-badge {
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    background: rgba(59, 130, 246, 0.2) !important;
+    border: 1px solid rgba(59, 130, 246, 0.4) !important;
+    color: #93c5fd !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+}
+.win-prob-sample-badge {
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    background: rgba(16, 185, 129, 0.2) !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
+    color: #6ee7b7 !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+}
+.win-prob-title {
+    margin: 0 !important;
+    font-size: 1.12rem !important;
+    font-weight: 900 !important;
+    color: #f8fafc !important;
+    letter-spacing: -0.02em !important;
+}
+.win-prob-subtitle {
+    margin: 2px 0 0 0 !important;
+    font-size: 0.78rem !important;
+    color: #94a3b8 !important;
+    line-height: 1.3 !important;
+}
+.win-prob-close-btn {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    color: #cbd5e1 !important;
+    font-size: 1.4rem !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    flex-shrink: 0 !important;
+}
+.win-prob-close-btn:hover {
+    background: rgba(239, 68, 68, 0.25) !important;
+    color: #f87171 !important;
+    border-color: #ef4444 !important;
+    transform: rotate(90deg) !important;
+}
+
+/* 모달 바디 스크롤 */
+.win-prob-modal-body {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    padding: 16px 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+    box-sizing: border-box !important;
+}
+
+/* 모달 전환 탭 버튼 */
+.win-prob-tab-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+}
+.win-prob-tab-btn {
+    background: rgba(30, 41, 59, 0.7) !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    padding: 10px 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 3px !important;
+    cursor: pointer !important;
+    color: #cbd5e1 !important;
+    font-size: 0.88rem !important;
+    font-weight: 800 !important;
+    transition: all 0.2s ease !important;
+}
+.win-prob-tab-btn:hover {
+    background: rgba(30, 41, 59, 1) !important;
+    border-color: rgba(251, 191, 36, 0.4) !important;
+}
+.win-prob-tab-btn.active {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(30, 41, 59, 0.95) 100%) !important;
+    border-color: #fbbf24 !important;
+    color: #fbbf24 !important;
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.2) !important;
+}
+.win-prob-tab-sub {
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: #94a3b8 !important;
+}
+.win-prob-tab-btn.active .win-prob-tab-sub {
+    color: #fde047 !important;
+}
+
+/* 4대 핵심 KPI 카드 */
+.win-prob-kpi-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+}
+.win-prob-kpi-card {
+    background: rgba(30, 41, 59, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    padding: 12px 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    box-sizing: border-box !important;
+}
+.win-prob-kpi-card.highlight-gold { border-color: rgba(251, 191, 36, 0.45) !important; background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(30, 41, 59, 0.7) 100%) !important; }
+.win-prob-kpi-card.highlight-emerald { border-color: rgba(16, 185, 129, 0.45) !important; background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.7) 100%) !important; }
+.win-prob-kpi-card.highlight-cyan { border-color: rgba(6, 182, 212, 0.45) !important; background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(30, 41, 59, 0.7) 100%) !important; }
+.win-prob-kpi-card.highlight-purple { border-color: rgba(168, 85, 247, 0.45) !important; background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(30, 41, 59, 0.7) 100%) !important; }
+
+.win-prob-kpi-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+.win-prob-kpi-label {
+    font-size: 0.78rem !important;
+    font-weight: 800 !important;
+    color: #cbd5e1 !important;
+}
+.win-prob-kpi-badge {
+    font-size: 0.72rem !important;
+    font-weight: 900 !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    white-space: nowrap !important;
+}
+.badge-surge { background: rgba(251, 191, 36, 0.25) !important; color: #fbbf24 !important; border: 1px solid #fbbf24 !important; }
+.badge-green { background: rgba(16, 185, 129, 0.25) !important; color: #34d399 !important; border: 1px solid #10b981 !important; }
+.badge-cyan { background: rgba(6, 182, 212, 0.25) !important; color: #38bdf8 !important; border: 1px solid #06b6d4 !important; }
+.badge-purple { background: rgba(168, 85, 247, 0.25) !important; color: #c084fc !important; border: 1px solid #a855f7 !important; }
+
+.win-prob-kpi-compare-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    background: rgba(15, 23, 42, 0.6) !important;
+    padding: 8px 10px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+.kpi-compare-box {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+    flex: 1 !important;
+}
+.kpi-compare-box .box-lbl {
+    font-size: 0.68rem !important;
+    color: #94a3b8 !important;
+    font-weight: 600 !important;
+}
+.kpi-compare-box .box-val {
+    font-size: 0.95rem !important;
+    font-weight: 900 !important;
+    color: #f8fafc !important;
+}
+.kpi-compare-box .box-sub {
+    font-size: 0.68rem !important;
+    color: #64748b !important;
+}
+.kpi-compare-arrow {
+    color: #64748b !important;
+    font-size: 0.75rem !important;
+}
+.kpi-compare-box.highlight {
+    text-align: right !important;
+}
+.text-gold { color: #fbbf24 !important; }
+.text-emerald { color: #34d399 !important; }
+.text-cyan { color: #38bdf8 !important; }
+.text-purple { color: #c084fc !important; }
+
+/* 1:1 대조 테이블 */
+.win-prob-table-wrap {
+    background: rgba(30, 41, 59, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+}
+.win-prob-table-title-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 12px !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+.win-prob-section-title {
+    margin: 0 !important;
+    font-size: 0.95rem !important;
+    font-weight: 800 !important;
+    color: #f8fafc !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+.win-prob-section-title i {
+    color: #fbbf24 !important;
+}
+.win-prob-target-tag {
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    color: #fbbf24 !important;
+    background: rgba(251, 191, 36, 0.15) !important;
+    border: 1px solid rgba(251, 191, 36, 0.4) !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+}
+
+.win-prob-responsive-table {
+    overflow-x: auto !important;
+}
+.win-prob-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 0.82rem !important;
+    text-align: left !important;
+}
+.win-prob-table th {
+    background: rgba(15, 23, 42, 0.8) !important;
+    color: #94a3b8 !important;
+    font-weight: 800 !important;
+    padding: 10px 12px !important;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.1) !important;
+    vertical-align: middle !important;
+}
+.win-prob-table th .th-sub {
+    font-size: 0.7rem !important;
+    font-weight: 500 !important;
+    color: #64748b !important;
+}
+.win-prob-table td {
+    padding: 10px 12px !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    vertical-align: middle !important;
+    color: #cbd5e1 !important;
+}
+.win-prob-table tr:hover td {
+    background: rgba(255, 255, 255, 0.02) !important;
+}
+
+.rank-name-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+}
+.rank-badge {
+    font-size: 0.76rem !important;
+    font-weight: 900 !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    display: inline-block !important;
+    width: fit-content !important;
+}
+.rank-badge.rank-1 { background: rgba(251, 191, 36, 0.2) !important; color: #fbbf24 !important; border: 1px solid rgba(251, 191, 36, 0.4) !important; }
+.rank-badge.rank-2 { background: rgba(96, 165, 250, 0.2) !important; color: #93c5fd !important; border: 1px solid rgba(96, 165, 250, 0.4) !important; }
+.rank-badge.rank-3 { background: rgba(52, 211, 153, 0.2) !important; color: #6ee7b7 !important; border: 1px solid rgba(52, 211, 153, 0.4) !important; }
+.rank-badge.rank-4 { background: rgba(167, 139, 250, 0.2) !important; color: #c4b5fd !important; border: 1px solid rgba(167, 139, 250, 0.4) !important; }
+.rank-badge.rank-5 { background: rgba(244, 114, 182, 0.2) !important; color: #f472b6 !important; border: 1px solid rgba(244, 114, 182, 0.4) !important; }
+
+.rank-cond {
+    font-size: 0.72rem !important;
+    color: #94a3b8 !important;
+}
+.prob-num-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+}
+.prob-sub {
+    font-size: 0.72rem !important;
+    color: #64748b !important;
+}
+.prog-hit-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+}
+.badge-neutral {
+    font-size: 0.72rem !important;
+    color: #94a3b8 !important;
+    background: rgba(255, 255, 255, 0.06) !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+}
+.badge-surge-lg {
+    font-size: 0.78rem !important;
+    font-weight: 900 !important;
+    color: #fbbf24 !important;
+    background: rgba(251, 191, 36, 0.2) !important;
+    border: 1px solid #fbbf24 !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.3) !important;
+}
+.badge-green-lg {
+    font-size: 0.78rem !important;
+    font-weight: 900 !important;
+    color: #34d399 !important;
+    background: rgba(16, 185, 129, 0.2) !important;
+    border: 1px solid #10b981 !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3) !important;
+}
+.badge-cyan-lg {
+    font-size: 0.78rem !important;
+    font-weight: 900 !important;
+    color: #38bdf8 !important;
+    background: rgba(6, 182, 212, 0.2) !important;
+    border: 1px solid #06b6d4 !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+}
+
+.highlight-row-gold {
+    background: rgba(251, 191, 36, 0.05) !important;
+    border-left: 3px solid #fbbf24 !important;
+}
+.highlight-row-emerald {
+    background: rgba(16, 185, 129, 0.05) !important;
+    border-left: 3px solid #10b981 !important;
+}
+.table-total-row {
+    background: rgba(15, 23, 42, 0.95) !important;
+    font-weight: 800 !important;
+    border-top: 2px solid rgba(255, 255, 255, 0.15) !important;
+}
+
+/* 과학적 우위 설명 섹션 */
+.win-prob-science-box {
+    background: rgba(15, 23, 42, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 14px 16px !important;
+}
+.win-prob-pillars-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 12px !important;
+    margin-top: 10px !important;
+}
+.pillar-card {
+    background: rgba(30, 41, 59, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-radius: 10px !important;
+    padding: 12px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+.pillar-icon {
+    font-size: 1.2rem !important;
+    color: #fbbf24 !important;
+    margin-bottom: 2px !important;
+}
+.pillar-content strong {
+    font-size: 0.82rem !important;
+    color: #f8fafc !important;
+    display: block !important;
+    margin-bottom: 4px !important;
+}
+.pillar-content p {
+    margin: 0 !important;
+    font-size: 0.74rem !important;
+    color: #94a3b8 !important;
+    line-height: 1.45 !important;
+}
+
+/* 모달 푸터 */
+.win-prob-modal-footer {
+    padding: 12px 20px !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: rgba(15, 23, 42, 0.9) !important;
+    flex-shrink: 0 !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+.win-prob-footer-source {
+    font-size: 0.72rem !important;
+    color: #64748b !important;
+}
+.btn-win-prob-dismiss {
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%) !important;
+    color: #0f172a !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 8px 18px !important;
+    font-size: 0.85rem !important;
+    font-weight: 900 !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+.btn-win-prob-dismiss:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(251, 191, 36, 0.45) !important;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+    .win-prob-kpi-grid {
+        grid-template-columns: 1fr 1fr !important;
+    }
+    .win-prob-pillars-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .btn-win-prob-compare {
+        width: 100% !important;
+        justify-content: center !important;
+        font-size: 0.84rem !important;
+        padding: 8px 14px !important;
+    }
+    .win-prob-modal-card {
+        max-height: 96vh !important;
+    }
+}
+@media (max-width: 480px) {
+    .win-prob-kpi-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .win-prob-tab-row {
+        grid-template-columns: 1fr !important;
+    }
+}

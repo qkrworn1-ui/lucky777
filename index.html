@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.06.1545.27">
+    <link rel="stylesheet" href="styles.css?v=2026.10.06.1817">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.06.1545.27
+                        v2026.10.06.1817
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -170,7 +170,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.06.1545.27 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.06.1817 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -288,18 +288,29 @@
             <!-- 상단: 통합 투자 및 자산 KPI 요약 -->
             <div class="lp-fin-main-row">
                 <div class="lp-fin-title-area">
-                    <div class="lp-fin-desktop-header">
-                        <span class="lp-fin-label"><i class="fa-solid fa-chart-pie"></i> 통합 구매 현황</span>
-                        <span class="lp-desktop-confirmed-pill" id="lpDesktopConfirmedPill">구매확정 회차 -</span>
-                        <span class="lp-fin-title">나의 누적 자산 &amp; 당첨 요약</span>
+                    <div class="lp-fin-desktop-header" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span class="lp-fin-label"><i class="fa-solid fa-chart-pie"></i> 통합 구매 현황</span>
+                            <span class="lp-desktop-confirmed-pill" id="lpDesktopConfirmedPill">구매확정 회차 -</span>
+                            <span class="lp-fin-title">나의 누적 자산 &amp; 당첨 요약</span>
+                        </div>
+                        <button type="button" class="lp-btn-prob-compare" onclick="window.openWinProbComparisonModal && window.openWinProbComparisonModal()" title="로또 6/45 공식 통계 확률 vs 당 프로그램 당첨 확률 1:1 비교">
+                            <i class="fa-solid fa-scale-balanced"></i>
+                            <span>확률 비교 분석</span>
+                        </button>
                     </div>
                     <!-- Concept 1 Mobile Unified Header -->
-                    <div class="lp-fin-mobile-header">
+                    <div class="lp-fin-mobile-header" style="display: flex; align-items: center; justify-content: space-between; gap: 6px;">
                         <div class="lp-fin-mobile-title">
                             <span>👤</span>
                             <span><strong id="lpMobileUserName" style="color: #fbbf24;">회원</strong> 님의 실구매 &amp; 당첨 요약</span>
                         </div>
-                        <span class="lp-mobile-confirmed-pill" id="lpMobileConfirmedPill">1241회 구매확정</span>
+                        <div style="display: flex; align-items: center; gap: 4px;">
+                            <span class="lp-mobile-confirmed-pill" id="lpMobileConfirmedPill">1241회 구매확정</span>
+                            <button type="button" class="lp-btn-prob-compare-sm" onclick="window.openWinProbComparisonModal && window.openWinProbComparisonModal()" title="확률 비교 분석">
+                                <i class="fa-solid fa-scale-balanced"></i> 확률비교
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="lp-fin-stats">
@@ -609,7 +620,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.06.1545.27
+                                v2026.10.06.1817
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1724,12 +1735,15 @@
                 <!-- 🔮 [신규] 개인 생년월일 기반 로또 구매 추천 요일 및 길시 (명리학 어드바이저) -->
                 <div id="dashboardFortuneAdvisorContainer" style="margin-bottom: 24px;"></div>
 
-                <div class="dashboard-header">
-
-                    <h2><i class="fa-solid fa-chart-bar"></i> 역대 추첨 데이터 전수 분석 대시보드</h2>
-
-                    <p>동행복권 1회부터 최신 회차까지의 누적 출현 빈도, 미출현 주기 및 구간별 분포 현황입니다.</p>
-
+                <div class="dashboard-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                    <div style="flex: 1; min-width: 260px;">
+                        <h2><i class="fa-solid fa-chart-bar"></i> 역대 추첨 데이터 전수 분석 대시보드</h2>
+                        <p>동행복권 1회부터 최신 회차까지의 누적 출현 빈도, 미출현 주기 및 구간별 분포 현황입니다.</p>
+                    </div>
+                    <button type="button" class="btn-win-prob-compare" onclick="window.openWinProbComparisonModal && window.openWinProbComparisonModal()" title="로또 6/45 공식 통계적 확률과 당 프로그램 실전 당첨률 1:1 비교 분석">
+                        <i class="fa-solid fa-scale-balanced" style="color: #fbbf24; font-size: 1.05rem;"></i>
+                        <span>로또 통계확률 vs 당프로그램 당첨확률 비교</span>
+                    </button>
                 </div>
 
                 <!-- Dashboard Overview Metrics -->
@@ -2030,7 +2044,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.06.1545.27
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.06.1817
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -4179,7 +4193,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.06.1545.27';
+        window.APP_VERSION = 'v2026.10.06.1817';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4250,7 +4264,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.06.1545.27';
+            var v = ver || window.APP_VERSION || 'v2026.10.06.1817';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4507,7 +4521,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.06.1545.27';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.06.1817';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4654,7 +4668,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.06.1545.27')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.06.1817')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -4907,8 +4921,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.06.1545.27"></script>
-    <script src="app_v2.js?v=2026.10.06.1545.27"></script>
+    <script src="data.js?v=2026.10.06.1817"></script>
+    <script src="app_v2.js?v=2026.10.06.1817"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
