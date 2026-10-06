@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.04.1337.50",
-  "buildDate": "2026-10-04",
+  "version": "v2026.10.06.1403.22",
+  "buildDate": "2026-10-06",
   "description": "feat: all members server precomputed evaluations and dashboard summary",
-  "buildTimestamp": "2026-10-04T13:37:50.165915",
+  "buildTimestamp": "2026-10-06T14:03:22.080121",
   "buildHistory": [
-    {
-      "version": "v2026.10.04.1212",
-      "buildDate": "2026-10-04",
-      "buildTime": "12:12",
-      "buildDateTime": "2026-10-04 12:12",
-      "buildTimestamp": "2026-10-04T12:12:19.198454",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
-    {
-      "version": "v2026.10.04.1225",
-      "buildDate": "2026-10-04",
-      "buildTime": "12:25",
-      "buildDateTime": "2026-10-04 12:25",
-      "buildTimestamp": "2026-10-04T12:25:05.583391",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
     {
       "version": "v2026.10.04.1225.24",
       "buildDate": "2026-10-04",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-04 13:37",
       "buildTimestamp": "2026-10-04T13:37:50.165915",
       "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.06.1403",
+      "buildDate": "2026-10-06",
+      "buildTime": "14:03",
+      "buildDateTime": "2026-10-06 14:03",
+      "buildTimestamp": "2026-10-06T14:03:08.160761",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.06.1403.22",
+      "buildDate": "2026-10-06",
+      "buildTime": "14:03",
+      "buildDateTime": "2026-10-06 14:03",
+      "buildTimestamp": "2026-10-06T14:03:22.080121",
+      "description": "feat: all members server precomputed evaluations and dashboard summary"
     }
   ],
-  "buildTime": "13:37",
-  "buildDateTime": "2026-10-04 13:37"
+  "buildTime": "14:03",
+  "buildDateTime": "2026-10-06 14:03"
 }
