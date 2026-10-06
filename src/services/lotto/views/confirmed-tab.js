@@ -1,5 +1,5 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, getBallTextColor, showToast, formatDate, calculateACValue, removeUndefined, copyToClipboard } from '../../../shared/utils.js';
+import { getBallColorClass, getBallHexColor, getBallTextColor, showToast, formatDate, calculateACValue, removeUndefined, copyToClipboard, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml, renderBallRow, getRankBadge, openModal, closeModal } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgmt.js';
@@ -229,7 +229,9 @@ export async function renderConfirmedPurchasesList() {
     let adminUserSelectHtml = '';
     const allUnifiedUsers = (typeof getAllUnifiedRegisteredUsers === 'function') ? getAllUnifiedRegisteredUsers() : [];
     const validUnifiedUsers = allUnifiedUsers.filter(u => {
+        if (!u || !u.id) return false;
         const clean = (u.id || '').trim().toLowerCase();
+        if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || isSystemOrDummyUser(clean)) return false;
         return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
     });
 

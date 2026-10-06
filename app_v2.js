@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.06.1509.25 - BUILD_DATE: 2026-10-06] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.06.1518 - BUILD_DATE: 2026-10-06] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.06.1509.25)
+ * Lucky777 Smart Bundle (v2026.10.06.1518)
  */
 
 
@@ -89,6 +89,21 @@ function isSystemOrDummyUser(userId) {
         clean.startsWith('test') || clean.startsWith('{') || clean.includes('테스트')) {
         return true;
     }
+    // 🔒 삭제(휴지통) 회원 검증: 삭제된 회원은 시스템/더미 처리하여 알고리즘 연산 및 상호보완 풀에서 100% 제외
+    try {
+        if (typeof SafeLocalStorage !== 'undefined') {
+            const rawStatus = SafeLocalStorage.getItem('lotto_users_with_status_cache');
+            if (rawStatus) {
+                const parsedStatus = JSON.parse(rawStatus);
+                if (Array.isArray(parsedStatus)) {
+                    const found = parsedStatus.find(u => String(u.userId || u.id || '').trim().toLowerCase() === clean);
+                    if (found && (found.isDeleted === true || found.status === 'trash' || found.status === 'deleted' || (found.data && (found.data.isDeleted === true || found.data.status === 'trash')))) {
+                        return true;
+                    }
+                }
+            }
+        }
+    } catch(e) {}
     return false;
 }
 
@@ -17242,6 +17257,9 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
         try {
             let uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
             let uData = (uDoc && uDoc.exists) ? uDoc.data() : null;
+            if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) {
+                return null;
+            }
             let existingData = null;
             if (uData && uData.recommendationSnapshots && uData.recommendationSnapshots[String(roundNum)]) {
                 existingData = uData.recommendationSnapshots[String(roundNum)];
@@ -23385,9 +23403,10 @@ async function renderTop5Combinations(isRollingAnimation = false) {
         })();
 
         if (isAdmin && adminBarContainer) {
-            const userList = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0)
+            const rawUserList = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0)
                 ? state.allRegisteredUsersList
                 : getAllUnifiedRegisteredUsers();
+            const userList = (rawUserList || []).filter(u => u && u.id && !isSystemOrDummyUser(u.id) && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted');
             let userOptions = `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
             userOptions += `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 종합 실적</option>`;
             userList.forEach(u => {
@@ -26710,7 +26729,7 @@ var __M_services_lotto_views_confirmed_tab = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { getBallColorClass, getBallHexColor, getBallTextColor, showToast, formatDate, calculateACValue, removeUndefined, copyToClipboard } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
+const { getBallColorClass, getBallHexColor, getBallTextColor, showToast, formatDate, calculateACValue, removeUndefined, copyToClipboard, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { createBallHtml, renderBallRow, getRankBadge, openModal, closeModal } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser, getUserRealName } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
@@ -26940,7 +26959,9 @@ async function renderConfirmedPurchasesList() {
     let adminUserSelectHtml = '';
     const allUnifiedUsers = (typeof getAllUnifiedRegisteredUsers === 'function') ? getAllUnifiedRegisteredUsers() : [];
     const validUnifiedUsers = allUnifiedUsers.filter(u => {
+        if (!u || !u.id) return false;
         const clean = (u.id || '').trim().toLowerCase();
+        if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || isSystemOrDummyUser(clean)) return false;
         return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
     });
 

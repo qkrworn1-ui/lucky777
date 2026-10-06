@@ -559,9 +559,10 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         })();
 
         if (isAdmin && adminBarContainer) {
-            const userList = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0)
+            const rawUserList = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0)
                 ? state.allRegisteredUsersList
                 : getAllUnifiedRegisteredUsers();
+            const userList = (rawUserList || []).filter(u => u && u.id && !isSystemOrDummyUser(u.id) && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted');
             let userOptions = `<option value="${authId}" ${effectiveUserId === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
             userOptions += `<option value="all" ${effectiveUserId === 'all' ? 'selected' : ''}>🌐 전체 회원 종합 실적</option>`;
             userList.forEach(u => {

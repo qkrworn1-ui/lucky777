@@ -1465,6 +1465,9 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
         try {
             let uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
             let uData = (uDoc && uDoc.exists) ? uDoc.data() : null;
+            if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) {
+                return null;
+            }
             let existingData = null;
             if (uData && uData.recommendationSnapshots && uData.recommendationSnapshots[String(roundNum)]) {
                 existingData = uData.recommendationSnapshots[String(roundNum)];

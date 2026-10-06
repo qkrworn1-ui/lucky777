@@ -66,6 +66,21 @@ export function isSystemOrDummyUser(userId) {
         clean.startsWith('test') || clean.startsWith('{') || clean.includes('테스트')) {
         return true;
     }
+    // 🔒 삭제(휴지통) 회원 검증: 삭제된 회원은 시스템/더미 처리하여 알고리즘 연산 및 상호보완 풀에서 100% 제외
+    try {
+        if (typeof localStorage !== 'undefined') {
+            const rawStatus = localStorage.getItem('lotto_users_with_status_cache');
+            if (rawStatus) {
+                const parsedStatus = JSON.parse(rawStatus);
+                if (Array.isArray(parsedStatus)) {
+                    const found = parsedStatus.find(u => String(u.userId || u.id || '').trim().toLowerCase() === clean);
+                    if (found && (found.isDeleted === true || found.status === 'trash' || found.status === 'deleted' || (found.data && (found.data.isDeleted === true || found.data.status === 'trash')))) {
+                        return true;
+                    }
+                }
+            }
+        }
+    } catch(e) {}
     return false;
 }
 
