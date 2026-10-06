@@ -12,6 +12,66 @@ let isStartingScanner = false;
 let stopScanningPromise = null;
 let currentScannerSessionId = 0;
 
+// 🔒 연속 등록 안정화: 저장 중복 실행 방지 락 & 잘못된 QR 경고 반복 방지
+let isSavingManualLedger = false;
+let lastInvalidQrText = '';
+let lastInvalidQrAt = 0;
+
+/**
+ * 🔍 동일 영수증(QR 일련번호 또는 번호 세트)이 대상 회원 장부의 같은 회차에 이미 등록되어 있는지 확인
+ */
+export function findAlreadyRegisteredQrReceipt(round, serial, combos, targetUserId) {
+    try {
+        const r = parseInt(round, 10);
+        if (!r || isNaN(r)) return null;
+        const ledger = getLedger(targetUserId || null) || {};
+        const receipts = Array.isArray(ledger[r]) ? ledger[r] : [];
+        if (receipts.length === 0) return null;
+
+        const toKey = (list) => (Array.isArray(list) ? list : [])
+            .map(c => (Array.isArray(c) ? c : (c && c.numbers) || []).slice().sort((a, b) => a - b).join(','))
+            .sort()
+            .join('|');
+
+        const cleanSerial = String(serial || '').trim();
+        const hasRealSerial = cleanSerial.length >= 10;
+        const incomingKey = toKey(combos);
+
+        return receipts.find(p => {
+            if (!p) return false;
+            const pSerial = String((p.qrMeta && p.qrMeta.qrSerial) || p.qrSerial || p.receiptId || '').trim();
+            // 실물 QR 일련번호가 있으면 일련번호로만 판정 (같은 번호를 다른 용지로 2장 구매한 정상 케이스 허용)
+            if (hasRealSerial) return pSerial === cleanSerial;
+            return !!incomingKey && Array.isArray(p.combos) && toKey(p.combos) === incomingKey;
+        }) || null;
+    } catch (e) {
+        console.warn('[QR Duplicate Check note]', e);
+        return null;
+    }
+}
+
+function getManualLedgerTargetUserId() {
+    const currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest').toLowerCase().trim();
+    const isAdmin = (typeof isAdminUser === 'function') ? isAdminUser(currentAuthId) : (currentAuthId === 'master' || currentAuthId === 'admin');
+    const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
+    if (isAdmin && masterUserSelect && masterUserSelect.value) {
+        return masterUserSelect.value.trim().toLowerCase();
+    }
+    return currentAuthId;
+}
+
+function setManualLedgerSaveButtonsDisabled(disabled) {
+    const btns = [document.getElementById('btnSaveManualLedger')];
+    const directWrap = document.getElementById('btnDirectConfirmReceipt');
+    if (directWrap) btns.push(...directWrap.querySelectorAll('button'));
+    btns.forEach(b => {
+        if (!b) return;
+        b.disabled = !!disabled;
+        b.style.opacity = disabled ? '0.6' : '';
+        b.style.pointerEvents = disabled ? 'none' : '';
+    });
+}
+
 /**
  * 🔒 Forcibly release all active video streams and tracks at the OS hardware level
  */
@@ -136,6 +196,10 @@ export async function stopScanning() {
 export function syncLedgerDateGuide(roundVal) {
     const guideEl = document.getElementById('manualLedgerDateGuide');
     if (!guideEl) return;
+
+    // 직전 '과거 회차' 등록 시 덧씌운 주황색 스타일 초기화 (연속 등록 시 잔상 방지)
+    guideEl.style.background = '';
+    guideEl.style.color = '';
 
     const round = parseInt(roundVal);
     if (!isNaN(round) && round >= 1) {
@@ -1285,6 +1349,9 @@ export function processLottoQrPayload(rawText) {
                 combosEl.dataset.qrRawUrl = canonicalUrl;
                 combosEl.dataset.qrSerial = serial;
                 combosEl.dataset.qrRound = String(round);
+                // 지류 QR 스캔은 항상 오프라인 채널 (직전 온라인 영수증 탭 사용 흔적 제거)
+                combosEl.dataset.isOnlineReceipt = 'false';
+                combosEl._cachedCrossCheck = null;
                 stopScanning();
 
                 // Trigger real-time cross check immediately
@@ -1295,18 +1362,35 @@ export function processLottoQrPayload(rawText) {
                     try { navigator.vibrate([50, 70, 50]); } catch(e) {}
                 }
 
+                // 🔍 연속 등록 중 동일 영수증 재스캔 감지
+                const dupReceipt = findAlreadyRegisteredQrReceipt(round, serial, parsed.combos, getManualLedgerTargetUserId());
+                if (dupReceipt) {
+                    combosEl.dataset.qrDuplicate = 'true';
+                    showToast(`⚠️ 이미 등록된 영수증입니다 (제 ${round}회차). 다음 영수증을 스캔해주세요.`, 4000);
+                    return true;
+                }
+                delete combosEl.dataset.qrDuplicate;
+
                 const currentRound = (typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1240);
                 const isPastRound = round < currentRound;
-                showToast(`🎉 QR 인식 성공: 제 ${round}회차 ${isPastRound ? '(과거 회차)' : '(이번 주)'} ${parsed.combos.length}게임 등록 완료!`);
+                showToast(`📷 QR 인식 완료: 제 ${round}회차 ${isPastRound ? '(과거 회차)' : '(이번 주)'} ${parsed.combos.length}게임 · [구매확정] 버튼을 눌러 저장하세요`);
                 return true;
             } else {
                 alert(`QR 코드에서 ${round}회차 정보는 확인되었으나, 유효한 6개 번호 조합을 파싱하지 못했습니다.\n\n영수증의 QR코드가 훼손되지 않았는지 확인해주세요.`);
                 return false;
             }
         } else {
-            alert('동행복권 로또 QR 코드가 아닙니다.\n\n영수증 상단의 동행복권 공식 QR 코드를 비춰주세요.');
+            // 실시간 카메라는 초당 15회 디코딩 → 같은 비로또 QR에 대해 alert가 무한 반복되지 않도록 5초 스로틀
+            const now = Date.now();
+            if (decodedText === lastInvalidQrText && (now - lastInvalidQrAt) < 5000) {
+                return false;
+            }
+            lastInvalidQrText = decodedText;
+            lastInvalidQrAt = now;
+            showToast('⚠️ 동행복권 로또 QR 코드가 아닙니다. 영수증의 공식 QR 코드를 비춰주세요.', 3500);
             return false;
         }
+
     } catch(e) {
         console.error('[QR Parser Error]', e);
         alert('QR 코드 분석 실패: ' + e.message);
@@ -1732,20 +1816,28 @@ if (typeof window !== 'undefined') {
 }
 
 export async function handleSaveManualLedger() {
+    // 🔒 0. 중복 실행 방지 (하단 버튼 + 카드 내 [구매확정] 버튼 연타 시 이중 저장 차단)
+    if (isSavingManualLedger) {
+        console.log('[handleSaveManualLedger] Save already in progress — ignored duplicate tap');
+        return;
+    }
+    isSavingManualLedger = true;
+
     const btnSave = document.getElementById('btnSaveManualLedger');
     const origBtnHtml = btnSave ? btnSave.innerHTML : '<i class="fa-solid fa-save"></i> 실구매 등록하기';
     const manualLedgerModal = document.getElementById('manualLedgerModal');
+    const isEditingExisting = !!state.editingLedgerInfo;
 
-    // 1. Stop camera immediately and ensure hardware lock is released
-    try { await stopScanning(); } catch(e) {}
-
-    // 2. Set button to saving state
+    // 1. Set ALL save buttons to saving state immediately (before any await)
+    setManualLedgerSaveButtonsDisabled(true);
     if (btnSave) {
-        btnSave.disabled = true;
         btnSave.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 저장 및 동기화 중...';
     }
 
     try {
+        // 2. Stop camera and ensure hardware lock is released
+        try { await stopScanning(); } catch(e) {}
+
         const roundInputEl = document.getElementById('manualLedgerRound');
         const roundInput = roundInputEl ? parseInt(roundInputEl.value.trim(), 10) : 0;
         const versionEl = document.getElementById('manualLedgerVersion');
@@ -1759,6 +1851,7 @@ export async function handleSaveManualLedger() {
         }
         if (!combosText) {
             alert('⚠️ 스캔된 번호 조합이 없습니다.\n\n[📷 QR 코드 다시 스캔하기] 버튼을 눌러 복권 영수증을 카메라로 비춰주세요.');
+            setTimeout(() => { startLottoQrScanner(); }, 100);
             return;
         }
 
@@ -1830,6 +1923,29 @@ export async function handleSaveManualLedger() {
             : null;
 
         const effectiveAuthId = selectedMasterTargetUser || originalUser || currentLoggedAuthId || 'guest';
+
+        // 🔍 연속 등록 중 이미 등록된 영수증 재저장 차단 (기존엔 조용히 중복제거되며 '정상 등록' 토스트만 노출되어 혼란 유발)
+        if (!isEditingExisting) {
+            const dupSerial = combosEl ? (combosEl.dataset.qrSerial || '') : '';
+            const dupReceipt = findAlreadyRegisteredQrReceipt(roundInput, dupSerial, parsedNumberArrays, effectiveAuthId);
+            if (dupReceipt) {
+                const dupUserName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveAuthId) : '') || effectiveAuthId;
+                alert(`⚠️ [이미 등록된 영수증]\n\n[${dupUserName}] 회원님의 제 ${roundInput}회차 장부에 동일한 영수증이 이미 등록되어 있습니다.\n\n다음 영수증을 스캔해주세요.`);
+                if (combosEl) {
+                    combosEl.value = '';
+                    delete combosEl.dataset.qrScanned;
+                    delete combosEl.dataset.qrRawUrl;
+                    delete combosEl.dataset.qrSerial;
+                    delete combosEl.dataset.qrRound;
+                    delete combosEl.dataset.qrDuplicate;
+                    combosEl._cachedCrossCheck = null;
+                }
+                const resultBoxDup = document.getElementById('manualLedgerAiCheckResult');
+                if (resultBoxDup) resultBoxDup.style.display = 'none';
+                setTimeout(() => { startLottoQrScanner(); }, 100);
+                return;
+            }
+        }
 
         // Safe cross-check (Use cached preview cross-check to avoid duplicate heavy Monte Carlo computation)
         let finalVersionStr = versionStr;
@@ -1903,6 +2019,7 @@ export async function handleSaveManualLedger() {
             delete combosEl.dataset.qrSerial;
             delete combosEl.dataset.qrRound;
             delete combosEl.dataset.isOnlineReceipt;
+            delete combosEl.dataset.qrDuplicate;
             combosEl._cachedCrossCheck = null;
         }
         const onlineTxt = document.getElementById('onlineReceiptTextInput');
@@ -1946,9 +2063,10 @@ export async function handleSaveManualLedger() {
         alert('실구매 내역 저장 중 오류가 발생했습니다: ' + err.message);
     } finally {
         if (btnSave) {
-            btnSave.disabled = false;
             btnSave.innerHTML = origBtnHtml;
         }
+        setManualLedgerSaveButtonsDisabled(false);
+        isSavingManualLedger = false;
     }
 }
 
@@ -1977,8 +2095,11 @@ export function openManualLedgerModal() {
             delete combosInput.dataset.qrSerial;
             delete combosInput.dataset.qrRound;
             delete combosInput.dataset.isOnlineReceipt;
+            delete combosInput.dataset.qrDuplicate;
             combosInput._cachedCrossCheck = null;
         }
+        lastInvalidQrText = '';
+        lastInvalidQrAt = 0;
         isStartingScanner = false;
         const previewContainer = document.getElementById('qrScannedReceiptPreview');
         if (previewContainer) {
