@@ -196,9 +196,9 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             ? state.fixedTop5Combinations_v3
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
         return {
-            versionLabel: '기본 2: 수학 퀀트 팩',
+            versionLabel: '기본 2: 올라운더 팩 2',
             badgeColor: '#3b82f6',
-            combos: v3Combos.map((c, i) => ({ ...c, customLabel: `수학퀀트-${alphabet[i] || (i + 1)}` })),
+            combos: v3Combos.map((c, i) => ({ ...c, customLabel: `올라운더2-${alphabet[i] || (i + 1)}` })),
             effectiveUserId,
             targetRound,
             isLocked: false
@@ -250,7 +250,7 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
 
         const allCombos = [
-            ...v3Combos.map((c, i) => ({ ...c, customLabel: `수학퀀트-${alphabet[i] || (i + 1)}`, groupTag: '기본 2: 수학 퀀트 팩 (10조합)' })),
+            ...v3Combos.map((c, i) => ({ ...c, customLabel: `올라운더2-${alphabet[i] || (i + 1)}`, groupTag: '기본 2: 올라운더 팩 2 (10조합)' })),
             ...v4Combos.map((c, i) => ({ ...c, customLabel: `올라운더-${alphabet[i] || (i + 1)}`, groupTag: '기본 1: 올라운더 팩 (10조합)' }))
         ];
 
@@ -383,7 +383,7 @@ export function switchQuickViewAlgo(algo) {
 
     let label = '추천번호';
     if (algo === 'v4') label = '기본 1: 올라운더 팩 (10조합)';
-    else if (algo === 'v3') label = '기본 2: 수학 퀀트 팩 (10조합)';
+    else if (algo === 'v3') label = '기본 2: 올라운더 팩 2 (10조합)';
     else if (algo === 'all') label = isEligible ? '전체 통합 조합 (70조합)' : '기본 통합 조합 (20조합)';
     else if (algo.startsWith('extra_')) {
         const pId = parseInt(algo.replace('extra_', ''), 10);
@@ -419,7 +419,7 @@ export function updateQuickViewAlgoButtons() {
             <i class="fa-solid fa-bullseye"></i> 올라운더 (10)
         </button>
         <button type="button" onclick="window.switchQuickViewAlgo('v3')" class="quick-algo-btn ${currentQuickAlgo === 'v3' ? 'active' : ''}" style="flex: 1 1 72px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v3' ? '#3b82f6' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v3' ? 'linear-gradient(135deg, #3b82f6, #2563eb)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v3' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v3' ? '800' : '600'};">
-            <i class="fa-solid fa-calculator"></i> 수학퀀트 (10)
+            <i class="fa-solid fa-layer-group"></i> 올라운더 2 (10)
         </button>
     `;
 

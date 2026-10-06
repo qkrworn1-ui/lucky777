@@ -482,7 +482,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
                 if (Array.isArray(rcpt.combos)) {
                     rcpt.combos.forEach(c => purchasedV4.push(c));
                 }
-            } else if (vStr.includes('V3') || vStr.includes('수학 퀀트') || vStr.includes('수학퀀트') || vStr.includes('하이브리드')) {
+            } else if (vStr.includes('V3') || vStr.includes('수학 퀀트') || vStr.includes('수학퀀트') || vStr.includes('하이브리드') || vStr.includes('올라운더 2') || vStr.includes('올라운더2')) {
                 if (Array.isArray(rcpt.combos)) {
                     rcpt.combos.forEach(c => purchasedV3.push(c));
                 }
@@ -564,9 +564,16 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
             }
         }
 
+        const isV42 = roundNum >= 1245;
         const algorithmsMetadata = [
             { algoId: 'v4', algoName: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#10b981', combos: v4Combos },
-            { algoId: 'v3', algoName: '기본 2: 수학 퀀트 팩 (10게임)', badge: 'MATH QUANT', color: '#3b82f6', combos: v3Combos }
+            { 
+                algoId: 'v3', 
+                algoName: isV42 ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)', 
+                badge: isV42 ? 'ALL-ROUNDER 2' : 'MATH QUANT', 
+                color: '#3b82f6', 
+                combos: v3Combos 
+            }
         ];
         for (let p = 1; p <= 5; p++) {
             if (generatedExtraPacks[p]) {
@@ -941,7 +948,7 @@ export async function renderAllRoundsReviewDetail() {
     // 7대 알고리즘 메타데이터 및 누적 통계 객체
     const algoPacks = [
         { id: 'v4', name: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#8b5cf6' },
-        { id: 'v3', name: '기본 2: 수학 퀀트 팩 (10게임)', badge: 'MATH QUANT', color: '#3b82f6' },
+        { id: 'v3', name: '기본 2: 올라운더 팩 2 (10게임)', badge: 'ALL-ROUNDER 2', color: '#3b82f6' },
         { id: 'extra_1', name: '추가 1: 빈틈제로 팩 (10게임)', badge: 'ZERO-GAP', color: '#10b981' },
         { id: 'extra_2', name: '추가 2: 슈퍼 잭팟 팩 (10게임)', badge: 'SUPER JACKPOT', color: '#f59e0b' },
         { id: 'extra_3', name: '추가 3: 멀티 히트 팩 (10게임)', badge: 'MULTI-HIT', color: '#8b5cf6' },
@@ -1811,8 +1818,8 @@ export async function renderAllRoundsReviewDetail() {
         if (canvasAlgo && typeof canvasAlgo.getContext === 'function' && typeof window.Chart === 'function') {
             const ctxAlgo = canvasAlgo.getContext('2d');
             const algoLabels = [
-                ['기본1', '올라운더'],
-                ['기본2', '수학퀀트'],
+                ['기본1', '올라운더1'],
+                ['기본2', '올라운더2'],
                 ['추가1', '빈틈제로'],
                 ['추가2', '슈퍼잭팟'],
                 ['추가3', '멀티히트'],
@@ -2331,9 +2338,9 @@ export async function renderReviewDetail(r) {
             },
             {
                 id: 'v3',
-                name: '기본 2: 수학 퀀트 팩 (10게임)',
-                shortName: '수학퀀트',
-                badge: 'MATH QUANT',
+                name: roundNum >= 1245 ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)',
+                shortName: roundNum >= 1245 ? '올라운더2' : '수학퀀트',
+                badge: roundNum >= 1245 ? 'ALL-ROUNDER 2' : 'MATH QUANT',
                 color: '#3b82f6',
                 games: actualV3Combos.length || 10,
                 prize: v3Eval.totalPrize,
@@ -2650,7 +2657,7 @@ export async function openAdmin1235ReviewModal(initialRound = null, initialUser 
                     <div id="admin1235ModalFilterPills" style="display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px;">
                         <button type="button" class="admin1235-filter-btn active" data-filter="all" onclick="window.setAdmin1235ModalFilter('all')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: 1px solid #f59e0b; background: #f59e0b; color: #0f172a; white-space: nowrap;">전체 (70G)</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="v4" onclick="window.setAdmin1235ModalFilter('v4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #c4b5fd; white-space: nowrap;">올라운더 (10G)</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="v3" onclick="window.setAdmin1235ModalFilter('v3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.15); color: #93c5fd; white-space: nowrap;">수학퀀트 (10G)</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="v3" onclick="window.setAdmin1235ModalFilter('v3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.15); color: #93c5fd; white-space: nowrap;">올라운더2 (10G)</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">추가1 빈틈제로</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="extra_2" onclick="window.setAdmin1235ModalFilter('extra_2')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.15); color: #fde047; white-space: nowrap;">추가2 슈퍼잭팟</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="extra_3" onclick="window.setAdmin1235ModalFilter('extra_3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #d8b4fe; white-space: nowrap;">추가3 멀티히트</button>
@@ -3261,9 +3268,10 @@ export async function renderAdmin1235ReviewModalContent() {
                 });
             }
             if (filterKey === 'all' || filterKey === 'v3') {
+                const isV42 = targetRound >= 1245;
                 packsToRender.push({
-                    name: '기본 2: 수학 퀀트 팩 (10게임)',
-                    badge: 'MATH QUANT',
+                    name: isV42 ? '기본 2: 올라운더 팩 2 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)',
+                    badge: isV42 ? 'ALL-ROUNDER 2' : 'MATH QUANT',
                     color: '#3b82f6',
                     evalData: reviewData.v3Eval
                 });

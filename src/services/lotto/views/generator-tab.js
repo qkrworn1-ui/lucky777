@@ -1342,7 +1342,7 @@ export function handleGenerateAllClick() {
 export async function handleConfirmPurchaseHeroClick() {
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
     const useV4 = chkReportLogic ? chkReportLogic.checked : false;
-    const versionStr = useV4 ? '기본 1: 올라운더 팩 (10게임)' : '기본 2: 수학 퀀트 팩 (10게임)';
+    const versionStr = useV4 ? '기본 1: 올라운더 팩 (10게임)' : '기본 2: 올라운더 팩 2 (10게임)';
     
     const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
     const nextRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
@@ -1422,7 +1422,7 @@ export function setupGeneratorTabEvents() {
                 }
             }
 
-            showToast(isV4 ? '🎯 [올라운더 팩] 10게임이 적용되었습니다.' : '⚡ [수학 퀀트 팩] 10게임이 적용되었습니다.');
+            showToast(isV4 ? '🎯 [올라운더 팩 1] 10게임이 적용되었습니다.' : '⚡ [올라운더 팩 2] 10게임이 적용되었습니다.');
         };
     }
 
@@ -2290,7 +2290,7 @@ export async function selectGeneratorAlgo(algoId) {
             if (typeof openCompactView === 'function') openCompactView('v3');
             else if (typeof window !== 'undefined' && window.openCompactView) window.openCompactView('v3');
         }
-        showToast('⚡ 기본 2: 수학 퀀트 팩 (10게임)이 선택되었습니다.');
+        showToast('⚡ 기본 2: 올라운더 팩 2 (10게임)이 선택되었습니다.');
         return;
     }
 
@@ -2368,7 +2368,7 @@ export async function handleGenerateAll70Games() {
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
         updateTop7AlgoUI();
-        const wantRegister = confirm(`⚡ 기본 20게임(올라운더 + 수학 퀀트)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 5팩(50게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
+        const wantRegister = confirm(`⚡ 기본 20게임(올라운더 1 + 올라운더 2)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 5팩(50게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();
