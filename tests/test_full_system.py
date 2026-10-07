@@ -3113,6 +3113,37 @@ Lotto 6/45
             self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
             self.assertIn('OK_13_USERS', res.stdout)
 
+    def test_102_admin_tab_switch_auto_reset_to_self(self):
+        """Test 102: Verify that when switching tabs, admin viewing user auto-resets to self (authId), and tabs do not cross-pollute."""
+        lotto_index_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'index.js')
+        gen_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js')
+        rev_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        algo_tab_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'algorithms-tab.js')
+
+        with open(lotto_index_file, 'r', encoding='utf-8') as f:
+            index_code = f.read()
+        with open(gen_tab_file, 'r', encoding='utf-8') as f:
+            gen_tab_code = f.read()
+        with open(rev_tab_file, 'r', encoding='utf-8') as f:
+            rev_tab_code = f.read()
+        with open(algo_tab_file, 'r', encoding='utf-8') as f:
+            algo_tab_code = f.read()
+
+        # 1. switchLottoTab invokes resetAdminViewingUserToSelf
+        self.assertIn("export function resetAdminViewingUserToSelf", index_code)
+        self.assertIn("resetAdminViewingUserToSelf();", index_code)
+        self.assertIn("window.resetAdminViewingUserToSelf = resetAdminViewingUserToSelf;", index_code)
+
+        # 2. Individual reset functions exist
+        self.assertIn("export function resetGeneratorAdminViewingUser", gen_tab_code)
+        self.assertIn("export function resetReviewAdminViewingUser", rev_tab_code)
+        self.assertIn("export function resetAlgoAdminViewingUser", algo_tab_code)
+
+        # 3. Changing user in one tab does NOT cross-pollute other tabs
+        self.assertNotIn("window.algoAdminViewingUser = userId;", gen_tab_code)
+        self.assertNotIn("window.generatorAdminViewingUser = userId;", rev_tab_code)
+        self.assertNotIn("window.generatorAdminViewingUser = userId;", algo_tab_code)
+
 if __name__ == '__main__':
     unittest.main()
 

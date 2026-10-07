@@ -898,15 +898,22 @@ export async function renderAlgorithmsTab(fromRound = null) {
 }
 
 /**
+ * 관리자 전용 알고리즘 탭 조회 회원 초기화 (관리자 본인 복귀)
+ */
+export function resetAlgoAdminViewingUser(authId = null) {
+    algoAdminViewingUser = authId || 'all';
+    if (typeof window !== 'undefined') {
+        window.algoAdminViewingUser = authId || 'all';
+    }
+}
+
+/**
  * 관리자 전용 알고리즘 탭 조회 회원 변경
  */
 export function changeAlgoAdminViewingUser(userId) {
     algoAdminViewingUser = userId;
     if (typeof window !== 'undefined') {
-        window.selectedAdminViewingUser = userId;
-        window.generatorAdminViewingUser = userId;
         window.algoAdminViewingUser = userId;
-        window.reviewAdminViewingUser = userId;
     }
     renderAlgorithmsTab();
     const reportModal = document.getElementById('predictionReportModal');
@@ -951,6 +958,7 @@ export function changeAlgoReviewStartRound(roundVal) {
 if (typeof window !== 'undefined') {
     window.renderAlgorithmsTab = renderAlgorithmsTab;
     window.changeAlgoAdminViewingUser = changeAlgoAdminViewingUser;
+    window.resetAlgoAdminViewingUser = resetAlgoAdminViewingUser;
     window.toggleAlgoDetailAccordion = toggleAlgoDetailAccordion;
     window.toggleAllAlgoDetailAccordions = toggleAllAlgoDetailAccordions;
     window.changeAlgoReviewStartRound = changeAlgoReviewStartRound;

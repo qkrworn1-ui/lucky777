@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1859 - BUILD_DATE: 2026-10-07] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1916.20 - BUILD_DATE: 2026-10-07] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.07.1859)
+ * Lucky777 Smart Bundle (v2026.10.07.1916.20)
  */
 
 
@@ -18839,10 +18839,12 @@ async function renderReviewTab() {
             const existingAdminContainer = document.getElementById('reviewAdminUserFilterContainer');
             if (existingAdminContainer) existingAdminContainer.remove();
         } else {
-            if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
+            if (typeof window !== 'undefined' && window.reviewAdminViewingUser) {
+                reviewAdminViewingUser = window.reviewAdminViewingUser;
+            } else if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
                 reviewAdminViewingUser = window.selectedAdminViewingUser;
             } else if (!reviewAdminViewingUser) {
-                reviewAdminViewingUser = (typeof window !== 'undefined' && window.algoAdminViewingUser) ? window.algoAdminViewingUser : 'all';
+                reviewAdminViewingUser = authId;
                 if (typeof window !== 'undefined') window.selectedAdminViewingUser = reviewAdminViewingUser;
             }
             // 관리자이며 회원 목록이 전혀 로드되지 않은 경우에만 1회 백그라운드 지연 로드
@@ -20694,12 +20696,20 @@ async function renderReviewDetail(r) {
     reviewMatchingContainer.innerHTML = html;
 }
 
+/**
+ * Admin: Reset Viewing User in Review Tab to Self
+ */
+function resetReviewAdminViewingUser(authId = null) {
+    reviewAdminViewingUser = authId;
+    if (typeof window !== 'undefined') {
+        window.reviewAdminViewingUser = authId;
+    }
+}
+
 function changeReviewAdminUser(userId) {
     reviewAdminViewingUser = userId;
     if (typeof window !== 'undefined') {
-        window.selectedAdminViewingUser = userId;
-        window.generatorAdminViewingUser = userId;
-        window.algoAdminViewingUser = userId;
+        window.reviewAdminViewingUser = userId;
     }
     const adminSel = document.getElementById('reviewAdminUserSelect');
     if (adminSel) {
@@ -22048,6 +22058,7 @@ if (typeof window !== 'undefined') {
     window.renderAllRoundsReviewDetail = renderAllRoundsReviewDetail;
     window.selectSpecificReviewRound = selectSpecificReviewRound;
     window.changeReviewAdminUser = changeReviewAdminUser;
+    window.resetReviewAdminViewingUser = resetReviewAdminViewingUser;
     window.computeUser70RecommendationsReview = computeUser70RecommendationsReview;
     window.updateReviewRoundSelector = updateReviewRoundSelector;
     window.exportImmutableUnifiedArchive = exportImmutableUnifiedArchive;
@@ -22116,6 +22127,10 @@ if (typeof window !== 'undefined') {
         if (typeof renderReviewDetail !== 'undefined') {
             __exports.renderReviewDetail = renderReviewDetail;
             if (typeof window !== 'undefined') window.renderReviewDetail = renderReviewDetail;
+        }
+        if (typeof resetReviewAdminViewingUser !== 'undefined') {
+            __exports.resetReviewAdminViewingUser = resetReviewAdminViewingUser;
+            if (typeof window !== 'undefined') window.resetReviewAdminViewingUser = resetReviewAdminViewingUser;
         }
         if (typeof changeReviewAdminUser !== 'undefined') {
             __exports.changeReviewAdminUser = changeReviewAdminUser;
@@ -23058,15 +23073,22 @@ async function renderAlgorithmsTab(fromRound = null) {
 }
 
 /**
+ * 관리자 전용 알고리즘 탭 조회 회원 초기화 (관리자 본인 복귀)
+ */
+function resetAlgoAdminViewingUser(authId = null) {
+    algoAdminViewingUser = authId || 'all';
+    if (typeof window !== 'undefined') {
+        window.algoAdminViewingUser = authId || 'all';
+    }
+}
+
+/**
  * 관리자 전용 알고리즘 탭 조회 회원 변경
  */
 function changeAlgoAdminViewingUser(userId) {
     algoAdminViewingUser = userId;
     if (typeof window !== 'undefined') {
-        window.selectedAdminViewingUser = userId;
-        window.generatorAdminViewingUser = userId;
         window.algoAdminViewingUser = userId;
-        window.reviewAdminViewingUser = userId;
     }
     renderAlgorithmsTab();
     const reportModal = document.getElementById('predictionReportModal');
@@ -23111,6 +23133,7 @@ function changeAlgoReviewStartRound(roundVal) {
 if (typeof window !== 'undefined') {
     window.renderAlgorithmsTab = renderAlgorithmsTab;
     window.changeAlgoAdminViewingUser = changeAlgoAdminViewingUser;
+    window.resetAlgoAdminViewingUser = resetAlgoAdminViewingUser;
     window.toggleAlgoDetailAccordion = toggleAlgoDetailAccordion;
     window.toggleAllAlgoDetailAccordions = toggleAllAlgoDetailAccordions;
     window.changeAlgoReviewStartRound = changeAlgoReviewStartRound;
@@ -23135,6 +23158,10 @@ if (typeof window !== 'undefined') {
         if (typeof renderAlgorithmsTab !== 'undefined') {
             __exports.renderAlgorithmsTab = renderAlgorithmsTab;
             if (typeof window !== 'undefined') window.renderAlgorithmsTab = renderAlgorithmsTab;
+        }
+        if (typeof resetAlgoAdminViewingUser !== 'undefined') {
+            __exports.resetAlgoAdminViewingUser = resetAlgoAdminViewingUser;
+            if (typeof window !== 'undefined') window.resetAlgoAdminViewingUser = resetAlgoAdminViewingUser;
         }
         if (typeof changeAlgoAdminViewingUser !== 'undefined') {
             __exports.changeAlgoAdminViewingUser = changeAlgoAdminViewingUser;
@@ -25203,6 +25230,17 @@ function handleClearExtraPacks() {
 }
 
 /**
+ * Admin: Reset Viewing User in Generator Tab to Self
+ */
+function resetGeneratorAdminViewingUser(authId = null) {
+    generatorAdminViewingUser = authId;
+    if (typeof window !== 'undefined') {
+        window.generatorAdminViewingUser = authId;
+        window.selectedAdminViewingUser = authId;
+    }
+}
+
+/**
  * Admin: Change Viewing User in Generator Tab (User-Isolated)
  */
 function changeGeneratorAdminViewingUser(userId) {
@@ -25210,8 +25248,6 @@ function changeGeneratorAdminViewingUser(userId) {
     if (typeof window !== 'undefined') {
         window.selectedAdminViewingUser = userId;
         window.generatorAdminViewingUser = userId;
-        window.algoAdminViewingUser = userId;
-        window.reviewAdminViewingUser = userId;
     }
     const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function' ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
     const targetCombosUser = getEffectiveGeneratorUserId(userId);
@@ -25260,6 +25296,7 @@ if (typeof window !== 'undefined') {
     window.handleAddExtraPack = handleAddExtraPack;
     window.handleClearExtraPacks = handleClearExtraPacks;
     window.changeGeneratorAdminViewingUser = changeGeneratorAdminViewingUser;
+    window.resetGeneratorAdminViewingUser = resetGeneratorAdminViewingUser;
     window.getUserActiveExtraPackIds = getUserActiveExtraPackIds;
     window.getEffectiveUserExtraPacks = getEffectiveUserExtraPacks;
     window.updateTop7AlgoUI = updateTop7AlgoUI;
@@ -25654,6 +25691,10 @@ async function handleGenerateAll70Games() {
         if (typeof handleClearExtraPacks !== 'undefined') {
             __exports.handleClearExtraPacks = handleClearExtraPacks;
             if (typeof window !== 'undefined') window.handleClearExtraPacks = handleClearExtraPacks;
+        }
+        if (typeof resetGeneratorAdminViewingUser !== 'undefined') {
+            __exports.resetGeneratorAdminViewingUser = resetGeneratorAdminViewingUser;
+            if (typeof window !== 'undefined') window.resetGeneratorAdminViewingUser = resetGeneratorAdminViewingUser;
         }
         if (typeof changeGeneratorAdminViewingUser !== 'undefined') {
             __exports.changeGeneratorAdminViewingUser = changeGeneratorAdminViewingUser;
@@ -39064,15 +39105,15 @@ const { state, initHistory } = (typeof __M_services_lotto_state !== 'undefined' 
 const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { showToast } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
-const { updateDebugMonitor, SafeAuth } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
+const { updateDebugMonitor, SafeAuth, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { renderLatestDrawBanner } = (typeof __M_services_lotto_views_draw_banner !== 'undefined' ? __M_services_lotto_views_draw_banner : {});
-const { renderTop5Combinations, updateSavedCount, renderSavedList, setupGeneratorTabEvents, updateTop7AlgoUI } = (typeof __M_services_lotto_views_generator_tab !== 'undefined' ? __M_services_lotto_views_generator_tab : {});
+const { renderTop5Combinations, updateSavedCount, renderSavedList, setupGeneratorTabEvents, updateTop7AlgoUI, resetGeneratorAdminViewingUser } = (typeof __M_services_lotto_views_generator_tab !== 'undefined' ? __M_services_lotto_views_generator_tab : {});
 const { populateSimRoundSelector, renderSimulationTab, setupSimulationEvents } = (typeof __M_services_lotto_views_simulation_tab !== 'undefined' ? __M_services_lotto_views_simulation_tab : {});
 const { renderWheelingSelector, renderWheelingResults, setupWheelingTab } = (typeof __M_services_lotto_views_wheeling !== 'undefined' ? __M_services_lotto_views_wheeling : {});
 const { renderVerificationTab, setupEvolutionButton } = (typeof __M_services_lotto_views_verification !== 'undefined' ? __M_services_lotto_views_verification : {});
 const { renderDashboardCharts, renderFortuneAdvisorCard } = (typeof __M_services_lotto_views_dashboard_tab !== 'undefined' ? __M_services_lotto_views_dashboard_tab : {});
-const { renderReviewTab, renderReviewDetail } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
-const { renderAlgorithmsTab } = (typeof __M_services_lotto_views_algorithms_tab !== 'undefined' ? __M_services_lotto_views_algorithms_tab : {});
+const { renderReviewTab, renderReviewDetail, resetReviewAdminViewingUser } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
+const { renderAlgorithmsTab, resetAlgoAdminViewingUser } = (typeof __M_services_lotto_views_algorithms_tab !== 'undefined' ? __M_services_lotto_views_algorithms_tab : {});
 const { renderConfirmedPurchasesList } = (typeof __M_services_lotto_views_confirmed_tab !== 'undefined' ? __M_services_lotto_views_confirmed_tab : {});
 const { setupPredictionReport } = (typeof __M_services_lotto_views_prediction_report !== 'undefined' ? __M_services_lotto_views_prediction_report : {});
 const { setupQuickView } = (typeof __M_services_lotto_views_quick_view !== 'undefined' ? __M_services_lotto_views_quick_view : {});
@@ -39535,6 +39576,56 @@ async function initLottoService(force = false) {
 
 let _lottoTabRenderTimer = null;
 
+/**
+ * 👑 관리자 전용: 메뉴(탭) 이동 시 모든 탭의 조회 대상을 항상 '관리자 본인' 계정으로 안전하게 자동 복귀
+ */
+function resetAdminViewingUserToSelf() {
+    try {
+        const rawAuth = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((typeof window !== 'undefined' && window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
+        let authId = rawAuth || '';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(authId);
+                authId = parsed.userid || parsed.userId || parsed.id || authId;
+            } catch(e) {}
+        }
+        authId = (authId || '').trim();
+        const cleanAuth = authId.toLowerCase();
+        const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
+
+        if (isAdmin && authId) {
+            if (typeof window !== 'undefined') {
+                window.selectedAdminViewingUser = authId;
+                window.generatorAdminViewingUser = authId;
+                window.algoAdminViewingUser = authId;
+                window.reviewAdminViewingUser = authId;
+            }
+            if (typeof resetGeneratorAdminViewingUser === 'function') {
+                resetGeneratorAdminViewingUser(authId);
+            } else if (typeof window !== 'undefined' && typeof window.resetGeneratorAdminViewingUser === 'function') {
+                window.resetGeneratorAdminViewingUser(authId);
+            }
+            if (typeof resetReviewAdminViewingUser === 'function') {
+                resetReviewAdminViewingUser(authId);
+            } else if (typeof window !== 'undefined' && typeof window.resetReviewAdminViewingUser === 'function') {
+                window.resetReviewAdminViewingUser(authId);
+            }
+            if (typeof resetAlgoAdminViewingUser === 'function') {
+                resetAlgoAdminViewingUser(authId);
+            } else if (typeof window !== 'undefined' && typeof window.resetAlgoAdminViewingUser === 'function') {
+                window.resetAlgoAdminViewingUser(authId);
+            }
+            if (typeof state !== 'undefined') {
+                state.adminViewingTarget = 'my';
+            }
+        }
+        return authId;
+    } catch(errReset) {
+        console.warn('[resetAdminViewingUserToSelf exception]', errReset);
+        return null;
+    }
+}
+
 // Global Lotto Tab Switcher
 function switchLottoTab(target) {
     if (!target) return;
@@ -39546,6 +39637,9 @@ function switchLottoTab(target) {
     if (!window.__lottoInitialized && typeof initLottoService === 'function') {
         try { initLottoService(); } catch(e){}
     }
+
+    // 🔄 메뉴(탭) 이동 시 항상 '👑 관리자 본인' 계정으로 자동 복귀 (안전 및 사용자 오인 원천 차단)
+    resetAdminViewingUserToSelf();
 
     // 1. Ensure appContainer is active and visible with !important
     if (typeof window._switchPage === 'function') {
@@ -39717,6 +39811,7 @@ if (typeof window !== 'undefined') {
     window.setupAllLottoEvents = setupAllLottoEvents;
     window.switchTab = switchLottoTab;
     window.switchLottoTab = switchLottoTab;
+    window.resetAdminViewingUserToSelf = resetAdminViewingUserToSelf;
     window.renderAlgorithmsTab = renderAlgorithmsTab;
     window.renderReviewTab = renderReviewTab;
     window.renderReviewDetail = renderReviewDetail;
@@ -39760,6 +39855,10 @@ if (typeof window !== 'undefined') {
         if (typeof initLottoService !== 'undefined') {
             __exports.initLottoService = initLottoService;
             if (typeof window !== 'undefined') window.initLottoService = initLottoService;
+        }
+        if (typeof resetAdminViewingUserToSelf !== 'undefined') {
+            __exports.resetAdminViewingUserToSelf = resetAdminViewingUserToSelf;
+            if (typeof window !== 'undefined') window.resetAdminViewingUserToSelf = resetAdminViewingUserToSelf;
         }
         if (typeof switchLottoTab !== 'undefined') {
             __exports.switchLottoTab = switchLottoTab;

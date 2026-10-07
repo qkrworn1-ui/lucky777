@@ -2,15 +2,15 @@ import { state, initHistory } from './state.js';
 import { recalculateGroups } from './statistics.js';
 import { db } from '../../shared/db.js';
 import { showToast } from '../../shared/utils.js';
-import { updateDebugMonitor, SafeAuth } from '../../shared/auth-mgmt.js';
+import { updateDebugMonitor, SafeAuth, isAdminUser } from '../../shared/auth-mgmt.js';
 import { renderLatestDrawBanner } from './views/draw-banner.js';
-import { renderTop5Combinations, updateSavedCount, renderSavedList, setupGeneratorTabEvents, updateTop7AlgoUI } from './views/generator-tab.js';
+import { renderTop5Combinations, updateSavedCount, renderSavedList, setupGeneratorTabEvents, updateTop7AlgoUI, resetGeneratorAdminViewingUser } from './views/generator-tab.js';
 import { populateSimRoundSelector, renderSimulationTab, setupSimulationEvents } from './views/simulation-tab.js';
 import { renderWheelingSelector, renderWheelingResults, setupWheelingTab } from './views/wheeling.js';
 import { renderVerificationTab, setupEvolutionButton } from './views/verification.js';
 import { renderDashboardCharts, renderFortuneAdvisorCard } from './views/dashboard-tab.js';
-import { renderReviewTab, renderReviewDetail } from './views/review-tab.js';
-import { renderAlgorithmsTab } from './views/algorithms-tab.js';
+import { renderReviewTab, renderReviewDetail, resetReviewAdminViewingUser } from './views/review-tab.js';
+import { renderAlgorithmsTab, resetAlgoAdminViewingUser } from './views/algorithms-tab.js';
 import { renderConfirmedPurchasesList } from './views/confirmed-tab.js';
 import { setupPredictionReport } from './views/prediction-report.js';
 import { setupQuickView } from './views/quick-view.js';
@@ -473,6 +473,56 @@ export async function initLottoService(force = false) {
 
 let _lottoTabRenderTimer = null;
 
+/**
+ * 👑 관리자 전용: 메뉴(탭) 이동 시 모든 탭의 조회 대상을 항상 '관리자 본인' 계정으로 안전하게 자동 복귀
+ */
+export function resetAdminViewingUserToSelf() {
+    try {
+        const rawAuth = (typeof SafeAuth !== 'undefined' && SafeAuth.get) ? SafeAuth.get() : ((typeof window !== 'undefined' && window.SafeAuth && window.SafeAuth.get) ? window.SafeAuth.get() : null);
+        let authId = rawAuth || '';
+        if (typeof authId === 'string' && authId.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(authId);
+                authId = parsed.userid || parsed.userId || parsed.id || authId;
+            } catch(e) {}
+        }
+        authId = (authId || '').trim();
+        const cleanAuth = authId.toLowerCase();
+        const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
+
+        if (isAdmin && authId) {
+            if (typeof window !== 'undefined') {
+                window.selectedAdminViewingUser = authId;
+                window.generatorAdminViewingUser = authId;
+                window.algoAdminViewingUser = authId;
+                window.reviewAdminViewingUser = authId;
+            }
+            if (typeof resetGeneratorAdminViewingUser === 'function') {
+                resetGeneratorAdminViewingUser(authId);
+            } else if (typeof window !== 'undefined' && typeof window.resetGeneratorAdminViewingUser === 'function') {
+                window.resetGeneratorAdminViewingUser(authId);
+            }
+            if (typeof resetReviewAdminViewingUser === 'function') {
+                resetReviewAdminViewingUser(authId);
+            } else if (typeof window !== 'undefined' && typeof window.resetReviewAdminViewingUser === 'function') {
+                window.resetReviewAdminViewingUser(authId);
+            }
+            if (typeof resetAlgoAdminViewingUser === 'function') {
+                resetAlgoAdminViewingUser(authId);
+            } else if (typeof window !== 'undefined' && typeof window.resetAlgoAdminViewingUser === 'function') {
+                window.resetAlgoAdminViewingUser(authId);
+            }
+            if (typeof state !== 'undefined') {
+                state.adminViewingTarget = 'my';
+            }
+        }
+        return authId;
+    } catch(errReset) {
+        console.warn('[resetAdminViewingUserToSelf exception]', errReset);
+        return null;
+    }
+}
+
 // Global Lotto Tab Switcher
 export function switchLottoTab(target) {
     if (!target) return;
@@ -484,6 +534,9 @@ export function switchLottoTab(target) {
     if (!window.__lottoInitialized && typeof initLottoService === 'function') {
         try { initLottoService(); } catch(e){}
     }
+
+    // 🔄 메뉴(탭) 이동 시 항상 '👑 관리자 본인' 계정으로 자동 복귀 (안전 및 사용자 오인 원천 차단)
+    resetAdminViewingUserToSelf();
 
     // 1. Ensure appContainer is active and visible with !important
     if (typeof window._switchPage === 'function') {
@@ -655,6 +708,7 @@ if (typeof window !== 'undefined') {
     window.setupAllLottoEvents = setupAllLottoEvents;
     window.switchTab = switchLottoTab;
     window.switchLottoTab = switchLottoTab;
+    window.resetAdminViewingUserToSelf = resetAdminViewingUserToSelf;
     window.renderAlgorithmsTab = renderAlgorithmsTab;
     window.renderReviewTab = renderReviewTab;
     window.renderReviewDetail = renderReviewDetail;

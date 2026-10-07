@@ -833,10 +833,12 @@ export async function renderReviewTab() {
             const existingAdminContainer = document.getElementById('reviewAdminUserFilterContainer');
             if (existingAdminContainer) existingAdminContainer.remove();
         } else {
-            if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
+            if (typeof window !== 'undefined' && window.reviewAdminViewingUser) {
+                reviewAdminViewingUser = window.reviewAdminViewingUser;
+            } else if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
                 reviewAdminViewingUser = window.selectedAdminViewingUser;
             } else if (!reviewAdminViewingUser) {
-                reviewAdminViewingUser = (typeof window !== 'undefined' && window.algoAdminViewingUser) ? window.algoAdminViewingUser : 'all';
+                reviewAdminViewingUser = authId;
                 if (typeof window !== 'undefined') window.selectedAdminViewingUser = reviewAdminViewingUser;
             }
             // 관리자이며 회원 목록이 전혀 로드되지 않은 경우에만 1회 백그라운드 지연 로드
@@ -2688,12 +2690,20 @@ export async function renderReviewDetail(r) {
     reviewMatchingContainer.innerHTML = html;
 }
 
+/**
+ * Admin: Reset Viewing User in Review Tab to Self
+ */
+export function resetReviewAdminViewingUser(authId = null) {
+    reviewAdminViewingUser = authId;
+    if (typeof window !== 'undefined') {
+        window.reviewAdminViewingUser = authId;
+    }
+}
+
 export function changeReviewAdminUser(userId) {
     reviewAdminViewingUser = userId;
     if (typeof window !== 'undefined') {
-        window.selectedAdminViewingUser = userId;
-        window.generatorAdminViewingUser = userId;
-        window.algoAdminViewingUser = userId;
+        window.reviewAdminViewingUser = userId;
     }
     const adminSel = document.getElementById('reviewAdminUserSelect');
     if (adminSel) {
@@ -4042,6 +4052,7 @@ if (typeof window !== 'undefined') {
     window.renderAllRoundsReviewDetail = renderAllRoundsReviewDetail;
     window.selectSpecificReviewRound = selectSpecificReviewRound;
     window.changeReviewAdminUser = changeReviewAdminUser;
+    window.resetReviewAdminViewingUser = resetReviewAdminViewingUser;
     window.computeUser70RecommendationsReview = computeUser70RecommendationsReview;
     window.updateReviewRoundSelector = updateReviewRoundSelector;
     window.exportImmutableUnifiedArchive = exportImmutableUnifiedArchive;

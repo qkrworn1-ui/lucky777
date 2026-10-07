@@ -2040,6 +2040,17 @@ export function handleClearExtraPacks() {
 }
 
 /**
+ * Admin: Reset Viewing User in Generator Tab to Self
+ */
+export function resetGeneratorAdminViewingUser(authId = null) {
+    generatorAdminViewingUser = authId;
+    if (typeof window !== 'undefined') {
+        window.generatorAdminViewingUser = authId;
+        window.selectedAdminViewingUser = authId;
+    }
+}
+
+/**
  * Admin: Change Viewing User in Generator Tab (User-Isolated)
  */
 export function changeGeneratorAdminViewingUser(userId) {
@@ -2047,8 +2058,6 @@ export function changeGeneratorAdminViewingUser(userId) {
     if (typeof window !== 'undefined') {
         window.selectedAdminViewingUser = userId;
         window.generatorAdminViewingUser = userId;
-        window.algoAdminViewingUser = userId;
-        window.reviewAdminViewingUser = userId;
     }
     const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function' ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
     const targetCombosUser = getEffectiveGeneratorUserId(userId);
@@ -2097,6 +2106,7 @@ if (typeof window !== 'undefined') {
     window.handleAddExtraPack = handleAddExtraPack;
     window.handleClearExtraPacks = handleClearExtraPacks;
     window.changeGeneratorAdminViewingUser = changeGeneratorAdminViewingUser;
+    window.resetGeneratorAdminViewingUser = resetGeneratorAdminViewingUser;
     window.getUserActiveExtraPackIds = getUserActiveExtraPackIds;
     window.getEffectiveUserExtraPacks = getEffectiveUserExtraPacks;
     window.updateTop7AlgoUI = updateTop7AlgoUI;
