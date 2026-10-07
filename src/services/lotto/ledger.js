@@ -1519,7 +1519,9 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                 userId: rawUserId,
                 realName: userNames[rawUserId] || rawUserId,
                 createdAt: (state.allRegisteredUsersList.find(u => u.id === rawUserId)?.createdAt) || null,
-                ledger: cleanUserLedger
+                ledger: cleanUserLedger,
+                recommendationSnapshots: data.recommendationSnapshots || {},
+                winningEvaluations: data.winningEvaluations || {}
             };
 
             for (const r in cleanUserLedger) {

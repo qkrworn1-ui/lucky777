@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1159.28 - BUILD_DATE: 2026-10-07] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1628.53 - BUILD_DATE: 2026-10-07] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.07.1159.28)
+ * Lucky777 Smart Bundle (v2026.10.07.1628.53)
  */
 
 
@@ -11118,7 +11118,9 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                 userId: rawUserId,
                 realName: userNames[rawUserId] || rawUserId,
                 createdAt: (state.allRegisteredUsersList.find(u => u.id === rawUserId)?.createdAt) || null,
-                ledger: cleanUserLedger
+                ledger: cleanUserLedger,
+                recommendationSnapshots: data.recommendationSnapshots || {},
+                winningEvaluations: data.winningEvaluations || {}
             };
 
             for (const r in cleanUserLedger) {
