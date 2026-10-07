@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1715 - BUILD_DATE: 2026-10-07] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1846.49 - BUILD_DATE: 2026-10-07] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.07.1715)
+ * Lucky777 Smart Bundle (v2026.10.07.1846.49)
  */
 
 
@@ -18370,6 +18370,10 @@ async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotDa
     const cleanUser = String(userId).toLowerCase().trim();
     if (cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || isSystemOrDummyUser(cleanUser)) return;
     const rKey = String(roundNum);
+
+    // 🔒 가입일 이전 회차는 추천번호 영구 스냅샷 저장 원천 차단 (가입 전 발급 불가)
+    const joinRound = getUserJoinRound(cleanUser);
+    if (Number(roundNum) < joinRound) return;
 
     const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
     if (!firestore) return;
