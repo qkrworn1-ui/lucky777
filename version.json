@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.07.1011.38",
+  "version": "v2026.10.07.1059.38",
   "buildDate": "2026-10-07",
-  "description": "fix(dashboard): align round 1244 recommendations summary with active members and enforce cache integrity",
-  "buildTimestamp": "2026-10-07T10:11:38.026776",
+  "description": "feat(review): unify recommendations and winnings with user single master doc pipeline",
+  "buildTimestamp": "2026-10-07T10:59:38.080162",
   "buildHistory": [
-    {
-      "version": "v2026.10.06.1509.25",
-      "buildDate": "2026-10-06",
-      "buildTime": "15:09",
-      "buildDateTime": "2026-10-06 15:09",
-      "buildTimestamp": "2026-10-06T15:09:25.608185",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
-    {
-      "version": "v2026.10.06.1517",
-      "buildDate": "2026-10-06",
-      "buildTime": "15:17",
-      "buildDateTime": "2026-10-06 15:17",
-      "buildTimestamp": "2026-10-06T15:17:57.631149",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
     {
       "version": "v2026.10.06.1518",
       "buildDate": "2026-10-06",
@@ -119,12 +103,28 @@
     {
       "version": "v2026.10.07.1011.38",
       "buildDate": "2026-10-07",
-      "buildTime": "10:11",
-      "buildDateTime": "2026-10-07 10:11",
-      "buildTimestamp": "2026-10-07T10:11:38.026776",
+      "buildTime": "10:58",
+      "buildDateTime": "2026-10-07 10:58",
+      "buildTimestamp": "2026-10-07T10:58:26.974871",
       "description": "fix(dashboard): align round 1244 recommendations summary with active members and enforce cache integrity"
+    },
+    {
+      "version": "v2026.10.07.1059",
+      "buildDate": "2026-10-07",
+      "buildTime": "10:59",
+      "buildDateTime": "2026-10-07 10:59",
+      "buildTimestamp": "2026-10-07T10:59:23.580539",
+      "description": "feat(review): unify recommendations and winnings with user single master doc pipeline"
+    },
+    {
+      "version": "v2026.10.07.1059.38",
+      "buildDate": "2026-10-07",
+      "buildTime": "10:59",
+      "buildDateTime": "2026-10-07 10:59",
+      "buildTimestamp": "2026-10-07T10:59:38.080162",
+      "description": "feat(review): unify recommendations and winnings with user single master doc pipeline"
     }
   ],
-  "buildTime": "10:11",
-  "buildDateTime": "2026-10-07 10:11"
+  "buildTime": "10:59",
+  "buildDateTime": "2026-10-07 10:59"
 }

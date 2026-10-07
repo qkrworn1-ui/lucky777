@@ -298,6 +298,57 @@ export function getPackFromSnapshot(extraPacks, pId) {
 }
 
 /**
+ * 🔒 Retrieves a user's single master document from state.allUsersPurchasesMap
+ */
+export function getUserSingleMasterDocSync(userId) {
+    if (!userId) return null;
+    let cleanUser = String(userId).trim();
+    if (cleanUser.startsWith('{')) {
+        try { cleanUser = JSON.parse(cleanUser).userid || cleanUser; } catch(e) {}
+    }
+    cleanUser = cleanUser.toLowerCase().trim();
+    if (isSystemOrDummyUser(cleanUser)) return null;
+
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
+        const doc = state.allUsersPurchasesMap[cleanUser];
+        if (doc && !doc.isDeleted && doc.status !== 'trash') return doc;
+    }
+    return null;
+}
+if (typeof window !== 'undefined') {
+    window.getUserSingleMasterDocSync = getUserSingleMasterDocSync;
+}
+
+/**
+ * 🔒 Retrieves a user's pre-evaluated winning record for a round from the user's single master document
+ */
+export function getUserWeeklyWinningEvaluationSync(userId, roundNum) {
+    if (!userId || !roundNum) return null;
+    let cleanUser = String(userId).trim();
+    if (cleanUser.startsWith('{')) {
+        try { cleanUser = JSON.parse(cleanUser).userid || cleanUser; } catch(e) {}
+    }
+    cleanUser = cleanUser.toLowerCase().trim();
+    if (isSystemOrDummyUser(cleanUser)) return null;
+    const rKey = String(roundNum);
+    const cacheKey = `${cleanUser}_${roundNum}`;
+
+    // 1. In-memory state userWinningEvaluations
+    if (state.userWinningEvaluations && state.userWinningEvaluations[cacheKey]) {
+        return state.userWinningEvaluations[cacheKey];
+    }
+    // 2. From user's single master document in state.allUsersPurchasesMap
+    const masterDoc = getUserSingleMasterDocSync(cleanUser);
+    if (masterDoc && masterDoc.winningEvaluations && masterDoc.winningEvaluations[rKey]) {
+        return masterDoc.winningEvaluations[rKey];
+    }
+    return null;
+}
+if (typeof window !== 'undefined') {
+    window.getUserWeeklyWinningEvaluationSync = getUserWeeklyWinningEvaluationSync;
+}
+
+/**
  * 🔒 Retrieves a user's weekly recommendation snapshot from in-memory state, localStorage, or preloaded Firestore purchases map
  */
 export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
@@ -324,7 +375,7 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         }
     } catch(e) {}
 
-    // 3. state.allUsersPurchasesMap
+    // 3. state.allUsersPurchasesMap (User's Single Master Document)
     if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
         const pDoc = state.allUsersPurchasesMap[cleanUser];
         if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
@@ -644,6 +695,50 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
     const totalInvest = 70 * 1000;
     const roi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
 
+    // 🔒 단일 마스터 문서(Single Master Document)의 사전 판별 데이터(winningEvaluations) 최우선 동기화
+    const preEval = getUserWeeklyWinningEvaluationSync(cleanUser, roundNum);
+    let finalHits = grandHits;
+    let finalPrize = totalPrize;
+    let finalWins = totalWins;
+    let finalRoi = roi;
+
+    if (preEval && preEval.recSummary && typeof preEval.recSummary === 'object' && !preEval.isPreJoin) {
+        const s = preEval.recSummary;
+        if (s.totalPrize !== undefined) finalPrize = Number(s.totalPrize || 0);
+        if (s.hits && typeof s.hits === 'object') {
+            finalHits = {
+                1: Number(s.hits['1'] ?? s.hits[1] ?? grandHits[1]),
+                2: Number(s.hits['2'] ?? s.hits[2] ?? grandHits[2]),
+                3: Number(s.hits['3'] ?? s.hits[3] ?? grandHits[3]),
+                4: Number(s.hits['4'] ?? s.hits[4] ?? grandHits[4]),
+                5: Number(s.hits['5'] ?? s.hits[5] ?? grandHits[5]),
+            };
+            finalWins = finalHits[1] + finalHits[2] + finalHits[3] + finalHits[4] + finalHits[5];
+        } else if (s.totalWins !== undefined) {
+            finalWins = Number(s.totalWins || 0);
+        }
+        if (s.roi !== undefined) finalRoi = Number(s.roi || 0);
+        else finalRoi = (70 * 1000) > 0 ? (finalPrize / (70 * 1000)) * 100 : 0;
+
+        // 알고리즘별 실적도 단일 문서의 algoSummaries와 정밀 동기화
+        if (s.algoSummaries && typeof s.algoSummaries === 'object') {
+            if (s.algoSummaries.v4 && v4Eval) {
+                v4Eval.totalPrize = Number(s.algoSummaries.v4.prize ?? v4Eval.totalPrize);
+            }
+            if (s.algoSummaries.v3 && v3Eval) {
+                v3Eval.totalPrize = Number(s.algoSummaries.v3.prize ?? v3Eval.totalPrize);
+            }
+            extraPackEvals.forEach(ep => {
+                const k1 = `extra_${ep.packId}`;
+                const k2 = String(ep.packId);
+                const aObj = s.algoSummaries[k1] || s.algoSummaries[k2];
+                if (aObj && ep.evalData) {
+                    ep.evalData.totalPrize = Number(aObj.prize ?? ep.evalData.totalPrize);
+                }
+            });
+        }
+    }
+
     const reviewResult = {
         userId: cleanUser,
         roundNum,
@@ -653,12 +748,12 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         v3Combos,
         v3Eval,
         extraPackEvals,
-        grandHits,
-        totalPrize,
-        totalWins,
+        grandHits: finalHits,
+        totalPrize: finalPrize,
+        totalWins: finalWins,
         totalGames: 70,
         totalInvest,
-        roi
+        roi: finalRoi
     };
 
     _user70ReviewCache[cacheKey] = reviewResult;
