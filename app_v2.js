@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1846.49 - BUILD_DATE: 2026-10-07] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1859 - BUILD_DATE: 2026-10-07] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.07.1846.49)
+ * Lucky777 Smart Bundle (v2026.10.07.1859)
  */
 
 
@@ -8842,17 +8842,50 @@ window.startBatchWinningSend = async function() {
         try {
             showToast(`💥 휴지통 비우기 진행 중 (${trashUsers.length}명)...`);
             for (const u of trashUsers) {
-                if (u.userId === 'master' || u.userId === 'admin' || u.userId === 'kakao_5070244665') continue;
+                const targetId = u.userId || u.id;
+                if (!targetId || targetId === 'master' || targetId === 'admin' || targetId === 'kakao_5070244665') continue;
                 try {
-                    await window.db.collection('lotto_users').doc(u.userId).delete();
-                    await window.db.collection('lotto_agreements').doc(u.userId).delete();
-                    await window.db.collection('lotto_purchases').doc(u.userId).delete();
+                    await window.db.collection('lotto_users').doc(targetId).delete();
+                    await window.db.collection('lotto_agreements').doc(targetId).delete();
+                    await window.db.collection('lotto_purchases').doc(targetId).delete();
                 } catch(e) {}
                 if (window.state && window.state.allUsersPurchasesMap) {
-                    delete window.state.allUsersPurchasesMap[u.userId];
-                    delete window.state.allUsersPurchasesMap[u.userId.toLowerCase()];
+                    delete window.state.allUsersPurchasesMap[targetId];
+                    delete window.state.allUsersPurchasesMap[targetId.toLowerCase()];
                 }
+                if (window.state && window.state.userRecommendationSnapshots) {
+                    Object.keys(window.state.userRecommendationSnapshots).forEach(k => {
+                        if (k.toLowerCase().startsWith(targetId.toLowerCase())) {
+                            delete window.state.userRecommendationSnapshots[k];
+                        }
+                    });
+                }
+                try {
+                    if (typeof localStorage !== 'undefined') {
+                        for (let i = localStorage.length - 1; i >= 0; i--) {
+                            const key = localStorage.key(i);
+                            if (key && (key.startsWith('lotto_rec_snapshot_' + targetId.toLowerCase()) || key.startsWith('lotto_review_v2_' + targetId.toLowerCase()))) {
+                                localStorage.removeItem(key);
+                            }
+                        }
+                    }
+                } catch(e) {}
             }
+
+            // lotto_purchases 내 잔여 휴지통/삭제 문서 추가 전수 정리
+            try {
+                const pTrashSnap = await window.db.collection('lotto_purchases').where('status', '==', 'trash').get();
+                if (pTrashSnap && !pTrashSnap.empty) {
+                    for (const doc of pTrashSnap.docs) {
+                        if (doc.id === 'master' || doc.id === 'admin' || doc.id === 'kakao_5070244665') continue;
+                        await doc.ref.delete().catch(() => {});
+                        if (window.state && window.state.allUsersPurchasesMap) {
+                            delete window.state.allUsersPurchasesMap[doc.id];
+                        }
+                    }
+                }
+            } catch(e) {}
+
             showToast(`🎉 휴지통이 완전히 비워졌습니다.`);
 
             // ⚡ 캐시 무효화 및 전체회원 당첨금액 즉시 자동 차감/재계산
