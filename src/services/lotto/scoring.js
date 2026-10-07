@@ -1,5 +1,4 @@
 import { state } from './state.js';
-import { calculateACValue } from '../../shared/utils.js';
 
 export function getNeighborMatches(numbers) {
     const prevSet = new Set(state.PREVIOUS_DRAW);

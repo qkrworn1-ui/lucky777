@@ -1,8 +1,7 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast } from '../../../shared/utils.js';
+import { showToast } from '../../../shared/utils.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
 import { renderTop5Combinations, renderExtraAddonPacksSection, getUserActiveExtraPackIds, saveUserActiveExtraPackIds } from './generator-tab.js';
-import { saveGlobalState } from '../state.js';
 import { getComboNumbers, isUserEligibleForExtraPacks } from '../ledger.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 

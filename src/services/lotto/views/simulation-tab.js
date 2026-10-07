@@ -1,11 +1,8 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue } from '../../../shared/utils.js';
+import { getBallColorClass, getBallHexColor, showToast } from '../../../shared/utils.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
-import { recalculateGroups } from '../statistics.js';
-import { calculateStats, getNeighborMatches } from '../scoring.js';
-import { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations, getSafeActualDraw } from '../ledger.js';
+import { getSafeActualDraw } from '../ledger.js';
 import { db } from '../../../shared/db.js';
-import { getSelectedComboCountOption } from './generator-tab.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 
 let realSimCache = null;

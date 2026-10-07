@@ -1,9 +1,9 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue, removeUndefined, isSystemOrDummyUser } from '../../../shared/utils.js';
-import { createBallHtml, renderBallRow, getRankBadge } from '../../../shared/components.js';
+import { getBallHexColor, showToast, isSystemOrDummyUser } from '../../../shared/utils.js';
+import { createBallHtml } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
-import { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
+import { getComboNumbers, fetchAllUsersPurchases, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
 
 let reviewAdminViewingUser = null; // null (defaults to authId) or 'all' or specific userId

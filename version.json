@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.07.1657.55",
+  "version": "v2026.10.07.1715",
   "buildDate": "2026-10-07",
   "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document",
-  "buildTimestamp": "2026-10-07T16:57:55.294150",
+  "buildTimestamp": "2026-10-07T17:15:53.874596",
   "buildHistory": [
-    {
-      "version": "v2026.10.07.1059.38",
-      "buildDate": "2026-10-07",
-      "buildTime": "10:59",
-      "buildDateTime": "2026-10-07 10:59",
-      "buildTimestamp": "2026-10-07T10:59:38.080162",
-      "description": "feat(review): unify recommendations and winnings with user single master doc pipeline"
-    },
-    {
-      "version": "v2026.10.07.1112",
-      "buildDate": "2026-10-07",
-      "buildTime": "11:12",
-      "buildDateTime": "2026-10-07 11:12",
-      "buildTimestamp": "2026-10-07T11:12:18.466950",
-      "description": "feat(review): unify recommendations and winnings with user single master doc pipeline"
-    },
     {
       "version": "v2026.10.07.1113",
       "buildDate": "2026-10-07",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-07 16:57",
       "buildTimestamp": "2026-10-07T16:57:55.294150",
       "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
+    },
+    {
+      "version": "v2026.10.07.1712",
+      "buildDate": "2026-10-07",
+      "buildTime": "17:12",
+      "buildDateTime": "2026-10-07 17:12",
+      "buildTimestamp": "2026-10-07T17:12:30.509645",
+      "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
+    },
+    {
+      "version": "v2026.10.07.1715",
+      "buildDate": "2026-10-07",
+      "buildTime": "17:15",
+      "buildDateTime": "2026-10-07 17:15",
+      "buildTimestamp": "2026-10-07T17:15:53.874596",
+      "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
     }
   ],
-  "buildTime": "16:57",
-  "buildDateTime": "2026-10-07 16:57"
+  "buildTime": "17:15",
+  "buildDateTime": "2026-10-07 17:15"
 }

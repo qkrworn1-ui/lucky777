@@ -1,5 +1,4 @@
 import { renderTotoDashboard } from './views/toto-dashboard.js';
-import { getTotoState } from './state.js';
 import { scrapeLatestTotoFixtures } from './scraper.js';
 
 export function resetTotoServiceState() {

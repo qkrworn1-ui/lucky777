@@ -1,4 +1,4 @@
-import { getBallColorClass, getBallHexColor } from '../../../shared/utils.js';
+import { getBallHexColor } from '../../../shared/utils.js';
 
 /**
  * Fireworks & Confetti Particle System

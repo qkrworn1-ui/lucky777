@@ -1,9 +1,6 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast, formatDate, getDrawDateByRound, getNextSaturdayDate, calculateACValue, removeUndefined } from '../../../shared/utils.js';
+import { getBallColorClass, getDrawDateByRound, getNextSaturdayDate } from '../../../shared/utils.js';
 import { db } from '../../../shared/db.js';
-import { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations } from '../ledger.js';
-import { computeAbsoluteTop10Combinations } from '../generator.js';
-import { recalculateGroups } from '../statistics.js';
 import { fetchFullPrizeDetailsFromHTML } from '../scraper.js';
 
 export function renderLatestDrawBanner() {

@@ -1,15 +1,14 @@
-import { 
-    getTotoState, 
+import {
+    getTotoState,
     loadTotoFixtures,
     setRecommendationMode,
     getTotoCarryoverInfo,
     loadCarryoverData,
-    setSelectedSlip, 
-    clearSelectedSlip, 
-    loadPurchasedSlips, 
-    addPurchasedSlip, 
-    deletePurchasedSlip, 
-    settlePurchasedSlip, 
+    clearSelectedSlip,
+    loadPurchasedSlips,
+    addPurchasedSlip,
+    deletePurchasedSlip,
+    settlePurchasedSlip,
     calculateTotoFinancials,
     setActiveStandingsLeague,
     loadStandingsData

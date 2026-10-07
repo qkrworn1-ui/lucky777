@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1657.55 - BUILD_DATE: 2026-10-07] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1715 - BUILD_DATE: 2026-10-07] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.07.1657.55)
+ * Lucky777 Smart Bundle (v2026.10.07.1715)
  */
 
 
@@ -1505,7 +1505,7 @@ var __M_shared_auth_mgmt = (function() {
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { showToast, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { hashPassword, checkPasswordStrength } = (typeof __M_shared_crypto_utils !== 'undefined' ? __M_shared_crypto_utils : {});
-const { DEFAULT_KNOWN_USERS, getAllUnifiedRegisteredUsers, UserContextManager } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
+const { DEFAULT_KNOWN_USERS, UserContextManager } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
 
 // Safe Multi-Storage Auth Helper (sessionStorage + localStorage + Cookie + memory fallback)
 const memoryAuthStore = { id: null };
@@ -15276,7 +15276,6 @@ var __M_services_lotto_scoring = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { calculateACValue } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 
 function getNeighborMatches(numbers) {
     const prevSet = new Set(state.PREVIOUS_DRAW);
@@ -15929,10 +15928,9 @@ async function scrapeCompleteRoundResult(roundNum) {
 var __M_services_lotto_generator = (function() {
     const __exports = {};
     try {
-const { state, getHistoricalDrawData, saveGlobalState } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
+const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { calculateStats } = (typeof __M_services_lotto_scoring !== 'undefined' ? __M_services_lotto_scoring : {});
 const { calculateACValue, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
-const { getLedger, getHistoricalTop10Combinations: getHistCombo } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
 const { SafeAuth, getUserRealName, getUpcomingLottoRound, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
@@ -17685,11 +17683,8 @@ var __M_services_lotto_views_draw_banner = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { getBallColorClass, getBallHexColor, showToast, formatDate, getDrawDateByRound, getNextSaturdayDate, calculateACValue, removeUndefined } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
+const { getBallColorClass, getDrawDateByRound, getNextSaturdayDate } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
-const { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
-const { computeAbsoluteTop10Combinations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
-const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
 const { fetchFullPrizeDetailsFromHTML } = (typeof __M_services_lotto_scraper !== 'undefined' ? __M_services_lotto_scraper : {});
 
 function renderLatestDrawBanner() {
@@ -17977,11 +17972,11 @@ var __M_services_lotto_views_review_tab = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue, removeUndefined, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
-const { createBallHtml, renderBallRow, getRankBadge } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
+const { getBallHexColor, showToast, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
+const { createBallHtml } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
-const { getComboNumbers, fetchAllUsersPurchases, getHistoricalTop10Combinations, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
+const { getComboNumbers, fetchAllUsersPurchases, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 
 let reviewAdminViewingUser = null; // null (defaults to authId) or 'all' or specific userId
@@ -22127,13 +22122,12 @@ var __M_services_lotto_views_algorithms_tab = (function() {
     const __exports = {};
     try {
 const { state, initHistory } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { getBallColorClass, getBallHexColor, showToast, calculateACValue, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
-const { createBallHtml } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
+const { showToast, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
-const { getComboNumbers, fetchAllUsersPurchases, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
+const { fetchAllUsersPurchases, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { SafeAuth, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getAllUnifiedRegisteredUsers } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
-const { computeUser70RecommendationsReview, getUserJoinRound } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
+const { computeUser70RecommendationsReview } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
 
 let currentAlgoStartRound = 1235;
 let algoDetailAccordionMap = {};
@@ -23130,7 +23124,7 @@ if (typeof window !== 'undefined') {
 var __M_services_lotto_views_generator_tab = (function() {
     const __exports = {};
     try {
-const { state, saveGlobalState } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
+const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { createBallHtml } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
@@ -25650,10 +25644,9 @@ var __M_services_lotto_views_budget_optimizer_modal = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { getBallColorClass, getBallHexColor, showToast } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
+const { showToast } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { renderTop5Combinations, renderExtraAddonPacksSection, getUserActiveExtraPackIds, saveUserActiveExtraPackIds } = (typeof __M_services_lotto_views_generator_tab !== 'undefined' ? __M_services_lotto_views_generator_tab : {});
-const { saveGlobalState } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { getComboNumbers, isUserEligibleForExtraPacks } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { SafeAuth, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 
@@ -26201,13 +26194,10 @@ var __M_services_lotto_views_simulation_tab = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
+const { getBallColorClass, getBallHexColor, showToast } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
-const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
-const { calculateStats, getNeighborMatches } = (typeof __M_services_lotto_scoring !== 'undefined' ? __M_services_lotto_scoring : {});
-const { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
+const { getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
-const { getSelectedComboCountOption } = (typeof __M_services_lotto_views_generator_tab !== 'undefined' ? __M_services_lotto_views_generator_tab : {});
 const { SafeAuth, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 
 let realSimCache = null;
@@ -27030,16 +27020,14 @@ var __M_services_lotto_views_confirmed_tab = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { getBallColorClass, getBallHexColor, getBallTextColor, showToast, formatDate, calculateACValue, removeUndefined, copyToClipboard, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
-const { createBallHtml, renderBallRow, getRankBadge, openModal, closeModal } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
+const { getBallHexColor, getBallTextColor, showToast, formatDate, copyToClipboard, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser, getUserRealName } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getAllUnifiedRegisteredUsers } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
-const { getLedger, fetchAllUsersPurchases, saveToLedger, saveLedgerDirectly, getComboNumbers, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
+const { getLedger, fetchAllUsersPurchases, saveLedgerDirectly, getComboNumbers, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 
 const { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { getPackFromSnapshot } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
-const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
 
 const _roundUserRecCache = new Map();
 function getMemoizedRecommendations(rnd, user) {
@@ -30558,11 +30546,7 @@ var __M_services_lotto_views_dashboard_tab = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
-const { computeAbsoluteTop10Combinations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
-const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
-const { calculateStats, getNeighborMatches } = (typeof __M_services_lotto_scoring !== 'undefined' ? __M_services_lotto_scoring : {});
-const { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
+const { getBallColorClass, getBallHexColor, showToast } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { updateLoggedInUserHeaderUI, getUpcomingLottoRound } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { MyeongriService } = (typeof __M_services_lotto_myeongri_service !== 'undefined' ? __M_services_lotto_myeongri_service : {});
@@ -32085,7 +32069,7 @@ var __M_services_lotto_views_quick_view = (function() {
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { getBallHexColor, getBallColorClass, showToast } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
-const { SafeAuth, isAdminUser, getUpcomingLottoRound, getUserRealName } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
+const { getUpcomingLottoRound, getUserRealName } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getComboNumbers, isUserEligibleForExtraPacks } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 
@@ -32905,11 +32889,11 @@ var __M_services_lotto_views_manual_modal = (function() {
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { showToast, getDrawDateByRound, getBallColorClass } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
-const { getLedger, saveToLedger, parseDonghangLotteryQrUrl, parseDonghangOnlineReceiptText, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
+const { getLedger, saveToLedger, parseDonghangLotteryQrUrl, parseDonghangOnlineReceiptText, buildDonghangLotteryQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { SafeAuth, getUserRealName, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
-const { renderReviewTab, renderReviewDetail } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
+const { renderReviewTab } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
 const { renderConfirmedPurchasesList } = (typeof __M_services_lotto_views_confirmed_tab !== 'undefined' ? __M_services_lotto_views_confirmed_tab : {});
-const { computeAbsoluteTop10Combinations, findBestRecommendationMatch, crossCheckCombosWithRecommendations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { crossCheckCombosWithRecommendations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { getAllUnifiedRegisteredUsers, DEFAULT_KNOWN_USERS } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
 
 let html5QrScanner = null;
@@ -35307,7 +35291,7 @@ if (typeof window !== 'undefined') {
 var __M_services_lotto_views_celebration = (function() {
     const __exports = {};
     try {
-const { getBallColorClass, getBallHexColor } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
+const { getBallHexColor } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 
 /**
  * Fireworks & Confetti Particle System
@@ -38250,7 +38234,6 @@ var __M_services_lotto_views_hex_map = (function() {
     const __exports = {};
     try {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
-const { getBallColorClass, getBallHexColor, formatDate } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 
 /* =====================================================
    45-Polygon Cumulative Frequency & Winning Numbers Map Engine
@@ -39040,7 +39023,7 @@ if (typeof window !== 'undefined') {
 var __M_services_lotto_index = (function() {
     const __exports = {};
     try {
-const { state, initHistory, saveGlobalState } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
+const { state, initHistory } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { showToast } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
@@ -39050,7 +39033,7 @@ const { renderTop5Combinations, updateSavedCount, renderSavedList, setupGenerato
 const { populateSimRoundSelector, renderSimulationTab, setupSimulationEvents } = (typeof __M_services_lotto_views_simulation_tab !== 'undefined' ? __M_services_lotto_views_simulation_tab : {});
 const { renderWheelingSelector, renderWheelingResults, setupWheelingTab } = (typeof __M_services_lotto_views_wheeling !== 'undefined' ? __M_services_lotto_views_wheeling : {});
 const { renderVerificationTab, setupEvolutionButton } = (typeof __M_services_lotto_views_verification !== 'undefined' ? __M_services_lotto_views_verification : {});
-const { renderDashboardCharts, renderFortuneAdvisorCard, toggleFortuneAdvisorAccordion } = (typeof __M_services_lotto_views_dashboard_tab !== 'undefined' ? __M_services_lotto_views_dashboard_tab : {});
+const { renderDashboardCharts, renderFortuneAdvisorCard } = (typeof __M_services_lotto_views_dashboard_tab !== 'undefined' ? __M_services_lotto_views_dashboard_tab : {});
 const { renderReviewTab, renderReviewDetail } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
 const { renderAlgorithmsTab } = (typeof __M_services_lotto_views_algorithms_tab !== 'undefined' ? __M_services_lotto_views_algorithms_tab : {});
 const { renderConfirmedPurchasesList } = (typeof __M_services_lotto_views_confirmed_tab !== 'undefined' ? __M_services_lotto_views_confirmed_tab : {});
@@ -39060,9 +39043,8 @@ const { setupManualLedgerModal, updateManualModalCrossCheck } = (typeof __M_serv
 const { setupManualDrawModal } = (typeof __M_services_lotto_views_manual_draw_modal !== 'undefined' ? __M_services_lotto_views_manual_draw_modal : {});
 const { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } = (typeof __M_services_lotto_views_snapshot_audit_modal !== 'undefined' ? __M_services_lotto_views_snapshot_audit_modal : {});
 const { autoSyncMissingDraws, setupSyncEvents } = (typeof __M_services_lotto_views_sync !== 'undefined' ? __M_services_lotto_views_sync : {});
-const { openWinProbComparisonModal, closeWinProbComparisonModal, switchWinProbTab } = (typeof __M_services_lotto_views_win_prob_modal !== 'undefined' ? __M_services_lotto_views_win_prob_modal : {});
 const { computeAbsoluteTop10Combinations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
-const { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl, getUserConfirmedRoundNumbers, formatConfirmedRoundLabel } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
+const { getLedger, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl, getUserConfirmedRoundNumbers, formatConfirmedRoundLabel } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 
 let _isLottoInitializing = false;
 let _lottoInitPromise = null;
@@ -43077,18 +43059,17 @@ window.startRealtimePipelineSyncDaemon = startRealtimePipelineSyncDaemon;
 var __M_services_toto_views_toto_dashboard = (function() {
     const __exports = {};
     try {
-const { 
-    getTotoState, 
+const {
+    getTotoState,
     loadTotoFixtures,
     setRecommendationMode,
     getTotoCarryoverInfo,
     loadCarryoverData,
-    setSelectedSlip, 
-    clearSelectedSlip, 
-    loadPurchasedSlips, 
-    addPurchasedSlip, 
-    deletePurchasedSlip, 
-    settlePurchasedSlip, 
+    clearSelectedSlip,
+    loadPurchasedSlips,
+    addPurchasedSlip,
+    deletePurchasedSlip,
+    settlePurchasedSlip,
     calculateTotoFinancials,
     setActiveStandingsLeague,
     loadStandingsData
@@ -46009,7 +45990,6 @@ var __M_services_toto_index = (function() {
     const __exports = {};
     try {
 const { renderTotoDashboard } = (typeof __M_services_toto_views_toto_dashboard !== 'undefined' ? __M_services_toto_views_toto_dashboard : {});
-const { getTotoState } = (typeof __M_services_toto_state !== 'undefined' ? __M_services_toto_state : {});
 const { scrapeLatestTotoFixtures } = (typeof __M_services_toto_scraper !== 'undefined' ? __M_services_toto_scraper : {});
 
 function resetTotoServiceState() {
@@ -46093,7 +46073,7 @@ const { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUse
 const { SafeAuth, getUserRealName, updateLoggedInUserHeaderUI } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { getAllUnifiedRegisteredUsers } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
-const { computeUser70RecommendationsReview, clearUser70ReviewCache, getUserJoinRound } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
+const { computeUser70RecommendationsReview, getUserJoinRound } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
 
 /**
  * Update Compact Financial & Actual Winning History Summary on Landing Page

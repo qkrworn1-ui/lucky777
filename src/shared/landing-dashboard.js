@@ -3,7 +3,7 @@ import { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUs
 import { SafeAuth, getUserRealName, updateLoggedInUserHeaderUI } from './auth-mgmt.js';
 import { isSystemOrDummyUser } from './utils.js';
 import { getAllUnifiedRegisteredUsers } from './user-context.js';
-import { computeUser70RecommendationsReview, clearUser70ReviewCache, getUserJoinRound } from '../services/lotto/views/review-tab.js';
+import { computeUser70RecommendationsReview, getUserJoinRound } from '../services/lotto/views/review-tab.js';
 
 /**
  * Update Compact Financial & Actual Winning History Summary on Landing Page

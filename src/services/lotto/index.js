@@ -1,4 +1,4 @@
-import { state, initHistory, saveGlobalState } from './state.js';
+import { state, initHistory } from './state.js';
 import { recalculateGroups } from './statistics.js';
 import { db } from '../../shared/db.js';
 import { showToast } from '../../shared/utils.js';
@@ -8,7 +8,7 @@ import { renderTop5Combinations, updateSavedCount, renderSavedList, setupGenerat
 import { populateSimRoundSelector, renderSimulationTab, setupSimulationEvents } from './views/simulation-tab.js';
 import { renderWheelingSelector, renderWheelingResults, setupWheelingTab } from './views/wheeling.js';
 import { renderVerificationTab, setupEvolutionButton } from './views/verification.js';
-import { renderDashboardCharts, renderFortuneAdvisorCard, toggleFortuneAdvisorAccordion } from './views/dashboard-tab.js';
+import { renderDashboardCharts, renderFortuneAdvisorCard } from './views/dashboard-tab.js';
 import { renderReviewTab, renderReviewDetail } from './views/review-tab.js';
 import { renderAlgorithmsTab } from './views/algorithms-tab.js';
 import { renderConfirmedPurchasesList } from './views/confirmed-tab.js';
@@ -18,9 +18,8 @@ import { setupManualLedgerModal, updateManualModalCrossCheck } from './views/man
 import { setupManualDrawModal } from './views/manual-draw-modal.js';
 import { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } from './views/snapshot-audit-modal.js';
 import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
-import { openWinProbComparisonModal, closeWinProbComparisonModal, switchWinProbTab } from './views/win-prob-modal.js';
 import { computeAbsoluteTop10Combinations } from './generator.js';
-import { getLedger, getHistoricalTop10Combinations, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, saveLedgerDirectly, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl, getUserConfirmedRoundNumbers, formatConfirmedRoundLabel } from './ledger.js';
+import { getLedger, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl, getUserConfirmedRoundNumbers, formatConfirmedRoundLabel } from './ledger.js';
 
 let _isLottoInitializing = false;
 let _lottoInitPromise = null;

@@ -1,7 +1,7 @@
 import { db } from './db.js';
 import { showToast, isSystemOrDummyUser } from './utils.js';
 import { hashPassword, checkPasswordStrength } from './crypto-utils.js';
-import { DEFAULT_KNOWN_USERS, getAllUnifiedRegisteredUsers, UserContextManager } from './user-context.js';
+import { DEFAULT_KNOWN_USERS, UserContextManager } from './user-context.js';
 
 // Safe Multi-Storage Auth Helper (sessionStorage + localStorage + Cookie + memory fallback)
 const memoryAuthStore = { id: null };

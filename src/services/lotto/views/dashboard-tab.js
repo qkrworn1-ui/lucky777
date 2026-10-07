@@ -1,9 +1,5 @@
 import { state } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast, formatDate, calculateACValue } from '../../../shared/utils.js';
-import { computeAbsoluteTop10Combinations } from '../generator.js';
-import { recalculateGroups } from '../statistics.js';
-import { calculateStats, getNeighborMatches } from '../scoring.js';
-import { getLedger, saveToLedger, getComboNumbers, getHistoricalTop10Combinations } from '../ledger.js';
+import { getBallColorClass, getBallHexColor, showToast } from '../../../shared/utils.js';
 import { updateLoggedInUserHeaderUI, getUpcomingLottoRound } from '../../../shared/auth-mgmt.js';
 import { db } from '../../../shared/db.js';
 import { MyeongriService } from '../myeongri-service.js';

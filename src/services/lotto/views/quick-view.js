@@ -1,6 +1,6 @@
 import { state } from '../state.js';
 import { getBallHexColor, getBallColorClass, showToast } from '../../../shared/utils.js';
-import { SafeAuth, isAdminUser, getUpcomingLottoRound, getUserRealName } from '../../../shared/auth-mgmt.js';
+import { getUpcomingLottoRound, getUserRealName } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, isUserEligibleForExtraPacks } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId } from '../generator.js';
 

@@ -1,11 +1,10 @@
 import { state, initHistory } from '../state.js';
-import { getBallColorClass, getBallHexColor, showToast, calculateACValue, isSystemOrDummyUser } from '../../../shared/utils.js';
-import { createBallHtml } from '../../../shared/components.js';
+import { showToast, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
-import { getComboNumbers, fetchAllUsersPurchases, getSafeActualDraw } from '../ledger.js';
+import { fetchAllUsersPurchases, getSafeActualDraw } from '../ledger.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
-import { computeUser70RecommendationsReview, getUserJoinRound } from './review-tab.js';
+import { computeUser70RecommendationsReview } from './review-tab.js';
 
 let currentAlgoStartRound = 1235;
 let algoDetailAccordionMap = {};

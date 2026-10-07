@@ -1,10 +1,10 @@
 import { state } from '../state.js';
 import { showToast, getDrawDateByRound, getBallColorClass } from '../../../shared/utils.js';
-import { getLedger, saveToLedger, parseDonghangLotteryQrUrl, parseDonghangOnlineReceiptText, buildDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
+import { getLedger, saveToLedger, parseDonghangLotteryQrUrl, parseDonghangOnlineReceiptText, buildDonghangLotteryQrUrl } from '../ledger.js';
 import { SafeAuth, getUserRealName, isAdminUser } from '../../../shared/auth-mgmt.js';
-import { renderReviewTab, renderReviewDetail } from './review-tab.js';
+import { renderReviewTab } from './review-tab.js';
 import { renderConfirmedPurchasesList } from './confirmed-tab.js';
-import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, crossCheckCombosWithRecommendations } from '../generator.js';
+import { crossCheckCombosWithRecommendations } from '../generator.js';
 import { getAllUnifiedRegisteredUsers, DEFAULT_KNOWN_USERS } from '../../../shared/user-context.js';
 
 let html5QrScanner = null;

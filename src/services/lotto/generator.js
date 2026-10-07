@@ -1,7 +1,6 @@
-import { state, getHistoricalDrawData, saveGlobalState } from './state.js';
+import { state } from './state.js';
 import { calculateStats } from './scoring.js';
 import { calculateACValue, isSystemOrDummyUser } from '../../shared/utils.js';
-import { getLedger, getHistoricalTop10Combinations as getHistCombo } from './ledger.js';
 import { recalculateGroups } from './statistics.js';
 import { SafeAuth, getUserRealName, getUpcomingLottoRound, isAdminUser } from '../../shared/auth-mgmt.js';
 import { db } from '../../shared/db.js';

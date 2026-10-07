@@ -1,4 +1,4 @@
-import { state, saveGlobalState } from '../state.js';
+import { state } from '../state.js';
 import { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml } from '../../../shared/components.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId } from '../generator.js';
