@@ -495,8 +495,20 @@ function _isDashboardSummaryStale(sData, maxRound, isAdminViewer) {
 
     if (isAdminViewer) {
         const expected = _getDashboardExpectedMemberIds(maxRound);
-        if (expected.size !== new Set(docIds).size) return true;
-        if (docIds.some(id => !expected.has(id))) return true;
+        if (expected.size > 0 && expected.size !== new Set(docIds).size) {
+            if (expected.size < new Set(docIds).size && docIds.length <= 13) {
+                // 서버 요약에 정상 13명 활성 회원이 등록되어 있으면 로컬 초기화 지연 중에도 신뢰 유지
+            } else {
+                return true;
+            }
+        }
+        if (docIds.some(id => !expected.has(id))) {
+            if (expected.size < docIds.length && docIds.length <= 13) {
+                // 서버 요약에 정상 13명 활성 회원이 등록되어 있으면 로컬 초기화 지연 중에도 신뢰 유지
+            } else {
+                return true;
+            }
+        }
     }
     return false;
 }

@@ -3071,6 +3071,48 @@ Lotto 6/45
         self.assertIn("isUserDeleted", ledger_code)
         self.assertIn("window.__knownDeletedUserIds", ledger_code)
 
+    # [Test 86] Winning History & Default Known Users Baseline Integrity
+    def test_86_winning_history_and_default_users_baseline(self):
+        """Test 86: Verify all 13 active users are in DEFAULT_KNOWN_USERS, uId is declared, and getAllUnifiedRegisteredUsers runs without error."""
+        ucontext_path = os.path.join(self.root_dir, 'src', 'shared', 'user-context.js')
+        with open(ucontext_path, 'r', encoding='utf-8') as f:
+            ucontext_code = f.read()
+        self.assertIn("kakao_5092105478", ucontext_code)
+        self.assertIn("kakao_5115956430", ucontext_code)
+        self.assertIn("const uId = String(u.id).trim().toLowerCase();", ucontext_code)
+
+        # Check Node.js execution of getAllUnifiedRegisteredUsers
+        import subprocess, shutil
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_script = """
+            global.window = { state: {} };
+            global.sessionStorage = { getItem: () => null, setItem: () => {} };
+            global.localStorage = { getItem: () => null, setItem: () => {} };
+            import('./src/shared/user-context.js').then(m => {
+                const users = m.getAllUnifiedRegisteredUsers();
+                if (users.length !== 13) {
+                    console.error('Expected 13 active users, got', users.length);
+                    process.exit(1);
+                }
+                const deleted = ['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'guest'];
+                for (const d of deleted) {
+                    if (users.some(u => u.id === d)) {
+                        console.error('Deleted user found in active list:', d);
+                        process.exit(2);
+                    }
+                }
+                console.log('OK_13_USERS');
+                process.exit(0);
+            }).catch(e => {
+                console.error(e);
+                process.exit(3);
+            });
+            """
+            res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, cwd=self.root_dir)
+            self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
+            self.assertIn('OK_13_USERS', res.stdout)
+
 if __name__ == '__main__':
     unittest.main()
 

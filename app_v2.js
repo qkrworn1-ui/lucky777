@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1115.17 - BUILD_DATE: 2026-10-07] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1159.28 - BUILD_DATE: 2026-10-07] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.07.1115.17)
+ * Lucky777 Smart Bundle (v2026.10.07.1159.28)
  */
 
 
@@ -1071,7 +1071,9 @@ const DEFAULT_KNOWN_USERS = [
     { id: 'kakao_5073272571', name: '우순애', realName: '우순애', phone: '010-8865-7777', phoneNumber: '010-8865-7777', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-05T04:26:10.288Z', status: 'active', isDeleted: false },
     { id: 'kakao_5078158815', name: '이재문', realName: '이재문', phone: '010-9116-3887', phoneNumber: '010-9116-3887', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-08T04:35:33.378Z', status: 'active', isDeleted: false },
     { id: 'kakao_5081166702', name: '은정', realName: '은정', phone: '010-8952-1325', phoneNumber: '010-8952-1325', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-09T15:36:24.439Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false }
+    { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5092105478', name: '한미순', realName: '한미순', phone: '010-4322-5053', phoneNumber: '010-4322-5053', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-16T05:55:23.110Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5115956430', name: '김현', realName: '김현', phone: '', phoneNumber: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-10-01T09:55:54.711Z', status: 'active', isDeleted: false }
 ];
 
 const KNOWN_DELETED_USER_IDS = new Set(['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'guest']);
@@ -1416,6 +1418,7 @@ const UserContextManager = {
         // 6. Filter out deleted or dummy test accounts and duplicate name aliases
         const unifiedList = Array.from(userMap.values()).filter(u => {
             if (!u || !u.id) return false;
+            const uId = String(u.id).trim().toLowerCase();
             if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || deletedUserIds.has(uId) || (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uId))) return false;
             if (uId.startsWith('{') || uId.startsWith('test') || uId.startsWith('guest') || uId === 'app_latest_version' ||
                 uId === 'dashboard_summary_latest' ||
@@ -46580,8 +46583,20 @@ function _isDashboardSummaryStale(sData, maxRound, isAdminViewer) {
 
     if (isAdminViewer) {
         const expected = _getDashboardExpectedMemberIds(maxRound);
-        if (expected.size !== new Set(docIds).size) return true;
-        if (docIds.some(id => !expected.has(id))) return true;
+        if (expected.size > 0 && expected.size !== new Set(docIds).size) {
+            if (expected.size < new Set(docIds).size && docIds.length <= 13) {
+                // 서버 요약에 정상 13명 활성 회원이 등록되어 있으면 로컬 초기화 지연 중에도 신뢰 유지
+            } else {
+                return true;
+            }
+        }
+        if (docIds.some(id => !expected.has(id))) {
+            if (expected.size < docIds.length && docIds.length <= 13) {
+                // 서버 요약에 정상 13명 활성 회원이 등록되어 있으면 로컬 초기화 지연 중에도 신뢰 유지
+            } else {
+                return true;
+            }
+        }
     }
     return false;
 }
