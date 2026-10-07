@@ -53,9 +53,7 @@ export const DEFAULT_KNOWN_USERS = [
     { id: 'kakao_5073272571', name: '우순애', realName: '우순애', phone: '010-8865-7777', phoneNumber: '010-8865-7777', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-05T04:26:10.288Z', status: 'active', isDeleted: false },
     { id: 'kakao_5078158815', name: '이재문', realName: '이재문', phone: '010-9116-3887', phoneNumber: '010-9116-3887', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-08T04:35:33.378Z', status: 'active', isDeleted: false },
     { id: 'kakao_5081166702', name: '은정', realName: '은정', phone: '010-8952-1325', phoneNumber: '010-8952-1325', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-09T15:36:24.439Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5081608503', name: '백인동', realName: '백인동', phone: '010-9444-6044', phoneNumber: '010-9444-6044', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-10T02:12:26.711Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5090399860', name: 'Stealth honey bang', realName: 'Stealth honey bang', phone: '010-6556-6393', phoneNumber: '010-6556-6393', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-15T06:22:13.931Z', status: 'active', isDeleted: false }
+    { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false }
 ];
 
 /**
@@ -175,7 +173,7 @@ export const UserContextManager = {
             userMap.set(u.id.toLowerCase(), { ...u });
         });
 
-        // 0.1 Collect set of known deleted/trashed user IDs from status cache
+        // 0.1 Collect set of known deleted/trashed user IDs from status cache and in-memory states
         const deletedUserIds = new Set();
         try {
             if (typeof localStorage !== 'undefined') {
@@ -193,6 +191,29 @@ export const UserContextManager = {
                 }
             }
         } catch(e) {}
+
+        if (typeof window !== 'undefined' && window.state) {
+            if (window.state.allUsersPurchasesMap && typeof window.state.allUsersPurchasesMap === 'object') {
+                Object.keys(window.state.allUsersPurchasesMap).forEach(k => {
+                    const p = window.state.allUsersPurchasesMap[k];
+                    if (p && (p.isDeleted === true || p.status === 'trash')) {
+                        deletedUserIds.add(String(k).trim().toLowerCase());
+                    }
+                });
+            }
+            if (Array.isArray(window.state.allRegisteredUsersList)) {
+                window.state.allRegisteredUsersList.forEach(u => {
+                    if (u && (u.isDeleted === true || u.status === 'trash')) {
+                        deletedUserIds.add(String(u.id || '').trim().toLowerCase());
+                    }
+                });
+            }
+        }
+
+        // 0.2 Purge seeded default users if marked deleted
+        deletedUserIds.forEach(delId => {
+            if (delId && delId !== 'master') userMap.delete(delId);
+        });
 
         // 1. Synchronously pre-load cached users from localStorage
         try {

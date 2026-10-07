@@ -215,14 +215,45 @@ def extract_combo_numbers(c):
             return [int(x) for x in nums if str(x).isdigit()]
     return []
 
+def fetch_extra_history_from_firestore():
+    url = f"{BASE_URL}/lotto_draw_history/extra_history?key={API_KEY}"
+    req = urllib.request.Request(url, headers={'User-Agent': 'Lucky777-Evaluator'})
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            fields = data.get('fields', {})
+            extra = {}
+            for r_str, val in fields.items():
+                if r_str.isdigit():
+                    decoded = decode_firestore_field(val)
+                    if isinstance(decoded, dict) and decoded.get('numbers'):
+                        rnd = int(r_str)
+                        extra[rnd] = {
+                            "round": rnd,
+                            "numbers": decoded.get('numbers', []),
+                            "bonus": decoded.get('bonus', 0),
+                            "rank1Prize": decoded.get('rank1Prize') or 2000000000,
+                            "rank2Prize": decoded.get('rank2Prize') or 50000000,
+                            "rank3Prize": decoded.get('rank3Prize') or 1500000,
+                            "rank4Prize": decoded.get('rank4Prize') or 50000,
+                            "rank5Prize": decoded.get('rank5Prize') or 5000,
+                        }
+            return extra
+    except Exception as e:
+        print(f"[!] Error fetching extra_history: {e}")
+        return {}
+
 def run_evaluation_batch():
     print("=" * 60)
     print("🚀 [Lucky777] 서버 사전 판별 및 대시보드 요약 배치 엔진 가동")
     print("=" * 60)
     
     draws = parse_data_js('data.js')
+    extra_draws = fetch_extra_history_from_firestore()
+    if extra_draws:
+        draws.update(extra_draws)
     if not draws:
-        print("[!] data.js 당첨번호 파싱 실패!")
+        print("[!] data.js 및 extra_history 당첨번호 파싱 실패!")
         return False
     
     drawn_rounds = sorted([r for r in draws.keys() if draws[r]['numbers'] and len(draws[r]['numbers']) == 6])
@@ -487,6 +518,7 @@ def run_evaluation_batch():
         "latestTotalGames": latest_total_games,
         "latestTotalWins": latest_total_wins,
         "latestActiveMemberCount": latest_active_members,
+        "memberIds": [rec['userId'] for rec in latest_records],
         "latestRank1": latest_rank1,
         "latestRank2": latest_rank2,
         "latestRank3": latest_rank3,

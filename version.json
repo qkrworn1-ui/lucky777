@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.06.2148",
-  "buildDate": "2026-10-06",
-  "description": "feat: all members server precomputed evaluations and dashboard summary",
-  "buildTimestamp": "2026-10-06T21:48:56.745461",
+  "version": "v2026.10.07.1011.38",
+  "buildDate": "2026-10-07",
+  "description": "fix(dashboard): align round 1244 recommendations summary with active members and enforce cache integrity",
+  "buildTimestamp": "2026-10-07T10:11:38.026776",
   "buildHistory": [
-    {
-      "version": "v2026.10.06.1459",
-      "buildDate": "2026-10-06",
-      "buildTime": "14:59",
-      "buildDateTime": "2026-10-06 14:59",
-      "buildTimestamp": "2026-10-06T14:59:06.868007",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
-    {
-      "version": "v2026.10.06.1509",
-      "buildDate": "2026-10-06",
-      "buildTime": "15:09",
-      "buildDateTime": "2026-10-06 15:09",
-      "buildTimestamp": "2026-10-06T15:09:07.394335",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
     {
       "version": "v2026.10.06.1509.25",
       "buildDate": "2026-10-06",
@@ -118,13 +102,29 @@
     },
     {
       "version": "v2026.10.06.2148",
-      "buildDate": "2026-10-06",
-      "buildTime": "21:48",
-      "buildDateTime": "2026-10-06 21:48",
-      "buildTimestamp": "2026-10-06T21:48:56.745461",
+      "buildDate": "2026-10-07",
+      "buildTime": "10:10",
+      "buildDateTime": "2026-10-07 10:10",
+      "buildTimestamp": "2026-10-07T10:10:02.518218",
       "description": "feat: all members server precomputed evaluations and dashboard summary"
+    },
+    {
+      "version": "v2026.10.07.1011",
+      "buildDate": "2026-10-07",
+      "buildTime": "10:11",
+      "buildDateTime": "2026-10-07 10:11",
+      "buildTimestamp": "2026-10-07T10:11:18.512345",
+      "description": "fix(dashboard): align round 1244 recommendations summary with active members and enforce cache integrity"
+    },
+    {
+      "version": "v2026.10.07.1011.38",
+      "buildDate": "2026-10-07",
+      "buildTime": "10:11",
+      "buildDateTime": "2026-10-07 10:11",
+      "buildTimestamp": "2026-10-07T10:11:38.026776",
+      "description": "fix(dashboard): align round 1244 recommendations summary with active members and enforce cache integrity"
     }
   ],
-  "buildTime": "21:48",
-  "buildDateTime": "2026-10-06 21:48"
+  "buildTime": "10:11",
+  "buildDateTime": "2026-10-07 10:11"
 }

@@ -3,7 +3,7 @@ import { calculateLedgerFinancials, calculateAllUsersTotalFinancials, fetchAllUs
 import { SafeAuth, getUserRealName, updateLoggedInUserHeaderUI } from './auth-mgmt.js';
 import { isSystemOrDummyUser } from './utils.js';
 import { getAllUnifiedRegisteredUsers } from './user-context.js';
-import { computeUser70RecommendationsReview, clearUser70ReviewCache } from '../services/lotto/views/review-tab.js';
+import { computeUser70RecommendationsReview, clearUser70ReviewCache, getUserJoinRound } from '../services/lotto/views/review-tab.js';
 
 /**
  * Update Compact Financial & Actual Winning History Summary on Landing Page
@@ -425,6 +425,72 @@ if (typeof window !== 'undefined') {
 }
 
 /**
+ * 🔐 현재 접속자가 관리자(전체 회원 데이터 열람 가능)인지 판별
+ */
+function _isDashboardAdminViewer() {
+    try {
+        let auth = (typeof window !== 'undefined' && window.SafeAuth && typeof window.SafeAuth.get === 'function') ? window.SafeAuth.get() : '';
+        if (typeof auth === 'string' && auth.startsWith('{')) {
+            try { const p = JSON.parse(auth); auth = p.userid || p.userId || auth; } catch(e) {}
+        }
+        const clean = String(auth || '').trim().toLowerCase();
+        return clean === 'master' || clean === 'admin' ||
+            (typeof window.isAdminUser === 'function' && !!window.isAdminUser(clean)) ||
+            (typeof window.isAdminSession === 'function' && !!window.isAdminSession());
+    } catch(e) {
+        return false;
+    }
+}
+
+/**
+ * 👥 특정 회차(round) 집계 대상 회원 ID 목록 (삭제/테스트 회원 제외 + 가입 회차 이전 제외)
+ * - 대시보드 집계(computeUser70RecommendationsReview 의 isPreJoin 기준) 및 당첨결과 탭 전체회원 집계와 동일한 기준
+ */
+function _getDashboardExpectedMemberIds(round) {
+    const list = getAllUnifiedRegisteredUsers() || [];
+    const ids = new Set();
+    list.forEach(u => {
+        const id = String((u && u.id) || '').trim().toLowerCase();
+        if (!id) return;
+        if (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(id)) return;
+        if (typeof getUserJoinRound === 'function' && round < getUserJoinRound(id)) return;
+        ids.add(id);
+    });
+    return ids;
+}
+
+/**
+ * 🧪 서버/로컬 대시보드 요약(summary)이 현재 회원 구성 및 최신 회차와 일치하는지 검증
+ * - 최신 회차보다 과거 회차 기준 요약 → 무효
+ * - 집계 회원(memberIds)에 삭제/휴지통/테스트 회원 포함 → 무효 (모든 접속자)
+ * - 관리자: 현재 활성 회원 목록과 집계 회원 목록이 1명이라도 다르면 무효
+ * - memberIds 가 없는 구버전/배치 요약 → 관리자는 무효 처리하여 즉시 재계산·재저장
+ */
+function _isDashboardSummaryStale(sData, maxRound, isAdminViewer) {
+    if (!sData) return true;
+    const docMax = Number(sData.maxRound || 0);
+    if (docMax < maxRound) return true;
+    // 서버 요약이 로컬보다 더 최신 회차 보유 (로컬 당첨번호 미동기화) → 서버 값 신뢰
+    if (docMax > maxRound) return false;
+
+    const docIds = Array.isArray(sData.memberIds)
+        ? sData.memberIds.map(id => String(id || '').trim().toLowerCase()).filter(Boolean)
+        : null;
+    if (!docIds) return !!isAdminViewer;
+
+    if (typeof isSystemOrDummyUser === 'function' && docIds.some(id => isSystemOrDummyUser(id))) {
+        return true;
+    }
+
+    if (isAdminViewer) {
+        const expected = _getDashboardExpectedMemberIds(maxRound);
+        if (expected.size !== new Set(docIds).size) return true;
+        if (docIds.some(id => !expected.has(id))) return true;
+    }
+    return false;
+}
+
+/**
  * 🔮 Calculate & Render All Registered Members' AI Recommendation (70 Games) Review History on Home Screen
  */
 export async function updateHomeReviewDashboard(forceRefresh = false) {
@@ -447,17 +513,18 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);
 
         const roundRangeLabel = `제 ${fromRound}~${maxRound}회차 누적`;
+        const isAdminViewer = _isDashboardAdminViewer();
 
         let summaryData = null;
         let fromLocalCache = false;
-        if (!forceRefresh && _homeReviewDashboardCache && (Date.now() - _homeReviewDashboardCacheTime < 25000) && _homeReviewDashboardCache.maxRound === maxRound && _homeReviewDashboardCache.latestTotalPrize !== undefined) {
+        if (!forceRefresh && _homeReviewDashboardCache && (Date.now() - _homeReviewDashboardCacheTime < 25000) && _homeReviewDashboardCache.latestTotalPrize !== undefined && !_isDashboardSummaryStale(_homeReviewDashboardCache, maxRound, isAdminViewer)) {
             summaryData = _homeReviewDashboardCache;
         } else if (!forceRefresh) {
             try {
                 const localRev = localStorage.getItem('lotto_home_review_dashboard_cache');
                 if (localRev) {
                     const parsed = JSON.parse(localRev);
-                    if (parsed && parsed.maxRound === maxRound && parsed.latestTotalPrize !== undefined) {
+                    if (parsed && parsed.latestTotalPrize !== undefined && !_isDashboardSummaryStale(parsed, maxRound, isAdminViewer)) {
                         summaryData = parsed;
                         _homeReviewDashboardCache = parsed;
                         _homeReviewDashboardCacheTime = Date.now();
@@ -473,6 +540,10 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                 maxRound: sData.maxRound || maxRound,
                 fromRound: sData.fromRound || fromRound,
                 roundRangeLabel: sData.roundRangeLabel || roundRangeLabel,
+                memberIds: Array.isArray(sData.memberIds)
+                    ? sData.memberIds
+                    : (Array.isArray(sData.userRankings) ? sData.userRankings.map(u => (u && (u.userId || u.id)) || '').filter(Boolean) : null),
+                updatedAt: sData.updatedAt || null,
                 grandRank1: Number(sData.grandRank1 || 0),
                 grandRank2: Number(sData.grandRank2 || 0),
                 grandRank3: Number(sData.grandRank3 || 0),
@@ -485,7 +556,8 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                 latestTotalPrize: Number(sData.latestTotalPrize || 0),
                 latestTotalGames: Number(sData.latestTotalGames || 0),
                 latestTotalWins: Number(sData.latestTotalWins || 0),
-                latestActiveMemberCount: Number(sData.latestActiveMemberCount || 0),
+                latestActiveMemberCount: Number(sData.latestActiveMemberCount || sData.activeMemberCount || 0),
+                activeMemberCount: Number(sData.activeMemberCount || sData.latestActiveMemberCount || 0),
                 latestRank1: Number(sData.latestRank1 || 0),
                 latestRank2: Number(sData.latestRank2 || 0),
                 latestRank3: Number(sData.latestRank3 || 0),
@@ -502,8 +574,9 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                     const snapDoc = await firestore.collection('lotto_purchases').doc('dashboard_summary_latest').get();
                     if (snapDoc && snapDoc.exists) {
                         const sData = snapDoc.data();
-                        if (sData && sData.maxRound && sData.maxRound >= (maxRound - 1)) {
-                            summaryData = formatSummaryFromDoc(sData);
+                        const formatted = formatSummaryFromDoc(sData);
+                        if (formatted && !_isDashboardSummaryStale(formatted, maxRound, isAdminViewer)) {
+                            summaryData = formatted;
                             _homeReviewDashboardCache = summaryData;
                             _homeReviewDashboardCacheTime = Date.now();
                             try { localStorage.setItem('lotto_home_review_dashboard_cache', JSON.stringify(summaryData)); } catch(e) {}
@@ -522,7 +595,7 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                         const snapDoc = await firestore.collection('lotto_purchases').doc('dashboard_summary_latest').get();
                         if (snapDoc && snapDoc.exists) {
                             const freshSummary = formatSummaryFromDoc(snapDoc.data());
-                            if (freshSummary && (
+                            if (freshSummary && !_isDashboardSummaryStale(freshSummary, maxRound, isAdminViewer) && (
                                 freshSummary.grandTotalPrize !== summaryData.grandTotalPrize ||
                                 freshSummary.latestTotalPrize !== summaryData.latestTotalPrize ||
                                 freshSummary.grandTotalWins !== summaryData.grandTotalWins ||
@@ -617,6 +690,7 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
             grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
             latestTotalWins = latestRank1 + latestRank2 + latestRank3 + latestRank4 + latestRank5;
 
+            const activeMemberIds = Array.from(_getDashboardExpectedMemberIds(maxRound));
             summaryData = {
                 maxRound,
                 fromRound,
@@ -626,6 +700,9 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                 latestTotalGames,
                 latestTotalWins,
                 latestActiveMemberCount,
+                memberIds: activeMemberIds,
+                activeMemberCount: activeMemberIds.length,
+                updatedAt: new Date().toISOString(),
                 latestRank1,
                 latestRank2,
                 latestRank3,
