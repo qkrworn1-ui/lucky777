@@ -1314,13 +1314,20 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
         if (!pSnapshot || pSnapshot.empty) return null;
 
         const userNames = {};
+        if (!window.__knownDeletedUserIds) {
+            window.__knownDeletedUserIds = new Set(['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'guest']);
+        }
         if (uSnapshot && !uSnapshot.empty) {
             state.allRegisteredUsersList = [];
             uSnapshot.forEach(doc => {
                 const uId = doc.id.trim().toLowerCase();
-                if (isSystemOrDummyUser(uId)) return;
                 const d = doc.data() || {};
-                if (d.isDeleted === true || d.status === 'trash' || d.status === 'deleted') return;
+                if (d.isDeleted === true || d.status === 'trash' || d.status === 'deleted') {
+                    window.__knownDeletedUserIds.add(uId);
+                    window.__knownDeletedUserIds.add(doc.id);
+                    return;
+                }
+                if (isSystemOrDummyUser(uId)) return;
                 
                 const rName = d.realName || doc.id;
                 userNames[doc.id] = rName;
@@ -1397,10 +1404,31 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
 
             const rawUserId = doc.id;
             const userId = rawUserId.trim().toLowerCase();
+            const data = doc.data() || {};
+            
+            // 🔒 삭제되거나 휴지통에 보관된 회원은 스냅샷, 당첨평가, 실구매 장부에서 100% 원천 배제
+            const isUserDeleted = (data.isDeleted === true || data.status === 'trash' || data.status === 'deleted' ||
+                                   (window.__knownDeletedUserIds && (window.__knownDeletedUserIds.has(userId) || window.__knownDeletedUserIds.has(rawUserId))));
+            if (isUserDeleted) {
+                if (window.__knownDeletedUserIds) {
+                    window.__knownDeletedUserIds.add(userId);
+                    window.__knownDeletedUserIds.add(rawUserId);
+                }
+                if (state.userRecommendationSnapshots) {
+                    Object.keys(state.userRecommendationSnapshots).forEach(k => {
+                        if (k.toLowerCase().startsWith(userId + '_')) delete state.userRecommendationSnapshots[k];
+                    });
+                }
+                if (state.userWinningEvaluations) {
+                    Object.keys(state.userWinningEvaluations).forEach(k => {
+                        if (k.toLowerCase().startsWith(userId + '_')) delete state.userWinningEvaluations[k];
+                    });
+                }
+                continue;
+            }
             
             if (isSystemOrDummyUser(userId)) continue;
             
-            const data = doc.data() || {};
             if (data.recommendationSnapshots && typeof data.recommendationSnapshots === 'object') {
                 if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                 for (const rKey in data.recommendationSnapshots) {

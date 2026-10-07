@@ -453,8 +453,36 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (isSystemOrDummyUser(cleanUser)) {
-        return null;
+    if (isSystemOrDummyUser(cleanUser) || cleanUser === 'guest' ||
+        cleanUser === 'kakao_5081608503' || cleanUser === 'kakao_5090399860' || cleanUser === 'kakao_5105087435') {
+        const dummyResult = {
+            userId: cleanUser,
+            roundNum,
+            actualDraw: null,
+            isPreJoin: true,
+            isDeleted: true,
+            joinRound: 99999,
+            v4Combos: [],
+            v4Eval: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 },
+            v3Combos: [],
+            v3Eval: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 },
+            extraPackEvals: [1, 2, 3, 4, 5].map(pId => ({
+                packId: pId,
+                name: `추가팩 ${pId}`,
+                badge: `EXTRA ${pId}`,
+                color: '#38bdf8',
+                combos: [],
+                evalData: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 }
+            })),
+            grandHits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+            totalPrize: 0,
+            totalWins: 0,
+            totalGames: 0,
+            totalInvest: 0,
+            roi: 0
+        };
+        _user70ReviewCache[cacheKey] = dummyResult;
+        return dummyResult;
     }
     const cacheKey = `${cleanUser}_${roundNum}`;
     if (_user70ReviewCache[cacheKey]) {
@@ -843,7 +871,7 @@ export async function renderReviewTab() {
                 currentSelectorEl.parentElement.appendChild(adminSelectorContainer);
             }
 
-            const registeredUsers = getAllUnifiedRegisteredUsers();
+            const registeredUsers = getAllUnifiedRegisteredUsers().filter(u => u && u.id && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted' && !isSystemOrDummyUser(u.id));
             let userOptionsHtml = `<option value="all" ${reviewAdminViewingUser === 'all' ? 'selected' : ''}>🌐 전체 회원 추천번호 당첨 결과 종합 (기본)</option>`;
             userOptionsHtml += `<option value="${authId}" ${reviewAdminViewingUser.toLowerCase() === cleanAuth ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
 
@@ -1072,7 +1100,7 @@ export async function renderAllRoundsReviewDetail() {
 
     if (isAdmin && isAllUsers) {
         // --- 1. ADMIN + ALL USERS AGGREGATION ---
-        const baseList = getAllUnifiedRegisteredUsers();
+        const baseList = getAllUnifiedRegisteredUsers().filter(u => u && u.id && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted' && !isSystemOrDummyUser(u.id));
 
         const memberAggMap = {};
         baseList.forEach(u => {
@@ -2094,7 +2122,7 @@ export async function renderReviewDetail(r) {
     let grandTotalPrize = 0, grandTotalGames = 0, grandTotalInvest = 0, grandTotalRoi = 0;
 
     if (isAdmin && isAllUsers) {
-        const baseList = getAllUnifiedRegisteredUsers();
+        const baseList = getAllUnifiedRegisteredUsers().filter(u => u && u.id && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted' && !isSystemOrDummyUser(u.id));
         
         // 🔒 회원 가입일 이전 회차 필터링: 해당 회차(roundNum) 시점에 이미 가입되어 있던 회원만 종합 집계 및 표에 포함
         const activeUsers = baseList.filter(u => {
@@ -2108,6 +2136,7 @@ export async function renderReviewDetail(r) {
             _uCnt++;
             if (_uCnt % 5 === 0) await new Promise(res => setTimeout(res, 0));
             const uRev = computeUser70RecommendationsReview(u.id, roundNum);
+            if (!uRev || uRev.isPreJoin || uRev.isDeleted) continue;
             membersEvalList.push({
                 userId: u.id,
                 realName: u.name || u.id,
@@ -3507,7 +3536,7 @@ export async function shareAdmin1235ReviewToKakao() {
     const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
     const registeredUsers = rawUsers.filter(u => {
         const uId = (u.id || '').trim().toLowerCase();
-        return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'dashboard_summary_latest' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+        return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'dashboard_summary_latest' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted' && !isSystemOrDummyUser(uId);
     });
     const baseList = (registeredUsers && registeredUsers.length > 0) ? registeredUsers : [{ id: 'master', name: '관리자' }];
 

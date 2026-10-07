@@ -4206,7 +4206,7 @@ export function setupAuthEvents(initFirebaseAndData) {
                     }
                     return;
                 }
-                if (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uIdClean)) {
+                if (!uIdClean.startsWith('kakao_') && typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uIdClean)) {
                     return;
                 }
                 const docData = doc.data() || {};

@@ -1,57 +1,9 @@
 {
-  "version": "v2026.10.07.1059.38",
+  "version": "v2026.10.07.1115.17",
   "buildDate": "2026-10-07",
-  "description": "feat(review): unify recommendations and winnings with user single master doc pipeline",
-  "buildTimestamp": "2026-10-07T10:59:38.080162",
+  "description": "fix(review): strictly isolate deleted members from 1244 recommendations and synchronize dashboard summary",
+  "buildTimestamp": "2026-10-07T11:15:17.398311",
   "buildHistory": [
-    {
-      "version": "v2026.10.06.1518",
-      "buildDate": "2026-10-06",
-      "buildTime": "15:18",
-      "buildDateTime": "2026-10-06 15:18",
-      "buildTimestamp": "2026-10-06T15:18:13.869105",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
-    {
-      "version": "v2026.10.06.1538",
-      "buildDate": "2026-10-06",
-      "buildTime": "15:38",
-      "buildDateTime": "2026-10-06 15:38",
-      "buildTimestamp": "2026-10-06T15:38:48.148929",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
-    {
-      "version": "v2026.10.06.1539",
-      "buildDate": "2026-10-06",
-      "buildTime": "15:39",
-      "buildDateTime": "2026-10-06 15:39",
-      "buildTimestamp": "2026-10-06T15:39:05.820319",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
-    {
-      "version": "v2026.10.06.1545",
-      "buildDate": "2026-10-06",
-      "buildTime": "15:45",
-      "buildDateTime": "2026-10-06 15:45",
-      "buildTimestamp": "2026-10-06T15:45:08.292838",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
-    {
-      "version": "v2026.10.06.1545.27",
-      "buildDate": "2026-10-06",
-      "buildTime": "15:45",
-      "buildDateTime": "2026-10-06 15:45",
-      "buildTimestamp": "2026-10-06T15:45:27.989807",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
-    {
-      "version": "v2026.10.06.1816",
-      "buildDate": "2026-10-06",
-      "buildTime": "18:16",
-      "buildDateTime": "2026-10-06 18:16",
-      "buildTimestamp": "2026-10-06T18:16:18.653824",
-      "description": "feat: all members server precomputed evaluations and dashboard summary"
-    },
     {
       "version": "v2026.10.06.1817",
       "buildDate": "2026-10-06",
@@ -123,8 +75,56 @@
       "buildDateTime": "2026-10-07 10:59",
       "buildTimestamp": "2026-10-07T10:59:38.080162",
       "description": "feat(review): unify recommendations and winnings with user single master doc pipeline"
+    },
+    {
+      "version": "v2026.10.07.1112",
+      "buildDate": "2026-10-07",
+      "buildTime": "11:12",
+      "buildDateTime": "2026-10-07 11:12",
+      "buildTimestamp": "2026-10-07T11:12:18.466950",
+      "description": "feat(review): unify recommendations and winnings with user single master doc pipeline"
+    },
+    {
+      "version": "v2026.10.07.1113",
+      "buildDate": "2026-10-07",
+      "buildTime": "11:13",
+      "buildDateTime": "2026-10-07 11:13",
+      "buildTimestamp": "2026-10-07T11:13:12.287431",
+      "description": "fix(review): isolate deleted members from round 1244 recommendations and synchronize dashboard summary"
+    },
+    {
+      "version": "v2026.10.07.1114",
+      "buildDate": "2026-10-07",
+      "buildTime": "11:14",
+      "buildDateTime": "2026-10-07 11:14",
+      "buildTimestamp": "2026-10-07T11:14:05.918440",
+      "description": "fix(review): isolate deleted members from round 1244 recommendations and synchronize dashboard summary"
+    },
+    {
+      "version": "v2026.10.07.1114.25",
+      "buildDate": "2026-10-07",
+      "buildTime": "11:14",
+      "buildDateTime": "2026-10-07 11:14",
+      "buildTimestamp": "2026-10-07T11:14:25.586708",
+      "description": "fix(review): strictly isolate deleted members from 1244 recommendations and synchronize dashboard summary"
+    },
+    {
+      "version": "v2026.10.07.1115",
+      "buildDate": "2026-10-07",
+      "buildTime": "11:15",
+      "buildDateTime": "2026-10-07 11:15",
+      "buildTimestamp": "2026-10-07T11:15:05.654162",
+      "description": "fix(review): strictly isolate deleted members from 1244 recommendations and synchronize dashboard summary"
+    },
+    {
+      "version": "v2026.10.07.1115.17",
+      "buildDate": "2026-10-07",
+      "buildTime": "11:15",
+      "buildDateTime": "2026-10-07 11:15",
+      "buildTimestamp": "2026-10-07T11:15:17.398311",
+      "description": "fix(review): strictly isolate deleted members from 1244 recommendations and synchronize dashboard summary"
     }
   ],
-  "buildTime": "10:59",
-  "buildDateTime": "2026-10-07 10:59"
+  "buildTime": "11:15",
+  "buildDateTime": "2026-10-07 11:15"
 }

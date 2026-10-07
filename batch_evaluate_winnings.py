@@ -266,9 +266,10 @@ def run_evaluation_batch():
     print(f"[+] lotto_users: {len(users)}명, lotto_purchases: {len(purchases)}건 수신 완료")
     
     user_metadata = {}
+    KNOWN_DELETED = ('app_latest_version', 'dashboard_summary_latest', 'test_write_perm', 'sample', 'test_alpha', 'guest', 'kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435')
     for u in users:
         uid = u.get('id', '')
-        if uid in ('app_latest_version', 'dashboard_summary_latest', 'test_write_perm', 'sample', 'test_alpha'):
+        if uid in KNOWN_DELETED:
             continue
         if u.get('isDeleted') is True or u.get('status') in ('trash', 'deleted'):
             continue
@@ -286,7 +287,7 @@ def run_evaluation_batch():
     
     for p in purchases:
         uid = p.get('id', '')
-        if uid in ('app_latest_version', 'dashboard_summary_latest', 'test_write_perm', 'sample', 'test_alpha'):
+        if uid in KNOWN_DELETED:
             continue
         if p.get('isDeleted') is True or p.get('status') in ('trash', 'deleted'):
             continue

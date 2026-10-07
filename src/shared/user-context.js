@@ -56,6 +56,8 @@ export const DEFAULT_KNOWN_USERS = [
     { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false }
 ];
 
+export const KNOWN_DELETED_USER_IDS = new Set(['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'guest']);
+
 /**
  * 👤 UserContextManager: Single Source of Truth for User Metadata & Permissions
  */
@@ -173,8 +175,13 @@ export const UserContextManager = {
             userMap.set(u.id.toLowerCase(), { ...u });
         });
 
-        // 0.1 Collect set of known deleted/trashed user IDs from status cache and in-memory states
-        const deletedUserIds = new Set();
+        // 0.1 Collect set of known deleted/trashed user IDs from status cache, runtime set, and in-memory states
+        const deletedUserIds = new Set(KNOWN_DELETED_USER_IDS);
+        if (typeof window !== 'undefined' && window.__knownDeletedUserIds) {
+            window.__knownDeletedUserIds.forEach(id => {
+                if (id) deletedUserIds.add(String(id).trim().toLowerCase());
+            });
+        }
         try {
             if (typeof localStorage !== 'undefined') {
                 const rawStatus = localStorage.getItem('lotto_users_with_status_cache');
@@ -183,7 +190,7 @@ export const UserContextManager = {
                     if (Array.isArray(parsedStatus)) {
                         parsedStatus.forEach(u => {
                             const uIdClean = String(u.userId || u.id || '').trim().toLowerCase();
-                            if (uIdClean && (u.isDeleted === true || u.status === 'trash' || (u.data && (u.data.isDeleted === true || u.data.status === 'trash')))) {
+                            if (uIdClean && (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || (u.data && (u.data.isDeleted === true || u.data.status === 'trash')))) {
                                 deletedUserIds.add(uIdClean);
                             }
                         });
@@ -196,14 +203,14 @@ export const UserContextManager = {
             if (window.state.allUsersPurchasesMap && typeof window.state.allUsersPurchasesMap === 'object') {
                 Object.keys(window.state.allUsersPurchasesMap).forEach(k => {
                     const p = window.state.allUsersPurchasesMap[k];
-                    if (p && (p.isDeleted === true || p.status === 'trash')) {
+                    if (p && (p.isDeleted === true || p.status === 'trash' || p.status === 'deleted')) {
                         deletedUserIds.add(String(k).trim().toLowerCase());
                     }
                 });
             }
             if (Array.isArray(window.state.allRegisteredUsersList)) {
                 window.state.allRegisteredUsersList.forEach(u => {
-                    if (u && (u.isDeleted === true || u.status === 'trash')) {
+                    if (u && (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted')) {
                         deletedUserIds.add(String(u.id || '').trim().toLowerCase());
                     }
                 });
@@ -222,10 +229,15 @@ export const UserContextManager = {
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     if (Array.isArray(parsed)) {
+                        let cacheNeedsSanitizing = false;
                         parsed.forEach(u => {
                             if (u && u.id) {
                                 const cleanId = String(u.id).trim().toLowerCase();
-                                const isDel = !!(u.isDeleted || u.status === 'trash' || deletedUserIds.has(cleanId));
+                                const isDel = !!(u.isDeleted || u.status === 'trash' || u.status === 'deleted' || deletedUserIds.has(cleanId));
+                                if (isDel) {
+                                    cacheNeedsSanitizing = true;
+                                    return;
+                                }
                                 if (cleanId && !userMap.has(cleanId)) {
                                     userMap.set(cleanId, {
                                         id: u.id,
@@ -236,12 +248,18 @@ export const UserContextManager = {
                                         isPermanent: !!u.isPermanent,
                                         userType: u.userType || 'regular',
                                         createdAt: u.createdAt || null,
-                                        status: isDel ? 'trash' : (u.status || 'active'),
-                                        isDeleted: isDel
+                                        status: 'active',
+                                        isDeleted: false
                                     });
                                 }
                             }
                         });
+                        if (cacheNeedsSanitizing) {
+                            try {
+                                const sanitized = parsed.filter(u => u && u.id && !deletedUserIds.has(String(u.id).trim().toLowerCase()) && u.isDeleted !== true && u.status !== 'trash');
+                                localStorage.setItem('lotto_all_users_list_cache', JSON.stringify(sanitized));
+                            } catch(e) {}
+                        }
                     }
                 }
             }
@@ -380,8 +398,7 @@ export const UserContextManager = {
         // 6. Filter out deleted or dummy test accounts and duplicate name aliases
         const unifiedList = Array.from(userMap.values()).filter(u => {
             if (!u || !u.id) return false;
-            const uId = String(u.id).trim().toLowerCase();
-            if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || deletedUserIds.has(uId)) return false;
+            if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || deletedUserIds.has(uId) || (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uId))) return false;
             if (uId.startsWith('{') || uId.startsWith('test') || uId.startsWith('guest') || uId === 'app_latest_version' ||
                 uId === 'dashboard_summary_latest' ||
                 uId === 'global_trash' || uId === 'global_state' || uId === 'global_saved' || uId === 'extra_history' ||

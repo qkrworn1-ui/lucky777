@@ -476,9 +476,20 @@ function _isDashboardSummaryStale(sData, maxRound, isAdminViewer) {
     const docIds = Array.isArray(sData.memberIds)
         ? sData.memberIds.map(id => String(id || '').trim().toLowerCase()).filter(Boolean)
         : null;
-    if (!docIds) return !!isAdminViewer;
+    if (!docIds) return true;
 
-    if (typeof isSystemOrDummyUser === 'function' && docIds.some(id => isSystemOrDummyUser(id))) {
+    // 🔒 삭제/휴지통/더미 회원 포함 시 모든 접속자 대상 즉시 무효화 (초고속 재동기화)
+    const hasDeletedMember = docIds.some(id => {
+        if (id === 'guest' || id === 'kakao_5081608503' || id === 'kakao_5090399860' || id === 'kakao_5105087435') return true;
+        if (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(id)) return true;
+        return false;
+    });
+    if (hasDeletedMember) {
+        return true;
+    }
+
+    // 1244회차 이상 기준 정상 활성 회원은 최대 13명 (삭제회원이 포함된 구버전 데이터 차단)
+    if (maxRound >= 1244 && (docIds.length > 13 || Number(sData.latestActiveMemberCount || sData.activeMemberCount || 0) > 13)) {
         return true;
     }
 
@@ -652,7 +663,7 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
             let latestTotalWins = 0;
             let latestActiveMemberCount = 0;
 
-            const userList = getAllUnifiedRegisteredUsers();
+            const userList = (getAllUnifiedRegisteredUsers() || []).filter(u => u && u.id && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted' && !isSystemOrDummyUser(u.id));
             const rounds = historyRounds.length > 0 ? historyRounds : [1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243].filter(r => r <= maxRound);
 
             rounds.forEach(rnd => {
@@ -660,7 +671,7 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                     const rev = (typeof computeUser70RecommendationsReview === 'function')
                         ? computeUser70RecommendationsReview(u.id, rnd)
                         : (typeof window !== 'undefined' && window.computeUser70RecommendationsReview ? window.computeUser70RecommendationsReview(u.id, rnd) : null);
-                    if (rev && !rev.isPreJoin) {
+                    if (rev && !rev.isPreJoin && !rev.isDeleted) {
                         const games = (rev.totalGames || 70);
                         const prize = (rev.totalPrize || 0);
                         grandTotalGames += games;
@@ -690,7 +701,7 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
             grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
             latestTotalWins = latestRank1 + latestRank2 + latestRank3 + latestRank4 + latestRank5;
 
-            const activeMemberIds = Array.from(_getDashboardExpectedMemberIds(maxRound));
+            const activeMemberIds = Array.from(_getDashboardExpectedMemberIds(maxRound)).filter(id => id && id !== 'guest' && id !== 'kakao_5081608503' && id !== 'kakao_5090399860' && id !== 'kakao_5105087435' && !isSystemOrDummyUser(id));
             summaryData = {
                 maxRound,
                 fromRound,
@@ -729,7 +740,8 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                 if (fs && typeof fs.collection === 'function') {
                     const auth = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '';
                     const isAdmin = auth === 'master' || auth === 'admin' || (typeof window.isAdminUser === 'function' && window.isAdminUser(auth)) || (typeof window.isAdminSession === 'function' && window.isAdminSession());
-                    if (isAdmin || forceRefresh) {
+                    const isClean = !activeMemberIds.some(id => id === 'kakao_5081608503' || id === 'kakao_5090399860' || id === 'kakao_5105087435' || id === 'guest' || (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(id)));
+                    if ((isAdmin || forceRefresh) && isClean && activeMemberIds.length <= 13) {
                         fs.collection('lotto_purchases').doc('dashboard_summary_latest').set(summaryData, { merge: true }).catch(console.warn);
                     }
                 }

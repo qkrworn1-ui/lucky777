@@ -63,10 +63,24 @@ export function isSystemOrDummyUser(userId) {
         clean === 'dashboard_summary_latest' ||
         clean === 'global_trash' || clean === 'global_state' || clean === 'global_saved' || clean === 'extra_history' ||
         clean === 'user_alpha' || clean === 'user_beta' || clean === 'user_gamma' || clean === 'sample' || clean === 'hms' ||
+        clean === 'kakao_5081608503' || clean === 'kakao_5090399860' || clean === 'kakao_5105087435' ||
         clean.startsWith('test') || clean.startsWith('{') || clean.includes('테스트')) {
         return true;
     }
     // 🔒 삭제(휴지통) 회원 검증: 삭제된 회원은 시스템/더미 처리하여 알고리즘 연산 및 상호보완 풀에서 100% 제외
+    if (typeof window !== 'undefined') {
+        if (window.__knownDeletedUserIds && window.__knownDeletedUserIds.has(clean)) return true;
+        if (window.state) {
+            if (window.state.allUsersPurchasesMap && window.state.allUsersPurchasesMap[clean]) {
+                const p = window.state.allUsersPurchasesMap[clean];
+                if (p.isDeleted === true || p.status === 'trash' || p.status === 'deleted') return true;
+            }
+            if (Array.isArray(window.state.allRegisteredUsersList)) {
+                const found = window.state.allRegisteredUsersList.find(u => String((u && u.id) || '').trim().toLowerCase() === clean);
+                if (found && (found.isDeleted === true || found.status === 'trash' || found.status === 'deleted')) return true;
+            }
+        }
+    }
     try {
         if (typeof localStorage !== 'undefined') {
             const rawStatus = localStorage.getItem('lotto_users_with_status_cache');
