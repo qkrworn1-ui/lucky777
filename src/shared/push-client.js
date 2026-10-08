@@ -54,6 +54,53 @@ export const PushClient = {
     },
 
     /**
+     * 현재 로그인된 사용자의 실명/이름 획득 (UI 동기화)
+     */
+    getCurrentUserName() {
+        try {
+            // 1. 화면에 렌더링된 실명 우선 확인
+            const mobileEl = document.getElementById('lpMobileUserName');
+            if (mobileEl && mobileEl.textContent && mobileEl.textContent.trim()) {
+                const txt = mobileEl.textContent.trim();
+                if (txt && txt !== '회원' && txt !== '비로그인') return txt;
+            }
+            const headerEl = document.getElementById('userDisplayName') || document.querySelector('.user-display-name');
+            if (headerEl && headerEl.textContent && headerEl.textContent.trim()) {
+                const txt = headerEl.textContent.trim().replace(/^👑\s*/, '').replace(/\s*님$/, '').trim();
+                if (txt && txt !== '비로그인' && txt !== '로그인') return txt;
+            }
+
+            // 2. SafeAuth 및 사용자 캐시/함수 확인
+            const uid = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : null;
+            if (uid) {
+                if (typeof window.getUserRealName === 'function') {
+                    const name = window.getUserRealName(uid);
+                    if (name && name !== '최고관리자' && !name.startsWith('kakao_')) return name;
+                }
+                if (window.__currentUser && window.__currentUser.realName) {
+                    return window.__currentUser.realName;
+                }
+                const cleanUid = String(uid).toLowerCase().trim();
+                if (window.__userNames && window.__userNames[cleanUid]) {
+                    return window.__userNames[cleanUid];
+                }
+            }
+
+            // 3. Storage 백업 확인
+            const sName = window.sessionStorage?.getItem('user_real_name') || window.localStorage?.getItem('user_real_name');
+            if (sName) return sName;
+        } catch (e) {
+            console.warn('[PushClient.getCurrentUserName]', e);
+        }
+        return '';
+    },
+
+    getUserDisplayName() {
+        const name = this.getCurrentUserName();
+        return (name && name !== '최고관리자' && !name.startsWith('kakao_')) ? `${name} 님` : '회원님';
+    },
+
+    /**
      * 회원의 사주명리 길일·길시 스케줄 정보 추출
      */
     getMyeongriSchedule() {
@@ -136,6 +183,7 @@ export const PushClient = {
         // 4. 사주 스케줄 및 사용자 정보 패키징
         const myeongriSchedule = this.getMyeongriSchedule();
         const userId = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest';
+        const userName = this.getCurrentUserName();
         const subData = {
             endpoint: sub.endpoint,
             keys: {
@@ -143,6 +191,7 @@ export const PushClient = {
                 auth: sub.toJSON().keys ? sub.toJSON().keys.auth : ''
             },
             userId: userId,
+            userName: userName,
             myeongriSchedule: myeongriSchedule,
             settings: {
                 notifyMyeongri: options.notifyMyeongri !== false, // 기본 ON (길일길시 1시간 전)
@@ -286,14 +335,19 @@ export const PushClient = {
                 banner.style.display = 'none';
             } else {
                 banner.style.display = 'flex';
+                const bannerDesc = banner.querySelector('div[style*="font-size: 0.77rem"]') || banner.querySelector('.lp-push-banner-desc');
+                if (bannerDesc) {
+                    const disp = this.getUserDisplayName();
+                    bannerDesc.textContent = `${disp}의 일간(日干)과 조화를 이루는 길시 1시간 전 스마트 알림 (해당 주차 구매등록 완료 시 알림 자동 생략)`;
+                }
             }
         }
 
         if (popoverPushBtnText) {
-            popoverPushBtnText.textContent = isSubscribed ? '행운 알림 관리 (수신 중 🟢)' : '행운 알림 설정 (길시 1시간 전)';
+            popoverPushBtnText.textContent = isSubscribed ? '맞춤 알림 관리 (수신 중 🟢)' : '맞춤 알림 설정 (길시 1시간 전)';
         }
         if (lpMobilePushBtn) {
-            lpMobilePushBtn.title = isSubscribed ? '길시 1시간 전 알림 수신 중 (클릭 시 관리/테스트)' : '길시 1시간 전 알림 신청';
+            lpMobilePushBtn.title = isSubscribed ? '길시 1시간 전 알림 수신 중 (클릭 시 관리/테스트)' : '길시 1시간 전 맞춤 알림 신청';
         }
     },
 
@@ -313,18 +367,19 @@ export const PushClient = {
         }
 
         const reg = await navigator.serviceWorker.ready;
-        const msg = `🧪 ${delaySec}초 뒤 품격화된 테스트 알림이 발송됩니다!\n\n지금 스마트폰의 [전원 버튼]을 눌러 화면을 끄고 기다려보세요.\n화면이 꺼진 상태에서도 잠금화면에 정갈한 알림이 도착합니다.`;
+        const displayName = this.getUserDisplayName();
+        const msg = `🧪 ${delaySec}초 뒤 [${displayName}]을 위한 품격화된 테스트 알림이 발송됩니다!\n\n지금 스마트폰의 [전원 버튼]을 눌러 화면을 끄고 기다려보세요.\n화면이 꺼진 상태에서도 잠금화면에 정갈한 알림이 도착합니다.`;
         
         if (typeof window.showToast === 'function') {
-            window.showToast(`🧪 ${delaySec}초 뒤 테스트 알림 발송! 지금 화면을 꺼보세요.`);
+            window.showToast(`🧪 ${delaySec}초 뒤 [${displayName}] 테스트 알림 발송! 지금 화면을 꺼보세요.`);
         }
         alert(msg);
 
         setTimeout(() => {
             const origin = window.location.origin;
             const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
-            reg.showNotification('🌿 [운도실력] 맞춤 알림 수신 연결 완료', {
-                body: '회원님의 스마트폰 잠금화면 및 백그라운드 수신 환경이 품격 있게 연결되었습니다.',
+            reg.showNotification(`🌿 [운도실력] ${displayName}의 맞춤 알림 연결 완료`, {
+                body: `${displayName}의 스마트폰 잠금화면 및 백그라운드 수신 환경이 품격 있게 연결되었습니다.`,
                 icon: `${origin}${basePath}icons/icon-192.png`,
                 badge: `${origin}${basePath}icons/favicon.png`,
                 vibrate: [200, 100, 200, 100, 400],
@@ -349,9 +404,10 @@ if (typeof window !== 'undefined') {
         }
 
         try {
+            const displayName = PushClient.getUserDisplayName();
             const existingSub = await PushClient.getSubscription();
             if (existingSub) {
-                const choice = confirm('🟢 현재 [운도실력 일간 조화 시간 & 공식 통계 리포트] 알림이 정상 등록되어 있습니다.\n\n[확인] : 3초 뒤 테스트 알림 받기 (화면 끄고 확인)\n[취소] : 알림 수신 해제 창으로 이동');
+                const choice = confirm(`🟢 현재 [${displayName}]을 위한 [일간 조화 시간 & 공식 통계 리포트] 알림이 정상 등록되어 있습니다.\n\n[확인] : 3초 뒤 테스트 알림 받기 (화면 끄고 확인)\n[취소] : 알림 수신 해제 창으로 이동`);
                 if (choice) {
                     // 테스트 알림 실행
                     await PushClient.sendTestNotification(3);
@@ -370,13 +426,13 @@ if (typeof window !== 'undefined') {
                 return;
             }
 
-            const ok = confirm('🌿 [운도실력 맞춤 알림 서비스]\n\n1. 회원님의 일간 조화 시간 1시간 전 정갈한 리마인더 안내\n2. 해당 주차 구매등록 완료 시 알림 자동 생략 (안심 스마트 케어)\n3. 토요일 20:45 공식 데이터 통계 정산 리포트 통보\n\n알림을 허용하시겠습니까?');
+            const ok = confirm(`🌿 [운도실력 맞춤 알림 서비스]\n\n1. [${displayName}]의 일간 조화 시간 1시간 전 정갈한 리마인더 안내\n2. 해당 주차 구매등록 완료 시 알림 자동 생략 (안심 스마트 케어)\n3. 토요일 20:45 공식 데이터 통계 정산 리포트 통보\n\n알림을 허용하시겠습니까?`);
             if (!ok) return;
 
             const sub = await PushClient.subscribe();
             if (sub) {
                 await PushClient.updateBannerVisibility();
-                const testNow = confirm('✨ [운도실력] 맞춤 알림이 성공적으로 등록되었습니다!\n\n지금 화면을 끄고 3초 뒤 정갈한 테스트 알림이 오는지 시험해 보시겠습니까?');
+                const testNow = confirm(`✨ [${displayName}]을 위한 맞춤 알림이 성공적으로 등록되었습니다!\n\n지금 화면을 끄고 3초 뒤 정갈한 테스트 알림이 오는지 시험해 보시겠습니까?`);
                 if (testNow) {
                     await PushClient.sendTestNotification(3);
                 }

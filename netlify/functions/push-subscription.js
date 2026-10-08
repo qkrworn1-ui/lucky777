@@ -25,7 +25,7 @@ exports.handler = async (event, context) => {
 
     try {
         const payload = JSON.parse(event.body || '{}');
-        const { endpoint, keys, userId, myeongriSchedule, settings, platform, userAgent } = payload;
+        const { endpoint, keys, userId, userName, myeongriSchedule, settings, platform, userAgent } = payload;
 
         if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
             return {
@@ -47,6 +47,7 @@ exports.handler = async (event, context) => {
             fields: {
                 docId: { stringValue: docId },
                 userId: { stringValue: safeUserId },
+                userName: { stringValue: userName || '' },
                 endpoint: { stringValue: endpoint },
                 p256dh: { stringValue: keys.p256dh },
                 auth: { stringValue: keys.auth },

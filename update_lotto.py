@@ -241,7 +241,7 @@ def main():
             push_payload = {
                 "notification": {
                     "title": f"📊 [동행복권] {latest_updated_round}회차 공식 통계 리포트 도착",
-                    "body": "이번 회차 공식 데이터 연동 및 등록하신 구매 영수증의 통계 정산이 완료되었습니다.",
+                    "body": "{userName}의 실구매 영수증 정산 및 이번 회차 공식 데이터 리포트가 업데이트되었습니다.",
                     "icon": "/lucky777/icons/icon-192.png",
                     "badge": "/lucky777/icons/favicon.png",
                     "tag": f"lotto-result-{latest_updated_round}",

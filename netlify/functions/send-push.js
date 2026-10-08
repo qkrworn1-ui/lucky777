@@ -80,8 +80,12 @@ exports.handler = async (event, context) => {
                 }
             };
 
+            const uName = sub.userName || sub.name || '';
+            const uDisp = (uName && uName !== '최고관리자' && !uName.startsWith('kakao_')) ? `${uName} 님` : '회원님';
+            const personalPayload = payloadString.replace(/\{userName\}/g, uDisp);
+
             try {
-                await webPush.sendNotification(pushSub, payloadString, {
+                await webPush.sendNotification(pushSub, personalPayload, {
                     TTL: 60 * 60 * 24 // 24시간 보관
                 });
                 results.success++;

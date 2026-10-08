@@ -97,6 +97,8 @@ exports.handler = async (event, context) => {
         for (const doc of documents) {
             const f = doc.fields || {};
             const userId = f.userId?.stringValue || 'guest';
+            const rawUserName = f.userName?.stringValue || '';
+            const userDisplayName = (rawUserName && rawUserName !== '최고관리자' && !rawUserName.startsWith('kakao_')) ? `${rawUserName} 님` : '회원님';
             const endpoint = f.endpoint?.stringValue;
             const p256dh = f.p256dh?.stringValue;
             const auth = f.auth?.stringValue;
@@ -127,15 +129,15 @@ exports.handler = async (event, context) => {
             // 🔥 [핵심 로직] 해당 주차(currentRound)에 이미 구매등록을 완료했는지 검사
             const alreadyPurchased = await checkUserPurchaseCompleted(null, userId, currentRound);
             if (alreadyPurchased && !isForceTest) {
-                console.log(`[cron-myeongri-push] [SKIP] User ${userId} already registered purchase for round ${currentRound}`);
+                console.log(`[cron-myeongri-push] [SKIP] User ${userId} (${userDisplayName}) already registered purchase for round ${currentRound}`);
                 stats.skippedAlreadyPurchased++;
                 continue; // 구매 완료 회원은 알림 스킵!
             }
 
             // 아직 구매하지 않은 회원에게만 푸시 발송!
             const notificationPayload = JSON.stringify({
-                title: `🌿 [운도실력] 오늘의 기운 환기 시간 안내`,
-                body: `오늘(${dayName}) 회원님의 일간(日干)과 조화를 이루는 ${slotName || '길시'} 1시간 전입니다. 편안한 마음으로 일상을 정리하고 맞춤 리포트를 확인해 보세요.`,
+                title: `🌿 [운도실력] ${userDisplayName}의 기운 환기 시간 안내`,
+                body: `오늘(${dayName}) ${userDisplayName}의 일간(日干)과 조화를 이루는 ${slotName || '길시'} 1시간 전입니다. 편안한 마음으로 일상을 정리하고 맞춤 리포트를 확인해 보세요.`,
                 icon: '/lucky777/icons/icon-192.png',
                 badge: '/lucky777/icons/favicon.png',
                 tag: 'myeongri-wellness-time',
