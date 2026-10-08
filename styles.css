@@ -954,34 +954,46 @@ body {
     transform: scale(1.12) rotate(4deg);
 }
 
-/* Korean Lotto Color Palette - Ultra 3D Realistic Spheres */
+/* Korean Lotto Color Palette - Design 1 Minimalist Monochrome (Matte Charcoal with Refined Tinted Rim) */
 .ball-yellow, .lotto-ball.ball-yellow, .lotto-ball-mini.ball-yellow {
-    background: radial-gradient(circle at 35% 30%, #fef08a 0%, #f59e0b 55%, #92400e 100%);
-    border: 1px solid rgba(251, 191, 36, 0.9);
-    box-shadow: 0 6px 14px rgba(245, 158, 11, 0.35), inset 0 -3px 6px rgba(0, 0, 0, 0.4), inset 0 3px 6px rgba(255, 255, 255, 0.6);
-    color: #0f172a !important;
-    font-weight: 900 !important;
-    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.6) !important;
+    background: #1e293b !important;
+    border: 1.5px solid rgba(245, 158, 11, 0.45) !important;
+    box-shadow: none !important;
+    color: #fef08a !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
 }
-.ball-blue {
-    background: radial-gradient(circle at 35% 30%, #93c5fd 0%, #2563eb 55%, #1e3a8a 100%);
-    border: 1px solid rgba(59, 130, 246, 0.9);
-    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.35), inset 0 -3px 6px rgba(0, 0, 0, 0.4), inset 0 3px 6px rgba(255, 255, 255, 0.6);
+.ball-blue, .lotto-ball.ball-blue, .lotto-ball-mini.ball-blue {
+    background: #1e293b !important;
+    border: 1.5px solid rgba(59, 130, 246, 0.45) !important;
+    box-shadow: none !important;
+    color: #93c5fd !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
 }
-.ball-red {
-    background: radial-gradient(circle at 35% 30%, #fca5a5 0%, #dc2626 55%, #7f1d1d 100%);
-    border: 1px solid rgba(239, 68, 68, 0.9);
-    box-shadow: 0 6px 14px rgba(220, 38, 38, 0.35), inset 0 -3px 6px rgba(0, 0, 0, 0.4), inset 0 3px 6px rgba(255, 255, 255, 0.6);
+.ball-red, .lotto-ball.ball-red, .lotto-ball-mini.ball-red {
+    background: #1e293b !important;
+    border: 1.5px solid rgba(239, 68, 68, 0.45) !important;
+    box-shadow: none !important;
+    color: #fca5a5 !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
 }
-.ball-gray {
-    background: radial-gradient(circle at 35% 30%, #d8b4fe 0%, #7c3aed 55%, #4c1d95 100%);
-    border: 1px solid rgba(168, 85, 247, 0.9);
-    box-shadow: 0 6px 14px rgba(124, 58, 237, 0.35), inset 0 -3px 6px rgba(0, 0, 0, 0.4), inset 0 3px 6px rgba(255, 255, 255, 0.6);
+.ball-gray, .lotto-ball.ball-gray, .lotto-ball-mini.ball-gray {
+    background: #1e293b !important;
+    border: 1.5px solid rgba(148, 163, 184, 0.45) !important;
+    box-shadow: none !important;
+    color: #e2e8f0 !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
 }
-.ball-green {
-    background: radial-gradient(circle at 35% 30%, #86efac 0%, #16a34a 55%, #14532d 100%);
-    border: 1px solid rgba(16, 185, 129, 0.9);
-    box-shadow: 0 6px 14px rgba(22, 163, 74, 0.35), inset 0 -3px 6px rgba(0, 0, 0, 0.4), inset 0 3px 6px rgba(255, 255, 255, 0.6);
+.ball-green, .lotto-ball.ball-green, .lotto-ball-mini.ball-green {
+    background: #1e293b !important;
+    border: 1.5px solid rgba(16, 185, 129, 0.45) !important;
+    box-shadow: none !important;
+    color: #86efac !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
 }
 
 /* ==========================================================================
@@ -18158,11 +18170,11 @@ body.is-admin .btn-snapshot-audit-compact {
     flex-shrink: 0;
     font-family: inherit;
 }
-.ball-mini.ball-yellow { background: linear-gradient(135deg, #fcd34d, #f59e0b); color: #0f172a; border: 1px solid #fef08a; }
-.ball-mini.ball-blue   { background: linear-gradient(135deg, #60a5fa, #2563eb); color: #ffffff; border: 1px solid #93c5fd; }
-.ball-mini.ball-red    { background: linear-gradient(135deg, #f87171, #dc2626); color: #ffffff; border: 1px solid #fca5a5; }
-.ball-mini.ball-gray   { background: linear-gradient(135deg, #94a3b8, #475569); color: #ffffff; border: 1px solid #cbd5e1; }
-.ball-mini.ball-green  { background: linear-gradient(135deg, #34d399, #059669); color: #ffffff; border: 1px solid #6ee7b7; }
+.ball-mini.ball-yellow { background: #1e293b; color: #fef08a; border: 1.5px solid rgba(245, 158, 11, 0.5); }
+.ball-mini.ball-blue   { background: #1e293b; color: #93c5fd; border: 1.5px solid rgba(59, 130, 246, 0.5); }
+.ball-mini.ball-red    { background: #1e293b; color: #fca5a5; border: 1.5px solid rgba(239, 68, 68, 0.5); }
+.ball-mini.ball-gray   { background: #1e293b; color: #e2e8f0; border: 1.5px solid rgba(148, 163, 184, 0.5); }
+.ball-mini.ball-green  { background: #1e293b; color: #86efac; border: 1.5px solid rgba(16, 185, 129, 0.5); }
 
 .digital-receipt-card {
     background: #020617;
@@ -18396,14 +18408,14 @@ body.is-admin .btn-snapshot-audit-compact {
     transform: scale(0.9);
 }
 
-.ball-keypad-btn.ball-yellow { background: linear-gradient(135deg, #fcd34d, #f59e0b); color: #0f172a; border-color: #fef08a; }
-.ball-keypad-btn.ball-blue   { background: linear-gradient(135deg, #60a5fa, #2563eb); color: #ffffff; border-color: #93c5fd; }
-.ball-keypad-btn.ball-red    { background: linear-gradient(135deg, #f87171, #dc2626); color: #ffffff; border-color: #fca5a5; }
-.ball-keypad-btn.ball-gray   { background: linear-gradient(135deg, #94a3b8, #475569); color: #ffffff; border-color: #cbd5e1; }
-.ball-keypad-btn.ball-green  { background: linear-gradient(135deg, #34d399, #059669); color: #ffffff; border-color: #6ee7b7; }
+.ball-keypad-btn.ball-yellow { background: #1e293b; color: #fef08a; border-color: rgba(245, 158, 11, 0.5); }
+.ball-keypad-btn.ball-blue   { background: #1e293b; color: #93c5fd; border-color: rgba(59, 130, 246, 0.5); }
+.ball-keypad-btn.ball-red    { background: #1e293b; color: #fca5a5; border-color: rgba(239, 68, 68, 0.5); }
+.ball-keypad-btn.ball-gray   { background: #1e293b; color: #e2e8f0; border-color: rgba(148, 163, 184, 0.5); }
+.ball-keypad-btn.ball-green  { background: #1e293b; color: #86efac; border-color: rgba(16, 185, 129, 0.5); }
 
 .ball-keypad-btn.selected {
-    box-shadow: 0 0 0 2.5px #ffffff, 0 0 12px rgba(255, 255, 255, 0.7);
+    box-shadow: 0 0 0 2.5px #10b981, 0 0 12px rgba(16, 185, 129, 0.6);
     transform: scale(1.08);
 }
 
@@ -20540,10 +20552,367 @@ body.is-admin .btn-snapshot-audit-compact {
 /* Clean Minimalist Hit Ball */
 .ball.is-hit,
 .ball.hit,
-.matched-ball {
-    background: rgba(16, 185, 129, 0.22) !important;
-    color: #34d399 !important;
-    border: 1.5px solid #10b981 !important;
+.matched-ball,
+.lotto-ball.is-hit,
+.lotto-ball.hit,
+.lotto-ball-mini.is-hit,
+.lotto-ball-mini.hit,
+.ball-mini.is-hit,
+.ball-mini.hit {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    border: 2px solid #34d399 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4) !important;
+    font-weight: 900 !important;
+}
+
+/* ==========================================================================
+   13. Header User Chip & Auth Popover - Minimal Monochrome
+   ========================================================================== */
+.header-user-chip.user-chip-admin,
+.header-user-chip.user-chip-member,
+.header-user-chip.user-chip-kakao {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ==========================================================================
+   14. Simulation Lab (#tab-simulation) - Design 1 Minimal Monochrome
+   ========================================================================== */
+#tab-simulation .sim-control-card,
+#tab-simulation .sim-results-card,
+#tab-simulation .sim-panel,
+#tab-simulation .sim-summary-box,
+#tab-simulation .sim-history-table-container {
+    background: #111827 !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 14px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+}
+#tab-simulation .sim-algo-panel-title {
+    color: #f8fafc !important;
+}
+#tab-simulation .sim-algo-label,
+#tab-simulation .sim-algo-v4,
+#tab-simulation .sim-algo-v3,
+#tab-simulation .sim-algo-e1,
+#tab-simulation .sim-algo-e2,
+#tab-simulation .sim-algo-e3,
+#tab-simulation .sim-algo-e4,
+#tab-simulation .sim-algo-e5 {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    color: #cbd5e1 !important;
+}
+#tab-simulation .sim-algo-label:hover {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+#tab-simulation .sim-algo-chk {
+    accent-color: #10b981 !important;
+}
+#tab-simulation .sim-toggle-btn {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #cbd5e1 !important;
+}
+#tab-simulation .sim-toggle-btn:hover {
+    background: #334155 !important;
+    color: #ffffff !important;
+}
+#tab-simulation .sim-run-btn {
+    background: #10b981 !important;
+    color: #ffffff !important;
+    border: none !important;
     font-weight: 800 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+}
+#tab-simulation .sim-run-btn:hover {
+    background: #059669 !important;
+}
+#tab-simulation .sim-history-table th {
+    background: #0f172a !important;
+    color: #94a3b8 !important;
+    border-bottom: 1px solid #1e293b !important;
+}
+#tab-simulation .sim-history-table td {
+    border-bottom: 1px solid #1e293b !important;
+    color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   15. Manual / QR Ledger Modal (#manualLedgerModal) - Minimal Monochrome
+   ========================================================================== */
+#manualLedgerModal .modal-content {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 14px !important;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85) !important;
+}
+#manualLedgerModal .modal-header,
+#manualLedgerModal .modal-footer {
+    background: #0f172a !important;
+    border-color: #1e293b !important;
+}
+#manualLedgerModal .manual-mode-tabs {
+    background: #111827 !important;
+    border: 1px solid #1e293b !important;
+}
+#manualLedgerModal .manual-tab-btn {
+    color: #94a3b8 !important;
+    border-radius: 8px !important;
+}
+#manualLedgerModal .manual-tab-btn.active {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #10b981 !important;
+    font-weight: 800 !important;
+    box-shadow: none !important;
+}
+#manualLedgerModal .digital-receipt-card {
+    background: #111827 !important;
+    border: 1px solid #1e293b !important;
+}
+#manualLedgerModal .receipt-game-row {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+}
+#manualLedgerModal .ball-game-chip {
+    background: #111827 !important;
+    border: 1px solid #1e293b !important;
+    color: #94a3b8 !important;
+}
+#manualLedgerModal .ball-game-chip.active {
+    background: #1e293b !important;
+    border-color: #10b981 !important;
+    color: #f8fafc !important;
+    box-shadow: none !important;
+}
+#manualLedgerModal .ball-game-chip.completed {
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}
+#manualLedgerModal .ball-game-chip .chip-count {
+    color: #94a3b8 !important;
+}
+#manualLedgerModal .ball-game-chip.completed .chip-count {
+    color: #10b981 !important;
+}
+#manualLedgerModal .ball-slots-preview {
+    background: #111827 !important;
+    border: 1px dashed #334155 !important;
+}
+#manualLedgerModal .ball-slot-item {
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   16. 📱 Galaxy Z Fold (Fold 2/3/4/5/6/7) & Ultra-Narrow Smartphone Responsive
+   Cover Screen Width: 280px ~ 360px
+   ========================================================================== */
+@media (max-width: 360px) {
+    html, body {
+        padding: 4px 2px !important;
+    }
+
+    .app-container {
+        padding: 0 2px !important;
+        gap: 6px !important;
+    }
+
+    /* ── App Header Compact for Narrow Screens ── */
+    .app-header {
+        padding: 6px 8px !important;
+        border-radius: 10px !important;
+        margin-bottom: 6px !important;
+    }
+    .header-top-row {
+        gap: 4px !important;
+    }
+    .logo-emblem {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+    }
+    .logo-title {
+        font-size: 0.92rem !important;
+    }
+    .header-user-chip {
+        padding: 2px 6px !important;
+        font-size: 0.70rem !important;
+        gap: 4px !important;
+    }
+
+    /* ── Number Balls: Compact Horizontal Fit (6 Balls + Game Tag in ~260px) ── */
+    .lotto-ball,
+    .ball,
+    .ball-mini,
+    .ball-slot-item,
+    .qv-ball,
+    .combo-card .lotto-ball,
+    .extra-combo-row .lotto-ball,
+    .confirmed-game-row .lotto-ball,
+    .receipt-game-row .ball-mini {
+        width: 25px !important;
+        height: 25px !important;
+        min-width: 25px !important;
+        max-width: 25px !important;
+        line-height: 25px !important;
+        font-size: 0.70rem !important;
+        flex-shrink: 0 !important;
+    }
+
+    .balls-row,
+    .combo-balls,
+    .ball-slots-preview,
+    .qv-balls-row,
+    .receipt-game-row > div:last-child {
+        gap: 2.5px !important;
+        padding: 3px 2px !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+    }
+
+    /* ── Landing Page Fin & Service Grids ── */
+    .lp-service-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+    .lp-fin-stats {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    .lp-fin-stat-box {
+        padding: 8px 10px !important;
+    }
+    .lp-stat-val {
+        font-size: 0.90rem !important;
+    }
+    .lp-stat-label {
+        font-size: 0.68rem !important;
+    }
+    .lp-fin-title {
+        font-size: 0.84rem !important;
+    }
+
+    /* ── Simulation Controls ── */
+    .sim-algo-grid {
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+    }
+    .sim-stats-grid {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+    }
+    .review-stats-grid,
+    .ConfirmedStatsGrid {
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+    }
+
+    /* ── Manual / QR Modal on Ultra Narrow Screens ── */
+    #manualLedgerModal .modal-content {
+        width: 96vw !important;
+        max-width: 96vw !important;
+        margin: 4px auto !important;
+        max-height: 94vh !important;
+        max-height: 94dvh !important;
+        border-radius: 12px !important;
+    }
+    #manualLedgerModal .modal-header {
+        padding: 8px 10px !important;
+    }
+    #manualLedgerModal .modal-body {
+        padding: 8px 10px !important;
+        gap: 8px !important;
+    }
+    #manualLedgerModal .modal-footer {
+        padding: 8px 10px !important;
+        gap: 6px !important;
+    }
+    #manualLedgerModal .manual-mode-tabs {
+        gap: 3px !important;
+        padding: 3px !important;
+    }
+    #manualLedgerModal .manual-tab-btn {
+        font-size: 0.70rem !important;
+        padding: 5px 2px !important;
+        gap: 2px !important;
+    }
+    #manualLedgerModal .ball-keypad-grid {
+        grid-template-columns: repeat(9, 1fr) !important;
+        gap: 2px !important;
+    }
+    #manualLedgerModal .ball-keypad-btn {
+        font-size: 0.68rem !important;
+        aspect-ratio: 1 !important;
+    }
+    #qrScannerContainer {
+        padding: 4px !important;
+    }
+    #qrScannerContainer > div:first-child {
+        max-height: 180px !important;
+    }
+    .qr-viewfinder-target {
+        width: 140px !important;
+        height: 140px !important;
+    }
+    .receipt-game-row {
+        padding: 4px 6px !important;
+        gap: 4px !important;
+    }
+}
+
+/* ── Extreme Ultra-Narrow Devices (Galaxy Fold 1/2 folded ~280px - 320px) ── */
+@media (max-width: 320px) {
+    .lotto-ball,
+    .ball,
+    .ball-mini,
+    .ball-slot-item,
+    .qv-ball,
+    .combo-card .lotto-ball,
+    .extra-combo-row .lotto-ball,
+    .confirmed-game-row .lotto-ball,
+    .receipt-game-row .ball-mini {
+        width: 23px !important;
+        height: 23px !important;
+        min-width: 23px !important;
+        max-width: 23px !important;
+        line-height: 23px !important;
+        font-size: 0.65rem !important;
+    }
+
+    .balls-row,
+    .combo-balls,
+    .ball-slots-preview,
+    .qv-balls-row {
+        gap: 1.5px !important;
+    }
+
+    #manualLedgerModal .ball-keypad-grid {
+        grid-template-columns: repeat(9, 1fr) !important;
+        gap: 1.5px !important;
+    }
+    #manualLedgerModal .ball-keypad-btn {
+        font-size: 0.62rem !important;
+    }
+
+    #qrActionButtons {
+        flex-direction: column !important;
+        gap: 6px !important;
+    }
+    #sectionOnlineReceipt > div:first-child {
+        flex-direction: column !important;
+        gap: 6px !important;
+    }
+    #manualLedgerModal .modal-footer {
+        flex-direction: column !important;
+    }
+    #manualLedgerModal .modal-footer button {
+        width: 100% !important;
+    }
 }
 

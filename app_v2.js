@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.08.1951 - BUILD_DATE: 2026-10-08] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.08.2006.32 - BUILD_DATE: 2026-10-08] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.08.1951)
+ * Lucky777 Smart Bundle (v2026.10.08.2006.32)
  */
 
 
@@ -46719,7 +46719,7 @@ async function renderLandingDashboard() {
     const elFinTitle = document.querySelector('.lp-fin-title');
 
     if (elFinTitle) {
-        elFinTitle.innerHTML = `<span style="color:#fbbf24;">[${displayName}]</span> 님의 실구매 누적 자산 &amp; 당첨 요약`;
+        elFinTitle.innerHTML = `<span style="color:#10b981; font-weight:700;">[${displayName}]</span> 님의 실구매 누적 자산 &amp; 당첨 요약`;
     }
 
     if (elInvest) elInvest.textContent = `${(myFin.totalInvest || 0).toLocaleString()} 원`;
@@ -46824,7 +46824,7 @@ async function renderLandingDashboard() {
     }
     if (elMyPrize) {
         elMyPrize.textContent = `당첨 ${myFin.totalPrize.toLocaleString()}원`;
-        elMyPrize.style.color = myFin.totalPrize > 0 ? '#fbbf24' : '#cbd5e1';
+        elMyPrize.style.color = myFin.totalPrize > 0 ? '#10b981' : '#cbd5e1';
     }
     if (elMyHits) {
         if (myFin.totalCombos > 0) {
@@ -46861,7 +46861,7 @@ async function renderLandingDashboard() {
         }
         if (elAllPrize) {
             elAllPrize.textContent = `총 당첨 ${(allFin.totalPrize || 0).toLocaleString()}원`;
-            elAllPrize.style.color = (allFin.totalPrize || 0) > 0 ? '#fbbf24' : '#cbd5e1';
+            elAllPrize.style.color = (allFin.totalPrize || 0) > 0 ? '#10b981' : '#cbd5e1';
         }
         if (elAllHits) {
             if (allFin.totalCombos > 0) {
@@ -46873,7 +46873,7 @@ async function renderLandingDashboard() {
                     if (allFin.hits && allFin.hits[3] > 0) ranksArr.push(`4등 ${allFin.hits[3]}`);
                     if (allFin.hits && allFin.hits[4] > 0) ranksArr.push(`5등 ${allFin.hits[4]}`);
                     elAllHits.textContent = `전체 ${allFin.totalWins}건 적중 (${ranksArr.join(', ')})`;
-                    elAllHits.style.color = '#38bdf8';
+                    elAllHits.style.color = '#94a3b8';
                 } else {
                     elAllHits.textContent = '당첨 내역 없음';
                     elAllHits.style.color = '#94a3b8';
@@ -46990,9 +46990,9 @@ function updateHomeServiceCardsPermissions() {
         } else {
             if (badge) {
                 badge.className = 'lp-card-badge';
-                badge.style.background = 'rgba(245, 158, 11, 0.2)';
-                badge.style.color = '#fbbf24';
-                badge.style.border = '1px solid rgba(245, 158, 11, 0.45)';
+                badge.style.background = '#1e293b';
+                badge.style.color = '#94a3b8';
+                badge.style.border = '1px solid #334155';
                 badge.innerHTML = '<i class="fa-solid fa-flask"></i> 🧪 테스트중 (Beta)';
             }
             if (btn) {
@@ -47398,12 +47398,12 @@ function applyDashboardReviewSummaryToUI(summaryData, maxRound, roundRangeLabel)
     }
     if (elRevPrize) {
         elRevPrize.textContent = `누적 당첨 +${grandTotalPrize.toLocaleString()}원`;
-        elRevPrize.style.color = grandTotalPrize > 0 ? '#fbbf24' : '#cbd5e1';
+        elRevPrize.style.color = grandTotalPrize > 0 ? '#10b981' : '#cbd5e1';
     }
     if (elRevHits) {
         if (latestTotalWins > 0 || grandTotalWins > 0) {
             elRevHits.textContent = `최신 ${latestRound}회: +${latestTotalPrize.toLocaleString()}원 (${latestTotalWins}건) · 누적 ${grandTotalWins}건`;
-            elRevHits.style.color = '#c4b5fd';
+            elRevHits.style.color = '#94a3b8';
         } else {
             elRevHits.textContent = '당첨 내역 없음';
             elRevHits.style.color = '#94a3b8';
@@ -47449,12 +47449,12 @@ function applyDashboardReviewSummaryToUI(summaryData, maxRound, roundRangeLabel)
     const elLatestHits = document.getElementById('lpReviewLatestHits');
     if (elLatestHits) {
         elLatestHits.innerHTML = `
-            <span style="color:${latestRank1>0?'#fbbf24':'#64748b'}; font-weight:700;">1등 ${latestRank1}</span> · 
+            <span style="color:${latestRank1>0?'#10b981':'#64748b'}; font-weight:700;">1등 ${latestRank1}</span> · 
             <span style="color:${latestRank2>0?'#f87171':'#64748b'}; font-weight:700;">2등 ${latestRank2}</span> · 
-            <span style="color:${latestRank3>0?'#60a5fa':'#64748b'}; font-weight:700;">3등 ${latestRank3}</span> · 
+            <span style="color:${latestRank3>0?'#38bdf8':'#64748b'}; font-weight:700;">3등 ${latestRank3}</span> · 
             <span style="color:${latestRank4>0?'#34d399':'#64748b'}; font-weight:700;">4등 ${latestRank4}</span> · 
-            <span style="color:${latestRank5>0?'#a78bfa':'#64748b'}; font-weight:700;">5등 ${latestRank5}</span>
-            <span style="color:#ddd6fe; margin-left:4px;">(총 ${latestTotalWins}건 적중)</span>
+            <span style="color:${latestRank5>0?'#94a3b8':'#64748b'}; font-weight:700;">5등 ${latestRank5}</span>
+            <span style="color:#94a3b8; margin-left:4px;">(총 ${latestTotalWins}건 적중)</span>
         `;
     }
 
@@ -47475,17 +47475,17 @@ function applyDashboardReviewSummaryToUI(summaryData, maxRound, roundRangeLabel)
     if (elKpiGames) elKpiGames.textContent = `${rRangeLabel} · 총 ${grandTotalGames.toLocaleString()}게임 (1인당 70조합)`;
     if (elKpiHits) {
         elKpiHits.innerHTML = `
-            <span style="color:${grandRank1>0?'#fbbf24':'#64748b'}; font-weight:700;">1등 ${grandRank1}</span> · 
+            <span style="color:${grandRank1>0?'#10b981':'#64748b'}; font-weight:700;">1등 ${grandRank1}</span> · 
             <span style="color:${grandRank2>0?'#f87171':'#64748b'}; font-weight:700;">2등 ${grandRank2}</span> · 
-            <span style="color:${grandRank3>0?'#60a5fa':'#64748b'}; font-weight:700;">3등 ${grandRank3}</span> · 
+            <span style="color:${grandRank3>0?'#38bdf8':'#64748b'}; font-weight:700;">3등 ${grandRank3}</span> · 
             <span style="color:${grandRank4>0?'#34d399':'#64748b'}; font-weight:700;">4등 ${grandRank4}</span> · 
-            <span style="color:${grandRank5>0?'#a78bfa':'#64748b'}; font-weight:700;">5등 ${grandRank5}</span>
-            <span style="color:#ddd6fe; margin-left:4px;">(총 ${grandTotalWins}건 적중)</span>
+            <span style="color:${grandRank5>0?'#94a3b8':'#64748b'}; font-weight:700;">5등 ${grandRank5}</span>
+            <span style="color:#94a3b8; margin-left:4px;">(총 ${grandTotalWins}건 적중)</span>
         `;
     }
     if (elKpiPrize) {
         elKpiPrize.textContent = `누적 당첨금 +${grandTotalPrize.toLocaleString()}원`;
-        elKpiPrize.style.color = grandTotalPrize > 0 ? '#fbbf24' : '#cbd5e1';
+        elKpiPrize.style.color = grandTotalPrize > 0 ? '#10b981' : '#cbd5e1';
     }
 }
 if (typeof window !== 'undefined') {
@@ -47657,9 +47657,9 @@ async function updateHomeWinningTicker() {
         if (aggregatedWinners.length > 0) {
             flipItems = aggregatedWinners.map(item => `
                 <div class="lp-flip-item">
-                    <i class="fa-solid fa-trophy" style="color: ${item.bestRank <= 3 ? '#fbbf24' : '#34d399'}; font-size: 0.82rem; flex-shrink: 0;"></i>
+                    <i class="fa-solid fa-trophy" style="color: #10b981; font-size: 0.82rem; flex-shrink: 0;"></i>
                     <strong style="color: #f8fafc; font-size: 0.84rem; letter-spacing: -0.2px; flex-shrink: 0;">${item.displayName}</strong>
-                    <span style="background: ${item.bestRank <= 3 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)'}; border: 1px solid ${item.bestRank <= 3 ? '#f59e0b' : '#10b981'}; color: ${item.bestRank <= 3 ? '#fbbf24' : '#6ee7b7'}; font-size: 0.72rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;">${item.rankSummaryText}</span>
+                    <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; font-size: 0.72rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;">${item.rankSummaryText}</span>
                     ${item.prizeText ? `<span style="color: #94a3b8; font-size: 0.74rem; font-weight: 700; white-space: nowrap; flex-shrink: 0;">${item.prizeText}</span>` : ''}
                 </div>
             `);
@@ -47669,9 +47669,9 @@ async function updateHomeWinningTicker() {
                 const singleWinner = aggregatedWinners[0];
                 flipItems.push(`
                     <div class="lp-flip-item">
-                        <i class="fa-solid fa-gift" style="color: #fbbf24; font-size: 0.82rem; flex-shrink: 0;"></i>
+                        <i class="fa-solid fa-gift" style="color: #10b981; font-size: 0.82rem; flex-shrink: 0;"></i>
                         <strong style="color: #f8fafc; font-size: 0.84rem; letter-spacing: -0.2px; flex-shrink: 0;">${singleWinner.displayName}</strong>
-                        <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #6ee7b7; font-size: 0.72rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;">실구매 인증 당첨 축하 🎉</span>
+                        <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; font-size: 0.72rem; font-weight: 800; padding: 1.5px 6px; border-radius: 4px; white-space: nowrap; flex-shrink: 0;">실구매 인증 당첨 축하 🎉</span>
                         <span class="lp-desktop-only" style="color: #94a3b8; font-size: 0.74rem; font-weight: 600; white-space: nowrap; flex-shrink: 0;">(구매확정현황에서 영수증 확인)</span>
                     </div>
                 `);
