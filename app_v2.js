@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.0218.54 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.0223 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.0218.54)
+ * Lucky777 Smart Bundle (v2026.10.09.0223)
  */
 
 
@@ -9852,9 +9852,15 @@ const PushClient = {
         }
 
         // 1. 브라우저 알림 권한 획득
-        const permission = await Notification.requestPermission();
+        let permission = Notification.permission;
+        if (permission === 'denied') {
+            throw new Error('브라우저에서 알림이 [차단]되어 있습니다.\n\n[간단 해제 방법 (3초)]\n1. 스마트폰 화면 상단 주소창 맨 왼쪽의 [설정 아이콘(⊶)] 터치\n2. [권한] 또는 [알림] 항목을 눌러 [허용]으로 변경\n3. 변경 후 다시 [알림 신청]을 누르시면 정상 등록됩니다.');
+        }
         if (permission !== 'granted') {
-            throw new Error('알림 권한이 거부되었습니다. 브라우저 설정에서 알림을 허용해 주세요.');
+            permission = await Notification.requestPermission();
+        }
+        if (permission !== 'granted') {
+            throw new Error('알림 권한이 허용되지 않았습니다.\n\n주소창 맨 왼쪽의 설정 아이콘(⊶)을 눌러 알림을 [허용]으로 변경해 주세요.');
         }
 
         // 2. 서비스 워커 등록 확인
@@ -10119,7 +10125,7 @@ if (typeof window !== 'undefined') {
             }
         } catch (err) {
             console.error('[handlePushNotificationToggle Error]', err);
-            alert('알림 설정 중 오류가 발생했습니다: ' + err.message);
+            alert(err.message.startsWith('브라우저') ? err.message : ('🔔 [알림 설정 안내]\n\n' + err.message));
         }
     };
 
