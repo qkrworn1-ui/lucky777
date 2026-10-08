@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.0304 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.0323 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.0304)
+ * Lucky777 Smart Bundle (v2026.10.09.0323)
  */
 
 
@@ -47413,6 +47413,13 @@ async function renderLandingDashboard() {
     const elMobileUserName = document.getElementById('lpMobileUserName');
     if (elMobileUserName) elMobileUserName.textContent = displayName || '회원';
 
+    // 📈 [신규] 로그인 회원 최근 추천 당첨추이 슬림 배너 (가입일 이후 한정, 폴드7 320px 최적화)
+    try {
+        renderUserWinningTrendBanner(authId, displayName);
+    } catch(e) {
+        console.warn('[User Trend Banner Init Error]', e);
+    }
+
     let confirmedRounds = [];
     try {
         confirmedRounds = getUserConfirmedRoundNumbers('my');
@@ -47590,6 +47597,9 @@ async function renderLandingDashboard() {
             updateHomeReviewDashboard(),
             updateHomeWinningTicker()
         ]).catch(e => console.warn('[Landing BG Compute Note]', e));
+        try {
+            renderUserWinningTrendBanner(authId, displayName);
+        } catch(e) {}
     }, 600);
 
     } finally {
@@ -48600,6 +48610,225 @@ function updateDrawCountdownBanner() {
     drawCountdownIntervalId = setInterval(renderBanner, 1000);
 }
 
+/**
+ * 📈 [신규] 로그인 회원 최근 추천 당첨추이 슬림 배너 렌더러
+ * - 가입일(joinRound) 이전 회차 원천 배제 (round >= joinRound)
+ * - 최근 최대 10주간 당첨금 & 적중 건수 0ms 로컬 캐싱
+ * - 폴드7 좁은 화면(320px)에서도 글자 겹침 없는 3-Tier 마이크로 반응형 레이아웃
+ * - 100% 폭 풀위드 SVG 스플라인 곡선 선그래프
+ */
+function renderUserWinningTrendBanner(authId, displayName) {
+    const container = document.getElementById('lpUserTrendBannerContainer');
+    if (!container) return;
+
+    let cleanAuth = String(authId || '').trim();
+    if (cleanAuth.startsWith('{')) {
+        try { const p = JSON.parse(cleanAuth); cleanAuth = p.userid || p.userId || cleanAuth; } catch(e) {}
+    }
+    cleanAuth = cleanAuth.toLowerCase().trim();
+
+    // 0. 비로그인 / Guest
+    if (!cleanAuth || cleanAuth === '비로그인' || cleanAuth === 'guest' || isSystemOrDummyUser(cleanAuth)) {
+        container.innerHTML = `
+            <div class="lp-trend-banner is-guest" onclick="if(window.handleLogin) window.handleLogin(); else { const m = document.getElementById('loginModalOverlay'); if(m) m.style.display = 'flex'; }" title="클릭하여 로그인하기">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.05rem;">📈</span>
+                    <span style="font-size: 0.76rem; color: #cbd5e1;">로그인하시면 가입 이후 추천번호 당첨 성과 선그래프가 표시됩니다.</span>
+                </div>
+                <button type="button" style="background: rgba(56, 189, 248, 0.2); border: 1px solid #38bdf8; color: #38bdf8; font-size: 0.72rem; font-weight: 800; padding: 4px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap;">
+                    로그인 &gt;
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    const name = displayName || (typeof getUserRealName === 'function' ? getUserRealName(cleanAuth) : '') || cleanAuth;
+
+    // 1. 0ms 로컬 캐시 즉시 렌더링
+    const cacheKey = `lotto_my_10w_trend_${cleanAuth}`;
+    let cached = null;
+    try {
+        const raw = SafeLocalStorage.getItem(cacheKey);
+        if (raw) cached = JSON.parse(raw);
+    } catch(e) {}
+
+    const buildBannerHtml = (data) => {
+        if (!data || !data.rounds || data.rounds.length === 0) {
+            return `
+                <div class="lp-trend-banner" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-generator'), 80); }" title="추천번호 생성 바로가기">
+                    <div class="trend-top-row">
+                        <div class="trend-title-box">
+                            <span>📈</span>
+                            <span><strong>${name} 님</strong> 최근 추천 당첨추이</span>
+                        </div>
+                        <div class="trend-top-right">
+                            <span class="trend-range-pill">${data.joinRound || 1235}회 가입</span>
+                            <i class="fa-solid fa-chevron-right trend-arrow-icon"></i>
+                        </div>
+                    </div>
+                    <div style="font-size: 0.74rem; color: #94a3b8; padding: 2px 0;">가입 이후 추천번호 생성 및 추첨 대기 중입니다.</div>
+                </div>
+            `;
+        }
+
+        const count = data.rounds.length;
+        const totalPrize = data.totalPrize || 0;
+        const totalWins = data.totalWins || 0;
+        const winWeeks = data.rounds.filter(r => r.prize > 0).length;
+        const winRate = count > 0 ? Math.round((winWeeks / count) * 100) : 0;
+        const joinRound = data.joinRound || data.rounds[0].round;
+
+        // SVG 좌표 계산 (너비 290, 높이 38, 패딩 X:8, Y:6)
+        const width = 290;
+        const height = 38;
+        const padX = 8;
+        const padY = 6;
+        const drawW = width - padX * 2;
+        const drawH = height - padY * 2;
+
+        const maxPrize = Math.max(...data.rounds.map(d => d.prize), 50000);
+
+        const points = data.rounds.map((d, i) => {
+            const x = padX + (i / Math.max(1, count - 1)) * drawW;
+            const y = padY + drawH - (d.prize / maxPrize) * drawH;
+            return { x, y, data: d };
+        });
+
+        // 큐빅 베지어 스플라인 곡선 생성
+        let lineD = '';
+        if (points.length === 1) {
+            lineD = `M ${points[0].x} ${points[0].y}`;
+        } else if (points.length > 1) {
+            lineD = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+            for (let i = 0; i < points.length - 1; i++) {
+                const p0 = points[i === 0 ? 0 : i - 1];
+                const p1 = points[i];
+                const p2 = points[i + 1];
+                const p3 = points[i + 2 < points.length ? i + 2 : i + 1];
+
+                const cp1x = p1.x + (p2.x - p0.x) / 6;
+                const cp1y = p1.y + (p2.y - p0.y) / 6;
+                const cp2x = p2.x - (p3.x - p1.x) / 6;
+                const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+                lineD += ` C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+            }
+        }
+
+        const areaD = lineD ? `${lineD} L ${points[points.length - 1].x.toFixed(1)} ${height} L ${points[0].x.toFixed(1)} ${height} Z` : '';
+
+        const dotsHtml = points.map(pt => `
+            <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${pt.data.r4 > 0 ? 4 : 2.8}" fill="${pt.data.r4 > 0 ? '#fbbf24' : '#10b981'}" stroke="#070a14" stroke-width="1.2" class="spark-dot">
+                <title>${pt.data.round}회: ${pt.data.prize.toLocaleString()}원 (${pt.data.r4 > 0 ? '4등 ' + pt.data.r4 + '건, ' : ''}5등 ${pt.data.r5}건)</title>
+            </circle>
+        `).join('');
+
+        return `
+            <div class="lp-trend-banner" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-review'), 80); }" title="클릭 시 추천번호 당첨결과 탭으로 이동">
+                <!-- Tier 1: Title + Range + Arrow -->
+                <div class="trend-top-row">
+                    <div class="trend-title-box">
+                        <span>📈</span>
+                        <span><strong>${name} 님</strong> 최근 추천 당첨추이</span>
+                    </div>
+                    <div class="trend-top-right">
+                        <span class="trend-range-pill">${joinRound}회~ (${count}주)</span>
+                        <i class="fa-solid fa-chevron-right trend-arrow-icon"></i>
+                    </div>
+                </div>
+
+                <!-- Tier 2: Stats (Total Prize + Wins + Win Rate) -->
+                <div class="trend-stats-row">
+                    <div class="trend-stat-main">
+                        <span class="trend-stat-val">+${totalPrize.toLocaleString()}원</span>
+                        <span class="trend-stat-sub">${totalWins}건 적중</span>
+                    </div>
+                    <div class="trend-stat-rate-pill">
+                        <i class="fa-solid fa-fire"></i> ${winRate}% 적중
+                    </div>
+                </div>
+
+                <!-- Tier 3: 100% Full-Width Simple Sparkline Graph -->
+                <div class="trend-sparkline-row">
+                    <svg class="sparkline-svg" viewBox="0 0 290 38" preserveAspectRatio="none">
+                        <defs>
+                            <linearGradient id="userTrendSparkGrad_${cleanAuth}" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#10b981" stop-opacity="0.35"></stop>
+                                <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"></stop>
+                            </linearGradient>
+                            <filter id="userTrendGlow_${cleanAuth}" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                                <feMerge>
+                                    <feMergeNode in="coloredBlur"/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                        </defs>
+                        ${areaD ? `<path d="${areaD}" fill="url(#userTrendSparkGrad_${cleanAuth})"></path>` : ''}
+                        ${lineD ? `<path d="${lineD}" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" filter="url(#userTrendGlow_${cleanAuth})"></path>` : ''}
+                        <g>${dotsHtml}</g>
+                    </svg>
+                </div>
+            </div>
+        `;
+    };
+
+    if (cached) {
+        container.innerHTML = buildBannerHtml(cached);
+    }
+
+    // 2. 가입일(joinRound) 이후 회차만 필터링하여 최신 데이터 산출
+    try {
+        const joinRound = (typeof getUserJoinRound === 'function') ? getUserJoinRound(cleanAuth) : 1235;
+        const history = state.mergedHistory || {};
+        const historyRounds = Object.keys(history)
+            .map(Number)
+            .filter(n => !isNaN(n) && n >= joinRound && Array.isArray(history[n]?.numbers) && history[n].numbers.length === 6)
+            .sort((a, b) => a - b);
+
+        const targetRounds = historyRounds.slice(-10);
+
+        if (targetRounds.length === 0) {
+            if (!cached) {
+                container.innerHTML = buildBannerHtml({ rounds: [], joinRound });
+            }
+            return;
+        }
+
+        const trendRounds = targetRounds.map(r => {
+            let rev = null;
+            try {
+                if (typeof computeUser70RecommendationsReview === 'function') {
+                    rev = computeUser70RecommendationsReview(cleanAuth, r);
+                }
+            } catch(e) {}
+            return {
+                round: r,
+                prize: (rev && rev.totalPrize) || 0,
+                hits: (rev && rev.totalWins) || 0,
+                r4: (rev && rev.grandHits && rev.grandHits[4]) || 0,
+                r5: (rev && rev.grandHits && rev.grandHits[5]) || 0
+            };
+        });
+
+        const freshData = {
+            joinRound,
+            rounds: trendRounds,
+            totalPrize: trendRounds.reduce((acc, cur) => acc + cur.prize, 0),
+            totalWins: trendRounds.reduce((acc, cur) => acc + cur.hits, 0)
+        };
+
+        try {
+            SafeLocalStorage.setItem(cacheKey, JSON.stringify(freshData));
+        } catch(e) {}
+
+        container.innerHTML = buildBannerHtml(freshData);
+    } catch(err) {
+        console.warn('[User Trend Banner Compute Error]', err);
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.renderLandingDashboard = renderLandingDashboard;
     window.updateHomeReviewDashboard = updateHomeReviewDashboard;
@@ -48609,6 +48838,7 @@ if (typeof window !== 'undefined') {
     window.getDrawRoundForSaturday21 = getDrawRoundForSaturday21;
     window.updateDrawCountdownBanner = updateDrawCountdownBanner;
     window.updateMobileDdayBadge = updateMobileDdayBadge;
+    window.renderUserWinningTrendBanner = renderUserWinningTrendBanner;
 }
 
 
@@ -48652,6 +48882,10 @@ if (typeof window !== 'undefined') {
         if (typeof updateDrawCountdownBanner !== 'undefined') {
             __exports.updateDrawCountdownBanner = updateDrawCountdownBanner;
             if (typeof window !== 'undefined') window.updateDrawCountdownBanner = updateDrawCountdownBanner;
+        }
+        if (typeof renderUserWinningTrendBanner !== 'undefined') {
+            __exports.renderUserWinningTrendBanner = renderUserWinningTrendBanner;
+            if (typeof window !== 'undefined') window.renderUserWinningTrendBanner = renderUserWinningTrendBanner;
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/shared/landing-dashboard.js]:', modErr);
