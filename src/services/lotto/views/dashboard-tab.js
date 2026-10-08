@@ -445,6 +445,19 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
                     </div>
                 </div>
 
+                <!-- 🔮 미입력 상태에서도 알림 신청 안내 -->
+                <div style="margin-top:10px; padding:8px 12px; background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.35); border-radius:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <span style="font-size:1rem;">🔮</span>
+                        <span style="font-size:0.74rem; color:#fde68a;">
+                            생년월일 입력 후 [알림 신청]을 켜두시면 매주 길시 1시간 전 스마트폰 알림이 자동 발송됩니다!
+                        </span>
+                    </div>
+                    <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" style="padding:5px 12px; border-radius:6px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#111827; font-weight:800; font-size:0.74rem; border:none; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                        <i class="fa-solid fa-bell"></i> <span>알림 신청하기</span>
+                    </button>
+                </div>
+
                 <!-- 안내 푸터 -->
                 <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:0.72rem; color:#94a3b8;">
                     <div style="display:flex; align-items:center; gap:6px;">
@@ -638,7 +651,10 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
                 <div class="fortune-toggle-left">
                     ${summaryLeftHtml}
                 </div>
-                <div class="fortune-toggle-right">
+                <div class="fortune-toggle-right" style="display:flex; align-items:center; gap:6px;">
+                    <button type="button" class="btn-fortune-push-quick" onclick="event.stopPropagation(); window.handlePushNotificationToggle && window.handlePushNotificationToggle();" style="padding:4px 9px; border-radius:6px; background:rgba(245, 158, 11, 0.2); border:1px solid #f59e0b; color:#fbbf24; font-size:0.72rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px; transition:transform 0.15s ease;" title="사주 길시 1시간 전 알림 신청">
+                        <i class="fa-solid fa-bell"></i> <span>알림신청</span>
+                    </button>
                     <button type="button" class="btn-toggle-fortune-view" onclick="event.stopPropagation(); window.toggleFortuneAdvisorAccordion && window.toggleFortuneAdvisorAccordion();">
                         <span class="fortune-toggle-btn-text">${isExpanded ? '접기' : (shouldShowInput ? '입력하기' : '상세보기')}</span>
                         <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} fortune-toggle-icon"></i>

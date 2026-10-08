@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=689">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=689">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.09.0155.40">
+    <link rel="stylesheet" href="styles.css?v=2026.10.09.0159.27">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.09.0155.40
+                        v2026.10.09.0159.27
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -134,6 +134,10 @@
                 </button>
                 <div style="display: flex; align-items: center; gap: 4px;">
                     <div id="lpMobileUserChip" class="lp-mobile-user-badge user-chip-member" style="display: none;" title="내 계정 정보"></div>
+                    <div class="lp-mobile-dday-badge" id="lpMobilePushBtn" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" style="background: rgba(245, 158, 11, 0.18); border-color: rgba(245, 158, 11, 0.45); color: #fbbf24; cursor: pointer;" title="길시 1시간 전 스마트 알림 신청">
+                        <span class="lp-dday-icon">🔔</span>
+                        <span class="lp-dday-text" style="color: #fbbf24;">알림</span>
+                    </div>
                     <div class="lp-mobile-dday-badge" id="lpMobileDdayBadge" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-generator'), 80); }" title="추천번호 생성 바로가기">
                         <span class="lp-dday-icon">🎯</span>
                         <span class="lp-dday-text" id="lpMobileDdayText">1242회 D-1</span>
@@ -144,6 +148,9 @@
             <!-- Desktop-only Top Actions -->
             <div class="lp-top-bar-actions lp-desktop-only">
                 <div id="lpHeaderUserChip" class="header-user-chip user-chip-member" style="display: none;" title="내 계정 정보 확인"></div>
+                <button id="btnPushNotifyTop" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" class="btn-lp-manual" style="background: rgba(245, 158, 11, 0.18); border-color: rgba(245, 158, 11, 0.45); color: #fbbf24;" title="사주 길일길시 1시간 전 알림 신청">
+                    <i class="fa-solid fa-bell"></i> <span>알림 신청</span>
+                </button>
                 <button id="btnLandingOpenQr" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.openManualLedgerModal) window.openManualLedgerModal(); else if(document.getElementById('btnOpenManualLedger')) document.getElementById('btnOpenManualLedger').click(); }, 120); }" class="btn-ledger-qr-prominent lp-top-qr-btn" title="실물 로또 영수증 QR 등록 바로가기">
                     <i class="fa-solid fa-qrcode"></i> <span>실구매 QR 등록</span>
                 </button>
@@ -170,7 +177,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.09.0155.40 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.09.0159.27 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -278,6 +285,27 @@
             <div class="lp-sync-strip-right">
                 <span class="lp-sync-badge-cloud" id="lpSyncBadgeCloud">Cloud 🟢</span>
             </div>
+        </div>
+
+        <!-- 🔔 [신규] 사주 길일·길시 1시간 전 & 당첨 발표 스마트 알림 신청 배너 (홈화면 전면 배치) -->
+        <div id="lpPushNotificationBanner" class="lp-push-banner" style="width: 100%; max-width: 900px; margin: 0 auto 16px auto; background: linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(99, 102, 241, 0.18) 100%); border: 1.5px solid rgba(245, 158, 11, 0.55); border-radius: 14px; padding: 12px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; box-sizing: border-box; box-shadow: 0 4px 18px rgba(0,0,0,0.3);">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 250px;">
+                <div style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #0f172a; font-size: 1.3rem; width: 42px; height: 42px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);">
+                    <i class="fa-solid fa-bell"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.92rem; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <span>사주 길일·길시 1시간 전 스마트 알림</span>
+                        <span style="font-size: 0.68rem; background: rgba(245, 158, 11, 0.25); border: 1px solid #f59e0b; color: #fbbf24; padding: 1px 7px; border-radius: 4px; font-weight: 800;">스마트 안심 케어</span>
+                    </div>
+                    <div style="font-size: 0.77rem; color: #cbd5e1; margin-top: 3px; line-height: 1.4;">
+                        회원님의 재물운이 가장 왕성한 길시 1시간 전 푸시 알림! (해당 주차 구매등록 완료 시 알림 자동 생략)
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; border: none; padding: 9px 18px; border-radius: 9px; font-size: 0.84rem; font-weight: 900; cursor: pointer; box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35); white-space: nowrap; transition: transform 0.15s ease;">
+                <i class="fa-solid fa-bell"></i> <span>알림 신청하기</span>
+            </button>
         </div>
 
         <!-- 🔮 [신규] 개인 생년월일 기반 로또 구매 추천 요일 및 길시 (명리학 어드바이저) -->
@@ -620,7 +648,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.09.0155.40
+                                v2026.10.09.0159.27
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -2044,7 +2072,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력 (Lucky 777)</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.09.0155.40
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.09.0159.27
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -4210,7 +4238,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.09.0155.40';
+        window.APP_VERSION = 'v2026.10.09.0159.27';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4281,7 +4309,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.09.0155.40';
+            var v = ver || window.APP_VERSION || 'v2026.10.09.0159.27';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4538,7 +4566,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.09.0155.40';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.09.0159.27';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4685,7 +4713,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.09.0155.40')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.09.0159.27')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -4938,8 +4966,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.09.0155.40"></script>
-    <script src="app_v2.js?v=2026.10.09.0155.40"></script>
+    <script src="data.js?v=2026.10.09.0159.27"></script>
+    <script src="app_v2.js?v=2026.10.09.0159.27"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
