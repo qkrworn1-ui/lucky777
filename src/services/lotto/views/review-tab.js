@@ -3799,7 +3799,7 @@ async function createAdmin1235ReportCanvas() {
                 🛡️ 1235회~ 실구매 영수증 및 스냅샷 불변 무결성 검증
             </div>
             <div style="color: #fbbf24; font-weight: 700;">
-                운도실력 777 (wook2100.github.io/lucky777)
+                운도실력 (wook2100.github.io/lucky777)
             </div>
         </div>
     `;

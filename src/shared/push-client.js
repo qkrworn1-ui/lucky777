@@ -317,7 +317,7 @@ export const PushClient = {
         setTimeout(() => {
             const origin = window.location.origin;
             const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
-            reg.showNotification('🎉 [운도실력 777] 알림 정상 작동 확인!', {
+            reg.showNotification('🔔 [운도실력] 알림 정상 작동 확인', {
                 body: '스마트폰 화면 꺼짐 및 백그라운드 수신이 완벽하게 작동하고 있습니다.',
                 icon: `${origin}${basePath}icons/icon-192.png`,
                 badge: `${origin}${basePath}icons/favicon.png`,
@@ -364,7 +364,7 @@ if (typeof window !== 'undefined') {
                 return;
             }
 
-            const ok = confirm('🔮 [운도실력 777 행운 알림 서비스]\n\n1. 회원님 사주의 재물 대길시 1시간 전 맞춤 알림\n2. 해당 주차에 이미 구매등록을 하셨으면 알림 자동 생략 (스마트 안심 케어)\n3. 토요일 20:45 당첨 결과 발표 즉시 통보\n\n알림을 허용하시겠습니까?');
+            const ok = confirm('🌿 [운도실력 맞춤 알림 서비스]\n\n1. 회원님 사주 길일·길시 1시간 전 스마트 알림\n2. 해당 주차 구매등록 완료 시 알림 자동 생략 (스마트 안심 케어)\n3. 토요일 20:45 공식 통계 정산 리포트 통보\n\n알림을 허용하시겠습니까?');
             if (!ok) return;
 
             const sub = await PushClient.subscribe();
