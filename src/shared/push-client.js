@@ -287,8 +287,48 @@ export const PushClient = {
             popoverPushBtnText.textContent = isSubscribed ? '행운 알림 관리 (수신 중 🟢)' : '행운 알림 설정 (길시 1시간 전)';
         }
         if (lpMobilePushBtn) {
-            lpMobilePushBtn.title = isSubscribed ? '길시 1시간 전 알림 수신 중 (클릭 시 관리)' : '길시 1시간 전 알림 신청';
+            lpMobilePushBtn.title = isSubscribed ? '길시 1시간 전 알림 수신 중 (클릭 시 관리/테스트)' : '길시 1시간 전 알림 신청';
         }
+    },
+
+    /**
+     * 🧪 알림 동작 테스트: 지정된 초(기본 3초) 뒤에 백그라운드 푸시 알림 팝업
+     * (사용자가 전원 버튼을 눌러 화면을 끄고 잠금화면 팝업 및 진동을 직접 체험할 수 있음)
+     */
+    async sendTestNotification(delaySec = 3) {
+        if (!('serviceWorker' in navigator) || !('Notification' in window)) {
+            alert('현재 브라우저에서는 알림을 지원하지 않습니다.');
+            return;
+        }
+
+        if (Notification.permission !== 'granted') {
+            alert('알림 권한이 허용되지 않았습니다. 먼저 [알림 신청하기]를 완료해 주세요.');
+            return;
+        }
+
+        const reg = await navigator.serviceWorker.ready;
+        const msg = `🧪 ${delaySec}초 뒤 테스트 알림이 발송됩니다!\n\n지금 스마트폰의 [전원 버튼]을 눌러 화면을 끄고 기다려보세요.\n화면이 꺼진 상태에서도 징~ 진동과 함께 잠금화면에 알림이 뜹니다.`;
+        
+        if (typeof window.showToast === 'function') {
+            window.showToast(`🧪 ${delaySec}초 뒤 테스트 알림 발송! 지금 화면을 꺼보세요.`);
+        }
+        alert(msg);
+
+        setTimeout(() => {
+            const origin = window.location.origin;
+            const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
+            reg.showNotification('🎉 [운도실력 777] 알림 정상 작동 확인!', {
+                body: '스마트폰 화면 꺼짐 및 백그라운드 수신이 완벽하게 작동하고 있습니다.',
+                icon: `${origin}${basePath}icons/icon-192.png`,
+                badge: `${origin}${basePath}icons/favicon.png`,
+                vibrate: [200, 100, 200, 100, 400],
+                tag: 'lucky777-test-alert',
+                data: { url: `${origin}${basePath}?tab=tab-confirmed` }
+            });
+
+            // App Badging API 배지 테스트
+            PushClient.setBadge(1);
+        }, delaySec * 1000);
     }
 };
 
@@ -305,14 +345,20 @@ if (typeof window !== 'undefined') {
         try {
             const existingSub = await PushClient.getSubscription();
             if (existingSub) {
-                const wantCancel = confirm('이미 [사주 길일길시 1시간 전 & 당첨 발표] 알림을 구독 중입니다.\n\n알림 수신을 해제하시겠습니까?');
-                if (wantCancel) {
-                    await PushClient.unsubscribe();
-                    await PushClient.updateBannerVisibility();
-                    if (typeof window.showToast === 'function') {
-                        window.showToast('🔔 푸시 알림 수신이 안전하게 해제되었습니다.');
-                    } else {
-                        alert('푸시 알림 수신이 해제되었습니다.');
+                const choice = confirm('🟢 현재 [사주 길일길시 1시간 전 & 당첨 발표] 알림이 정상 등록되어 있습니다.\n\n[확인] : 3초 뒤 테스트 알림 받기 (화면 끄고 확인)\n[취소] : 알림 수신 해제 창으로 이동');
+                if (choice) {
+                    // 테스트 알림 실행
+                    await PushClient.sendTestNotification(3);
+                } else {
+                    const wantCancel = confirm('정말 알림 수신을 해제하시겠습니까?');
+                    if (wantCancel) {
+                        await PushClient.unsubscribe();
+                        await PushClient.updateBannerVisibility();
+                        if (typeof window.showToast === 'function') {
+                            window.showToast('🔔 푸시 알림 수신이 안전하게 해제되었습니다.');
+                        } else {
+                            alert('푸시 알림 수신이 해제되었습니다.');
+                        }
                     }
                 }
                 return;
@@ -324,10 +370,9 @@ if (typeof window !== 'undefined') {
             const sub = await PushClient.subscribe();
             if (sub) {
                 await PushClient.updateBannerVisibility();
-                if (typeof window.showToast === 'function') {
-                    window.showToast('✨ 사주 길일·길시 1시간 전 스마트 알림이 등록되었습니다!');
-                } else {
-                    alert('✨ 사주 길일·길시 1시간 전 스마트 알림이 등록되었습니다!\n(해당 주차 구매등록 완료 시 알림이 자동 생략됩니다)');
+                const testNow = confirm('✨ 사주 길일·길시 1시간 전 스마트 알림이 등록되었습니다!\n\n지금 화면을 끄고 3초 뒤 테스트 알림이 오는지 시험해 보시겠습니까?');
+                if (testNow) {
+                    await PushClient.sendTestNotification(3);
                 }
             }
         } catch (err) {
