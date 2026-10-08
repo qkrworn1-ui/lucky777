@@ -381,10 +381,31 @@ if (typeof window !== 'undefined') {
         }
     };
 
-    // 앱 실행 시 배지 초기화 및 홈화면 배너 가시성 자동 동기화
+    // 앱 실행 및 화면 복귀 시 배지 초기화 및 홈화면 배너 가시성 실시간 자동 동기화
     function initPushUI() {
         PushClient.clearBadge();
         PushClient.updateBannerVisibility();
+
+        // 1. 스마트폰 설정 등 외부에서 알림을 끄고 앱으로 돌아왔을 때 즉시 감지 (focus / visibilitychange)
+        window.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                PushClient.updateBannerVisibility();
+            }
+        });
+        window.addEventListener('focus', () => {
+            PushClient.updateBannerVisibility();
+        });
+
+        // 2. W3C Permissions API 권한 변경 실시간 리스너 (브라우저 설정 변경 즉시 반영)
+        if ('permissions' in navigator && navigator.permissions.query) {
+            try {
+                navigator.permissions.query({ name: 'notifications' }).then((status) => {
+                    status.onchange = function() {
+                        PushClient.updateBannerVisibility();
+                    };
+                }).catch(() => {});
+            } catch (e) {}
+        }
     }
 
     if (document.readyState === 'loading') {
