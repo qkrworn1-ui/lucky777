@@ -598,9 +598,8 @@ export function renderQuickViewContent() {
         const nums = getComboNumbers(combo);
 
         const ballsHtml = nums.map(n => {
-            const bgColor = getBallHexColor(n);
             const textColor = n <= 10 ? '#0f172a' : '#ffffff';
-            return `<span class="qv-ball ${getBallColorClass(n)}" style="background: ${bgColor}; color: ${textColor};">${n.toString().padStart(2, '0')}</span>`;
+            return `<span class="qv-ball ball-mono ${getBallColorClass(n)}" style="color: ${textColor};">${n.toString().padStart(2, '0')}</span>`;
         }).join('');
 
         gridHtml += `

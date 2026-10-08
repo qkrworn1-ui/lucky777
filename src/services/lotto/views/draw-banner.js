@@ -63,12 +63,12 @@ export function renderLatestDrawBanner() {
     const ballsContainer = document.getElementById('latestDrawBalls');
     if (ballsContainer) {
         const mainBallsHTML = state.latestDrawData.numbers.map(n => `
-            <div class="lotto-ball sm-ball ${getBallColorClass(n)}">${n}</div>
+            <div class="ball-mono lotto-ball sm-ball ${getBallColorClass(n)}">${n.toString().padStart(2, '0')}</div>
         `).join('');
 
         const bonusBallHTML = `
             <span class="plus-symbol">+</span>
-            <div class="lotto-ball sm-ball ${getBallColorClass(state.latestDrawData.bonus)}" title="보너스 번호">${state.latestDrawData.bonus}</div>
+            <div class="ball-mono lotto-ball sm-ball ${getBallColorClass(state.latestDrawData.bonus)}" title="보너스 번호">${state.latestDrawData.bonus.toString().padStart(2, '0')}</div>
         `;
 
         ballsContainer.innerHTML = mainBallsHTML + bonusBallHTML;

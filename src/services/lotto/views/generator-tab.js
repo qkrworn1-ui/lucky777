@@ -775,7 +775,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                     <div class="combo-compact-left">
                         <span class="combo-compact-num ${index < 3 ? 'num-gold' : ''}">#${(index + 1).toString().padStart(2, '0')}</span>
                         <div class="combo-compact-balls">
-                            ${numbers.map(n => `<span class="lotto-ball lotto-ball-xs ${getBallColorClass(n)}">${n}</span>`).join('')}
+                            ${numbers.map(n => `<span class="ball-mono lotto-ball lotto-ball-xs ${getBallColorClass(n)}">${n.toString().padStart(2, '0')}</span>`).join('')}
                         </div>
                         ${isPurchased ? `<span class="combo-compact-purchased"><i class="fa-solid fa-circle-check"></i> 구매</span>` : ''}
                     </div>
@@ -809,7 +809,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                 <div class="combo-body">
                     <div class="balls-row">
                         ${numbers.map(n => `
-                            <div class="lotto-ball ${getBallColorClass(n)} ${isRollingAnimation ? 'ball-rolling' : ''}">${n}</div>
+                            <div class="ball-mono lotto-ball ${getBallColorClass(n)} ${isRollingAnimation ? 'ball-rolling' : ''}">${n.toString().padStart(2, '0')}</div>
                         `).join('')}
                     </div>
                     <div class="combo-stats">

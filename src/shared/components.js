@@ -12,23 +12,27 @@ export function createBallHtml(num, options = {}) {
     const bg = getBallHexColor(n);
     const colorClass = getBallColorClass(n);
     const textColor = getBallTextColor(n);
-    const size = options.size || 'normal'; // 'mini' (22px), 'small' (26px), 'normal' (34px), 'large' (40px)
+    const size = options.size || 'normal'; // 'mini' (22px), 'small' (26px), 'normal' (28px), 'large' (40px)
     
     let sizeStyle = '';
-    if (size === 'mini') sizeStyle = 'width: 22px; height: 22px; line-height: 22px; font-size: 0.72rem;';
+    if (size === 'mini') sizeStyle = 'width: 22px; height: 22px; line-height: 22px; font-size: 0.70rem;';
     else if (size === 'small') sizeStyle = 'width: 26px; height: 26px; line-height: 26px; font-size: 0.75rem;';
     else if (size === 'large') sizeStyle = 'width: 42px; height: 42px; line-height: 42px; font-size: 1.1rem;';
+    else sizeStyle = 'width: 28px; height: 28px; line-height: 28px; font-size: 0.80rem;';
 
-    let borderStyle = '';
+    let hitClass = '';
+    let extraStyle = '';
     if (options.isHit) {
-        borderStyle = 'border: 2px solid #fbbf24; font-weight: 800; transform: scale(1.05); box-shadow: 0 0 6px rgba(251,191,36,0.6);';
+        hitClass = 'ball-hit';
+        extraStyle = 'background: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border: 1.5px solid #10b981 !important; font-weight: 800 !important;';
     } else if (options.isBonusHit) {
-        borderStyle = 'border: 2px solid #69c8f2; font-weight: 800; transform: scale(1.05); box-shadow: 0 0 6px rgba(105,200,242,0.6);';
+        hitClass = 'ball-bonus-hit';
+        extraStyle = 'background: rgba(56, 189, 248, 0.22) !important; color: #38bdf8 !important; border: 1.5px solid #38bdf8 !important; font-weight: 800 !important;';
     } else if (options.dim) {
-        borderStyle = 'opacity: 0.4;';
+        extraStyle = 'opacity: 0.35 !important;';
     }
 
-    return `<span class="lotto-ball ${colorClass} ${options.extraClass || ''}" style="background: ${bg}; ${sizeStyle} ${borderStyle} text-align: center; border-radius: 50%; color: ${textColor}; display: inline-flex; align-items: center; justify-content: center; font-weight: 900;">${n}</span>`;
+    return `<span class="ball-mono ${hitClass} lotto-ball ${colorClass} ${options.extraClass || ''}" style="${sizeStyle} color: ${textColor}; ${extraStyle} text-align: center; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
 }
 
 /**

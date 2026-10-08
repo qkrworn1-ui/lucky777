@@ -1089,65 +1089,69 @@ export async function renderConfirmedPurchasesList() {
 
                     if (matchCount === 6) {
                         isRowWon = true;
-                        resultText = `<span style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(217, 119, 6, 0.35)); border: 1px solid #fbbf24; color: #fef08a; padding: 2px 8px; border-radius: 5px; font-size: 0.74rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);"><i class="fa-solid fa-crown" style="color: #fbbf24;"></i> 1등 대박 (+${p1.toLocaleString()}원)</span>`;
-                        rowBg = "rgba(251,191,36,0.12)";
-                        border = "1.5px solid #fbbf24";
+                        resultText = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-crown" style="color: #10b981;"></i> 1등 대박 (+${p1.toLocaleString()}원)</span>`;
+                        rowBg = "#111827";
+                        border = "1.5px solid #10b981";
                     } else if (matchCount === 5 && hasBonus) {
                         isRowWon = true;
-                        resultText = `<span style="background: rgba(248, 113, 113, 0.3); border: 1px solid #f87171; color: #fecaca; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(248, 113, 113, 0.35);"><i class="fa-solid fa-medal" style="color: #f87171;"></i> 2등 당첨 (+${p2.toLocaleString()}원)</span>`;
-                        rowBg = "rgba(248,113,113,0.12)";
-                        border = "1.5px solid #f87171";
+                        resultText = `<span style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #38bdf8; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-medal"></i> 2등 당첨 (+${p2.toLocaleString()}원)</span>`;
+                        rowBg = "#111827";
+                        border = "1.5px solid #38bdf8";
                     } else if (matchCount === 5) {
                         isRowWon = true;
-                        resultText = `<span style="background: rgba(96, 165, 250, 0.3); border: 1px solid #60a5fa; color: #bfdbfe; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(96, 165, 250, 0.35);"><i class="fa-solid fa-trophy" style="color: #60a5fa;"></i> 3등 당첨 (+${p3.toLocaleString()}원)</span>`;
-                        rowBg = "rgba(96,165,250,0.12)";
-                        border = "1.5px solid #60a5fa";
+                        resultText = `<span style="background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; color: #38bdf8; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;"><i class="fa-solid fa-trophy"></i> 3등 당첨 (+${p3.toLocaleString()}원)</span>`;
+                        rowBg = "#111827";
+                        border = "1.5px solid #38bdf8";
                     } else if (matchCount === 4) {
                         isRowWon = true;
-                        resultText = `<span style="background: rgba(16, 185, 129, 0.25); border: 1px solid #10b981; color: #a7f3d0; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-award" style="color: #34d399;"></i> 4등 (50,000원)</span>`;
-                        rowBg = "rgba(16,185,129,0.12)";
+                        resultText = `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; color: #34d399; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;">4등 (50,000원)</span>`;
+                        rowBg = "#111827";
                         border = "1.5px solid #10b981";
                     } else if (matchCount === 3) {
                         isRowWon = true;
-                        resultText = `<span style="background: rgba(167, 139, 250, 0.25); border: 1px solid #a78bfa; color: #ddd6fe; padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px; box-shadow: 0 0 8px rgba(167, 139, 250, 0.3);"><i class="fa-solid fa-award" style="color: #c4b5fd;"></i> 5등 (5,000원)</span>`;
-                        rowBg = "rgba(167,139,250,0.12)";
-                        border = "1.5px solid #a78bfa";
+                        resultText = `<span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 3px;">3개 적중 (5등)</span>`;
+                        rowBg = "#111827";
+                        border = "1px solid rgba(16, 185, 129, 0.4)";
                     } else {
-                        resultText = `<span style="color: #64748b; font-size: 0.72rem;">낙첨</span>`;
-                        if (hasWonReceipt) {
-                            rowBg = "rgba(255,255,255,0.01)";
-                            border = "1px solid rgba(255,255,255,0.03)";
-                        }
+                        resultText = `<span style="color: #64748b; font-size: 0.72rem; font-weight: 600; white-space: nowrap; flex-shrink: 0;">${matchCount}개 적중 (낙첨)</span>`;
+                        rowBg = "#0f172a";
+                        border = "1px solid #1e293b";
                     }
                 }
 
                 const gameLetter = ['A', 'B', 'C', 'D', 'E'][cIdx] || `${cIdx + 1}`;
                 const letterStyle = isRowWon
-                    ? `background: ${border.split(' ')[2] || '#10b981'}; color: #000; font-weight: 900;`
-                    : `color: var(--text-secondary); background: rgba(0,0,0,0.3); font-weight: 800;`;
+                    ? `background: #1e293b; color: #34d399; border: 1px solid #10b981; font-weight: 800;`
+                    : `color: #94a3b8; background: #0f172a; border: 1px solid #1e293b; font-weight: 700;`;
 
                 gamesHtml += `
-                    <div class="confirmed-game-row" style="display: flex; justify-content: space-between; align-items: center; background: ${rowBg}; border: ${border}; padding: 5px 8px; border-radius: 6px; gap: 4px; width: 100%; box-sizing: border-box; ${hasWonReceipt && !isRowWon ? 'opacity: 0.7;' : ''}">
-                        <div class="confirmed-game-main" style="display: inline-flex; align-items: center; gap: 5px; flex-shrink: 1; min-width: 0;">
-                            <span class="confirmed-game-letter" style="font-size: 0.72rem; ${letterStyle} min-width: 18px; text-align: center; padding: 2px 3px; border-radius: 4px; font-family: monospace; flex-shrink: 0;">${gameLetter}</span>
+                    <div class="confirmed-game-row" style="display: flex; justify-content: space-between; align-items: center; background: ${rowBg}; border: ${border}; padding: 6px 10px; border-radius: 8px; gap: 8px; width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; ${hasWonReceipt && !isRowWon ? 'opacity: 0.75;' : ''}">
+                        <div class="confirmed-game-main" style="display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                            <span class="confirmed-game-letter" style="font-size: 0.72rem; ${letterStyle} min-width: 18px; text-align: center; padding: 2px 4px; border-radius: 4px; font-family: monospace; flex-shrink: 0;">${gameLetter}</span>
                             <div class="balls-row confirmed-balls-row" style="display: inline-flex; gap: 3px; flex-shrink: 0; flex-wrap: nowrap;">
                                 ${nums.map(n => {
                                     const isHit = actualDraw ? new Set(actualDraw.numbers).has(n) : false;
                                     const isBonusHit = actualDraw ? (n === actualDraw.bonus) : false;
-                                    const ballBg = getColor(n);
+                                    let hitClass = '';
                                     let extraStyle = '';
                                     if (actualDraw) {
-                                        extraStyle = isHit ? 'border: 2.5px solid #fbbf24; font-weight: 900; box-shadow: 0 0 8px rgba(251,191,36,0.8);' : (isBonusHit ? 'border: 2.5px solid #f87171; font-weight: 900; box-shadow: 0 0 8px rgba(248,113,113,0.8);' : (hasWonReceipt && !isRowWon ? 'opacity: 0.35;' : 'opacity: 0.55;'));
+                                        if (isHit) {
+                                            hitClass = 'ball-hit';
+                                            extraStyle = 'background: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border: 1.5px solid #10b981 !important; font-weight: 800 !important;';
+                                        } else if (isBonusHit) {
+                                            hitClass = 'ball-bonus-hit';
+                                            extraStyle = 'background: rgba(56, 189, 248, 0.22) !important; color: #38bdf8 !important; border: 1.5px solid #38bdf8 !important; font-weight: 800 !important;';
+                                        } else if (hasWonReceipt && !isRowWon) {
+                                            extraStyle = 'opacity: 0.35 !important;';
+                                        }
                                     }
                                     const ballTextColor = (n <= 10) ? '#0f172a' : '#ffffff';
-                                    return `<span class="lotto-ball-mini ${n <= 10 ? 'ball-yellow' : ''}" style="background: ${ballBg}; ${extraStyle} width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; font-size: 0.68rem; color: ${ballTextColor}; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
+                                    return `<span class="ball-mono ${hitClass} lotto-ball-mini" style="width: 25px; height: 25px; line-height: 25px; text-align: center; border-radius: 50%; font-size: 0.70rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace; ${extraStyle}">${n.toString().padStart(2, '0')}</span>`;
                                 }).join('')}
                             </div>
-                            <div class="confirmed-ai-tag" style="flex-shrink: 0; white-space: nowrap;">
-                                ${aiMatchTag}
-                            </div>
+                            ${aiMatchTag ? `<div class="confirmed-ai-tag" style="flex-shrink: 0; white-space: nowrap;">${aiMatchTag}</div>` : ''}
                         </div>
-                        <div class="confirmed-game-result" style="margin-left: auto; text-align: right; flex-shrink: 0; white-space: nowrap;">${resultText}</div>
+                        <div class="confirmed-game-result" style="margin-left: auto; text-align: right; flex-shrink: 0; white-space: nowrap; padding-left: 6px;">${resultText}</div>
                     </div>
                 `;
             });

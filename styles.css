@@ -10423,8 +10423,8 @@ html, body {
     }
 
     .lp-fin-stats {
-        grid-template-columns: repeat(4, 1fr) !important;
-        gap: 4px !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px 10px !important;
     }
 
     .lp-compact-win-row {
@@ -12463,15 +12463,16 @@ html, body {
         margin: 0 !important;
     }
 
-    /* 6. Financial Board (Concept 1 Unified Card: Header + 4-col Grid + Strip) */
+    /* 6. Financial Board (Design 1 Minimalist Monochrome: 2-Col Grid, No Clipping) */
     .lp-financial-summary {
-        padding: 12px !important;
+        padding: 12px 14px !important;
         border-radius: 16px !important;
-        background: rgba(8, 14, 28, 0.95) !important;
-        border: 1px solid rgba(56, 189, 248, 0.22) !important;
+        background: #111827 !important;
+        border: 1px solid #1e293b !important;
         margin-bottom: 8px !important;
         width: 100% !important;
         box-sizing: border-box !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
     }
 
     .lp-fin-main-row {
@@ -12490,102 +12491,129 @@ html, body {
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
         width: 100% !important;
-        margin-bottom: 6px !important;
+        margin-bottom: 8px !important;
     }
 
     .lp-fin-mobile-title {
         display: flex !important;
         align-items: center !important;
-        gap: 4px !important;
+        gap: 5px !important;
         font-size: 11px !important;
-        font-weight: 800 !important;
-        color: #e2e8f0 !important;
+        font-weight: 700 !important;
+        color: #cbd5e1 !important;
+        flex-shrink: 0 !important;
     }
 
     .lp-mobile-confirmed-pill {
         display: inline-block !important;
-        font-size: 9px !important;
-        font-weight: 800 !important;
-        color: #38bdf8 !important;
-        background: rgba(6, 182, 212, 0.15) !important;
-        border: 1px solid rgba(6, 182, 212, 0.35) !important;
-        padding: 2px 6px !important;
-        border-radius: 4px !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        color: #34d399 !important;
+        background: rgba(16, 185, 129, 0.12) !important;
+        border: 1px solid rgba(16, 185, 129, 0.3) !important;
+        padding: 2px 8px !important;
+        border-radius: 6px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .lp-btn-prob-compare-sm {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        color: #cbd5e1 !important;
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
+        padding: 2px 8px !important;
+        border-radius: 6px !important;
+        flex-shrink: 0 !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
     }
 
     .lp-fin-stats {
         display: grid !important;
-        grid-template-columns: repeat(4, 1fr) !important;
-        gap: 2px !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 8px 10px !important;
         width: 100% !important;
-        padding: 8px 4px !important;
-        background: rgba(4, 8, 18, 0.85) !important;
-        border-radius: 12px !important;
-        border: 1px solid rgba(56, 189, 248, 0.2) !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
         box-sizing: border-box !important;
-        text-align: center !important;
-        margin-bottom: 6px !important;
+        margin-bottom: 8px !important;
     }
 
     .lp-stat-item {
-        padding: 2px !important;
-        background: transparent !important;
-        text-align: center !important;
+        padding: 8px 12px !important;
+        background: #0f172a !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 10px !important;
+        text-align: left !important;
         box-sizing: border-box !important;
         width: 100% !important;
         min-width: 0 !important;
-        overflow: hidden !important;
+        overflow: visible !important;
     }
 
     .lp-stat-label {
-        font-size: 9px !important;
-        margin-bottom: 2px !important;
+        display: block !important;
+        font-size: 11px !important;
+        margin-bottom: 3px !important;
         white-space: nowrap !important;
         color: #94a3b8 !important;
+        font-weight: 600 !important;
     }
 
     .lp-stat-val {
-        font-size: 11px !important;
-        font-weight: 900 !important;
+        display: block !important;
+        font-size: 1.05rem !important;
+        font-weight: 800 !important;
+        font-family: 'JetBrains Mono', monospace !important;
         white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
+        overflow: visible !important;
+        color: #f1f5f9 !important;
     }
 
-    /* Concept 1 Mobile Recent Win Highlight Strip */
+    /* Design 1 Mobile Recent Win Highlight Strip */
     .lp-mobile-win-strip {
         display: flex !important;
         justify-content: space-between !important;
         align-items: center !important;
         width: 100% !important;
-        background: linear-gradient(90deg, rgba(8, 25, 45, 0.5) 0%, rgba(8, 14, 28, 0.85) 100%) !important;
-        border: 1px solid rgba(6, 182, 212, 0.3) !important;
+        background: #0f172a !important;
+        border: 1px solid #1e293b !important;
         border-radius: 10px !important;
-        padding: 6px 10px !important;
+        padding: 7px 10px !important;
         box-sizing: border-box !important;
-        font-size: 10px !important;
-        color: #67e8f9 !important;
+        font-size: 11px !important;
+        color: #cbd5e1 !important;
     }
 
     .lp-win-strip-left {
         display: flex !important;
         align-items: center !important;
-        gap: 4px !important;
+        gap: 6px !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
         white-space: nowrap !important;
     }
 
     .lp-win-strip-btn {
-        background: none !important;
-        border: none !important;
+        background: #1e293b !important;
+        border: 1px solid #334155 !important;
         color: #94a3b8 !important;
-        font-size: 9px !important;
-        text-decoration: underline !important;
+        font-size: 10px !important;
+        font-weight: 600 !important;
+        padding: 3px 8px !important;
+        border-radius: 6px !important;
         cursor: pointer !important;
-        padding: 0 !important;
+        text-decoration: none !important;
         flex-shrink: 0 !important;
+        margin-left: 6px !important;
     }
 
     /* Hide redundant 3 long mini cards on mobile */
@@ -20549,7 +20577,37 @@ body.is-admin .btn-snapshot-audit-compact {
     border-radius: 10px !important;
 }
 
-/* Clean Minimalist Hit Ball */
+/* Universal Design 1 Minimalist Lotto Ball (Matte Charcoal + Refined Monospace) */
+.ball-mono,
+.lotto-ball,
+.lotto-ball-mini,
+.qv-ball,
+.sim-win-ball,
+.verify-ball-mini {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    font-weight: 700 !important;
+    font-family: 'JetBrains Mono', 'SF Pro Mono', monospace !important;
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    box-shadow: none !important;
+    user-select: none !important;
+    text-shadow: none !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.lotto-ball::after,
+.qv-ball::after,
+.ball-mono::after {
+    display: none !important;
+}
+
+/* Clean Minimalist Hit Ball - Emerald Glow */
+.ball-hit,
+.ball-mono.ball-hit,
 .ball.is-hit,
 .ball.hit,
 .matched-ball,
@@ -20558,12 +20616,46 @@ body.is-admin .btn-snapshot-audit-compact {
 .lotto-ball-mini.is-hit,
 .lotto-ball-mini.hit,
 .ball-mini.is-hit,
-.ball-mini.hit {
-    background: #10b981 !important;
-    color: #ffffff !important;
-    border: 2px solid #34d399 !important;
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4) !important;
-    font-weight: 900 !important;
+.ball-mini.hit,
+.verify-ball-hit,
+.sim-win-ball.is-hit {
+    background: rgba(16, 185, 129, 0.22) !important;
+    color: #34d399 !important;
+    border: 1.5px solid #10b981 !important;
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.35) !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
+}
+
+/* Bonus Hit Ball - Sky Blue Glow */
+.ball-bonus-hit,
+.ball-mono.ball-bonus-hit,
+.lotto-ball.bonus-hit,
+.lotto-ball-mini.bonus-hit,
+.sim-win-ball.bonus-hit {
+    background: rgba(56, 189, 248, 0.22) !important;
+    color: #38bdf8 !important;
+    border: 1.5px solid #38bdf8 !important;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.35) !important;
+    font-weight: 800 !important;
+    text-shadow: none !important;
+}
+
+/* Combo Row Anti-Overlap Safeguards */
+.confirmed-game-row,
+.receipt-combo-row,
+.combo-compact-row,
+.combo-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+.confirmed-game-result,
+.receipt-combo-result,
+.combo-result-badge {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
 }
 
 /* ==========================================================================
