@@ -3358,6 +3358,137 @@ Lotto 6/45
             self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
             self.assertIn('OK_MULTI_SHEET_PRESERVATION_TEST', res.stdout)
 
+    # [Test 105] User Last Access Tracking and Admin Display Integrity Test
+    def test_105_user_last_access_tracking_and_admin_display(self):
+        with open('index.html', 'r', encoding='utf-8') as f:
+            index_code = f.read()
+        with open('src/shared/auth-mgmt.js', 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+
+        # 1. index.html userDetailDrawerPanel has last access info elements
+        self.assertIn('id="drawerLastAccessText"', index_code)
+        self.assertIn('id="drawerLastAccessBadge"', index_code)
+        self.assertIn('id="drawerLastDeviceText"', index_code)
+
+        # 2. auth-mgmt.js exports and functions
+        self.assertIn('export function getSimpleDeviceInfo()', auth_code)
+        self.assertIn('export function formatLastAccessTime(timestamp)', auth_code)
+        self.assertIn('export async function recordLastAccess(userId)', auth_code)
+        self.assertIn('window.getSimpleDeviceInfo = getSimpleDeviceInfo', auth_code)
+        self.assertIn('window.formatLastAccessTime = formatLastAccessTime', auth_code)
+        self.assertIn('window.recordLastAccess = recordLastAccess', auth_code)
+
+        # 3. 30-minute throttling logic
+        self.assertIn('30 * 60 * 1000', auth_code)
+        self.assertIn('last_access_log_', auth_code)
+
+        # 4. Auth entrypoints trigger recordLastAccess / lastAccessAt
+        self.assertIn('recordLastAccess(authId)', auth_code)
+        self.assertIn('lastAccessAt: nowIso', auth_code)
+        self.assertIn('lastDevice: getSimpleDeviceInfo()', auth_code)
+
+        # 5. Admin display bindings
+        self.assertIn('drawerLastAccessText', auth_code)
+        self.assertIn('drawerLastAccessBadge', auth_code)
+        self.assertIn('drawerLastDeviceText', auth_code)
+        self.assertIn('formatLastAccessTime(lastAccessRaw)', auth_code)
+
+        # 6. Node.js unit verification for getSimpleDeviceInfo & formatLastAccessTime & recordLastAccess
+        import subprocess, shutil
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_script = """
+            global.window = {
+                addEventListener: () => {},
+                removeEventListener: () => {},
+                state: { allRegisteredUsersList: [] },
+                location: { search: '' }
+            };
+            const sessionData = {};
+            global.sessionStorage = {
+                getItem: (k) => sessionData[k] || null,
+                setItem: (k, v) => { sessionData[k] = String(v); },
+                removeItem: (k) => { delete sessionData[k]; }
+            };
+            const localData = {};
+            global.localStorage = {
+                getItem: (k) => localData[k] || null,
+                setItem: (k, v) => { localData[k] = String(v); },
+                removeItem: (k) => { delete localData[k]; }
+            };
+            global.document = {
+                addEventListener: () => {},
+                getElementById: () => null,
+                querySelector: () => null,
+                querySelectorAll: () => [],
+                createElement: () => ({ setAttribute: () => {}, style: {} }),
+                head: { appendChild: () => {} },
+                body: { appendChild: () => {} }
+            };
+
+            async function run() {
+                const authMod = await import('./src/shared/auth-mgmt.js');
+                
+                // Test 1: getSimpleDeviceInfo
+                const dev = authMod.getSimpleDeviceInfo();
+                if (typeof dev !== 'string' || !dev) {
+                    console.error('getSimpleDeviceInfo failed');
+                    process.exit(1);
+                }
+
+                // Test 2: formatLastAccessTime
+                if (authMod.formatLastAccessTime(null) !== '미기록') {
+                    console.error('formatLastAccessTime(null) should return 미기록');
+                    process.exit(2);
+                }
+                const nowIso = new Date().toISOString();
+                const nowFormatted = authMod.formatLastAccessTime(nowIso);
+                if (nowFormatted !== '방금 전') {
+                    console.error('formatLastAccessTime(now) should return 방금 전, got ' + nowFormatted);
+                    process.exit(3);
+                }
+                const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+                const tenFormatted = authMod.formatLastAccessTime(tenMinAgo);
+                if (!tenFormatted.includes('10분 전') && !tenFormatted.includes('오늘')) {
+                    console.error('formatLastAccessTime(10m) failed: ' + tenFormatted);
+                    process.exit(4);
+                }
+
+                // Test 3: recordLastAccess with 30-min throttle
+                let firestoreWrites = 0;
+                global.window.db = {
+                    collection: (col) => ({
+                        doc: (docId) => ({
+                            set: async (data, opts) => {
+                                firestoreWrites++;
+                                return true;
+                            }
+                        })
+                    })
+                };
+
+                await authMod.recordLastAccess('user_alpha');
+                if (firestoreWrites !== 1) {
+                    console.error('First recordLastAccess should write to firestore once, got ' + firestoreWrites);
+                    process.exit(5);
+                }
+
+                // Immediate second call should be throttled (zero additional writes)
+                await authMod.recordLastAccess('user_alpha');
+                if (firestoreWrites !== 1) {
+                    console.error('Second recordLastAccess within 30m should be throttled, got ' + firestoreWrites);
+                    process.exit(6);
+                }
+
+                console.log('OK_USER_LAST_ACCESS_TEST');
+                process.exit(0);
+            }
+            run().catch(e => { console.error(e); process.exit(9); });
+            """
+            res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, cwd=self.root_dir)
+            self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
+            self.assertIn('OK_USER_LAST_ACCESS_TEST', res.stdout)
+
 if __name__ == '__main__':
     unittest.main()
 

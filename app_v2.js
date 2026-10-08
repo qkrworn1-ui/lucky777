@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.08.1826 - BUILD_DATE: 2026-10-08] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.08.1937 - BUILD_DATE: 2026-10-08] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.08.1826)
+ * Lucky777 Smart Bundle (v2026.10.08.1937)
  */
 
 
@@ -1843,12 +1843,142 @@ function isUserVerifiedAndPledged(userId, userData = null) {
     return !!(isNameValid && isPhoneValid && isSigValid);
 }
 
+/**
+ * 📱 초경량 접속 단말기 및 브라우저 환경 감지
+ */
+function getSimpleDeviceInfo() {
+    if (typeof navigator === 'undefined') return '알 수 없음';
+    const ua = navigator.userAgent || '';
+    const isKakao = ua.includes('KAKAOTALK');
+    const isIos = /iPhone|iPad|iPod/i.test(ua);
+    const isAndroid = /Android/i.test(ua);
+    const isMac = /Macintosh|Mac OS X/i.test(ua) && !isIos;
+    const isWindows = /Windows/i.test(ua);
+
+    let osDevice = 'PC';
+    if (isIos) osDevice = ua.includes('iPad') ? '아이패드' : '아이폰';
+    else if (isAndroid) osDevice = '갤럭시/안드로이드';
+    else if (isMac) osDevice = 'Mac';
+    else if (isWindows) osDevice = 'Windows PC';
+
+    let browser = '웹 브라우저';
+    if (isKakao) browser = '카카오톡';
+    else if (ua.includes('SamsungBrowser')) browser = '삼성인터넷';
+    else if (ua.includes('NAVER')) browser = '네이버앱';
+    else if (ua.includes('Whale')) browser = '웨일';
+    else if (ua.includes('Edg')) browser = 'Edge';
+    else if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Safari')) browser = 'Safari';
+    else if (ua.includes('Firefox')) browser = 'Firefox';
+
+    return `${osDevice} (${browser})`;
+}
+
+/**
+ * 🕒 마지막 접속 시점 포맷팅 (오늘 HH:mm, 어제 HH:mm, MM.DD, 방금 전 등)
+ */
+function formatLastAccessTime(timestamp) {
+    if (!timestamp) return '미기록';
+    try {
+        const dt = new Date(timestamp);
+        if (isNaN(dt.getTime())) return '미기록';
+
+        const now = new Date();
+        const diffMs = now.getTime() - dt.getTime();
+        if (diffMs < 0) return '방금 전';
+
+        const diffMin = Math.floor(diffMs / 60000);
+        if (diffMin < 1) return '방금 전';
+        if (diffMin < 60) return `${diffMin}분 전`;
+
+        const isToday = dt.getFullYear() === now.getFullYear() &&
+                        dt.getMonth() === now.getMonth() &&
+                        dt.getDate() === now.getDate();
+
+        const pad = (n) => String(n).padStart(2, '0');
+        const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+
+        if (isToday) return `오늘 ${timeStr}`;
+
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        const isYesterday = dt.getFullYear() === yesterday.getFullYear() &&
+                            dt.getMonth() === yesterday.getMonth() &&
+                            dt.getDate() === yesterday.getDate();
+        if (isYesterday) return `어제 ${timeStr}`;
+
+        return `${pad(dt.getMonth() + 1)}.${pad(dt.getDate())}`;
+    } catch(e) {
+        return '미기록';
+    }
+}
+
+/**
+ * 🕒 사용자 마지막 접속 일시 및 기기 정보 기록 (30분 스로틀링으로 DB 비용 제로화)
+ */
+async function recordLastAccess(userId) {
+    if (!userId) return;
+    let cleanId = String(userId).trim();
+    if (cleanId.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanId);
+            cleanId = p.userId || p.userid || p.id || cleanId;
+        } catch(e) {}
+    }
+    cleanId = cleanId.toLowerCase().trim();
+    if (!cleanId || cleanId === 'guest' || cleanId.startsWith('{') || cleanId.startsWith('test_') || cleanId === 'app_latest_version' || cleanId === 'dashboard_summary_latest') return;
+
+    const now = Date.now();
+    const sessionKey = `last_access_log_${cleanId}`;
+
+    try {
+        if (typeof sessionStorage !== 'undefined') {
+            const lastRecorded = parseInt(sessionStorage.getItem(sessionKey), 10);
+            // 30분(1,800,000ms) 이내 중복 기록 스킵 (Firestore 비용 0원 최적화)
+            if (!isNaN(lastRecorded) && (now - lastRecorded) < 30 * 60 * 1000) {
+                return;
+            }
+            sessionStorage.setItem(sessionKey, String(now));
+        }
+    } catch(e) {}
+
+    const nowIso = new Date().toISOString();
+    const deviceInfo = getSimpleDeviceInfo();
+
+    // 1. 메모리 캐시 갱신
+    if (typeof window !== 'undefined') {
+        if (window.state && Array.isArray(window.state.allRegisteredUsersList)) {
+            const found = window.state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase().trim() === cleanId);
+            if (found) {
+                found.lastAccessAt = nowIso;
+                found.lastDevice = deviceInfo;
+            }
+        }
+    }
+
+    // 2. Firestore 비동기 저장 (Non-blocking background)
+    try {
+        const firestore = (db && typeof db.getFirestore === 'function') ? db.getFirestore() : (typeof window !== 'undefined' ? window.db : null);
+        if (firestore) {
+            firestore.collection('lotto_users').doc(cleanId).set({
+                lastAccessAt: nowIso,
+                lastDevice: deviceInfo
+            }, { merge: true }).catch(err => {
+                console.warn('[recordLastAccess note]', err);
+            });
+        }
+    } catch(e) {}
+}
+
 if (typeof window !== 'undefined') {
     window.SafeAuth = SafeAuth;
     window.handleLogout = handleLogout;
     window.hashPassword = hashPassword;
     window.checkPasswordStrength = checkPasswordStrength;
     window.isUserVerifiedAndPledged = isUserVerifiedAndPledged;
+    window.getSimpleDeviceInfo = getSimpleDeviceInfo;
+    window.formatLastAccessTime = formatLastAccessTime;
+    window.recordLastAccess = recordLastAccess;
 }
 
 function updateDebugMonitor(globalLedger = {}) {
@@ -3055,6 +3185,11 @@ async function checkAuthOnLoad(initFirebaseAndData) {
                     console.error('[Active User Verification Error]', e);
                 }
             })();
+
+            // 🕒 세션 복원 시 마지막 접속 기록 (30분 스로틀링)
+            try {
+                recordLastAccess(authId);
+            } catch(e) {}
         }
 
         // 💬 [Kakao Auto-Dispatch] Check pending queue & auto-dispatch unsent real winning reports upon login
@@ -3344,10 +3479,18 @@ function processKakaoLoginSuccess(res, authObj = {}) {
                                 authProvider: 'kakao'
                             },
                             loginFailCount: 0,
-                            lockoutUntil: null
+                            lockoutUntil: null,
+                            lastLoginAt: nowIso,
+                            lastAccessAt: nowIso,
+                            lastDevice: getSimpleDeviceInfo()
                         };
 
                         await firestore.collection('lotto_users').doc(customUserId).set(userData);
+                        try {
+                            if (typeof sessionStorage !== 'undefined') {
+                                sessionStorage.setItem(`last_access_log_${customUserId.toLowerCase().trim()}`, String(Date.now()));
+                            }
+                        } catch(e) {}
                         try { await firestore.collection('lotto_agreements').doc(customUserId).set(agreementDocument); } catch(e){}
                         activeUserData = userData;
                     } else {
@@ -3364,8 +3507,15 @@ function processKakaoLoginSuccess(res, authObj = {}) {
 
                         await firestore.collection('lotto_users').doc(customUserId).set({
                             kakaoAuth: kakaoAuthData,
-                            lastLoginAt: nowIso
+                            lastLoginAt: nowIso,
+                            lastAccessAt: nowIso,
+                            lastDevice: getSimpleDeviceInfo()
                         }, { merge: true });
+                        try {
+                            if (typeof sessionStorage !== 'undefined') {
+                                sessionStorage.setItem(`last_access_log_${customUserId.toLowerCase().trim()}`, String(Date.now()));
+                            }
+                        } catch(e) {}
 
                         const isAdm = !!(existingData.role === 'admin' || existingData.isAdmin === true);
                         const isPerm = !!(isAdm || existingData.isPermanent === true || existingData.userType === 'permanent');
@@ -4604,10 +4754,18 @@ function setupAuthEvents(initFirebaseAndData) {
                         hasSignature: !!signatureDataUrl
                     },
                     loginFailCount: 0,
-                    lockoutUntil: null
+                    lockoutUntil: null,
+                    lastLoginAt: now.toISOString(),
+                    lastAccessAt: now.toISOString(),
+                    lastDevice: getSimpleDeviceInfo()
                 };
 
                 await firestore.collection('lotto_users').doc(rawId).set(userData);
+                try {
+                    if (typeof sessionStorage !== 'undefined') {
+                        sessionStorage.setItem(`last_access_log_${rawId.toLowerCase().trim()}`, String(Date.now()));
+                    }
+                } catch(e) {}
 
                 // Also persist standalone agreement record for audit archive
                 try {
@@ -4887,11 +5045,21 @@ function setupAuthEvents(initFirebaseAndData) {
                     }
 
                     // Reset fail count & migrate legacy plaintext in background
+                    const loginNowIso = new Date().toISOString();
+                    const loginDevice = getSimpleDeviceInfo();
                     const updatePayload = {
                         loginFailCount: 0,
                         lockoutUntil: null,
-                        lastLoginAt: new Date().toISOString()
+                        lastLoginAt: loginNowIso,
+                        lastAccessAt: loginNowIso,
+                        lastDevice: loginDevice
                     };
+
+                    try {
+                        if (typeof sessionStorage !== 'undefined') {
+                            sessionStorage.setItem(`last_access_log_${rawId.toLowerCase().trim()}`, String(Date.now()));
+                        }
+                    } catch(e) {}
 
                     if (isLegacyMatch) {
                         updatePayload.passwordHash = computedHash;
@@ -5234,6 +5402,10 @@ function setupAuthEvents(initFirebaseAndData) {
 
             const realName = data.realName && data.realName !== userId ? data.realName : '';
             const phoneDisplay = data.phoneNumber || data.phone || (isKakaoUser ? '카카오 인증' : '연락처 미등록');
+            const lastAccessRaw = data.lastAccessAt || data.lastLoginAt;
+            const lastAccessBadge = lastAccessRaw
+                ? `<span style="font-size:0.63rem; color:#38bdf8; font-weight:700; background:rgba(56,189,248,0.12); padding:0px 4px; border-radius:3px; font-family:sans-serif;" title="최근 접속: ${lastAccessRaw}">🕒 ${formatLastAccessTime(lastAccessRaw)}</span>`
+                : '';
 
             html += `
             <div onclick="window.openUserDetailDrawer(decodeURIComponent('${safeUserId}'))" class="user-row-item" style="display:flex; align-items:center; justify-content:space-between; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.06); cursor:pointer; transition:background 0.15s; word-break:keep-all; min-height:42px; box-sizing:border-box;">
@@ -5247,8 +5419,9 @@ function setupAuthEvents(initFirebaseAndData) {
                             <span style="font-weight:800; color:#f8fafc; font-size:0.83rem; letter-spacing:-0.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${userId}</span>
                             ${realName ? `<span style="font-size:0.74rem; color:#94a3b8; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">(${realName})</span>` : ''}
                         </div>
-                        <div style="font-size:0.68rem; color:#64748b; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px;">
-                            ${phoneDisplay}
+                        <div style="font-size:0.68rem; color:#64748b; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px; display:flex; align-items:center; gap:5px;">
+                            <span>${phoneDisplay}</span>
+                            ${lastAccessBadge}
                         </div>
                     </div>
                 </div>
@@ -5356,6 +5529,33 @@ function setupAuthEvents(initFirebaseAndData) {
 
         if (elProvider) {
             elProvider.textContent = isKakaoUser ? '카카오 간편가입' : '일반 아이디 가입';
+        }
+
+        // 🕒 Populate Last Access Info
+        const elLastAccessText = document.getElementById('drawerLastAccessText');
+        const elLastAccessBadge = document.getElementById('drawerLastAccessBadge');
+        const elLastDeviceText = document.getElementById('drawerLastDeviceText');
+
+        const rawLastAccess = data.lastAccessAt || data.lastLoginAt;
+        if (elLastAccessText) {
+            if (rawLastAccess) {
+                try {
+                    const dt = new Date(rawLastAccess);
+                    const pad = (n) => String(n).padStart(2, '0');
+                    elLastAccessText.textContent = `${dt.getFullYear()}.${pad(dt.getMonth()+1)}.${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+                } catch(e) {
+                    elLastAccessText.textContent = rawLastAccess;
+                }
+            } else {
+                elLastAccessText.textContent = '접속 기록 없음';
+            }
+        }
+        if (elLastAccessBadge) {
+            elLastAccessBadge.textContent = formatLastAccessTime(rawLastAccess);
+        }
+        if (elLastDeviceText) {
+            elLastDeviceText.textContent = data.lastDevice || '단말기 미기록';
+            elLastDeviceText.title = data.lastDevice || '';
         }
 
         // 3. Populate Form Fields
@@ -9405,6 +9605,18 @@ window.startBatchWinningSend = async function() {
         if (typeof isUserVerifiedAndPledged !== 'undefined') {
             __exports.isUserVerifiedAndPledged = isUserVerifiedAndPledged;
             if (typeof window !== 'undefined') window.isUserVerifiedAndPledged = isUserVerifiedAndPledged;
+        }
+        if (typeof getSimpleDeviceInfo !== 'undefined') {
+            __exports.getSimpleDeviceInfo = getSimpleDeviceInfo;
+            if (typeof window !== 'undefined') window.getSimpleDeviceInfo = getSimpleDeviceInfo;
+        }
+        if (typeof formatLastAccessTime !== 'undefined') {
+            __exports.formatLastAccessTime = formatLastAccessTime;
+            if (typeof window !== 'undefined') window.formatLastAccessTime = formatLastAccessTime;
+        }
+        if (typeof recordLastAccess !== 'undefined') {
+            __exports.recordLastAccess = recordLastAccess;
+            if (typeof window !== 'undefined') window.recordLastAccess = recordLastAccess;
         }
         if (typeof updateDebugMonitor !== 'undefined') {
             __exports.updateDebugMonitor = updateDebugMonitor;
