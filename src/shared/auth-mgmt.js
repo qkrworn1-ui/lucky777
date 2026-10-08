@@ -242,11 +242,109 @@ export function handleLogout(skipConfirm = false) {
     }, 300);
 }
 
+/**
+ * 🔒 회원 본인인증(실명·휴대폰) 및 4대 필수 약정 전자 서약 체결 완료 여부 종합 판정
+ * - 최고관리자(master) 및 관리자(admin)는 운영 관리 목적으로 예외 허용
+ * - 일반 회원은 실명(2자 이상), 휴대폰 번호(10자리 이상 유효), 전자 서약(자필 서명/서약 플래그)이 모두 완료되어야 함
+ * - 탈퇴/삭제(isDeleted, trash) 회원은 즉시 false
+ * @param {string} userId
+ * @param {Object} [userData]
+ * @returns {boolean}
+ */
+export function isUserVerifiedAndPledged(userId, userData = null) {
+    if (!userId) return false;
+    let cleanId = String(userId).trim();
+    if (cleanId.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanId);
+            cleanId = p.userId || p.userid || p.id || cleanId;
+        } catch(e) {}
+    }
+    cleanId = cleanId.toLowerCase().trim();
+
+    if (cleanId === 'master' || cleanId === 'admin') return true;
+    if (typeof isAdminUser === 'function' && isAdminUser(cleanId)) return true;
+
+    // 전달된 userData 또는 메모리/캐시/통합 사용자 목록에서 검색
+    let uData = userData || null;
+    if (!uData && typeof state !== 'undefined' && state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+        const found = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase().trim() === cleanId);
+        if (found) uData = found;
+    }
+    if (!uData && typeof __cachedUsersWithStatus !== 'undefined' && Array.isArray(__cachedUsersWithStatus)) {
+        const found = __cachedUsersWithStatus.find(u => (u.userId || '').toLowerCase().trim() === cleanId);
+        if (found) uData = found.data || found;
+    }
+    if (!uData && typeof getAllUnifiedRegisteredUsers === 'function') {
+        try {
+            const unified = getAllUnifiedRegisteredUsers();
+            if (Array.isArray(unified)) {
+                const found = unified.find(u => (u.id || '').toLowerCase().trim() === cleanId);
+                if (found) uData = found;
+            }
+        } catch(e) {}
+    }
+    if (!uData && typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) {
+        const found = DEFAULT_KNOWN_USERS.find(u => (u.id || '').toLowerCase().trim() === cleanId);
+        if (found) uData = found;
+    }
+    if (!uData) {
+        try {
+            const rawCache = typeof localStorage !== 'undefined' ? localStorage.getItem('lotto_users_with_status_cache') : null;
+            if (rawCache) {
+                const list = JSON.parse(rawCache);
+                if (Array.isArray(list)) {
+                    const found = list.find(u => (u.userId || u.id || '').toLowerCase().trim() === cleanId);
+                    if (found) uData = found.data || found;
+                }
+            }
+        } catch(e) {}
+    }
+
+    const isLocalSigned = (typeof localStorage !== 'undefined' && localStorage.getItem('pledge_signed_' + cleanId) === 'true');
+
+    if (!uData) {
+        return isLocalSigned;
+    }
+
+    // 탈퇴/삭제 회원은 미인증/미서약 처리
+    if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') {
+        return false;
+    }
+
+    // 1. 실명 검증 (2자 이상, 카카오 임시 닉네임 불가)
+    const realName = String(uData.realName || uData.name || '').trim();
+    const isNameValid = realName.length >= 2 && !realName.startsWith('카카오_') && !realName.startsWith('kakao_');
+
+    // 2. 휴대폰 번호 검증 (숫자 10자리 이상, 미등록 불가)
+    const phone = String(uData.phoneNumber || uData.phone || '').trim();
+    const cleanPhoneDigits = phone.replace(/[^0-9]/g, '');
+    const isPhoneValid = cleanPhoneDigits.length >= 10 && !phone.includes('카카오') && phone !== '미등록';
+
+    // 3. 전자 서약 및 서명 검증
+    const agreementDoc = uData.agreementDoc || {};
+    const isSigReset = (agreementDoc.status === 'reset') || (uData.hasSignature === false);
+    const hasValidSigUrl = !!(agreementDoc.signatureDataUrl && agreementDoc.signatureDataUrl.length > 50);
+    const hasAnySigFlag = (
+        uData.hasSignature === true ||
+        uData.hasPledgeSigned === true ||
+        uData.isPledgeSigned === true ||
+        (uData.agreedTerms && (uData.agreedTerms.hasSignature || uData.agreedTerms.agreedAt || uData.agreedTerms.weeklyPurchaseAgreement)) ||
+        agreementDoc.status === 'legally_binding' ||
+        (agreementDoc.signature && agreementDoc.signature.length > 0)
+    );
+
+    const isSigValid = !isSigReset && (hasValidSigUrl || hasAnySigFlag || isLocalSigned);
+
+    return !!(isNameValid && isPhoneValid && isSigValid);
+}
+
 if (typeof window !== 'undefined') {
     window.SafeAuth = SafeAuth;
     window.handleLogout = handleLogout;
     window.hashPassword = hashPassword;
     window.checkPasswordStrength = checkPasswordStrength;
+    window.isUserVerifiedAndPledged = isUserVerifiedAndPledged;
 }
 
 export function updateDebugMonitor(globalLedger = {}) {
@@ -1431,17 +1529,7 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
                         const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
 
                         if (!isRootMaster) {
-                            const isPhoneValid = !!(uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.replace(/[^0-9]/g, '').length >= 10);
-                            const isReset = !!(uData.agreementDoc && uData.agreementDoc.status === 'reset');
-                            const hasValidSigUrl = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl && uData.agreementDoc.signatureDataUrl.length > 50);
-                            const hasAnySigFlag = (uData.hasSignature === true || uData.hasPledgeSigned === true || uData.isPledgeSigned === true || (uData.agreedTerms && uData.agreedTerms.hasSignature === true));
-                            const isLocalSigned = (typeof localStorage !== 'undefined' && localStorage.getItem('pledge_signed_' + authId) === 'true');
-                            
-                            // 서명 유효성: 관리자에 의해 리셋되지 않았고, 유효한 서명 데이터 또는 플래그가 존재할 때 유효
-                            const isSigValid = !isReset && ((hasValidSigUrl && (hasAnySigFlag || isLocalSigned)) || (hasValidSigUrl && uData.hasSignature !== false));
-                            const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2 && !uData.realName.startsWith('카카오_') && !uData.realName.startsWith('kakao_'));
-
-                            if (!isPhoneValid || !isSigValid || !isNameValid) {
+                            if (!isUserVerifiedAndPledged(authId, uData)) {
                                 if (typeof window.openMandatoryPledgeModal === 'function') {
                                     window.openMandatoryPledgeModal(authId, uData);
                                     return; // Prompt user to complete profile & sign pledge
@@ -1783,20 +1871,12 @@ export function processKakaoLoginSuccess(res, authObj = {}) {
                         activeUserData = { ...existingData, kakaoAuth: kakaoAuthData };
                     }
 
-                        // 🔒 [카카오 간편 가입자 필수 정보 & 전자 서명 검증 게이트]
+                        // 🔒 [카카오 간편 가입자 본인인증 & 전자 서약 검증 게이트]
                         const isRootMaster = (customUserId.toLowerCase() === 'master' || customUserId.toLowerCase() === 'admin');
                         if (!isRootMaster && activeUserData) {
-                            const isPhoneValid = !!(activeUserData.phoneNumber && !activeUserData.phoneNumber.includes('카카오') && activeUserData.phoneNumber !== '미등록' && activeUserData.phoneNumber.replace(/[^0-9]/g, '').length >= 10);
-                            const isReset = !!(activeUserData.agreementDoc && activeUserData.agreementDoc.status === 'reset');
-                            const hasValidSigUrl = !!(activeUserData.agreementDoc && activeUserData.agreementDoc.signatureDataUrl && activeUserData.agreementDoc.signatureDataUrl.length > 50);
-                            const hasAnySigFlag = (activeUserData.hasSignature === true || activeUserData.hasPledgeSigned === true || activeUserData.isPledgeSigned === true || (activeUserData.agreedTerms && activeUserData.agreedTerms.hasSignature === true));
-                            const isLocalSigned = (typeof localStorage !== 'undefined' && localStorage.getItem('pledge_signed_' + customUserId) === 'true');
-                            
-                            // 서명 유효성: 관리자에 의해 리셋되지 않았고, 유효한 서명 데이터 또는 플래그가 존재할 때 유효
-                            const isSigValid = !isReset && ((hasValidSigUrl && (hasAnySigFlag || isLocalSigned)) || (hasValidSigUrl && activeUserData.hasSignature !== false));
-                            const isNameValid = !!(activeUserData.realName && activeUserData.realName.trim().length >= 2 && !activeUserData.realName.startsWith('카카오_') && !activeUserData.realName.startsWith('kakao_'));
+                            const isPledged = isUserVerifiedAndPledged(customUserId, activeUserData);
 
-                            if (!isPhoneValid || !isSigValid || !isNameValid) {
+                            if (!isPledged) {
                                 try { localStorage.removeItem('pledge_signed_' + customUserId); } catch(e){}
                                 console.log('[Kakao Login] Mandatory profile/signature incomplete. Ensuring pledge modal for:', customUserId);
                                 if (typeof window.openMandatoryPledgeModal === 'function') {

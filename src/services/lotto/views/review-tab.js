@@ -2,7 +2,7 @@ import { state } from '../state.js';
 import { getBallHexColor, showToast, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
-import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
+import { SafeAuth, isAdminUser, isUserVerifiedAndPledged } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, fetchAllUsersPurchases, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
 
@@ -402,15 +402,28 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, sna
     const joinRound = getUserJoinRound(cleanUser);
     if (Number(roundNum) < joinRound) return;
 
+    // 🔒 본인인증 미완료 및 미서약 사용자 추천번호 영구 스냅샷 저장 원천 차단
+    const isPledged = (typeof isUserVerifiedAndPledged === 'function')
+        ? isUserVerifiedAndPledged(cleanUser)
+        : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(cleanUser) : true);
+    if (!isPledged) {
+        console.warn(`[ReviewTab Guard] User ${cleanUser} is not verified/pledged. Snapshot save blocked.`);
+        return;
+    }
+
     const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
     if (!firestore) return;
 
     try {
-        // 🔒 삭제(휴지통) 회원 차단: DB 조회 확인
+        // 🔒 삭제(휴지통) 회원 및 본인인증/미서약 회원 차단: DB 조회 확인
         const uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
         if (uDoc && uDoc.exists) {
             const uData = uDoc.data();
             if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) return;
+            if (uData && typeof isUserVerifiedAndPledged === 'function' && !isUserVerifiedAndPledged(cleanUser, uData)) {
+                console.warn(`[ReviewTab Guard] User ${cleanUser} profile/pledge incomplete in Firestore. Snapshot save blocked.`);
+                return;
+            }
         }
         const pDoc = await firestore.collection('lotto_purchases').doc(cleanUser).get();
         if (pDoc && pDoc.exists) {

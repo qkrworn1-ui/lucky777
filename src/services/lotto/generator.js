@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { calculateStats } from './scoring.js';
 import { calculateACValue, isSystemOrDummyUser } from '../../shared/utils.js';
 import { recalculateGroups } from './statistics.js';
-import { SafeAuth, getUserRealName, getUpcomingLottoRound, isAdminUser } from '../../shared/auth-mgmt.js';
+import { SafeAuth, getUserRealName, getUpcomingLottoRound, isAdminUser, isUserVerifiedAndPledged } from '../../shared/auth-mgmt.js';
 import { db } from '../../shared/db.js';
 
 /**
@@ -1455,6 +1455,15 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
         return null;
     }
 
+    // 🔒 본인인증 미완료 및 미서약 사용자 추천번호 영구 스냅샷 생성 및 저장 원천 차단
+    const isPledged = (typeof isUserVerifiedAndPledged === 'function')
+        ? isUserVerifiedAndPledged(cleanUser)
+        : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(cleanUser) : true);
+    if (!isPledged) {
+        console.warn(`[Snapshot Guard] User ${cleanUser} is not verified/pledged. Snapshot creation/save blocked.`);
+        return null;
+    }
+
     const docKey = `${cleanUser}_${roundNum}`;
 
     // 1. Check Firestore first (Single Source of Truth for immutable snapshots: lotto_users with lotto_purchases fallback)
@@ -1464,6 +1473,10 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
             let uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
             let uData = (uDoc && uDoc.exists) ? uDoc.data() : null;
             if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) {
+                return null;
+            }
+            if (uData && typeof isUserVerifiedAndPledged === 'function' && !isUserVerifiedAndPledged(cleanUser, uData)) {
+                console.warn(`[Snapshot Guard] User ${cleanUser} profile/pledge incomplete in Firestore. Snapshot blocked.`);
                 return null;
             }
             let existingData = null;

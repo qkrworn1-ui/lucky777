@@ -1,7 +1,7 @@
 import { state } from '../state.js';
 import { showToast, getDrawDateByRound, getBallColorClass } from '../../../shared/utils.js';
 import { getLedger, saveToLedger, parseDonghangLotteryQrUrl, parseDonghangOnlineReceiptText, buildDonghangLotteryQrUrl } from '../ledger.js';
-import { SafeAuth, getUserRealName, isAdminUser } from '../../../shared/auth-mgmt.js';
+import { SafeAuth, getUserRealName, isAdminUser, isUserVerifiedAndPledged } from '../../../shared/auth-mgmt.js';
 import { renderReviewTab } from './review-tab.js';
 import { renderConfirmedPurchasesList } from './confirmed-tab.js';
 import { crossCheckCombosWithRecommendations } from '../generator.js';
@@ -1924,6 +1924,20 @@ export async function handleSaveManualLedger() {
 
         const effectiveAuthId = selectedMasterTargetUser || originalUser || currentLoggedAuthId || 'guest';
 
+        // 🔒 [본인인증 및 전자 서약 검증] 대상 회원이 본인인증 미완료 및 미서약 상태인 경우 저장 차단
+        const isTargetVerifiedAndPledged = (typeof isUserVerifiedAndPledged === 'function')
+            ? isUserVerifiedAndPledged(effectiveAuthId)
+            : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(effectiveAuthId) : true);
+
+        if (!isTargetVerifiedAndPledged) {
+            const targetUserName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveAuthId) : '') || effectiveAuthId;
+            alert(`⚠️ [본인인증 및 서약 미완료]\n\n[${targetUserName}] 회원님은 본인인증(실명 및 연락처 등록) 또는 전자 서약이 완료되지 않아 간편장부(실구매 등록) 저장이 차단되었습니다.`);
+            if (effectiveAuthId === currentLoggedAuthId && typeof window !== 'undefined' && typeof window.openMandatoryPledgeModal === 'function') {
+                window.openMandatoryPledgeModal(effectiveAuthId);
+            }
+            return;
+        }
+
         // 🔍 연속 등록 중 이미 등록된 영수증 재저장 차단 (기존엔 조용히 중복제거되며 '정상 등록' 토스트만 노출되어 혼란 유발)
         if (!isEditingExisting) {
             const dupSerial = combosEl ? (combosEl.dataset.qrSerial || '') : '';
@@ -2117,6 +2131,20 @@ export function openManualLedgerModal() {
         if (!currentAuthId) currentAuthId = 'guest';
 
         const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(currentAuthId) : (currentAuthId === 'master' || currentAuthId === 'admin'));
+
+        // 🔒 [본인인증 및 전자 서약 검증] 본인인증 미완료 및 미서약 회원은 간편장부 작성 차단
+        const isVerifiedAndPledged = (typeof isUserVerifiedAndPledged === 'function')
+            ? isUserVerifiedAndPledged(currentAuthId)
+            : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(currentAuthId) : true);
+
+        if (!isAdmin && !isVerifiedAndPledged) {
+            alert('본인인증(실명 및 연락처 등록) 및 전자 서약 작성이 완료되어야 간편장부(실구매 등록)를 이용하실 수 있습니다.\n본인인증 및 서약 페이지로 이동합니다.');
+            if (typeof window !== 'undefined' && typeof window.openMandatoryPledgeModal === 'function') {
+                window.openMandatoryPledgeModal(currentAuthId);
+            }
+            return;
+        }
+
         const masterUserRow = document.getElementById('manualLedgerMasterUserRow');
         const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
 

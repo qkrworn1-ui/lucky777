@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.07.1916.20 - BUILD_DATE: 2026-10-07] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.08.1814.53 - BUILD_DATE: 2026-10-08] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.07.1916.20)
+ * Lucky777 Smart Bundle (v2026.10.08.1814.53)
  */
 
 
@@ -1062,17 +1062,17 @@ const LottoTimeService = {
 
 const DEFAULT_KNOWN_USERS = [
     { id: 'master', name: '최고관리자', realName: '최고관리자', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-07-25T12:00:00+09:00', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
-    { id: 'wdy', name: '우대용', realName: '우대용', phone: '010-4056-8177', phoneNumber: '010-4056-8177', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-01T12:00:00+09:00', status: 'active', isDeleted: false },
+    { id: 'wdy', name: '우대용', realName: '우대용', phone: '010-4056-8177', phoneNumber: '010-4056-8177', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-08-01T12:00:00+09:00', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
     { id: 'kakao_5070244665', name: '박재구', realName: '박재구', phone: '010-7177-2581', phoneNumber: '010-7177-2581', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T07:11:50.351Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
-    { id: 'kakao_5070267707', name: '정미승', realName: '정미승', phone: '010-7124-5768', phoneNumber: '010-7124-5768', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T05:16:47.711Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5070267707', name: '정미승', realName: '정미승', phone: '010-7124-5768', phoneNumber: '010-7124-5768', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T05:16:47.711Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
     { id: 'kakao_5070669650', name: '강지민', realName: '강지민', phone: '010-7191-1151', phoneNumber: '010-7191-1151', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-03T09:32:47.035Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
-    { id: 'kakao_5071901217', name: '황선영', realName: '황선영', phone: '010-3332-5843', phoneNumber: '010-3332-5843', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-04T05:58:58.537Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5071901217', name: '황선영', realName: '황선영', phone: '010-3332-5843', phoneNumber: '010-3332-5843', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-04T05:58:58.537Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
     { id: 'kakao_5072328991', name: '채금조(재우주식회사)', realName: '채금조(재우주식회사)', phone: '010-2596-1107', phoneNumber: '010-2596-1107', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-04T10:34:57.095Z', status: 'suspended_nopurchase', isDeleted: false },
-    { id: 'kakao_5073272571', name: '우순애', realName: '우순애', phone: '010-8865-7777', phoneNumber: '010-8865-7777', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-05T04:26:10.288Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5078158815', name: '이재문', realName: '이재문', phone: '010-9116-3887', phoneNumber: '010-9116-3887', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-08T04:35:33.378Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5081166702', name: '은정', realName: '은정', phone: '010-8952-1325', phoneNumber: '010-8952-1325', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-09T15:36:24.439Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false },
-    { id: 'kakao_5092105478', name: '한미순', realName: '한미순', phone: '010-4322-5053', phoneNumber: '010-4322-5053', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-16T05:55:23.110Z', status: 'active', isDeleted: false },
+    { id: 'kakao_5073272571', name: '우순애', realName: '우순애', phone: '010-8865-7777', phoneNumber: '010-8865-7777', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-05T04:26:10.288Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
+    { id: 'kakao_5078158815', name: '이재문', realName: '이재문', phone: '010-9116-3887', phoneNumber: '010-9116-3887', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-08T04:35:33.378Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
+    { id: 'kakao_5081166702', name: '은정', realName: '은정', phone: '010-8952-1325', phoneNumber: '010-8952-1325', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-09T15:36:24.439Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
+    { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
+    { id: 'kakao_5092105478', name: '한미순', realName: '한미순', phone: '010-4322-5053', phoneNumber: '010-4322-5053', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-16T05:55:23.110Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
     { id: 'kakao_5115956430', name: '김현', realName: '김현', phone: '', phoneNumber: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-10-01T09:55:54.711Z', status: 'active', isDeleted: false }
 ];
 
@@ -1746,11 +1746,109 @@ function handleLogout(skipConfirm = false) {
     }, 300);
 }
 
+/**
+ * 🔒 회원 본인인증(실명·휴대폰) 및 4대 필수 약정 전자 서약 체결 완료 여부 종합 판정
+ * - 최고관리자(master) 및 관리자(admin)는 운영 관리 목적으로 예외 허용
+ * - 일반 회원은 실명(2자 이상), 휴대폰 번호(10자리 이상 유효), 전자 서약(자필 서명/서약 플래그)이 모두 완료되어야 함
+ * - 탈퇴/삭제(isDeleted, trash) 회원은 즉시 false
+ * @param {string} userId
+ * @param {Object} [userData]
+ * @returns {boolean}
+ */
+function isUserVerifiedAndPledged(userId, userData = null) {
+    if (!userId) return false;
+    let cleanId = String(userId).trim();
+    if (cleanId.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanId);
+            cleanId = p.userId || p.userid || p.id || cleanId;
+        } catch(e) {}
+    }
+    cleanId = cleanId.toLowerCase().trim();
+
+    if (cleanId === 'master' || cleanId === 'admin') return true;
+    if (typeof isAdminUser === 'function' && isAdminUser(cleanId)) return true;
+
+    // 전달된 userData 또는 메모리/캐시/통합 사용자 목록에서 검색
+    let uData = userData || null;
+    if (!uData && typeof state !== 'undefined' && state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+        const found = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase().trim() === cleanId);
+        if (found) uData = found;
+    }
+    if (!uData && typeof __cachedUsersWithStatus !== 'undefined' && Array.isArray(__cachedUsersWithStatus)) {
+        const found = __cachedUsersWithStatus.find(u => (u.userId || '').toLowerCase().trim() === cleanId);
+        if (found) uData = found.data || found;
+    }
+    if (!uData && typeof getAllUnifiedRegisteredUsers === 'function') {
+        try {
+            const unified = getAllUnifiedRegisteredUsers();
+            if (Array.isArray(unified)) {
+                const found = unified.find(u => (u.id || '').toLowerCase().trim() === cleanId);
+                if (found) uData = found;
+            }
+        } catch(e) {}
+    }
+    if (!uData && typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) {
+        const found = DEFAULT_KNOWN_USERS.find(u => (u.id || '').toLowerCase().trim() === cleanId);
+        if (found) uData = found;
+    }
+    if (!uData) {
+        try {
+            const rawCache = typeof localStorage !== 'undefined' ? localStorage.getItem('lotto_users_with_status_cache') : null;
+            if (rawCache) {
+                const list = JSON.parse(rawCache);
+                if (Array.isArray(list)) {
+                    const found = list.find(u => (u.userId || u.id || '').toLowerCase().trim() === cleanId);
+                    if (found) uData = found.data || found;
+                }
+            }
+        } catch(e) {}
+    }
+
+    const isLocalSigned = (typeof localStorage !== 'undefined' && localStorage.getItem('pledge_signed_' + cleanId) === 'true');
+
+    if (!uData) {
+        return isLocalSigned;
+    }
+
+    // 탈퇴/삭제 회원은 미인증/미서약 처리
+    if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') {
+        return false;
+    }
+
+    // 1. 실명 검증 (2자 이상, 카카오 임시 닉네임 불가)
+    const realName = String(uData.realName || uData.name || '').trim();
+    const isNameValid = realName.length >= 2 && !realName.startsWith('카카오_') && !realName.startsWith('kakao_');
+
+    // 2. 휴대폰 번호 검증 (숫자 10자리 이상, 미등록 불가)
+    const phone = String(uData.phoneNumber || uData.phone || '').trim();
+    const cleanPhoneDigits = phone.replace(/[^0-9]/g, '');
+    const isPhoneValid = cleanPhoneDigits.length >= 10 && !phone.includes('카카오') && phone !== '미등록';
+
+    // 3. 전자 서약 및 서명 검증
+    const agreementDoc = uData.agreementDoc || {};
+    const isSigReset = (agreementDoc.status === 'reset') || (uData.hasSignature === false);
+    const hasValidSigUrl = !!(agreementDoc.signatureDataUrl && agreementDoc.signatureDataUrl.length > 50);
+    const hasAnySigFlag = (
+        uData.hasSignature === true ||
+        uData.hasPledgeSigned === true ||
+        uData.isPledgeSigned === true ||
+        (uData.agreedTerms && (uData.agreedTerms.hasSignature || uData.agreedTerms.agreedAt || uData.agreedTerms.weeklyPurchaseAgreement)) ||
+        agreementDoc.status === 'legally_binding' ||
+        (agreementDoc.signature && agreementDoc.signature.length > 0)
+    );
+
+    const isSigValid = !isSigReset && (hasValidSigUrl || hasAnySigFlag || isLocalSigned);
+
+    return !!(isNameValid && isPhoneValid && isSigValid);
+}
+
 if (typeof window !== 'undefined') {
     window.SafeAuth = SafeAuth;
     window.handleLogout = handleLogout;
     window.hashPassword = hashPassword;
     window.checkPasswordStrength = checkPasswordStrength;
+    window.isUserVerifiedAndPledged = isUserVerifiedAndPledged;
 }
 
 function updateDebugMonitor(globalLedger = {}) {
@@ -2935,17 +3033,7 @@ async function checkAuthOnLoad(initFirebaseAndData) {
                         const isRootMaster = (authId.toLowerCase() === 'master' || authId.toLowerCase() === 'admin');
 
                         if (!isRootMaster) {
-                            const isPhoneValid = !!(uData.phoneNumber && !uData.phoneNumber.includes('카카오') && uData.phoneNumber !== '미등록' && uData.phoneNumber.replace(/[^0-9]/g, '').length >= 10);
-                            const isReset = !!(uData.agreementDoc && uData.agreementDoc.status === 'reset');
-                            const hasValidSigUrl = !!(uData.agreementDoc && uData.agreementDoc.signatureDataUrl && uData.agreementDoc.signatureDataUrl.length > 50);
-                            const hasAnySigFlag = (uData.hasSignature === true || uData.hasPledgeSigned === true || uData.isPledgeSigned === true || (uData.agreedTerms && uData.agreedTerms.hasSignature === true));
-                            const isLocalSigned = (typeof localStorage !== 'undefined' && localStorage.getItem('pledge_signed_' + authId) === 'true');
-                            
-                            // 서명 유효성: 관리자에 의해 리셋되지 않았고, 유효한 서명 데이터 또는 플래그가 존재할 때 유효
-                            const isSigValid = !isReset && ((hasValidSigUrl && (hasAnySigFlag || isLocalSigned)) || (hasValidSigUrl && uData.hasSignature !== false));
-                            const isNameValid = !!(uData.realName && uData.realName.trim().length >= 2 && !uData.realName.startsWith('카카오_') && !uData.realName.startsWith('kakao_'));
-
-                            if (!isPhoneValid || !isSigValid || !isNameValid) {
+                            if (!isUserVerifiedAndPledged(authId, uData)) {
                                 if (typeof window.openMandatoryPledgeModal === 'function') {
                                     window.openMandatoryPledgeModal(authId, uData);
                                     return; // Prompt user to complete profile & sign pledge
@@ -3287,20 +3375,12 @@ function processKakaoLoginSuccess(res, authObj = {}) {
                         activeUserData = { ...existingData, kakaoAuth: kakaoAuthData };
                     }
 
-                        // 🔒 [카카오 간편 가입자 필수 정보 & 전자 서명 검증 게이트]
+                        // 🔒 [카카오 간편 가입자 본인인증 & 전자 서약 검증 게이트]
                         const isRootMaster = (customUserId.toLowerCase() === 'master' || customUserId.toLowerCase() === 'admin');
                         if (!isRootMaster && activeUserData) {
-                            const isPhoneValid = !!(activeUserData.phoneNumber && !activeUserData.phoneNumber.includes('카카오') && activeUserData.phoneNumber !== '미등록' && activeUserData.phoneNumber.replace(/[^0-9]/g, '').length >= 10);
-                            const isReset = !!(activeUserData.agreementDoc && activeUserData.agreementDoc.status === 'reset');
-                            const hasValidSigUrl = !!(activeUserData.agreementDoc && activeUserData.agreementDoc.signatureDataUrl && activeUserData.agreementDoc.signatureDataUrl.length > 50);
-                            const hasAnySigFlag = (activeUserData.hasSignature === true || activeUserData.hasPledgeSigned === true || activeUserData.isPledgeSigned === true || (activeUserData.agreedTerms && activeUserData.agreedTerms.hasSignature === true));
-                            const isLocalSigned = (typeof localStorage !== 'undefined' && localStorage.getItem('pledge_signed_' + customUserId) === 'true');
-                            
-                            // 서명 유효성: 관리자에 의해 리셋되지 않았고, 유효한 서명 데이터 또는 플래그가 존재할 때 유효
-                            const isSigValid = !isReset && ((hasValidSigUrl && (hasAnySigFlag || isLocalSigned)) || (hasValidSigUrl && activeUserData.hasSignature !== false));
-                            const isNameValid = !!(activeUserData.realName && activeUserData.realName.trim().length >= 2 && !activeUserData.realName.startsWith('카카오_') && !activeUserData.realName.startsWith('kakao_'));
+                            const isPledged = isUserVerifiedAndPledged(customUserId, activeUserData);
 
-                            if (!isPhoneValid || !isSigValid || !isNameValid) {
+                            if (!isPledged) {
                                 try { localStorage.removeItem('pledge_signed_' + customUserId); } catch(e){}
                                 console.log('[Kakao Login] Mandatory profile/signature incomplete. Ensuring pledge modal for:', customUserId);
                                 if (typeof window.openMandatoryPledgeModal === 'function') {
@@ -9322,6 +9402,10 @@ window.startBatchWinningSend = async function() {
             __exports.handleLogout = handleLogout;
             if (typeof window !== 'undefined') window.handleLogout = handleLogout;
         }
+        if (typeof isUserVerifiedAndPledged !== 'undefined') {
+            __exports.isUserVerifiedAndPledged = isUserVerifiedAndPledged;
+            if (typeof window !== 'undefined') window.isUserVerifiedAndPledged = isUserVerifiedAndPledged;
+        }
         if (typeof updateDebugMonitor !== 'undefined') {
             __exports.updateDebugMonitor = updateDebugMonitor;
             if (typeof window !== 'undefined') window.updateDebugMonitor = updateDebugMonitor;
@@ -9636,7 +9720,7 @@ const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 
 const { removeUndefined, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 
-const { SafeAuth, isAdminUser, isPermanentUser, getUserRealName, setUserNameCache } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
+const { SafeAuth, isAdminUser, isPermanentUser, getUserRealName, setUserNameCache, isUserVerifiedAndPledged } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 
 
 
@@ -11779,7 +11863,20 @@ async function saveToLedger(round, combos, versionStr, user = null, qrMeta = nul
 
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
 
-
+    // 🔒 [본인인증 및 전자 서약 검증] 본인인증 미완료 및 미서약 회원은 장부 저장 차단
+    if (!isAdmin) {
+        const isVerifiedAndPledged = (typeof isUserVerifiedAndPledged === 'function')
+            ? isUserVerifiedAndPledged(authId)
+            : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(authId) : true);
+        if (!isVerifiedAndPledged) {
+            console.warn(`[saveToLedger Guard] User ${authId} is not verified/pledged. Ledger save blocked.`);
+            const targetUserName = (typeof getUserRealName === 'function' ? getUserRealName(authId) : '') || authId;
+            if (typeof alert === 'function') {
+                alert(`⚠️ [본인인증 및 서약 미완료]\n\n[${targetUserName}] 회원님은 본인인증(실명 및 연락처 등록) 또는 전자 서약이 완료되지 않아 간편장부 저장이 차단되었습니다.`);
+            }
+            return false;
+        }
+    }
 
     const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : SafeLocalStorage;
 
@@ -15965,7 +16062,7 @@ const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_service
 const { calculateStats } = (typeof __M_services_lotto_scoring !== 'undefined' ? __M_services_lotto_scoring : {});
 const { calculateACValue, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
-const { SafeAuth, getUserRealName, getUpcomingLottoRound, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
+const { SafeAuth, getUserRealName, getUpcomingLottoRound, isAdminUser, isUserVerifiedAndPledged } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 
 /**
@@ -17418,6 +17515,15 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
         return null;
     }
 
+    // 🔒 본인인증 미완료 및 미서약 사용자 추천번호 영구 스냅샷 생성 및 저장 원천 차단
+    const isPledged = (typeof isUserVerifiedAndPledged === 'function')
+        ? isUserVerifiedAndPledged(cleanUser)
+        : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(cleanUser) : true);
+    if (!isPledged) {
+        console.warn(`[Snapshot Guard] User ${cleanUser} is not verified/pledged. Snapshot creation/save blocked.`);
+        return null;
+    }
+
     const docKey = `${cleanUser}_${roundNum}`;
 
     // 1. Check Firestore first (Single Source of Truth for immutable snapshots: lotto_users with lotto_purchases fallback)
@@ -17427,6 +17533,10 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
             let uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
             let uData = (uDoc && uDoc.exists) ? uDoc.data() : null;
             if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) {
+                return null;
+            }
+            if (uData && typeof isUserVerifiedAndPledged === 'function' && !isUserVerifiedAndPledged(cleanUser, uData)) {
+                console.warn(`[Snapshot Guard] User ${cleanUser} profile/pledge incomplete in Firestore. Snapshot blocked.`);
                 return null;
             }
             let existingData = null;
@@ -18008,7 +18118,7 @@ const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_service
 const { getBallHexColor, showToast, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { createBallHtml } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
-const { SafeAuth, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
+const { SafeAuth, isAdminUser, isUserVerifiedAndPledged } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getComboNumbers, fetchAllUsersPurchases, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 
@@ -18408,15 +18518,28 @@ async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotDa
     const joinRound = getUserJoinRound(cleanUser);
     if (Number(roundNum) < joinRound) return;
 
+    // 🔒 본인인증 미완료 및 미서약 사용자 추천번호 영구 스냅샷 저장 원천 차단
+    const isPledged = (typeof isUserVerifiedAndPledged === 'function')
+        ? isUserVerifiedAndPledged(cleanUser)
+        : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(cleanUser) : true);
+    if (!isPledged) {
+        console.warn(`[ReviewTab Guard] User ${cleanUser} is not verified/pledged. Snapshot save blocked.`);
+        return;
+    }
+
     const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
     if (!firestore) return;
 
     try {
-        // 🔒 삭제(휴지통) 회원 차단: DB 조회 확인
+        // 🔒 삭제(휴지통) 회원 및 본인인증/미서약 회원 차단: DB 조회 확인
         const uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
         if (uDoc && uDoc.exists) {
             const uData = uDoc.data();
             if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) return;
+            if (uData && typeof isUserVerifiedAndPledged === 'function' && !isUserVerifiedAndPledged(cleanUser, uData)) {
+                console.warn(`[ReviewTab Guard] User ${cleanUser} profile/pledge incomplete in Firestore. Snapshot save blocked.`);
+                return;
+            }
         }
         const pDoc = await firestore.collection('lotto_purchases').doc(cleanUser).get();
         if (pDoc && pDoc.exists) {
@@ -32968,7 +33091,7 @@ var __M_services_lotto_views_manual_modal = (function() {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { showToast, getDrawDateByRound, getBallColorClass } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { getLedger, saveToLedger, parseDonghangLotteryQrUrl, parseDonghangOnlineReceiptText, buildDonghangLotteryQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
-const { SafeAuth, getUserRealName, isAdminUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
+const { SafeAuth, getUserRealName, isAdminUser, isUserVerifiedAndPledged } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { renderReviewTab } = (typeof __M_services_lotto_views_review_tab !== 'undefined' ? __M_services_lotto_views_review_tab : {});
 const { renderConfirmedPurchasesList } = (typeof __M_services_lotto_views_confirmed_tab !== 'undefined' ? __M_services_lotto_views_confirmed_tab : {});
 const { crossCheckCombosWithRecommendations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
@@ -34891,6 +35014,20 @@ async function handleSaveManualLedger() {
 
         const effectiveAuthId = selectedMasterTargetUser || originalUser || currentLoggedAuthId || 'guest';
 
+        // 🔒 [본인인증 및 전자 서약 검증] 대상 회원이 본인인증 미완료 및 미서약 상태인 경우 저장 차단
+        const isTargetVerifiedAndPledged = (typeof isUserVerifiedAndPledged === 'function')
+            ? isUserVerifiedAndPledged(effectiveAuthId)
+            : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(effectiveAuthId) : true);
+
+        if (!isTargetVerifiedAndPledged) {
+            const targetUserName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveAuthId) : '') || effectiveAuthId;
+            alert(`⚠️ [본인인증 및 서약 미완료]\n\n[${targetUserName}] 회원님은 본인인증(실명 및 연락처 등록) 또는 전자 서약이 완료되지 않아 간편장부(실구매 등록) 저장이 차단되었습니다.`);
+            if (effectiveAuthId === currentLoggedAuthId && typeof window !== 'undefined' && typeof window.openMandatoryPledgeModal === 'function') {
+                window.openMandatoryPledgeModal(effectiveAuthId);
+            }
+            return;
+        }
+
         // 🔍 연속 등록 중 이미 등록된 영수증 재저장 차단 (기존엔 조용히 중복제거되며 '정상 등록' 토스트만 노출되어 혼란 유발)
         if (!isEditingExisting) {
             const dupSerial = combosEl ? (combosEl.dataset.qrSerial || '') : '';
@@ -35084,6 +35221,20 @@ function openManualLedgerModal() {
         if (!currentAuthId) currentAuthId = 'guest';
 
         const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(currentAuthId) : (currentAuthId === 'master' || currentAuthId === 'admin'));
+
+        // 🔒 [본인인증 및 전자 서약 검증] 본인인증 미완료 및 미서약 회원은 간편장부 작성 차단
+        const isVerifiedAndPledged = (typeof isUserVerifiedAndPledged === 'function')
+            ? isUserVerifiedAndPledged(currentAuthId)
+            : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(currentAuthId) : true);
+
+        if (!isAdmin && !isVerifiedAndPledged) {
+            alert('본인인증(실명 및 연락처 등록) 및 전자 서약 작성이 완료되어야 간편장부(실구매 등록)를 이용하실 수 있습니다.\n본인인증 및 서약 페이지로 이동합니다.');
+            if (typeof window !== 'undefined' && typeof window.openMandatoryPledgeModal === 'function') {
+                window.openMandatoryPledgeModal(currentAuthId);
+            }
+            return;
+        }
+
         const masterUserRow = document.getElementById('manualLedgerMasterUserRow');
         const masterUserSelect = document.getElementById('manualLedgerMasterUserSelect');
 

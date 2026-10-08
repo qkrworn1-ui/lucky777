@@ -4,7 +4,7 @@ import { db } from '../../shared/db.js';
 
 import { removeUndefined, isSystemOrDummyUser } from '../../shared/utils.js';
 
-import { SafeAuth, isAdminUser, isPermanentUser, getUserRealName, setUserNameCache } from '../../shared/auth-mgmt.js';
+import { SafeAuth, isAdminUser, isPermanentUser, getUserRealName, setUserNameCache, isUserVerifiedAndPledged } from '../../shared/auth-mgmt.js';
 
 
 
@@ -2147,7 +2147,20 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
 
     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
 
-
+    // 🔒 [본인인증 및 전자 서약 검증] 본인인증 미완료 및 미서약 회원은 장부 저장 차단
+    if (!isAdmin) {
+        const isVerifiedAndPledged = (typeof isUserVerifiedAndPledged === 'function')
+            ? isUserVerifiedAndPledged(authId)
+            : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(authId) : true);
+        if (!isVerifiedAndPledged) {
+            console.warn(`[saveToLedger Guard] User ${authId} is not verified/pledged. Ledger save blocked.`);
+            const targetUserName = (typeof getUserRealName === 'function' ? getUserRealName(authId) : '') || authId;
+            if (typeof alert === 'function') {
+                alert(`⚠️ [본인인증 및 서약 미완료]\n\n[${targetUserName}] 회원님은 본인인증(실명 및 연락처 등록) 또는 전자 서약이 완료되지 않아 간편장부 저장이 차단되었습니다.`);
+            }
+            return false;
+        }
+    }
 
     const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : localStorage;
 

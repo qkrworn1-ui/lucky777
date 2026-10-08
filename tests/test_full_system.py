@@ -3144,6 +3144,113 @@ Lotto 6/45
         self.assertNotIn("window.generatorAdminViewingUser = userId;", rev_tab_code)
         self.assertNotIn("window.generatorAdminViewingUser = userId;", algo_tab_code)
 
+    def test_103_unverified_unpledged_users_blocked_from_snapshots_and_ledger(self):
+        """Test 103: Verify unverified (realName/phone missing) or unpledged users are strictly blocked from snapshots & manual ledger."""
+        auth_file = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        gen_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+        rev_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        modal_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'manual-modal.js')
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+
+        with open(auth_file, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        with open(gen_file, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+        with open(rev_file, 'r', encoding='utf-8') as f:
+            rev_code = f.read()
+        with open(modal_file, 'r', encoding='utf-8') as f:
+            modal_code = f.read()
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+
+        # 1. auth-mgmt.js exports and exposes isUserVerifiedAndPledged
+        self.assertIn("export function isUserVerifiedAndPledged", auth_code)
+        self.assertIn("window.isUserVerifiedAndPledged = isUserVerifiedAndPledged;", auth_code)
+        self.assertIn("const isPledged = isUserVerifiedAndPledged(customUserId, activeUserData);", auth_code)
+
+        # 2. generator.js imports and enforces isUserVerifiedAndPledged guard
+        self.assertIn("isUserVerifiedAndPledged", gen_code)
+        self.assertIn("const isPledged = (typeof isUserVerifiedAndPledged === 'function')", gen_code)
+        self.assertIn("[Snapshot Guard] User", gen_code)
+
+        # 3. review-tab.js imports and enforces isUserVerifiedAndPledged guard
+        self.assertIn("isUserVerifiedAndPledged", rev_code)
+        self.assertIn("[ReviewTab Guard] User", rev_code)
+
+        # 4. manual-modal.js blocks modal opening & saving for unverified/unpledged users
+        self.assertIn("isUserVerifiedAndPledged", modal_code)
+        self.assertIn("openManualLedgerModal", modal_code)
+        self.assertIn("handleSaveManualLedger", modal_code)
+        self.assertIn("본인인증 및 서약 미완료", modal_code)
+
+        # 5. ledger.js blocks saveToLedger for unverified/unpledged users
+        self.assertIn("isUserVerifiedAndPledged", ledger_code)
+        self.assertIn("[saveToLedger Guard] User", ledger_code)
+
+        # 6. Node.js evaluation of isUserVerifiedAndPledged
+        import subprocess, shutil
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_script = """
+            global.window = { 
+                addEventListener: () => {}, 
+                removeEventListener: () => {}, 
+                state: { allRegisteredUsersList: [] },
+                location: { search: '' }
+            };
+            global.document = {
+                addEventListener: () => {},
+                getElementById: () => null,
+                querySelector: () => null,
+                querySelectorAll: () => [],
+                createElement: () => ({ setAttribute: () => {}, style: {} }),
+                head: { appendChild: () => {} },
+                body: { appendChild: () => {} }
+            };
+            global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+            global.sessionStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+            import('./src/shared/auth-mgmt.js').then(m => {
+                // master is exempt
+                if (!m.isUserVerifiedAndPledged('master')) {
+                    console.error('Master should be exempt');
+                    process.exit(1);
+                }
+                // unverified dummy user (no name/phone/pledge)
+                if (m.isUserVerifiedAndPledged('dummy_user', { realName: '카카오_홍길동', phoneNumber: '미등록' })) {
+                    console.error('Unverified dummy user should return false');
+                    process.exit(2);
+                }
+                // user with phone but no signature
+                if (m.isUserVerifiedAndPledged('dummy_user_2', { realName: '홍길동', phoneNumber: '010-1234-5678', hasSignature: false })) {
+                    console.error('Unpledged user should return false');
+                    process.exit(3);
+                }
+                // fully verified and pledged user
+                if (!m.isUserVerifiedAndPledged('valid_user', { realName: '홍길동', phoneNumber: '010-1234-5678', hasSignature: true, hasPledgeSigned: true })) {
+                    console.error('Verified and pledged user should return true');
+                    process.exit(4);
+                }
+                // kakao_5115956430 (Kim Hyun) has no phone and no pledge in baseline -> false
+                if (m.isUserVerifiedAndPledged('kakao_5115956430')) {
+                    console.error('kakao_5115956430 without phone/pledge should return false');
+                    process.exit(5);
+                }
+                // wdy has realName, phone, and pledge -> true
+                if (!m.isUserVerifiedAndPledged('wdy')) {
+                    console.error('wdy with realName, phone, and pledge should return true');
+                    process.exit(6);
+                }
+                console.log('OK_VERIFIED_PLEDGED_SECURITY_TEST');
+                process.exit(0);
+            }).catch(e => {
+                console.error(e);
+                process.exit(9);
+            });
+            """
+            res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, cwd=self.root_dir)
+            self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
+            self.assertIn('OK_VERIFIED_PLEDGED_SECURITY_TEST', res.stdout)
+
 if __name__ == '__main__':
     unittest.main()
 
