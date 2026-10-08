@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.0223 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.0231.28 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.0223)
+ * Lucky777 Smart Bundle (v2026.10.09.0231.28)
  */
 
 
@@ -10055,7 +10055,7 @@ const PushClient = {
         }
 
         const reg = await navigator.serviceWorker.ready;
-        const msg = `🧪 ${delaySec}초 뒤 테스트 알림이 발송됩니다!\n\n지금 스마트폰의 [전원 버튼]을 눌러 화면을 끄고 기다려보세요.\n화면이 꺼진 상태에서도 징~ 진동과 함께 잠금화면에 알림이 뜹니다.`;
+        const msg = `🧪 ${delaySec}초 뒤 품격화된 테스트 알림이 발송됩니다!\n\n지금 스마트폰의 [전원 버튼]을 눌러 화면을 끄고 기다려보세요.\n화면이 꺼진 상태에서도 잠금화면에 정갈한 알림이 도착합니다.`;
         
         if (typeof window.showToast === 'function') {
             window.showToast(`🧪 ${delaySec}초 뒤 테스트 알림 발송! 지금 화면을 꺼보세요.`);
@@ -10065,8 +10065,8 @@ const PushClient = {
         setTimeout(() => {
             const origin = window.location.origin;
             const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
-            reg.showNotification('🔔 [운도실력] 알림 정상 작동 확인', {
-                body: '스마트폰 화면 꺼짐 및 백그라운드 수신이 완벽하게 작동하고 있습니다.',
+            reg.showNotification('🌿 [운도실력] 맞춤 알림 수신 연결 완료', {
+                body: '회원님의 스마트폰 잠금화면 및 백그라운드 수신 환경이 품격 있게 연결되었습니다.',
                 icon: `${origin}${basePath}icons/icon-192.png`,
                 badge: `${origin}${basePath}icons/favicon.png`,
                 vibrate: [200, 100, 200, 100, 400],
@@ -10093,7 +10093,7 @@ if (typeof window !== 'undefined') {
         try {
             const existingSub = await PushClient.getSubscription();
             if (existingSub) {
-                const choice = confirm('🟢 현재 [사주 길일길시 1시간 전 & 당첨 발표] 알림이 정상 등록되어 있습니다.\n\n[확인] : 3초 뒤 테스트 알림 받기 (화면 끄고 확인)\n[취소] : 알림 수신 해제 창으로 이동');
+                const choice = confirm('🟢 현재 [운도실력 일간 조화 시간 & 공식 통계 리포트] 알림이 정상 등록되어 있습니다.\n\n[확인] : 3초 뒤 테스트 알림 받기 (화면 끄고 확인)\n[취소] : 알림 수신 해제 창으로 이동');
                 if (choice) {
                     // 테스트 알림 실행
                     await PushClient.sendTestNotification(3);
@@ -10112,13 +10112,13 @@ if (typeof window !== 'undefined') {
                 return;
             }
 
-            const ok = confirm('🌿 [운도실력 맞춤 알림 서비스]\n\n1. 회원님 사주 길일·길시 1시간 전 스마트 알림\n2. 해당 주차 구매등록 완료 시 알림 자동 생략 (스마트 안심 케어)\n3. 토요일 20:45 공식 통계 정산 리포트 통보\n\n알림을 허용하시겠습니까?');
+            const ok = confirm('🌿 [운도실력 맞춤 알림 서비스]\n\n1. 회원님의 일간 조화 시간 1시간 전 정갈한 리마인더 안내\n2. 해당 주차 구매등록 완료 시 알림 자동 생략 (안심 스마트 케어)\n3. 토요일 20:45 공식 데이터 통계 정산 리포트 통보\n\n알림을 허용하시겠습니까?');
             if (!ok) return;
 
             const sub = await PushClient.subscribe();
             if (sub) {
                 await PushClient.updateBannerVisibility();
-                const testNow = confirm('✨ 사주 길일·길시 1시간 전 스마트 알림이 등록되었습니다!\n\n지금 화면을 끄고 3초 뒤 테스트 알림이 오는지 시험해 보시겠습니까?');
+                const testNow = confirm('✨ [운도실력] 맞춤 알림이 성공적으로 등록되었습니다!\n\n지금 화면을 끄고 3초 뒤 정갈한 테스트 알림이 오는지 시험해 보시겠습니까?');
                 if (testNow) {
                     await PushClient.sendTestNotification(3);
                 }

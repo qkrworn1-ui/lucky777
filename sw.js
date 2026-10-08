@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lucky777-pwa-v2026.10.09.0223';
+const CACHE_NAME = 'lucky777-pwa-v2026.10.09.0231.28';
 
 function getBasePath() {
   try {
@@ -104,8 +104,8 @@ self.addEventListener('fetch', (e) => {
 
 self.addEventListener('push', (event) => {
   let data = {
-    title: '운도실력',
-    body: '새로운 맞춤 알림이 도착했습니다.',
+    title: '🌿 [운도실력]',
+    body: '회원님을 위한 새로운 맞춤 리포트가 도착했습니다.',
     icon: `${BASE_PATH}icons/icon-192.png`,
     badge: `${BASE_PATH}icons/favicon.png`,
     tag: 'lucky777-alert',

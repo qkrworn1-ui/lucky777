@@ -134,13 +134,13 @@ exports.handler = async (event, context) => {
 
             // 아직 구매하지 않은 회원에게만 푸시 발송!
             const notificationPayload = JSON.stringify({
-                title: `🔮 [재물 대길시 1시간 전] 행운의 시간대 안내`,
-                body: `오늘(${dayName}) 회원님의 재물운이 가장 왕성한 ${slotName || '길시'}가 1시간 뒤 시작됩니다. 행운의 추천번호를 확인해 보세요! (행운색: ${luckyColor})`,
+                title: `🌿 [운도실력] 오늘의 기운 환기 시간 안내`,
+                body: `오늘(${dayName}) 회원님의 일간(日干)과 조화를 이루는 ${slotName || '길시'} 1시간 전입니다. 편안한 마음으로 일상을 정리하고 맞춤 리포트를 확인해 보세요.`,
                 icon: '/lucky777/icons/icon-192.png',
                 badge: '/lucky777/icons/favicon.png',
-                tag: 'myeongri-lucky-time',
+                tag: 'myeongri-wellness-time',
                 data: {
-                    url: '/lucky777/?tab=tab-generator&src=myeongri_push'
+                    url: '/lucky777/?tab=tab-generator&src=wellness_push'
                 }
             });
 

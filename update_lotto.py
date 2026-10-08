@@ -240,8 +240,8 @@ def main():
             print(f"\n[*] [PUSH] {latest_updated_round}회 당첨 결과 백그라운드 푸시 알림 트리거 중...")
             push_payload = {
                 "notification": {
-                    "title": f"🎉 로또 {latest_updated_round}회 1등 당첨번호 발표!",
-                    "body": "등록하신 구매 영수증의 당첨 채점 결과를 지금 확인하세요!",
+                    "title": f"📊 [동행복권] {latest_updated_round}회차 공식 통계 리포트 도착",
+                    "body": "이번 회차 공식 데이터 연동 및 등록하신 구매 영수증의 통계 정산이 완료되었습니다.",
                     "icon": "/lucky777/icons/icon-192.png",
                     "badge": "/lucky777/icons/favicon.png",
                     "tag": f"lotto-result-{latest_updated_round}",
