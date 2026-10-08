@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.08.2210 - BUILD_DATE: 2026-10-08] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.08.2328 - BUILD_DATE: 2026-10-08] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.08.2210)
+ * Lucky777 Smart Bundle (v2026.10.08.2328)
  */
 
 
@@ -23144,8 +23144,10 @@ async function renderAlgorithmsTab(fromRound = null) {
         `;
     }
 
-    // 1. 알고리즘 소개 섹션 카드 HTML 생성
+    // 1. 알고리즘 소개 섹션 카드 HTML 생성 (기본 설명 유지 + 세부 메커니즘 접기/펼치기)
     const algoIntroCardsHtml = SEVEN_ALGORITHMS_INFO.map((algo, idx) => {
+        const isDetailOpen = !!algoDetailAccordionMap[algo.id];
+
         const methodsHtml = algo.comboMethod.map(m => `
             <div style="background: rgba(0, 0, 0, 0.25); border-left: 3px solid ${algo.badgeColor}; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px;">
                 <div style="font-size: 0.8rem; font-weight: 800; color: ${algo.badgeColor}; margin-bottom: 3px;">
@@ -23164,50 +23166,58 @@ async function renderAlgorithmsTab(fromRound = null) {
         `).join('');
 
         return `
-            <div class="algo-spec-card" style="background: ${algo.bgGradient}; border: 1.5px solid ${algo.borderColor}; border-radius: 14px; padding: 16px 18px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 10px; transition: transform 0.2s ease;">
+            <div class="algo-spec-card" style="background: ${algo.bgGradient}; border: 1.5px solid ${algo.borderColor}; border-radius: 14px; padding: 14px 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 8px; transition: transform 0.2s ease;">
                 <!-- Header Row -->
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; flex-wrap: wrap;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <div style="width: 36px; height: 36px; border-radius: 10px; background: ${algo.badgeColor}25; border: 1px solid ${algo.badgeColor}; display: flex; align-items: center; justify-content: center; color: ${algo.badgeColor}; font-size: 1.1rem; flex-shrink: 0;">
+                        <div style="width: 34px; height: 34px; border-radius: 9px; background: ${algo.badgeColor}25; border: 1px solid ${algo.badgeColor}; display: flex; align-items: center; justify-content: center; color: ${algo.badgeColor}; font-size: 1.05rem; flex-shrink: 0;">
                             <i class="fa-solid ${algo.icon}"></i>
                         </div>
                         <div>
                             <div style="display: flex; align-items: center; gap: 6px;">
-                                <span style="font-size: 0.7rem; font-weight: 800; color: ${algo.badgeColor}; background: ${algo.badgeColor}15; border: 1px solid ${algo.badgeColor}40; padding: 1px 6px; border-radius: 6px;">
+                                <span style="font-size: 0.68rem; font-weight: 800; color: ${algo.badgeColor}; background: ${algo.badgeColor}15; border: 1px solid ${algo.badgeColor}40; padding: 1px 6px; border-radius: 5px;">
                                     알고리즘 #${idx + 1}
                                 </span>
-                                <span style="font-size: 0.72rem; font-weight: 800; color: #f8fafc; background: rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 6px;">
+                                <span style="font-size: 0.70rem; font-weight: 800; color: #f8fafc; background: rgba(255,255,255,0.1); padding: 1px 6px; border-radius: 5px;">
                                     ${algo.badge}
                                 </span>
                             </div>
-                            <h3 style="margin: 3px 0 0 0; color: #f8fafc; font-size: 1.05rem; font-weight: 900;">
+                            <h3 style="margin: 2px 0 0 0; color: #f8fafc; font-size: 0.98rem; font-weight: 900;">
                                 ${algo.name}
                             </h3>
                         </div>
                     </div>
                 </div>
 
-                <!-- Philosophy / Tag -->
-                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 12px;">
-                    <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 2px;">
+                <!-- Philosophy / Tag (기본 설명) -->
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 10px;">
+                    <div style="font-size: 0.70rem; color: #94a3b8; margin-bottom: 2px;">
                         <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>조합 철학 &amp; 핵심 이론</strong>
                     </div>
-                    <p style="margin: 0; font-size: 0.77rem; color: #e2e8f0; line-height: 1.45;">
+                    <p style="margin: 0; font-size: 0.75rem; color: #e2e8f0; line-height: 1.42;">
                         ${algo.corePhilosophy}
                     </p>
                 </div>
 
-                <!-- Step-by-Step Combo Method -->
-                <div>
-                    <div style="font-size: 0.75rem; font-weight: 800; color: #f8fafc; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-cubes-stacked" style="color: ${algo.badgeColor};"></i> 번호 조합 및 추출 메커니즘
+                <!-- Features Tags (기본 특징 태그) -->
+                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                    ${featuresHtml}
+                </div>
+
+                <!-- Step-by-Step Combo Method (상세 메커니즘 - 기본 접힘 / 토글 가능) -->
+                <div id="algoDetail_${algo.id}" class="algo-detail-body" style="display: ${isDetailOpen ? 'block' : 'none'}; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 8px; margin-top: 2px;">
+                    <div style="font-size: 0.74rem; font-weight: 800; color: #f8fafc; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-cubes-stacked" style="color: ${algo.badgeColor};"></i> 세부 번호 조합 및 추출 메커니즘
                     </div>
                     ${methodsHtml}
                 </div>
 
-                <!-- Features Tags -->
-                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px;">
-                    ${featuresHtml}
+                <!-- 접기/펼치기 토글 버튼 -->
+                <div style="margin-top: 2px; display: flex; justify-content: flex-end;">
+                    <button type="button" id="algoDetailBtn_${algo.id}" class="btn-toggle-algo-detail ${isDetailOpen ? 'active' : ''}" onclick="window.toggleAlgoSpecDetail && window.toggleAlgoSpecDetail('${algo.id}')" style="background: ${isDetailOpen ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)'}; border: 1px solid ${isDetailOpen ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.15)'}; color: #cbd5e1; border-radius: 7px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
+                        <span id="algoDetailText_${algo.id}" class="algo-detail-text">${isDetailOpen ? '세부 메커니즘 접기' : '세부 조합 메커니즘 펼치기'}</span>
+                        <i id="algoDetailIcon_${algo.id}" class="algo-detail-icon fa-solid ${isDetailOpen ? 'fa-chevron-up' : 'fa-chevron-down'}" style="font-size: 0.68rem; color: ${algo.badgeColor};"></i>
+                    </button>
                 </div>
             </div>
         `;
@@ -23299,22 +23309,32 @@ async function renderAlgorithmsTab(fromRound = null) {
             <!-- Admin User Selector Bar (Admin only) -->
             ${adminUserSelectHtml}
 
-            <!-- SECTION 1: 7대 알고리즘 조합 원리 상세 해설 -->
+            <!-- SECTION 1: 7대 알고리즘 조합 원리 상세 해설 (기본설명 모드 & 접기/펼치기) -->
             <section class="algo-guide-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; cursor: pointer;" onclick="window.toggleAlgoGuideSection && window.toggleAlgoGuideSection()" title="클릭 시 7대 알고리즘 설명 섹션 전체 접기/펼치기">
                         <span style="width: 4px; height: 18px; background: #6366f1; border-radius: 2px; display: inline-block; flex-shrink: 0;"></span>
                         <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #f8fafc; word-break: keep-all; overflow-wrap: break-word;">
                             1. 7대 알고리즘별 번호 조합 메커니즘
                         </h3>
+                        <span style="font-size: 0.70rem; color: #a5b4fc; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); padding: 1px 7px; border-radius: 4px; font-weight: 700; white-space: nowrap;">
+                            기본설명 모드
+                        </span>
                     </div>
-                    <span style="font-size: 0.75rem; color: #94a3b8; white-space: nowrap;">
-                        <i class="fa-solid fa-circle-info" style="color: #60a5fa;"></i> 알고리즘별 10게임 맞춤형 조합 원리
-                    </span>
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <button type="button" onclick="window.toggleAllAlgoSpecDetails && window.toggleAllAlgoSpecDetails()" id="btnToggleAllAlgoSpecs" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); color: #c7d2fe; padding: 4px 10px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
+                            <i id="iconToggleAllAlgoSpecs" class="fa-solid fa-angles-down" style="color: #818cf8;"></i>
+                            <span id="textToggleAllAlgoSpecs">세부 설명 전체 펼치기</span>
+                        </button>
+                        <button type="button" onclick="window.toggleAlgoGuideSection && window.toggleAlgoGuideSection()" id="btnToggleAlgoGuideSection" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); color: #94a3b8; padding: 4px 9px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
+                            <span id="algoGuideToggleText">섹션 접기</span>
+                            <i id="algoGuideChevron" class="fa-solid fa-chevron-up"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- 7 Algorithms Grid -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px;">
+                <!-- 7 Algorithms Grid (기본 설명 카드 그리드) -->
+                <div id="algoIntroGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px;">
                     ${algoIntroCardsHtml}
                 </div>
             </section>
@@ -23442,6 +23462,111 @@ function changeAlgoAdminViewingUser(userId) {
 }
 
 /**
+ * 개별 알고리즘 카드의 세부 메커니즘 접기/펼치기 토글
+ */
+function toggleAlgoSpecDetail(algoId) {
+    const detailEl = document.getElementById(`algoDetail_${algoId}`);
+    const textEl = document.getElementById(`algoDetailText_${algoId}`);
+    const iconEl = document.getElementById(`algoDetailIcon_${algoId}`);
+    const btnEl = document.getElementById(`algoDetailBtn_${algoId}`);
+    if (!detailEl) return;
+
+    const isExpanded = detailEl.style.display !== 'none';
+    if (isExpanded) {
+        detailEl.style.display = 'none';
+        if (textEl) textEl.textContent = '세부 조합 메커니즘 펼치기';
+        if (iconEl) {
+            iconEl.classList.remove('fa-chevron-up');
+            iconEl.classList.add('fa-chevron-down');
+        }
+        if (btnEl) {
+            btnEl.style.background = 'rgba(255,255,255,0.06)';
+            btnEl.style.borderColor = 'rgba(255,255,255,0.15)';
+            btnEl.classList.remove('active');
+        }
+        algoDetailAccordionMap[algoId] = false;
+    } else {
+        detailEl.style.display = 'block';
+        if (textEl) textEl.textContent = '세부 메커니즘 접기';
+        if (iconEl) {
+            iconEl.classList.remove('fa-chevron-down');
+            iconEl.classList.add('fa-chevron-up');
+        }
+        if (btnEl) {
+            btnEl.style.background = 'rgba(99,102,241,0.2)';
+            btnEl.style.borderColor = 'rgba(99,102,241,0.4)';
+            btnEl.classList.add('active');
+        }
+        algoDetailAccordionMap[algoId] = true;
+    }
+}
+
+/**
+ * 7대 알고리즘 세부 메커니즘 전체 펼치기/접기
+ */
+function toggleAllAlgoSpecDetails() {
+    const allDetailEls = document.querySelectorAll('.algo-detail-body');
+    const mainBtnText = document.getElementById('textToggleAllAlgoSpecs');
+    const mainBtnIcon = document.getElementById('iconToggleAllAlgoSpecs');
+
+    let anyClosed = false;
+    allDetailEls.forEach(el => {
+        if (el.style.display === 'none') anyClosed = true;
+    });
+
+    SEVEN_ALGORITHMS_INFO.forEach(a => {
+        algoDetailAccordionMap[a.id] = anyClosed;
+        const detailEl = document.getElementById(`algoDetail_${a.id}`);
+        const textEl = document.getElementById(`algoDetailText_${a.id}`);
+        const iconEl = document.getElementById(`algoDetailIcon_${a.id}`);
+        const btnEl = document.getElementById(`algoDetailBtn_${a.id}`);
+        if (detailEl) {
+            detailEl.style.display = anyClosed ? 'block' : 'none';
+        }
+        if (textEl) {
+            textEl.textContent = anyClosed ? '세부 메커니즘 접기' : '세부 조합 메커니즘 펼치기';
+        }
+        if (iconEl) {
+            iconEl.className = anyClosed ? 'algo-detail-icon fa-solid fa-chevron-up' : 'algo-detail-icon fa-solid fa-chevron-down';
+        }
+        if (btnEl) {
+            btnEl.style.background = anyClosed ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)';
+            btnEl.style.borderColor = anyClosed ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.15)';
+            if (anyClosed) btnEl.classList.add('active');
+            else btnEl.classList.remove('active');
+        }
+    });
+
+    if (mainBtnText) mainBtnText.textContent = anyClosed ? '세부 설명 전체 접기' : '세부 설명 전체 펼치기';
+    if (mainBtnIcon) mainBtnIcon.className = anyClosed ? 'fa-solid fa-angles-up' : 'fa-solid fa-angles-down';
+}
+
+/**
+ * 1번 섹션(7대 알고리즘 소개 그리드) 전체 접기/펼치기
+ */
+function toggleAlgoGuideSection() {
+    const gridEl = document.getElementById('algoIntroGrid');
+    const chevronEl = document.getElementById('algoGuideChevron');
+    const textEl = document.getElementById('algoGuideToggleText');
+    if (!gridEl) return;
+
+    const isHidden = gridEl.style.display === 'none';
+    if (isHidden) {
+        gridEl.style.display = 'grid';
+        if (chevronEl) {
+            chevronEl.className = 'fa-solid fa-chevron-up';
+        }
+        if (textEl) textEl.textContent = '섹션 접기';
+    } else {
+        gridEl.style.display = 'none';
+        if (chevronEl) {
+            chevronEl.className = 'fa-solid fa-chevron-down';
+        }
+        if (textEl) textEl.textContent = '섹션 펼치기';
+    }
+}
+
+/**
  * 특정 알고리즘의 회차별 아코디언 토글
  */
 function toggleAlgoDetailAccordion(algoId) {
@@ -23475,6 +23600,9 @@ if (typeof window !== 'undefined') {
     window.renderAlgorithmsTab = renderAlgorithmsTab;
     window.changeAlgoAdminViewingUser = changeAlgoAdminViewingUser;
     window.resetAlgoAdminViewingUser = resetAlgoAdminViewingUser;
+    window.toggleAlgoSpecDetail = toggleAlgoSpecDetail;
+    window.toggleAllAlgoSpecDetails = toggleAllAlgoSpecDetails;
+    window.toggleAlgoGuideSection = toggleAlgoGuideSection;
     window.toggleAlgoDetailAccordion = toggleAlgoDetailAccordion;
     window.toggleAllAlgoDetailAccordions = toggleAllAlgoDetailAccordions;
     window.changeAlgoReviewStartRound = changeAlgoReviewStartRound;
@@ -23507,6 +23635,18 @@ if (typeof window !== 'undefined') {
         if (typeof changeAlgoAdminViewingUser !== 'undefined') {
             __exports.changeAlgoAdminViewingUser = changeAlgoAdminViewingUser;
             if (typeof window !== 'undefined') window.changeAlgoAdminViewingUser = changeAlgoAdminViewingUser;
+        }
+        if (typeof toggleAlgoSpecDetail !== 'undefined') {
+            __exports.toggleAlgoSpecDetail = toggleAlgoSpecDetail;
+            if (typeof window !== 'undefined') window.toggleAlgoSpecDetail = toggleAlgoSpecDetail;
+        }
+        if (typeof toggleAllAlgoSpecDetails !== 'undefined') {
+            __exports.toggleAllAlgoSpecDetails = toggleAllAlgoSpecDetails;
+            if (typeof window !== 'undefined') window.toggleAllAlgoSpecDetails = toggleAllAlgoSpecDetails;
+        }
+        if (typeof toggleAlgoGuideSection !== 'undefined') {
+            __exports.toggleAlgoGuideSection = toggleAlgoGuideSection;
+            if (typeof window !== 'undefined') window.toggleAlgoGuideSection = toggleAlgoGuideSection;
         }
         if (typeof toggleAlgoDetailAccordion !== 'undefined') {
             __exports.toggleAlgoDetailAccordion = toggleAlgoDetailAccordion;
