@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.08.2328 - BUILD_DATE: 2026-10-08] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.08.2342.44 - BUILD_DATE: 2026-10-08] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.08.2328)
+ * Lucky777 Smart Bundle (v2026.10.08.2342.44)
  */
 
 
@@ -1879,7 +1879,7 @@ function getSimpleDeviceInfo() {
 }
 
 /**
- * 🕒 마지막 접속 시점 포맷팅 (오늘 HH:mm, 어제 HH:mm, MM.DD, 방금 전 등)
+ * 🕒 마지막 접속 시점 포맷팅 (당일: 방금 전 / N분 전 / 오늘 HH:mm, 당일 아닐 때: MM월DD일)
  */
 function formatLastAccessTime(timestamp) {
     if (!timestamp) return '미기록';
@@ -1891,27 +1891,24 @@ function formatLastAccessTime(timestamp) {
         const diffMs = now.getTime() - dt.getTime();
         if (diffMs < 0) return '방금 전';
 
-        const diffMin = Math.floor(diffMs / 60000);
-        if (diffMin < 1) return '방금 전';
-        if (diffMin < 60) return `${diffMin}분 전`;
-
         const isToday = dt.getFullYear() === now.getFullYear() &&
                         dt.getMonth() === now.getMonth() &&
                         dt.getDate() === now.getDate();
 
         const pad = (n) => String(n).padStart(2, '0');
-        const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
 
-        if (isToday) return `오늘 ${timeStr}`;
+        if (isToday) {
+            const diffMin = Math.floor(diffMs / 60000);
+            if (diffMin < 1) return '방금 전';
+            if (diffMin < 60) return `${diffMin}분 전`;
+            const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+            return `오늘 ${timeStr}`;
+        }
 
-        const yesterday = new Date(now);
-        yesterday.setDate(now.getDate() - 1);
-        const isYesterday = dt.getFullYear() === yesterday.getFullYear() &&
-                            dt.getMonth() === yesterday.getMonth() &&
-                            dt.getDate() === yesterday.getDate();
-        if (isYesterday) return `어제 ${timeStr}`;
-
-        return `${pad(dt.getMonth() + 1)}.${pad(dt.getDate())}`;
+        // 📅 당일이 아닌 경우: "10월03일" 형식으로 표시
+        const monthStr = pad(dt.getMonth() + 1);
+        const dayStr = pad(dt.getDate());
+        return `${monthStr}월${dayStr}일`;
     } catch(e) {
         return '미기록';
     }
