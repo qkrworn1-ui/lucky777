@@ -1,17 +1,9 @@
 {
-  "version": "v2026.10.08.2024",
+  "version": "v2026.10.08.2210",
   "buildDate": "2026-10-08",
   "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document",
-  "buildTimestamp": "2026-10-08T20:24:04.362616",
+  "buildTimestamp": "2026-10-08T22:10:35.810304",
   "buildHistory": [
-    {
-      "version": "v2026.10.08.1825",
-      "buildDate": "2026-10-08",
-      "buildTime": "18:25",
-      "buildDateTime": "2026-10-08 18:25",
-      "buildTimestamp": "2026-10-08T18:25:52.395829",
-      "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
-    },
     {
       "version": "v2026.10.08.1826",
       "buildDate": "2026-10-08",
@@ -123,8 +115,16 @@
       "buildDateTime": "2026-10-08 20:24",
       "buildTimestamp": "2026-10-08T20:24:04.362616",
       "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
+    },
+    {
+      "version": "v2026.10.08.2210",
+      "buildDate": "2026-10-08",
+      "buildTime": "22:10",
+      "buildDateTime": "2026-10-08 22:10",
+      "buildTimestamp": "2026-10-08T22:10:35.810304",
+      "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
     }
   ],
-  "buildTime": "20:24",
-  "buildDateTime": "2026-10-08 20:24"
+  "buildTime": "22:10",
+  "buildDateTime": "2026-10-08 22:10"
 }
