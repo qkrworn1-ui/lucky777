@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lucky777-pwa-v2026.10.08.2342.44';
+const CACHE_NAME = 'lucky777-pwa-v2026.10.09.0155.40';
 
 function getBasePath() {
   try {
@@ -95,5 +95,88 @@ self.addEventListener('fetch', (e) => {
           }
         });
       })
+  );
+});
+
+// ============================================================================
+// 🔔 Web Push & Background Notification Listeners (Myeongri & Draw Alert)
+// ============================================================================
+
+self.addEventListener('push', (event) => {
+  let data = {
+    title: '운도실력 777',
+    body: '새로운 로또 행운 알림이 도착했습니다.',
+    icon: `${BASE_PATH}icons/icon-192.png`,
+    badge: `${BASE_PATH}icons/favicon.png`,
+    tag: 'lucky777-alert',
+    data: { url: `${BASE_PATH}?tab=tab-confirmed` }
+  };
+
+  if (event.data) {
+    try {
+      const parsed = event.data.json();
+      data = Object.assign(data, parsed);
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
+  // Ensure absolute or relative paths with BASE_PATH
+  if (data.icon && !data.icon.startsWith('http') && !data.icon.startsWith(BASE_PATH)) {
+    data.icon = BASE_PATH + data.icon.replace(/^\//, '');
+  }
+  if (data.badge && !data.badge.startsWith('http') && !data.badge.startsWith(BASE_PATH)) {
+    data.badge = BASE_PATH + data.badge.replace(/^\//, '');
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon,
+    badge: data.badge,
+    tag: data.tag || 'lucky777-alert',
+    vibrate: [100, 50, 100],
+    data: data.data || { url: `${BASE_PATH}?tab=tab-confirmed` },
+    actions: [
+      { action: 'open', title: '확인하기' },
+      { action: 'close', title: '닫기' }
+    ]
+  };
+
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(data.title, options),
+      (typeof self.navigator !== 'undefined' && 'setAppBadge' in self.navigator)
+        ? self.navigator.setAppBadge(1).catch(() => {})
+        : Promise.resolve()
+    ])
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'close') return;
+
+  let targetUrl = `${BASE_PATH}`;
+  if (event.notification.data && event.notification.data.url) {
+    targetUrl = event.notification.data.url;
+  }
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If a window is already open, navigate and focus
+      for (const client of clientList) {
+        if (client.url && 'focus' in client) {
+          if ('navigate' in client) {
+            client.navigate(targetUrl);
+          }
+          return client.focus();
+        }
+      }
+      // Otherwise open a new window
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
   );
 });

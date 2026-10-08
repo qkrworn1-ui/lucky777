@@ -603,6 +603,24 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
                     </div>
                 </div>
 
+                <!-- 🔮 사주 길일·길시 1시간 전 알림 푸시 원클릭 등록 버튼 -->
+                <div style="margin-top:12px; padding:10px 14px; background:linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%); border:1.5px solid rgba(245, 158, 11, 0.4); border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:1.15rem;">🔮</span>
+                        <div>
+                            <div style="font-size:0.78rem; font-weight:800; color:#fde68a;">
+                                길시 1시간 전 스마트폰 알림 받기
+                            </div>
+                            <div style="font-size:0.68rem; color:#cbd5e1;">
+                                해당 주차 구매등록 완료 시 알림 자동 생략 (스마트 안심 케어)
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" style="padding:6px 14px; border-radius:8px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#111827; font-weight:800; font-size:0.75rem; border:none; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 2px 8px rgba(245, 158, 11, 0.3);">
+                        <i class="fa-solid fa-bell"></i> <span>알림 신청하기</span>
+                    </button>
+                </div>
+
                 <!-- Disclaimer -->
                 <div style="margin-top:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:0.68rem; color:#64748b;">
                     <span>* 본 추천은 복권 구매의 재미와 심리적 기대를 돕는 역학 통계 가이드이며, 기존 7대 알고리즘 추천번호와 함께 독립적으로 참고하실 수 있습니다.</span>

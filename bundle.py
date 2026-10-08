@@ -235,6 +235,7 @@ FILES_TO_BUNDLE = [
     "src/shared/event-bus.js",
     "src/shared/user-context.js",
     "src/shared/auth-mgmt.js",
+    "src/shared/push-client.js",
     "src/services/lotto/state.js",
     "src/services/lotto/ledger.js",
     "src/services/lotto/statistics.js",

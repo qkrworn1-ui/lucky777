@@ -1,0 +1,8 @@
+{
+  "name": "lucky777-netlify-functions",
+  "version": "1.0.0",
+  "description": "Serverless Functions for Lucky 777 Platform",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

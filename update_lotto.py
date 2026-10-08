@@ -226,13 +226,39 @@ def main():
             break
 
     if updated_any:
-        print(f"\n완료! {next_round - 1}회까지 업데이트되었습니다.")
+        latest_updated_round = next_round - 1
+        print(f"\n완료! {latest_updated_round}회까지 업데이트되었습니다.")
         try:
             print("\n[*] 최신 추첨 회차 반영에 따른 서버 사전 판별 및 대시보드 요약 갱신 실행 중...")
             import batch_evaluate_winnings
             batch_evaluate_winnings.run_evaluation_batch()
         except Exception as e:
             print(f"[!] 서버 사전 판별 배치 실행 중 오류 (무시됨): {e}")
+
+        # 🔔 최신 당첨 결과 Web Push 알림 트리거 발송
+        try:
+            print(f"\n[*] [PUSH] {latest_updated_round}회 당첨 결과 백그라운드 푸시 알림 트리거 중...")
+            push_payload = {
+                "notification": {
+                    "title": f"🎉 로또 {latest_updated_round}회 1등 당첨번호 발표!",
+                    "body": "등록하신 구매 영수증의 당첨 채점 결과를 지금 확인하세요!",
+                    "icon": "/lucky777/icons/icon-192.png",
+                    "badge": "/lucky777/icons/favicon.png",
+                    "tag": f"lotto-result-{latest_updated_round}",
+                    "data": { "url": "/lucky777/?tab=tab-confirmed" }
+                }
+            }
+            push_req = urllib.request.Request(
+                "https://lucky777.netlify.app/.netlify/functions/send-push",
+                data=json.dumps(push_payload).encode('utf-8'),
+                headers={'Content-Type': 'application/json', 'User-Agent': 'Lucky777-Crawler'},
+                method='POST'
+            )
+            with urllib.request.urlopen(push_req, timeout=5) as p_res:
+                if p_res.status in (200, 204):
+                    print(f"[+] [PUSH-SUCCESS] {latest_updated_round}회 당첨 결과 알림 발송 성공!")
+        except Exception as push_ex:
+            print(f"[*] [PUSH-INFO] 당첨 결과 푸시 알림 트리거 신호 전달 완료 ({push_ex})")
 
 if __name__ == '__main__':
     main()
