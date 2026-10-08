@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.09.0159.27",
+  "version": "v2026.10.09.0203.44",
   "buildDate": "2026-10-09",
   "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document",
-  "buildTimestamp": "2026-10-09T01:59:27.664352",
+  "buildTimestamp": "2026-10-09T02:03:44.941571",
   "buildHistory": [
-    {
-      "version": "v2026.10.08.2024",
-      "buildDate": "2026-10-08",
-      "buildTime": "20:24",
-      "buildDateTime": "2026-10-08 20:24",
-      "buildTimestamp": "2026-10-08T20:24:04.362616",
-      "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
-    },
-    {
-      "version": "v2026.10.08.2210",
-      "buildDate": "2026-10-08",
-      "buildTime": "22:10",
-      "buildDateTime": "2026-10-08 22:10",
-      "buildTimestamp": "2026-10-08T22:10:35.810304",
-      "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
-    },
     {
       "version": "v2026.10.08.2326",
       "buildDate": "2026-10-08",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-09 01:59",
       "buildTimestamp": "2026-10-09T01:59:27.664352",
       "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
+    },
+    {
+      "version": "v2026.10.09.0203",
+      "buildDate": "2026-10-09",
+      "buildTime": "02:03",
+      "buildDateTime": "2026-10-09 02:03",
+      "buildTimestamp": "2026-10-09T02:03:33.273206",
+      "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
+    },
+    {
+      "version": "v2026.10.09.0203.44",
+      "buildDate": "2026-10-09",
+      "buildTime": "02:03",
+      "buildDateTime": "2026-10-09 02:03",
+      "buildTimestamp": "2026-10-09T02:03:44.941571",
+      "description": "feat(ledger): attach recommendationSnapshots and winningEvaluations to allUsersMap for complete single master document"
     }
   ],
-  "buildTime": "01:59",
-  "buildDateTime": "2026-10-09 01:59"
+  "buildTime": "02:03",
+  "buildDateTime": "2026-10-09 02:03"
 }

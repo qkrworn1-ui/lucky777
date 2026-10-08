@@ -238,11 +238,56 @@ export const PushClient = {
     /**
      * App Badging API: 앱 아이콘 배지 초기화
      */
+    /**
+     * App Badging API: 앱 아이콘 배지 초기화
+     */
     async clearBadge() {
         if ('clearAppBadge' in navigator) {
             try {
                 await navigator.clearAppBadge();
             } catch (e) {}
+        }
+    },
+
+    /**
+     * 알림 수신 상태에 따라 홈화면 배너 숨김/표시 처리
+     * (알림 수신 확인/구독 완료 회원은 홈화면 배너 자동 숨김)
+     */
+    async updateBannerVisibility() {
+        const banner = document.getElementById('lpPushNotificationBanner');
+        const popoverPushBtnText = document.getElementById('popoverPushBtnText');
+        const lpMobilePushBtn = document.getElementById('lpMobilePushBtn');
+
+        let isSubscribed = false;
+        try {
+            if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                if (localStorage.getItem('lucky777_push_subscribed') === 'true') {
+                    isSubscribed = true;
+                } else {
+                    const sub = await this.getSubscription();
+                    if (sub) {
+                        isSubscribed = true;
+                        localStorage.setItem('lucky777_push_subscribed', 'true');
+                    }
+                }
+            } else if (typeof Notification !== 'undefined' && Notification.permission === 'denied') {
+                localStorage.removeItem('lucky777_push_subscribed');
+            }
+        } catch(e) {}
+
+        if (banner) {
+            if (isSubscribed) {
+                banner.style.display = 'none';
+            } else {
+                banner.style.display = 'flex';
+            }
+        }
+
+        if (popoverPushBtnText) {
+            popoverPushBtnText.textContent = isSubscribed ? '행운 알림 관리 (수신 중 🟢)' : '행운 알림 설정 (길시 1시간 전)';
+        }
+        if (lpMobilePushBtn) {
+            lpMobilePushBtn.title = isSubscribed ? '길시 1시간 전 알림 수신 중 (클릭 시 관리)' : '길시 1시간 전 알림 신청';
         }
     }
 };
@@ -263,6 +308,7 @@ if (typeof window !== 'undefined') {
                 const wantCancel = confirm('이미 [사주 길일길시 1시간 전 & 당첨 발표] 알림을 구독 중입니다.\n\n알림 수신을 해제하시겠습니까?');
                 if (wantCancel) {
                     await PushClient.unsubscribe();
+                    await PushClient.updateBannerVisibility();
                     if (typeof window.showToast === 'function') {
                         window.showToast('🔔 푸시 알림 수신이 안전하게 해제되었습니다.');
                     } else {
@@ -277,6 +323,7 @@ if (typeof window !== 'undefined') {
 
             const sub = await PushClient.subscribe();
             if (sub) {
+                await PushClient.updateBannerVisibility();
                 if (typeof window.showToast === 'function') {
                     window.showToast('✨ 사주 길일·길시 1시간 전 스마트 알림이 등록되었습니다!');
                 } else {
@@ -289,11 +336,16 @@ if (typeof window !== 'undefined') {
         }
     };
 
-    // 앱 실행 시 배지 자동 초기화
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => PushClient.clearBadge());
-    } else {
+    // 앱 실행 시 배지 초기화 및 홈화면 배너 가시성 자동 동기화
+    function initPushUI() {
         PushClient.clearBadge();
+        PushClient.updateBannerVisibility();
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initPushUI);
+    } else {
+        initPushUI();
     }
 }
 
