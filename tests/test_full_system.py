@@ -3251,6 +3251,113 @@ Lotto 6/45
             self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
             self.assertIn('OK_VERIFIED_PLEDGED_SECURITY_TEST', res.stdout)
 
+    def test_104_qr_continuous_multi_sheet_and_cross_model_compatibility(self):
+        """Test 104: Verify QR continuous multi-sheet scanning, smartphone hardware HAL release, and ledger preservation."""
+        modal_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'manual-modal.js')
+        ledger_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+
+        with open(modal_file, 'r', encoding='utf-8') as f:
+            modal_code = f.read()
+        with open(ledger_file, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+
+        # 1. Verify ledger.js declares _allUsersFinancialsCache
+        self.assertIn("let _allUsersFinancialsCache = null;", ledger_code)
+
+        # 2. Verify manual-modal.js supports keepScanning in handleSaveManualLedger
+        self.assertIn("export async function handleSaveManualLedger(keepScanning = false)", modal_code)
+        self.assertIn("if (keepScanning)", modal_code)
+        self.assertIn("startLottoQrScanner()", modal_code)
+
+        # 3. Verify digital receipt card renders continuous scan button
+        self.assertIn("저장 후 다음 장 스캔", modal_code)
+        self.assertIn("handleSaveManualLedger(true)", modal_code)
+        self.assertIn("handleSaveManualLedger(false)", modal_code)
+
+        # 4. Verify multi-tier camera initialization and cooldown guards
+        self.assertIn("forceKillAllCameraTracks", modal_code)
+        self.assertIn("resetQrReaderDOM", modal_code)
+        self.assertIn('facingMode: "environment"', modal_code)
+        self.assertIn("getCameras()", modal_code)
+
+        # 5. Verify Node.js multi-sheet sequential saving and persistence
+        import subprocess, shutil
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_script = """
+            global.window = {
+                addEventListener: () => {},
+                removeEventListener: () => {},
+                state: {
+                    globalLedger: {},
+                    allUsersPurchasesMap: {},
+                    allRegisteredUsersList: [
+                        { id: 'kakao_5070244665', name: '박재구', realName: '박재구', phone: '010-7177-2581', phoneNumber: '010-7177-2581', isAdmin: true, isPermanent: true, userType: 'permanent', hasSignature: true, hasPledgeSigned: true }
+                    ]
+                },
+                location: { search: '' }
+            };
+            global.document = {
+                addEventListener: () => {},
+                getElementById: () => null,
+                querySelector: () => null,
+                querySelectorAll: () => [],
+                createElement: () => ({ setAttribute: () => {}, style: {} }),
+                head: { appendChild: () => {} },
+                body: { appendChild: () => {} }
+            };
+            const store = {};
+            global.localStorage = {
+                getItem: (k) => store[k] || null,
+                setItem: (k, v) => { store[k] = String(v); },
+                removeItem: (k) => { delete store[k]; }
+            };
+            global.sessionStorage = {
+                getItem: (k) => 'kakao_5070244665',
+                setItem: () => {},
+                removeItem: () => {}
+            };
+
+            async function run() {
+                const ledgerMod = await import('./src/services/lotto/ledger.js');
+                const userId = 'kakao_5070244665';
+                const round = 1245;
+
+                // Sheet 1
+                const sheet1 = [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]];
+                const meta1 = { qrSerial: '124500000000000001', channel: 'offline' };
+                await ledgerMod.saveToLedger(round, sheet1, 'QR 실구매 영수증 (2게임)', userId, meta1, true);
+
+                // Sheet 2
+                const sheet2 = [[13, 14, 15, 16, 17, 18], [19, 20, 21, 22, 23, 24]];
+                const meta2 = { qrSerial: '124500000000000002', channel: 'offline' };
+                await ledgerMod.saveToLedger(round, sheet2, 'QR 실구매 영수증 (2게임)', userId, meta2, true);
+
+                // Sheet 3
+                const sheet3 = [[25, 26, 27, 28, 29, 30]];
+                const meta3 = { qrSerial: '124500000000000003', channel: 'offline' };
+                await ledgerMod.saveToLedger(round, sheet3, 'QR 실구매 영수증 (1게임)', userId, meta3, true);
+
+                const ledger = ledgerMod.getLedger(userId);
+                const receipts = ledger[round] || [];
+                if (receipts.length !== 3) {
+                    console.error('Expected 3 receipts, got ' + receipts.length);
+                    process.exit(1);
+                }
+                const totalGames = receipts.reduce((acc, r) => acc + (r.combos ? r.combos.length : 0), 0);
+                if (totalGames !== 5) {
+                    console.error('Expected 5 games across 3 sheets, got ' + totalGames);
+                    process.exit(2);
+                }
+                console.log('OK_MULTI_SHEET_PRESERVATION_TEST');
+                process.exit(0);
+            }
+            run().catch(e => { console.error(e); process.exit(9); });
+            """
+            res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, cwd=self.root_dir)
+            self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
+            self.assertIn('OK_MULTI_SHEET_PRESERVATION_TEST', res.stdout)
+
 if __name__ == '__main__':
     unittest.main()
 

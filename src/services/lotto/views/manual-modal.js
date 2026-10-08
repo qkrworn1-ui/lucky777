@@ -336,9 +336,14 @@ export function renderDigitalReceiptCard(round, parsedCombos, check, serial) {
     }
     if (confirmBtnEl) {
         confirmBtnEl.innerHTML = `
-            <button type="button" onclick="window.handleSaveManualLedger && window.handleSaveManualLedger()" class="btn-primary" style="width: 100%; height: 44px; background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; font-size: 0.92rem; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); color: white;">
-                <i class="fa-solid fa-circle-check" style="font-size: 1.05rem;"></i> ${memberPrefix}제 ${round}회 실구매 구매확정 (${totalAmount.toLocaleString()}원)
-            </button>
+            <div style="display: flex; gap: 8px; width: 100%; flex-wrap: wrap;">
+                <button type="button" onclick="window.handleSaveManualLedger && window.handleSaveManualLedger(true)" class="btn-primary" style="flex: 1 1 45%; min-width: 140px; height: 44px; background: linear-gradient(135deg, #3b82f6, #2563eb); font-weight: 800; font-size: 0.88rem; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4); color: white;">
+                    <i class="fa-solid fa-camera-rotate"></i> 저장 후 다음 장 스캔
+                </button>
+                <button type="button" onclick="window.handleSaveManualLedger && window.handleSaveManualLedger(false)" class="btn-primary" style="flex: 1 1 45%; min-width: 140px; height: 44px; background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; font-size: 0.88rem; border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4); color: white;">
+                    <i class="fa-solid fa-circle-check"></i> ${memberPrefix}구매확정 및 완료
+                </button>
+            </div>
         `;
     }
 
@@ -1815,7 +1820,7 @@ if (typeof window !== 'undefined') {
     window.processLottoQrPayload = processLottoQrPayload;
 }
 
-export async function handleSaveManualLedger() {
+export async function handleSaveManualLedger(keepScanning = false) {
     // 🔒 0. 중복 실행 방지 (하단 버튼 + 카드 내 [구매확정] 버튼 연타 시 이중 저장 차단)
     if (isSavingManualLedger) {
         console.log('[handleSaveManualLedger] Save already in progress — ignored duplicate tap');
@@ -1931,7 +1936,9 @@ export async function handleSaveManualLedger() {
 
         if (!isTargetVerifiedAndPledged) {
             const targetUserName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveAuthId) : '') || effectiveAuthId;
-            alert(`⚠️ [본인인증 및 서약 미완료]\n\n[${targetUserName}] 회원님은 본인인증(실명 및 연락처 등록) 또는 전자 서약이 완료되지 않아 간편장부(실구매 등록) 저장이 차단되었습니다.`);
+            const msg = `⚠️ [본인인증 및 서약 미완료]\n\n[${targetUserName}] 회원님은 본인인증(실명 및 연락처 등록) 또는 전자 서약이 완료되지 않아 간편장부(실구매 등록) 저장이 차단되었습니다.`;
+            if (typeof alert === 'function') alert(msg);
+            else console.warn(msg);
             if (effectiveAuthId === currentLoggedAuthId && typeof window !== 'undefined' && typeof window.openMandatoryPledgeModal === 'function') {
                 window.openMandatoryPledgeModal(effectiveAuthId);
             }
@@ -2040,6 +2047,33 @@ export async function handleSaveManualLedger() {
         if (onlineTxt) onlineTxt.value = '';
         clearAllGames();
 
+        const previewContainer = document.getElementById('qrScannedReceiptPreview');
+        if (previewContainer) previewContainer.style.display = 'none';
+
+        const resultBox = document.getElementById('manualLedgerAiCheckResult');
+        if (resultBox) resultBox.style.display = 'none';
+
+        const targetUserName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveAuthId) : '') || effectiveAuthId;
+        const successNotice = (effectiveAuthId !== currentLoggedAuthId)
+            ? `🎉 [${targetUserName}] 회원님의 제 ${roundInput}회차 [${finalVersionStr.split(' ')[0]}] 실구매 영수증이 대리 등록되었습니다.`
+            : `🎉 제 ${roundInput}회차 [${finalVersionStr.split(' ')[0]}] 실구매 내역이 정상 등록되었습니다.`;
+
+        // Defer background tab renders so current screen repaints at 60fps without hitching
+        setTimeout(() => {
+            if (typeof renderConfirmedPurchasesList === 'function') renderConfirmedPurchasesList();
+            if (typeof renderReviewTab === 'function') renderReviewTab();
+            if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
+        }, 100);
+
+        if (keepScanning) {
+            // 🔄 연속 등록 모드: 모달을 닫지 않고 바로 다음 영수증 카메라 스캔 시작
+            showToast(`${successNotice}\n📷 다음 영수증을 카메라에 비춰주세요.`, 3500);
+            setTimeout(() => {
+                startLottoQrScanner();
+            }, 150);
+            return;
+        }
+
         // Close modal immediately (< 5ms response time)
         if (manualLedgerModal) {
             manualLedgerModal.style.display = 'none';
@@ -2060,21 +2094,10 @@ export async function handleSaveManualLedger() {
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        const targetUserName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveAuthId) : '') || effectiveAuthId;
-        if (effectiveAuthId !== currentLoggedAuthId) {
-            showToast(`🎉 [${targetUserName}] 회원님의 제 ${roundInput}회차 [${finalVersionStr.split(' ')[0]}] 실구매 영수증이 대리 등록되었습니다.`);
-        } else {
-            showToast(`🎉 제 ${roundInput}회차 [${finalVersionStr.split(' ')[0]}] 실구매 내역이 정상 등록되었습니다.`);
-        }
-
-        // Defer background tab renders so current screen repaints at 60fps without hitching
-        setTimeout(() => {
-            if (typeof renderReviewTab === 'function') renderReviewTab();
-            if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
-        }, 200);
+        showToast(successNotice);
     } catch (err) {
         console.error('[handleSaveManualLedger] Error:', err);
-        alert('실구매 내역 저장 중 오류가 발생했습니다: ' + err.message);
+        if (typeof alert === 'function') alert('실구매 내역 저장 중 오류가 발생했습니다: ' + err.message);
     } finally {
         if (btnSave) {
             btnSave.innerHTML = origBtnHtml;

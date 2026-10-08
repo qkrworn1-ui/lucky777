@@ -6,6 +6,8 @@ import { removeUndefined, isSystemOrDummyUser } from '../../shared/utils.js';
 
 import { SafeAuth, isAdminUser, isPermanentUser, getUserRealName, setUserNameCache, isUserVerifiedAndPledged } from '../../shared/auth-mgmt.js';
 
+let _allUsersFinancialsCache = null;
+
 
 
 /**
