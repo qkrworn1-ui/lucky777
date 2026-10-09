@@ -3605,8 +3605,49 @@ Lotto 6/45
             res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, cwd=self.root_dir)
             self.assertEqual(res.returncode, 0, f"Sequential receipt Node test failed: {res.stderr or res.stdout}")
 
+    # [Test 108] QR Camera Autofocus, 1080p FHD Resolution & Tap-to-Focus Optimization
+    def test_108_qr_camera_autofocus_and_stream_optimization(self):
+        # 1. CSS styling verification
+        css_path = os.path.join(self.root_dir, 'styles.css')
+        with open(css_path, 'r', encoding='utf-8') as f:
+            css_content = f.read()
+        self.assertIn('.qr-focus-ring', css_content, "styles.css must contain .qr-focus-ring styling")
+        self.assertIn('@keyframes qrFocusPulse', css_content, "styles.css must contain qrFocusPulse animation")
+
+        # 2. HTML Viewfinder & UI Controls verification
+        html_path = os.path.join(self.root_dir, 'index.html')
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+        self.assertIn('id="qrViewfinderFrame"', html_content, "index.html must have #qrViewfinderFrame")
+        self.assertIn('triggerCameraAutoFocus', html_content, "index.html must trigger tap-to-focus on viewfinder")
+        self.assertIn('id="btnTriggerFocus"', html_content, "index.html must have #btnTriggerFocus button")
+        self.assertIn('id="qrFocusGuideTip"', html_content, "index.html must have #qrFocusGuideTip distance guide")
+        self.assertIn('20~25cm', html_content, "index.html focus guide must advise 20~25cm distance to avoid macro blur")
+
+        # 3. JavaScript Scanner & Focus Engine verification
+        modal_js_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'manual-modal.js')
+        with open(modal_js_path, 'r', encoding='utf-8') as f:
+            modal_js = f.read()
+
+        # FHD 1080p stream constraints
+        self.assertIn('width: { ideal: 1920 }', modal_js, "Camera stream must request 1080p FHD ideal width")
+        self.assertIn('height: { ideal: 1080 }', modal_js, "Camera stream must request 1080p FHD ideal height")
+        self.assertIn('focusMode: "continuous"', modal_js, "Camera stream must request continuous focusMode constraint")
+
+        # Functions & track management
+        self.assertIn('getActiveCameraTrack', modal_js, "Must define getActiveCameraTrack helper")
+        self.assertIn('applyCameraFocusOptimization', modal_js, "Must define applyCameraFocusOptimization function")
+        self.assertIn('triggerCameraAutoFocus', modal_js, "Must define triggerCameraAutoFocus function")
+        self.assertIn('startLiveBarcodeDetectorLoop', modal_js, "Must define startLiveBarcodeDetectorLoop parallel detector")
+        self.assertIn('stopLiveBarcodeDetectorLoop', modal_js, "Must clean up live barcode detector loop in stopScanning")
+
+        # Window exports
+        self.assertIn('window.triggerCameraAutoFocus = triggerCameraAutoFocus', modal_js)
+        self.assertIn('window.applyCameraFocusOptimization = applyCameraFocusOptimization', modal_js)
+
 if __name__ == '__main__':
     unittest.main()
+
 
 
 

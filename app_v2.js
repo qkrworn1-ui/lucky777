@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1658.47 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1713 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.1658.47)
+ * Lucky777 Smart Bundle (v2026.10.09.1713)
  */
 
 
@@ -35862,6 +35862,10 @@ async function stopScanning() {
     stopScanningPromise = (async () => {
         isStartingScanner = false;
         startScannerPromise = null;
+        stopLiveBarcodeDetectorLoop();
+        isTorchActive = false;
+        currentZoomLevel = 1.0;
+
         const qrScannerContainer = document.getElementById('qrScannerContainer');
         const scanner = html5QrScanner;
         html5QrScanner = null;
@@ -35879,8 +35883,10 @@ async function stopScanning() {
         }
         const btnTorch = document.getElementById('btnToggleTorch');
         const btnZoom = document.getElementById('btnToggleZoom');
+        const btnFocus = document.getElementById('btnTriggerFocus');
         if (btnTorch) btnTorch.style.display = 'none';
         if (btnZoom) btnZoom.style.display = 'none';
+        if (btnFocus) btnFocus.style.display = 'none';
     })().finally(() => {
         stopScanningPromise = null;
         isStartingScanner = false;
@@ -37160,12 +37166,12 @@ async function startLottoQrScanner() {
             };
 
             const config = {
-                fps: 15,
+                fps: 20,
                 qrbox: (viewfinderWidth, viewfinderHeight) => {
-                    const w = Math.max(120, Math.floor(viewfinderWidth || 250));
-                    const h = Math.max(120, Math.floor(viewfinderHeight || 250));
+                    const w = Math.max(160, Math.floor(viewfinderWidth || 300));
+                    const h = Math.max(160, Math.floor(viewfinderHeight || 300));
                     const minEdge = Math.min(w, h);
-                    const size = Math.max(100, Math.floor(minEdge * 0.85));
+                    const size = Math.max(140, Math.floor(minEdge * 0.88));
                     return { width: size, height: size };
                 },
                 experimentalFeatures: {
@@ -37214,10 +37220,36 @@ async function startLottoQrScanner() {
 
             let started = false;
 
-            // 1단계: ideal environment (삼성 갤럭시/폴드7 및 안드로이드에서 가장 유연한 후면 카메라 열기)
-            started = await attemptStart({ facingMode: { ideal: "environment" } });
+            // 1단계: Full HD 1080p + continuous focus + ideal environment (삼성 갤럭시 Fold 7 최적화)
+            started = await attemptStart({
+                facingMode: { ideal: "environment" },
+                width: { ideal: 1920 },
+                height: { ideal: 1080 },
+                advanced: [
+                    { focusMode: "continuous" },
+                    { exposureMode: "continuous" },
+                    { whiteBalanceMode: "continuous" }
+                ]
+            });
 
-            // 1.5단계: 실패 시 250ms OS 드라이버 해제 대기 후 엄격한 environment 시도
+            // 1.2단계: 실패 시 720p HD + continuous focus 시도
+            if (!started && thisSessionId === currentScannerSessionId) {
+                console.log('[QR Scanner] Retrying 720p HD camera with continuous focus...');
+                started = await attemptStart({
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    advanced: [{ focusMode: "continuous" }]
+                }, 150);
+            }
+
+            // 1.5단계: 실패 시 기본 ideal environment 시도
+            if (!started && thisSessionId === currentScannerSessionId) {
+                console.log('[QR Scanner] Retrying basic ideal environment camera...');
+                started = await attemptStart({ facingMode: { ideal: "environment" } }, 150);
+            }
+
+            // 1.8단계: 실패 시 250ms OS 드라이버 해제 대기 후 엄격한 environment 시도
             if (!started && thisSessionId === currentScannerSessionId) {
                 console.log('[QR Scanner] Retrying environment camera with 250ms driver cooldown backoff...');
                 started = await attemptStart({ facingMode: "environment" }, 250);
@@ -37262,6 +37294,8 @@ async function startLottoQrScanner() {
 
             if (started) {
                 setupCameraCapabilities();
+                await applyCameraFocusOptimization();
+                startLiveBarcodeDetectorLoop();
                 return true;
             } else {
                 await stopScanning();
@@ -37277,22 +37311,249 @@ async function startLottoQrScanner() {
     return startScannerPromise;
 }
 
+let liveDetectorRunning = false;
+let liveDetectorInterval = null;
+
+function stopLiveBarcodeDetectorLoop() {
+    liveDetectorRunning = false;
+    if (liveDetectorInterval) {
+        clearInterval(liveDetectorInterval);
+        liveDetectorInterval = null;
+    }
+}
+
 /**
- * Check camera capabilities (torch, zoom) and show controls
+ * ⚡ Dual-Engine Live BarcodeDetector Interceptor (Hardware ML Kit accelerated)
+ * Runs parallel to Html5Qrcode to instantly decode tilted, low-contrast, or motion-blurred QR codes
+ */
+function startLiveBarcodeDetectorLoop() {
+    if (typeof window === 'undefined' || !('BarcodeDetector' in window)) return;
+    stopLiveBarcodeDetectorLoop();
+
+    liveDetectorRunning = true;
+    let detector = null;
+    try {
+        detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+    } catch(e) {
+        return;
+    }
+
+    const thisSession = currentScannerSessionId;
+    let isDetecting = false;
+
+    liveDetectorInterval = setInterval(async () => {
+        if (!liveDetectorRunning || thisSession !== currentScannerSessionId) {
+            stopLiveBarcodeDetectorLoop();
+            return;
+        }
+        if (isDetecting) return;
+
+        const videoEl = document.querySelector('#qrReader video');
+        if (!videoEl || videoEl.readyState < 2 || videoEl.paused || videoEl.ended) return;
+
+        isDetecting = true;
+        try {
+            const barcodes = await detector.detect(videoEl);
+            if (barcodes && barcodes.length > 0 && liveDetectorRunning && thisSession === currentScannerSessionId) {
+                const rawVal = barcodes[0].rawValue;
+                if (rawVal) {
+                    console.log('[Native BarcodeDetector Live Match]:', rawVal);
+                    stopLiveBarcodeDetectorLoop();
+                    processLottoQrPayload(rawVal);
+                }
+            }
+        } catch(err) {
+            // Ignore temporary frame capture errors
+        } finally {
+            isDetecting = false;
+        }
+    }, 110);
+}
+
+/**
+ * Helper to retrieve currently running live camera MediaStreamTrack
+ */
+function getActiveCameraTrack() {
+    if (html5QrScanner) {
+        if (typeof html5QrScanner.getRunningTrack === 'function') {
+            try {
+                const t = html5QrScanner.getRunningTrack();
+                if (t && t.readyState === 'live') return t;
+            } catch(e) {}
+        }
+        if (html5QrScanner._localMediaStream && typeof html5QrScanner._localMediaStream.getVideoTracks === 'function') {
+            const tracks = html5QrScanner._localMediaStream.getVideoTracks();
+            const live = tracks.find(t => t.readyState === 'live');
+            if (live) return live;
+        }
+        if (html5QrScanner.localMediaStream && typeof html5QrScanner.localMediaStream.getVideoTracks === 'function') {
+            const tracks = html5QrScanner.localMediaStream.getVideoTracks();
+            const live = tracks.find(t => t.readyState === 'live');
+            if (live) return live;
+        }
+    }
+    if (typeof window !== 'undefined' && window.__activeLottoMediaStreams) {
+        for (const stream of window.__activeLottoMediaStreams) {
+            if (stream && stream.active && typeof stream.getVideoTracks === 'function') {
+                const live = stream.getVideoTracks().find(t => t.readyState === 'live');
+                if (live) return live;
+            }
+        }
+    }
+    const videoEl = document.querySelector('#qrReader video');
+    if (videoEl && videoEl.srcObject && typeof videoEl.srcObject.getVideoTracks === 'function') {
+        const live = videoEl.srcObject.getVideoTracks().find(t => t.readyState === 'live');
+        if (live) return live;
+    }
+    return null;
+}
+
+/**
+ * 🎯 Apply Continuous AutoFocus & Macro-friendly Default Zoom
+ */
+async function applyCameraFocusOptimization() {
+    const track = getActiveCameraTrack();
+    if (!track) return false;
+
+    try {
+        const caps = (typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
+        const advanced = [];
+
+        // 1. Continuous AutoFocus
+        if (caps.focusMode && Array.isArray(caps.focusMode)) {
+            if (caps.focusMode.includes('continuous')) {
+                advanced.push({ focusMode: 'continuous' });
+            } else if (caps.focusMode.includes('single-shot')) {
+                advanced.push({ focusMode: 'single-shot' });
+            }
+        }
+
+        // 2. Exposure & White Balance
+        if (caps.exposureMode && Array.isArray(caps.exposureMode) && caps.exposureMode.includes('continuous')) {
+            advanced.push({ exposureMode: 'continuous' });
+        }
+        if (caps.whiteBalanceMode && Array.isArray(caps.whiteBalanceMode) && caps.whiteBalanceMode.includes('continuous')) {
+            advanced.push({ whiteBalanceMode: 'continuous' });
+        }
+
+        if (advanced.length > 0 && typeof track.applyConstraints === 'function') {
+            await track.applyConstraints({ advanced });
+            console.log('[Camera Focus] Continuous focus applied:', advanced);
+        }
+
+        // 3. Recommended Default Macro-Avoidance Zoom (1.25x ~ 1.5x)
+        if (caps.zoom && typeof caps.zoom === 'object') {
+            const minZ = caps.zoom.min || 1.0;
+            const maxZ = caps.zoom.max || 1.0;
+            if (maxZ >= 1.5) {
+                const targetZ = Math.min(1.5, Math.max(minZ, 1.25));
+                try {
+                    await track.applyConstraints({ advanced: [{ zoom: targetZ }] });
+                    currentZoomLevel = targetZ;
+                    const btnZoom = document.getElementById('btnToggleZoom');
+                    if (btnZoom) btnZoom.innerHTML = `${targetZ}x`;
+                    console.log(`[Camera Focus] Macro-friendly default zoom applied: ${targetZ}x`);
+                } catch(zErr) {
+                    console.warn('[Camera zoom init note]:', zErr);
+                }
+            }
+        }
+
+        return true;
+    } catch(err) {
+        console.warn('[Camera Focus Optimization note]:', err);
+        return false;
+    }
+}
+
+/**
+ * 🎯 Tap-to-Focus (화면 터치 시 즉시 초점 재조정)
+ */
+async function triggerCameraAutoFocus(event = null) {
+    const frame = document.getElementById('qrViewfinderFrame') || document.getElementById('qrReader');
+    if (frame && event) {
+        const rect = frame.getBoundingClientRect();
+        const clientX = (event.touches && event.touches[0]) ? event.touches[0].clientX : event.clientX;
+        const clientY = (event.touches && event.touches[0]) ? event.touches[0].clientY : event.clientY;
+
+        if (clientX !== undefined && clientY !== undefined) {
+            const x = Math.round(clientX - rect.left);
+            const y = Math.round(clientY - rect.top);
+
+            const oldRing = frame.querySelector('.qr-focus-ring');
+            if (oldRing) oldRing.remove();
+
+            const ring = document.createElement('div');
+            ring.className = 'qr-focus-ring';
+            ring.style.left = `${x}px`;
+            ring.style.top = `${y}px`;
+            frame.appendChild(ring);
+
+            setTimeout(() => { try { ring.remove(); } catch(e){} }, 700);
+        }
+    }
+
+    if (navigator.vibrate) {
+        try { navigator.vibrate(35); } catch(e) {}
+    }
+
+    const track = getActiveCameraTrack();
+    if (!track) return false;
+
+    try {
+        const caps = (typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
+        if (caps.focusMode && Array.isArray(caps.focusMode)) {
+            // Cycle single-shot -> continuous to force VCM actuator to sweep focal plane
+            if (caps.focusMode.includes('single-shot')) {
+                await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+                setTimeout(async () => {
+                    try {
+                        if (caps.focusMode.includes('continuous')) {
+                            await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+                        }
+                    } catch(e) {}
+                }, 350);
+            } else if (caps.focusMode.includes('continuous')) {
+                await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+            }
+        }
+        showToast('🎯 카메라 초점을 다시 맞췄습니다.');
+        return true;
+    } catch(err) {
+        console.warn('[Focus trigger note]:', err);
+        return false;
+    }
+}
+
+/**
+ * Check camera capabilities (torch, zoom, focus) and show controls
  */
 function setupCameraCapabilities() {
     try {
-        if (!html5QrScanner) return;
-        const capabilities = html5QrScanner.getRunningTrackCameraCapabilities ? html5QrScanner.getRunningTrackCameraCapabilities() : null;
+        const track = getActiveCameraTrack();
+        const trackCaps = (track && typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
+        const scannerCaps = (html5QrScanner && typeof html5QrScanner.getRunningTrackCameraCapabilities === 'function') 
+            ? html5QrScanner.getRunningTrackCameraCapabilities() 
+            : null;
+
         const btnTorch = document.getElementById('btnToggleTorch');
         const btnZoom = document.getElementById('btnToggleZoom');
+        const btnFocus = document.getElementById('btnTriggerFocus');
 
-        if (capabilities && capabilities.torchFeature && capabilities.torchFeature().isSupported()) {
-            if (btnTorch) btnTorch.style.display = 'inline-flex';
+        if (btnFocus) {
+            btnFocus.style.display = 'inline-flex';
         }
 
-        if (capabilities && capabilities.zoomFeature && capabilities.zoomFeature().isSupported()) {
-            if (btnZoom) btnZoom.style.display = 'inline-flex';
+        const hasTorch = (trackCaps && trackCaps.torch) || (scannerCaps && scannerCaps.torchFeature && scannerCaps.torchFeature().isSupported());
+        if (btnTorch && hasTorch) {
+            btnTorch.style.display = 'inline-flex';
+        }
+
+        const hasZoom = (trackCaps && trackCaps.zoom) || (scannerCaps && scannerCaps.zoomFeature && scannerCaps.zoomFeature().isSupported());
+        if (btnZoom && hasZoom) {
+            btnZoom.style.display = 'inline-flex';
+            const displayZ = currentZoomLevel > 1.0 ? `${currentZoomLevel}x` : '1.5x';
+            btnZoom.innerHTML = displayZ;
         }
     } catch(e) {
         console.warn('[Camera capabilities check warn]:', e);
@@ -37302,53 +37563,96 @@ function setupCameraCapabilities() {
 /**
  * 💡 Toggle Torch (Flashlight)
  */
-function toggleLottoTorch() {
-    if (!html5QrScanner) return;
-    try {
-        const capabilities = html5QrScanner.getRunningTrackCameraCapabilities ? html5QrScanner.getRunningTrackCameraCapabilities() : null;
-        if (capabilities && capabilities.torchFeature) {
-            isTorchActive = !isTorchActive;
-            capabilities.torchFeature().apply(isTorchActive);
-            const btnTorch = document.getElementById('btnToggleTorch');
-            if (btnTorch) {
-                btnTorch.style.background = isTorchActive ? 'rgba(251, 191, 36, 0.85)' : 'rgba(251, 191, 36, 0.2)';
-                btnTorch.style.color = isTorchActive ? '#0f172a' : '#fef08a';
-                btnTorch.innerHTML = `<i class="fa-solid fa-lightbulb"></i> 플래시 ${isTorchActive ? 'ON' : 'OFF'}`;
-            }
+async function toggleLottoTorch() {
+    const track = getActiveCameraTrack();
+    const btnTorch = document.getElementById('btnToggleTorch');
+    isTorchActive = !isTorchActive;
+
+    if (track && typeof track.applyConstraints === 'function') {
+        const caps = (typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
+        if (caps.torch) {
+            try {
+                await track.applyConstraints({ advanced: [{ torch: isTorchActive }] });
+                if (btnTorch) {
+                    btnTorch.style.background = isTorchActive ? 'rgba(251, 191, 36, 0.9)' : 'rgba(15, 23, 42, 0.85)';
+                    btnTorch.style.color = isTorchActive ? '#0f172a' : '#f8fafc';
+                    btnTorch.style.borderColor = isTorchActive ? '#fbbf24' : '#334155';
+                }
+                return;
+            } catch(e) {}
         }
-    } catch(e) {
-        console.warn('Torch toggle error:', e);
+    }
+
+    if (html5QrScanner && typeof html5QrScanner.getRunningTrackCameraCapabilities === 'function') {
+        try {
+            const capabilities = html5QrScanner.getRunningTrackCameraCapabilities();
+            if (capabilities && capabilities.torchFeature) {
+                capabilities.torchFeature().apply(isTorchActive);
+                if (btnTorch) {
+                    btnTorch.style.background = isTorchActive ? 'rgba(251, 191, 36, 0.9)' : 'rgba(15, 23, 42, 0.85)';
+                    btnTorch.style.color = isTorchActive ? '#0f172a' : '#f8fafc';
+                    btnTorch.style.borderColor = isTorchActive ? '#fbbf24' : '#334155';
+                }
+            }
+        } catch(e) {
+            console.warn('Torch toggle error:', e);
+        }
     }
 }
 
 /**
  * 🔍 Toggle Zoom (1.0x -> 1.5x -> 2.0x -> 1.0x)
  */
-function toggleLottoZoom() {
-    if (!html5QrScanner) return;
-    try {
-        const capabilities = html5QrScanner.getRunningTrackCameraCapabilities ? html5QrScanner.getRunningTrackCameraCapabilities() : null;
-        if (capabilities && capabilities.zoomFeature) {
-            const zoomFeature = capabilities.zoomFeature();
-            const minZ = zoomFeature.min() || 1.0;
-            const maxZ = zoomFeature.max() || 3.0;
-            
-            if (currentZoomLevel === 1.0 && maxZ >= 1.5) {
+async function toggleLottoZoom() {
+    const track = getActiveCameraTrack();
+    const btnZoom = document.getElementById('btnToggleZoom');
+
+    if (track && typeof track.applyConstraints === 'function') {
+        const caps = (typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
+        if (caps.zoom && typeof caps.zoom === 'object') {
+            const minZ = caps.zoom.min || 1.0;
+            const maxZ = caps.zoom.max || 3.0;
+
+            if (currentZoomLevel <= 1.1 && maxZ >= 1.5) {
                 currentZoomLevel = 1.5;
-            } else if (currentZoomLevel === 1.5 && maxZ >= 2.0) {
+            } else if (currentZoomLevel <= 1.6 && maxZ >= 2.0) {
                 currentZoomLevel = 2.0;
             } else {
                 currentZoomLevel = 1.0;
             }
-            
-            zoomFeature.apply(currentZoomLevel);
-            const btnZoom = document.getElementById('btnToggleZoom');
-            if (btnZoom) {
-                btnZoom.innerHTML = `<i class="fa-solid fa-magnifying-glass-plus"></i> ${currentZoomLevel}x 확대`;
-            }
+
+            try {
+                await track.applyConstraints({ advanced: [{ zoom: currentZoomLevel }] });
+                if (btnZoom) btnZoom.innerHTML = `${currentZoomLevel}x`;
+                showToast(`🔍 줌 배율: ${currentZoomLevel}x`);
+                return;
+            } catch(e) {}
         }
-    } catch(e) {
-        console.warn('Zoom toggle error:', e);
+    }
+
+    if (html5QrScanner && typeof html5QrScanner.getRunningTrackCameraCapabilities === 'function') {
+        try {
+            const capabilities = html5QrScanner.getRunningTrackCameraCapabilities();
+            if (capabilities && capabilities.zoomFeature) {
+                const zoomFeature = capabilities.zoomFeature();
+                const minZ = zoomFeature.min() || 1.0;
+                const maxZ = zoomFeature.max() || 3.0;
+
+                if (currentZoomLevel <= 1.1 && maxZ >= 1.5) {
+                    currentZoomLevel = 1.5;
+                } else if (currentZoomLevel <= 1.6 && maxZ >= 2.0) {
+                    currentZoomLevel = 2.0;
+                } else {
+                    currentZoomLevel = 1.0;
+                }
+
+                zoomFeature.apply(currentZoomLevel);
+                if (btnZoom) btnZoom.innerHTML = `${currentZoomLevel}x`;
+                showToast(`🔍 줌 배율: ${currentZoomLevel}x`);
+            }
+        } catch(e) {
+            console.warn('Zoom toggle error:', e);
+        }
     }
 }
 
@@ -37530,6 +37834,8 @@ if (typeof window !== 'undefined') {
     window.toggleLottoTorch = toggleLottoTorch;
     window.toggleLottoZoom = toggleLottoZoom;
     window.processLottoQrPayload = processLottoQrPayload;
+    window.triggerCameraAutoFocus = triggerCameraAutoFocus;
+    window.applyCameraFocusOptimization = applyCameraFocusOptimization;
 }
 
 async function handleSaveManualLedger(keepScanning = false) {
@@ -38001,6 +38307,8 @@ if (typeof window !== 'undefined') {
     window.updateManualModalCrossCheck = updateManualModalCrossCheck;
     window.renderDigitalReceiptCard = renderDigitalReceiptCard;
     window.startLottoQrScanner = startLottoQrScanner;
+    window.triggerCameraAutoFocus = triggerCameraAutoFocus;
+    window.applyCameraFocusOptimization = applyCameraFocusOptimization;
     window.stopScanning = stopScanning;
     window.stopLottoScanning = stopScanning;
     window.safeStopScanner = safeStopScanner;
@@ -38131,6 +38439,26 @@ if (typeof window !== 'undefined') {
         if (typeof startLottoQrScanner !== 'undefined') {
             __exports.startLottoQrScanner = startLottoQrScanner;
             if (typeof window !== 'undefined') window.startLottoQrScanner = startLottoQrScanner;
+        }
+        if (typeof stopLiveBarcodeDetectorLoop !== 'undefined') {
+            __exports.stopLiveBarcodeDetectorLoop = stopLiveBarcodeDetectorLoop;
+            if (typeof window !== 'undefined') window.stopLiveBarcodeDetectorLoop = stopLiveBarcodeDetectorLoop;
+        }
+        if (typeof startLiveBarcodeDetectorLoop !== 'undefined') {
+            __exports.startLiveBarcodeDetectorLoop = startLiveBarcodeDetectorLoop;
+            if (typeof window !== 'undefined') window.startLiveBarcodeDetectorLoop = startLiveBarcodeDetectorLoop;
+        }
+        if (typeof getActiveCameraTrack !== 'undefined') {
+            __exports.getActiveCameraTrack = getActiveCameraTrack;
+            if (typeof window !== 'undefined') window.getActiveCameraTrack = getActiveCameraTrack;
+        }
+        if (typeof applyCameraFocusOptimization !== 'undefined') {
+            __exports.applyCameraFocusOptimization = applyCameraFocusOptimization;
+            if (typeof window !== 'undefined') window.applyCameraFocusOptimization = applyCameraFocusOptimization;
+        }
+        if (typeof triggerCameraAutoFocus !== 'undefined') {
+            __exports.triggerCameraAutoFocus = triggerCameraAutoFocus;
+            if (typeof window !== 'undefined') window.triggerCameraAutoFocus = triggerCameraAutoFocus;
         }
         if (typeof toggleLottoTorch !== 'undefined') {
             __exports.toggleLottoTorch = toggleLottoTorch;

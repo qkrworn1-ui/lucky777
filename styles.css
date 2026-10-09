@@ -18229,6 +18229,24 @@ body.is-admin .btn-snapshot-audit-compact {
     100% { top: 8%; opacity: 0.8; }
 }
 
+@keyframes qrFocusPulse {
+    0% { transform: translate(-50%, -50%) scale(1.6); opacity: 0.9; border-color: #fbbf24; }
+    50% { transform: translate(-50%, -50%) scale(0.9); opacity: 1; border-color: #34d399; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0; border-color: #10b981; }
+}
+
+.qr-focus-ring {
+    position: absolute;
+    width: 58px;
+    height: 58px;
+    border: 2px solid #fbbf24;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 30;
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.6);
+    animation: qrFocusPulse 0.65s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
 .qr-scanner-laser {
     position: absolute;
     left: 4px;
