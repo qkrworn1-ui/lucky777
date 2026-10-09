@@ -16463,14 +16463,19 @@ body.is-admin .btn-snapshot-audit-compact {
     }
 
     .confirmed-admin-bar {
-        flex-direction: column !important;
-        align-items: stretch !important;
+        flex-direction: row !important;
+        align-items: center !important;
         gap: 6px !important;
+        padding: 5px 8px !important;
     }
 
-    .confirmed-admin-bar select {
-        width: 100% !important;
-        flex: 1 1 100% !important;
+    .confirmed-admin-bar select,
+    .confirmed-admin-bar .slim-picker-trigger {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        height: 28px !important;
+        min-height: 26px !important;
+        padding: 2px 8px !important;
     }
 
     /* 🎟️ [스마트 모바일 월렛 패스] 모바일 최적화 */

@@ -255,22 +255,22 @@ export async function renderConfirmedPurchasesList() {
         }
 
         adminUserSelectHtml = `
-            <div class="confirmed-admin-bar" style="background: #0d1322; border: 1px solid rgba(255, 255, 255, 0.08); padding: 8px 12px; border-radius: 10px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; max-width: 100%; box-sizing: border-box; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
-                <span style="font-size: 0.8rem; color: #fbbf24; font-weight: 800; display: flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0;">
-                    <i class="fa-solid fa-crown"></i> 관리자 대상 선택:
+            <div class="confirmed-admin-bar" style="background: #0d1322; border: 1px solid rgba(255, 255, 255, 0.08); padding: 5px 10px; border-radius: 8px; display: flex; align-items: center; gap: 6px; margin-bottom: 8px; max-width: 100%; box-sizing: border-box; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+                <span style="font-size: 0.76rem; color: #fbbf24; font-weight: 800; display: flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">
+                    <i class="fa-solid fa-crown" style="font-size: 0.72rem;"></i> 관리자 대상:
                 </span>
-                <button type="button" id="btnConfirmedUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForConfirmed && window.openSlimMemberPickerForConfirmed()" style="flex: 1 1 200px; min-width: 0; justify-content: space-between;">
-                    <span style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        <i class="fa-solid fa-user text-amber-400"></i>
+                <button type="button" id="btnConfirmedUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForConfirmed && window.openSlimMemberPickerForConfirmed()" style="flex: 1 1 auto; max-width: 320px; min-width: 0; min-height: 26px; height: 28px; padding: 2px 8px; font-size: 0.74rem; justify-content: space-between; border-radius: 6px;">
+                    <span style="display: flex; align-items: center; gap: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <i class="fa-solid fa-user text-amber-400" style="font-size: 0.68rem;"></i>
                         <span id="confirmedUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${currentDisplayLabel}</span>
                     </span>
-                    <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; opacity: 0.6; flex-shrink: 0;"></i>
+                    <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem; opacity: 0.6; margin-left: 6px; flex-shrink: 0;"></i>
                 </button>
                 <select id="selAdminLedgerTarget" style="display: none;">
                     ${optionsHtml}
                 </select>
-                <button type="button" class="btn-dark-pill" onclick="window.refreshAdminLedgers && window.refreshAdminLedgers()" style="padding: 5px 10px; font-size: 0.74rem; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">
-                    <i class="fa-solid fa-rotate-right"></i> 새로고침
+                <button type="button" class="btn-dark-pill" onclick="window.refreshAdminLedgers && window.refreshAdminLedgers()" style="padding: 2px 8px; height: 28px; font-size: 0.72rem; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0; border-radius: 6px;">
+                    <i class="fa-solid fa-rotate-right" style="font-size: 0.68rem;"></i> 새로고침
                 </button>
             </div>
         `;
@@ -639,10 +639,10 @@ export async function renderConfirmedPurchasesList() {
                             ${activeFilter === 'all' ? `전체 회차 (${rounds.length}개)` : `${activeFilter}회차 선택됨`}
                         </span>
                     </div>
-                    <button type="button" id="btnConfirmedRoundPickerTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimRoundPickerForConfirmed && window.openSlimRoundPickerForConfirmed()" style="padding: 4px 10px; font-size: 0.74rem;">
-                        <i class="fa-solid fa-layer-group text-amber-400"></i>
+                    <button type="button" id="btnConfirmedRoundPickerTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimRoundPickerForConfirmed && window.openSlimRoundPickerForConfirmed()" style="padding: 2px 9px; min-height: 26px; height: 28px; font-size: 0.74rem; border-radius: 6px;">
+                        <i class="fa-solid fa-layer-group text-amber-400" style="font-size: 0.68rem;"></i>
                         <span id="confirmedRoundDisplayLabel">${activeFilter === 'all' ? '회차 모달 검색' : activeFilter + '회차'}</span>
-                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; opacity: 0.6;"></i>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem; opacity: 0.6; margin-left: 4px;"></i>
                     </button>
                 </div>
                 <div class="confirmed-filter-chips-scroller custom-scrollbar">
