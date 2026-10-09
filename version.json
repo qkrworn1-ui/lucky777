@@ -1,33 +1,9 @@
 {
-  "version": "v2026.10.09.1131",
+  "version": "v2026.10.09.1138",
   "buildDate": "2026-10-09",
-  "description": "Feat: Fixed sticky tab navigation bar with scrollable content area",
-  "buildTimestamp": "2026-10-09T11:31:03.677787",
+  "description": "Fix: Position menu bar at top, restore vertical scrolling, and ensure lower content scrolls freely",
+  "buildTimestamp": "2026-10-09T11:38:26.608346",
   "buildHistory": [
-    {
-      "version": "v2026.10.09.0235",
-      "buildDate": "2026-10-09",
-      "buildTime": "02:35",
-      "buildDateTime": "2026-10-09 02:35",
-      "buildTimestamp": "2026-10-09T02:35:35.050207",
-      "description": "Feature: Personalize notification messages with user real name"
-    },
-    {
-      "version": "v2026.10.09.0235.52",
-      "buildDate": "2026-10-09",
-      "buildTime": "02:35",
-      "buildDateTime": "2026-10-09 02:35",
-      "buildTimestamp": "2026-10-09T02:35:52.246114",
-      "description": "Feature: Personalize notification messages with user real name"
-    },
-    {
-      "version": "v2026.10.09.0257",
-      "buildDate": "2026-10-09",
-      "buildTime": "02:57",
-      "buildDateTime": "2026-10-09 02:57",
-      "buildTimestamp": "2026-10-09T02:57:05.740628",
-      "description": "Design: Apply Concept 5 (Lucky Cat Boknyangi) as official PWA app icon"
-    },
     {
       "version": "v2026.10.09.0257.31",
       "buildDate": "2026-10-09",
@@ -123,8 +99,32 @@
       "buildDateTime": "2026-10-09 11:31",
       "buildTimestamp": "2026-10-09T11:31:03.677787",
       "description": "Feat: Fixed sticky tab navigation bar with scrollable content area"
+    },
+    {
+      "version": "v2026.10.09.1137",
+      "buildDate": "2026-10-09",
+      "buildTime": "11:37",
+      "buildDateTime": "2026-10-09 11:37",
+      "buildTimestamp": "2026-10-09T11:37:37.724461",
+      "description": "Fix: Position menu bar at top, restore vertical scrolling, and ensure lower content scrolls freely"
+    },
+    {
+      "version": "v2026.10.09.1137.51",
+      "buildDate": "2026-10-09",
+      "buildTime": "11:37",
+      "buildDateTime": "2026-10-09 11:37",
+      "buildTimestamp": "2026-10-09T11:37:51.018324",
+      "description": "Fix: Position menu bar at top, restore vertical scrolling, and ensure lower content scrolls freely"
+    },
+    {
+      "version": "v2026.10.09.1138",
+      "buildDate": "2026-10-09",
+      "buildTime": "11:38",
+      "buildDateTime": "2026-10-09 11:38",
+      "buildTimestamp": "2026-10-09T11:38:26.608346",
+      "description": "Fix: Position menu bar at top, restore vertical scrolling, and ensure lower content scrolls freely"
     }
   ],
-  "buildTime": "11:31",
-  "buildDateTime": "2026-10-09 11:31"
+  "buildTime": "11:38",
+  "buildDateTime": "2026-10-09 11:38"
 }

@@ -2762,10 +2762,19 @@ body {
 /* ==========================================================================
    Comprehensive Mobile & Landscape Responsive System
    ========================================================================== */
-html, body {
+html {
     max-width: 100vw !important;
-    overflow-x: clip !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     box-sizing: border-box !important;
+}
+
+body {
+    max-width: 100vw !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    box-sizing: border-box !important;
+    -webkit-overflow-scrolling: touch !important;
 }
 
 .app-container, .tab-content, .chart-card, .metric-card, .dashboard-grid, .combinations-grid, section[id^="tab-"] {
@@ -10223,7 +10232,7 @@ html, body {
     .app-container {
         gap: 10px !important;
         max-width: 100% !important;
-        overflow-x: hidden !important;
+        overflow: visible !important;
     }
 
     /* 1. Mobile Header (Option 2 Unified 2-Row Layout) */
@@ -11892,11 +11901,21 @@ html, body {
    iPhone 13~16 (390px), iPhone Pro Max / Plus (430px)
    ========================================================================== */
 
-html, body {
-    overflow-x: clip !important;
+html {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
     max-width: 100vw !important;
     width: 100% !important;
     box-sizing: border-box !important;
+}
+
+body {
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    max-width: 100vw !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    -webkit-overflow-scrolling: touch !important;
 }
 
 #landingPage {
@@ -20544,9 +20563,7 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 
 .tab-nav {
-    position: -webkit-sticky !important;
-    position: sticky !important;
-    top: 0 !important;
+    position: relative !important;
     background: #0f172a !important;
     border: 1px solid #1e293b !important;
     border-radius: 14px !important;
