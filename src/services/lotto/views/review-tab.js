@@ -902,16 +902,31 @@ export async function renderReviewTab() {
                 }
             });
 
+            let reviewUserLabel = '🌐 전체 회원 추천번호 종합';
+            if (reviewAdminViewingUser.toLowerCase() === cleanAuth) {
+                reviewUserLabel = `👑 관리자 본인 (${cleanAuth})`;
+            } else if (reviewAdminViewingUser !== 'all') {
+                const foundU = unifiedUsers.find(u => (u.id || '').toLowerCase().trim() === reviewAdminViewingUser.toLowerCase());
+                reviewUserLabel = foundU ? `👤 ${(foundU.name || foundU.realName || foundU.id)} (${foundU.id})` : `👤 ${reviewAdminViewingUser}`;
+            }
+
             adminSelectorContainer.innerHTML = `
-                <label for="reviewAdminUserSelect" style="font-size: 0.78rem; color: #fbbf24; font-weight: 700;">
-                    <i class="fa-solid fa-users"></i> 회원 선택:
-                </label>
-                <select id="reviewAdminUserSelect" onchange="window.changeReviewAdminUser && window.changeReviewAdminUser(this.value)" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #f59e0b; color: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; outline: none;">
-                    ${userOptionsHtml}
-                </select>
-                <button type="button" id="btnOpenAdmin1235ReviewModal" onclick="window.openAdmin1235ReviewModal && window.openAdmin1235ReviewModal()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4); margin-left: 4px; transition: all 0.2s;">
-                    <i class="fa-solid fa-crown"></i> 1235회~ 추천·당첨 모달 (카톡 공유)
-                </button>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;">
+                        <i class="fa-solid fa-users"></i> 회원 선택:
+                    </label>
+                    <button type="button" id="btnReviewUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForReview && window.openSlimMemberPickerForReview()" style="min-width: 150px;">
+                        <i class="fa-solid fa-user-check" style="color: #fbbf24; font-size: 0.75rem;"></i>
+                        <span id="reviewUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 700;">${reviewUserLabel}</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto;"></i>
+                    </button>
+                    <select id="reviewAdminUserSelect" onchange="window.changeReviewAdminUser && window.changeReviewAdminUser(this.value)" style="display: none;">
+                        ${userOptionsHtml}
+                    </select>
+                    <button type="button" id="btnOpenAdmin1235ReviewModal" onclick="window.openAdmin1235ReviewModal && window.openAdmin1235ReviewModal()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4); margin-left: 4px; transition: all 0.2s;">
+                        <i class="fa-solid fa-crown"></i> 1235회~ 추천·당첨 모달 (카톡 공유)
+                    </button>
+                </div>
             `;
         }
 
@@ -982,6 +997,15 @@ export function updateReviewRoundSelector(selectedRound = null) {
     }
     reviewRoundSelector.innerHTML = optionsHtml;
     reviewRoundSelector.value = String(validSelected);
+
+    const roundLabelEl = document.getElementById('reviewRoundDisplayLabel');
+    if (roundLabelEl) {
+        if (validSelected === 'all_rounds') {
+            roundLabelEl.innerText = `전체 회차 누적 종합 (${minReviewRound}회~${effectiveMax}회)`;
+        } else {
+            roundLabelEl.innerText = `제 ${validSelected}회차`;
+        }
+    }
 
     return validSelected;
 }
@@ -2722,6 +2746,20 @@ export function changeReviewAdminUser(userId) {
     if (adminSel) {
         adminSel.value = userId;
     }
+
+    const userLabelEl = document.getElementById('reviewUserDisplayLabel');
+    if (userLabelEl) {
+        if (userId === 'all') {
+            userLabelEl.innerText = '🌐 전체 회원 추천번호 종합';
+        } else {
+            let uName = userId;
+            if (typeof getAllUnifiedRegisteredUsers === 'function') {
+                const f = getAllUnifiedRegisteredUsers().find(u => (u.id || '').toLowerCase() === userId.toLowerCase());
+                if (f) uName = `${f.name || f.realName || f.id} (${f.id})`;
+            }
+            userLabelEl.innerText = `👤 ${uName}`;
+        }
+    }
     
     // 🔄 선택된 대상(전체, 관리자 본인, 특정 회원)의 가입일에 맞춰 회차 드롭다운 옵션 즉각 동적 갱신
     const validRound = updateReviewRoundSelector();
@@ -2933,6 +2971,57 @@ export async function openAdmin1235ReviewModal(initialRound = null, initialUser 
     modal.style.display = 'flex';
     renderAdmin1235ReviewModalContent();
 }
+
+/**
+ * 🔄 메인 당첨내역 탭 슬림 회차 선택 모달 열기
+ */
+window.openSlimRoundPickerForReview = function() {
+    if (typeof window.openSlimRoundPickerModal === 'function') {
+        const actualRoundSel = document.getElementById('reviewRoundSelector');
+        const curVal = actualRoundSel ? actualRoundSel.value : 'all_rounds';
+        window.openSlimRoundPickerModal({
+            title: '당첨내역 조회 회차 선택',
+            subtitle: '회차별 추천 70게임과 공식 추첨 번호를 대조할 회차를 선택하세요.',
+            selectedRound: curVal,
+            minRound: 1235,
+            includeAllRounds: true,
+            onSelect: function(rVal) {
+                if (actualRoundSel) {
+                    actualRoundSel.value = String(rVal);
+                    actualRoundSel.dispatchEvent(new Event('change'));
+                }
+                const label = document.getElementById('reviewRoundDisplayLabel');
+                if (label) {
+                    label.innerText = (rVal === 'all_rounds') ? '전체 회차 누적 종합' : `제 ${rVal}회차`;
+                }
+                const targetR = (rVal === 'all_rounds') ? 'all_rounds' : parseInt(rVal);
+                renderReviewDetail(targetR);
+            }
+        });
+    }
+};
+
+/**
+ * 🔄 메인 당첨내역 탭 슬림 회원 선택 모달 열기
+ */
+window.openSlimMemberPickerForReview = function() {
+    if (typeof window.openSlimMemberPickerModal === 'function') {
+        const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        const curUser = (typeof reviewAdminViewingUser !== 'undefined' && reviewAdminViewingUser) || rawAuth || 'all';
+        window.openSlimMemberPickerModal({
+            title: '당첨내역 조회 대상 회원 선택',
+            subtitle: '각 회원에게 배정된 추천번호 및 당첨 성과를 확인할 회원을 선택하세요.',
+            selectedUserId: curUser,
+            includeAll: true,
+            onSelect: function(user) {
+                const uId = (typeof user === 'string') ? user : (user.id || user.userId || 'all');
+                if (window.changeReviewAdminUser) {
+                    window.changeReviewAdminUser(uId);
+                }
+            }
+        });
+    }
+};
 
 /**
  * 🔄 슬림 회차 선택 모달 열기 (1235회차 모달 연동)

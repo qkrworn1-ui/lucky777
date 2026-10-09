@@ -155,18 +155,24 @@ let _activeMemberPickerCallback = null;
 let _tempSelectedMemberId = 'all';
 let _tempSelectedMemberName = '전체 회원 종합';
 let _currentMemberPickerCategory = 'all';
+let _activeMemberCustomList = null;
+let _activeMemberIncludeAll = true;
 
 export function openSlimMemberPickerModal(options = {}) {
     const {
         onSelect = null,
         selectedUserId = 'all',
         title = '조회 대상 회원 선택',
-        subtitle = '조회하거나 분석할 대상 회원을 검색 및 선택하세요.'
+        subtitle = '조회하거나 분석할 대상 회원을 검색 및 선택하세요.',
+        includeAll = true,
+        customUserList = null
     } = options;
 
     _activeMemberPickerCallback = onSelect;
     _tempSelectedMemberId = selectedUserId || 'all';
     _currentMemberPickerCategory = 'all';
+    _activeMemberCustomList = customUserList;
+    _activeMemberIncludeAll = (includeAll !== false);
 
     let overlay = document.getElementById('slimMemberPickerModal');
     if (!overlay) {
@@ -204,7 +210,7 @@ export function openSlimMemberPickerModal(options = {}) {
                 </div>
 
                 <!-- All Users Global Card -->
-                <div style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
+                <div id="slimMemberAllCardWrap" style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
                     <div id="slimMemberItem-all" onclick="window._selectSlimMemberTemp('all', '전체 회원 종합 (AI 70게임)')" class="slim-picker-item" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(245, 158, 11, 0.35);">
                         <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                             <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; border: 1px solid rgba(245, 158, 11, 0.4); flex-shrink: 0;">
@@ -254,6 +260,11 @@ export function openSlimMemberPickerModal(options = {}) {
     const searchInp = document.getElementById('slimMemberSearchInput');
     if (searchInp) searchInp.value = '';
 
+    const allWrap = document.getElementById('slimMemberAllCardWrap');
+    if (allWrap) {
+        allWrap.style.display = _activeMemberIncludeAll ? 'block' : 'none';
+    }
+
     overlay.style.display = 'flex';
     window._renderSlimMemberList();
 }
@@ -268,7 +279,9 @@ window._renderSlimMemberList = function() {
     if (!container) return;
 
     let users = [];
-    if (typeof window.getAllUnifiedRegisteredUsers === 'function') {
+    if (_activeMemberCustomList && Array.isArray(_activeMemberCustomList) && _activeMemberCustomList.length > 0) {
+        users = _activeMemberCustomList;
+    } else if (typeof window.getAllUnifiedRegisteredUsers === 'function') {
         users = window.getAllUnifiedRegisteredUsers();
     } else if (typeof window.__cachedUsersWithStatus === 'object' && window.__cachedUsersWithStatus) {
         users = Object.keys(window.__cachedUsersWithStatus).map(id => ({
@@ -391,7 +404,8 @@ window._filterSlimMemberList = function() {
 
 window._confirmSlimMemberSelection = function() {
     if (typeof _activeMemberPickerCallback === 'function') {
-        _activeMemberPickerCallback(_tempSelectedMemberId, _tempSelectedMemberName);
+        const userObj = { id: _tempSelectedMemberId, name: _tempSelectedMemberName, userId: _tempSelectedMemberId };
+        _activeMemberPickerCallback(userObj, _tempSelectedMemberId);
     }
     window.closeSlimMemberPickerModal();
 };
@@ -405,6 +419,9 @@ let _activeRoundPickerCallback = null;
 let _tempSelectedRoundVal = 'all_rounds';
 let _tempSelectedRoundName = '전체 회차 누적 종합';
 let _currentRoundPickerFilter = 'all';
+let _activeRoundIncludeAll = true;
+let _activeRoundMin = 1235;
+let _activeRoundMax = null;
 
 export function openSlimRoundPickerModal(options = {}) {
     const {
@@ -412,12 +429,17 @@ export function openSlimRoundPickerModal(options = {}) {
         selectedRound = 'all_rounds',
         title = '조회 대상 회차 선택',
         subtitle = '조회하고자 하는 공식 로또 추첨 회차를 선택하세요.',
-        minRound = 1235
+        minRound = 1235,
+        maxRound = null,
+        includeAllRounds = true
     } = options;
 
     _activeRoundPickerCallback = onSelect;
     _tempSelectedRoundVal = String(selectedRound || 'all_rounds');
     _currentRoundPickerFilter = 'all';
+    _activeRoundIncludeAll = (includeAllRounds !== false);
+    _activeRoundMin = minRound;
+    _activeRoundMax = maxRound;
 
     let overlay = document.getElementById('slimRoundPickerModal');
     if (!overlay) {
@@ -440,8 +462,12 @@ export function openSlimRoundPickerModal(options = {}) {
                     <button type="button" class="slim-picker-close-btn" onclick="window.closeSlimRoundPickerModal()">&times;</button>
                 </div>
 
-                <!-- Toolbar: Quick Filter Chips -->
+                <!-- Toolbar: Search & Quick Filter Chips -->
                 <div class="slim-picker-toolbar">
+                    <div class="slim-picker-search-wrap" style="margin-bottom: 8px;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: #64748b;"></i>
+                        <input type="text" id="slimRoundSearchInput" class="slim-picker-search-input" placeholder="회차 번호 검색 (예: 1243)..." oninput="window._filterSlimRoundList && window._filterSlimRoundList()">
+                    </div>
                     <div class="slim-picker-pills-row">
                         <button type="button" class="slim-picker-pill slim-picker-pill-amber active" data-filter="all" onclick="window._setSlimRoundFilter('all', this)">전체 누적</button>
                         <button type="button" class="slim-picker-pill slim-picker-pill-amber" data-filter="latest" onclick="window._setSlimRoundFilter('latest', this)">최신 회차</button>
@@ -450,7 +476,7 @@ export function openSlimRoundPickerModal(options = {}) {
                 </div>
 
                 <!-- All Rounds Global Card -->
-                <div style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
+                <div id="slimRoundAllCardWrap" style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
                     <div id="slimRoundItem-all_rounds" onclick="window._selectSlimRoundTemp('all_rounds', '전체 회차 누적 종합 조회')" class="slim-picker-item" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(245, 158, 11, 0.35);">
                         <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                             <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; border: 1px solid rgba(245, 158, 11, 0.4); flex-shrink: 0;">
@@ -497,9 +523,16 @@ export function openSlimRoundPickerModal(options = {}) {
     if (titleEl) titleEl.innerText = title;
     const subEl = document.getElementById('slimRoundPickerSubtext');
     if (subEl) subEl.innerText = subtitle;
+    const searchInp = document.getElementById('slimRoundSearchInput');
+    if (searchInp) searchInp.value = '';
+
+    const allRoundWrap = document.getElementById('slimRoundAllCardWrap');
+    if (allRoundWrap) {
+        allRoundWrap.style.display = _activeRoundIncludeAll ? 'block' : 'none';
+    }
 
     overlay.style.display = 'flex';
-    window._renderSlimRoundList(minRound);
+    window._renderSlimRoundList(_activeRoundMin, _activeRoundMax);
 }
 
 export function closeSlimRoundPickerModal() {
@@ -507,7 +540,11 @@ export function closeSlimRoundPickerModal() {
     if (overlay) overlay.style.display = 'none';
 }
 
-window._renderSlimRoundList = function(minRound = 1235) {
+window._filterSlimRoundList = function() {
+    window._renderSlimRoundList(_activeRoundMin, _activeRoundMax);
+};
+
+window._renderSlimRoundList = function(minRound = 1235, maxRound = null) {
     const container = document.getElementById('slimRoundListContainer');
     if (!container) return;
 
@@ -518,13 +555,19 @@ window._renderSlimRoundList = function(minRound = 1235) {
         .sort((a, b) => b - a);
 
     const fallbackLatest = (typeof window.getLatestDrawnRound === 'function') ? window.getLatestDrawnRound() : 1243;
-    const latestRoundNum = (window.state && window.state.latestDrawData && window.state.latestDrawData.numbers?.length === 6)
+    const latestRoundNum = maxRound || ((window.state && window.state.latestDrawData && window.state.latestDrawData.numbers?.length === 6)
         ? Math.max(window.state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
-        : (historyRounds[0] || fallbackLatest);
+        : (historyRounds[0] || fallbackLatest));
 
     let roundNumbers = [];
-    for (let r = latestRoundNum; r >= minRound; r--) {
+    const effectiveMin = Math.max(1, minRound || 1);
+    for (let r = latestRoundNum; r >= effectiveMin; r--) {
         roundNumbers.push(r);
+    }
+
+    const searchVal = (document.getElementById('slimRoundSearchInput')?.value || '').trim();
+    if (searchVal) {
+        roundNumbers = roundNumbers.filter(r => String(r).includes(searchVal));
     }
 
     if (_currentRoundPickerFilter === 'latest') {

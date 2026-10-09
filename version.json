@@ -1,49 +1,9 @@
 {
-  "version": "v2026.10.09.1219",
+  "version": "v2026.10.09.1233.43",
   "buildDate": "2026-10-09",
-  "description": "Feat: Fixed top shell with independent lower scroll container",
-  "buildTimestamp": "2026-10-09T12:19:10.564148",
+  "description": "Feat: Complete high-density obsidian slim picker modals across all 5 main tabs",
+  "buildTimestamp": "2026-10-09T12:33:43.822500",
   "buildHistory": [
-    {
-      "version": "v2026.10.09.0338",
-      "buildDate": "2026-10-09",
-      "buildTime": "03:38",
-      "buildDateTime": "2026-10-09 03:38",
-      "buildTimestamp": "2026-10-09T03:38:06.014395",
-      "description": "Feat: Add dynamic red heat transition on high winning prizes to home trend banner"
-    },
-    {
-      "version": "v2026.10.09.0340",
-      "buildDate": "2026-10-09",
-      "buildTime": "03:40",
-      "buildDateTime": "2026-10-09 03:40",
-      "buildTimestamp": "2026-10-09T03:40:14.077572",
-      "description": "Feat: Showcase latest round recommendation winning result at the end of the trend graph"
-    },
-    {
-      "version": "v2026.10.09.0340.26",
-      "buildDate": "2026-10-09",
-      "buildTime": "03:40",
-      "buildDateTime": "2026-10-09 03:40",
-      "buildTimestamp": "2026-10-09T03:40:26.256466",
-      "description": "Feat: Showcase latest round recommendation winning result at the end of the trend graph"
-    },
-    {
-      "version": "v2026.10.09.1129",
-      "buildDate": "2026-10-09",
-      "buildTime": "11:29",
-      "buildDateTime": "2026-10-09 11:29",
-      "buildTimestamp": "2026-10-09T11:29:13.799679",
-      "description": "Feat: Fixed sticky tab navigation bar with scrollable content area"
-    },
-    {
-      "version": "v2026.10.09.1129.49",
-      "buildDate": "2026-10-09",
-      "buildTime": "11:29",
-      "buildDateTime": "2026-10-09 11:29",
-      "buildTimestamp": "2026-10-09T11:29:49.807928",
-      "description": "Feat: Fixed sticky tab navigation bar with scrollable content area"
-    },
     {
       "version": "v2026.10.09.1131",
       "buildDate": "2026-10-09",
@@ -123,8 +83,48 @@
       "buildDateTime": "2026-10-09 12:19",
       "buildTimestamp": "2026-10-09T12:19:10.564148",
       "description": "Feat: Fixed top shell with independent lower scroll container"
+    },
+    {
+      "version": "v2026.10.09.1231",
+      "buildDate": "2026-10-09",
+      "buildTime": "12:31",
+      "buildDateTime": "2026-10-09 12:31",
+      "buildTimestamp": "2026-10-09T12:31:51.525693",
+      "description": "Feat: Complete slim picker modals integration across generator, simulation, algorithms, review, and confirmed tabs"
+    },
+    {
+      "version": "v2026.10.09.1232",
+      "buildDate": "2026-10-09",
+      "buildTime": "12:32",
+      "buildDateTime": "2026-10-09 12:32",
+      "buildTimestamp": "2026-10-09T12:32:13.487542",
+      "description": "Feat: Complete slim picker modals integration across generator, simulation, algorithms, review, and confirmed tabs"
+    },
+    {
+      "version": "v2026.10.09.1233",
+      "buildDate": "2026-10-09",
+      "buildTime": "12:33",
+      "buildDateTime": "2026-10-09 12:33",
+      "buildTimestamp": "2026-10-09T12:33:08.426522",
+      "description": "Feat: Complete high-density obsidian slim picker modals across all 5 main tabs"
+    },
+    {
+      "version": "v2026.10.09.1233.30",
+      "buildDate": "2026-10-09",
+      "buildTime": "12:33",
+      "buildDateTime": "2026-10-09 12:33",
+      "buildTimestamp": "2026-10-09T12:33:30.590121",
+      "description": "Feat: Complete high-density obsidian slim picker modals across all 5 main tabs"
+    },
+    {
+      "version": "v2026.10.09.1233.43",
+      "buildDate": "2026-10-09",
+      "buildTime": "12:33",
+      "buildDateTime": "2026-10-09 12:33",
+      "buildTimestamp": "2026-10-09T12:33:43.822500",
+      "description": "Feat: Complete high-density obsidian slim picker modals across all 5 main tabs"
     }
   ],
-  "buildTime": "12:19",
-  "buildDateTime": "2026-10-09 12:19"
+  "buildTime": "12:33",
+  "buildDateTime": "2026-10-09 12:33"
 }

@@ -3,6 +3,7 @@ import { getBallHexColor, getBallTextColor, showToast, formatDate, copyToClipboa
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName } from '../../../shared/auth-mgmt.js';
 import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
+import { openSlimMemberPickerModal, openSlimRoundPickerModal } from '../../../shared/components.js';
 import { getLedger, fetchAllUsersPurchases, saveLedgerDirectly, getComboNumbers, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } from '../ledger.js';
 
 import { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync } from '../generator.js';
@@ -244,12 +245,28 @@ export async function renderConfirmedPurchasesList() {
             optionsHtml += `<option value="${uId}" ${currentTarget === uId ? 'selected' : ''}>👤 ${label}</option>`;
         });
 
+        let currentDisplayLabel = `[내 계정 (${cleanAuthId})]`;
+        if (currentTarget === 'all') {
+            currentDisplayLabel = `👥 전체 회원 통합 보기 (${validUnifiedUsers.length}명)`;
+        } else if (currentTarget !== 'my') {
+            const foundUser = validUnifiedUsers.find(u => u.id === currentTarget);
+            const foundName = foundUser ? (foundUser.name || foundUser.realName || (typeof getUserRealName === 'function' ? getUserRealName(foundUser.id) : '') || foundUser.id) : currentTarget;
+            currentDisplayLabel = (foundName && foundName !== currentTarget) ? `👤 ${currentTarget} (${foundName})` : `👤 ${currentTarget}`;
+        }
+
         adminUserSelectHtml = `
             <div class="confirmed-admin-bar" style="background: #0d1322; border: 1px solid rgba(255, 255, 255, 0.08); padding: 8px 12px; border-radius: 10px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; max-width: 100%; box-sizing: border-box; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
                 <span style="font-size: 0.8rem; color: #fbbf24; font-weight: 800; display: flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0;">
                     <i class="fa-solid fa-crown"></i> 관리자 대상 선택:
                 </span>
-                <select id="selAdminLedgerTarget" style="background: #080d1a; color: #f1f5f9; border: 1px solid rgba(255, 255, 255, 0.12); padding: 5px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; outline: none; cursor: pointer; max-width: 100%; min-width: 0; flex: 1 1 200px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; box-sizing: border-box;">
+                <button type="button" id="btnConfirmedUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForConfirmed && window.openSlimMemberPickerForConfirmed()" style="flex: 1 1 200px; min-width: 0; justify-content: space-between;">
+                    <span style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <i class="fa-solid fa-user text-amber-400"></i>
+                        <span id="confirmedUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${currentDisplayLabel}</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; opacity: 0.6; flex-shrink: 0;"></i>
+                </button>
+                <select id="selAdminLedgerTarget" style="display: none;">
                     ${optionsHtml}
                 </select>
                 <button type="button" class="btn-dark-pill" onclick="window.refreshAdminLedgers && window.refreshAdminLedgers()" style="padding: 5px 10px; font-size: 0.74rem; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">
@@ -613,13 +630,20 @@ export async function renderConfirmedPurchasesList() {
 
         html += `
             <div class="confirmed-quick-filter-bar">
-                <div class="confirmed-filter-header-row">
-                    <span class="confirmed-filter-title">
-                        <i class="fa-solid fa-filter" style="color: #fbbf24;"></i> 회차 퀵 필터 바로가기
-                    </span>
-                    <span id="confirmedActiveFilterLabel" class="confirmed-filter-active-desc">
-                        ${activeFilter === 'all' ? `전체 회차 (${rounds.length}개)` : `${activeFilter}회차 선택됨`}
-                    </span>
+                <div class="confirmed-filter-header-row" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="confirmed-filter-title">
+                            <i class="fa-solid fa-filter" style="color: #fbbf24;"></i> 회차 퀵 필터 바로가기
+                        </span>
+                        <span id="confirmedActiveFilterLabel" class="confirmed-filter-active-desc">
+                            ${activeFilter === 'all' ? `전체 회차 (${rounds.length}개)` : `${activeFilter}회차 선택됨`}
+                        </span>
+                    </div>
+                    <button type="button" id="btnConfirmedRoundPickerTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimRoundPickerForConfirmed && window.openSlimRoundPickerForConfirmed()" style="padding: 4px 10px; font-size: 0.74rem;">
+                        <i class="fa-solid fa-layer-group text-amber-400"></i>
+                        <span id="confirmedRoundDisplayLabel">${activeFilter === 'all' ? '회차 모달 검색' : activeFilter + '회차'}</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; opacity: 0.6;"></i>
+                    </button>
                 </div>
                 <div class="confirmed-filter-chips-scroller custom-scrollbar">
                     ${chips.join('')}
@@ -1336,11 +1360,7 @@ export async function renderConfirmedPurchasesList() {
         const selTarget = document.getElementById('selAdminLedgerTarget');
         if (selTarget) {
             selTarget.onchange = async (e) => {
-                state.adminViewingTarget = e.target.value;
-                state.ledgerFinancialsCache = null;
-                state.confirmedActiveRoundFilter = 'all';
-                await renderConfirmedPurchasesList();
-                if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
+                await changeConfirmedAdminUser(e.target.value);
             };
         }
 
@@ -1956,6 +1976,23 @@ export async function changeConfirmedAdminUser(userId) {
     state.confirmedActiveRoundFilter = 'all';
     const selTarget = document.getElementById('selAdminLedgerTarget');
     if (selTarget) selTarget.value = userId;
+
+    const dispLabel = document.getElementById('confirmedUserDisplayLabel');
+    if (dispLabel) {
+        if (userId === 'all') {
+            dispLabel.textContent = '👥 전체 회원 통합 보기';
+        } else if (userId === 'my') {
+            let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
+            if (typeof authId === 'string' && authId.startsWith('{')) {
+                try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
+            }
+            dispLabel.textContent = `👤 내 계정 (${authId})`;
+        } else {
+            const uName = (typeof getUserRealName === 'function') ? getUserRealName(userId) : '';
+            dispLabel.textContent = (uName && uName !== userId) ? `👤 ${userId} (${uName})` : `👤 ${userId}`;
+        }
+    }
+
     await renderConfirmedPurchasesList();
     if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
     showToast(userId === 'all' ? '🌐 전체 회원 통합 구매내역으로 전환되었습니다.' : `👤 [${userId}] 회원의 개별 구매내역으로 전환되었습니다.`);
@@ -2374,6 +2411,11 @@ export function filterConfirmedByRound(targetRound) {
             : `${targetRound}회차 선택됨`;
     }
 
+    const roundDisp = document.getElementById('confirmedRoundDisplayLabel');
+    if (roundDisp) {
+        roundDisp.textContent = (targetRound === 'all') ? '회차 모달 검색' : `${targetRound}회차`;
+    }
+
     const cards = document.querySelectorAll('.confirmed-round-card');
     let matchedCard = null;
     cards.forEach(card => {
@@ -2440,6 +2482,68 @@ export function toggleConfirmedStats(forceOpen) {
     }
 }
 
+/**
+ * 👤 관리자 구매확정 대상 회원 선택 슬림 모달
+ */
+export function openSlimMemberPickerForConfirmed() {
+    if (typeof openSlimMemberPickerModal !== 'function') return;
+    const curTarget = state.adminViewingTarget || 'my';
+    const allUnifiedUsers = (typeof getAllUnifiedRegisteredUsers === 'function') ? getAllUnifiedRegisteredUsers() : [];
+    const validUnifiedUsers = allUnifiedUsers.filter(u => {
+        if (!u || !u.id) return false;
+        const clean = (u.id || '').trim().toLowerCase();
+        if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || isSystemOrDummyUser(clean)) return false;
+        return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
+    });
+
+    openSlimMemberPickerModal({
+        currentUserId: curTarget,
+        includeAll: true,
+        allCardLabel: '👥 전체 회원 통합 보기',
+        allCardSub: '등록된 모든 회원의 구매내역 및 지출 집계를 한번에 확인합니다.',
+        title: '구매확정 회원 선택',
+        subtitle: '조회할 회원을 선택하면 해당 회원의 구매 확정 영수증 및 손익 현황으로 전환됩니다.',
+        customUserList: validUnifiedUsers,
+        onSelect: (userObj, userId) => {
+            changeConfirmedAdminUser(userId);
+        }
+    });
+}
+
+/**
+ * 🎯 구매확정 회차 선택 슬림 모달
+ */
+export function openSlimRoundPickerForConfirmed() {
+    if (typeof openSlimRoundPickerModal !== 'function') return;
+    const curRound = state.confirmedActiveRoundFilter || 'all';
+    const roundChips = document.querySelectorAll('.confirmed-filter-chip');
+    const availableRounds = [];
+    roundChips.forEach(c => {
+        const r = c.getAttribute('data-round-filter');
+        if (r && r !== 'all') {
+            const num = parseInt(r, 10);
+            if (!isNaN(num) && !availableRounds.includes(num)) availableRounds.push(num);
+        }
+    });
+    availableRounds.sort((a, b) => b - a);
+
+    openSlimRoundPickerModal({
+        currentRound: curRound === 'all' ? null : parseInt(curRound, 10),
+        includeAllRounds: true,
+        allRoundsLabel: '전체 회차 통합 보기',
+        availableRounds: availableRounds.length > 0 ? availableRounds : undefined,
+        title: '구매확정 회차 선택',
+        subtitle: '확인할 회차를 선택하면 해당 회차 영수증으로 즉시 필터링됩니다.',
+        onSelect: (selectedRound) => {
+            if (selectedRound === null || selectedRound === 'all') {
+                filterConfirmedByRound('all');
+            } else {
+                filterConfirmedByRound(selectedRound);
+            }
+        }
+    });
+}
+
 if (typeof window !== 'undefined') {
     window.renderConfirmedPurchasesList = renderConfirmedPurchasesList;
     window.openWinningHistoryModal = openWinningHistoryModal;
@@ -2454,6 +2558,8 @@ if (typeof window !== 'undefined') {
     window.toggleAllConfirmedRounds = toggleAllConfirmedRounds;
     window.filterConfirmedByRound = filterConfirmedByRound;
     window.toggleConfirmedStats = toggleConfirmedStats;
+    window.openSlimMemberPickerForConfirmed = openSlimMemberPickerForConfirmed;
+    window.openSlimRoundPickerForConfirmed = openSlimRoundPickerForConfirmed;
 }
 
 // ============================================================

@@ -182,6 +182,10 @@ export function populateSimRoundSelector() {
             sel.value = maxR;
         }
     }
+    const label = document.getElementById('simRoundDisplayLabel');
+    if (label && sel.value) {
+        label.innerText = `제 ${sel.value}회차`;
+    }
 }
 
 export function renderSimulationTab(targetRound = null) {
@@ -222,6 +226,9 @@ export function renderSimulationTab(targetRound = null) {
     const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : (state.mergedHistory ? Math.max(...Object.keys(state.mergedHistory).map(Number)) : 1239));
     const selectedRound = targetRound || (sel && sel.value ? parseInt(sel.value) : maxR);
     if (sel) sel.value = selectedRound;
+
+    const roundDisplayLabel = document.getElementById('simRoundDisplayLabel');
+    if (roundDisplayLabel) roundDisplayLabel.innerText = `제 ${selectedRound}회차`;
 
     // 👑 [관리자 전용] 회원별 시뮬레이션 & 백테스팅 컨트롤러 바 렌더링
     const adminBarContainer = document.getElementById('simAdminBarContainer');
@@ -272,6 +279,14 @@ export function renderSimulationTab(targetRound = null) {
             let userOptions = `<option value="${authId}" ${effectiveTarget === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
             userOptions += `<option value="__ALL__" ${effectiveTarget === '__ALL__' ? 'selected' : ''}>👥 [전체] 등록 회원 종합 시뮬레이션 (${userList.length}명 전수)</option>`;
             
+            let simUserLabel = '👑 관리자 본인';
+            if (effectiveTarget === '__ALL__') {
+                simUserLabel = '👥 [전체] 등록 회원 종합';
+            } else if (effectiveTarget.toLowerCase() !== authId.toLowerCase()) {
+                const foundU = userList.find(u => (u.id || '').toLowerCase() === effectiveTarget.toLowerCase());
+                simUserLabel = foundU ? `👤 ${(foundU.name || foundU.realName || foundU.id)} (${foundU.id})` : `👤 ${effectiveTarget}`;
+            }
+
             userList.forEach(u => {
                 if (u.id !== authId) {
                     userOptions += `<option value="${u.id}" ${effectiveTarget === u.id ? 'selected' : ''}>👤 ${u.id} (${u.name}${u.phone ? ` / ${u.phone}` : ''})</option>`;
@@ -287,9 +302,14 @@ export function renderSimulationTab(targetRound = null) {
                             <div class="sim-admin-bar-desc">전체 회원 종합 또는 특정 회원의 고유 시드로 1회부터 최신 회차까지 백테스팅을 실행합니다.</div>
                         </div>
                     </div>
-                    <div class="sim-admin-bar-right">
-                        <label for="simAdminUserSelect" class="sim-admin-bar-label">시뮬레이션 대상:</label>
-                        <select id="simAdminUserSelect" onchange="window.changeSimAdminViewingUser && window.changeSimAdminViewingUser(this.value)" class="sim-admin-user-select">
+                    <div class="sim-admin-bar-right" style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;"><i class="fa-solid fa-users"></i> 시뮬레이션 대상:</label>
+                        <button type="button" id="btnSimUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForSimulation && window.openSlimMemberPickerForSimulation()" style="min-width: 160px;">
+                            <i class="fa-solid fa-user-check" style="color: #fbbf24; font-size: 0.75rem; flex-shrink: 0;"></i>
+                            <span id="simUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 700;">${simUserLabel}</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto; flex-shrink: 0;"></i>
+                        </button>
+                        <select id="simAdminUserSelect" onchange="window.changeSimAdminViewingUser && window.changeSimAdminViewingUser(this.value)" style="display: none;">
                             ${userOptions}
                         </select>
                     </div>
@@ -753,13 +773,75 @@ export function setupSimulationEvents() {
     }
 }
 
+export function openSlimRoundPickerForSimulation() {
+    if (typeof window.openSlimRoundPickerModal === 'function') {
+        const sel = document.getElementById('simRoundSelector');
+        const curRound = sel && sel.value ? parseInt(sel.value) : (state.latestRoundNum || 1243);
+        const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1243);
+        window.openSlimRoundPickerModal({
+            title: '시뮬레이션 대조 회차 선택',
+            subtitle: '과거 추천 알고리즘과 실제 당첨 결과를 검증할 회차를 선택하세요.',
+            selectedRound: curRound,
+            minRound: 1,
+            maxRound: maxR,
+            includeAllRounds: false,
+            onSelect: (roundNum) => {
+                const r = parseInt(roundNum);
+                if (sel) {
+                    sel.value = r;
+                    sel.dispatchEvent(new Event('change'));
+                }
+                const label = document.getElementById('simRoundDisplayLabel');
+                if (label) label.innerText = `제 ${r}회차`;
+                if (typeof renderSimulationTab === 'function') {
+                    renderSimulationTab(r);
+                }
+            }
+        });
+    }
+}
+
+export function openSlimMemberPickerForSimulation() {
+    if (typeof window.openSlimMemberPickerModal === 'function') {
+        const effectiveTarget = getEffectiveTargetUser();
+        window.openSlimMemberPickerModal({
+            title: '시뮬레이션 대상 회원 선택',
+            subtitle: '백테스팅을 실행할 대상 회원의 고유 시드를 선택하세요.',
+            selectedUserId: (effectiveTarget === '__ALL__') ? 'all' : effectiveTarget,
+            includeAll: true,
+            onSelect: (user) => {
+                const uId = (typeof user === 'string') ? user : (user.id || user.userId || '__ALL__');
+                const finalId = (uId === 'all') ? '__ALL__' : uId;
+                if (window.changeSimAdminViewingUser) {
+                    window.changeSimAdminViewingUser(finalId);
+                }
+            }
+        });
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.renderSimulationTab = renderSimulationTab;
     window.runRealHistoricalSimulation = runRealHistoricalSimulation;
     window.setupSimulationEvents = setupSimulationEvents;
     window.selectAllSimAlgos = selectAllSimAlgos;
+    window.openSlimRoundPickerForSimulation = openSlimRoundPickerForSimulation;
+    window.openSlimMemberPickerForSimulation = openSlimMemberPickerForSimulation;
     window.changeSimAdminViewingUser = function(val) {
         state.simAdminTargetUserId = val;
+        const userLabelEl = document.getElementById('simUserDisplayLabel');
+        if (userLabelEl) {
+            if (val === '__ALL__' || val === 'all') {
+                userLabelEl.innerText = '👥 [전체] 등록 회원 종합';
+            } else {
+                let uName = val;
+                if (Array.isArray(state.allRegisteredUsersList)) {
+                    const f = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase() === val.toLowerCase());
+                    if (f) uName = `${f.name || f.realName || f.id} (${f.id})`;
+                }
+                userLabelEl.innerText = `👤 ${uName}`;
+            }
+        }
         const sel = document.getElementById('simRoundSelector');
         const targetRound = sel && sel.value ? parseInt(sel.value) : null;
         renderSimulationTab(targetRound);

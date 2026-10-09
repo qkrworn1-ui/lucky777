@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1219 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1233.43 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.1219)
+ * Lucky777 Smart Bundle (v2026.10.09.1233.43)
  */
 
 
@@ -846,18 +846,24 @@ let _activeMemberPickerCallback = null;
 let _tempSelectedMemberId = 'all';
 let _tempSelectedMemberName = '전체 회원 종합';
 let _currentMemberPickerCategory = 'all';
+let _activeMemberCustomList = null;
+let _activeMemberIncludeAll = true;
 
 function openSlimMemberPickerModal(options = {}) {
     const {
         onSelect = null,
         selectedUserId = 'all',
         title = '조회 대상 회원 선택',
-        subtitle = '조회하거나 분석할 대상 회원을 검색 및 선택하세요.'
+        subtitle = '조회하거나 분석할 대상 회원을 검색 및 선택하세요.',
+        includeAll = true,
+        customUserList = null
     } = options;
 
     _activeMemberPickerCallback = onSelect;
     _tempSelectedMemberId = selectedUserId || 'all';
     _currentMemberPickerCategory = 'all';
+    _activeMemberCustomList = customUserList;
+    _activeMemberIncludeAll = (includeAll !== false);
 
     let overlay = document.getElementById('slimMemberPickerModal');
     if (!overlay) {
@@ -895,7 +901,7 @@ function openSlimMemberPickerModal(options = {}) {
                 </div>
 
                 <!-- All Users Global Card -->
-                <div style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
+                <div id="slimMemberAllCardWrap" style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
                     <div id="slimMemberItem-all" onclick="window._selectSlimMemberTemp('all', '전체 회원 종합 (AI 70게임)')" class="slim-picker-item" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(245, 158, 11, 0.35);">
                         <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                             <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; border: 1px solid rgba(245, 158, 11, 0.4); flex-shrink: 0;">
@@ -945,6 +951,11 @@ function openSlimMemberPickerModal(options = {}) {
     const searchInp = document.getElementById('slimMemberSearchInput');
     if (searchInp) searchInp.value = '';
 
+    const allWrap = document.getElementById('slimMemberAllCardWrap');
+    if (allWrap) {
+        allWrap.style.display = _activeMemberIncludeAll ? 'block' : 'none';
+    }
+
     overlay.style.display = 'flex';
     window._renderSlimMemberList();
 }
@@ -959,7 +970,9 @@ window._renderSlimMemberList = function() {
     if (!container) return;
 
     let users = [];
-    if (typeof window.getAllUnifiedRegisteredUsers === 'function') {
+    if (_activeMemberCustomList && Array.isArray(_activeMemberCustomList) && _activeMemberCustomList.length > 0) {
+        users = _activeMemberCustomList;
+    } else if (typeof window.getAllUnifiedRegisteredUsers === 'function') {
         users = window.getAllUnifiedRegisteredUsers();
     } else if (typeof window.__cachedUsersWithStatus === 'object' && window.__cachedUsersWithStatus) {
         users = Object.keys(window.__cachedUsersWithStatus).map(id => ({
@@ -1082,7 +1095,8 @@ window._filterSlimMemberList = function() {
 
 window._confirmSlimMemberSelection = function() {
     if (typeof _activeMemberPickerCallback === 'function') {
-        _activeMemberPickerCallback(_tempSelectedMemberId, _tempSelectedMemberName);
+        const userObj = { id: _tempSelectedMemberId, name: _tempSelectedMemberName, userId: _tempSelectedMemberId };
+        _activeMemberPickerCallback(userObj, _tempSelectedMemberId);
     }
     window.closeSlimMemberPickerModal();
 };
@@ -1096,6 +1110,9 @@ let _activeRoundPickerCallback = null;
 let _tempSelectedRoundVal = 'all_rounds';
 let _tempSelectedRoundName = '전체 회차 누적 종합';
 let _currentRoundPickerFilter = 'all';
+let _activeRoundIncludeAll = true;
+let _activeRoundMin = 1235;
+let _activeRoundMax = null;
 
 function openSlimRoundPickerModal(options = {}) {
     const {
@@ -1103,12 +1120,17 @@ function openSlimRoundPickerModal(options = {}) {
         selectedRound = 'all_rounds',
         title = '조회 대상 회차 선택',
         subtitle = '조회하고자 하는 공식 로또 추첨 회차를 선택하세요.',
-        minRound = 1235
+        minRound = 1235,
+        maxRound = null,
+        includeAllRounds = true
     } = options;
 
     _activeRoundPickerCallback = onSelect;
     _tempSelectedRoundVal = String(selectedRound || 'all_rounds');
     _currentRoundPickerFilter = 'all';
+    _activeRoundIncludeAll = (includeAllRounds !== false);
+    _activeRoundMin = minRound;
+    _activeRoundMax = maxRound;
 
     let overlay = document.getElementById('slimRoundPickerModal');
     if (!overlay) {
@@ -1131,8 +1153,12 @@ function openSlimRoundPickerModal(options = {}) {
                     <button type="button" class="slim-picker-close-btn" onclick="window.closeSlimRoundPickerModal()">&times;</button>
                 </div>
 
-                <!-- Toolbar: Quick Filter Chips -->
+                <!-- Toolbar: Search & Quick Filter Chips -->
                 <div class="slim-picker-toolbar">
+                    <div class="slim-picker-search-wrap" style="margin-bottom: 8px;">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: #64748b;"></i>
+                        <input type="text" id="slimRoundSearchInput" class="slim-picker-search-input" placeholder="회차 번호 검색 (예: 1243)..." oninput="window._filterSlimRoundList && window._filterSlimRoundList()">
+                    </div>
                     <div class="slim-picker-pills-row">
                         <button type="button" class="slim-picker-pill slim-picker-pill-amber active" data-filter="all" onclick="window._setSlimRoundFilter('all', this)">전체 누적</button>
                         <button type="button" class="slim-picker-pill slim-picker-pill-amber" data-filter="latest" onclick="window._setSlimRoundFilter('latest', this)">최신 회차</button>
@@ -1141,7 +1167,7 @@ function openSlimRoundPickerModal(options = {}) {
                 </div>
 
                 <!-- All Rounds Global Card -->
-                <div style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
+                <div id="slimRoundAllCardWrap" style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
                     <div id="slimRoundItem-all_rounds" onclick="window._selectSlimRoundTemp('all_rounds', '전체 회차 누적 종합 조회')" class="slim-picker-item" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(245, 158, 11, 0.35);">
                         <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                             <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; border: 1px solid rgba(245, 158, 11, 0.4); flex-shrink: 0;">
@@ -1188,9 +1214,16 @@ function openSlimRoundPickerModal(options = {}) {
     if (titleEl) titleEl.innerText = title;
     const subEl = document.getElementById('slimRoundPickerSubtext');
     if (subEl) subEl.innerText = subtitle;
+    const searchInp = document.getElementById('slimRoundSearchInput');
+    if (searchInp) searchInp.value = '';
+
+    const allRoundWrap = document.getElementById('slimRoundAllCardWrap');
+    if (allRoundWrap) {
+        allRoundWrap.style.display = _activeRoundIncludeAll ? 'block' : 'none';
+    }
 
     overlay.style.display = 'flex';
-    window._renderSlimRoundList(minRound);
+    window._renderSlimRoundList(_activeRoundMin, _activeRoundMax);
 }
 
 function closeSlimRoundPickerModal() {
@@ -1198,7 +1231,11 @@ function closeSlimRoundPickerModal() {
     if (overlay) overlay.style.display = 'none';
 }
 
-window._renderSlimRoundList = function(minRound = 1235) {
+window._filterSlimRoundList = function() {
+    window._renderSlimRoundList(_activeRoundMin, _activeRoundMax);
+};
+
+window._renderSlimRoundList = function(minRound = 1235, maxRound = null) {
     const container = document.getElementById('slimRoundListContainer');
     if (!container) return;
 
@@ -1209,13 +1246,19 @@ window._renderSlimRoundList = function(minRound = 1235) {
         .sort((a, b) => b - a);
 
     const fallbackLatest = (typeof window.getLatestDrawnRound === 'function') ? window.getLatestDrawnRound() : 1243;
-    const latestRoundNum = (window.state && window.state.latestDrawData && window.state.latestDrawData.numbers?.length === 6)
+    const latestRoundNum = maxRound || ((window.state && window.state.latestDrawData && window.state.latestDrawData.numbers?.length === 6)
         ? Math.max(window.state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
-        : (historyRounds[0] || fallbackLatest);
+        : (historyRounds[0] || fallbackLatest));
 
     let roundNumbers = [];
-    for (let r = latestRoundNum; r >= minRound; r--) {
+    const effectiveMin = Math.max(1, minRound || 1);
+    for (let r = latestRoundNum; r >= effectiveMin; r--) {
         roundNumbers.push(r);
+    }
+
+    const searchVal = (document.getElementById('slimRoundSearchInput')?.value || '').trim();
+    if (searchVal) {
+        roundNumbers = roundNumbers.filter(r => String(r).includes(searchVal));
     }
 
     if (_currentRoundPickerFilter === 'latest') {
@@ -20224,16 +20267,31 @@ async function renderReviewTab() {
                 }
             });
 
+            let reviewUserLabel = '🌐 전체 회원 추천번호 종합';
+            if (reviewAdminViewingUser.toLowerCase() === cleanAuth) {
+                reviewUserLabel = `👑 관리자 본인 (${cleanAuth})`;
+            } else if (reviewAdminViewingUser !== 'all') {
+                const foundU = unifiedUsers.find(u => (u.id || '').toLowerCase().trim() === reviewAdminViewingUser.toLowerCase());
+                reviewUserLabel = foundU ? `👤 ${(foundU.name || foundU.realName || foundU.id)} (${foundU.id})` : `👤 ${reviewAdminViewingUser}`;
+            }
+
             adminSelectorContainer.innerHTML = `
-                <label for="reviewAdminUserSelect" style="font-size: 0.78rem; color: #fbbf24; font-weight: 700;">
-                    <i class="fa-solid fa-users"></i> 회원 선택:
-                </label>
-                <select id="reviewAdminUserSelect" onchange="window.changeReviewAdminUser && window.changeReviewAdminUser(this.value)" style="background: rgba(15, 23, 42, 0.95); border: 1px solid #f59e0b; color: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; outline: none;">
-                    ${userOptionsHtml}
-                </select>
-                <button type="button" id="btnOpenAdmin1235ReviewModal" onclick="window.openAdmin1235ReviewModal && window.openAdmin1235ReviewModal()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4); margin-left: 4px; transition: all 0.2s;">
-                    <i class="fa-solid fa-crown"></i> 1235회~ 추천·당첨 모달 (카톡 공유)
-                </button>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;">
+                        <i class="fa-solid fa-users"></i> 회원 선택:
+                    </label>
+                    <button type="button" id="btnReviewUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForReview && window.openSlimMemberPickerForReview()" style="min-width: 150px;">
+                        <i class="fa-solid fa-user-check" style="color: #fbbf24; font-size: 0.75rem;"></i>
+                        <span id="reviewUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 700;">${reviewUserLabel}</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto;"></i>
+                    </button>
+                    <select id="reviewAdminUserSelect" onchange="window.changeReviewAdminUser && window.changeReviewAdminUser(this.value)" style="display: none;">
+                        ${userOptionsHtml}
+                    </select>
+                    <button type="button" id="btnOpenAdmin1235ReviewModal" onclick="window.openAdmin1235ReviewModal && window.openAdmin1235ReviewModal()" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; border: none; padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 900; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4); margin-left: 4px; transition: all 0.2s;">
+                        <i class="fa-solid fa-crown"></i> 1235회~ 추천·당첨 모달 (카톡 공유)
+                    </button>
+                </div>
             `;
         }
 
@@ -20304,6 +20362,15 @@ function updateReviewRoundSelector(selectedRound = null) {
     }
     reviewRoundSelector.innerHTML = optionsHtml;
     reviewRoundSelector.value = String(validSelected);
+
+    const roundLabelEl = document.getElementById('reviewRoundDisplayLabel');
+    if (roundLabelEl) {
+        if (validSelected === 'all_rounds') {
+            roundLabelEl.innerText = `전체 회차 누적 종합 (${minReviewRound}회~${effectiveMax}회)`;
+        } else {
+            roundLabelEl.innerText = `제 ${validSelected}회차`;
+        }
+    }
 
     return validSelected;
 }
@@ -22044,6 +22111,20 @@ function changeReviewAdminUser(userId) {
     if (adminSel) {
         adminSel.value = userId;
     }
+
+    const userLabelEl = document.getElementById('reviewUserDisplayLabel');
+    if (userLabelEl) {
+        if (userId === 'all') {
+            userLabelEl.innerText = '🌐 전체 회원 추천번호 종합';
+        } else {
+            let uName = userId;
+            if (typeof getAllUnifiedRegisteredUsers === 'function') {
+                const f = getAllUnifiedRegisteredUsers().find(u => (u.id || '').toLowerCase() === userId.toLowerCase());
+                if (f) uName = `${f.name || f.realName || f.id} (${f.id})`;
+            }
+            userLabelEl.innerText = `👤 ${uName}`;
+        }
+    }
     
     // 🔄 선택된 대상(전체, 관리자 본인, 특정 회원)의 가입일에 맞춰 회차 드롭다운 옵션 즉각 동적 갱신
     const validRound = updateReviewRoundSelector();
@@ -22255,6 +22336,57 @@ async function openAdmin1235ReviewModal(initialRound = null, initialUser = null)
     modal.style.display = 'flex';
     renderAdmin1235ReviewModalContent();
 }
+
+/**
+ * 🔄 메인 당첨내역 탭 슬림 회차 선택 모달 열기
+ */
+window.openSlimRoundPickerForReview = function() {
+    if (typeof window.openSlimRoundPickerModal === 'function') {
+        const actualRoundSel = document.getElementById('reviewRoundSelector');
+        const curVal = actualRoundSel ? actualRoundSel.value : 'all_rounds';
+        window.openSlimRoundPickerModal({
+            title: '당첨내역 조회 회차 선택',
+            subtitle: '회차별 추천 70게임과 공식 추첨 번호를 대조할 회차를 선택하세요.',
+            selectedRound: curVal,
+            minRound: 1235,
+            includeAllRounds: true,
+            onSelect: function(rVal) {
+                if (actualRoundSel) {
+                    actualRoundSel.value = String(rVal);
+                    actualRoundSel.dispatchEvent(new Event('change'));
+                }
+                const label = document.getElementById('reviewRoundDisplayLabel');
+                if (label) {
+                    label.innerText = (rVal === 'all_rounds') ? '전체 회차 누적 종합' : `제 ${rVal}회차`;
+                }
+                const targetR = (rVal === 'all_rounds') ? 'all_rounds' : parseInt(rVal);
+                renderReviewDetail(targetR);
+            }
+        });
+    }
+};
+
+/**
+ * 🔄 메인 당첨내역 탭 슬림 회원 선택 모달 열기
+ */
+window.openSlimMemberPickerForReview = function() {
+    if (typeof window.openSlimMemberPickerModal === 'function') {
+        const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        const curUser = (typeof reviewAdminViewingUser !== 'undefined' && reviewAdminViewingUser) || rawAuth || 'all';
+        window.openSlimMemberPickerModal({
+            title: '당첨내역 조회 대상 회원 선택',
+            subtitle: '각 회원에게 배정된 추천번호 및 당첨 성과를 확인할 회원을 선택하세요.',
+            selectedUserId: curUser,
+            includeAll: true,
+            onSelect: function(user) {
+                const uId = (typeof user === 'string') ? user : (user.id || user.userId || 'all');
+                if (window.changeReviewAdminUser) {
+                    window.changeReviewAdminUser(uId);
+                }
+            }
+        });
+    }
+};
 
 /**
  * 🔄 슬림 회차 선택 모달 열기 (1235회차 모달 연동)
@@ -24196,6 +24328,14 @@ async function renderAlgorithmsTab(fromRound = null) {
             }
         });
 
+        let algoUserLabel = '🌐 전체 회원 종합 (기본)';
+        if (effectiveUserId === authId) {
+            algoUserLabel = `👑 관리자 본인 (${authId})`;
+        } else if (effectiveUserId !== 'all') {
+            const foundU = userList.find(u => (u.id || '').toLowerCase().trim() === effectiveUserId.toLowerCase());
+            algoUserLabel = foundU ? `👤 ${(foundU.name || foundU.realName || foundU.id)} (${foundU.id})` : `👤 ${effectiveUserId}`;
+        }
+
         adminUserSelectHtml = `
             <div class="algo-admin-bar" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; max-width: 100%; box-sizing: border-box; overflow: hidden;">
                 <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 220px;">
@@ -24206,8 +24346,13 @@ async function renderAlgorithmsTab(fromRound = null) {
                     </div>
                 </div>
                 <div class="algo-admin-select-wrapper" style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; max-width: 100%; box-sizing: border-box;">
-                    <label for="algoAdminUserSelect" style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;">조회 대상:</label>
-                    <select id="algoAdminUserSelect" onchange="window.changeAlgoAdminViewingUser && window.changeAlgoAdminViewingUser(this.value)" style="background: #0f172a; border: 1px solid #f59e0b; color: #fff; padding: 5px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; outline: none; max-width: 100%; min-width: 0; flex: 1; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; box-sizing: border-box;">
+                    <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;"><i class="fa-solid fa-users"></i> 조회 대상:</label>
+                    <button type="button" id="btnAlgoUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForAlgo && window.openSlimMemberPickerForAlgo()" style="flex: 1; min-width: 0;">
+                        <i class="fa-solid fa-user-check" style="color: #fbbf24; font-size: 0.75rem; flex-shrink: 0;"></i>
+                        <span id="algoUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 700;">${algoUserLabel}</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto; flex-shrink: 0;"></i>
+                    </button>
+                    <select id="algoAdminUserSelect" onchange="window.changeAlgoAdminViewingUser && window.changeAlgoAdminViewingUser(this.value)" style="display: none;">
                         ${userOptions}
                     </select>
                 </div>
@@ -24422,8 +24567,13 @@ async function renderAlgorithmsTab(fromRound = null) {
                     
                     <!-- 회차 범위 셀렉터 -->
                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                        <label for="algoReviewStartRoundSelect" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; white-space: nowrap;">집계 시작 회차:</label>
-                        <select id="algoReviewStartRoundSelect" onchange="window.changeAlgoReviewStartRound && window.changeAlgoReviewStartRound(this.value)" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
+                        <label style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; white-space: nowrap;">집계 시작 회차:</label>
+                        <button type="button" id="btnAlgoRoundTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimRoundPickerForAlgo && window.openSlimRoundPickerForAlgo()" style="min-width: 140px;">
+                            <i class="fa-solid fa-calendar-check" style="color: #fbbf24; font-size: 0.75rem;"></i>
+                            <span id="algoRoundDisplayLabel" style="font-size: 0.76rem; font-weight: 700; color: #fbbf24;">${currentAlgoStartRound === 1 ? '제 1회부터 전체 전수' : `제 ${currentAlgoStartRound}회부터 누적`}</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto;"></i>
+                        </button>
+                        <select id="algoReviewStartRoundSelect" onchange="window.changeAlgoReviewStartRound && window.changeAlgoReviewStartRound(this.value)" style="display: none;">
                             <option value="1235" ${currentAlgoStartRound === 1235 ? 'selected' : ''}>제 1235회부터 누적 (실제 발급 이력)</option>
                             <option value="1230" ${currentAlgoStartRound === 1230 ? 'selected' : ''}>제 1230회부터 누적</option>
                             <option value="1220" ${currentAlgoStartRound === 1220 ? 'selected' : ''}>제 1220회부터 누적</option>
@@ -24667,8 +24817,49 @@ function changeAlgoReviewStartRound(roundVal) {
     }
 }
 
+function openSlimMemberPickerForAlgo() {
+    if (typeof window.openSlimMemberPickerModal === 'function') {
+        const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        const curUser = (typeof algoAdminViewingUser !== 'undefined' && algoAdminViewingUser) || rawAuth || 'all';
+        window.openSlimMemberPickerModal({
+            title: '7대 알고리즘 조회 대상 회원 선택',
+            subtitle: '누적 추천 및 당첨 실적을 확인할 회원을 검색 및 선택하세요.',
+            selectedUserId: curUser,
+            includeAll: true,
+            onSelect: (user) => {
+                const uId = (typeof user === 'string') ? user : (user.id || user.userId || 'all');
+                if (window.changeAlgoAdminViewingUser) {
+                    window.changeAlgoAdminViewingUser(uId);
+                }
+            }
+        });
+    }
+}
+
+function openSlimRoundPickerForAlgo() {
+    if (typeof window.openSlimRoundPickerModal === 'function') {
+        const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1243);
+        window.openSlimRoundPickerModal({
+            title: '알고리즘 누적 집계 시작 회차 선택',
+            subtitle: '7대 알고리즘 적중 실적의 집계 기준 시작 회차를 선택하세요.',
+            selectedRound: currentAlgoStartRound,
+            minRound: 1,
+            maxRound: maxR,
+            includeAllRounds: false,
+            onSelect: (roundNum) => {
+                const r = parseInt(roundNum);
+                if (window.changeAlgoReviewStartRound) {
+                    window.changeAlgoReviewStartRound(r);
+                }
+            }
+        });
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.renderAlgorithmsTab = renderAlgorithmsTab;
+    window.openSlimMemberPickerForAlgo = openSlimMemberPickerForAlgo;
+    window.openSlimRoundPickerForAlgo = openSlimRoundPickerForAlgo;
     window.changeAlgoAdminViewingUser = changeAlgoAdminViewingUser;
     window.resetAlgoAdminViewingUser = resetAlgoAdminViewingUser;
     window.toggleAlgoSpecDetail = toggleAlgoSpecDetail;
@@ -24730,6 +24921,14 @@ if (typeof window !== 'undefined') {
         if (typeof changeAlgoReviewStartRound !== 'undefined') {
             __exports.changeAlgoReviewStartRound = changeAlgoReviewStartRound;
             if (typeof window !== 'undefined') window.changeAlgoReviewStartRound = changeAlgoReviewStartRound;
+        }
+        if (typeof openSlimMemberPickerForAlgo !== 'undefined') {
+            __exports.openSlimMemberPickerForAlgo = openSlimMemberPickerForAlgo;
+            if (typeof window !== 'undefined') window.openSlimMemberPickerForAlgo = openSlimMemberPickerForAlgo;
+        }
+        if (typeof openSlimRoundPickerForAlgo !== 'undefined') {
+            __exports.openSlimRoundPickerForAlgo = openSlimRoundPickerForAlgo;
+            if (typeof window !== 'undefined') window.openSlimRoundPickerForAlgo = openSlimRoundPickerForAlgo;
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/services/lotto/views/algorithms-tab.js]:', modErr);
@@ -25314,6 +25513,14 @@ async function renderTop5Combinations(isRollingAnimation = false) {
                 }
             });
 
+            let currentLabel = '👑 관리자 본인';
+            if (effectiveUserId === 'all') {
+                currentLabel = '🌐 전체 회원 종합';
+            } else if (effectiveUserId.toLowerCase() !== cleanAuth) {
+                const foundU = userList.find(u => (u.id || '').toLowerCase().trim() === effectiveUserId.toLowerCase());
+                currentLabel = foundU ? `👤 ${(foundU.name || foundU.realName || foundU.id)} (${foundU.id})` : `👤 ${effectiveUserId}`;
+            }
+
             adminBarContainer.innerHTML = `
                 <div class="generator-admin-bar" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; max-width: 100%; box-sizing: border-box; overflow: hidden;">
                     <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 220px;">
@@ -25324,8 +25531,13 @@ async function renderTop5Combinations(isRollingAnimation = false) {
                         </div>
                     </div>
                     <div class="generator-admin-select-wrapper" style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; max-width: 100%; box-sizing: border-box;">
-                        <label for="generatorAdminUserSelect" style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;">회원 선택:</label>
-                        <select id="generatorAdminUserSelect" onchange="window.changeGeneratorAdminViewingUser && window.changeGeneratorAdminViewingUser(this.value)" style="background: #0f172a; border: 1px solid #f59e0b; color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; outline: none; max-width: 100%; min-width: 0; flex: 1; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; box-sizing: border-box;">
+                        <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;"><i class="fa-solid fa-users"></i> 회원 선택:</label>
+                        <button type="button" id="btnGeneratorUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForGenerator && window.openSlimMemberPickerForGenerator()" style="flex: 1; min-width: 0;">
+                            <i class="fa-solid fa-user-check" style="color: #fbbf24; font-size: 0.75rem; flex-shrink: 0;"></i>
+                            <span id="generatorUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 700;">${currentLabel}</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto; flex-shrink: 0;"></i>
+                        </button>
+                        <select id="generatorAdminUserSelect" onchange="window.changeGeneratorAdminViewingUser && window.changeGeneratorAdminViewingUser(this.value)" style="display: none;">
                             ${userOptions}
                         </select>
                     </div>
@@ -26832,10 +27044,43 @@ function changeGeneratorAdminViewingUser(userId) {
             window.renderQuickViewContent();
         }
     }
+    const labelEl = document.getElementById('generatorUserDisplayLabel');
+    if (labelEl) {
+        if (userId === 'all') {
+            labelEl.innerText = '🌐 전체 회원 종합';
+        } else {
+            let uName = userId;
+            if (Array.isArray(state.allRegisteredUsersList)) {
+                const f = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase() === userId.toLowerCase());
+                if (f) uName = `${f.name || f.realName || f.id} (${f.id})`;
+            }
+            labelEl.innerText = `👤 ${uName}`;
+        }
+    }
     showToast(`👑 [${userId === 'all' ? '전체 회원 종합' : userId}] 모드로 즉시 전환되었습니다.`);
 }
 
+function openSlimMemberPickerForGenerator() {
+    if (typeof window.openSlimMemberPickerModal === 'function') {
+        const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        const curUser = (typeof selectedAdminViewingUser !== 'undefined' && selectedAdminViewingUser) || (typeof generatorAdminViewingUser !== 'undefined' && generatorAdminViewingUser) || rawAuth || 'all';
+        window.openSlimMemberPickerModal({
+            title: '추천번호 조회 대상 회원 선택',
+            subtitle: 'AI 맞춤 추천번호(10조합)를 확인할 회원을 검색 및 선택하세요.',
+            selectedUserId: curUser,
+            includeAll: true,
+            onSelect: (user) => {
+                const uId = (typeof user === 'string') ? user : (user.id || user.userId || 'all');
+                if (window.changeGeneratorAdminViewingUser) {
+                    window.changeGeneratorAdminViewingUser(uId);
+                }
+            }
+        });
+    }
+}
+
 if (typeof window !== 'undefined') {
+    window.openSlimMemberPickerForGenerator = openSlimMemberPickerForGenerator;
     window.render7AlgorithmsRealReviewSection = render7AlgorithmsRealReviewSection;
     window.compute7AlgorithmsRealStats = compute7AlgorithmsRealStats;
     window.toggleAlgoReviewMainCollapse = toggleAlgoReviewMainCollapse;
@@ -27251,6 +27496,10 @@ async function handleGenerateAll70Games() {
         if (typeof changeGeneratorAdminViewingUser !== 'undefined') {
             __exports.changeGeneratorAdminViewingUser = changeGeneratorAdminViewingUser;
             if (typeof window !== 'undefined') window.changeGeneratorAdminViewingUser = changeGeneratorAdminViewingUser;
+        }
+        if (typeof openSlimMemberPickerForGenerator !== 'undefined') {
+            __exports.openSlimMemberPickerForGenerator = openSlimMemberPickerForGenerator;
+            if (typeof window !== 'undefined') window.openSlimMemberPickerForGenerator = openSlimMemberPickerForGenerator;
         }
         if (typeof updateTop7AlgoUI !== 'undefined') {
             __exports.updateTop7AlgoUI = updateTop7AlgoUI;
@@ -28007,6 +28256,10 @@ function populateSimRoundSelector() {
             sel.value = maxR;
         }
     }
+    const label = document.getElementById('simRoundDisplayLabel');
+    if (label && sel.value) {
+        label.innerText = `제 ${sel.value}회차`;
+    }
 }
 
 function renderSimulationTab(targetRound = null) {
@@ -28047,6 +28300,9 @@ function renderSimulationTab(targetRound = null) {
     const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : (state.mergedHistory ? Math.max(...Object.keys(state.mergedHistory).map(Number)) : 1239));
     const selectedRound = targetRound || (sel && sel.value ? parseInt(sel.value) : maxR);
     if (sel) sel.value = selectedRound;
+
+    const roundDisplayLabel = document.getElementById('simRoundDisplayLabel');
+    if (roundDisplayLabel) roundDisplayLabel.innerText = `제 ${selectedRound}회차`;
 
     // 👑 [관리자 전용] 회원별 시뮬레이션 & 백테스팅 컨트롤러 바 렌더링
     const adminBarContainer = document.getElementById('simAdminBarContainer');
@@ -28097,6 +28353,14 @@ function renderSimulationTab(targetRound = null) {
             let userOptions = `<option value="${authId}" ${effectiveTarget === authId ? 'selected' : ''}>👑 관리자 본인 (${authId})</option>`;
             userOptions += `<option value="__ALL__" ${effectiveTarget === '__ALL__' ? 'selected' : ''}>👥 [전체] 등록 회원 종합 시뮬레이션 (${userList.length}명 전수)</option>`;
             
+            let simUserLabel = '👑 관리자 본인';
+            if (effectiveTarget === '__ALL__') {
+                simUserLabel = '👥 [전체] 등록 회원 종합';
+            } else if (effectiveTarget.toLowerCase() !== authId.toLowerCase()) {
+                const foundU = userList.find(u => (u.id || '').toLowerCase() === effectiveTarget.toLowerCase());
+                simUserLabel = foundU ? `👤 ${(foundU.name || foundU.realName || foundU.id)} (${foundU.id})` : `👤 ${effectiveTarget}`;
+            }
+
             userList.forEach(u => {
                 if (u.id !== authId) {
                     userOptions += `<option value="${u.id}" ${effectiveTarget === u.id ? 'selected' : ''}>👤 ${u.id} (${u.name}${u.phone ? ` / ${u.phone}` : ''})</option>`;
@@ -28112,9 +28376,14 @@ function renderSimulationTab(targetRound = null) {
                             <div class="sim-admin-bar-desc">전체 회원 종합 또는 특정 회원의 고유 시드로 1회부터 최신 회차까지 백테스팅을 실행합니다.</div>
                         </div>
                     </div>
-                    <div class="sim-admin-bar-right">
-                        <label for="simAdminUserSelect" class="sim-admin-bar-label">시뮬레이션 대상:</label>
-                        <select id="simAdminUserSelect" onchange="window.changeSimAdminViewingUser && window.changeSimAdminViewingUser(this.value)" class="sim-admin-user-select">
+                    <div class="sim-admin-bar-right" style="display: flex; align-items: center; gap: 8px;">
+                        <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;"><i class="fa-solid fa-users"></i> 시뮬레이션 대상:</label>
+                        <button type="button" id="btnSimUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForSimulation && window.openSlimMemberPickerForSimulation()" style="min-width: 160px;">
+                            <i class="fa-solid fa-user-check" style="color: #fbbf24; font-size: 0.75rem; flex-shrink: 0;"></i>
+                            <span id="simUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 700;">${simUserLabel}</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto; flex-shrink: 0;"></i>
+                        </button>
+                        <select id="simAdminUserSelect" onchange="window.changeSimAdminViewingUser && window.changeSimAdminViewingUser(this.value)" style="display: none;">
                             ${userOptions}
                         </select>
                     </div>
@@ -28578,13 +28847,75 @@ function setupSimulationEvents() {
     }
 }
 
+function openSlimRoundPickerForSimulation() {
+    if (typeof window.openSlimRoundPickerModal === 'function') {
+        const sel = document.getElementById('simRoundSelector');
+        const curRound = sel && sel.value ? parseInt(sel.value) : (state.latestRoundNum || 1243);
+        const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1243);
+        window.openSlimRoundPickerModal({
+            title: '시뮬레이션 대조 회차 선택',
+            subtitle: '과거 추천 알고리즘과 실제 당첨 결과를 검증할 회차를 선택하세요.',
+            selectedRound: curRound,
+            minRound: 1,
+            maxRound: maxR,
+            includeAllRounds: false,
+            onSelect: (roundNum) => {
+                const r = parseInt(roundNum);
+                if (sel) {
+                    sel.value = r;
+                    sel.dispatchEvent(new Event('change'));
+                }
+                const label = document.getElementById('simRoundDisplayLabel');
+                if (label) label.innerText = `제 ${r}회차`;
+                if (typeof renderSimulationTab === 'function') {
+                    renderSimulationTab(r);
+                }
+            }
+        });
+    }
+}
+
+function openSlimMemberPickerForSimulation() {
+    if (typeof window.openSlimMemberPickerModal === 'function') {
+        const effectiveTarget = getEffectiveTargetUser();
+        window.openSlimMemberPickerModal({
+            title: '시뮬레이션 대상 회원 선택',
+            subtitle: '백테스팅을 실행할 대상 회원의 고유 시드를 선택하세요.',
+            selectedUserId: (effectiveTarget === '__ALL__') ? 'all' : effectiveTarget,
+            includeAll: true,
+            onSelect: (user) => {
+                const uId = (typeof user === 'string') ? user : (user.id || user.userId || '__ALL__');
+                const finalId = (uId === 'all') ? '__ALL__' : uId;
+                if (window.changeSimAdminViewingUser) {
+                    window.changeSimAdminViewingUser(finalId);
+                }
+            }
+        });
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.renderSimulationTab = renderSimulationTab;
     window.runRealHistoricalSimulation = runRealHistoricalSimulation;
     window.setupSimulationEvents = setupSimulationEvents;
     window.selectAllSimAlgos = selectAllSimAlgos;
+    window.openSlimRoundPickerForSimulation = openSlimRoundPickerForSimulation;
+    window.openSlimMemberPickerForSimulation = openSlimMemberPickerForSimulation;
     window.changeSimAdminViewingUser = function(val) {
         state.simAdminTargetUserId = val;
+        const userLabelEl = document.getElementById('simUserDisplayLabel');
+        if (userLabelEl) {
+            if (val === '__ALL__' || val === 'all') {
+                userLabelEl.innerText = '👥 [전체] 등록 회원 종합';
+            } else {
+                let uName = val;
+                if (Array.isArray(state.allRegisteredUsersList)) {
+                    const f = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase() === val.toLowerCase());
+                    if (f) uName = `${f.name || f.realName || f.id} (${f.id})`;
+                }
+                userLabelEl.innerText = `👤 ${uName}`;
+            }
+        }
         const sel = document.getElementById('simRoundSelector');
         const targetRound = sel && sel.value ? parseInt(sel.value) : null;
         renderSimulationTab(targetRound);
@@ -28640,6 +28971,14 @@ if (typeof window !== 'undefined') {
             __exports.setupSimulationEvents = setupSimulationEvents;
             if (typeof window !== 'undefined') window.setupSimulationEvents = setupSimulationEvents;
         }
+        if (typeof openSlimRoundPickerForSimulation !== 'undefined') {
+            __exports.openSlimRoundPickerForSimulation = openSlimRoundPickerForSimulation;
+            if (typeof window !== 'undefined') window.openSlimRoundPickerForSimulation = openSlimRoundPickerForSimulation;
+        }
+        if (typeof openSlimMemberPickerForSimulation !== 'undefined') {
+            __exports.openSlimMemberPickerForSimulation = openSlimMemberPickerForSimulation;
+            if (typeof window !== 'undefined') window.openSlimMemberPickerForSimulation = openSlimMemberPickerForSimulation;
+        }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/services/lotto/views/simulation-tab.js]:', modErr);
     }
@@ -28654,6 +28993,7 @@ const { getBallHexColor, getBallTextColor, showToast, formatDate, copyToClipboar
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser, getUserRealName } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getAllUnifiedRegisteredUsers } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
+const { openSlimMemberPickerModal, openSlimRoundPickerModal } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
 const { getLedger, fetchAllUsersPurchases, saveLedgerDirectly, getComboNumbers, calculateLedgerFinancials, getSafeActualDraw, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, deduplicateReceipts, getReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, toggleReceiptLock, toggleRoundLock, getReceiptCombosFingerprint, buildDonghangLotteryQrUrl, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 
 const { computeAbsoluteTop10Combinations, findBestRecommendationMatch, generateExtraAddonPack, getUserWeeklyRecommendationSnapshotSync } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
@@ -28895,12 +29235,28 @@ async function renderConfirmedPurchasesList() {
             optionsHtml += `<option value="${uId}" ${currentTarget === uId ? 'selected' : ''}>👤 ${label}</option>`;
         });
 
+        let currentDisplayLabel = `[내 계정 (${cleanAuthId})]`;
+        if (currentTarget === 'all') {
+            currentDisplayLabel = `👥 전체 회원 통합 보기 (${validUnifiedUsers.length}명)`;
+        } else if (currentTarget !== 'my') {
+            const foundUser = validUnifiedUsers.find(u => u.id === currentTarget);
+            const foundName = foundUser ? (foundUser.name || foundUser.realName || (typeof getUserRealName === 'function' ? getUserRealName(foundUser.id) : '') || foundUser.id) : currentTarget;
+            currentDisplayLabel = (foundName && foundName !== currentTarget) ? `👤 ${currentTarget} (${foundName})` : `👤 ${currentTarget}`;
+        }
+
         adminUserSelectHtml = `
             <div class="confirmed-admin-bar" style="background: #0d1322; border: 1px solid rgba(255, 255, 255, 0.08); padding: 8px 12px; border-radius: 10px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; max-width: 100%; box-sizing: border-box; overflow: hidden; box-shadow: 0 4px 14px rgba(0,0,0,0.3);">
                 <span style="font-size: 0.8rem; color: #fbbf24; font-weight: 800; display: flex; align-items: center; gap: 5px; white-space: nowrap; flex-shrink: 0;">
                     <i class="fa-solid fa-crown"></i> 관리자 대상 선택:
                 </span>
-                <select id="selAdminLedgerTarget" style="background: #080d1a; color: #f1f5f9; border: 1px solid rgba(255, 255, 255, 0.12); padding: 5px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; outline: none; cursor: pointer; max-width: 100%; min-width: 0; flex: 1 1 200px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; box-sizing: border-box;">
+                <button type="button" id="btnConfirmedUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForConfirmed && window.openSlimMemberPickerForConfirmed()" style="flex: 1 1 200px; min-width: 0; justify-content: space-between;">
+                    <span style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        <i class="fa-solid fa-user text-amber-400"></i>
+                        <span id="confirmedUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${currentDisplayLabel}</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; opacity: 0.6; flex-shrink: 0;"></i>
+                </button>
+                <select id="selAdminLedgerTarget" style="display: none;">
                     ${optionsHtml}
                 </select>
                 <button type="button" class="btn-dark-pill" onclick="window.refreshAdminLedgers && window.refreshAdminLedgers()" style="padding: 5px 10px; font-size: 0.74rem; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">
@@ -29264,13 +29620,20 @@ async function renderConfirmedPurchasesList() {
 
         html += `
             <div class="confirmed-quick-filter-bar">
-                <div class="confirmed-filter-header-row">
-                    <span class="confirmed-filter-title">
-                        <i class="fa-solid fa-filter" style="color: #fbbf24;"></i> 회차 퀵 필터 바로가기
-                    </span>
-                    <span id="confirmedActiveFilterLabel" class="confirmed-filter-active-desc">
-                        ${activeFilter === 'all' ? `전체 회차 (${rounds.length}개)` : `${activeFilter}회차 선택됨`}
-                    </span>
+                <div class="confirmed-filter-header-row" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="confirmed-filter-title">
+                            <i class="fa-solid fa-filter" style="color: #fbbf24;"></i> 회차 퀵 필터 바로가기
+                        </span>
+                        <span id="confirmedActiveFilterLabel" class="confirmed-filter-active-desc">
+                            ${activeFilter === 'all' ? `전체 회차 (${rounds.length}개)` : `${activeFilter}회차 선택됨`}
+                        </span>
+                    </div>
+                    <button type="button" id="btnConfirmedRoundPickerTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimRoundPickerForConfirmed && window.openSlimRoundPickerForConfirmed()" style="padding: 4px 10px; font-size: 0.74rem;">
+                        <i class="fa-solid fa-layer-group text-amber-400"></i>
+                        <span id="confirmedRoundDisplayLabel">${activeFilter === 'all' ? '회차 모달 검색' : activeFilter + '회차'}</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; opacity: 0.6;"></i>
+                    </button>
                 </div>
                 <div class="confirmed-filter-chips-scroller custom-scrollbar">
                     ${chips.join('')}
@@ -29987,11 +30350,7 @@ async function renderConfirmedPurchasesList() {
         const selTarget = document.getElementById('selAdminLedgerTarget');
         if (selTarget) {
             selTarget.onchange = async (e) => {
-                state.adminViewingTarget = e.target.value;
-                state.ledgerFinancialsCache = null;
-                state.confirmedActiveRoundFilter = 'all';
-                await renderConfirmedPurchasesList();
-                if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
+                await changeConfirmedAdminUser(e.target.value);
             };
         }
 
@@ -30607,6 +30966,23 @@ async function changeConfirmedAdminUser(userId) {
     state.confirmedActiveRoundFilter = 'all';
     const selTarget = document.getElementById('selAdminLedgerTarget');
     if (selTarget) selTarget.value = userId;
+
+    const dispLabel = document.getElementById('confirmedUserDisplayLabel');
+    if (dispLabel) {
+        if (userId === 'all') {
+            dispLabel.textContent = '👥 전체 회원 통합 보기';
+        } else if (userId === 'my') {
+            let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '';
+            if (typeof authId === 'string' && authId.startsWith('{')) {
+                try { authId = JSON.parse(authId).userid || authId; } catch(e) {}
+            }
+            dispLabel.textContent = `👤 내 계정 (${authId})`;
+        } else {
+            const uName = (typeof getUserRealName === 'function') ? getUserRealName(userId) : '';
+            dispLabel.textContent = (uName && uName !== userId) ? `👤 ${userId} (${uName})` : `👤 ${userId}`;
+        }
+    }
+
     await renderConfirmedPurchasesList();
     if (typeof window.renderReviewTab === 'function') window.renderReviewTab();
     showToast(userId === 'all' ? '🌐 전체 회원 통합 구매내역으로 전환되었습니다.' : `👤 [${userId}] 회원의 개별 구매내역으로 전환되었습니다.`);
@@ -31025,6 +31401,11 @@ function filterConfirmedByRound(targetRound) {
             : `${targetRound}회차 선택됨`;
     }
 
+    const roundDisp = document.getElementById('confirmedRoundDisplayLabel');
+    if (roundDisp) {
+        roundDisp.textContent = (targetRound === 'all') ? '회차 모달 검색' : `${targetRound}회차`;
+    }
+
     const cards = document.querySelectorAll('.confirmed-round-card');
     let matchedCard = null;
     cards.forEach(card => {
@@ -31091,6 +31472,68 @@ function toggleConfirmedStats(forceOpen) {
     }
 }
 
+/**
+ * 👤 관리자 구매확정 대상 회원 선택 슬림 모달
+ */
+function openSlimMemberPickerForConfirmed() {
+    if (typeof openSlimMemberPickerModal !== 'function') return;
+    const curTarget = state.adminViewingTarget || 'my';
+    const allUnifiedUsers = (typeof getAllUnifiedRegisteredUsers === 'function') ? getAllUnifiedRegisteredUsers() : [];
+    const validUnifiedUsers = allUnifiedUsers.filter(u => {
+        if (!u || !u.id) return false;
+        const clean = (u.id || '').trim().toLowerCase();
+        if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || isSystemOrDummyUser(clean)) return false;
+        return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
+    });
+
+    openSlimMemberPickerModal({
+        currentUserId: curTarget,
+        includeAll: true,
+        allCardLabel: '👥 전체 회원 통합 보기',
+        allCardSub: '등록된 모든 회원의 구매내역 및 지출 집계를 한번에 확인합니다.',
+        title: '구매확정 회원 선택',
+        subtitle: '조회할 회원을 선택하면 해당 회원의 구매 확정 영수증 및 손익 현황으로 전환됩니다.',
+        customUserList: validUnifiedUsers,
+        onSelect: (userObj, userId) => {
+            changeConfirmedAdminUser(userId);
+        }
+    });
+}
+
+/**
+ * 🎯 구매확정 회차 선택 슬림 모달
+ */
+function openSlimRoundPickerForConfirmed() {
+    if (typeof openSlimRoundPickerModal !== 'function') return;
+    const curRound = state.confirmedActiveRoundFilter || 'all';
+    const roundChips = document.querySelectorAll('.confirmed-filter-chip');
+    const availableRounds = [];
+    roundChips.forEach(c => {
+        const r = c.getAttribute('data-round-filter');
+        if (r && r !== 'all') {
+            const num = parseInt(r, 10);
+            if (!isNaN(num) && !availableRounds.includes(num)) availableRounds.push(num);
+        }
+    });
+    availableRounds.sort((a, b) => b - a);
+
+    openSlimRoundPickerModal({
+        currentRound: curRound === 'all' ? null : parseInt(curRound, 10),
+        includeAllRounds: true,
+        allRoundsLabel: '전체 회차 통합 보기',
+        availableRounds: availableRounds.length > 0 ? availableRounds : undefined,
+        title: '구매확정 회차 선택',
+        subtitle: '확인할 회차를 선택하면 해당 회차 영수증으로 즉시 필터링됩니다.',
+        onSelect: (selectedRound) => {
+            if (selectedRound === null || selectedRound === 'all') {
+                filterConfirmedByRound('all');
+            } else {
+                filterConfirmedByRound(selectedRound);
+            }
+        }
+    });
+}
+
 if (typeof window !== 'undefined') {
     window.renderConfirmedPurchasesList = renderConfirmedPurchasesList;
     window.openWinningHistoryModal = openWinningHistoryModal;
@@ -31105,6 +31548,8 @@ if (typeof window !== 'undefined') {
     window.toggleAllConfirmedRounds = toggleAllConfirmedRounds;
     window.filterConfirmedByRound = filterConfirmedByRound;
     window.toggleConfirmedStats = toggleConfirmedStats;
+    window.openSlimMemberPickerForConfirmed = openSlimMemberPickerForConfirmed;
+    window.openSlimRoundPickerForConfirmed = openSlimRoundPickerForConfirmed;
 }
 
 // ============================================================
@@ -31504,6 +31949,14 @@ if (typeof window !== 'undefined') {
         if (typeof toggleConfirmedStats !== 'undefined') {
             __exports.toggleConfirmedStats = toggleConfirmedStats;
             if (typeof window !== 'undefined') window.toggleConfirmedStats = toggleConfirmedStats;
+        }
+        if (typeof openSlimMemberPickerForConfirmed !== 'undefined') {
+            __exports.openSlimMemberPickerForConfirmed = openSlimMemberPickerForConfirmed;
+            if (typeof window !== 'undefined') window.openSlimMemberPickerForConfirmed = openSlimMemberPickerForConfirmed;
+        }
+        if (typeof openSlimRoundPickerForConfirmed !== 'undefined') {
+            __exports.openSlimRoundPickerForConfirmed = openSlimRoundPickerForConfirmed;
+            if (typeof window !== 'undefined') window.openSlimRoundPickerForConfirmed = openSlimRoundPickerForConfirmed;
         }
         if (typeof openDonghangVerifyModal !== 'undefined') {
             __exports.openDonghangVerifyModal = openDonghangVerifyModal;

@@ -572,6 +572,14 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                 }
             });
 
+            let currentLabel = '👑 관리자 본인';
+            if (effectiveUserId === 'all') {
+                currentLabel = '🌐 전체 회원 종합';
+            } else if (effectiveUserId.toLowerCase() !== cleanAuth) {
+                const foundU = userList.find(u => (u.id || '').toLowerCase().trim() === effectiveUserId.toLowerCase());
+                currentLabel = foundU ? `👤 ${(foundU.name || foundU.realName || foundU.id)} (${foundU.id})` : `👤 ${effectiveUserId}`;
+            }
+
             adminBarContainer.innerHTML = `
                 <div class="generator-admin-bar" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; max-width: 100%; box-sizing: border-box; overflow: hidden;">
                     <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 220px;">
@@ -582,8 +590,13 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                         </div>
                     </div>
                     <div class="generator-admin-select-wrapper" style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; max-width: 100%; box-sizing: border-box;">
-                        <label for="generatorAdminUserSelect" style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;">회원 선택:</label>
-                        <select id="generatorAdminUserSelect" onchange="window.changeGeneratorAdminViewingUser && window.changeGeneratorAdminViewingUser(this.value)" style="background: #0f172a; border: 1px solid #f59e0b; color: #fff; padding: 4px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; outline: none; max-width: 100%; min-width: 0; flex: 1; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; box-sizing: border-box;">
+                        <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;"><i class="fa-solid fa-users"></i> 회원 선택:</label>
+                        <button type="button" id="btnGeneratorUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForGenerator && window.openSlimMemberPickerForGenerator()" style="flex: 1; min-width: 0;">
+                            <i class="fa-solid fa-user-check" style="color: #fbbf24; font-size: 0.75rem; flex-shrink: 0;"></i>
+                            <span id="generatorUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 700;">${currentLabel}</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto; flex-shrink: 0;"></i>
+                        </button>
+                        <select id="generatorAdminUserSelect" onchange="window.changeGeneratorAdminViewingUser && window.changeGeneratorAdminViewingUser(this.value)" style="display: none;">
                             ${userOptions}
                         </select>
                     </div>
@@ -2090,10 +2103,43 @@ export function changeGeneratorAdminViewingUser(userId) {
             window.renderQuickViewContent();
         }
     }
+    const labelEl = document.getElementById('generatorUserDisplayLabel');
+    if (labelEl) {
+        if (userId === 'all') {
+            labelEl.innerText = '🌐 전체 회원 종합';
+        } else {
+            let uName = userId;
+            if (Array.isArray(state.allRegisteredUsersList)) {
+                const f = state.allRegisteredUsersList.find(u => (u.id || '').toLowerCase() === userId.toLowerCase());
+                if (f) uName = `${f.name || f.realName || f.id} (${f.id})`;
+            }
+            labelEl.innerText = `👤 ${uName}`;
+        }
+    }
     showToast(`👑 [${userId === 'all' ? '전체 회원 종합' : userId}] 모드로 즉시 전환되었습니다.`);
 }
 
+export function openSlimMemberPickerForGenerator() {
+    if (typeof window.openSlimMemberPickerModal === 'function') {
+        const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        const curUser = (typeof selectedAdminViewingUser !== 'undefined' && selectedAdminViewingUser) || (typeof generatorAdminViewingUser !== 'undefined' && generatorAdminViewingUser) || rawAuth || 'all';
+        window.openSlimMemberPickerModal({
+            title: '추천번호 조회 대상 회원 선택',
+            subtitle: 'AI 맞춤 추천번호(10조합)를 확인할 회원을 검색 및 선택하세요.',
+            selectedUserId: curUser,
+            includeAll: true,
+            onSelect: (user) => {
+                const uId = (typeof user === 'string') ? user : (user.id || user.userId || 'all');
+                if (window.changeGeneratorAdminViewingUser) {
+                    window.changeGeneratorAdminViewingUser(uId);
+                }
+            }
+        });
+    }
+}
+
 if (typeof window !== 'undefined') {
+    window.openSlimMemberPickerForGenerator = openSlimMemberPickerForGenerator;
     window.render7AlgorithmsRealReviewSection = render7AlgorithmsRealReviewSection;
     window.compute7AlgorithmsRealStats = compute7AlgorithmsRealStats;
     window.toggleAlgoReviewMainCollapse = toggleAlgoReviewMainCollapse;

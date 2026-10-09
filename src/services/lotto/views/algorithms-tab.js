@@ -609,6 +609,14 @@ export async function renderAlgorithmsTab(fromRound = null) {
             }
         });
 
+        let algoUserLabel = '🌐 전체 회원 종합 (기본)';
+        if (effectiveUserId === authId) {
+            algoUserLabel = `👑 관리자 본인 (${authId})`;
+        } else if (effectiveUserId !== 'all') {
+            const foundU = userList.find(u => (u.id || '').toLowerCase().trim() === effectiveUserId.toLowerCase());
+            algoUserLabel = foundU ? `👤 ${(foundU.name || foundU.realName || foundU.id)} (${foundU.id})` : `👤 ${effectiveUserId}`;
+        }
+
         adminUserSelectHtml = `
             <div class="algo-admin-bar" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(245, 158, 11, 0.45); border-radius: 12px; padding: 10px 14px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; max-width: 100%; box-sizing: border-box; overflow: hidden;">
                 <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 220px;">
@@ -619,8 +627,13 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     </div>
                 </div>
                 <div class="algo-admin-select-wrapper" style="display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 auto; max-width: 100%; box-sizing: border-box;">
-                    <label for="algoAdminUserSelect" style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;">조회 대상:</label>
-                    <select id="algoAdminUserSelect" onchange="window.changeAlgoAdminViewingUser && window.changeAlgoAdminViewingUser(this.value)" style="background: #0f172a; border: 1px solid #f59e0b; color: #fff; padding: 5px 8px; border-radius: 6px; font-size: 0.78rem; font-weight: 700; cursor: pointer; outline: none; max-width: 100%; min-width: 0; flex: 1; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; box-sizing: border-box;">
+                    <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;"><i class="fa-solid fa-users"></i> 조회 대상:</label>
+                    <button type="button" id="btnAlgoUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForAlgo && window.openSlimMemberPickerForAlgo()" style="flex: 1; min-width: 0;">
+                        <i class="fa-solid fa-user-check" style="color: #fbbf24; font-size: 0.75rem; flex-shrink: 0;"></i>
+                        <span id="algoUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 700;">${algoUserLabel}</span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto; flex-shrink: 0;"></i>
+                    </button>
+                    <select id="algoAdminUserSelect" onchange="window.changeAlgoAdminViewingUser && window.changeAlgoAdminViewingUser(this.value)" style="display: none;">
                         ${userOptions}
                     </select>
                 </div>
@@ -835,8 +848,13 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     
                     <!-- 회차 범위 셀렉터 -->
                     <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
-                        <label for="algoReviewStartRoundSelect" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; white-space: nowrap;">집계 시작 회차:</label>
-                        <select id="algoReviewStartRoundSelect" onchange="window.changeAlgoReviewStartRound && window.changeAlgoReviewStartRound(this.value)" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); color: #fbbf24; padding: 4px 8px; border-radius: 6px; font-size: 0.76rem; font-weight: 700; cursor: pointer;">
+                        <label style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; white-space: nowrap;">집계 시작 회차:</label>
+                        <button type="button" id="btnAlgoRoundTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimRoundPickerForAlgo && window.openSlimRoundPickerForAlgo()" style="min-width: 140px;">
+                            <i class="fa-solid fa-calendar-check" style="color: #fbbf24; font-size: 0.75rem;"></i>
+                            <span id="algoRoundDisplayLabel" style="font-size: 0.76rem; font-weight: 700; color: #fbbf24;">${currentAlgoStartRound === 1 ? '제 1회부터 전체 전수' : `제 ${currentAlgoStartRound}회부터 누적`}</span>
+                            <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto;"></i>
+                        </button>
+                        <select id="algoReviewStartRoundSelect" onchange="window.changeAlgoReviewStartRound && window.changeAlgoReviewStartRound(this.value)" style="display: none;">
                             <option value="1235" ${currentAlgoStartRound === 1235 ? 'selected' : ''}>제 1235회부터 누적 (실제 발급 이력)</option>
                             <option value="1230" ${currentAlgoStartRound === 1230 ? 'selected' : ''}>제 1230회부터 누적</option>
                             <option value="1220" ${currentAlgoStartRound === 1220 ? 'selected' : ''}>제 1220회부터 누적</option>
@@ -1080,8 +1098,49 @@ export function changeAlgoReviewStartRound(roundVal) {
     }
 }
 
+export function openSlimMemberPickerForAlgo() {
+    if (typeof window.openSlimMemberPickerModal === 'function') {
+        const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+        const curUser = (typeof algoAdminViewingUser !== 'undefined' && algoAdminViewingUser) || rawAuth || 'all';
+        window.openSlimMemberPickerModal({
+            title: '7대 알고리즘 조회 대상 회원 선택',
+            subtitle: '누적 추천 및 당첨 실적을 확인할 회원을 검색 및 선택하세요.',
+            selectedUserId: curUser,
+            includeAll: true,
+            onSelect: (user) => {
+                const uId = (typeof user === 'string') ? user : (user.id || user.userId || 'all');
+                if (window.changeAlgoAdminViewingUser) {
+                    window.changeAlgoAdminViewingUser(uId);
+                }
+            }
+        });
+    }
+}
+
+export function openSlimRoundPickerForAlgo() {
+    if (typeof window.openSlimRoundPickerModal === 'function') {
+        const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1243);
+        window.openSlimRoundPickerModal({
+            title: '알고리즘 누적 집계 시작 회차 선택',
+            subtitle: '7대 알고리즘 적중 실적의 집계 기준 시작 회차를 선택하세요.',
+            selectedRound: currentAlgoStartRound,
+            minRound: 1,
+            maxRound: maxR,
+            includeAllRounds: false,
+            onSelect: (roundNum) => {
+                const r = parseInt(roundNum);
+                if (window.changeAlgoReviewStartRound) {
+                    window.changeAlgoReviewStartRound(r);
+                }
+            }
+        });
+    }
+}
+
 if (typeof window !== 'undefined') {
     window.renderAlgorithmsTab = renderAlgorithmsTab;
+    window.openSlimMemberPickerForAlgo = openSlimMemberPickerForAlgo;
+    window.openSlimRoundPickerForAlgo = openSlimRoundPickerForAlgo;
     window.changeAlgoAdminViewingUser = changeAlgoAdminViewingUser;
     window.resetAlgoAdminViewingUser = resetAlgoAdminViewingUser;
     window.toggleAlgoSpecDetail = toggleAlgoSpecDetail;
