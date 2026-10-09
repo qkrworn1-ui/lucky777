@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1242.55 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1244.51 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.1242.55)
+ * Lucky777 Smart Bundle (v2026.10.09.1244.51)
  */
 
 
@@ -24699,9 +24699,9 @@ function openSlimRoundPickerForAlgo() {
         const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1243);
         window.openSlimRoundPickerModal({
             title: '알고리즘 누적 집계 시작 회차 선택',
-            subtitle: '7대 알고리즘 적중 실적의 집계 기준 시작 회차를 선택하세요.',
-            selectedRound: currentAlgoStartRound,
-            minRound: 1,
+            subtitle: '7대 알고리즘 적중 실적의 집계 기준 시작 회차를 선택하세요 (1235회~).',
+            selectedRound: currentAlgoStartRound || 1235,
+            minRound: 1235,
             maxRound: maxR,
             includeAllRounds: false,
             onSelect: (roundNum) => {
