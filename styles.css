@@ -19362,25 +19362,31 @@ body.is-admin .btn-snapshot-audit-compact {
     box-sizing: border-box;
 }
 
+/* 🔮 [황금구매가이드 위젯 리디자인] 48px 고정 2단 스마트 밸런스형 & 사주 애니메이션 */
 .fortune-toggle-bar {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.92) 0%, rgba(15, 23, 42, 0.98) 100%);
-    border: 1px solid rgba(245, 158, 11, 0.35);
+    height: 48px !important;
+    min-height: 48px !important;
+    max-height: 48px !important;
+    box-sizing: border-box !important;
+    padding: 3px 10px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+    border: 1.5px solid rgba(245, 158, 11, 0.45);
     border-radius: 12px;
-    padding: 10px 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    gap: 10px;
+    overflow: hidden !important;
     user-select: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    gap: 6px;
+    transition: all 0.2s ease;
 }
 
 .fortune-toggle-bar:hover {
-    border-color: rgba(245, 158, 11, 0.6);
-    background: linear-gradient(135deg, rgba(40, 53, 76, 0.95) 0%, rgba(19, 29, 52, 0.98) 100%);
-    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);
+    border-color: rgba(245, 158, 11, 0.7);
+    background: linear-gradient(135deg, rgba(40, 53, 76, 0.98) 0%, rgba(19, 29, 52, 1) 100%);
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);
 }
 
 .fortune-toggle-bar.expanded {
@@ -19390,32 +19396,95 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 
 .fortune-toggle-bar.analyzed {
-    border-color: rgba(16, 185, 129, 0.35);
+    border-color: rgba(16, 185, 129, 0.4);
 }
 
 .fortune-toggle-bar.analyzed:hover {
-    border-color: rgba(16, 185, 129, 0.6);
-    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.15);
+    border-color: rgba(16, 185, 129, 0.7);
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.2);
 }
 
+/* 2단 스마트 밸런스형 컨테이너 (Row 1: 수호신+타이틀+점수 / Row 2: 길일+길시) */
 .fortune-toggle-left {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
     min-width: 0;
     flex: 1;
+    overflow: hidden;
+}
+
+.fortune-toggle-grid-wrap {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+}
+
+.fortune-grid-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 18px;
+    line-height: 18px;
+    min-width: 0;
+}
+
+.fortune-grid-row-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 18px;
+    line-height: 18px;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding-top: 1px;
+    min-width: 0;
+    gap: 8px;
+}
+
+/* 🐉 5행 수호신 & 횡재 보주 */
+.fortune-mascot-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    flex-shrink: 0;
+}
+
+.fortune-mascot-emoji {
+    font-size: 0.76rem;
+    display: inline-block;
+    animation: mascotBreathePulse 2.4s ease-in-out infinite;
+    user-select: none;
+}
+
+.fortune-mascot-orb {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 0.55rem;
+    animation: orbOrbitVivid 3.5s linear infinite;
+    pointer-events: none;
 }
 
 .fortune-toggle-badge {
-    font-size: 0.8rem;
+    font-size: 0.68rem;
     font-weight: 800;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
     white-space: nowrap;
-    padding: 2px 8px;
-    border-radius: 6px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    flex-shrink: 0;
 }
 
 .fortune-toggle-badge.badge-pending {
@@ -19425,80 +19494,97 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 
 .fortune-toggle-badge.badge-analyzed {
-    background: rgba(16, 185, 129, 0.18);
-    border: 1px solid rgba(16, 185, 129, 0.4);
-    color: #34d399;
-}
-
-.fortune-quick-pills {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.fortune-mini-pill {
-    font-size: 0.73rem;
-    color: #cbd5e1;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 2px 8px;
-    border-radius: 6px;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-}
-
-.fortune-mini-pill strong {
-    font-weight: 700;
-}
-
-.fortune-mini-pill.pill-gold {
-    background: rgba(245, 158, 11, 0.1);
-    border-color: rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.4);
     color: #fde68a;
 }
-.fortune-mini-pill.pill-gold strong { color: #fbbf24; }
 
-.fortune-mini-pill.pill-time {
-    background: rgba(99, 102, 241, 0.1);
-    border-color: rgba(99, 102, 241, 0.3);
-    color: #c7d2fe;
-}
-.fortune-mini-pill.pill-time strong { color: #818cf8; }
-
-.fortune-mini-pill.pill-score {
-    background: rgba(251, 191, 36, 0.12);
-    border-color: rgba(251, 191, 36, 0.35);
-    color: #fef08a;
-}
-.fortune-mini-pill.pill-score strong { color: #fbbf24; }
-
-.fortune-toggle-right {
+.fortune-mini-stem {
+    font-size: 0.68rem;
+    font-weight: 800;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1px 5px;
+    border-radius: 4px;
+    white-space: nowrap;
     flex-shrink: 0;
 }
 
+.fortune-mini-pill {
+    font-size: 0.68rem;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 1px 6px;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    white-space: nowrap;
+}
+
+.fortune-mini-pill.pill-score {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.4);
+    color: #fef08a;
+    font-weight: 800;
+}
+.fortune-mini-pill.pill-score strong { color: #fbbf24; }
+
+/* 2행 길일 & 길시 텍스트 */
+.fortune-row-day, .fortune-row-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.fortune-row-day {
+    color: #fde68a;
+    font-weight: 700;
+}
+.fortune-row-day strong {
+    color: #fbbf24;
+    font-weight: 800;
+}
+.fortune-row-time {
+    color: #cbd5e1;
+    font-weight: 700;
+}
+.fortune-row-time strong {
+    color: #c7d2fe;
+    font-weight: 800;
+}
+
+.fortune-toggle-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    padding-left: 2px;
+}
+
 .btn-toggle-fortune-view {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.18);
     color: #e2e8f0;
-    padding: 5px 12px;
-    border-radius: 7px;
-    font-size: 0.76rem;
+    padding: 3px 7px;
+    border-radius: 6px;
+    font-size: 0.68rem;
     font-weight: 800;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 4px;
     transition: all 0.15s ease;
     white-space: nowrap;
 }
 
 .btn-toggle-fortune-view:hover {
-    background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.28);
-    color: #ffffff;
+    background: rgba(40, 53, 76, 1);
+    border-color: #f59e0b;
+    color: #fbbf24;
 }
 
 .fortune-collapsible-content {
@@ -19511,22 +19597,107 @@ body.is-admin .btn-snapshot-audit-compact {
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
 }
 
+/* 🔔 [독립 미니 알림 위젯] 알림 미설정 사용자 전용 슬림 배너 */
+.fortune-push-mini-banner {
+    margin-top: 6px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.92) 100%);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    border-radius: 10px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.3s ease;
+}
+
+.fortune-push-mini-banner .mini-bell-icon {
+    font-size: 0.85rem;
+    display: inline-block;
+    animation: miniBellRing 2.4s infinite;
+}
+
+.fortune-push-mini-banner .mini-banner-text {
+    font-size: 0.72rem;
+    color: #fde68a;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fortune-push-mini-banner .btn-mini-push-enable {
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #111827;
+    font-size: 0.68rem;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: transform 0.15s ease;
+}
+.fortune-push-mini-banner .btn-mini-push-enable:hover {
+    filter: brightness(1.1);
+}
+.fortune-push-mini-banner .btn-mini-push-enable:active {
+    transform: scale(0.96);
+}
+
+.fortune-push-mini-banner .btn-mini-push-close {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0 3px;
+    line-height: 1;
+}
+.fortune-push-mini-banner .btn-mini-push-close:hover {
+    color: #cbd5e1;
+}
+
+/* 🌟 키프레임 애니메이션 */
+@keyframes mascotBreathePulse {
+    0%, 100% { transform: translateY(0) scale(1); filter: drop-shadow(0 0 3px #10b981); }
+    50% { transform: translateY(-1.5px) scale(1.15); filter: drop-shadow(0 0 8px #10b981) drop-shadow(0 0 5px #fbbf24); }
+}
+
+@keyframes orbOrbitVivid {
+    0% { transform: rotate(0deg) translateX(10px) rotate(0deg) scale(0.9); }
+    50% { transform: rotate(180deg) translateX(10px) rotate(-180deg) scale(1.2); filter: drop-shadow(0 0 4px #fbbf24); }
+    100% { transform: rotate(360deg) translateX(10px) rotate(-360deg) scale(0.9); }
+}
+
+@keyframes calendarSwing {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-7deg); }
+    75% { transform: rotate(7deg); }
+}
+
+@keyframes clockPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); filter: drop-shadow(0 0 4px #818cf8); }
+}
+
+@keyframes miniBellRing {
+    0%, 100% { transform: rotate(0deg); }
+    20% { transform: rotate(16deg) scale(1.1); }
+    40% { transform: rotate(-16deg) scale(1.1); }
+    60% { transform: rotate(10deg); }
+    80% { transform: rotate(-10deg); }
+}
+
+@keyframes goldShimmerBorderLine {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 @media (max-width: 640px) {
     .fortune-toggle-bar {
-        padding: 8px 10px;
-        gap: 6px;
-    }
-    .fortune-toggle-badge {
-        font-size: 0.74rem;
-        padding: 2px 6px;
-    }
-    .fortune-mini-pill {
-        font-size: 0.68rem;
-        padding: 2px 6px;
-    }
-    .btn-toggle-fortune-view {
-        padding: 4px 8px;
-        font-size: 0.72rem;
+        padding: 3px 8px !important;
     }
     .fortune-collapsible-content {
         padding: 12px 14px;

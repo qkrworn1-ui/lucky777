@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1747.53 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1818 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.1747.53)
+ * Lucky777 Smart Bundle (v2026.10.09.1818)
  */
 
 
@@ -10506,6 +10506,11 @@ const PushClient = {
         }
         if (lpMobilePushBtn) {
             lpMobilePushBtn.title = isSubscribed ? '길시 1시간 전 알림 수신 중 (클릭 시 관리/테스트)' : '길시 1시간 전 맞춤 알림 신청';
+        }
+
+        // 🔔 홈화면 황금구매가이드 독립 미니 알림 위젯 상태 동기화
+        if (typeof window !== 'undefined' && typeof window.renderPushNotificationMiniWidget === 'function') {
+            try { window.renderPushNotificationMiniWidget(); } catch(e) {}
         }
     },
 
@@ -33795,16 +33800,23 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
         const defaultDateValue = (birthDate && birthDate !== 'null' && birthDate !== 'undefined') ? birthDate : '1990-01-01';
 
         summaryLeftHtml = `
-            <span class="fortune-toggle-badge badge-pending">
-                <i class="fa-solid fa-compass"></i> 사주명리학 횡재수 분석
-            </span>
-            <div class="fortune-quick-pills">
-                <span class="fortune-mini-pill" style="color: #94a3b8;">
-                    <i class="fa-regular fa-calendar" style="color: #fbbf24;"></i> 생년월일 미입력
-                </span>
-                <span class="fortune-mini-pill pill-gold">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> 제 ${currentRound}회 맞춤 구매 길시 & 요일 확인
-                </span>
+            <div class="fortune-toggle-grid-wrap">
+                <div class="fortune-grid-row-top">
+                    <div style="display:flex; align-items:center; gap:5px; min-width:0;">
+                        <span class="fortune-mascot-wrap"><span class="fortune-mascot-emoji">🔮</span></span>
+                        <span class="fortune-toggle-badge badge-pending">
+                            <i class="fa-solid fa-compass"></i> 사주명리 횡재수 분석
+                        </span>
+                    </div>
+                </div>
+                <div class="fortune-grid-row-bottom">
+                    <span style="font-size:0.71rem; color:#94a3b8; display:flex; align-items:center; gap:4px;">
+                        <i class="fa-regular fa-calendar" style="color:#fbbf24;"></i> 생년월일 미입력
+                    </span>
+                    <span style="font-size:0.71rem; color:#fbbf24; font-weight:700; display:flex; align-items:center; gap:4px;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 제 ${currentRound}회 맞춤 길시 확인
+                    </span>
+                </div>
             </div>
         `;
 
@@ -33892,23 +33904,52 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
         const s = profile.stem;
         const calLabel = calendarType === 'lunar' ? '음력' : '양력';
 
+        // 🐉 5행 수호신 & 횡재 보주 연동
+        const sajuGuardians = {
+            wood: { emoji: '🐉', name: '청룡', color: '#34d399' },
+            fire: { emoji: '🦅', name: '주작', color: '#f87171' },
+            earth: { emoji: '🐸', name: '금섬', color: '#fbbf24' },
+            metal: { emoji: '🐯', name: '백호', color: '#e2e8f0' },
+            water: { emoji: '🐟', name: '황금잉어', color: '#60a5fa' }
+        };
+        const guardian = sajuGuardians[s.element] || sajuGuardians.wood;
+        const isPeak = (profile.fortuneScore >= 95);
+        const timeSlotClean = s.timeSlot1 ? s.timeSlot1.replace(/\(.*?\)/g, '').trim() : '15:30~17:30';
+
         summaryLeftHtml = `
-            <span class="fortune-toggle-badge badge-analyzed">
-                <i class="fa-solid fa-wand-magic-sparkles"></i> 황금 구매 가이드
-            </span>
-            <div class="fortune-quick-pills">
-                <span class="fortune-mini-pill">
-                    <strong style="color:#34d399;">${s.name}</strong> (${s.elementKo.split(' ')[0]})
-                </span>
-                <span class="fortune-mini-pill pill-gold">
-                    <i class="fa-solid fa-calendar-check" style="color:#fbbf24;"></i> 1순위 <strong>${s.primaryDay}</strong>
-                </span>
-                <span class="fortune-mini-pill pill-time">
-                    <i class="fa-solid fa-clock" style="color:#818cf8;"></i> <strong>${s.timeSlot1.split(' ')[0]}</strong>
-                </span>
-                <span class="fortune-mini-pill pill-score">
-                    <i class="fa-solid fa-star" style="color:#fbbf24;"></i> <strong>${profile.fortuneScore}점</strong>
-                </span>
+            <div class="fortune-toggle-grid-wrap">
+                <!-- 1행: 수호신 마스코트 + 황금가이드 뱃지 + 본원 일간 | 횡재수 점수 -->
+                <div class="fortune-grid-row-top">
+                    <div style="display:flex; align-items:center; gap:5px; min-width:0;">
+                        <div class="fortune-mascot-wrap" title="${s.name} 본원 수호신: ${guardian.name}">
+                            <span class="fortune-mascot-emoji">${guardian.emoji}</span>
+                            ${isPeak ? '<span class="fortune-mascot-orb">🔮</span>' : ''}
+                        </div>
+                        <span class="fortune-toggle-badge badge-analyzed">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> 황금가이드
+                        </span>
+                        <span class="fortune-mini-stem" style="color:${guardian.color};">
+                            ${s.name.split(' ')[0]}
+                        </span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                        <span class="fortune-mini-pill pill-score">
+                            <i class="fa-solid fa-star" style="color:#fbbf24;"></i> <strong>${profile.fortuneScore}점</strong>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 2행: 1순위 구매 길일 | 황금 구매 길시 (글자 겹침 0% 완전 노출) -->
+                <div class="fortune-grid-row-bottom">
+                    <div class="fortune-row-day">
+                        <i class="fa-solid fa-calendar-check fortune-anim-calendar" style="color:#fbbf24;"></i>
+                        <span>1순위: <strong>${s.primaryDay}</strong></span>
+                    </div>
+                    <div class="fortune-row-time">
+                        <i class="fa-solid fa-clock fortune-anim-clock" style="color:#818cf8;"></i>
+                        <span>길시: <strong>${timeSlotClean}</strong></span>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -34070,10 +34111,7 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
                 <div class="fortune-toggle-left">
                     ${summaryLeftHtml}
                 </div>
-                <div class="fortune-toggle-right" style="display:flex; align-items:center; gap:6px;">
-                    <button type="button" class="btn-fortune-push-quick" onclick="event.stopPropagation(); window.handlePushNotificationToggle && window.handlePushNotificationToggle();" style="padding:4px 9px; border-radius:6px; background:rgba(245, 158, 11, 0.2); border:1px solid #f59e0b; color:#fbbf24; font-size:0.72rem; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:4px; transition:transform 0.15s ease;" title="사주 길시 1시간 전 알림 신청">
-                        <i class="fa-solid fa-bell"></i> <span>알림신청</span>
-                    </button>
+                <div class="fortune-toggle-right">
                     <button type="button" class="btn-toggle-fortune-view" onclick="event.stopPropagation(); window.toggleFortuneAdvisorAccordion && window.toggleFortuneAdvisorAccordion();">
                         <span class="fortune-toggle-btn-text">${isExpanded ? '접기' : (shouldShowInput ? '입력하기' : '상세보기')}</span>
                         <i class="fa-solid ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} fortune-toggle-icon"></i>
@@ -34086,12 +34124,22 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
                 ${detailedContentHtml}
             </div>
         </div>
+
+        <!-- 🔔 [독립 미니 알림 위젯] 알림 미설정 사용자 전용 독립 슬림 위젯 -->
+        <div class="fortune-push-mini-wrap" style="display:none;"></div>
     `;
 
     // 모든 대상 컨테이너(랜딩 페이지 대시보드 및 통계분석 탭 대시보드)에 일괄 반영
     targets.forEach(el => {
         el.innerHTML = finalHtml;
     });
+
+    // 🔔 알림 미설정 사용자 전용 독립 미니 위젯 렌더링
+    if (typeof renderPushNotificationMiniWidget === 'function') {
+        renderPushNotificationMiniWidget();
+    } else if (typeof window !== 'undefined' && typeof window.renderPushNotificationMiniWidget === 'function') {
+        window.renderPushNotificationMiniWidget();
+    }
 }
 
 /**
@@ -34183,11 +34231,89 @@ async function saveAndApplyDashboardBirthDate(triggerBtn) {
     }
 }
 
+/**
+ * 🔔 [독립 미니 알림 위젯] 알림 미설정 사용자 대상 슬림 알림 위젯 동적 렌더링
+ */
+async function renderPushNotificationMiniWidget() {
+    const miniWraps = document.querySelectorAll('.fortune-push-mini-wrap');
+    if (!miniWraps.length) return;
+
+    // 세션 중 닫기를 누른 경우 숨김 유지
+    try {
+        if (typeof SafeStorage !== 'undefined' && SafeStorage.getItem('lucky777_push_mini_dismissed') === 'true') {
+            miniWraps.forEach(w => { w.style.display = 'none'; w.innerHTML = ''; });
+            return;
+        }
+    } catch(e) {}
+
+    let isSubscribed = false;
+    try {
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            if (typeof SafeLocalStorage !== 'undefined' && SafeLocalStorage.getItem('lucky777_push_subscribed') === 'true') {
+                isSubscribed = true;
+            } else if (typeof window !== 'undefined' && window.PushClient && typeof window.PushClient.getSubscription === 'function') {
+                const sub = await window.PushClient.getSubscription();
+                if (sub) {
+                    isSubscribed = true;
+                    if (typeof SafeLocalStorage !== 'undefined') {
+                        SafeLocalStorage.setItem('lucky777_push_subscribed', 'true');
+                    }
+                }
+            }
+        }
+    } catch(e) {}
+
+    if (isSubscribed) {
+        miniWraps.forEach(w => {
+            w.style.display = 'none';
+            w.innerHTML = '';
+        });
+        return;
+    }
+
+    const miniHtml = `
+        <div class="fortune-push-mini-banner">
+            <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
+                <span class="mini-bell-icon">🔔</span>
+                <span class="mini-banner-text">길시 1시간 전 스마트폰 알림 받기</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                <button type="button" class="btn-mini-push-enable" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" title="길시 1시간 전 알림 받기">알림 켜기</button>
+                <button type="button" class="btn-mini-push-close" onclick="window.dismissPushMiniWidget && window.dismissPushMiniWidget();" title="닫기">✕</button>
+            </div>
+        </div>
+    `;
+
+    miniWraps.forEach(w => {
+        w.style.display = 'block';
+        w.innerHTML = miniHtml;
+    });
+}
+
+/**
+ * 🔔 독립 미니 알림 위젯 닫기 핸들러
+ */
+function dismissPushMiniWidget() {
+    try {
+        if (typeof SafeStorage !== 'undefined') {
+            SafeStorage.setItem('lucky777_push_mini_dismissed', 'true');
+        }
+    } catch(e) {}
+    const miniWraps = document.querySelectorAll('.fortune-push-mini-wrap');
+    miniWraps.forEach(w => {
+        w.style.display = 'none';
+        w.innerHTML = '';
+    });
+}
+
 if (typeof window !== 'undefined') {
     window.renderFortuneAdvisorCard = renderFortuneAdvisorCard;
     window.saveAndApplyDashboardBirthDate = saveAndApplyDashboardBirthDate;
     window.toggleFortuneAdvisorAccordion = toggleFortuneAdvisorAccordion;
+    window.renderPushNotificationMiniWidget = renderPushNotificationMiniWidget;
+    window.dismissPushMiniWidget = dismissPushMiniWidget;
 }
+
 
 
 
@@ -34206,6 +34332,14 @@ if (typeof window !== 'undefined') {
         if (typeof saveAndApplyDashboardBirthDate !== 'undefined') {
             __exports.saveAndApplyDashboardBirthDate = saveAndApplyDashboardBirthDate;
             if (typeof window !== 'undefined') window.saveAndApplyDashboardBirthDate = saveAndApplyDashboardBirthDate;
+        }
+        if (typeof renderPushNotificationMiniWidget !== 'undefined') {
+            __exports.renderPushNotificationMiniWidget = renderPushNotificationMiniWidget;
+            if (typeof window !== 'undefined') window.renderPushNotificationMiniWidget = renderPushNotificationMiniWidget;
+        }
+        if (typeof dismissPushMiniWidget !== 'undefined') {
+            __exports.dismissPushMiniWidget = dismissPushMiniWidget;
+            if (typeof window !== 'undefined') window.dismissPushMiniWidget = dismissPushMiniWidget;
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/services/lotto/views/dashboard-tab.js]:', modErr);

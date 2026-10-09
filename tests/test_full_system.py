@@ -3832,6 +3832,59 @@ Lotto 6/45
             res = subprocess.run([node_bin, '-e', js_script], capture_output=True, text=True)
             self.assertEqual(res.returncode, 0, f"Node test 110 failed: {res.stderr or res.stdout}")
 
+    def test_111_fortune_guide_smart_2row_layout_and_mini_push_widget(self):
+        """Test 111: Verify Golden Purchase Guide 48px 2-row smart balanced layout and independent mini push widget."""
+        # 1. Verify styles.css
+        styles_path = os.path.join(self.root_dir, 'styles.css')
+        with open(styles_path, 'r', encoding='utf-8') as f:
+            styles_code = f.read()
+
+        self.assertIn('.fortune-toggle-bar', styles_code)
+        self.assertIn('height: 48px !important;', styles_code)
+        self.assertIn('.fortune-toggle-grid-wrap', styles_code)
+        self.assertIn('.fortune-grid-row-top', styles_code)
+        self.assertIn('.fortune-grid-row-bottom', styles_code)
+        self.assertIn('.fortune-row-day', styles_code)
+        self.assertIn('.fortune-row-time', styles_code)
+        self.assertIn('.fortune-push-mini-banner', styles_code)
+        self.assertIn('.btn-mini-push-enable', styles_code)
+        self.assertIn('.btn-mini-push-close', styles_code)
+
+        # 2. Verify dashboard-tab.js
+        dash_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'dashboard-tab.js')
+        with open(dash_path, 'r', encoding='utf-8') as f:
+            dash_code = f.read()
+
+        # Notification button removed from collapsed bar
+        self.assertNotIn('btn-fortune-push-quick', dash_code)
+        self.assertIn('btn-toggle-fortune-view', dash_code)
+
+        # 2-Row grid structure and 5-element guardians present
+        self.assertIn('fortune-toggle-grid-wrap', dash_code)
+        self.assertIn('fortune-grid-row-top', dash_code)
+        self.assertIn('fortune-grid-row-bottom', dash_code)
+        self.assertIn('fortune-row-day', dash_code)
+        self.assertIn('fortune-row-time', dash_code)
+        self.assertIn('🐉', dash_code)
+        self.assertIn('🦅', dash_code)
+        self.assertIn('🐸', dash_code)
+        self.assertIn('🐯', dash_code)
+        self.assertIn('🐟', dash_code)
+
+        # Mini push wrapper and handlers
+        self.assertIn('fortune-push-mini-wrap', dash_code)
+        self.assertIn('function renderPushNotificationMiniWidget', dash_code)
+        self.assertIn('function dismissPushMiniWidget', dash_code)
+        self.assertIn('window.renderPushNotificationMiniWidget = renderPushNotificationMiniWidget', dash_code)
+        self.assertIn('window.dismissPushMiniWidget = dismissPushMiniWidget', dash_code)
+
+        # 3. Verify push-client.js synchronization
+        push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
+        with open(push_path, 'r', encoding='utf-8') as f:
+            push_code = f.read()
+
+        self.assertIn('window.renderPushNotificationMiniWidget', push_code)
+
 if __name__ == '__main__':
     unittest.main()
 

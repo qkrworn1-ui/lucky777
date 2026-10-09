@@ -349,6 +349,11 @@ export const PushClient = {
         if (lpMobilePushBtn) {
             lpMobilePushBtn.title = isSubscribed ? '길시 1시간 전 알림 수신 중 (클릭 시 관리/테스트)' : '길시 1시간 전 맞춤 알림 신청';
         }
+
+        // 🔔 홈화면 황금구매가이드 독립 미니 알림 위젯 상태 동기화
+        if (typeof window !== 'undefined' && typeof window.renderPushNotificationMiniWidget === 'function') {
+            try { window.renderPushNotificationMiniWidget(); } catch(e) {}
+        }
     },
 
     /**
