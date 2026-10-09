@@ -1099,8 +1099,12 @@ export function changeAlgoReviewStartRound(roundVal) {
 }
 
 export function openSlimMemberPickerForAlgo() {
+    const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    const cleanAuth = String(rawAuth || '').toLowerCase().trim();
+    const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
+    if (!isAdmin) return;
+
     if (typeof window.openSlimMemberPickerModal === 'function') {
-        const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
         const curUser = (typeof algoAdminViewingUser !== 'undefined' && algoAdminViewingUser) || rawAuth || 'all';
         window.openSlimMemberPickerModal({
             title: '7대 알고리즘 조회 대상 회원 선택',

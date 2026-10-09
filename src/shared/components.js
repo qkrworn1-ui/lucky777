@@ -159,6 +159,23 @@ let _activeMemberCustomList = null;
 let _activeMemberIncludeAll = true;
 
 export function openSlimMemberPickerModal(options = {}) {
+    const rawAuth = (typeof SafeAuth !== 'undefined' && SafeAuth ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || '';
+    const cleanAuth = String(rawAuth || '').toLowerCase().trim();
+    const isCallerAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || 
+        (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)) || 
+        (typeof window !== 'undefined' && typeof window.isAdminUser === 'function' && window.isAdminUser(cleanAuth)));
+
+    if (!isCallerAdmin) {
+        const alertMsg = '🔒 회원 선택 기능은 관리자 전용 권한입니다.';
+        if (typeof showToast === 'function') {
+            showToast(alertMsg);
+        } else if (typeof window !== 'undefined' && typeof window.showToast === 'function') {
+            window.showToast(alertMsg);
+        }
+        console.warn('[Security Guard] Non-admin user blocked from opening member picker modal:', cleanAuth);
+        return;
+    }
+
     const {
         onSelect = null,
         selectedUserId = 'all',

@@ -2486,6 +2486,11 @@ export function toggleConfirmedStats(forceOpen) {
  * 👤 관리자 구매확정 대상 회원 선택 슬림 모달
  */
 export function openSlimMemberPickerForConfirmed() {
+    const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || '';
+    const cleanAuth = String(rawAuth || '').toLowerCase().trim();
+    const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
+    if (!isAdmin) return;
+
     if (typeof openSlimMemberPickerModal !== 'function') return;
     const curTarget = state.adminViewingTarget || 'my';
     const allUnifiedUsers = (typeof getAllUnifiedRegisteredUsers === 'function') ? getAllUnifiedRegisteredUsers() : [];

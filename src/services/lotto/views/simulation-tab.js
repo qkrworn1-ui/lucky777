@@ -802,6 +802,11 @@ export function openSlimRoundPickerForSimulation() {
 }
 
 export function openSlimMemberPickerForSimulation() {
+    const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || '';
+    const cleanAuth = String(authId || '').toLowerCase().trim();
+    const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)) || (typeof window !== 'undefined' && window.isAdminUser && window.isAdminUser(cleanAuth)));
+    if (!isAdmin) return;
+
     if (typeof window.openSlimMemberPickerModal === 'function') {
         const effectiveTarget = getEffectiveTargetUser();
         window.openSlimMemberPickerModal({

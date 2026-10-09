@@ -928,6 +928,9 @@ export async function renderReviewTab() {
                     </button>
                 </div>
             `;
+        } else if (!isAdmin) {
+            const existing = document.getElementById('reviewAdminUserFilterContainer');
+            if (existing) existing.remove();
         }
 
         const actualRoundSel = document.getElementById('reviewRoundSelector');
@@ -2791,6 +2794,11 @@ let _currentAdmin1235ModalFilter = 'all';
  * 👑 1235회차별 추천 및 당첨 성과 상세 모달 열기
  */
 export async function openAdmin1235ReviewModal(initialRound = null, initialUser = null) {
+    const callerAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    const cleanAuth = String(callerAuth || '').toLowerCase().trim();
+    const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
+    if (!isAdmin) return;
+
     if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
         try {
             await fetchAllUsersPurchases();
@@ -3005,8 +3013,12 @@ window.openSlimRoundPickerForReview = function() {
  * 🔄 메인 당첨내역 탭 슬림 회원 선택 모달 열기
  */
 window.openSlimMemberPickerForReview = function() {
+    const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    const cleanAuth = String(rawAuth || '').toLowerCase().trim();
+    const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
+    if (!isAdmin) return;
+
     if (typeof window.openSlimMemberPickerModal === 'function') {
-        const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
         const curUser = (typeof reviewAdminViewingUser !== 'undefined' && reviewAdminViewingUser) || rawAuth || 'all';
         window.openSlimMemberPickerModal({
             title: '당첨내역 조회 대상 회원 선택',
@@ -3043,6 +3055,11 @@ window.openSlimRoundPickerFromAdmin1235 = function() {
  * 🔄 슬림 회원 선택 모달 열기 (1235회차 모달 연동)
  */
 window.openSlimMemberPickerFromAdmin1235 = function() {
+    const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
+    const cleanAuth = String(rawAuth || '').toLowerCase().trim();
+    const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
+    if (!isAdmin) return;
+
     if (typeof window.openSlimMemberPickerModal === 'function') {
         window.openSlimMemberPickerModal({
             selectedUserId: _currentAdmin1235ModalUser,
