@@ -582,6 +582,26 @@ export function switchLottoTab(target) {
         }
     });
 
+    // 3-1. Scroll active tab button horizontally into center view on mobile devices
+    const activeTabBtn = document.querySelector(`.tab-btn[data-tab="${target}"]`);
+    if (activeTabBtn && typeof activeTabBtn.scrollIntoView === 'function') {
+        try {
+            activeTabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } catch(e) {}
+    }
+
+    // 3-2. Smoothly align viewport to the top of tab content if user is scrolled down past sticky navigation
+    try {
+        const navWrapper = document.getElementById('tabNavStickyWrapper') || document.querySelector('.tab-nav');
+        if (navWrapper && typeof window !== 'undefined') {
+            const navTop = navWrapper.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+            const currentScroll = window.pageYOffset || document.documentElement.scrollTop || 0;
+            if (currentScroll > navTop + 5) {
+                window.scrollTo({ top: navTop, behavior: 'smooth' });
+            }
+        }
+    } catch(e) {}
+
     // 4. Safely execute tab-specific render routines (Immediate 0ms render for generator & dashboard, async for heavy tabs)
     if (target === 'tab-generator' && typeof renderTop5Combinations === 'function') {
         try { renderTop5Combinations(false); } catch(e){}
