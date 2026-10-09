@@ -2522,20 +2522,21 @@ export function openSlimRoundPickerForConfirmed() {
         const r = c.getAttribute('data-round-filter');
         if (r && r !== 'all') {
             const num = parseInt(r, 10);
-            if (!isNaN(num) && !availableRounds.includes(num)) availableRounds.push(num);
+            if (!isNaN(num) && num >= 1235 && !availableRounds.includes(num)) availableRounds.push(num);
         }
     });
     availableRounds.sort((a, b) => b - a);
 
     openSlimRoundPickerModal({
-        currentRound: curRound === 'all' ? null : parseInt(curRound, 10),
+        selectedRound: curRound === 'all' ? 'all_rounds' : curRound,
         includeAllRounds: true,
         allRoundsLabel: '전체 회차 통합 보기',
+        minRound: 1235,
         availableRounds: availableRounds.length > 0 ? availableRounds : undefined,
         title: '구매확정 회차 선택',
-        subtitle: '확인할 회차를 선택하면 해당 회차 영수증으로 즉시 필터링됩니다.',
+        subtitle: '회차를 탭하면 즉시 필터링 후 창이 닫힙니다 (1235회~).',
         onSelect: (selectedRound) => {
-            if (selectedRound === null || selectedRound === 'all') {
+            if (selectedRound === null || selectedRound === 'all' || selectedRound === 'all_rounds') {
                 filterConfirmedByRound('all');
             } else {
                 filterConfirmedByRound(selectedRound);

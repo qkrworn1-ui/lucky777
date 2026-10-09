@@ -147,14 +147,14 @@ export function switchLegalTab(tabKey) {
 }
 
 /**
+/**
  * ============================================================================
- * ✨ 초슬림 핀테크 모던 회원 선택 모달 (Slim Member Picker Modal)
+ * ✨ 초슬림 핀테크 모던 회원 선택 모달 (Slim Member Picker Modal - Ultra Simple)
  * ============================================================================
  */
 let _activeMemberPickerCallback = null;
 let _tempSelectedMemberId = 'all';
-let _tempSelectedMemberName = '전체 회원 종합';
-let _currentMemberPickerCategory = 'all';
+let _tempSelectedMemberName = '전체 회원 통합 보기';
 let _activeMemberCustomList = null;
 let _activeMemberIncludeAll = true;
 
@@ -163,14 +163,13 @@ export function openSlimMemberPickerModal(options = {}) {
         onSelect = null,
         selectedUserId = 'all',
         title = '조회 대상 회원 선택',
-        subtitle = '조회하거나 분석할 대상 회원을 검색 및 선택하세요.',
+        subtitle = '회원을 탭하면 즉시 선택되어 전환됩니다.',
         includeAll = true,
         customUserList = null
     } = options;
 
     _activeMemberPickerCallback = onSelect;
     _tempSelectedMemberId = selectedUserId || 'all';
-    _currentMemberPickerCategory = 'all';
     _activeMemberCustomList = customUserList;
     _activeMemberIncludeAll = (includeAll !== false);
 
@@ -185,7 +184,7 @@ export function openSlimMemberPickerModal(options = {}) {
                 <div class="slim-picker-header">
                     <div class="slim-picker-title-group">
                         <div class="slim-picker-icon-badge" style="background: rgba(59, 130, 246, 0.18); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.35);">
-                            <i class="fa-solid fa-users"></i>
+                            <i class="fa-solid fa-user-check"></i>
                         </div>
                         <div>
                             <h3 id="slimMemberPickerTitle" class="slim-picker-title">${title}</h3>
@@ -195,37 +194,27 @@ export function openSlimMemberPickerModal(options = {}) {
                     <button type="button" class="slim-picker-close-btn" onclick="window.closeSlimMemberPickerModal()">&times;</button>
                 </div>
 
-                <!-- Toolbar: Search & Category Pills -->
-                <div class="slim-picker-toolbar">
+                <!-- Toolbar: Simple Clean Search -->
+                <div class="slim-picker-toolbar" style="padding: 10px 14px 8px 14px; background: rgba(0,0,0,0.25);">
                     <div class="slim-picker-search-wrap">
                         <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: #64748b;"></i>
-                        <input type="text" id="slimMemberSearchInput" class="slim-picker-search-input" placeholder="회원 ID, 실명, 연락처 초성 검색..." oninput="window._filterSlimMemberList && window._filterSlimMemberList()">
-                    </div>
-                    <div class="slim-picker-pills-row">
-                        <button type="button" class="slim-picker-pill active" data-cat="all" onclick="window._setSlimMemberCategory('all', this)">전체</button>
-                        <button type="button" class="slim-picker-pill" data-cat="admin" onclick="window._setSlimMemberCategory('admin', this)">👑 관리자/영구</button>
-                        <button type="button" class="slim-picker-pill" data-cat="purchased" onclick="window._setSlimMemberCategory('purchased', this)">🧾 실구매인증</button>
-                        <button type="button" class="slim-picker-pill" data-cat="kakao" onclick="window._setSlimMemberCategory('kakao', this)">💬 카카오연동</button>
+                        <input type="text" id="slimMemberSearchInput" class="slim-picker-search-input" placeholder="회원 이름 또는 ID 검색..." oninput="window._filterSlimMemberList && window._filterSlimMemberList()">
                     </div>
                 </div>
 
-                <!-- All Users Global Card -->
+                <!-- All Users Single-Line Item -->
                 <div id="slimMemberAllCardWrap" style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
-                    <div id="slimMemberItem-all" onclick="window._selectSlimMemberTemp('all', '전체 회원 종합 (AI 70게임)')" class="slim-picker-item" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(245, 158, 11, 0.35);">
+                    <div id="slimMemberItem-all" onclick="window._pickSlimMemberAndClose('all', '전체 회원 통합 보기')" class="slim-picker-item" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.3);">
                         <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                            <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; border: 1px solid rgba(245, 158, 11, 0.4); flex-shrink: 0;">
-                                <i class="fa-solid fa-globe"></i>
+                            <div style="width: 26px; height: 26px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); color: #60a5fa; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0;">
+                                <i class="fa-solid fa-users"></i>
                             </div>
-                            <div style="min-width: 0;">
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <span style="font-size: 0.78rem; font-weight: 800; color: #fbbf24;">전체 회원 종합</span>
-                                    <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-weight: 800;">ALL</span>
-                                </div>
-                                <div style="font-size: 0.68rem; color: #94a3b8; margin-top: 1px;">모든 회원의 추천 70게임 및 실구매 당첨 종합 대조</div>
+                            <div style="display: flex; align-items: baseline; gap: 6px;">
+                                <span style="font-size: 0.82rem; font-weight: 700; color: #60a5fa;">전체 회원 통합 보기</span>
+                                <span style="font-size: 0.68rem; color: #94a3b8; font-family: monospace;">(ALL)</span>
                             </div>
                         </div>
-                        <div class="slim-radio-indicator" style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(245,158,11,0.6); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        </div>
+                        <i class="fa-solid fa-angle-right" style="color: #64748b; font-size: 0.75rem;"></i>
                     </div>
                 </div>
 
@@ -234,18 +223,10 @@ export function openSlimMemberPickerModal(options = {}) {
                     <!-- Populated dynamically -->
                 </div>
 
-                <!-- Footer -->
-                <div class="slim-picker-footer">
-                    <div class="slim-picker-selected-desc">
-                        <span>선택: </span>
-                        <strong id="slimMemberSelectedLabel" style="color: #fbbf24; font-weight: 800;">전체 회원 종합</strong>
-                    </div>
-                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                        <button type="button" onclick="window.closeSlimMemberPickerModal()" style="padding: 6px 12px; border-radius: 7px; font-size: 0.75rem; font-weight: 600; color: #94a3b8; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">취소</button>
-                        <button type="button" onclick="window._confirmSlimMemberSelection()" style="padding: 6px 14px; border-radius: 7px; font-size: 0.75rem; font-weight: 800; color: #0f172a; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);">
-                            <i class="fa-solid fa-check"></i> 선택 확정
-                        </button>
-                    </div>
+                <!-- Minimal Footer -->
+                <div class="slim-picker-footer" style="padding: 8px 14px; justify-content: space-between;">
+                    <span style="font-size: 0.72rem; color: #94a3b8;">💡 회원을 터치하면 즉시 선택 후 창이 닫힙니다.</span>
+                    <button type="button" onclick="window.closeSlimMemberPickerModal()" style="padding: 5px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; color: #cbd5e1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">닫기</button>
                 </div>
             </div>
         `;
@@ -294,24 +275,12 @@ window._renderSlimMemberList = function() {
     }
 
     const query = (document.getElementById('slimMemberSearchInput')?.value || '').trim().toLowerCase();
-    const cat = _currentMemberPickerCategory;
 
     const filtered = users.filter(u => {
         const uId = (u.id || '').toLowerCase();
         const uName = (u.name || u.realName || '').toLowerCase();
         const uPhone = (u.phone || '').replace(/[^0-9]/g, '');
-        const matchQ = !query || uId.includes(query) || uName.includes(query) || uPhone.includes(query);
-        if (!matchQ) return false;
-
-        const isAdm = (typeof window.isAdminUser === 'function') ? window.isAdminUser(u.id) : (uId === 'master' || uId === 'admin');
-        const isPerm = (typeof window.isPermanentUser === 'function') ? window.isPermanentUser(u.id) : false;
-        const isKakao = uId.startsWith('kakao_') || !!(u.kakaoAuth && u.kakaoAuth.kakaoId);
-        const hasPurchases = (window.state && window.state.ledger && Object.values(window.state.ledger).some(list => (list || []).some(p => (p.userId || '').toLowerCase() === uId)));
-
-        if (cat === 'admin') return isAdm || isPerm;
-        if (cat === 'purchased') return hasPurchases;
-        if (cat === 'kakao') return isKakao;
-        return true;
+        return !query || uId.includes(query) || uName.includes(query) || uPhone.includes(query);
     });
 
     if (filtered.length === 0) {
@@ -322,80 +291,43 @@ window._renderSlimMemberList = function() {
     let html = '';
     filtered.forEach(u => {
         const uId = u.id;
-        const uDisplayName = u.name || u.realName || uId;
-        const isKakao = uId.startsWith('kakao_') || !!(u.kakaoAuth && u.kakaoAuth.kakaoId);
-        const isAdm = (typeof window.isAdminUser === 'function') ? window.isAdminUser(uId) : (uId.toLowerCase() === 'master');
-        const isPerm = (typeof window.isPermanentUser === 'function') ? window.isPermanentUser(uId) : false;
+        const uDisplayName = u.name || u.realName || (typeof window.getUserRealName === 'function' ? window.getUserRealName(uId) : '') || uId;
+        const isAdm = (typeof window.isAdminUser === 'function') ? window.isAdminUser(uId) : (uId.toLowerCase() === 'master' || uId.toLowerCase() === 'admin');
         const isSelected = String(_tempSelectedMemberId).toLowerCase() === uId.toLowerCase();
 
-        let roleBadge = '<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; background:rgba(255,255,255,0.06); color:#94a3b8;">일반</span>';
-        if (isAdm) roleBadge = '<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.35);">👑 관리자</span>';
-        else if (isPerm) roleBadge = '<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.35);">💎 영구</span>';
-
-        let avatarHtml = `<div style="width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:800; flex-shrink:0;">${uDisplayName[0] || 'U'}</div>`;
-        if (isKakao) avatarHtml = `<div style="width:28px; height:28px; border-radius:8px; background:#fee500; color:#191919; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:900; flex-shrink:0;"><i class="fa-solid fa-comment"></i></div>`;
-        else if (isAdm) avatarHtml = `<div style="width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color:#0f172a; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:900; flex-shrink:0;"><i class="fa-solid fa-crown"></i></div>`;
-
+        const safeName = uDisplayName.replace(/'/g, "\\'");
         html += `
-            <div id="slimMemberItem-${uId}" onclick="window._selectSlimMemberTemp('${uId}', '${uDisplayName} (${uId})')" class="slim-picker-item ${isSelected ? 'selected' : ''}">
-                <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
-                    ${avatarHtml}
-                    <div style="min-width:0; flex:1;">
-                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                            <span style="font-size:0.78rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${uDisplayName}</span>
-                            <span style="font-size:0.70rem; color:#94a3b8; font-family:monospace;">(${uId})</span>
-                            ${roleBadge}
-                        </div>
+            <div id="slimMemberItem-${uId}" onclick="window._pickSlimMemberAndClose('${uId}', '${safeName}')" class="slim-picker-item ${isSelected ? 'selected' : ''}">
+                <div style="display:flex; align-items:center; gap:9px; min-width:0; flex:1;">
+                    <div style="width:26px; height:26px; border-radius:50%; background:${isAdm ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.06)'}; border:1px solid ${isAdm ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255,255,255,0.1)'}; color:${isAdm ? '#fbbf24' : '#94a3b8'}; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        ${isAdm ? '<i class="fa-solid fa-crown" style="font-size:0.7rem;"></i>' : (uDisplayName[0] || 'U')}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        <span style="font-size:0.82rem; font-weight:700; color:#f8fafc;">${uDisplayName}</span>
+                        <span style="font-size:0.70rem; color:#64748b; font-family:monospace;">@${uId}</span>
+                        ${isAdm ? '<span style="font-size:0.62rem; padding:1px 5px; border-radius:4px; background:rgba(245,158,11,0.18); color:#fbbf24; font-weight:700;">관리자</span>' : ''}
                     </div>
                 </div>
-                <div class="slim-radio-indicator" style="width:16px; height:16px; border-radius:50%; border:1.5px solid ${isSelected ? '#3b82f6' : 'rgba(255,255,255,0.2)'}; background:${isSelected ? '#3b82f6' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                    ${isSelected ? '<span style="width:6px; height:6px; border-radius:50%; background:#fff;"></span>' : ''}
-                </div>
+                ${isSelected ? '<i class="fa-solid fa-check" style="color:#3b82f6; font-size:0.85rem; flex-shrink:0;"></i>' : '<i class="fa-solid fa-angle-right" style="color:#64748b; font-size:0.75rem; flex-shrink:0;"></i>'}
             </div>
         `;
     });
 
     container.innerHTML = html;
-    window._updateSlimMemberRadioStyles();
+};
+
+window._pickSlimMemberAndClose = function(userId, displayName, rawObj) {
+    _tempSelectedMemberId = userId;
+    _tempSelectedMemberName = displayName;
+    if (typeof _activeMemberPickerCallback === 'function') {
+        const userObj = rawObj || { id: userId, name: displayName, userId: userId };
+        _activeMemberPickerCallback(userObj, userId);
+    }
+    window.closeSlimMemberPickerModal();
 };
 
 window._selectSlimMemberTemp = function(userId, displayName) {
-    _tempSelectedMemberId = userId;
-    _tempSelectedMemberName = displayName;
-    const label = document.getElementById('slimMemberSelectedLabel');
-    if (label) label.innerText = displayName;
-    window._updateSlimMemberRadioStyles();
-};
-
-window._updateSlimMemberRadioStyles = function() {
-    const allItems = document.querySelectorAll('#slimMemberPickerModal .slim-picker-item');
-    allItems.forEach(item => {
-        const isSelected = item.id === `slimMemberItem-${_tempSelectedMemberId}`;
-        const radio = item.querySelector('.slim-radio-indicator');
-        if (isSelected) {
-            item.classList.add('selected');
-            if (radio) {
-                radio.style.borderColor = (_tempSelectedMemberId === 'all') ? '#fbbf24' : '#3b82f6';
-                radio.style.background = (_tempSelectedMemberId === 'all') ? '#fbbf24' : '#3b82f6';
-                radio.innerHTML = `<span style="width:6px; height:6px; border-radius:50%; background:${_tempSelectedMemberId === 'all' ? '#0f172a' : '#fff'};"></span>`;
-            }
-        } else {
-            item.classList.remove('selected');
-            if (radio) {
-                radio.style.borderColor = 'rgba(255,255,255,0.2)';
-                radio.style.background = 'transparent';
-                radio.innerHTML = '';
-            }
-        }
-    });
-};
-
-window._setSlimMemberCategory = function(cat, btn) {
-    _currentMemberPickerCategory = cat;
-    const pills = document.querySelectorAll('#slimMemberPickerModal .slim-picker-pill');
-    pills.forEach(p => p.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    window._renderSlimMemberList();
+    window._pickSlimMemberAndClose(userId, displayName);
 };
 
 window._filterSlimMemberList = function() {
@@ -403,43 +335,40 @@ window._filterSlimMemberList = function() {
 };
 
 window._confirmSlimMemberSelection = function() {
-    if (typeof _activeMemberPickerCallback === 'function') {
-        const userObj = { id: _tempSelectedMemberId, name: _tempSelectedMemberName, userId: _tempSelectedMemberId };
-        _activeMemberPickerCallback(userObj, _tempSelectedMemberId);
-    }
-    window.closeSlimMemberPickerModal();
+    window._pickSlimMemberAndClose(_tempSelectedMemberId, _tempSelectedMemberName);
 };
 
 /**
  * ============================================================================
- * ✨ 초슬림 핀테크 모던 회차 선택 모달 (Slim Round Picker Modal)
+ * ✨ 초슬림 핀테크 모던 회차 선택 모달 (Slim Round Picker Modal - Round-Only & >= 1235)
  * ============================================================================
  */
 let _activeRoundPickerCallback = null;
 let _tempSelectedRoundVal = 'all_rounds';
 let _tempSelectedRoundName = '전체 회차 누적 종합';
-let _currentRoundPickerFilter = 'all';
 let _activeRoundIncludeAll = true;
 let _activeRoundMin = 1235;
 let _activeRoundMax = null;
+let _activeRoundAvailableRounds = null;
 
 export function openSlimRoundPickerModal(options = {}) {
     const {
         onSelect = null,
         selectedRound = 'all_rounds',
         title = '조회 대상 회차 선택',
-        subtitle = '조회하고자 하는 공식 로또 추첨 회차를 선택하세요.',
+        subtitle = '회차를 탭하면 즉시 적용되어 창이 닫힙니다 (1235회~).',
         minRound = 1235,
         maxRound = null,
-        includeAllRounds = true
+        includeAllRounds = true,
+        availableRounds = null
     } = options;
 
     _activeRoundPickerCallback = onSelect;
     _tempSelectedRoundVal = String(selectedRound || 'all_rounds');
-    _currentRoundPickerFilter = 'all';
     _activeRoundIncludeAll = (includeAllRounds !== false);
-    _activeRoundMin = minRound;
+    _activeRoundMin = (typeof minRound === 'number' && minRound > 0) ? minRound : 1235;
     _activeRoundMax = maxRound;
+    _activeRoundAvailableRounds = Array.isArray(availableRounds) ? availableRounds : null;
 
     let overlay = document.getElementById('slimRoundPickerModal');
     if (!overlay) {
@@ -452,7 +381,7 @@ export function openSlimRoundPickerModal(options = {}) {
                 <div class="slim-picker-header">
                     <div class="slim-picker-title-group">
                         <div class="slim-picker-icon-badge" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);">
-                            <i class="fa-solid fa-calendar-check"></i>
+                            <i class="fa-solid fa-calendar-days"></i>
                         </div>
                         <div>
                             <h3 id="slimRoundPickerTitle" class="slim-picker-title">${title}</h3>
@@ -462,56 +391,35 @@ export function openSlimRoundPickerModal(options = {}) {
                     <button type="button" class="slim-picker-close-btn" onclick="window.closeSlimRoundPickerModal()">&times;</button>
                 </div>
 
-                <!-- Toolbar: Search & Quick Filter Chips -->
-                <div class="slim-picker-toolbar">
-                    <div class="slim-picker-search-wrap" style="margin-bottom: 8px;">
+                <!-- Toolbar: Simple Clean Search -->
+                <div class="slim-picker-toolbar" style="padding: 10px 14px 8px 14px; background: rgba(0,0,0,0.25);">
+                    <div class="slim-picker-search-wrap">
                         <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: #64748b;"></i>
-                        <input type="text" id="slimRoundSearchInput" class="slim-picker-search-input" placeholder="회차 번호 검색 (예: 1243)..." oninput="window._filterSlimRoundList && window._filterSlimRoundList()">
-                    </div>
-                    <div class="slim-picker-pills-row">
-                        <button type="button" class="slim-picker-pill slim-picker-pill-amber active" data-filter="all" onclick="window._setSlimRoundFilter('all', this)">전체 누적</button>
-                        <button type="button" class="slim-picker-pill slim-picker-pill-amber" data-filter="latest" onclick="window._setSlimRoundFilter('latest', this)">최신 회차</button>
-                        <button type="button" class="slim-picker-pill slim-picker-pill-amber" data-filter="wins" onclick="window._setSlimRoundFilter('wins', this)">🏆 당첨 회차만</button>
+                        <input type="text" id="slimRoundSearchInput" class="slim-picker-search-input" placeholder="회차 검색 (예: 1243)..." oninput="window._filterSlimRoundList && window._filterSlimRoundList()">
                     </div>
                 </div>
 
-                <!-- All Rounds Global Card -->
+                <!-- All Rounds Single-Line Item -->
                 <div id="slimRoundAllCardWrap" style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
-                    <div id="slimRoundItem-all_rounds" onclick="window._selectSlimRoundTemp('all_rounds', '전체 회차 누적 종합 조회')" class="slim-picker-item" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(245, 158, 11, 0.35);">
-                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                            <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; border: 1px solid rgba(245, 158, 11, 0.4); flex-shrink: 0;">
-                                <i class="fa-solid fa-chart-pie"></i>
-                            </div>
-                            <div style="min-width: 0;">
-                                <div style="display: flex; align-items: center; gap: 6px;">
-                                    <span style="font-size: 0.78rem; font-weight: 800; color: #fbbf24;">전체 회차 누적 종합</span>
-                                    <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-weight: 800;">1235회~</span>
-                                </div>
-                                <div style="font-size: 0.68rem; color: #94a3b8; margin-top: 1px;">전체 회차 추천 70게임 전수 적중 성과 및 통계 통합 분석</div>
-                            </div>
+                    <div id="slimRoundItem-all_rounds" onclick="window._pickSlimRoundAndClose('all_rounds', '전체 회차 누적 종합')" class="slim-picker-item" style="background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.3);">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-layer-group text-amber-400" style="color: #fbbf24; font-size: 0.85rem;"></i>
+                            <span style="font-size: 0.84rem; font-weight: 800; color: #fbbf24;">전체 회차 누적 종합</span>
+                            <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-weight: 800;">1235회~</span>
                         </div>
-                        <div class="slim-radio-indicator" style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(245,158,11,0.6); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                        </div>
+                        <i class="fa-solid fa-angle-right" style="color: #64748b; font-size: 0.75rem;"></i>
                     </div>
                 </div>
 
-                <!-- Scrollable Round List -->
+                <!-- Scrollable Round List (Clean, Just Rounds, No Clutter) -->
                 <div id="slimRoundListContainer" class="slim-picker-list custom-scrollbar">
                     <!-- Populated dynamically -->
                 </div>
 
-                <!-- Footer -->
-                <div class="slim-picker-footer">
-                    <div class="slim-picker-selected-desc">
-                        <span>선택: </span>
-                        <strong id="slimRoundSelectedLabel" style="color: #fbbf24; font-weight: 800;">전체 회차 누적 종합</strong>
-                    </div>
-                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
-                        <button type="button" onclick="window.closeSlimRoundPickerModal()" style="padding: 6px 12px; border-radius: 7px; font-size: 0.75rem; font-weight: 600; color: #94a3b8; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">취소</button>
-                        <button type="button" onclick="window._confirmSlimRoundSelection()" style="padding: 6px 14px; border-radius: 7px; font-size: 0.75rem; font-weight: 800; color: #0f172a; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);">
-                            <i class="fa-solid fa-check"></i> 회차 적용
-                        </button>
-                    </div>
+                <!-- Minimal Footer -->
+                <div class="slim-picker-footer" style="padding: 8px 14px; justify-content: space-between;">
+                    <span style="font-size: 0.72rem; color: #94a3b8;">⚡ 회차를 터치하면 즉시 적용 후 창이 닫힙니다 (1235회~).</span>
+                    <button type="button" onclick="window.closeSlimRoundPickerModal()" style="padding: 5px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; color: #cbd5e1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">닫기</button>
                 </div>
             </div>
         `;
@@ -544,7 +452,7 @@ window._filterSlimRoundList = function() {
     window._renderSlimRoundList(_activeRoundMin, _activeRoundMax);
 };
 
-window._renderSlimRoundList = function(minRound = 1235, maxRound = null) {
+window._renderSlimRoundList = function(minRound = null, maxRound = null) {
     const container = document.getElementById('slimRoundListContainer');
     if (!container) return;
 
@@ -555,14 +463,19 @@ window._renderSlimRoundList = function(minRound = 1235, maxRound = null) {
         .sort((a, b) => b - a);
 
     const fallbackLatest = (typeof window.getLatestDrawnRound === 'function') ? window.getLatestDrawnRound() : 1243;
-    const latestRoundNum = maxRound || ((window.state && window.state.latestDrawData && window.state.latestDrawData.numbers?.length === 6)
+    const latestRoundNum = maxRound || _activeRoundMax || ((window.state && window.state.latestDrawData && window.state.latestDrawData.numbers?.length === 6)
         ? Math.max(window.state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || fallbackLatest));
 
+    const effectiveMin = Math.max(1235, (typeof minRound === 'number' && minRound > 0 ? minRound : (_activeRoundMin || 1235)));
+
     let roundNumbers = [];
-    const effectiveMin = Math.max(1, minRound || 1);
-    for (let r = latestRoundNum; r >= effectiveMin; r--) {
-        roundNumbers.push(r);
+    if (_activeRoundAvailableRounds && _activeRoundAvailableRounds.length > 0) {
+        roundNumbers = _activeRoundAvailableRounds.filter(r => r >= effectiveMin);
+    } else {
+        for (let r = latestRoundNum; r >= effectiveMin; r--) {
+            roundNumbers.push(r);
+        }
     }
 
     const searchVal = (document.getElementById('slimRoundSearchInput')?.value || '').trim();
@@ -570,100 +483,45 @@ window._renderSlimRoundList = function(minRound = 1235, maxRound = null) {
         roundNumbers = roundNumbers.filter(r => String(r).includes(searchVal));
     }
 
-    if (_currentRoundPickerFilter === 'latest') {
-        roundNumbers = roundNumbers.slice(0, 1);
+    if (roundNumbers.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 24px 10px; color:#64748b; font-size:0.75rem;">선택 가능한 1235회 이후 회차가 없습니다.</div>`;
+        return;
     }
 
     let html = '';
     roundNumbers.forEach(r => {
-        const draw = (typeof window.getSafeActualDraw === 'function') ? window.getSafeActualDraw(r) : (history[r] || null);
-        const dateStr = draw && (draw.date || draw.drwNoDate) ? ` (${draw.date || draw.drwNoDate})` : '';
         const isLatest = (r === latestRoundNum);
         const isSelected = String(_tempSelectedRoundVal) === String(r);
 
-        let ballsHtml = '';
-        if (draw && draw.numbers && draw.numbers.length === 6) {
-            ballsHtml = draw.numbers.map(n => {
-                const bg = getBallHexColor(n);
-                const textColor = n <= 10 ? '#0f172a' : '#fff';
-                return `<span class="slim-picker-ball-mini" style="background:${bg}; color:${textColor};">${n}</span>`;
-            }).join('');
-            if (draw.bonus) {
-                const bBg = getBallHexColor(draw.bonus);
-                const bTextColor = draw.bonus <= 10 ? '#0f172a' : '#fff';
-                ballsHtml += `<span style="font-size:0.7rem; color:#64748b; margin:0 1px;">+</span><span class="slim-picker-ball-mini" style="background:${bBg}; color:${bTextColor}; border:1.5px solid #fbbf24;">${draw.bonus}</span>`;
-            }
-        } else {
-            ballsHtml = `<span style="font-size:0.7rem; color:#64748b;">(추첨 대기)</span>`;
-        }
-
         html += `
-            <div id="slimRoundItem-${r}" onclick="window._selectSlimRoundTemp('${r}', '제 ${r}회${dateStr}')" class="slim-picker-item ${isSelected ? 'selected-round' : ''}">
-                <div style="min-width:0; flex:1;">
-                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:3px;">
-                        <span style="font-size:0.82rem; font-weight:800; color:${isLatest ? '#fbbf24' : '#fff'};">제 ${r}회</span>
-                        <span style="font-size:0.68rem; color:#94a3b8;">${dateStr}</span>
-                        ${isLatest ? '<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; background:rgba(245,158,11,0.2); color:#fbbf24; font-weight:800;">최신</span>' : ''}
-                    </div>
-                    <div style="display:flex; align-items:center; gap:3px; flex-wrap:wrap;">
-                        ${ballsHtml}
-                    </div>
+            <div id="slimRoundItem-${r}" onclick="window._pickSlimRoundAndClose('${r}', '제 ${r}회차')" class="slim-picker-item ${isSelected ? 'selected-round' : ''}">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="font-size:0.88rem; font-weight:800; color:${isLatest ? '#fbbf24' : '#f8fafc'};">제 ${r}회</span>
+                    ${isLatest ? '<span style="font-size:0.65rem; padding:1px 6px; border-radius:4px; background:rgba(245,158,11,0.2); color:#fbbf24; font-weight:800;">최신 회차</span>' : ''}
                 </div>
-                <div class="slim-radio-indicator" style="width:16px; height:16px; border-radius:50%; border:1.5px solid ${isSelected ? '#f59e0b' : 'rgba(255,255,255,0.2)'}; background:${isSelected ? '#f59e0b' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                    ${isSelected ? '<span style="width:6px; height:6px; border-radius:50%; background:#0f172a;"></span>' : ''}
-                </div>
+                ${isSelected ? '<i class="fa-solid fa-check" style="color:#fbbf24; font-size:0.85rem; flex-shrink:0;"></i>' : '<i class="fa-solid fa-angle-right" style="color:#64748b; font-size:0.75rem; flex-shrink:0;"></i>'}
             </div>
         `;
     });
 
     container.innerHTML = html;
-    window._updateSlimRoundRadioStyles();
+};
+
+window._pickSlimRoundAndClose = function(roundVal, displayName) {
+    _tempSelectedRoundVal = roundVal;
+    _tempSelectedRoundName = displayName;
+    if (typeof _activeRoundPickerCallback === 'function') {
+        _activeRoundPickerCallback(roundVal, displayName);
+    }
+    window.closeSlimRoundPickerModal();
 };
 
 window._selectSlimRoundTemp = function(roundVal, display) {
-    _tempSelectedRoundVal = roundVal;
-    _tempSelectedRoundName = display;
-    const label = document.getElementById('slimRoundSelectedLabel');
-    if (label) label.innerText = display;
-    window._updateSlimRoundRadioStyles();
-};
-
-window._updateSlimRoundRadioStyles = function() {
-    const allItems = document.querySelectorAll('#slimRoundPickerModal .slim-picker-item');
-    allItems.forEach(item => {
-        const isSelected = item.id === `slimRoundItem-${_tempSelectedRoundVal}`;
-        const radio = item.querySelector('.slim-radio-indicator');
-        if (isSelected) {
-            item.classList.add('selected-round');
-            if (radio) {
-                radio.style.borderColor = '#f59e0b';
-                radio.style.background = '#f59e0b';
-                radio.innerHTML = `<span style="width:6px; height:6px; border-radius:50%; background:#0f172a;"></span>`;
-            }
-        } else {
-            item.classList.remove('selected-round');
-            if (radio) {
-                radio.style.borderColor = 'rgba(255,255,255,0.2)';
-                radio.style.background = 'transparent';
-                radio.innerHTML = '';
-            }
-        }
-    });
-};
-
-window._setSlimRoundFilter = function(filterKey, btn) {
-    _currentRoundPickerFilter = filterKey;
-    const pills = document.querySelectorAll('#slimRoundPickerModal .slim-picker-pill');
-    pills.forEach(p => p.classList.remove('active'));
-    if (btn) btn.classList.add('active');
-    window._renderSlimRoundList();
+    window._pickSlimRoundAndClose(roundVal, display);
 };
 
 window._confirmSlimRoundSelection = function() {
-    if (typeof _activeRoundPickerCallback === 'function') {
-        _activeRoundPickerCallback(_tempSelectedRoundVal, _tempSelectedRoundName);
-    }
-    window.closeSlimRoundPickerModal();
+    window._pickSlimRoundAndClose(_tempSelectedRoundVal, _tempSelectedRoundName);
 };
 
 if (typeof window !== 'undefined') {
