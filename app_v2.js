@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1323.58 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1349.49 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.1323.58)
+ * Lucky777 Smart Bundle (v2026.10.09.1349.49)
  */
 
 
@@ -28607,6 +28607,150 @@ function renderSimulationCharts(hit1st, hit2nd, hit3rd, hit4th, hit5th, totalWin
 /**
  * Execute real historical walk-forward backtesting across all historical draws (1 to 1238)
  */
+let _simSoundEnabled = true;
+let _simAudioCtx = null;
+let _simScanSpeed = 1;
+let _simAbortRequested = false;
+
+function getSimAudioContext() {
+    if (!_simAudioCtx) {
+        const AudioCtxClass = (typeof window !== 'undefined') ? (window.AudioContext || window.webkitAudioContext) : null;
+        if (AudioCtxClass) _simAudioCtx = new AudioCtxClass();
+    }
+    if (_simAudioCtx && _simAudioCtx.state === 'suspended') {
+        _simAudioCtx.resume();
+    }
+    return _simAudioCtx;
+}
+
+function playSimCoinSound() {
+    if (!_simSoundEnabled) return;
+    try {
+        const ctx = getSimAudioContext();
+        if (!ctx) return;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        const now = ctx.currentTime;
+        osc.frequency.setValueAtTime(987.77, now);
+        osc.frequency.exponentialRampToValueAtTime(1318.51, now + 0.08);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+    } catch(e) {}
+}
+
+function playSimJackpotSound() {
+    if (!_simSoundEnabled) return;
+    try {
+        const ctx = getSimAudioContext();
+        if (!ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51];
+        notes.forEach((freq, idx) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            const startTime = ctx.currentTime + (idx * 0.08);
+            osc.frequency.setValueAtTime(freq, startTime);
+            gain.gain.setValueAtTime(0.14, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.25);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startTime);
+            osc.stop(startTime + 0.25);
+        });
+    } catch(e) {}
+}
+
+function toggleSimSound() {
+    _simSoundEnabled = !_simSoundEnabled;
+    const label = document.getElementById('simSoundLabel');
+    const icon = document.getElementById('simSoundIcon');
+    if (_simSoundEnabled) {
+        if (label) label.innerText = '사운드 ON';
+        if (icon) icon.className = 'fa-solid fa-volume-high text-amber-400';
+        playSimCoinSound();
+    } else {
+        if (label) label.innerText = '사운드 OFF';
+        if (icon) icon.className = 'fa-solid fa-volume-xmark text-slate-500';
+    }
+}
+
+function setSimSpeed(speed, btnEl) {
+    _simScanSpeed = Number(speed) || 1;
+    document.querySelectorAll('.sim-speed-btn').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = '#94a3b8';
+    });
+    if (btnEl) {
+        btnEl.style.background = '#3b82f6';
+        btnEl.style.color = '#fff';
+    }
+}
+
+function stopRealHistoricalSimulation() {
+    _simAbortRequested = true;
+}
+
+function fireSimConfetti() {
+    const canvas = document.getElementById('simConfettiCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = canvas.offsetWidth || 600;
+    canvas.height = canvas.offsetHeight || 300;
+
+    const particles = [];
+    const colors = ['#fbbf24', '#f59e0b', '#3b82f6', '#10b981', '#ec4899', '#ffffff'];
+
+    for (let i = 0; i < 70; i++) {
+        particles.push({
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            vx: (Math.random() - 0.5) * 14,
+            vy: (Math.random() - 0.7) * 16,
+            size: Math.random() * 5 + 3,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            alpha: 1,
+            rotation: Math.random() * 360,
+            rotationSpeed: (Math.random() - 0.5) * 10
+        });
+    }
+
+    function renderConfetti() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = false;
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.4;
+            p.vx *= 0.98;
+            p.alpha -= 0.018;
+            p.rotation += p.rotationSpeed;
+
+            if (p.alpha > 0) {
+                alive = true;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate((p.rotation * Math.PI) / 180);
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = Math.max(0, p.alpha);
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+            }
+        });
+
+        if (alive) {
+            requestAnimationFrame(renderConfetti);
+        } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+    }
+    renderConfetti();
+}
+
 async function runRealHistoricalSimulation() {
     const cfg = getSelectedSimulationConfig();
     if (!cfg.hasSelection) {
@@ -28616,19 +28760,55 @@ async function runRealHistoricalSimulation() {
 
     const btn = document.getElementById('btnRunRealSim');
     const progContainer = document.getElementById('simProgressContainer');
+    const telemetryCard = document.getElementById('simTelemetryCard');
+    const celebrationCard = document.getElementById('simCelebrationTrophyCard');
     const progBar = document.getElementById('simProgressBar');
     const progText = document.getElementById('simProgressText');
     const progCount = document.getElementById('simProgressCount');
-    
+    const targetRoundEl = document.getElementById('simHudTargetRound');
+    const dateLabelEl = document.getElementById('simHudDateLabel');
+    const ballRowEl = document.getElementById('simHudBallRow');
+    const feedContainer = document.getElementById('simJackpotFeedContainer');
+
+    const liveC1 = document.getElementById('simLiveCount1st');
+    const liveC2 = document.getElementById('simLiveCount2nd');
+    const liveC3 = document.getElementById('simLiveCount3rd');
+    const liveC4 = document.getElementById('simLiveCount4th');
+    const liveC5 = document.getElementById('simLiveCount5th');
+    const livePrizeEl = document.getElementById('simLiveTotalPrize');
+    const liveRoiEl = document.getElementById('simLiveRoi');
+
     if (!btn || !progContainer) return;
-    
+
     btn.style.display = 'none';
     progContainer.style.display = 'block';
-    
+    if (telemetryCard) telemetryCard.style.display = 'flex';
+    if (celebrationCard) celebrationCard.style.display = 'none';
+
+    // Reset live stats
+    let live1st = 0, live2nd = 0, live3rd = 0, live4th = 0, live5th = 0, livePrize = 0;
+    if (liveC1) liveC1.textContent = '0';
+    if (liveC2) liveC2.textContent = '0';
+    if (liveC3) liveC3.textContent = '0';
+    if (liveC4) liveC4.textContent = '0';
+    if (liveC5) liveC5.textContent = '0';
+    if (livePrizeEl) livePrizeEl.textContent = '0 원';
+    if (liveRoiEl) liveRoiEl.textContent = 'ROI 0.0%';
+    if (feedContainer) {
+        feedContainer.innerHTML = `
+            <div style="text-align: center; padding: 10px 0; font-size: 0.68rem; color: #64748b;">
+                🔍 과거 회차 검증 중... 고액 당첨 발생 시 실시간으로 피드가 갱신됩니다.
+            </div>
+        `;
+    }
+
+    _simAbortRequested = false;
+    getSimAudioContext();
+
     const maxRound = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : (state.mergedHistory ? Math.max(...Object.keys(state.mergedHistory).map(Number)) : 1239));
     const results = [];
     let r = maxRound;
-    
+
     function getHistoricalDrawData(round) {
         const h = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(round) || (state.mergedHistory ? state.mergedHistory[round] : null)) : (state.mergedHistory ? state.mergedHistory[round] : null);
         if (h) {
@@ -28647,67 +28827,210 @@ async function runRealHistoricalSimulation() {
     const effectiveTarget = getEffectiveTargetUser();
     const authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || '';
     const targetTitle = (effectiveTarget === '__ALL__') ? `전체 등록 회원 종합` : (effectiveTarget === authId ? '관리자 본인' : effectiveTarget);
-    
-    const chunkSize = (effectiveTarget === '__ALL__') ? 15 : 40;
+
+    let hasCleanedFeedPlaceholder = false;
 
     return new Promise((resolve) => {
         function processChunk() {
-            const end = Math.max(1, r - chunkSize + 1);
+            if (_simAbortRequested) {
+                finalizeSimulation();
+                return;
+            }
+
+            const baseStep = (effectiveTarget === '__ALL__') ? 8 : 16;
+            const speedMultiplier = _simScanSpeed === 8 ? 4 : (_simScanSpeed === 3 ? 2 : 1);
+            const currentChunkSize = baseStep * speedMultiplier;
+            const end = Math.max(1, r - currentChunkSize + 1);
+
+            let latestDrawForBalls = null;
+
             for (; r >= end; r--) {
                 const drawData = getHistoricalDrawData(r);
                 if (!drawData || !Array.isArray(drawData.numbers) || drawData.numbers.length !== 6) continue;
-                
+                latestDrawForBalls = drawData;
+
                 const winningSet = new Set(drawData.numbers);
                 const bonusNum = drawData.bonus;
 
-                // Retrieve all combinations (Base 10 + Checked Extra Packs) for round r with target user
                 const simulatedCombos = getCombosForSimulationRound(r, cfg, effectiveTarget);
-                
+
                 simulatedCombos.forEach(combo => {
                     let matchesList = (combo.numbers || []).filter(n => winningSet.has(n));
                     let realMatchCount = matchesList.length;
                     let isBonusMatch = (combo.numbers || []).includes(bonusNum);
-                    
+
                     let prizeRank = 0;
                     if (realMatchCount === 6) prizeRank = 1;
                     else if (realMatchCount === 5 && isBonusMatch) prizeRank = 2;
                     else if (realMatchCount === 5) prizeRank = 3;
                     else if (realMatchCount === 4) prizeRank = 4;
                     else if (realMatchCount === 3) prizeRank = 5;
-                    
+
                     if (prizeRank > 0) {
                         results.push({ round: r, combo: combo, prizeRank: prizeRank });
+
+                        if (prizeRank === 1) {
+                            live1st++;
+                            const p1Prize = drawData.rank1Prize || 2000000000;
+                            livePrize += p1Prize;
+                            handleJackpotHit(r, 1, p1Prize, combo);
+                        } else if (prizeRank === 2) {
+                            live2nd++;
+                            livePrize += 50000000;
+                            handleJackpotHit(r, 2, 50000000, combo);
+                        } else if (prizeRank === 3) {
+                            live3rd++;
+                            livePrize += 1500000;
+                            handleJackpotHit(r, 3, 1500000, combo);
+                        } else if (prizeRank === 4) {
+                            live4th++;
+                            livePrize += 50000;
+                        } else if (prizeRank === 5) {
+                            live5th++;
+                            livePrize += 5000;
+                        }
                     }
                 });
             }
-            
+
+            // Update HUD Counters
             const processed = maxRound - r;
             const pct = Math.min(100, Math.round((processed / maxRound) * 100));
             if (progBar) progBar.style.width = `${pct}%`;
-            if (progText) progText.textContent = `1~${maxRound}회 [${targetTitle}] 백테스팅 진행 중... ${pct}%`;
-            if (progCount) progCount.textContent = `${processed} / ${maxRound} 회차`;
-            
+            if (progText) progText.innerHTML = `<i class="fa-solid fa-microchip"></i> 1~${maxRound}회 [${targetTitle}] 백테스팅 중... <strong style="color:#fff;">${pct}%</strong>`;
+            if (progCount) progCount.textContent = `${processed.toLocaleString()} / ${maxRound.toLocaleString()} 회차`;
+
+            if (targetRoundEl) targetRoundEl.textContent = `제 ${Math.max(1, r).toLocaleString()}회차 대조 중`;
+            if (dateLabelEl && latestDrawForBalls) {
+                dateLabelEl.textContent = `추첨일: ${latestDrawForBalls.date || latestDrawForBalls.drwNoDate || ''} (역대 순차 역산 진행)`;
+            }
+
+            if (liveC1) liveC1.textContent = live1st;
+            if (liveC2) liveC2.textContent = live2nd;
+            if (liveC3) liveC3.textContent = live3rd;
+            if (liveC4) liveC4.textContent = live4th.toLocaleString();
+            if (liveC5) liveC5.textContent = live5th.toLocaleString();
+
+            const prizeFmt = (livePrize >= 100000000) 
+                ? `${(livePrize / 100000000).toFixed(1)}억 원`
+                : `${livePrize.toLocaleString()} 원`;
+            if (livePrizeEl) livePrizeEl.textContent = prizeFmt;
+
+            const gamesPerR = ((cfg.includeV4 ? 10 : 0) + (cfg.includeV3 ? 10 : 0) + cfg.selectedExtraPacks.length * 10);
+            const userMul = (effectiveTarget === '__ALL__') ? ((state.allRegisteredUsersList && state.allRegisteredUsersList.length) || 1) : 1;
+            const totalInvested = processed * gamesPerR * userMul * 1000;
+            const currentRoi = totalInvested > 0 ? ((livePrize / totalInvested) * 100).toFixed(0) : 0;
+            if (liveRoiEl) liveRoiEl.textContent = `ROI +${Number(currentRoi).toLocaleString()}%`;
+
+            // Update mini ball row with latest draw
+            if (ballRowEl && latestDrawForBalls && Array.isArray(latestDrawForBalls.numbers)) {
+                ballRowEl.innerHTML = latestDrawForBalls.numbers.slice(0, 6).map(n => {
+                    const bg = getBallHexColor(n);
+                    const textColor = n <= 10 ? '#0f172a' : '#ffffff';
+                    return `<span style="width: 20px; height: 20px; border-radius: 50%; background: ${bg}; color: ${textColor}; font-size: 0.65rem; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; font-family: monospace;">${n}</span>`;
+                }).join('');
+            }
+
+            if (r % 6 === 0) {
+                playSimCoinSound();
+            }
+
             if (r >= 1) {
-                requestAnimationFrame(processChunk);
+                const delay = _simScanSpeed === 8 ? 0 : (_simScanSpeed === 3 ? 12 : 28);
+                if (delay > 0) {
+                    setTimeout(processChunk, delay);
+                } else {
+                    requestAnimationFrame(processChunk);
+                }
             } else {
-                const cfgKey = `${effectiveTarget}_${JSON.stringify(cfg)}`;
-                liveSimCacheMap[cfgKey] = results;
-                realSimCache = results;
-                if (progText) progText.textContent = `백테스팅 완료!`;
-                setTimeout(() => {
-                    if (progContainer) progContainer.style.display = 'none';
-                    if (btn) {
-                        btn.style.display = 'inline-block';
-                        btn.innerHTML = `<i class="fa-solid fa-rotate-right"></i> 1~${maxRound}회 [${targetTitle}] 리얼 백테스팅 다시 실행`;
-                    }
-                    const sel = document.getElementById('simRoundSelector');
-                    const targetRound = sel && sel.value ? parseInt(sel.value) : null;
-                    renderSimulationTab(targetRound);
-                    showToast(`🎉 [${targetTitle}] ${maxRound}개 전 회차 리얼 백테스팅 완료! (총 ${results.length}회 적중)`);
-                }, 400);
-                resolve(results);
+                finalizeSimulation();
             }
         }
+
+        function handleJackpotHit(round, rank, prize, combo) {
+            if (rank <= 2) {
+                playSimJackpotSound();
+                if (telemetryCard) {
+                    telemetryCard.classList.add('sim-jackpot-flash');
+                    setTimeout(() => telemetryCard.classList.remove('sim-jackpot-flash'), 1000);
+                }
+            } else {
+                playSimCoinSound();
+            }
+
+            if (feedContainer) {
+                if (!hasCleanedFeedPlaceholder) {
+                    feedContainer.innerHTML = '';
+                    hasCleanedFeedPlaceholder = true;
+                }
+                const comboName = (combo && combo.meta && combo.meta.name) ? combo.meta.name : (combo ? combo.name : '추천 알고리즘');
+                const owner = (combo && combo.meta && combo.meta.ownerName) ? combo.meta.ownerName : '';
+                const rankName = rank === 1 ? '🥇 1등 (6개 일치!)' : (rank === 2 ? '🥈 2등 (5+보 일치!)' : '🥉 3등 (5개 일치!)');
+                const badgeStyle = rank === 1 
+                    ? 'background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4);' 
+                    : (rank === 2 ? 'background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.4);' : 'background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.4);');
+                const prizeTxt = (prize >= 100000000) ? `${(prize / 100000000).toFixed(1)}억 원` : `${(prize / 10000).toLocaleString()}만 원`;
+
+                const itemHtml = `
+                    <div class="sim-feed-anim" style="display: flex; justify-content: space-between; align-items: center; padding: 4px 8px; border-radius: 6px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.06); font-size: 0.70rem;">
+                        <div style="display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <span style="padding: 1px 5px; border-radius: 4px; font-weight: 900; font-size: 0.65rem; ${badgeStyle}">${rankName}</span>
+                            <strong style="color: #f8fafc;">제 ${round}회</strong>
+                            <span style="color: #94a3b8; font-size: 0.66rem;">(${comboName}${owner ? ` · ${owner}` : ''})</span>
+                        </div>
+                        <span style="color: #fde047; font-weight: 900; font-family: monospace; flex-shrink: 0; margin-left: 6px;">+${prizeTxt}</span>
+                    </div>
+                `;
+                feedContainer.insertAdjacentHTML('afterbegin', itemHtml);
+            }
+        }
+
+        function finalizeSimulation() {
+            const cfgKey = `${effectiveTarget}_${JSON.stringify(cfg)}`;
+            liveSimCacheMap[cfgKey] = results;
+            realSimCache = results;
+
+            playSimJackpotSound();
+            fireSimConfetti();
+
+            if (progText) progText.innerHTML = `<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> 백테스팅 완료!`;
+            
+            // Show Trophy Card
+            if (telemetryCard) telemetryCard.style.display = 'none';
+            if (celebrationCard) {
+                celebrationCard.style.display = 'block';
+                const trophyTitle = document.getElementById('simTrophyTitle');
+                const trophyDesc = document.getElementById('simTrophyDesc');
+                const tHit1 = document.getElementById('trophyHit1st');
+                const tHit2 = document.getElementById('trophyHit2nd');
+                const tHit3 = document.getElementById('trophyHit3rd');
+                const tRoi = document.getElementById('trophyRoi');
+
+                if (trophyTitle) trophyTitle.innerText = `🎉 [${targetTitle}] 전 회차 완주 성공!`;
+                if (trophyDesc) trophyDesc.innerHTML = `역대 1,243개 모든 회차 대조 결과, 총 <strong style="color:#fbbf24;">${results.length.toLocaleString()}건</strong>의 당첨을 기록했습니다!`;
+                if (tHit1) tHit1.innerText = `${live1st}회`;
+                if (tHit2) tHit2.innerText = `${live2nd}회`;
+                if (tHit3) tHit3.innerText = `${live3rd}회`;
+
+                const gamesPerR = ((cfg.includeV4 ? 10 : 0) + (cfg.includeV3 ? 10 : 0) + cfg.selectedExtraPacks.length * 10);
+                const userMul = (effectiveTarget === '__ALL__') ? ((state.allRegisteredUsersList && state.allRegisteredUsersList.length) || 1) : 1;
+                const totalInvested = maxRound * gamesPerR * userMul * 1000;
+                const finalRoiVal = totalInvested > 0 ? ((livePrize / totalInvested) * 100).toFixed(0) : 0;
+                if (tRoi) tRoi.innerText = `+${Number(finalRoiVal).toLocaleString()}%`;
+            }
+
+            if (btn) {
+                btn.style.display = 'flex';
+                btn.innerHTML = `<i class="fa-solid fa-rotate-right"></i> 1~${maxRound}회 [${targetTitle}] 리얼 백테스팅 다시 실행`;
+            }
+
+            const sel = document.getElementById('simRoundSelector');
+            const targetRound = sel && sel.value ? parseInt(sel.value) : null;
+            renderSimulationTab(targetRound);
+            showToast(`🎉 [${targetTitle}] ${maxRound}개 전 회차 리얼 백테스팅 완료! (총 ${results.length}회 적중)`);
+            resolve(results);
+        }
+
         processChunk();
     });
 }
@@ -28806,6 +29129,10 @@ if (typeof window !== 'undefined') {
     window.selectAllSimAlgos = selectAllSimAlgos;
     window.openSlimRoundPickerForSimulation = openSlimRoundPickerForSimulation;
     window.openSlimMemberPickerForSimulation = openSlimMemberPickerForSimulation;
+    window.toggleSimSound = toggleSimSound;
+    window.setSimSpeed = setSimSpeed;
+    window.stopRealHistoricalSimulation = stopRealHistoricalSimulation;
+    window.fireSimConfetti = fireSimConfetti;
     window.changeSimAdminViewingUser = function(val) {
         state.simAdminTargetUserId = val;
         const userLabelEl = document.getElementById('simUserDisplayLabel');
@@ -28867,6 +29194,22 @@ if (typeof window !== 'undefined') {
         if (typeof renderSimulationCharts !== 'undefined') {
             __exports.renderSimulationCharts = renderSimulationCharts;
             if (typeof window !== 'undefined') window.renderSimulationCharts = renderSimulationCharts;
+        }
+        if (typeof toggleSimSound !== 'undefined') {
+            __exports.toggleSimSound = toggleSimSound;
+            if (typeof window !== 'undefined') window.toggleSimSound = toggleSimSound;
+        }
+        if (typeof setSimSpeed !== 'undefined') {
+            __exports.setSimSpeed = setSimSpeed;
+            if (typeof window !== 'undefined') window.setSimSpeed = setSimSpeed;
+        }
+        if (typeof stopRealHistoricalSimulation !== 'undefined') {
+            __exports.stopRealHistoricalSimulation = stopRealHistoricalSimulation;
+            if (typeof window !== 'undefined') window.stopRealHistoricalSimulation = stopRealHistoricalSimulation;
+        }
+        if (typeof fireSimConfetti !== 'undefined') {
+            __exports.fireSimConfetti = fireSimConfetti;
+            if (typeof window !== 'undefined') window.fireSimConfetti = fireSimConfetti;
         }
         if (typeof runRealHistoricalSimulation !== 'undefined') {
             __exports.runRealHistoricalSimulation = runRealHistoricalSimulation;

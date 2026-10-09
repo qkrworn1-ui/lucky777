@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=700">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=700">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.09.1323.58">
+    <link rel="stylesheet" href="styles.css?v=2026.10.09.1349.49">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.09.1323.58
+                        v2026.10.09.1349.49
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -177,7 +177,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.09.1323.58 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.09.1349.49 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -654,7 +654,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.09.1323.58
+                                v2026.10.09.1349.49
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1227,19 +1227,167 @@
                         </div>
                     </div>
 
-                    <div class="sim-run-row">
-                        <button id="btnRunRealSim" onclick="window.runRealHistoricalSimulation && window.runRealHistoricalSimulation()" class="sim-run-btn">
+                    <div class="sim-run-row" style="display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Top Bar: Sound & Speed Controls -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; padding: 0 2px;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <button type="button" id="btnSimSoundToggle" onclick="window.toggleSimSound && window.toggleSimSound()" class="btn-dark-pill" style="padding: 3px 9px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; border-radius: 6px; cursor: pointer;">
+                                    <i class="fa-solid fa-volume-high text-amber-400" id="simSoundIcon"></i>
+                                    <span id="simSoundLabel">사운드 ON</span>
+                                </button>
+                                <div style="display: inline-flex; align-items: center; gap: 3px; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); font-size: 0.70rem; color: #94a3b8;">
+                                    <span>속도:</span>
+                                    <button type="button" onclick="window.setSimSpeed && window.setSimSpeed(1, this)" class="sim-speed-btn active" style="padding: 1px 6px; border-radius: 4px; font-weight: 800; border: none; cursor: pointer;">1x</button>
+                                    <button type="button" onclick="window.setSimSpeed && window.setSimSpeed(3, this)" class="sim-speed-btn" style="padding: 1px 6px; border-radius: 4px; font-weight: 800; border: none; cursor: pointer; background: transparent; color: #94a3b8;">3x</button>
+                                    <button type="button" onclick="window.setSimSpeed && window.setSimSpeed(8, this)" class="sim-speed-btn" style="padding: 1px 6px; border-radius: 4px; font-weight: 800; border: none; cursor: pointer; background: transparent; color: #94a3b8;">⚡터보</button>
+                                </div>
+                            </div>
+                            <span style="font-size: 0.70rem; color: #94a3b8;">
+                                <i class="fa-solid fa-bolt text-amber-400"></i> 역대 전 회차 리얼 퀀트 대조 검증
+                            </span>
+                        </div>
+
+                        <button id="btnRunRealSim" onclick="window.runRealHistoricalSimulation && window.runRealHistoricalSimulation()" class="sim-run-btn" style="width: 100%; height: 42px; font-size: 0.90rem; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35); transition: all 0.2s;">
                             <i class="fa-solid fa-play"></i> 1회~최신 전 회차 리얼 백테스팅 시작
                         </button>
                     </div>
 
-                    <div id="simProgressContainer" style="display: none; margin-top: 15px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.9rem;">
-                            <span id="simProgressText">진행 중... 0%</span>
-                            <span id="simProgressCount">0 / 0</span>
+                    <!-- Enhanced Dynamic Telemetry HUD Container -->
+                    <div id="simProgressContainer" style="display: none; margin-top: 14px; position: relative;">
+                        <!-- Confetti Canvas -->
+                        <canvas id="simConfettiCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;"></canvas>
+
+                        <!-- HUD Card Wrapper -->
+                        <div id="simTelemetryCard" style="background: linear-gradient(155deg, rgba(15, 23, 42, 0.95) 0%, rgba(9, 13, 22, 0.98) 100%); border: 1.5px solid rgba(59, 130, 246, 0.4); border-radius: 14px; padding: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 10px; transition: all 0.3s ease;">
+                            
+                            <!-- HUD Header: Live Status & Target Round & Mini Ball Row -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="width: 30px; height: 30px; border-radius: 8px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; color: #60a5fa; font-size: 0.85rem;">
+                                        <i class="fa-solid fa-radar fa-spin" style="animation-duration: 3s;"></i>
+                                    </div>
+                                    <div>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <span style="font-size: 0.65rem; font-weight: 900; padding: 1px 6px; border-radius: 4px; background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3);">● LIVE SCANNING</span>
+                                            <span id="simHudTargetRound" style="font-size: 0.85rem; font-weight: 900; color: #fbbf24; font-family: monospace;">제 1,243회차 대조 중</span>
+                                        </div>
+                                        <div id="simHudDateLabel" style="font-size: 0.68rem; color: #94a3b8; margin-top: 1px;">역대 회차 실시간 순차 역산 진행</div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 5px; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                                    <span style="font-size: 0.68rem; color: #94a3b8;"><i class="fa-solid fa-atom text-indigo-400"></i> 대조:</span>
+                                    <div id="simHudBallRow" style="display: flex; gap: 3px;">
+                                        <!-- Animated 6 ball row populated dynamically -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Progress Bar Row -->
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; font-size: 0.74rem; font-weight: 700;">
+                                    <span id="simProgressText" style="color: #93c5fd; display: inline-flex; align-items: center; gap: 5px;">
+                                        <i class="fa-solid fa-microchip"></i> 퀀트 엔진 백테스팅 진행 중... 0%
+                                    </span>
+                                    <span id="simProgressCount" style="color: #cbd5e1; font-family: monospace;">0 / 0</span>
+                                </div>
+                                <div style="width: 100%; height: 9px; background: rgba(0,0,0,0.5); border-radius: 5px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); padding: 1px;">
+                                    <div id="simProgressBar" style="width: 0%; height: 100%; border-radius: 4px; transition: width 0.1s ease;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Live Odometer Grid (1st ~ 5th + Total Prize & ROI) -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 5px;">
+                                <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 5px 3px; text-align: center;">
+                                    <div style="font-size: 0.65rem; color: #fbbf24; font-weight: 800;"><i class="fa-solid fa-crown"></i> 1등 (6개)</div>
+                                    <div id="simLiveCount1st" style="font-size: 1.1rem; font-weight: 900; color: #fde047; font-family: monospace;">0</div>
+                                    <div style="font-size: 0.60rem; color: #f59e0b;">20억+ 원</div>
+                                </div>
+                                <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 8px; padding: 5px 3px; text-align: center;">
+                                    <div style="font-size: 0.65rem; color: #60a5fa; font-weight: 800;"><i class="fa-solid fa-medal"></i> 2등 (5+보)</div>
+                                    <div id="simLiveCount2nd" style="font-size: 1.1rem; font-weight: 900; color: #93c5fd; font-family: monospace;">0</div>
+                                    <div style="font-size: 0.60rem; color: #3b82f6;">5,000만 원</div>
+                                </div>
+                                <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 5px 3px; text-align: center;">
+                                    <div style="font-size: 0.65rem; color: #34d399; font-weight: 800;"><i class="fa-solid fa-star"></i> 3등 (5개)</div>
+                                    <div id="simLiveCount3rd" style="font-size: 1.1rem; font-weight: 900; color: #6ee7b7; font-family: monospace;">0</div>
+                                    <div style="font-size: 0.60rem; color: #10b981;">150만 원</div>
+                                </div>
+                                <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 5px 3px; text-align: center;">
+                                    <div style="font-size: 0.65rem; color: #c084fc; font-weight: 800;">✨ 4등 (4개)</div>
+                                    <div id="simLiveCount4th" style="font-size: 1.1rem; font-weight: 900; color: #d8b4fe; font-family: monospace;">0</div>
+                                    <div style="font-size: 0.60rem; color: #a855f7;">50,000 원</div>
+                                </div>
+                                <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 8px; padding: 5px 3px; text-align: center;">
+                                    <div style="font-size: 0.65rem; color: #f472b6; font-weight: 800;">⭐ 5등 (3개)</div>
+                                    <div id="simLiveCount5th" style="font-size: 1.1rem; font-weight: 900; color: #fbcfe8; font-family: monospace;">0</div>
+                                    <div style="font-size: 0.60rem; color: #ec4899;">5,000 원</div>
+                                </div>
+                                <div style="background: rgba(234, 179, 8, 0.15); border: 1px solid rgba(234, 179, 8, 0.4); border-radius: 8px; padding: 5px 5px; text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                                    <div style="font-size: 0.65rem; color: #fde047; font-weight: 800;">💰 누적 상금</div>
+                                    <div id="simLiveTotalPrize" style="font-size: 0.82rem; font-weight: 900; color: #fef08a; font-family: monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">0 원</div>
+                                    <div id="simLiveRoi" style="font-size: 0.65rem; font-weight: 800; color: #34d399; font-family: monospace;">ROI 0.0%</div>
+                                </div>
+                            </div>
+
+                            <!-- Live Jackpot Radar Ticker Feed -->
+                            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 7px 9px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <span style="font-size: 0.68rem; font-weight: 800; color: #cbd5e1; display: inline-flex; align-items: center; gap: 5px;">
+                                        <span style="width: 6px; height: 6px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+                                        실시간 잭팟 레이더 피드 (고액 당첨 실시간 포착)
+                                    </span>
+                                    <span style="font-size: 0.62rem; color: #64748b;">1등~3등 포착 시 하이라이트</span>
+                                </div>
+                                <div id="simJackpotFeedContainer" class="custom-scrollbar" style="max-height: 95px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; padding-right: 2px;">
+                                    <div style="text-align: center; padding: 10px 0; font-size: 0.68rem; color: #64748b;">
+                                        🔍 과거 회차 검증 중... 고액 당첨 발생 시 실시간으로 피드가 갱신됩니다.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Control Footer: Stop Button -->
+                            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 8px;">
+                                <button type="button" id="btnStopSim" onclick="window.stopRealHistoricalSimulation && window.stopRealHistoricalSimulation()" style="padding: 4px 12px; border-radius: 6px; font-size: 0.70rem; font-weight: 700; color: #f87171; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer;">
+                                    <i class="fa-solid fa-stop"></i> 시뮬레이션 중지
+                                </button>
+                            </div>
                         </div>
-                        <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
-                            <div id="simProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple)); transition: width 0.1s ease;"></div>
+
+                        <!-- Completion Trophy Card -->
+                        <div id="simCelebrationTrophyCard" style="display: none; background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(15, 23, 42, 0.98) 100%); border: 2px solid rgba(245, 158, 11, 0.5); border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
+                            <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #0f172a; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto; box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);">
+                                <i class="fa-solid fa-trophy"></i>
+                            </div>
+                            <h3 id="simTrophyTitle" style="color: #fff; font-size: 1.1rem; font-weight: 900; margin: 0 0 3px 0;">🎉 리얼 백테스팅 완주 성공!</h3>
+                            <p id="simTrophyDesc" style="color: #cbd5e1; font-size: 0.74rem; margin: 0 0 10px 0;">역대 모든 회차의 당첨 번호와 비교 검증을 마쳤습니다.</p>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 12px; max-width: 440px; margin-left: auto; margin-right: auto;">
+                                <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 6px 3px;">
+                                    <div style="font-size: 0.65rem; color: #fbbf24; font-weight: 700;">🥇 1등 적중</div>
+                                    <div id="trophyHit1st" style="font-size: 1.05rem; font-weight: 900; color: #fde047; font-family: monospace;">0회</div>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(59,130,246,0.3); border-radius: 8px; padding: 6px 3px;">
+                                    <div style="font-size: 0.65rem; color: #60a5fa; font-weight: 700;">🥈 2등 적중</div>
+                                    <div id="trophyHit2nd" style="font-size: 1.05rem; font-weight: 900; color: #93c5fd; font-family: monospace;">0회</div>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 6px 3px;">
+                                    <div style="font-size: 0.65rem; color: #34d399; font-weight: 700;">🥉 3등 적중</div>
+                                    <div id="trophyHit3rd" style="font-size: 1.05rem; font-weight: 900; color: #6ee7b7; font-family: monospace;">0회</div>
+                                </div>
+                                <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(234,179,8,0.3); border-radius: 8px; padding: 6px 3px;">
+                                    <div style="font-size: 0.65rem; color: #fde047; font-weight: 700;">📈 최종 ROI</div>
+                                    <div id="trophyRoi" style="font-size: 1.05rem; font-weight: 900; color: #34d399; font-family: monospace;">0%</div>
+                                </div>
+                            </div>
+
+                            <div style="display: flex; justify-content: center; gap: 8px;">
+                                <button type="button" onclick="window.runRealHistoricalSimulation && window.runRealHistoricalSimulation()" style="padding: 5px 12px; border-radius: 8px; font-size: 0.74rem; font-weight: 800; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; cursor: pointer;">
+                                    <i class="fa-solid fa-rotate-right"></i> 다시 돌려보기
+                                </button>
+                                <button type="button" onclick="window.fireSimConfetti && window.fireSimConfetti()" style="padding: 5px 12px; border-radius: 8px; font-size: 0.74rem; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); border: none; color: #0f172a; cursor: pointer; box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4);">
+                                    <i class="fa-solid fa-champagne-glasses"></i> 폭죽 터뜨리기!
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2093,7 +2241,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.09.1323.58
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.09.1349.49
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -4293,7 +4441,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.09.1323.58';
+        window.APP_VERSION = 'v2026.10.09.1349.49';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4364,7 +4512,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.09.1323.58';
+            var v = ver || window.APP_VERSION || 'v2026.10.09.1349.49';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4621,7 +4769,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.09.1323.58';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.09.1349.49';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4768,7 +4916,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.09.1323.58')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.09.1349.49')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -5021,8 +5169,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.09.1323.58"></script>
-    <script src="app_v2.js?v=2026.10.09.1323.58"></script>
+    <script src="data.js?v=2026.10.09.1349.49"></script>
+    <script src="app_v2.js?v=2026.10.09.1349.49"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
