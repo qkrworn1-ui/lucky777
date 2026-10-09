@@ -20910,6 +20910,49 @@ body.is-admin .btn-snapshot-audit-compact {
     animation: optPulseBtn 1.6s infinite ease-in-out;
 }
 
+/* Responsive rules for Galaxy Z Fold Cover Screens (width <= 400px) */
+@media (max-width: 400px) {
+    #budgetOptimizerModal {
+        padding: 6px 4px !important;
+    }
+    #budgetOptimizerModal .modal-content {
+        border-radius: 12px !important;
+        max-height: 96vh !important;
+        max-height: 96dvh !important;
+    }
+    #budgetOptimizerModal .modal-header {
+        padding: 10px 10px !important;
+    }
+    #budgetOptimizerModal .modal-header h3 {
+        font-size: 0.86rem !important;
+    }
+    #budgetOptimizerModal .modal-body {
+        padding: 8px 6px !important;
+        gap: 8px !important;
+    }
+    #budgetOptimizerModal .budget-chip-btn {
+        padding: 5px 3px !important;
+        font-size: 0.7rem !important;
+    }
+    #budgetOptimizerModal .opt-synergy-grid {
+        grid-template-columns: 1fr !important;
+    }
+    #budgetOptimizerModal .opt-stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    #budgetOptimizerModal .opt-gold-glow {
+        padding: 10px 8px !important;
+    }
+}
+
+.budget-chip-btn.active-budget-chip {
+    border-color: #fbbf24 !important;
+    background: rgba(245, 158, 11, 0.25) !important;
+    color: #fde047 !important;
+    font-weight: 800 !important;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.35) !important;
+}
+
 /* ==========================================================================
    15. Manual / QR Ledger Modal (#manualLedgerModal) - Minimal Monochrome
    ========================================================================== */

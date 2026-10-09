@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1401 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1408.53 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.1401)
+ * Lucky777 Smart Bundle (v2026.10.09.1408.53)
  */
 
 
@@ -27956,7 +27956,7 @@ async function runBudgetOptimizationSimulation() {
 
         if (liveFeed) {
             const feedItem = document.createElement('div');
-            feedItem.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 3px 6px; border-radius: 4px; background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.06); font-size: 0.68rem;';
+            feedItem.style.cssText = 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; padding: 4px 6px; border-radius: 4px; background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.06); font-size: 0.68rem; line-height: 1.3; word-break: keep-all;';
             feedItem.innerHTML = `
                 <span style="color: ${newPacks[0].color || '#60a5fa'}; font-weight: 700;">[후보 ${cIdx + 1}] ${newPackNames}</span>
                 <span style="color: #fbbf24; font-weight: 800;">1등 ${hit1st}회 | 커버리지 ${candidateCoverage}% (ROI ${roi}%)</span>
@@ -28016,12 +28016,12 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1245));
     
     const ownedHtml = ownedPacks.length > 0 
-        ? ownedPacks.map(p => `<span style="background: rgba(255,255,255,0.08); border: 1px solid #475569; color: #cbd5e1; padding: 4px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; white-space: nowrap;">✓ ${p.shortName}</span>`).join(' ')
-        : '<span style="color: #94a3b8; font-size: 0.74rem;">없음 (0게임)</span>';
+        ? ownedPacks.map(p => `<span style="background: rgba(255,255,255,0.08); border: 1px solid #475569; color: #cbd5e1; padding: 3px 6px; border-radius: 6px; font-size: 0.72rem; font-weight: 700; white-space: nowrap;">✓ ${p.shortName}</span>`).join(' ')
+        : '<span style="color: #94a3b8; font-size: 0.72rem;">없음 (0게임)</span>';
 
     const newPacksHtml = bestNewPacks.map(p => `
-        <span style="background: ${p.color || '#f59e0b'}25; border: 1.5px solid ${p.color || '#f59e0b'}; color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 800; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 0 12px ${p.color || '#f59e0b'}40; line-height: 1.2;">
-            <i class="fa-solid fa-sparkles" style="color: #fbbf24; font-size: 0.8rem;"></i> ${p.name}
+        <span style="background: ${p.color || '#f59e0b'}25; border: 1.5px solid ${p.color || '#f59e0b'}; color: #fff; padding: 4px 8px; border-radius: 8px; font-size: 0.82rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px ${p.color || '#f59e0b'}40; line-height: 1.2; word-break: keep-all;">
+            <i class="fa-solid fa-sparkles" style="color: #fbbf24; font-size: 0.75rem; flex-shrink: 0;"></i> <span>${p.name}</span>
         </span>
     `).join(' ');
 
@@ -28040,127 +28040,128 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
     const roiDeltaStr = roiDelta >= 0 ? `+${roiDelta}%p` : `${roiDelta}%p`;
 
     resultContainer.innerHTML = `
-        <div class="opt-gold-glow" style="background: linear-gradient(145deg, rgba(245, 158, 11, 0.12), #090d16 65%), #0f172a; border: 2px solid #fbbf24; border-radius: 14px; padding: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); box-sizing: border-box; margin-top: 6px;">
+        <div class="opt-gold-glow" style="background: linear-gradient(145deg, rgba(245, 158, 11, 0.12), #090d16 65%), #0f172a; border: 2px solid #fbbf24; border-radius: 14px; padding: 12px 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); box-sizing: border-box; margin-top: 6px;">
             <!-- Header Banner -->
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(251, 191, 36, 0.3);">
-                <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
-                    <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 900; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); flex-shrink: 0;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(251, 191, 36, 0.3);">
+                <div style="display: flex; align-items: center; gap: 7px; min-width: 0; flex: 1 1 170px;">
+                    <div style="width: 34px; height: 34px; border-radius: 8px; background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 900; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4); flex-shrink: 0;">
                         <i class="fa-solid fa-crown"></i>
                     </div>
-                    <div style="min-width: 0;">
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="background: #fbbf24; color: #0f172a; padding: 2px 7px; border-radius: 6px; font-weight: 900; font-size: 0.7rem; text-transform: uppercase;">
+                    <div style="min-width: 0; flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                            <span style="background: #fbbf24; color: #0f172a; padding: 1px 6px; border-radius: 5px; font-weight: 900; font-size: 0.68rem; text-transform: uppercase;">
                                 AI 1위 최적팩 확정
                             </span>
-                            <span style="color: #fde047; font-size: 0.74rem; font-weight: 800; font-family: monospace;">
-                                시너지 지수 99.4점
+                            <span style="color: #fde047; font-size: 0.72rem; font-weight: 800; font-family: monospace;">
+                                시너지 99.4점
                             </span>
                         </div>
-                        <h4 style="margin: 3px 0 0 0; color: #fff; font-size: 1.05rem; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        <h4 style="margin: 2px 0 0 0; color: #fff; font-size: clamp(0.85rem, 3.8vw, 1.02rem); font-weight: 900; word-break: keep-all; line-height: 1.25;">
                             제 ${curUpcomingRound}회차 추가 구매 추천 팩
                         </h4>
                     </div>
                 </div>
-                <div style="text-align: right;">
-                    <span style="font-size: 0.7rem; color: #94a3b8; display: block;">배정 예산</span>
-                    <span style="color: #fbbf24; font-weight: 900; font-size: 0.95rem; font-family: monospace;">
-                        +${metrics.additionalBudget.toLocaleString()}원 (+${metrics.additionalGames}게임)
+                <div style="text-align: right; flex-shrink: 0;">
+                    <span style="font-size: 0.66rem; color: #94a3b8; display: block;">배정 예산</span>
+                    <span style="color: #fbbf24; font-weight: 900; font-size: 0.88rem; font-family: monospace; white-space: nowrap;">
+                        +${metrics.additionalBudget.toLocaleString()}원 (+${metrics.additionalGames}G)
                     </span>
                 </div>
             </div>
 
-            <!-- Before vs After Synergy Impact Cards (3-Column Grid) -->
-            <div style="margin-bottom: 12px;">
-                <div style="font-size: 0.74rem; font-weight: 800; color: #cbd5e1; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;">
+            <!-- Before vs After Synergy Impact Cards (Responsive Grid) -->
+            <div style="margin-bottom: 10px;">
+                <div style="font-size: 0.72rem; font-weight: 800; color: #cbd5e1; margin-bottom: 5px; display: flex; align-items: center; gap: 4px;">
                     <i class="fa-solid fa-arrow-trend-up" style="color: #10b981;"></i>
-                    <span>최적팩 추가 시 실시간 시너지 폭증 효과 (Before vs After):</span>
+                    <span>최적팩 추가 시 실시간 시너지 폭증 효과:</span>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 6px;">
+                <div class="opt-synergy-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 6px;">
                     <!-- 1st Rank Impact -->
-                    <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 8px 10px;">
-                        <div style="color: #94a3b8; font-size: 0.68rem; font-weight: 700;">🥇 역대 1등 당첨</div>
-                        <div style="display: flex; align-items: baseline; gap: 5px; margin: 3px 0;">
-                            <span style="color: #64748b; font-family: monospace; font-size: 0.75rem;">기존 ${metrics.baselineHit1st || 0}회</span>
-                            <i class="fa-solid fa-arrow-right" style="color: #fbbf24; font-size: 0.65rem;"></i>
-                            <span style="color: #fbbf24; font-weight: 900; font-size: 0.95rem; font-family: monospace;">${metrics.hit1st}회 (${hit1DeltaStr})</span>
+                    <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 7px 9px;">
+                        <div style="color: #94a3b8; font-size: 0.66rem; font-weight: 700;">🥇 역대 1등 당첨</div>
+                        <div style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin: 3px 0;">
+                            <span style="color: #64748b; font-family: monospace; font-size: 0.72rem; white-space: nowrap;">기존 ${metrics.baselineHit1st || 0}회</span>
+                            <i class="fa-solid fa-arrow-right" style="color: #fbbf24; font-size: 0.62rem;"></i>
+                            <span style="color: #fbbf24; font-weight: 900; font-size: 0.88rem; font-family: monospace; white-space: nowrap;">${metrics.hit1st}회 (${hit1DeltaStr})</span>
                         </div>
-                        <div style="color: #fde047; font-size: 0.64rem; font-weight: 700;">💥 1등 적중 빈도 확장!</div>
+                        <div style="color: #fde047; font-size: 0.62rem; font-weight: 700;">💥 1등 적중 빈도 확장!</div>
                     </div>
 
                     <!-- Coverage Expansion -->
-                    <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 8px; padding: 8px 10px;">
-                        <div style="color: #94a3b8; font-size: 0.68rem; font-weight: 700;">🌐 45개 번호 커버리지</div>
-                        <div style="display: flex; align-items: baseline; gap: 5px; margin: 3px 0;">
-                            <span style="color: #64748b; font-family: monospace; font-size: 0.75rem;">${metrics.baselineCoverage}%</span>
-                            <i class="fa-solid fa-arrow-right" style="color: #60a5fa; font-size: 0.65rem;"></i>
-                            <span style="color: #60a5fa; font-weight: 900; font-size: 0.95rem; font-family: monospace;">${metrics.combinedCoverage}% (${covDeltaStr})</span>
+                    <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 8px; padding: 7px 9px;">
+                        <div style="color: #94a3b8; font-size: 0.66rem; font-weight: 700;">🌐 45개 번호 커버리지</div>
+                        <div style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin: 3px 0;">
+                            <span style="color: #64748b; font-family: monospace; font-size: 0.72rem; white-space: nowrap;">${metrics.baselineCoverage}%</span>
+                            <i class="fa-solid fa-arrow-right" style="color: #60a5fa; font-size: 0.62rem;"></i>
+                            <span style="color: #60a5fa; font-weight: 900; font-size: 0.88rem; font-family: monospace; white-space: nowrap;">${metrics.combinedCoverage}% (${covDeltaStr})</span>
                         </div>
-                        <div style="color: #93c5fd; font-size: 0.64rem; font-weight: 700;">✨ 중복 없는 황금 분산</div>
+                        <div style="color: #93c5fd; font-size: 0.62rem; font-weight: 700;">✨ 중복 없는 황금 분산</div>
                     </div>
 
                     <!-- ROI Boost -->
-                    <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 8px 10px;">
-                        <div style="color: #94a3b8; font-size: 0.68rem; font-weight: 700;">📈 누적 환급 ROI</div>
-                        <div style="display: flex; align-items: baseline; gap: 5px; margin: 3px 0;">
-                            <span style="color: #64748b; font-family: monospace; font-size: 0.75rem;">+${metrics.baselineRoi}%</span>
-                            <i class="fa-solid fa-arrow-right" style="color: #10b981; font-size: 0.65rem;"></i>
-                            <span style="color: #34d399; font-weight: 900; font-size: 0.95rem; font-family: monospace;">+${metrics.roi}% (${roiDeltaStr})</span>
+                    <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 8px; padding: 7px 9px;">
+                        <div style="color: #94a3b8; font-size: 0.66rem; font-weight: 700;">📈 누적 환급 ROI</div>
+                        <div style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px; margin: 3px 0;">
+                            <span style="color: #64748b; font-family: monospace; font-size: 0.72rem; white-space: nowrap;">+${metrics.baselineRoi}%</span>
+                            <i class="fa-solid fa-arrow-right" style="color: #10b981; font-size: 0.62rem;"></i>
+                            <span style="color: #34d399; font-weight: 900; font-size: 0.88rem; font-family: monospace; white-space: nowrap;">+${metrics.roi}% (${roiDeltaStr})</span>
                         </div>
-                        <div style="color: #6ee7b7; font-size: 0.64rem; font-weight: 700;">💰 순수익 극대화 포트폴리오</div>
+                        <div style="color: #6ee7b7; font-size: 0.62rem; font-weight: 700;">💰 순수익 극대화 포트폴리오</div>
                     </div>
                 </div>
             </div>
 
             <!-- Recommended Extra Pack Highlight -->
-            <div style="margin-bottom: 10px; background: rgba(16, 185, 129, 0.12); padding: 10px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.35); box-sizing: border-box;">
-                <div style="font-size: 0.74rem; color: #34d399; margin-bottom: 5px; font-weight: 800; display: flex; align-items: center; gap: 5px;">
+            <div style="margin-bottom: 8px; background: rgba(16, 185, 129, 0.12); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.35); box-sizing: border-box;">
+                <div style="font-size: 0.72rem; color: #34d399; margin-bottom: 4px; font-weight: 800; display: flex; align-items: center; gap: 4px;">
                     <i class="fa-solid fa-bullseye"></i> 🎯 이번 추가 구매 최적 추천 팩 (${metrics.additionalGames}게임):
                 </div>
-                <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <div style="display: flex; gap: 5px; flex-wrap: wrap;">
                     ${newPacksHtml}
                 </div>
             </div>
 
             <!-- Combined Full Portfolio Detail -->
-            <div style="margin-bottom: 12px; background: rgba(0, 0, 0, 0.35); padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); box-sizing: border-box;">
-                <div style="font-size: 0.72rem; color: #94a3b8; margin-bottom: 5px; font-weight: 700; display: flex; justify-content: space-between; align-items: center;">
+            <div style="margin-bottom: 10px; background: rgba(0, 0, 0, 0.35); padding: 7px 9px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.08); box-sizing: border-box;">
+                <div style="font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
                     <span><i class="fa-solid fa-layer-group" style="color: #818cf8;"></i> 최종 확정 황금 포트폴리오:</span>
                     <span style="color: #fbbf24; font-family: monospace; font-weight: 800;">총 ${metrics.totalPortfolioGames}게임 (${(metrics.totalPortfolioGames * 1000).toLocaleString()}원)</span>
                 </div>
-                <div style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center;">
+                <div style="display: flex; gap: 4px; flex-wrap: wrap; align-items: center;">
                     ${ownedHtml}
                     <span style="color: #475569; font-weight: 800;">+</span>
-                    ${bestNewPacks.map(p => `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #fbbf24; color: #fde047; padding: 4px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; white-space: nowrap;"><i class="fa-solid fa-star" style="font-size: 0.65rem;"></i> ${p.shortName}</span>`).join(' ')}
+                    ${bestNewPacks.map(p => `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid #fbbf24; color: #fde047; padding: 3px 6px; border-radius: 6px; font-size: 0.72rem; font-weight: 800; white-space: nowrap;"><i class="fa-solid fa-star" style="font-size: 0.62rem;"></i> ${p.shortName}</span>`).join(' ')}
                 </div>
             </div>
 
             <!-- Historical Performance Stats Grid (5-Item Card Layout) -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 5px; margin-bottom: 14px; box-sizing: border-box;">
-                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 6px 4px; border-radius: 6px; text-align: center; box-sizing: border-box;">
-                    <div style="color: #94a3b8; font-size: 0.66rem;">총 적중</div>
-                    <div style="color: #fbbf24; font-size: 0.95rem; font-weight: 800; font-family: monospace;">${metrics.totalHits.toLocaleString()}회</div>
+            <div class="opt-stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(70px, 1fr)); gap: 4px; margin-bottom: 12px; box-sizing: border-box;">
+                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 5px 3px; border-radius: 6px; text-align: center; box-sizing: border-box;">
+                    <div style="color: #94a3b8; font-size: 0.64rem;">총 적중</div>
+                    <div style="color: #fbbf24; font-size: 0.9rem; font-weight: 800; font-family: monospace;">${metrics.totalHits.toLocaleString()}회</div>
                 </div>
-                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 6px 4px; border-radius: 6px; text-align: center; box-sizing: border-box;">
-                    <div style="color: #94a3b8; font-size: 0.66rem;">1등 당첨</div>
-                    <div style="color: #fbbf24; font-size: 0.95rem; font-weight: 800; font-family: monospace;">${metrics.hit1st}회</div>
+                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 5px 3px; border-radius: 6px; text-align: center; box-sizing: border-box;">
+                    <div style="color: #94a3b8; font-size: 0.64rem;">1등 당첨</div>
+                    <div style="color: #fbbf24; font-size: 0.9rem; font-weight: 800; font-family: monospace;">${metrics.hit1st}회</div>
                 </div>
-                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 6px 4px; border-radius: 6px; text-align: center; box-sizing: border-box;">
-                    <div style="color: #94a3b8; font-size: 0.66rem;">2·3등 당첨</div>
-                    <div style="color: #60a5fa; font-size: 0.92rem; font-weight: 800; font-family: monospace;">${metrics.hit2nd + metrics.hit3rd}회 <span style="font-size:0.6rem;">(${metrics.hit2nd}/${metrics.hit3rd})</span></div>
+                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 5px 3px; border-radius: 6px; text-align: center; box-sizing: border-box;">
+                    <div style="color: #94a3b8; font-size: 0.64rem;">2·3등 당첨</div>
+                    <div style="color: #60a5fa; font-size: 0.85rem; font-weight: 800; font-family: monospace; line-height: 1.2;">${metrics.hit2nd + metrics.hit3rd}회 <span style="font-size:0.6rem; display: block; color: #93c5fd; font-weight: 600;">(${metrics.hit2nd}/${metrics.hit3rd})</span></div>
                 </div>
-                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 6px 4px; border-radius: 6px; text-align: center; box-sizing: border-box;">
-                    <div style="color: #94a3b8; font-size: 0.66rem;">4·5등 당첨</div>
-                    <div style="color: #34d399; font-size: 0.92rem; font-weight: 800; font-family: monospace;">${metrics.hit4th + metrics.hit5th}회</div>
+                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 5px 3px; border-radius: 6px; text-align: center; box-sizing: border-box;">
+                    <div style="color: #94a3b8; font-size: 0.64rem;">4·5등 당첨</div>
+                    <div style="color: #34d399; font-size: 0.85rem; font-weight: 800; font-family: monospace;">${metrics.hit4th + metrics.hit5th}회</div>
                 </div>
-                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 6px 4px; border-radius: 6px; text-align: center; box-sizing: border-box;">
-                    <div style="color: #94a3b8; font-size: 0.66rem;">환급 ROI</div>
-                    <div style="color: #f43f5e; font-size: 0.95rem; font-weight: 800; font-family: monospace;">+${metrics.roi}%</div>
+                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 5px 3px; border-radius: 6px; text-align: center; box-sizing: border-box;">
+                    <div style="color: #94a3b8; font-size: 0.64rem;">환급 ROI</div>
+                    <div style="color: #f43f5e; font-size: 0.88rem; font-weight: 800; font-family: monospace;">+${metrics.roi}%</div>
                 </div>
             </div>
 
             <!-- Instant Apply Button with Pulse Glow -->
-            <button type="button" id="btnApplyOptimizedResult" onclick="window.applyOptimizedCombinationToApp && window.applyOptimizedCombinationToApp()" class="opt-pulse-btn btn-primary" style="width: 100%; padding: 13px 16px; font-size: 0.95rem; font-weight: 900; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 7px; box-shadow: 0 4px 18px rgba(16, 185, 129, 0.45); letter-spacing: 0.2px;">
-                <i class="fa-solid fa-circle-check"></i> 최적 추가팩 추천기 즉시 적용 (+${metrics.additionalGames}게임 자동 배정)
+            <button type="button" id="btnApplyOptimizedResult" onclick="window.applyOptimizedCombinationToApp && window.applyOptimizedCombinationToApp()" class="opt-pulse-btn btn-primary" style="width: 100%; padding: 11px 10px; font-size: 0.88rem; font-weight: 900; border-radius: 10px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; box-shadow: 0 4px 18px rgba(16, 185, 129, 0.45); line-height: 1.3; text-align: center; word-break: keep-all;">
+                <i class="fa-solid fa-circle-check" style="font-size: 1rem; flex-shrink: 0;"></i>
+                <span>최적 추가팩 추천기 즉시 적용 <span style="font-size: 0.76rem; opacity: 0.9; font-weight: 700; display: inline-block;">(+${metrics.additionalGames}게임 자동 배정)</span></span>
             </button>
         </div>
     `;
