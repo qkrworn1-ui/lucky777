@@ -212,7 +212,7 @@ export function openSlimMemberPickerModal(options = {}) {
                 </div>
 
                 <!-- Toolbar: Simple Clean Search -->
-                <div class="slim-picker-toolbar" style="padding: 10px 14px 8px 14px; background: rgba(0,0,0,0.25);">
+                <div class="slim-picker-toolbar" style="padding: 8px 12px; background: rgba(0,0,0,0.25);">
                     <div class="slim-picker-search-wrap">
                         <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: #64748b;"></i>
                         <input type="text" id="slimMemberSearchInput" class="slim-picker-search-input" placeholder="회원 이름 또는 ID 검색..." oninput="window._filterSlimMemberList && window._filterSlimMemberList()">
@@ -220,7 +220,7 @@ export function openSlimMemberPickerModal(options = {}) {
                 </div>
 
                 <!-- All Users Single-Line Item -->
-                <div id="slimMemberAllCardWrap" style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
+                <div id="slimMemberAllCardWrap" style="padding: 6px 12px 2px 12px; box-sizing: border-box;">
                     <div id="slimMemberItem-all" onclick="window._pickSlimMemberAndClose('all', '전체 회원 통합 보기')" class="slim-picker-item" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.3);">
                         <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                             <div style="width: 26px; height: 26px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); color: #60a5fa; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0;">
@@ -241,9 +241,9 @@ export function openSlimMemberPickerModal(options = {}) {
                 </div>
 
                 <!-- Minimal Footer -->
-                <div class="slim-picker-footer" style="padding: 8px 14px; justify-content: space-between;">
-                    <span style="font-size: 0.72rem; color: #94a3b8;">💡 회원을 터치하면 즉시 선택 후 창이 닫힙니다.</span>
-                    <button type="button" onclick="window.closeSlimMemberPickerModal()" style="padding: 5px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; color: #cbd5e1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">닫기</button>
+                <div class="slim-picker-footer" style="padding: 7px 12px; justify-content: space-between;">
+                    <span style="font-size: 0.70rem; color: #94a3b8;">💡 회원을 터치하면 즉시 선택 후 창이 닫힙니다.</span>
+                    <button type="button" onclick="window.closeSlimMemberPickerModal()" style="padding: 4px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; color: #cbd5e1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">닫기</button>
                 </div>
             </div>
         `;

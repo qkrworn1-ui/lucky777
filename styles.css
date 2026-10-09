@@ -14055,16 +14055,16 @@ body.is-admin .btn-snapshot-audit-compact {
 
 /* ── 관리자 바 ── */
 .sim-admin-bar {
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%);
-    border: 1.5px solid rgba(245, 158, 11, 0.45);
-    border-radius: 12px;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
+    background: #0d1322 !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+    border-radius: 8px !important;
+    padding: 5px 10px !important;
+    margin-bottom: 8px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 6px !important;
+    box-sizing: border-box !important;
 }
 
 .sim-admin-bar-left {
@@ -14274,22 +14274,23 @@ body.is-admin .btn-snapshot-audit-compact {
    📱 모바일 시뮬레이션 반응형 (≤768px)
    ═══════════════════════════════════════════ */
 @media (max-width: 768px) {
-    /* 관리자 바: 세로 스택 */
+    /* 관리자 바: 슬림 가로 배치 유지 */
     .sim-admin-bar {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 12px 14px;
-        gap: 10px;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 5px 8px !important;
+        gap: 6px !important;
     }
 
     .sim-admin-bar-left {
-        align-items: flex-start;
+        align-items: center;
     }
 
     .sim-admin-bar-right {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 6px;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 6px !important;
     }
 
     .sim-admin-bar-label {
@@ -14470,22 +14471,23 @@ body.is-admin .btn-snapshot-audit-compact {
    📱 모바일 시뮬레이션 반응형 (≤768px)
    ═══════════════════════════════════════════ */
 @media (max-width: 768px) {
-    /* 관리자 바: 세로 스택 */
+    /* 관리자 바: 슬림 가로 배치 유지 */
     .sim-admin-bar {
-        flex-direction: column;
-        align-items: stretch;
-        padding: 12px 14px;
-        gap: 10px;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 5px 8px !important;
+        gap: 6px !important;
     }
 
     .sim-admin-bar-left {
-        align-items: flex-start;
+        align-items: center;
     }
 
     .sim-admin-bar-right {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 6px;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 6px !important;
     }
 
     .sim-admin-bar-label {
@@ -21623,12 +21625,12 @@ body.lotto-mode-active .app-container {
 
 .slim-picker-modal {
     width: 100%;
-    max-width: 520px;
-    max-height: 90vh;
-    max-height: 90dvh;
+    max-width: 500px;
+    max-height: 75vh;
+    max-height: 75dvh;
     background: linear-gradient(155deg, rgba(15, 23, 42, 0.96) 0%, rgba(9, 13, 22, 0.98) 100%);
     border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 20px;
+    border-radius: 16px;
     color: #f8fafc;
     box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.95), 0 0 30px rgba(59, 130, 246, 0.12);
     display: flex;
@@ -21643,7 +21645,7 @@ body.lotto-mode-active .app-container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 16px;
+    padding: 10px 14px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     background: rgba(15, 23, 42, 0.6);
     flex-shrink: 0;
@@ -21706,12 +21708,12 @@ body.lotto-mode-active .app-container {
 }
 
 .slim-picker-toolbar {
-    padding: 10px 14px;
+    padding: 8px 12px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     background: rgba(0, 0, 0, 0.25);
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     flex-shrink: 0;
 }
 
@@ -21788,8 +21790,8 @@ body.lotto-mode-active .app-container {
 .slim-picker-item {
     background: rgba(15, 23, 42, 0.65);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 12px;
-    padding: 9px 12px;
+    border-radius: 10px;
+    padding: 7px 10px;
     cursor: pointer;
     transition: all 0.15s ease;
     display: flex;
@@ -21819,7 +21821,7 @@ body.lotto-mode-active .app-container {
 
 .slim-picker-footer {
     background: rgba(15, 23, 42, 0.95);
-    padding: 10px 14px;
+    padding: 7px 12px;
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     justify-content: space-between;
@@ -21855,21 +21857,23 @@ body.lotto-mode-active .app-container {
 
 @media (max-width: 480px) {
     .slim-picker-modal {
-        border-radius: 16px;
-        max-height: 94vh;
-        max-height: 94dvh;
+        border-radius: 14px;
+        max-height: 75vh;
+        max-height: 75dvh;
     }
     .slim-picker-header {
-        padding: 10px 12px;
+        padding: 8px 10px;
     }
     .slim-picker-toolbar {
-        padding: 8px 10px;
+        padding: 6px 10px;
     }
     .slim-picker-list {
-        padding: 8px 10px;
+        padding: 6px 10px;
+        gap: 4px;
     }
     .slim-picker-item {
-        padding: 8px 10px;
+        padding: 6px 8px;
+        border-radius: 8px;
     }
 }
 

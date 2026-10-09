@@ -294,25 +294,20 @@ export function renderSimulationTab(targetRound = null) {
             });
 
             adminBarContainer.innerHTML = `
-                <div class="sim-admin-bar">
-                    <div class="sim-admin-bar-left">
-                        <i class="fa-solid fa-crown sim-admin-crown"></i>
-                        <div class="sim-admin-bar-info">
-                            <strong class="sim-admin-bar-title">[관리자 전용] 회원별 시뮬레이션 &amp; 백테스팅 컨트롤러</strong>
-                            <div class="sim-admin-bar-desc">전체 회원 종합 또는 특정 회원의 고유 시드로 1회부터 최신 회차까지 백테스팅을 실행합니다.</div>
-                        </div>
-                    </div>
-                    <div class="sim-admin-bar-right" style="display: flex; align-items: center; gap: 8px;">
-                        <label style="font-size: 0.78rem; color: #fbbf24; font-weight: 700; white-space: nowrap; flex-shrink: 0;"><i class="fa-solid fa-users"></i> 시뮬레이션 대상:</label>
-                        <button type="button" id="btnSimUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForSimulation && window.openSlimMemberPickerForSimulation()" style="min-width: 160px;">
-                            <i class="fa-solid fa-user-check" style="color: #fbbf24; font-size: 0.75rem; flex-shrink: 0;"></i>
-                            <span id="simUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.78rem; font-weight: 700;">${simUserLabel}</span>
-                            <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: auto; flex-shrink: 0;"></i>
-                        </button>
-                        <select id="simAdminUserSelect" onchange="window.changeSimAdminViewingUser && window.changeSimAdminViewingUser(this.value)" style="display: none;">
-                            ${userOptions}
-                        </select>
-                    </div>
+                <div class="sim-admin-bar" style="background: #0d1322; border: 1px solid rgba(245, 158, 11, 0.35); padding: 5px 10px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 8px; max-width: 100%; box-sizing: border-box; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.25);">
+                    <span style="font-size: 0.76rem; color: #fbbf24; font-weight: 800; display: flex; align-items: center; gap: 4px; white-space: nowrap; flex-shrink: 0;">
+                        <i class="fa-solid fa-crown" style="font-size: 0.72rem;"></i> 시뮬레이션 대상:
+                    </span>
+                    <button type="button" id="btnSimUserTrigger" class="slim-picker-trigger slim-picker-trigger-amber" onclick="window.openSlimMemberPickerForSimulation && window.openSlimMemberPickerForSimulation()" style="flex: 1 1 auto; max-width: 320px; min-width: 0; min-height: 26px; height: 28px; padding: 2px 8px; font-size: 0.74rem; justify-content: space-between; border-radius: 6px;">
+                        <span style="display: flex; align-items: center; gap: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            <i class="fa-solid fa-user text-amber-400" style="font-size: 0.68rem;"></i>
+                            <span id="simUserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${simUserLabel}</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-down" style="font-size: 0.6rem; opacity: 0.6; margin-left: 6px; flex-shrink: 0;"></i>
+                    </button>
+                    <select id="simAdminUserSelect" onchange="window.changeSimAdminViewingUser && window.changeSimAdminViewingUser(this.value)" style="display: none;">
+                        ${userOptions}
+                    </select>
                 </div>
             `;
         } else {
