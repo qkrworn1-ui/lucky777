@@ -20892,6 +20892,25 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 
 /* ==========================================================================
+   Budget Optimizer Dynamic Redesign Animations
+   ========================================================================== */
+@keyframes optGoldGlow {
+    0%, 100% { box-shadow: 0 0 15px rgba(245, 158, 11, 0.4), inset 0 0 10px rgba(245, 158, 11, 0.2); border-color: rgba(245, 158, 11, 0.7); }
+    50% { box-shadow: 0 0 32px rgba(245, 158, 11, 0.8), inset 0 0 18px rgba(245, 158, 11, 0.35); border-color: #fbbf24; }
+}
+.opt-gold-glow {
+    animation: optGoldGlow 2s infinite ease-in-out;
+}
+
+@keyframes optPulseBtn {
+    0%, 100% { transform: scale(1); box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
+    50% { transform: scale(1.02); box-shadow: 0 8px 25px rgba(16, 185, 129, 0.75); }
+}
+.opt-pulse-btn {
+    animation: optPulseBtn 1.6s infinite ease-in-out;
+}
+
+/* ==========================================================================
    15. Manual / QR Ledger Modal (#manualLedgerModal) - Minimal Monochrome
    ========================================================================== */
 #manualLedgerModal .modal-content {
