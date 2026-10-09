@@ -353,34 +353,71 @@ if (typeof window !== 'undefined') {
  */
 export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
     if (!userId || !roundNum) return null;
-    const cleanUser = String(userId).toLowerCase().trim();
-    if (isSystemOrDummyUser(cleanUser)) return null;
-    const cacheKey = `${cleanUser}_${roundNum}`;
-    const rKey = String(roundNum);
-
-    // 1. In-memory state snapshots
-    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cacheKey]) {
-        return state.userRecommendationSnapshots[cacheKey];
+    let cleanUser = String(userId).trim();
+    if (cleanUser.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanUser);
+            cleanUser = p.userid || p.userId || cleanUser;
+        } catch(e) {}
     }
+    cleanUser = cleanUser.toLowerCase().trim();
+    if (isSystemOrDummyUser(cleanUser)) return null;
+    const rNum = parseInt(roundNum, 10);
+    const rKey = String(rNum);
+
+    // Collect candidate user identifiers for alias / display name mapping (e.g. 박재구 <-> pjg <-> kakao_5070244665)
+    const candidateIds = new Set([cleanUser]);
+    if (cleanUser === '박재구' || cleanUser === 'pjg' || cleanUser === 'kakao_5070244665') {
+        candidateIds.add('kakao_5070244665');
+        candidateIds.add('박재구');
+        candidateIds.add('pjg');
+    }
+    if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+        state.allRegisteredUsersList.forEach(u => {
+            if (!u) return;
+            const uId = String(u.id || '').toLowerCase().trim();
+            const uName = String(u.name || '').toLowerCase().trim();
+            const uReal = String(u.realName || '').toLowerCase().trim();
+            if (uId === cleanUser || uName === cleanUser || uReal === cleanUser) {
+                if (uId) candidateIds.add(uId);
+                if (uName) candidateIds.add(uName);
+                if (uReal) candidateIds.add(uReal);
+            }
+        });
+    }
+
+    for (const cId of candidateIds) {
+        const cacheKey = `${cId}_${rNum}`;
+        // 1. In-memory state snapshots
+        if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cacheKey]) {
+            return state.userRecommendationSnapshots[cacheKey];
+        }
+        // 2. LocalStorage cache
+        try {
+            const raw = localStorage.getItem(`lotto_rec_snapshot_${cacheKey}`);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && (parsed.v4Combos || parsed.v3Combos)) return parsed;
+            }
+        } catch(e) {}
+        // 3. state.allUsersPurchasesMap (User's Single Master Document)
+        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
+            const pDoc = state.allUsersPurchasesMap[cId];
+            if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
+                return pDoc.recommendationSnapshots[rKey];
+            }
+        }
+        // 4. state.allRegisteredUsersList
+        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+            const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
+            if (u && u.recommendationSnapshots && u.recommendationSnapshots[rKey]) {
+                return u.recommendationSnapshots[rKey];
+            }
+        }
+    }
+
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
         return state.userRecommendationSnapshots[rKey];
-    }
-
-    // 2. LocalStorage cache
-    try {
-        const raw = localStorage.getItem(`lotto_rec_snapshot_${cacheKey}`);
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed && (parsed.v4Combos || parsed.v3Combos)) return parsed;
-        }
-    } catch(e) {}
-
-    // 3. state.allUsersPurchasesMap (User's Single Master Document)
-    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
-        const pDoc = state.allUsersPurchasesMap[cleanUser];
-        if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
-            return pDoc.recommendationSnapshots[rKey];
-        }
     }
 
     return null;

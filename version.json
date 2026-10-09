@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.09.1724.38",
+  "version": "v2026.10.09.1747.53",
   "buildDate": "2026-10-09",
   "description": "Fix: Optimize dashboard height to fit within single screen",
-  "buildTimestamp": "2026-10-09T17:24:38.796309",
+  "buildTimestamp": "2026-10-09T17:47:53.093101",
   "buildHistory": [
-    {
-      "version": "v2026.10.09.1408.53",
-      "buildDate": "2026-10-09",
-      "buildTime": "14:08",
-      "buildDateTime": "2026-10-09 14:08",
-      "buildTimestamp": "2026-10-09T14:08:53.132235",
-      "description": "Fix: Enhance budget optimizer modal responsive layout for Galaxy Z Fold cover screens and narrow viewports"
-    },
-    {
-      "version": "v2026.10.09.1530",
-      "buildDate": "2026-10-09",
-      "buildTime": "15:30",
-      "buildDateTime": "2026-10-09 15:30",
-      "buildTimestamp": "2026-10-09T15:30:44.952424",
-      "description": "Fix: Optimize vertical height of simulation member selector bar and slim picker modal"
-    },
     {
       "version": "v2026.10.09.1531",
       "buildDate": "2026-10-09",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-09 17:24",
       "buildTimestamp": "2026-10-09T17:24:38.796309",
       "description": "Fix: Optimize dashboard height to fit within single screen"
+    },
+    {
+      "version": "v2026.10.09.1747",
+      "buildDate": "2026-10-09",
+      "buildTime": "17:47",
+      "buildDateTime": "2026-10-09 17:47",
+      "buildTimestamp": "2026-10-09T17:47:13.973386",
+      "description": "Fix: Optimize dashboard height to fit within single screen"
+    },
+    {
+      "version": "v2026.10.09.1747.53",
+      "buildDate": "2026-10-09",
+      "buildTime": "17:47",
+      "buildDateTime": "2026-10-09 17:47",
+      "buildTimestamp": "2026-10-09T17:47:53.093101",
+      "description": "Fix: Optimize dashboard height to fit within single screen"
     }
   ],
-  "buildTime": "17:24",
-  "buildDateTime": "2026-10-09 17:24"
+  "buildTime": "17:47",
+  "buildDateTime": "2026-10-09 17:47"
 }

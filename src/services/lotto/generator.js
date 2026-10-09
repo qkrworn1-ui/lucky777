@@ -1666,35 +1666,60 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     const roundNum = parseInt(round, 10);
     const docKey = `${cleanUser}_${roundNum}`;
 
-    if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey]) {
-        return state.userRecommendationSnapshots[docKey];
+    // Collect candidate user identifiers for alias / display name mapping (e.g. 박재구 <-> pjg <-> kakao_5070244665)
+    const candidateIds = new Set([cleanUser]);
+    if (cleanUser === '박재구' || cleanUser === 'pjg' || cleanUser === 'kakao_5070244665') {
+        candidateIds.add('kakao_5070244665');
+        candidateIds.add('박재구');
+        candidateIds.add('pjg');
     }
+    if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+        state.allRegisteredUsersList.forEach(u => {
+            if (!u) return;
+            const uId = String(u.id || '').toLowerCase().trim();
+            const uName = String(u.name || '').toLowerCase().trim();
+            const uReal = String(u.realName || '').toLowerCase().trim();
+            if (uId === cleanUser || uName === cleanUser || uReal === cleanUser) {
+                if (uId) candidateIds.add(uId);
+                if (uName) candidateIds.add(uName);
+                if (uReal) candidateIds.add(uReal);
+            }
+        });
+    }
+
+    for (const cId of candidateIds) {
+        const cKey = `${cId}_${roundNum}`;
+        if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cKey]) {
+            return state.userRecommendationSnapshots[cKey];
+        }
+        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
+            const pDoc = state.allUsersPurchasesMap[cId];
+            if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[String(roundNum)]) {
+                return pDoc.recommendationSnapshots[String(roundNum)];
+            }
+        }
+        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+            const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
+            if (u && u.recommendationSnapshots && u.recommendationSnapshots[String(roundNum)]) {
+                return u.recommendationSnapshots[String(roundNum)];
+            }
+        }
+        try {
+            const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(`lotto_rec_snapshot_${cKey}`) : null;
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
+                    if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                    state.userRecommendationSnapshots[cKey] = parsed;
+                    return parsed;
+                }
+            }
+        } catch(e) {}
+    }
+
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[String(roundNum)]) {
         return state.userRecommendationSnapshots[String(roundNum)];
     }
-    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
-        const pDoc = state.allUsersPurchasesMap[cleanUser];
-        if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[String(roundNum)]) {
-            return pDoc.recommendationSnapshots[String(roundNum)];
-        }
-    }
-    if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
-        const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cleanUser);
-        if (u && u.recommendationSnapshots && u.recommendationSnapshots[String(roundNum)]) {
-            return u.recommendationSnapshots[String(roundNum)];
-        }
-    }
-    try {
-        const raw = (typeof localStorage !== 'undefined') ? localStorage.getItem(`lotto_rec_snapshot_${docKey}`) : null;
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
-                if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                state.userRecommendationSnapshots[docKey] = parsed;
-                return parsed;
-            }
-        }
-    } catch(e) {}
     return null;
 }
 

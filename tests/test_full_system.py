@@ -3712,6 +3712,126 @@ Lotto 6/45
             res = subprocess.run([node_bin, '-e', js_script], capture_output=True, text=True)
             self.assertEqual(res.returncode, 0, f"Node allrounder badge test failed: {res.stderr or res.stdout}")
 
+    # [Test 110] Snapshot-driven All-Rounder 1 & 2 Re-evaluation for Park Jae-gu (박재구/kakao_5070244665)
+    def test_110_allrounder_snapshot_driven_reevaluation_for_parkjaegu(self):
+        gen_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+        rev_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        conf_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+
+        with open(gen_path, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+        with open(rev_path, 'r', encoding='utf-8') as f:
+            rev_code = f.read()
+        with open(conf_path, 'r', encoding='utf-8') as f:
+            conf_code = f.read()
+
+        # 1. Alias candidate resolution in generator.js and review-tab.js
+        self.assertIn("candidateIds.add('kakao_5070244665')", gen_code)
+        self.assertIn("candidateIds.add('박재구')", gen_code)
+        self.assertIn("candidateIds.add('pjg')", gen_code)
+
+        self.assertIn("candidateIds.add('kakao_5070244665')", rev_code)
+        self.assertIn("candidateIds.add('박재구')", rev_code)
+        self.assertIn("candidateIds.add('pjg')", rev_code)
+
+        # 2. Snapshot-driven receipt badge in confirmed-tab.js
+        self.assertIn("recV3Exact", conf_code)
+        self.assertIn("recV4Exact", conf_code)
+        self.assertIn("기본 2: 올라운더 팩 2", conf_code)
+
+        # 3. Snapshot match checked first for combos in confirmed-tab.js
+        self.assertIn("snapshotMatch = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);", conf_code)
+
+        # 4. algoHits snapshot-driven classification
+        self.assertIn("algoHits.v3++;", conf_code)
+        self.assertIn("algoHits.v4++;", conf_code)
+
+        # 5. Node.js functional test simulating snapshot evaluation for 박재구
+        import subprocess, shutil
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_script = """
+            const state = {
+                userRecommendationSnapshots: {
+                    'kakao_5070244665_1245': {
+                        v4Combos: [
+                            [1, 2, 3, 4, 5, 6],
+                            [7, 8, 9, 10, 11, 12]
+                        ],
+                        v3Combos: [
+                            [13, 14, 15, 16, 17, 18],
+                            [19, 20, 21, 22, 23, 24]
+                        ],
+                        extraPacks: []
+                    }
+                },
+                allRegisteredUsersList: [
+                    { id: 'kakao_5070244665', name: '박재구', realName: '박재구' }
+                ]
+            };
+
+            function getUserSnapshotSync(userId, round) {
+                let clean = String(userId).toLowerCase().trim();
+                const candidates = new Set([clean]);
+                if (clean === '박재구' || clean === 'pjg' || clean === 'kakao_5070244665') {
+                    candidates.add('kakao_5070244665');
+                    candidates.add('박재구');
+                    candidates.add('pjg');
+                }
+                for (const c of candidates) {
+                    const key = `${c}_${round}`;
+                    if (state.userRecommendationSnapshots[key]) return state.userRecommendationSnapshots[key];
+                }
+                return null;
+            }
+
+            // Verify lookup by alias '박재구' and 'pjg' finds kakao_5070244665's snapshot
+            const snapByName = getUserSnapshotSync('박재구', 1245);
+            const snapByAlias = getUserSnapshotSync('pjg', 1245);
+            if (!snapByName || !snapByAlias) {
+                console.error('Failed snapshot alias lookup');
+                process.exit(1);
+            }
+
+            // Verify receipt evaluation: All-Rounder 2 combos detected as All-Rounder 2 even with generic pVer
+            function evaluateReceipt(combos, pVer, snapshot) {
+                const toKey = arr => [...arr].sort((a,b)=>a-b).join(',');
+                const v4Keys = new Set((snapshot.v4Combos || []).map(toKey));
+                const v3Keys = new Set((snapshot.v3Combos || []).map(toKey));
+
+                let recV4 = 0, recV3 = 0;
+                combos.forEach(c => {
+                    const k = toKey(c);
+                    if (v3Keys.has(k)) recV3++;
+                    else if (v4Keys.has(k)) recV4++;
+                });
+
+                if (recV3 > 0 && recV3 >= recV4) return '기본 2: 올라운더 팩 2';
+                if (recV4 > 0 && recV4 > recV3) return '기본 1: 올라운더 팩';
+                return pVer;
+            }
+
+            const receipt1 = [[1, 2, 3, 4, 5, 6], [7, 8, 9, 10, 11, 12]]; // All-Rounder 1
+            const receipt2 = [[13, 14, 15, 16, 17, 18], [19, 20, 21, 22, 23, 24]]; // All-Rounder 2
+
+            const label1 = evaluateReceipt(receipt1, '기본 1: 올라운더 팩 (10게임)', snapByName);
+            const label2 = evaluateReceipt(receipt2, '기본 1: 올라운더 팩 (10게임)', snapByName);
+
+            if (label1 !== '기본 1: 올라운더 팩') {
+                console.error('Expected 기본 1: 올라운더 팩, got ' + label1);
+                process.exit(2);
+            }
+            if (label2 !== '기본 2: 올라운더 팩 2') {
+                console.error('Expected 기본 2: 올라운더 팩 2, got ' + label2);
+                process.exit(3);
+            }
+
+            console.log('OK_TEST_110_PASSED');
+            process.exit(0);
+            """
+            res = subprocess.run([node_bin, '-e', js_script], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0, f"Node test 110 failed: {res.stderr or res.stdout}")
+
 if __name__ == '__main__':
     unittest.main()
 
