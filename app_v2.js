@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1142.53 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1149.40 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.1142.53)
+ * Lucky777 Smart Bundle (v2026.10.09.1149.40)
  */
 
 
@@ -40752,14 +40752,19 @@ function switchLottoTab(target) {
         } catch(e) {}
     }
 
-    // 3-2. Smoothly align viewport to the top of tab content if user is scrolled down past sticky navigation
+    // 3-2. Smoothly align viewport to the top of tab content if user is scrolled down
     try {
-        const navWrapper = document.getElementById('tabNavStickyWrapper') || document.querySelector('.tab-nav');
-        if (navWrapper && typeof window !== 'undefined') {
-            const navTop = navWrapper.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
-            const currentScroll = window.pageYOffset || document.documentElement.scrollTop || 0;
-            if (currentScroll > navTop + 5) {
-                window.scrollTo({ top: navTop, behavior: 'smooth' });
+        const scrollBody = document.getElementById('appScrollableBody');
+        if (scrollBody) {
+            scrollBody.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            const navWrapper = document.getElementById('tabNavStickyWrapper') || document.querySelector('.tab-nav');
+            if (navWrapper && typeof window !== 'undefined') {
+                const navTop = navWrapper.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+                const currentScroll = window.pageYOffset || document.documentElement.scrollTop || 0;
+                if (currentScroll > navTop + 5) {
+                    window.scrollTo({ top: navTop, behavior: 'smooth' });
+                }
             }
         }
     } catch(e) {}
@@ -49335,6 +49340,18 @@ function _switchPage(show, pushHistory = true) {
         }
     });
 
+    if (show === 'appContainer') {
+        try {
+            document.documentElement.classList.add('lotto-mode-active');
+            document.body.classList.add('lotto-mode-active');
+        } catch(e) {}
+    } else {
+        try {
+            document.documentElement.classList.remove('lotto-mode-active');
+            document.body.classList.remove('lotto-mode-active');
+        } catch(e) {}
+    }
+
     if (pushHistory && typeof history !== 'undefined' && history.pushState) {
         try {
             const hash = show === 'landingPage' ? '#home' : (show === 'appContainer' ? '#lotto' : '#toto');
@@ -49419,7 +49436,12 @@ window.showLotto = function(pushHistory = true) {
     } catch(e) {
         console.warn('[Lotto Safe Load Exception]', e);
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const scrollBody = document.getElementById('appScrollableBody');
+    if (scrollBody) {
+        scrollBody.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 };
 
 function setupMobileBackNavigation() {

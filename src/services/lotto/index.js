@@ -590,14 +590,19 @@ export function switchLottoTab(target) {
         } catch(e) {}
     }
 
-    // 3-2. Smoothly align viewport to the top of tab content if user is scrolled down past sticky navigation
+    // 3-2. Smoothly align viewport to the top of tab content if user is scrolled down
     try {
-        const navWrapper = document.getElementById('tabNavStickyWrapper') || document.querySelector('.tab-nav');
-        if (navWrapper && typeof window !== 'undefined') {
-            const navTop = navWrapper.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
-            const currentScroll = window.pageYOffset || document.documentElement.scrollTop || 0;
-            if (currentScroll > navTop + 5) {
-                window.scrollTo({ top: navTop, behavior: 'smooth' });
+        const scrollBody = document.getElementById('appScrollableBody');
+        if (scrollBody) {
+            scrollBody.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            const navWrapper = document.getElementById('tabNavStickyWrapper') || document.querySelector('.tab-nav');
+            if (navWrapper && typeof window !== 'undefined') {
+                const navTop = navWrapper.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0);
+                const currentScroll = window.pageYOffset || document.documentElement.scrollTop || 0;
+                if (currentScroll > navTop + 5) {
+                    window.scrollTo({ top: navTop, behavior: 'smooth' });
+                }
             }
         }
     } catch(e) {}

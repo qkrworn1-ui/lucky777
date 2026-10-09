@@ -94,6 +94,18 @@ function _switchPage(show, pushHistory = true) {
         }
     });
 
+    if (show === 'appContainer') {
+        try {
+            document.documentElement.classList.add('lotto-mode-active');
+            document.body.classList.add('lotto-mode-active');
+        } catch(e) {}
+    } else {
+        try {
+            document.documentElement.classList.remove('lotto-mode-active');
+            document.body.classList.remove('lotto-mode-active');
+        } catch(e) {}
+    }
+
     if (pushHistory && typeof history !== 'undefined' && history.pushState) {
         try {
             const hash = show === 'landingPage' ? '#home' : (show === 'appContainer' ? '#lotto' : '#toto');
@@ -178,7 +190,12 @@ window.showLotto = function(pushHistory = true) {
     } catch(e) {
         console.warn('[Lotto Safe Load Exception]', e);
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const scrollBody = document.getElementById('appScrollableBody');
+    if (scrollBody) {
+        scrollBody.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
 };
 
 function setupMobileBackNavigation() {

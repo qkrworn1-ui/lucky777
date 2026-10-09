@@ -21398,4 +21398,103 @@ body.is-admin .btn-snapshot-audit-compact {
     opacity: 1;
 }
 
+/* ==========================================================================
+   Lotto App Shell Architecture (Fixed Top Shell & Independent Scrollable Body)
+   - Screen / Viewport is locked to 100dvh with zero window scrolling
+   - Top shell (Header + Latest Draw Banner + Menu Bar) stays completely stationary
+   - Only the lower body (Tab Content Area + Footer) scrolls independently
+   - Landing page maintains normal document scroll when active
+   ========================================================================== */
+html.lotto-mode-active,
+body.lotto-mode-active {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    overflow: hidden !important;
+    overflow-y: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+body.lotto-mode-active .app-container {
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    gap: 0 !important;
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 6px 12px 0 12px !important;
+    box-sizing: border-box;
+}
+
+/* 1. App Top Fixed Shell (Header + Latest Draw Banner + Menu Bar) */
+.app-top-fixed-shell {
+    flex-shrink: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    width: 100% !important;
+    background: var(--bg-primary, #070a14) !important;
+    z-index: 100 !important;
+    box-sizing: border-box !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+}
+
+/* 2. App Scrollable Body (Main Content Area + Footer) */
+.app-scrollable-body {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    padding-top: 10px !important;
+    padding-bottom: 32px !important;
+    padding-right: 4px !important;
+}
+
+/* Custom Scrollbar for App Scrollable Body */
+.app-scrollable-body::-webkit-scrollbar {
+    width: 6px;
+}
+.app-scrollable-body::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.5);
+    border-radius: 3px;
+}
+.app-scrollable-body::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 3px;
+}
+.app-scrollable-body::-webkit-scrollbar-thumb:hover {
+    background: #6366f1;
+}
+
+@media (max-width: 768px) {
+    body.lotto-mode-active .app-container {
+        padding: 4px 6px 0 6px !important;
+    }
+    .app-top-fixed-shell {
+        gap: 6px !important;
+    }
+    .app-scrollable-body {
+        padding-top: 6px !important;
+        padding-right: 2px !important;
+        padding-bottom: 24px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    body.lotto-mode-active .app-container {
+        padding: 2px 4px 0 4px !important;
+    }
+    .app-top-fixed-shell {
+        gap: 4px !important;
+    }
+}
+
+
 
