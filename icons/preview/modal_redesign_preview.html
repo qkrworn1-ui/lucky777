@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>회원선택 & 회차선택 모달 리디자인 프리뷰</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.25); border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.45); }
+    .tnum { font-feature-settings: 'tnum'; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-3 md:p-6 antialiased custom-scrollbar">
+
+  <!-- Top Global Controller Bar -->
+  <div class="max-w-4xl mx-auto mb-5 bg-slate-900/90 border border-slate-800 backdrop-blur-md rounded-2xl p-4 shadow-xl">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 text-sm">✨</span>
+          <h1 class="text-base sm:text-lg font-bold text-white tracking-tight">회원 · 회차 선택 모달 UI 고도화 리디자인</h1>
+        </div>
+        <p class="text-xs text-slate-400 mt-1">기존의 크고 투박한 글씨와 답답한 레이아웃을 핀테크급 초슬림 모던 UI로 개선한 비교 프리뷰입니다.</p>
+      </div>
+
+      <!-- Controls Switcher -->
+      <div class="flex items-center gap-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800/80 self-start sm:self-auto">
+        <!-- Target Modal Toggle -->
+        <button id="btnTabMember" onclick="switchModalType('member')" class="px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 bg-amber-500 text-slate-950 shadow-sm">
+          👥 회원 선택 모달
+        </button>
+        <button id="btnTabRound" onclick="switchModalType('round')" class="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-lg transition-all duration-200">
+          🎯 회차 선택 모달
+        </button>
+      </div>
+    </div>
+
+    <!-- Mode Toggle: Before vs After -->
+    <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2">
+        <span class="text-slate-400 font-medium">비교 보기:</span>
+        <div class="inline-flex bg-slate-950/90 rounded-lg p-1 border border-slate-800">
+          <button id="btnViewAfter" onclick="switchViewMode('after')" class="px-2.5 py-1 rounded text-xs font-bold bg-blue-600 text-white shadow-xs">
+            🌟 개선 후 (After)
+          </button>
+          <button id="btnViewBefore" onclick="switchViewMode('before')" class="px-2.5 py-1 rounded text-xs text-slate-400 hover:text-slate-200">
+            ⚠️ 기존 UI (Before)
+          </button>
+          <button id="btnViewBoth" onclick="switchViewMode('both')" class="px-2.5 py-1 rounded text-xs text-slate-400 hover:text-slate-200">
+            ↔️ 나란히 비교
+          </button>
+        </div>
+      </div>
+      <div id="statusBadge" class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-medium text-[11px]">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span>고밀도 슬림 타이포그래피 &amp; 원탭 선택 인터랙션 적용</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Container -->
+  <div class="max-w-4xl mx-auto">
+
+    <!-- ======================================================== -->
+    <!-- 1. [회원 선택 모달] MEMBER MODAL CONTAINER -->
+    <!-- ======================================================== -->
+    <div id="sectionMemberModal" class="transition-all duration-300">
+      <div id="gridMemberComparison" class="grid grid-cols-1 gap-6">
+
+        <!-- [BEFORE] 기존 투박한 회원선택 UI -->
+        <div id="colMemberBefore" class="hidden bg-slate-900/60 border-2 border-amber-600/40 rounded-2xl p-4 relative overflow-hidden">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-amber-500/20">
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+              <span>⚠️ 기존 문제점</span>
+              <span class="text-[11px] text-slate-400 font-normal">(글자가 비대하고 두껍고 공간 낭비 심함)</span>
+            </span>
+            <span class="px-2 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-bold">Old Version</span>
+          </div>
+
+          <!-- Existing Mockup: Oversized text, thick borders, crude dropdowns -->
+          <div class="bg-[#0f172a] border-2 border-[#f59e0b] rounded-xl p-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b-2 border-amber-500/30 mb-3">
+              <h3 class="text-lg font-black text-[#fbbf24] flex items-center gap-2">
+                👑 조회 대상 회원 선택
+              </h3>
+              <button class="w-8 h-8 rounded-full bg-white/10 text-white text-lg font-bold leading-none">&times;</button>
+            </div>
+
+            <!-- Heavy Native Select -->
+            <div class="mb-3">
+              <label class="block text-xs text-slate-300 font-bold mb-1">조회 대상 회원 목록 (Native Select)</label>
+              <select class="w-full h-11 px-3 bg-[#090d16] border-2 border-[#334155] text-white rounded-lg text-sm font-bold">
+                <option>👥 [전체 회원 통합] AI 적중 성과 종합 요약 (70G)</option>
+                <option>👑 관리자 본인 (master)</option>
+                <option>👤 user1 (홍길동 - 010-1234-5678)</option>
+                <option>👤 lucky_kim (김대박 - 010-9876-5432)</option>
+              </select>
+            </div>
+
+            <!-- Clunky table with huge padding & heavy text -->
+            <div class="border border-slate-700 rounded-lg overflow-x-auto bg-slate-900/80">
+              <table class="w-full text-xs text-center border-collapse">
+                <thead>
+                  <tr class="bg-slate-800 text-amber-300 font-black text-xs border-b border-slate-700">
+                    <th class="p-2.5">순위</th>
+                    <th class="p-2.5 text-left">회원ID (실명)</th>
+                    <th class="p-2.5">참여회차</th>
+                    <th class="p-2.5">적중현황</th>
+                    <th class="p-2.5 text-right">총 당첨금</th>
+                    <th class="p-2.5">작업</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800 text-slate-200">
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="p-3 font-black text-base text-amber-400">🥇</td>
+                    <td class="p-3 text-left font-bold text-sm text-white">master <span class="text-xs text-slate-400">(관리자)</span></td>
+                    <td class="p-3 font-bold text-sm">9회차</td>
+                    <td class="p-3 font-bold text-xs text-amber-300">1등 1, 3등 2</td>
+                    <td class="p-3 text-right font-black text-sm text-emerald-400">+1,425,000,000원</td>
+                    <td class="p-3"><button class="px-2.5 py-1.5 bg-amber-500 text-slate-950 font-black rounded text-xs">선택</button></td>
+                  </tr>
+                  <tr class="hover:bg-slate-800/40">
+                    <td class="p-3 font-black text-base text-slate-400">🥈</td>
+                    <td class="p-3 text-left font-bold text-sm text-white">lucky_kim <span class="text-xs text-slate-400">(김대박)</span></td>
+                    <td class="p-3 font-bold text-sm">8회차</td>
+                    <td class="p-3 font-bold text-xs text-blue-300">2등 1, 4등 3</td>
+                    <td class="p-3 text-right font-black text-sm text-emerald-400">+48,500,000원</td>
+                    <td class="p-3"><button class="px-2.5 py-1.5 bg-amber-500 text-slate-950 font-black rounded text-xs">선택</button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="mt-3 text-right">
+              <button class="px-4 py-2 bg-slate-800 text-slate-300 rounded font-bold text-xs">닫기</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- [AFTER] 세련되고 슬림한 모던 핀테크 회원선택 모달 -->
+        <div id="colMemberAfter" class="bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-2xl relative">
+          
+          <!-- Modal Card Header -->
+          <div class="flex items-center justify-between pb-3.5 border-b border-slate-800/80">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shadow-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm sm:text-base font-bold text-white tracking-tight">회원 선택</h3>
+                  <span class="px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[11px] font-semibold">총 <span id="memberCountBadge">6</span>명</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">조회하거나 리포트를 발송할 대상 회원을 검색 및 선택하세요.</p>
+              </div>
+            </div>
+            <button class="w-7 h-7 rounded-full bg-slate-800/60 hover:bg-slate-700/80 text-slate-400 hover:text-white flex items-center justify-center text-sm transition-all">&times;</button>
+          </div>
+
+          <!-- Search & Filter Category Bar -->
+          <div class="mt-3.5 space-y-2.5">
+            <!-- Sleek Search Input -->
+            <div class="relative">
+              <svg class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              <input type="text" id="memberSearchInput" oninput="filterMemberList()" placeholder="회원 ID, 실명, 연락처 초성 검색..." class="w-full h-9 pl-9 pr-3 text-xs bg-slate-900/90 border border-slate-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 rounded-xl text-slate-200 placeholder-slate-500 outline-none transition-all">
+            </div>
+
+            <!-- Filter Pills -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-[11px] custom-scrollbar">
+              <button onclick="setMemberCategoryFilter('all', this)" class="member-filter-chip px-2.5 py-1 rounded-lg font-bold bg-blue-600 text-white shadow-xs whitespace-nowrap transition-all">전체</button>
+              <button onclick="setMemberCategoryFilter('admin', this)" class="member-filter-chip px-2.5 py-1 rounded-lg font-medium text-slate-400 bg-slate-900/80 border border-slate-800 hover:border-slate-700 whitespace-nowrap transition-all">👑 관리자/영구</button>
+              <button onclick="setMemberCategoryFilter('purchased', this)" class="member-filter-chip px-2.5 py-1 rounded-lg font-medium text-slate-400 bg-slate-900/80 border border-slate-800 hover:border-slate-700 whitespace-nowrap transition-all">🧾 실구매인증</button>
+              <button onclick="setMemberCategoryFilter('kakao', this)" class="member-filter-chip px-2.5 py-1 rounded-lg font-medium text-slate-400 bg-slate-900/80 border border-slate-800 hover:border-slate-700 whitespace-nowrap transition-all">💬 카카오연동</button>
+            </div>
+          </div>
+
+          <!-- All Users Global Quick Card -->
+          <div onclick="selectMemberItem('all', '전체 회원 통합 (AI 70게임)')" id="member-card-all" class="member-item-card mt-3 p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-900/80 to-slate-900/80 border border-amber-500/40 hover:border-amber-400/80 cursor-pointer transition-all flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs border border-amber-500/30">
+                🌐
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-bold text-amber-300">전체 회원 종합</span>
+                  <span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold">ALL</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">모든 회원의 추천 70게임 및 실구매 당첨 종합 대조</div>
+              </div>
+            </div>
+            <div class="radio-indicator w-4 h-4 rounded-full border border-amber-400/80 bg-amber-400 flex items-center justify-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
+            </div>
+          </div>
+
+          <!-- High-Density Slim User List (Scrollable) -->
+          <div id="memberListContainer" class="mt-2.5 space-y-1.5 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+            <!-- Dynamically populated by JavaScript with elegant cards -->
+          </div>
+
+          <!-- Selected Summary & Footer Actions -->
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-[11px] text-slate-400 shrink-0">선택 회원:</span>
+              <span id="selectedMemberDisplay" class="text-xs font-bold text-amber-400 truncate">전체 회원 종합</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800 transition-all">취소</button>
+              <button onclick="confirmMemberSelection()" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 shadow-sm transition-all flex items-center gap-1">
+                <span>선택 확정</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+
+    <!-- ======================================================== -->
+    <!-- 2. [회차 선택 모달] ROUND MODAL CONTAINER -->
+    <!-- ======================================================== -->
+    <div id="sectionRoundModal" class="hidden transition-all duration-300">
+      <div id="gridRoundComparison" class="grid grid-cols-1 gap-6">
+
+        <!-- [BEFORE] 기존 투박한 회차선택 UI -->
+        <div id="colRoundBefore" class="hidden bg-slate-900/60 border-2 border-amber-600/40 rounded-2xl p-4 relative overflow-hidden">
+          <div class="flex items-center justify-between mb-3 pb-2 border-b border-amber-500/20">
+            <span class="text-xs font-bold text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+              <span>⚠️ 기존 문제점</span>
+              <span class="text-[11px] text-slate-400 font-normal">(두꺼운 버튼, 거대한 번호공, 답답한 그리드)</span>
+            </span>
+            <span class="px-2 py-0.5 rounded bg-red-500/20 text-red-300 text-[10px] font-bold">Old Version</span>
+          </div>
+
+          <!-- Existing Mockup: Oversized balls, thick text -->
+          <div class="bg-[#0f172a] border-2 border-[#10b981] rounded-xl p-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-3 border-b-2 border-emerald-500/30 mb-3">
+              <h3 class="text-lg font-black text-white flex items-center gap-2">
+                <span class="text-emerald-400">📅</span> 상세 조회 회차 선택
+              </h3>
+              <button class="w-8 h-8 rounded-full bg-white/10 text-white text-lg font-bold leading-none">&times;</button>
+            </div>
+
+            <!-- Heavy Native Select -->
+            <div class="mb-3">
+              <select class="w-full h-11 px-3 bg-[#090d16] border-2 border-emerald-500 text-amber-400 rounded-lg text-sm font-black">
+                <option>📊 [전체 회차 조회] 1235회 ~ 1243회 누적 종합 성과</option>
+                <option>제 1243회차 (2026-10-03)</option>
+                <option>제 1242회차 (2026-09-26)</option>
+                <option>제 1241회차 (2026-09-19)</option>
+              </select>
+            </div>
+
+            <!-- Clunky oversized round cards -->
+            <div class="space-y-2">
+              <div class="p-3 bg-slate-800 border-2 border-slate-700 rounded-lg flex items-center justify-between">
+                <div>
+                  <div class="text-base font-black text-amber-400">제 1243회 <span class="text-xs text-slate-400">(2026-10-03)</span></div>
+                  <div class="flex gap-1.5 mt-2">
+                    <span class="w-7 h-7 rounded-full bg-red-500 text-white text-xs font-black flex items-center justify-center">3</span>
+                    <span class="w-7 h-7 rounded-full bg-blue-500 text-white text-xs font-black flex items-center justify-center">14</span>
+                    <span class="w-7 h-7 rounded-full bg-amber-500 text-slate-900 text-xs font-black flex items-center justify-center">21</span>
+                    <span class="w-7 h-7 rounded-full bg-slate-600 text-white text-xs font-black flex items-center justify-center">33</span>
+                    <span class="w-7 h-7 rounded-full bg-emerald-500 text-white text-xs font-black flex items-center justify-center">41</span>
+                    <span class="w-7 h-7 rounded-full bg-emerald-500 text-white text-xs font-black flex items-center justify-center">45</span>
+                    <span class="text-xs text-slate-400 font-bold self-center">+</span>
+                    <span class="w-7 h-7 rounded-full bg-amber-400 text-slate-900 text-xs font-black border-2 border-yellow-300 flex items-center justify-center">7</span>
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="text-sm font-black text-emerald-400">+52,400,000원</div>
+                  <button class="mt-1 px-3 py-1 bg-emerald-600 text-white font-black text-xs rounded">선택하기</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-3 text-right">
+              <button class="px-4 py-2 bg-slate-800 text-slate-300 rounded font-bold text-xs">닫기</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- [AFTER] 세련되고 슬림한 모던 핀테크 회차선택 모달 -->
+        <div id="colRoundAfter" class="bg-gradient-to-b from-slate-900/90 to-slate-950/95 border border-slate-800/80 rounded-2xl p-4 sm:p-5 shadow-2xl relative">
+
+          <!-- Modal Card Header -->
+          <div class="flex items-center justify-between pb-3.5 border-b border-slate-800/80">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-xs">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm sm:text-base font-bold text-white tracking-tight">회차 선택</h3>
+                  <span class="px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[11px] font-semibold">최신 1243회차</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mt-0.5">조회하고자 하는 공식 추첨 회차를 선택하면 번호와 당첨 결과가 즉시 연동됩니다.</p>
+              </div>
+            </div>
+            <button class="w-7 h-7 rounded-full bg-slate-800/60 hover:bg-slate-700/80 text-slate-400 hover:text-white flex items-center justify-center text-sm transition-all">&times;</button>
+          </div>
+
+          <!-- Quick Range Filter Buttons -->
+          <div class="mt-3.5 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-1.5 text-[11px]">
+              <button onclick="setRoundQuickFilter('all', this)" class="round-filter-chip px-2.5 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 shadow-xs transition-all">전체 누적 (9주)</button>
+              <button onclick="setRoundQuickFilter('latest', this)" class="round-filter-chip px-2.5 py-1 rounded-lg font-medium text-slate-400 bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all">최신 1243회</button>
+              <button onclick="setRoundQuickFilter('wins', this)" class="round-filter-chip px-2.5 py-1 rounded-lg font-medium text-slate-400 bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all">🏆 당첨 회차만</button>
+            </div>
+            <span class="text-[11px] text-slate-500 hidden sm:inline">1235회 ~ 1243회</span>
+          </div>
+
+          <!-- All Rounds Option Card -->
+          <div onclick="selectRoundItem('all_rounds', '전체 회차 (1235~1243회) 누적 종합')" id="round-card-all_rounds" class="round-item-card mt-3 p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-slate-900/80 to-slate-900/80 border border-amber-500/40 hover:border-amber-400/80 cursor-pointer transition-all flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs border border-amber-500/30">
+                📊
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-bold text-amber-300">전체 회차 누적 종합 조회</span>
+                  <span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold">1235회~1243회</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">총 9개 회차 70게임 전수 적중 성과 및 통계 통합 분석</div>
+              </div>
+            </div>
+            <div class="radio-indicator w-4 h-4 rounded-full border border-amber-400/80 bg-amber-400 flex items-center justify-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-slate-950"></span>
+            </div>
+          </div>
+
+          <!-- Slim High-Density Round List -->
+          <div id="roundListContainer" class="mt-2.5 space-y-1.5 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+            <!-- Dynamically populated by JS -->
+          </div>
+
+          <!-- Selected Summary & Footer Actions -->
+          <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="text-[11px] text-slate-400 shrink-0">선택 회차:</span>
+              <span id="selectedRoundDisplay" class="text-xs font-bold text-amber-400 truncate">전체 회차 누적 종합</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+              <button class="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 bg-slate-900 border border-slate-800 transition-all">취소</button>
+              <button onclick="confirmRoundSelection()" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-950 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 shadow-sm transition-all flex items-center gap-1">
+                <span>회차 적용</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Core Redesign Specs & Improvement Summary Box -->
+    <div class="mt-6 bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 sm:p-5 text-xs text-slate-300">
+      <h4 class="font-bold text-white text-sm flex items-center gap-2 mb-3">
+        <span class="text-blue-400">💡</span> 주요 개선 포인트 요약
+      </h4>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+          <div class="font-bold text-amber-400 text-xs mb-1">1. 타이포그래피 슬림화</div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">제목과 버튼 글자 크기를 16px→13~14px로 축소하고, 가변 두께(Pretendard 500~700)와 자간(-0.01em)을 적용하여 세련된 핀테크 밀도를 확보했습니다.</p>
+        </div>
+        <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+          <div class="font-bold text-blue-400 text-xs mb-1">2. 네이티브 셀렉트 탈피</div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">투박한 기본 드롭다운 대신, 실시간 검색과 상태 뱃지(관리자, 실구매, 당첨 등)가 결합된 터치 친화적 슬림 카드 리스트로 전환했습니다.</p>
+        </div>
+        <div class="p-3 bg-slate-950/60 border border-slate-800 rounded-xl">
+          <div class="font-bold text-emerald-400 text-xs mb-1">3. 반응형 &amp; 고밀도 레이아웃</div>
+          <p class="text-[11px] text-slate-400 leading-relaxed">번호공 크기를 28px→22px로 소형화하고 당첨 내역과 배지를 단일 행에 균형 있게 배치해 모바일(갤럭시 Fold 등)에서도 잘림 없이 쾌적합니다.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Mock Data for Members
+    const mockMembers = [
+      { id: 'master', name: '김대표', role: 'admin', roleLabel: '👑 최고관리자', purchases: 9, winPrize: 1425000000, wins: '1등 1, 3등 2', isKakao: false, isPurchased: true },
+      { id: 'user_lotto77', name: '홍길동', role: 'permanent', roleLabel: '💎 영구회원', purchases: 8, winPrize: 2450000, wins: '3등 1, 4등 2', isKakao: true, isPurchased: true },
+      { id: 'lucky_kim', name: '김대박', role: 'regular', roleLabel: '👤 일반회원', purchases: 7, winPrize: 48500000, wins: '2등 1, 4등 3', isKakao: false, isPurchased: true },
+      { id: 'star_rich', name: '이황금', role: 'regular', roleLabel: '👤 일반회원', purchases: 9, winPrize: 150000, wins: '4등 2, 5등 14', isKakao: true, isPurchased: true },
+      { id: 'kakao_8921', name: '박행운', role: 'regular', roleLabel: '👤 카카오회원', purchases: 4, winPrize: 55000, wins: '4등 1, 5등 1', isKakao: true, isPurchased: false },
+      { id: 'vip_champion', name: '정승리', role: 'regular', roleLabel: '👤 일반회원', purchases: 6, winPrize: 850000, wins: '4등 8, 5등 9', isKakao: false, isPurchased: true }
+    ];
+
+    // Mock Data for Rounds (1235 ~ 1243)
+    const mockRounds = [
+      { round: 1243, date: '2026.10.03', numbers: [3, 14, 21, 33, 41, 45], bonus: 7, prize: 52400000, wins: '2등 1건, 4등 5건', isLatest: true },
+      { round: 1242, date: '2026.09.26', numbers: [7, 12, 19, 23, 28, 38], bonus: 42, prize: 2150000, wins: '3등 1건, 4등 2건', isLatest: false },
+      { round: 1241, date: '2026.09.19', numbers: [2, 11, 15, 29, 36, 44], bonus: 18, prize: 1425000000, wins: '1등 1건 (대박)', isLatest: false },
+      { round: 1240, date: '2026.09.12', numbers: [5, 17, 24, 31, 39, 43], bonus: 9, prize: 180000, wins: '4등 3건, 5등 6건', isLatest: false },
+      { round: 1239, date: '2026.09.05', numbers: [1, 8, 16, 22, 35, 40], bonus: 30, prize: 75000, wins: '4등 1건, 5등 5건', isLatest: false },
+      { round: 1238, date: '2026.08.29', numbers: [9, 13, 27, 34, 37, 42], bonus: 4, prize: 3400000, wins: '3등 2건, 4등 1건', isLatest: false },
+      { round: 1237, date: '2026.08.22', numbers: [6, 18, 25, 30, 32, 45], bonus: 12, prize: 50000, wins: '5등 10건', isLatest: false },
+      { round: 1236, date: '2026.08.15', numbers: [4, 10, 20, 26, 38, 41], bonus: 15, prize: 1500000, wins: '3등 1건', isLatest: false },
+      { round: 1235, date: '2026.08.08', numbers: [3, 7, 14, 21, 28, 35], bonus: 44, prize: 95000, wins: '4등 1건, 5등 9건', isLatest: false }
+    ];
+
+    let currentSelectedMember = 'all';
+    let currentSelectedRound = 'all_rounds';
+    let currentMemberCategory = 'all';
+
+    // Ball Hex Color Calculator
+    function getBallColor(n) {
+      if (n <= 10) return { bg: '#f59e0b', text: '#0f172a' };
+      if (n <= 20) return { bg: '#3b82f6', text: '#ffffff' };
+      if (n <= 30) return { bg: '#ef4444', text: '#ffffff' };
+      if (n <= 40) return { bg: '#64748b', text: '#ffffff' };
+      return { bg: '#10b981', text: '#ffffff' };
+    }
+
+    // Render Members
+    function renderMembers(list) {
+      const container = document.getElementById('memberListContainer');
+      document.getElementById('memberCountBadge').innerText = list.length;
+      if (list.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-xs text-slate-500">일치하는 회원이 없습니다.</div>`;
+        return;
+      }
+
+      container.innerHTML = list.map(m => {
+        const isSelected = currentSelectedMember === m.id;
+        const prizeStr = m.winPrize > 0 ? `+${(m.winPrize >= 100000000 ? (m.winPrize/100000000).toFixed(1)+'억원' : (m.winPrize/10000).toLocaleString()+'만원')}` : '0원';
+        
+        let roleBadgeClass = 'bg-slate-800 text-slate-400 border-slate-700';
+        if (m.role === 'admin') roleBadgeClass = 'bg-amber-500/15 text-amber-400 border-amber-500/30';
+        else if (m.role === 'permanent') roleBadgeClass = 'bg-blue-500/15 text-blue-400 border-blue-500/30';
+
+        return `
+          <div onclick="selectMemberItem('${m.id}', '${m.name} (${m.id})')" id="member-card-${m.id}" class="member-item-card p-2.5 rounded-xl border ${isSelected ? 'bg-blue-500/10 border-blue-500/60 shadow-xs' : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'} cursor-pointer transition-all flex items-center justify-between">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div class="w-8 h-8 rounded-full ${m.role === 'admin' ? 'bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 font-black' : (m.isKakao ? 'bg-[#fee500] text-[#191919]' : 'bg-gradient-to-br from-slate-700 to-slate-800 text-white font-bold')} flex items-center justify-center text-xs shrink-0 shadow-xs">
+                ${m.isKakao ? '💬' : m.name[0]}
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <span class="text-xs font-bold text-white truncate">${m.name}</span>
+                  <span class="text-[11px] text-slate-400 font-mono">(${m.id})</span>
+                  <span class="px-1.5 py-0.2 rounded border text-[10px] font-bold ${roleBadgeClass}">${m.roleLabel.split(' ')[1] || '일반'}</span>
+                  ${m.isPurchased ? '<span class="px-1 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold">실구매</span>' : ''}
+                </div>
+                <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                  <span>참여 ${m.purchases}회</span>
+                  <span class="text-slate-600">·</span>
+                  <span class="text-slate-300 font-medium">${m.wins}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2.5 shrink-0 pl-2">
+              <div class="text-right">
+                <div class="text-xs font-bold text-emerald-400 tnum">${prizeStr}</div>
+                <div class="text-[10px] text-slate-500">누적 당첨</div>
+              </div>
+              <div class="radio-indicator w-4 h-4 rounded-full border ${isSelected ? 'border-blue-500 bg-blue-500' : 'border-slate-700 bg-slate-950'} flex items-center justify-center transition-all">
+                ${isSelected ? '<span class="w-1.5 h-1.5 rounded-full bg-white"></span>' : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render Rounds
+    function renderRounds(list) {
+      const container = document.getElementById('roundListContainer');
+      container.innerHTML = list.map(r => {
+        const isSelected = String(currentSelectedRound) === String(r.round);
+        const ballsHtml = r.numbers.map(n => {
+          const c = getBallColor(n);
+          return `<span style="background:${c.bg}; color:${c.text};" class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] font-black shrink-0 shadow-xs">${n}</span>`;
+        }).join('');
+        const bonusColor = getBallColor(r.bonus);
+        const bonusHtml = `<span style="background:${bonusColor.bg}; color:${bonusColor.text};" class="w-5 h-5 rounded-full inline-flex items-center justify-center text-[10px] font-black shrink-0 border border-amber-400 shadow-xs">${r.bonus}</span>`;
+
+        return `
+          <div onclick="selectRoundItem('${r.round}', '제 ${r.round}회 (${r.date})')" id="round-card-${r.round}" class="round-item-card p-2.5 rounded-xl border ${isSelected ? 'bg-amber-500/10 border-amber-500/60 shadow-xs' : 'bg-slate-900/60 border-slate-800/80 hover:border-slate-700'} cursor-pointer transition-all flex items-center justify-between gap-2">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <span class="text-xs font-bold ${r.isLatest ? 'text-amber-400' : 'text-white'}">제 ${r.round}회</span>
+                <span class="text-[11px] text-slate-400">${r.date}</span>
+                ${r.isLatest ? '<span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[10px] font-bold">최신</span>' : ''}
+                <span class="px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 text-[10px] font-medium border border-slate-700">${r.wins}</span>
+              </div>
+              <div class="flex items-center gap-1 flex-wrap">
+                ${ballsHtml}
+                <span class="text-[10px] text-slate-500 mx-0.5">+</span>
+                ${bonusHtml}
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 shrink-0 pl-2">
+              <div class="text-right">
+                <div class="text-xs font-bold text-emerald-400 tnum">+${(r.prize >= 100000000 ? (r.prize/100000000).toFixed(1)+'억원' : (r.prize/10000).toLocaleString()+'만원')}</div>
+                <div class="text-[10px] text-slate-500">당첨금 합계</div>
+              </div>
+              <div class="radio-indicator w-4 h-4 rounded-full border ${isSelected ? 'border-amber-400 bg-amber-400' : 'border-slate-700 bg-slate-950'} flex items-center justify-center transition-all">
+                ${isSelected ? '<span class="w-1.5 h-1.5 rounded-full bg-slate-950"></span>' : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Selection handlers
+    function selectMemberItem(id, display) {
+      currentSelectedMember = id;
+      document.getElementById('selectedMemberDisplay').innerText = display;
+      document.querySelectorAll('#sectionMemberModal .member-item-card').forEach(card => {
+        card.classList.remove('bg-blue-500/10', 'border-blue-500/60');
+        card.classList.add('bg-slate-900/60', 'border-slate-800/80');
+        const r = card.querySelector('.radio-indicator');
+        if (r) {
+          r.className = 'radio-indicator w-4 h-4 rounded-full border border-slate-700 bg-slate-950 flex items-center justify-center';
+          r.innerHTML = '';
+        }
+      });
+      const activeCard = document.getElementById(`member-card-${id}`);
+      if (activeCard) {
+        activeCard.classList.remove('bg-slate-900/60', 'border-slate-800/80');
+        activeCard.classList.add('bg-blue-500/10', 'border-blue-500/60');
+        const r = activeCard.querySelector('.radio-indicator');
+        if (r) {
+          r.className = 'radio-indicator w-4 h-4 rounded-full border border-blue-500 bg-blue-500 flex items-center justify-center';
+          r.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-white"></span>';
+        }
+      }
+    }
+
+    function selectRoundItem(id, display) {
+      currentSelectedRound = id;
+      document.getElementById('selectedRoundDisplay').innerText = display;
+      document.querySelectorAll('#sectionRoundModal .round-item-card').forEach(card => {
+        card.classList.remove('bg-amber-500/10', 'border-amber-500/60');
+        card.classList.add('bg-slate-900/60', 'border-slate-800/80');
+        const r = card.querySelector('.radio-indicator');
+        if (r) {
+          r.className = 'radio-indicator w-4 h-4 rounded-full border border-slate-700 bg-slate-950 flex items-center justify-center';
+          r.innerHTML = '';
+        }
+      });
+      const activeCard = document.getElementById(`round-card-${id}`);
+      if (activeCard) {
+        activeCard.classList.remove('bg-slate-900/60', 'border-slate-800/80');
+        activeCard.classList.add('bg-amber-500/10', 'border-amber-500/60');
+        const r = activeCard.querySelector('.radio-indicator');
+        if (r) {
+          r.className = 'radio-indicator w-4 h-4 rounded-full border border-amber-400 bg-amber-400 flex items-center justify-center';
+          r.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-950"></span>';
+        }
+      }
+    }
+
+    // Filter Handlers
+    function filterMemberList() {
+      const q = (document.getElementById('memberSearchInput').value || '').trim().toLowerCase();
+      let filtered = mockMembers.filter(m => {
+        const matchQ = m.id.toLowerCase().includes(q) || m.name.toLowerCase().includes(q);
+        if (!matchQ) return false;
+        if (currentMemberCategory === 'admin') return m.role === 'admin' || m.role === 'permanent';
+        if (currentMemberCategory === 'purchased') return m.isPurchased;
+        if (currentMemberCategory === 'kakao') return m.isKakao;
+        return true;
+      });
+      renderMembers(filtered);
+    }
+
+    function setMemberCategoryFilter(cat, btn) {
+      currentMemberCategory = cat;
+      document.querySelectorAll('.member-filter-chip').forEach(b => {
+        b.className = 'member-filter-chip px-2.5 py-1 rounded-lg font-medium text-slate-400 bg-slate-900/80 border border-slate-800 hover:border-slate-700 whitespace-nowrap transition-all';
+      });
+      btn.className = 'member-filter-chip px-2.5 py-1 rounded-lg font-bold bg-blue-600 text-white shadow-xs whitespace-nowrap transition-all';
+      filterMemberList();
+    }
+
+    function setRoundQuickFilter(mode, btn) {
+      document.querySelectorAll('.round-filter-chip').forEach(b => {
+        b.className = 'round-filter-chip px-2.5 py-1 rounded-lg font-medium text-slate-400 bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all';
+      });
+      btn.className = 'round-filter-chip px-2.5 py-1 rounded-lg font-bold bg-amber-500 text-slate-950 shadow-xs transition-all';
+
+      if (mode === 'all') {
+        renderRounds(mockRounds);
+        selectRoundItem('all_rounds', '전체 회차 (1235~1243회) 누적 종합');
+      } else if (mode === 'latest') {
+        renderRounds(mockRounds.slice(0, 1));
+        selectRoundItem('1243', '제 1243회 (2026.10.03)');
+      } else if (mode === 'wins') {
+        renderRounds(mockRounds.filter(r => r.prize > 1000000));
+      }
+    }
+
+    // Modal View Switchers
+    function switchModalType(type) {
+      const btnMember = document.getElementById('btnTabMember');
+      const btnRound = document.getElementById('btnTabRound');
+      const secMember = document.getElementById('sectionMemberModal');
+      const secRound = document.getElementById('sectionRoundModal');
+
+      if (type === 'member') {
+        btnMember.className = 'px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 bg-amber-500 text-slate-950 shadow-sm';
+        btnRound.className = 'px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-lg transition-all duration-200';
+        secMember.classList.remove('hidden');
+        secRound.classList.add('hidden');
+      } else {
+        btnRound.className = 'px-3 py-1.5 text-xs font-bold rounded-lg transition-all duration-200 bg-amber-500 text-slate-950 shadow-sm';
+        btnMember.className = 'px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-white rounded-lg transition-all duration-200';
+        secRound.classList.remove('hidden');
+        secMember.classList.add('hidden');
+      }
+    }
+
+    function switchViewMode(mode) {
+      const colM_B = document.getElementById('colMemberBefore');
+      const colM_A = document.getElementById('colMemberAfter');
+      const gridM = document.getElementById('gridMemberComparison');
+
+      const colR_B = document.getElementById('colRoundBefore');
+      const colR_A = document.getElementById('colRoundAfter');
+      const gridR = document.getElementById('gridRoundComparison');
+
+      const btnA = document.getElementById('btnViewAfter');
+      const btnB = document.getElementById('btnViewBefore');
+      const btnBoth = document.getElementById('btnViewBoth');
+
+      [btnA, btnB, btnBoth].forEach(b => {
+        b.className = 'px-2.5 py-1 rounded text-xs text-slate-400 hover:text-slate-200';
+      });
+
+      if (mode === 'after') {
+        btnA.className = 'px-2.5 py-1 rounded text-xs font-bold bg-blue-600 text-white shadow-xs';
+        colM_B.classList.add('hidden');
+        colM_A.classList.remove('hidden');
+        gridM.className = 'grid grid-cols-1 gap-6';
+
+        colR_B.classList.add('hidden');
+        colR_A.classList.remove('hidden');
+        gridR.className = 'grid grid-cols-1 gap-6';
+      } else if (mode === 'before') {
+        btnB.className = 'px-2.5 py-1 rounded text-xs font-bold bg-amber-600 text-white shadow-xs';
+        colM_B.classList.remove('hidden');
+        colM_A.classList.add('hidden');
+        gridM.className = 'grid grid-cols-1 gap-6';
+
+        colR_B.classList.remove('hidden');
+        colR_A.classList.add('hidden');
+        gridR.className = 'grid grid-cols-1 gap-6';
+      } else {
+        btnBoth.className = 'px-2.5 py-1 rounded text-xs font-bold bg-indigo-600 text-white shadow-xs';
+        colM_B.classList.remove('hidden');
+        colM_A.classList.remove('hidden');
+        gridM.className = 'grid grid-cols-1 lg:grid-cols-2 gap-5';
+
+        colR_B.classList.remove('hidden');
+        colR_A.classList.remove('hidden');
+        gridR.className = 'grid grid-cols-1 lg:grid-cols-2 gap-5';
+      }
+    }
+
+    function confirmMemberSelection() {
+      alert(`[선택 완료] 회원: ${document.getElementById('selectedMemberDisplay').innerText}`);
+    }
+
+    function confirmRoundSelection() {
+      alert(`[선택 완료] 회차: ${document.getElementById('selectedRoundDisplay').innerText}`);
+    }
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      renderMembers(mockMembers);
+      renderRounds(mockRounds);
+    });
+  </script>
+</body>
+</html>

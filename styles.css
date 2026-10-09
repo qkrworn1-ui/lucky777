@@ -21496,5 +21496,281 @@ body.lotto-mode-active .app-container {
     }
 }
 
+/* ==========================================================================
+   ✨ 슬림 모던 회원/회차 선택 모달 전용 스타일 (Slim FinTech Picker Modals)
+   - 핀테크(토스/애플) 감성의 초슬림 타이포그래피 및 옵시디언 다크 글래스 테마
+   - 모바일(갤럭시 Fold 320px 등) 완벽 반응형 및 터치 친화적 카드 리스트
+   ========================================================================== */
+
+.slim-picker-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(7, 10, 20, 0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    z-index: 100010;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    box-sizing: border-box;
+}
+
+.slim-picker-modal {
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    max-height: 90dvh;
+    background: linear-gradient(155deg, rgba(15, 23, 42, 0.96) 0%, rgba(9, 13, 22, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 20px;
+    color: #f8fafc;
+    box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.95), 0 0 30px rgba(59, 130, 246, 0.12);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-sizing: border-box;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    letter-spacing: -0.015em;
+}
+
+.slim-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(15, 23, 42, 0.6);
+    flex-shrink: 0;
+}
+
+.slim-picker-title-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.slim-picker-icon-badge {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.88rem;
+    flex-shrink: 0;
+}
+
+.slim-picker-title {
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: -0.02em;
+}
+
+.slim-picker-subtext {
+    font-size: 0.70rem;
+    color: #94a3b8;
+    margin-top: 1px;
+}
+
+.slim-picker-close-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #94a3b8;
+    font-size: 1.15rem;
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    line-height: 1;
+}
+
+.slim-picker-close-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+}
+
+.slim-picker-toolbar {
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.slim-picker-search-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.slim-picker-search-input {
+    width: 100%;
+    height: 34px;
+    padding: 0 10px 0 32px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 9px;
+    font-size: 0.78rem;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.slim-picker-search-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+}
+
+.slim-picker-pills-row {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.slim-picker-pill {
+    padding: 4px 9px;
+    border-radius: 7px;
+    font-size: 0.70rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.6);
+    color: #94a3b8;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+
+.slim-picker-pill.active {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #3b82f6;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.slim-picker-pill-amber.active {
+    background: #f59e0b !important;
+    color: #0f172a !important;
+    border-color: #f59e0b !important;
+    box-shadow: 0 2px 6px rgba(245, 158, 11, 0.35) !important;
+}
+
+.slim-picker-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+}
+
+.slim-picker-item {
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 9px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    box-sizing: border-box;
+}
+
+.slim-picker-item:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    background: rgba(30, 41, 59, 0.7);
+    transform: translateY(-1px);
+}
+
+.slim-picker-item.selected {
+    border-color: rgba(59, 130, 246, 0.65) !important;
+    background: rgba(37, 99, 235, 0.12) !important;
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.18);
+}
+
+.slim-picker-item.selected-round {
+    border-color: rgba(245, 158, 11, 0.65) !important;
+    background: rgba(245, 158, 11, 0.1) !important;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.18);
+}
+
+.slim-picker-footer {
+    background: rgba(15, 23, 42, 0.95);
+    padding: 10px 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.slim-picker-selected-desc {
+    font-size: 0.74rem;
+    color: #94a3b8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+}
+
+.slim-picker-ball-mini {
+    width: 20px !important;
+    height: 20px !important;
+    line-height: 20px !important;
+    font-size: 0.66rem !important;
+    border-radius: 50% !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 900 !important;
+    font-family: monospace !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3) !important;
+    flex-shrink: 0 !important;
+}
+
+@media (max-width: 480px) {
+    .slim-picker-modal {
+        border-radius: 16px;
+        max-height: 94vh;
+        max-height: 94dvh;
+    }
+    .slim-picker-header {
+        padding: 10px 12px;
+    }
+    .slim-picker-toolbar {
+        padding: 8px 10px;
+    }
+    .slim-picker-list {
+        padding: 8px 10px;
+    }
+    .slim-picker-item {
+        padding: 8px 10px;
+    }
+}
+
+
 
 

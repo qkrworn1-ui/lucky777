@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1149.40 - BUILD_DATE: 2026-10-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.09.1219 - BUILD_DATE: 2026-10-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.09.1149.40)
+ * Lucky777 Smart Bundle (v2026.10.09.1219)
  */
 
 
@@ -837,11 +837,493 @@ function switchLegalTab(tabKey) {
     });
 }
 
+/**
+ * ============================================================================
+ * ✨ 초슬림 핀테크 모던 회원 선택 모달 (Slim Member Picker Modal)
+ * ============================================================================
+ */
+let _activeMemberPickerCallback = null;
+let _tempSelectedMemberId = 'all';
+let _tempSelectedMemberName = '전체 회원 종합';
+let _currentMemberPickerCategory = 'all';
+
+function openSlimMemberPickerModal(options = {}) {
+    const {
+        onSelect = null,
+        selectedUserId = 'all',
+        title = '조회 대상 회원 선택',
+        subtitle = '조회하거나 분석할 대상 회원을 검색 및 선택하세요.'
+    } = options;
+
+    _activeMemberPickerCallback = onSelect;
+    _tempSelectedMemberId = selectedUserId || 'all';
+    _currentMemberPickerCategory = 'all';
+
+    let overlay = document.getElementById('slimMemberPickerModal');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'slimMemberPickerModal';
+        overlay.className = 'slim-picker-overlay';
+        overlay.innerHTML = `
+            <div class="slim-picker-modal" onclick="event.stopPropagation()">
+                <!-- Header -->
+                <div class="slim-picker-header">
+                    <div class="slim-picker-title-group">
+                        <div class="slim-picker-icon-badge" style="background: rgba(59, 130, 246, 0.18); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.35);">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <h3 id="slimMemberPickerTitle" class="slim-picker-title">${title}</h3>
+                            <div id="slimMemberPickerSubtext" class="slim-picker-subtext">${subtitle}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="slim-picker-close-btn" onclick="window.closeSlimMemberPickerModal()">&times;</button>
+                </div>
+
+                <!-- Toolbar: Search & Category Pills -->
+                <div class="slim-picker-toolbar">
+                    <div class="slim-picker-search-wrap">
+                        <i class="fa-solid fa-magnifying-glass" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 0.72rem; color: #64748b;"></i>
+                        <input type="text" id="slimMemberSearchInput" class="slim-picker-search-input" placeholder="회원 ID, 실명, 연락처 초성 검색..." oninput="window._filterSlimMemberList && window._filterSlimMemberList()">
+                    </div>
+                    <div class="slim-picker-pills-row">
+                        <button type="button" class="slim-picker-pill active" data-cat="all" onclick="window._setSlimMemberCategory('all', this)">전체</button>
+                        <button type="button" class="slim-picker-pill" data-cat="admin" onclick="window._setSlimMemberCategory('admin', this)">👑 관리자/영구</button>
+                        <button type="button" class="slim-picker-pill" data-cat="purchased" onclick="window._setSlimMemberCategory('purchased', this)">🧾 실구매인증</button>
+                        <button type="button" class="slim-picker-pill" data-cat="kakao" onclick="window._setSlimMemberCategory('kakao', this)">💬 카카오연동</button>
+                    </div>
+                </div>
+
+                <!-- All Users Global Card -->
+                <div style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
+                    <div id="slimMemberItem-all" onclick="window._selectSlimMemberTemp('all', '전체 회원 종합 (AI 70게임)')" class="slim-picker-item" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(245, 158, 11, 0.35);">
+                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                            <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; border: 1px solid rgba(245, 158, 11, 0.4); flex-shrink: 0;">
+                                <i class="fa-solid fa-globe"></i>
+                            </div>
+                            <div style="min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 0.78rem; font-weight: 800; color: #fbbf24;">전체 회원 종합</span>
+                                    <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-weight: 800;">ALL</span>
+                                </div>
+                                <div style="font-size: 0.68rem; color: #94a3b8; margin-top: 1px;">모든 회원의 추천 70게임 및 실구매 당첨 종합 대조</div>
+                            </div>
+                        </div>
+                        <div class="slim-radio-indicator" style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(245,158,11,0.6); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scrollable Item List -->
+                <div id="slimMemberListContainer" class="slim-picker-list custom-scrollbar">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Footer -->
+                <div class="slim-picker-footer">
+                    <div class="slim-picker-selected-desc">
+                        <span>선택: </span>
+                        <strong id="slimMemberSelectedLabel" style="color: #fbbf24; font-weight: 800;">전체 회원 종합</strong>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                        <button type="button" onclick="window.closeSlimMemberPickerModal()" style="padding: 6px 12px; border-radius: 7px; font-size: 0.75rem; font-weight: 600; color: #94a3b8; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">취소</button>
+                        <button type="button" onclick="window._confirmSlimMemberSelection()" style="padding: 6px 14px; border-radius: 7px; font-size: 0.75rem; font-weight: 800; color: #0f172a; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);">
+                            <i class="fa-solid fa-check"></i> 선택 확정
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        overlay.onclick = (e) => { if (e.target === overlay) window.closeSlimMemberPickerModal(); };
+        document.body.appendChild(overlay);
+    }
+
+    const titleEl = document.getElementById('slimMemberPickerTitle');
+    if (titleEl) titleEl.innerText = title;
+    const subEl = document.getElementById('slimMemberPickerSubtext');
+    if (subEl) subEl.innerText = subtitle;
+    const searchInp = document.getElementById('slimMemberSearchInput');
+    if (searchInp) searchInp.value = '';
+
+    overlay.style.display = 'flex';
+    window._renderSlimMemberList();
+}
+
+function closeSlimMemberPickerModal() {
+    const overlay = document.getElementById('slimMemberPickerModal');
+    if (overlay) overlay.style.display = 'none';
+}
+
+window._renderSlimMemberList = function() {
+    const container = document.getElementById('slimMemberListContainer');
+    if (!container) return;
+
+    let users = [];
+    if (typeof window.getAllUnifiedRegisteredUsers === 'function') {
+        users = window.getAllUnifiedRegisteredUsers();
+    } else if (typeof window.__cachedUsersWithStatus === 'object' && window.__cachedUsersWithStatus) {
+        users = Object.keys(window.__cachedUsersWithStatus).map(id => ({
+            id,
+            name: window.__cachedUsersWithStatus[id]?.realName || id
+        }));
+    } else {
+        const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'master';
+        users = [{ id: rawAuth, name: '관리자' }];
+    }
+
+    const query = (document.getElementById('slimMemberSearchInput')?.value || '').trim().toLowerCase();
+    const cat = _currentMemberPickerCategory;
+
+    const filtered = users.filter(u => {
+        const uId = (u.id || '').toLowerCase();
+        const uName = (u.name || u.realName || '').toLowerCase();
+        const uPhone = (u.phone || '').replace(/[^0-9]/g, '');
+        const matchQ = !query || uId.includes(query) || uName.includes(query) || uPhone.includes(query);
+        if (!matchQ) return false;
+
+        const isAdm = (typeof window.isAdminUser === 'function') ? window.isAdminUser(u.id) : (uId === 'master' || uId === 'admin');
+        const isPerm = (typeof window.isPermanentUser === 'function') ? window.isPermanentUser(u.id) : false;
+        const isKakao = uId.startsWith('kakao_') || !!(u.kakaoAuth && u.kakaoAuth.kakaoId);
+        const hasPurchases = (window.state && window.state.ledger && Object.values(window.state.ledger).some(list => (list || []).some(p => (p.userId || '').toLowerCase() === uId)));
+
+        if (cat === 'admin') return isAdm || isPerm;
+        if (cat === 'purchased') return hasPurchases;
+        if (cat === 'kakao') return isKakao;
+        return true;
+    });
+
+    if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 24px 10px; color:#64748b; font-size:0.75rem;">일치하는 회원이 없습니다.</div>`;
+        return;
+    }
+
+    let html = '';
+    filtered.forEach(u => {
+        const uId = u.id;
+        const uDisplayName = u.name || u.realName || uId;
+        const isKakao = uId.startsWith('kakao_') || !!(u.kakaoAuth && u.kakaoAuth.kakaoId);
+        const isAdm = (typeof window.isAdminUser === 'function') ? window.isAdminUser(uId) : (uId.toLowerCase() === 'master');
+        const isPerm = (typeof window.isPermanentUser === 'function') ? window.isPermanentUser(uId) : false;
+        const isSelected = String(_tempSelectedMemberId).toLowerCase() === uId.toLowerCase();
+
+        let roleBadge = '<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; background:rgba(255,255,255,0.06); color:#94a3b8;">일반</span>';
+        if (isAdm) roleBadge = '<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.35);">👑 관리자</span>';
+        else if (isPerm) roleBadge = '<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; background:rgba(59,130,246,0.2); color:#60a5fa; border:1px solid rgba(59,130,246,0.35);">💎 영구</span>';
+
+        let avatarHtml = `<div style="width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:#fff; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:800; flex-shrink:0;">${uDisplayName[0] || 'U'}</div>`;
+        if (isKakao) avatarHtml = `<div style="width:28px; height:28px; border-radius:8px; background:#fee500; color:#191919; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:900; flex-shrink:0;"><i class="fa-solid fa-comment"></i></div>`;
+        else if (isAdm) avatarHtml = `<div style="width:28px; height:28px; border-radius:8px; background:linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color:#0f172a; display:flex; align-items:center; justify-content:center; font-size:0.75rem; font-weight:900; flex-shrink:0;"><i class="fa-solid fa-crown"></i></div>`;
+
+        html += `
+            <div id="slimMemberItem-${uId}" onclick="window._selectSlimMemberTemp('${uId}', '${uDisplayName} (${uId})')" class="slim-picker-item ${isSelected ? 'selected' : ''}">
+                <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
+                    ${avatarHtml}
+                    <div style="min-width:0; flex:1;">
+                        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                            <span style="font-size:0.78rem; font-weight:800; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${uDisplayName}</span>
+                            <span style="font-size:0.70rem; color:#94a3b8; font-family:monospace;">(${uId})</span>
+                            ${roleBadge}
+                        </div>
+                    </div>
+                </div>
+                <div class="slim-radio-indicator" style="width:16px; height:16px; border-radius:50%; border:1.5px solid ${isSelected ? '#3b82f6' : 'rgba(255,255,255,0.2)'}; background:${isSelected ? '#3b82f6' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    ${isSelected ? '<span style="width:6px; height:6px; border-radius:50%; background:#fff;"></span>' : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    window._updateSlimMemberRadioStyles();
+};
+
+window._selectSlimMemberTemp = function(userId, displayName) {
+    _tempSelectedMemberId = userId;
+    _tempSelectedMemberName = displayName;
+    const label = document.getElementById('slimMemberSelectedLabel');
+    if (label) label.innerText = displayName;
+    window._updateSlimMemberRadioStyles();
+};
+
+window._updateSlimMemberRadioStyles = function() {
+    const allItems = document.querySelectorAll('#slimMemberPickerModal .slim-picker-item');
+    allItems.forEach(item => {
+        const isSelected = item.id === `slimMemberItem-${_tempSelectedMemberId}`;
+        const radio = item.querySelector('.slim-radio-indicator');
+        if (isSelected) {
+            item.classList.add('selected');
+            if (radio) {
+                radio.style.borderColor = (_tempSelectedMemberId === 'all') ? '#fbbf24' : '#3b82f6';
+                radio.style.background = (_tempSelectedMemberId === 'all') ? '#fbbf24' : '#3b82f6';
+                radio.innerHTML = `<span style="width:6px; height:6px; border-radius:50%; background:${_tempSelectedMemberId === 'all' ? '#0f172a' : '#fff'};"></span>`;
+            }
+        } else {
+            item.classList.remove('selected');
+            if (radio) {
+                radio.style.borderColor = 'rgba(255,255,255,0.2)';
+                radio.style.background = 'transparent';
+                radio.innerHTML = '';
+            }
+        }
+    });
+};
+
+window._setSlimMemberCategory = function(cat, btn) {
+    _currentMemberPickerCategory = cat;
+    const pills = document.querySelectorAll('#slimMemberPickerModal .slim-picker-pill');
+    pills.forEach(p => p.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    window._renderSlimMemberList();
+};
+
+window._filterSlimMemberList = function() {
+    window._renderSlimMemberList();
+};
+
+window._confirmSlimMemberSelection = function() {
+    if (typeof _activeMemberPickerCallback === 'function') {
+        _activeMemberPickerCallback(_tempSelectedMemberId, _tempSelectedMemberName);
+    }
+    window.closeSlimMemberPickerModal();
+};
+
+/**
+ * ============================================================================
+ * ✨ 초슬림 핀테크 모던 회차 선택 모달 (Slim Round Picker Modal)
+ * ============================================================================
+ */
+let _activeRoundPickerCallback = null;
+let _tempSelectedRoundVal = 'all_rounds';
+let _tempSelectedRoundName = '전체 회차 누적 종합';
+let _currentRoundPickerFilter = 'all';
+
+function openSlimRoundPickerModal(options = {}) {
+    const {
+        onSelect = null,
+        selectedRound = 'all_rounds',
+        title = '조회 대상 회차 선택',
+        subtitle = '조회하고자 하는 공식 로또 추첨 회차를 선택하세요.',
+        minRound = 1235
+    } = options;
+
+    _activeRoundPickerCallback = onSelect;
+    _tempSelectedRoundVal = String(selectedRound || 'all_rounds');
+    _currentRoundPickerFilter = 'all';
+
+    let overlay = document.getElementById('slimRoundPickerModal');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'slimRoundPickerModal';
+        overlay.className = 'slim-picker-overlay';
+        overlay.innerHTML = `
+            <div class="slim-picker-modal" onclick="event.stopPropagation()">
+                <!-- Header -->
+                <div class="slim-picker-header">
+                    <div class="slim-picker-title-group">
+                        <div class="slim-picker-icon-badge" style="background: rgba(245, 158, 11, 0.18); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35);">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                        <div>
+                            <h3 id="slimRoundPickerTitle" class="slim-picker-title">${title}</h3>
+                            <div id="slimRoundPickerSubtext" class="slim-picker-subtext">${subtitle}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="slim-picker-close-btn" onclick="window.closeSlimRoundPickerModal()">&times;</button>
+                </div>
+
+                <!-- Toolbar: Quick Filter Chips -->
+                <div class="slim-picker-toolbar">
+                    <div class="slim-picker-pills-row">
+                        <button type="button" class="slim-picker-pill slim-picker-pill-amber active" data-filter="all" onclick="window._setSlimRoundFilter('all', this)">전체 누적</button>
+                        <button type="button" class="slim-picker-pill slim-picker-pill-amber" data-filter="latest" onclick="window._setSlimRoundFilter('latest', this)">최신 회차</button>
+                        <button type="button" class="slim-picker-pill slim-picker-pill-amber" data-filter="wins" onclick="window._setSlimRoundFilter('wins', this)">🏆 당첨 회차만</button>
+                    </div>
+                </div>
+
+                <!-- All Rounds Global Card -->
+                <div style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
+                    <div id="slimRoundItem-all_rounds" onclick="window._selectSlimRoundTemp('all_rounds', '전체 회차 누적 종합 조회')" class="slim-picker-item" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.8) 100%); border-color: rgba(245, 158, 11, 0.35);">
+                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                            <div style="width: 28px; height: 28px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 900; border: 1px solid rgba(245, 158, 11, 0.4); flex-shrink: 0;">
+                                <i class="fa-solid fa-chart-pie"></i>
+                            </div>
+                            <div style="min-width: 0;">
+                                <div style="display: flex; align-items: center; gap: 6px;">
+                                    <span style="font-size: 0.78rem; font-weight: 800; color: #fbbf24;">전체 회차 누적 종합</span>
+                                    <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-weight: 800;">1235회~</span>
+                                </div>
+                                <div style="font-size: 0.68rem; color: #94a3b8; margin-top: 1px;">전체 회차 추천 70게임 전수 적중 성과 및 통계 통합 분석</div>
+                            </div>
+                        </div>
+                        <div class="slim-radio-indicator" style="width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(245,158,11,0.6); background: transparent; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scrollable Round List -->
+                <div id="slimRoundListContainer" class="slim-picker-list custom-scrollbar">
+                    <!-- Populated dynamically -->
+                </div>
+
+                <!-- Footer -->
+                <div class="slim-picker-footer">
+                    <div class="slim-picker-selected-desc">
+                        <span>선택: </span>
+                        <strong id="slimRoundSelectedLabel" style="color: #fbbf24; font-weight: 800;">전체 회차 누적 종합</strong>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                        <button type="button" onclick="window.closeSlimRoundPickerModal()" style="padding: 6px 12px; border-radius: 7px; font-size: 0.75rem; font-weight: 600; color: #94a3b8; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">취소</button>
+                        <button type="button" onclick="window._confirmSlimRoundSelection()" style="padding: 6px 14px; border-radius: 7px; font-size: 0.75rem; font-weight: 800; color: #0f172a; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35);">
+                            <i class="fa-solid fa-check"></i> 회차 적용
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        overlay.onclick = (e) => { if (e.target === overlay) window.closeSlimRoundPickerModal(); };
+        document.body.appendChild(overlay);
+    }
+
+    const titleEl = document.getElementById('slimRoundPickerTitle');
+    if (titleEl) titleEl.innerText = title;
+    const subEl = document.getElementById('slimRoundPickerSubtext');
+    if (subEl) subEl.innerText = subtitle;
+
+    overlay.style.display = 'flex';
+    window._renderSlimRoundList(minRound);
+}
+
+function closeSlimRoundPickerModal() {
+    const overlay = document.getElementById('slimRoundPickerModal');
+    if (overlay) overlay.style.display = 'none';
+}
+
+window._renderSlimRoundList = function(minRound = 1235) {
+    const container = document.getElementById('slimRoundListContainer');
+    if (!container) return;
+
+    const history = (window.state && window.state.mergedHistory) ? window.state.mergedHistory : {};
+    const historyRounds = Object.keys(history)
+        .map(Number)
+        .filter(n => !isNaN(n) && n >= 1 && history[n]?.numbers?.length === 6)
+        .sort((a, b) => b - a);
+
+    const fallbackLatest = (typeof window.getLatestDrawnRound === 'function') ? window.getLatestDrawnRound() : 1243;
+    const latestRoundNum = (window.state && window.state.latestDrawData && window.state.latestDrawData.numbers?.length === 6)
+        ? Math.max(window.state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
+        : (historyRounds[0] || fallbackLatest);
+
+    let roundNumbers = [];
+    for (let r = latestRoundNum; r >= minRound; r--) {
+        roundNumbers.push(r);
+    }
+
+    if (_currentRoundPickerFilter === 'latest') {
+        roundNumbers = roundNumbers.slice(0, 1);
+    }
+
+    let html = '';
+    roundNumbers.forEach(r => {
+        const draw = (typeof window.getSafeActualDraw === 'function') ? window.getSafeActualDraw(r) : (history[r] || null);
+        const dateStr = draw && (draw.date || draw.drwNoDate) ? ` (${draw.date || draw.drwNoDate})` : '';
+        const isLatest = (r === latestRoundNum);
+        const isSelected = String(_tempSelectedRoundVal) === String(r);
+
+        let ballsHtml = '';
+        if (draw && draw.numbers && draw.numbers.length === 6) {
+            ballsHtml = draw.numbers.map(n => {
+                const bg = getBallHexColor(n);
+                const textColor = n <= 10 ? '#0f172a' : '#fff';
+                return `<span class="slim-picker-ball-mini" style="background:${bg}; color:${textColor};">${n}</span>`;
+            }).join('');
+            if (draw.bonus) {
+                const bBg = getBallHexColor(draw.bonus);
+                const bTextColor = draw.bonus <= 10 ? '#0f172a' : '#fff';
+                ballsHtml += `<span style="font-size:0.7rem; color:#64748b; margin:0 1px;">+</span><span class="slim-picker-ball-mini" style="background:${bBg}; color:${bTextColor}; border:1.5px solid #fbbf24;">${draw.bonus}</span>`;
+            }
+        } else {
+            ballsHtml = `<span style="font-size:0.7rem; color:#64748b;">(추첨 대기)</span>`;
+        }
+
+        html += `
+            <div id="slimRoundItem-${r}" onclick="window._selectSlimRoundTemp('${r}', '제 ${r}회${dateStr}')" class="slim-picker-item ${isSelected ? 'selected-round' : ''}">
+                <div style="min-width:0; flex:1;">
+                    <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; margin-bottom:3px;">
+                        <span style="font-size:0.82rem; font-weight:800; color:${isLatest ? '#fbbf24' : '#fff'};">제 ${r}회</span>
+                        <span style="font-size:0.68rem; color:#94a3b8;">${dateStr}</span>
+                        ${isLatest ? '<span style="font-size:0.65rem; padding:1px 5px; border-radius:4px; background:rgba(245,158,11,0.2); color:#fbbf24; font-weight:800;">최신</span>' : ''}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:3px; flex-wrap:wrap;">
+                        ${ballsHtml}
+                    </div>
+                </div>
+                <div class="slim-radio-indicator" style="width:16px; height:16px; border-radius:50%; border:1.5px solid ${isSelected ? '#f59e0b' : 'rgba(255,255,255,0.2)'}; background:${isSelected ? '#f59e0b' : 'transparent'}; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                    ${isSelected ? '<span style="width:6px; height:6px; border-radius:50%; background:#0f172a;"></span>' : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    window._updateSlimRoundRadioStyles();
+};
+
+window._selectSlimRoundTemp = function(roundVal, display) {
+    _tempSelectedRoundVal = roundVal;
+    _tempSelectedRoundName = display;
+    const label = document.getElementById('slimRoundSelectedLabel');
+    if (label) label.innerText = display;
+    window._updateSlimRoundRadioStyles();
+};
+
+window._updateSlimRoundRadioStyles = function() {
+    const allItems = document.querySelectorAll('#slimRoundPickerModal .slim-picker-item');
+    allItems.forEach(item => {
+        const isSelected = item.id === `slimRoundItem-${_tempSelectedRoundVal}`;
+        const radio = item.querySelector('.slim-radio-indicator');
+        if (isSelected) {
+            item.classList.add('selected-round');
+            if (radio) {
+                radio.style.borderColor = '#f59e0b';
+                radio.style.background = '#f59e0b';
+                radio.innerHTML = `<span style="width:6px; height:6px; border-radius:50%; background:#0f172a;"></span>`;
+            }
+        } else {
+            item.classList.remove('selected-round');
+            if (radio) {
+                radio.style.borderColor = 'rgba(255,255,255,0.2)';
+                radio.style.background = 'transparent';
+                radio.innerHTML = '';
+            }
+        }
+    });
+};
+
+window._setSlimRoundFilter = function(filterKey, btn) {
+    _currentRoundPickerFilter = filterKey;
+    const pills = document.querySelectorAll('#slimRoundPickerModal .slim-picker-pill');
+    pills.forEach(p => p.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    window._renderSlimRoundList();
+};
+
+window._confirmSlimRoundSelection = function() {
+    if (typeof _activeRoundPickerCallback === 'function') {
+        _activeRoundPickerCallback(_tempSelectedRoundVal, _tempSelectedRoundName);
+    }
+    window.closeSlimRoundPickerModal();
+};
+
 if (typeof window !== 'undefined') {
     window.openLegalModal = openLegalModal;
     window.closeLegalModal = closeLegalModal;
     window.switchLegalTab = switchLegalTab;
+    window.openSlimMemberPickerModal = openSlimMemberPickerModal;
+    window.closeSlimMemberPickerModal = closeSlimMemberPickerModal;
+    window.openSlimRoundPickerModal = openSlimRoundPickerModal;
+    window.closeSlimRoundPickerModal = closeSlimRoundPickerModal;
 }
+
 
         if (typeof createBallHtml !== 'undefined') {
             __exports.createBallHtml = createBallHtml;
@@ -874,6 +1356,22 @@ if (typeof window !== 'undefined') {
         if (typeof switchLegalTab !== 'undefined') {
             __exports.switchLegalTab = switchLegalTab;
             if (typeof window !== 'undefined') window.switchLegalTab = switchLegalTab;
+        }
+        if (typeof openSlimMemberPickerModal !== 'undefined') {
+            __exports.openSlimMemberPickerModal = openSlimMemberPickerModal;
+            if (typeof window !== 'undefined') window.openSlimMemberPickerModal = openSlimMemberPickerModal;
+        }
+        if (typeof closeSlimMemberPickerModal !== 'undefined') {
+            __exports.closeSlimMemberPickerModal = closeSlimMemberPickerModal;
+            if (typeof window !== 'undefined') window.closeSlimMemberPickerModal = closeSlimMemberPickerModal;
+        }
+        if (typeof openSlimRoundPickerModal !== 'undefined') {
+            __exports.openSlimRoundPickerModal = openSlimRoundPickerModal;
+            if (typeof window !== 'undefined') window.openSlimRoundPickerModal = openSlimRoundPickerModal;
+        }
+        if (typeof closeSlimRoundPickerModal !== 'undefined') {
+            __exports.closeSlimRoundPickerModal = closeSlimRoundPickerModal;
+            if (typeof window !== 'undefined') window.closeSlimRoundPickerModal = closeSlimRoundPickerModal;
         }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/shared/components.js]:', modErr);
@@ -21590,54 +22088,62 @@ async function openAdmin1235ReviewModal(initialRound = null, initialUser = null)
         modal.className = 'modal-overlay';
         modal.style.cssText = 'display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 10, 20, 0.92); z-index: 100005; padding: 12px; box-sizing: border-box; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);';
         modal.innerHTML = `
-            <div class="modal-card" style="background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border: 2px solid #f59e0b; border-radius: 16px; max-width: 720px; width: 100%; color: #fff; box-shadow: 0 20px 60px rgba(0,0,0,0.9); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif;">
+            <div class="modal-card" style="background: linear-gradient(155deg, rgba(15, 23, 42, 0.96) 0%, rgba(9, 13, 22, 0.98) 100%); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 18px; max-width: 740px; width: 100%; color: #fff; box-shadow: 0 25px 60px rgba(0,0,0,0.95), 0 0 25px rgba(245,158,11,0.15); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; letter-spacing: -0.015em;">
                 
                 <!-- Modal Header -->
-                <div style="background: rgba(15, 23, 42, 0.95); padding: 14px 16px; border-bottom: 1.5px solid rgba(245, 158, 11, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="background: rgba(15, 23, 42, 0.95); padding: 12px 16px; border-bottom: 1px solid rgba(245, 158, 11, 0.25); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 1.1rem; border: 1px solid rgba(245, 158, 11, 0.4);">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.95rem; border: 1px solid rgba(245, 158, 11, 0.4);">
                             <i class="fa-solid fa-crown"></i>
                         </span>
                         <div>
-                            <h3 style="margin: 0; color: #fbbf24; font-size: 1.05rem; font-weight: 900; letter-spacing: -0.3px;">
+                            <h3 style="margin: 0; color: #fbbf24; font-size: 0.95rem; font-weight: 800; letter-spacing: -0.015em;">
                                 1235회~ 추천·당첨 상세 리포트
                             </h3>
-                            <span style="font-size: 0.72rem; color: #94a3b8;">빅데이터 퀀트 알고리즘 당첨 결과 &amp; 대외 공유 콘솔</span>
+                            <span style="font-size: 0.68rem; color: #94a3b8;">빅데이터 퀀트 알고리즘 당첨 결과 &amp; 대외 공유 콘솔</span>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                        <button type="button" onclick="window.shareAdmin1235ReviewAsImage && window.shareAdmin1235ReviewAsImage()" title="카카오톡/SNS로 이미지 전송 (친구/단톡방 선택)" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);">
+                    <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" onclick="window.shareAdmin1235ReviewAsImage && window.shareAdmin1235ReviewAsImage()" title="카카오톡/SNS로 이미지 전송 (친구/단톡방 선택)" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 5px 9px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);">
                             <i class="fa-solid fa-image"></i> 이미지 공유
                         </button>
-                        <button type="button" onclick="window.shareAdmin1235ReviewToKakao && window.shareAdmin1235ReviewToKakao()" title="카카오톡 친구 및 채팅방 선택 공유" style="background: #fee500; color: #191919; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(254, 229, 0, 0.35);">
+                        <button type="button" onclick="window.shareAdmin1235ReviewToKakao && window.shareAdmin1235ReviewToKakao()" title="카카오톡 친구 및 채팅방 선택 공유" style="background: #fee500; color: #191919; border: none; padding: 5px 9px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(254, 229, 0, 0.35);">
                             <i class="fa-solid fa-comment"></i> 카톡 공유
                         </button>
-                        <button type="button" onclick="window.downloadAdmin1235ReviewImage && window.downloadAdmin1235ReviewImage()" title="리포트 이미지 파일로 저장" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <button type="button" onclick="window.downloadAdmin1235ReviewImage && window.downloadAdmin1235ReviewImage()" title="리포트 이미지 파일로 저장" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 5px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px;">
                             <i class="fa-solid fa-download"></i> 저장
                         </button>
-                        <button type="button" onclick="window.copyAdmin1235ReviewText && window.copyAdmin1235ReviewText()" title="텍스트 클립보드 복사" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <button type="button" onclick="window.copyAdmin1235ReviewText && window.copyAdmin1235ReviewText()" title="텍스트 클립보드 복사" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 5px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px;">
                             <i class="fa-solid fa-copy"></i> 복사
                         </button>
-                        <button type="button" onclick="document.getElementById('admin1235ReviewModal').style.display='none'" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 1.2rem; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1;">&times;</button>
+                        <button type="button" onclick="document.getElementById('admin1235ReviewModal').style.display='none'" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; font-size: 1.15rem; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1;">&times;</button>
                     </div>
                 </div>
 
                 <!-- Controls: Round, Member & Pack Selector -->
-                <div style="background: rgba(0, 0, 0, 0.35); padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 8px;">
+                <div style="background: rgba(0, 0, 0, 0.35); padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 7px;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                         <div>
-                            <label style="display: block; font-size: 0.72rem; color: #94a3b8; font-weight: 700; margin-bottom: 3px;">
+                            <label style="display: block; font-size: 0.70rem; color: #94a3b8; font-weight: 700; margin-bottom: 3px;">
                                 <i class="fa-solid fa-calendar-check" style="color: #60a5fa;"></i> 조회 대상 회차
                             </label>
-                            <select id="admin1235ModalRoundSelect" onchange="window.onAdmin1235ModalRoundChange(this.value)" style="width: 100%; height: 34px; padding: 0 8px; background: #0f172a; border: 1px solid #334155; color: #fbbf24; border-radius: 6px; font-size: 0.8rem; font-weight: 800; outline: none;">
+                            <button type="button" id="btnAdmin1235RoundTrigger" onclick="window.openSlimRoundPickerFromAdmin1235 && window.openSlimRoundPickerFromAdmin1235()" style="width: 100%; height: 34px; padding: 0 10px; background: #0f172a; border: 1px solid rgba(255,255,255,0.12); color: #fbbf24; border-radius: 8px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: space-between; outline: none; transition: border-color 0.2s;" onmouseover="this.style.borderColor='rgba(245,158,11,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.12)'">
+                                <span id="admin1235RoundDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">회차 선택</span>
+                                <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: 4px;"></i>
+                            </button>
+                            <select id="admin1235ModalRoundSelect" onchange="window.onAdmin1235ModalRoundChange(this.value)" style="display: none;">
                                 <!-- Options dynamically injected -->
                             </select>
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.72rem; color: #94a3b8; font-weight: 700; margin-bottom: 3px;">
+                            <label style="display: block; font-size: 0.70rem; color: #94a3b8; font-weight: 700; margin-bottom: 3px;">
                                 <i class="fa-solid fa-users" style="color: #fbbf24;"></i> 조회 대상 회원
                             </label>
-                            <select id="admin1235ModalUserSelect" onchange="window.onAdmin1235ModalUserChange(this.value)" style="width: 100%; height: 34px; padding: 0 8px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 6px; font-size: 0.8rem; font-weight: 700; outline: none;">
+                            <button type="button" id="btnAdmin1235UserTrigger" onclick="window.openSlimMemberPickerFromAdmin1235 && window.openSlimMemberPickerFromAdmin1235()" style="width: 100%; height: 34px; padding: 0 10px; background: #0f172a; border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: space-between; outline: none; transition: border-color 0.2s;" onmouseover="this.style.borderColor='rgba(59,130,246,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.12)'">
+                                <span id="admin1235UserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">회원 선택</span>
+                                <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: 4px;"></i>
+                            </button>
+                            <select id="admin1235ModalUserSelect" onchange="window.onAdmin1235ModalUserChange(this.value)" style="display: none;">
                                 <!-- Options dynamically injected -->
                             </select>
                         </div>
@@ -21730,15 +22236,68 @@ async function openAdmin1235ReviewModal(initialRound = null, initialUser = null)
         userSelect.innerHTML = userOpts;
     }
 
+    // Sync button labels
+    const rLabel = document.getElementById('admin1235RoundDisplayLabel');
+    if (rLabel) {
+        rLabel.innerText = _currentAdmin1235ModalRound === 'all_rounds' ? '📊 [전체] 1235회~ 누적 종합' : `제 ${_currentAdmin1235ModalRound}회차`;
+    }
+    const uLabel = document.getElementById('admin1235UserDisplayLabel');
+    if (uLabel) {
+        if (_currentAdmin1235ModalUser === 'all') {
+            uLabel.innerText = '🌐 전체 회원 종합 (AI 70G)';
+        } else {
+            const registeredUsers = getAllUnifiedRegisteredUsers();
+            const found = registeredUsers.find(u => (u.id || '').toLowerCase() === String(_currentAdmin1235ModalUser).toLowerCase());
+            uLabel.innerText = found ? `👤 ${found.name || found.id}` : `👤 ${_currentAdmin1235ModalUser}`;
+        }
+    }
+
     modal.style.display = 'flex';
     renderAdmin1235ReviewModalContent();
 }
+
+/**
+ * 🔄 슬림 회차 선택 모달 열기 (1235회차 모달 연동)
+ */
+window.openSlimRoundPickerFromAdmin1235 = function() {
+    if (typeof window.openSlimRoundPickerModal === 'function') {
+        window.openSlimRoundPickerModal({
+            selectedRound: _currentAdmin1235ModalRound,
+            minRound: 1235,
+            title: '1235회~ 조회 대상 회차 선택',
+            onSelect: function(rVal) {
+                window.onAdmin1235ModalRoundChange(rVal);
+            }
+        });
+    }
+};
+
+/**
+ * 🔄 슬림 회원 선택 모달 열기 (1235회차 모달 연동)
+ */
+window.openSlimMemberPickerFromAdmin1235 = function() {
+    if (typeof window.openSlimMemberPickerModal === 'function') {
+        window.openSlimMemberPickerModal({
+            selectedUserId: _currentAdmin1235ModalUser,
+            title: '1235회~ 조회 대상 회원 선택',
+            onSelect: function(uId, uName) {
+                window.onAdmin1235ModalUserChange(uId);
+            }
+        });
+    }
+};
 
 /**
  * 🔄 모달 회차 변경 이벤트
  */
 window.onAdmin1235ModalRoundChange = function(val) {
     _currentAdmin1235ModalRound = val;
+    const rLabel = document.getElementById('admin1235RoundDisplayLabel');
+    if (rLabel) {
+        rLabel.innerText = val === 'all_rounds' ? '📊 [전체] 1235회~ 누적 종합' : `제 ${val}회차`;
+    }
+    const roundSelect = document.getElementById('admin1235ModalRoundSelect');
+    if (roundSelect) roundSelect.value = val;
     renderAdmin1235ReviewModalContent();
 };
 
@@ -21747,6 +22306,16 @@ window.onAdmin1235ModalRoundChange = function(val) {
  */
 window.onAdmin1235ModalUserChange = function(val) {
     _currentAdmin1235ModalUser = val;
+    const uLabel = document.getElementById('admin1235UserDisplayLabel');
+    if (uLabel) {
+        if (val === 'all') {
+            uLabel.innerText = '🌐 전체 회원 종합 (AI 70G)';
+        } else {
+            const registeredUsers = getAllUnifiedRegisteredUsers();
+            const found = registeredUsers.find(u => (u.id || '').toLowerCase() === String(val).toLowerCase());
+            uLabel.innerText = found ? `👤 ${found.name || found.id}` : `👤 ${val}`;
+        }
+    }
     const userSelect = document.getElementById('admin1235ModalUserSelect');
     if (userSelect) userSelect.value = val;
     renderAdmin1235ReviewModalContent();
@@ -21975,7 +22544,13 @@ async function renderAdmin1235ReviewModalContent() {
             `;
 
             memberAggList.forEach((m, idx) => {
-                const rankBadge = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `${idx + 1}`));
+                const rankBadge = idx === 0 
+                    ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(251,191,36,0.25);color:#fbbf24;border:1px solid rgba(251,191,36,0.45);font-size:0.68rem;font-weight:900;">1</span>' 
+                    : (idx === 1 
+                        ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(148,163,184,0.25);color:#e2e8f0;border:1px solid rgba(148,163,184,0.45);font-size:0.68rem;font-weight:900;">2</span>' 
+                        : (idx === 2 
+                            ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(217,119,6,0.25);color:#f59e0b;border:1px solid rgba(217,119,6,0.45);font-size:0.68rem;font-weight:900;">3</span>' 
+                            : `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;color:#94a3b8;font-size:0.68rem;font-weight:700;">${idx + 1}</span>`));
                 const hitsSummary = `${m.hits[1] ? `<span style="color:#fbbf24;font-weight:900;">1등${m.hits[1]} ` : ''}${m.hits[2] ? `<span style="color:#f87171;font-weight:900;">2등${m.hits[2]} ` : ''}${m.hits[3] ? `<span style="color:#60a5fa;font-weight:900;">3등${m.hits[3]} ` : ''}${m.hits[4] ? `<span style="color:#34d399;">4등${m.hits[4]} ` : ''}${m.hits[5] ? `<span style="color:#a78bfa;">5등${m.hits[5]}` : ''}` || '<span style="color:#64748b;">0건</span>';
                 const roiColor = m.roi >= 100 ? '#34d399' : (m.roi > 0 ? '#fbbf24' : '#94a3b8');
 
@@ -22167,7 +22742,13 @@ async function renderAdmin1235ReviewModalContent() {
             `;
 
             memberEvals.forEach((m, idx) => {
-                const rankBadge = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `${idx + 1}`));
+                const rankBadge = idx === 0 
+                    ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(251,191,36,0.25);color:#fbbf24;border:1px solid rgba(251,191,36,0.45);font-size:0.68rem;font-weight:900;">1</span>' 
+                    : (idx === 1 
+                        ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(148,163,184,0.25);color:#e2e8f0;border:1px solid rgba(148,163,184,0.45);font-size:0.68rem;font-weight:900;">2</span>' 
+                        : (idx === 2 
+                            ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(217,119,6,0.25);color:#f59e0b;border:1px solid rgba(217,119,6,0.45);font-size:0.68rem;font-weight:900;">3</span>' 
+                            : `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;color:#94a3b8;font-size:0.68rem;font-weight:700;">${idx + 1}</span>`));
                 const hitsSummary = `${m.grandHits[1] ? `<span style="color:#fbbf24;font-weight:900;">1등${m.grandHits[1]} ` : ''}${m.grandHits[2] ? `<span style="color:#f87171;font-weight:900;">2등${m.grandHits[2]} ` : ''}${m.grandHits[3] ? `<span style="color:#60a5fa;font-weight:900;">3등${m.grandHits[3]} ` : ''}${m.grandHits[4] ? `<span style="color:#34d399;">4등${m.grandHits[4]} ` : ''}${m.grandHits[5] ? `<span style="color:#a78bfa;">5등${m.grandHits[5]}` : ''}` || '<span style="color:#64748b;">0건</span>';
                 const roiColor = m.roi >= 100 ? '#34d399' : (m.roi > 0 ? '#fbbf24' : '#94a3b8');
 
@@ -29808,7 +30389,7 @@ function renderWinningHistoryModal() {
     const getBallBadge = (n) => {
         const bg = getBallHexColor(n);
         const textColor = n <= 10 ? '#0f172a' : '#fff';
-        return `<span style="background: ${bg}; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; color: ${textColor}; font-size: 0.72rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">${n}</span>`;
+        return `<span style="background: ${bg}; width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 50%; color: ${textColor}; font-size: 0.68rem; font-weight: 800; font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.35); flex-shrink: 0;">${n}</span>`;
     };
 
     if (rounds.length === 0) {
@@ -29837,35 +30418,35 @@ function renderWinningHistoryModal() {
         <!-- Top KPI summary -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;">
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
-                <div style="color: #94a3b8; font-size: 0.75rem;">실구매 회차 / 조합</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-top: 4px;">${rounds.length}회 <span style="font-size:0.8rem; color:#cbd5e1; font-weight:normal;">(${totalCombos}조합)</span></div>
+                <div style="color: #94a3b8; font-size: 0.72rem; letter-spacing: -0.01em;">실구매 회차 / 조합</div>
+                <div style="font-size: 0.92rem; font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; color: #fff; margin-top: 4px;">${rounds.length}회 <span style="font-size:0.75rem; color:#cbd5e1; font-weight:normal;">(${totalCombos}조합)</span></div>
             </div>
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
-                <div style="color: #94a3b8; font-size: 0.75rem;">총 구매금액</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #cbd5e1; margin-top: 4px;">${totalInvest.toLocaleString()}원</div>
+                <div style="color: #94a3b8; font-size: 0.72rem; letter-spacing: -0.01em;">총 구매금액</div>
+                <div style="font-size: 0.92rem; font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; color: #cbd5e1; margin-top: 4px;">${totalInvest.toLocaleString()}원</div>
             </div>
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
-                <div style="color: #94a3b8; font-size: 0.75rem;">총 당첨금액</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #10b981; margin-top: 4px;">${totalPrize.toLocaleString()}원</div>
+                <div style="color: #94a3b8; font-size: 0.72rem; letter-spacing: -0.01em;">총 당첨금액</div>
+                <div style="font-size: 0.92rem; font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; color: #10b981; margin-top: 4px;">${totalPrize.toLocaleString()}원</div>
             </div>
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
-                <div style="color: #94a3b8; font-size: 0.75rem;">순수익 (회수율)</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: ${netProfit >= 0 ? '#10b981' : '#f87171'}; margin-top: 4px;">
-                    ${(netProfit >= 0 ? '+' : '') + netProfit.toLocaleString()}원 <span style="font-size: 0.78rem; font-weight:bold; color: ${totalRoi >= 100 ? '#10b981' : '#fbbf24'};">(${totalRoi.toFixed(1)}%)</span>
+                <div style="color: #94a3b8; font-size: 0.72rem; letter-spacing: -0.01em;">순수익 (회수율)</div>
+                <div style="font-size: 0.92rem; font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; color: ${netProfit >= 0 ? '#10b981' : '#f87171'}; margin-top: 4px;">
+                    ${(netProfit >= 0 ? '+' : '') + netProfit.toLocaleString()}원 <span style="font-size: 0.75rem; font-weight:bold; color: ${totalRoi >= 100 ? '#10b981' : '#fbbf24'};">(${totalRoi.toFixed(1)}%)</span>
                 </div>
             </div>
         </div>
 
         <!-- Rank Hits Badges -->
-        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 14px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            <span style="font-size: 0.8rem; color: #cbd5e1; font-weight: bold;"><i class="fa-solid fa-award" style="color: #fbbf24;"></i> 등수별 총 적중:</span>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <span style="background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4); color: #fbbf24; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px;">1등: ${hits[0]}건</span>
-                <span style="background: rgba(105, 200, 242, 0.15); border: 1px solid rgba(105, 200, 242, 0.4); color: #69c8f2; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px;">2등: ${hits[1]}건</span>
-                <span style="background: rgba(255, 114, 114, 0.15); border: 1px solid rgba(255, 114, 114, 0.4); color: #ff7272; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px;">3등: ${hits[2]}건</span>
-                <span style="background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px;">4등: ${hits[3]}건</span>
-                <span style="background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.4); color: #a78bfa; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px;">5등: ${hits[4]}건</span>
-                <span style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.5); color: #c7d2fe; font-size: 0.75rem; font-weight: 800; padding: 2px 10px; border-radius: 12px;">총 ${totalWins}건 적중 (${winRate}%)</span>
+        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 0.76rem; color: #cbd5e1; font-weight: bold;"><i class="fa-solid fa-award" style="color: #fbbf24;"></i> 등수별 총 적중:</span>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <span style="background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4); color: #fbbf24; font-size: 0.72rem; font-weight: bold; padding: 2px 7px; border-radius: 12px;">1등: ${hits[0]}건</span>
+                <span style="background: rgba(105, 200, 242, 0.15); border: 1px solid rgba(105, 200, 242, 0.4); color: #69c8f2; font-size: 0.72rem; font-weight: bold; padding: 2px 7px; border-radius: 12px;">2등: ${hits[1]}건</span>
+                <span style="background: rgba(255, 114, 114, 0.15); border: 1px solid rgba(255, 114, 114, 0.4); color: #ff7272; font-size: 0.72rem; font-weight: bold; padding: 2px 7px; border-radius: 12px;">3등: ${hits[2]}건</span>
+                <span style="background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; font-size: 0.72rem; font-weight: bold; padding: 2px 7px; border-radius: 12px;">4등: ${hits[3]}건</span>
+                <span style="background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.4); color: #a78bfa; font-size: 0.72rem; font-weight: bold; padding: 2px 7px; border-radius: 12px;">5등: ${hits[4]}건</span>
+                <span style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.5); color: #c7d2fe; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">총 ${totalWins}건 적중 (${winRate}%)</span>
             </div>
         </div>
 

@@ -1738,7 +1738,7 @@ export function renderWinningHistoryModal() {
     const getBallBadge = (n) => {
         const bg = getBallHexColor(n);
         const textColor = n <= 10 ? '#0f172a' : '#fff';
-        return `<span style="background: ${bg}; width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; color: ${textColor}; font-size: 0.72rem; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3);">${n}</span>`;
+        return `<span style="background: ${bg}; width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 50%; color: ${textColor}; font-size: 0.68rem; font-weight: 800; font-family: -apple-system, BlinkMacSystemFont, 'Pretendard', sans-serif; font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,0.35); flex-shrink: 0;">${n}</span>`;
     };
 
     if (rounds.length === 0) {
@@ -1767,35 +1767,35 @@ export function renderWinningHistoryModal() {
         <!-- Top KPI summary -->
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;">
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
-                <div style="color: #94a3b8; font-size: 0.75rem;">실구매 회차 / 조합</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #fff; margin-top: 4px;">${rounds.length}회 <span style="font-size:0.8rem; color:#cbd5e1; font-weight:normal;">(${totalCombos}조합)</span></div>
+                <div style="color: #94a3b8; font-size: 0.72rem; letter-spacing: -0.01em;">실구매 회차 / 조합</div>
+                <div style="font-size: 0.92rem; font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; color: #fff; margin-top: 4px;">${rounds.length}회 <span style="font-size:0.75rem; color:#cbd5e1; font-weight:normal;">(${totalCombos}조합)</span></div>
             </div>
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
-                <div style="color: #94a3b8; font-size: 0.75rem;">총 구매금액</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #cbd5e1; margin-top: 4px;">${totalInvest.toLocaleString()}원</div>
+                <div style="color: #94a3b8; font-size: 0.72rem; letter-spacing: -0.01em;">총 구매금액</div>
+                <div style="font-size: 0.92rem; font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; color: #cbd5e1; margin-top: 4px;">${totalInvest.toLocaleString()}원</div>
             </div>
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
-                <div style="color: #94a3b8; font-size: 0.75rem;">총 당첨금액</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: #10b981; margin-top: 4px;">${totalPrize.toLocaleString()}원</div>
+                <div style="color: #94a3b8; font-size: 0.72rem; letter-spacing: -0.01em;">총 당첨금액</div>
+                <div style="font-size: 0.92rem; font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; color: #10b981; margin-top: 4px;">${totalPrize.toLocaleString()}원</div>
             </div>
             <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
-                <div style="color: #94a3b8; font-size: 0.75rem;">순수익 (회수율)</div>
-                <div style="font-size: 1.1rem; font-weight: 800; color: ${netProfit >= 0 ? '#10b981' : '#f87171'}; margin-top: 4px;">
-                    ${(netProfit >= 0 ? '+' : '') + netProfit.toLocaleString()}원 <span style="font-size: 0.78rem; font-weight:bold; color: ${totalRoi >= 100 ? '#10b981' : '#fbbf24'};">(${totalRoi.toFixed(1)}%)</span>
+                <div style="color: #94a3b8; font-size: 0.72rem; letter-spacing: -0.01em;">순수익 (회수율)</div>
+                <div style="font-size: 0.92rem; font-weight: 700; letter-spacing: -0.015em; font-variant-numeric: tabular-nums; color: ${netProfit >= 0 ? '#10b981' : '#f87171'}; margin-top: 4px;">
+                    ${(netProfit >= 0 ? '+' : '') + netProfit.toLocaleString()}원 <span style="font-size: 0.75rem; font-weight:bold; color: ${totalRoi >= 100 ? '#10b981' : '#fbbf24'};">(${totalRoi.toFixed(1)}%)</span>
                 </div>
             </div>
         </div>
 
         <!-- Rank Hits Badges -->
-        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 14px; margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-            <span style="font-size: 0.8rem; color: #cbd5e1; font-weight: bold;"><i class="fa-solid fa-award" style="color: #fbbf24;"></i> 등수별 총 적중:</span>
-            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <span style="background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4); color: #fbbf24; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px;">1등: ${hits[0]}건</span>
-                <span style="background: rgba(105, 200, 242, 0.15); border: 1px solid rgba(105, 200, 242, 0.4); color: #69c8f2; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px;">2등: ${hits[1]}건</span>
-                <span style="background: rgba(255, 114, 114, 0.15); border: 1px solid rgba(255, 114, 114, 0.4); color: #ff7272; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px;">3등: ${hits[2]}건</span>
-                <span style="background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px;">4등: ${hits[3]}건</span>
-                <span style="background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.4); color: #a78bfa; font-size: 0.75rem; font-weight: bold; padding: 2px 8px; border-radius: 12px;">5등: ${hits[4]}건</span>
-                <span style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.5); color: #c7d2fe; font-size: 0.75rem; font-weight: 800; padding: 2px 10px; border-radius: 12px;">총 ${totalWins}건 적중 (${winRate}%)</span>
+        <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 8px 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span style="font-size: 0.76rem; color: #cbd5e1; font-weight: bold;"><i class="fa-solid fa-award" style="color: #fbbf24;"></i> 등수별 총 적중:</span>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <span style="background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4); color: #fbbf24; font-size: 0.72rem; font-weight: bold; padding: 2px 7px; border-radius: 12px;">1등: ${hits[0]}건</span>
+                <span style="background: rgba(105, 200, 242, 0.15); border: 1px solid rgba(105, 200, 242, 0.4); color: #69c8f2; font-size: 0.72rem; font-weight: bold; padding: 2px 7px; border-radius: 12px;">2등: ${hits[1]}건</span>
+                <span style="background: rgba(255, 114, 114, 0.15); border: 1px solid rgba(255, 114, 114, 0.4); color: #ff7272; font-size: 0.72rem; font-weight: bold; padding: 2px 7px; border-radius: 12px;">3등: ${hits[2]}건</span>
+                <span style="background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.4); color: #34d399; font-size: 0.72rem; font-weight: bold; padding: 2px 7px; border-radius: 12px;">4등: ${hits[3]}건</span>
+                <span style="background: rgba(167, 139, 250, 0.15); border: 1px solid rgba(167, 139, 250, 0.4); color: #a78bfa; font-size: 0.72rem; font-weight: bold; padding: 2px 7px; border-radius: 12px;">5등: ${hits[4]}건</span>
+                <span style="background: rgba(99, 102, 241, 0.2); border: 1px solid rgba(99, 102, 241, 0.5); color: #c7d2fe; font-size: 0.72rem; font-weight: 800; padding: 2px 8px; border-radius: 12px;">총 ${totalWins}건 적중 (${winRate}%)</span>
             </div>
         </div>
 

@@ -2766,54 +2766,62 @@ export async function openAdmin1235ReviewModal(initialRound = null, initialUser 
         modal.className = 'modal-overlay';
         modal.style.cssText = 'display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(7, 10, 20, 0.92); z-index: 100005; padding: 12px; box-sizing: border-box; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);';
         modal.innerHTML = `
-            <div class="modal-card" style="background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border: 2px solid #f59e0b; border-radius: 16px; max-width: 720px; width: 100%; color: #fff; box-shadow: 0 20px 60px rgba(0,0,0,0.9); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', sans-serif;">
+            <div class="modal-card" style="background: linear-gradient(155deg, rgba(15, 23, 42, 0.96) 0%, rgba(9, 13, 22, 0.98) 100%); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 18px; max-width: 740px; width: 100%; color: #fff; box-shadow: 0 25px 60px rgba(0,0,0,0.95), 0 0 25px rgba(245,158,11,0.15); max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; letter-spacing: -0.015em;">
                 
                 <!-- Modal Header -->
-                <div style="background: rgba(15, 23, 42, 0.95); padding: 14px 16px; border-bottom: 1.5px solid rgba(245, 158, 11, 0.3); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="background: rgba(15, 23, 42, 0.95); padding: 12px 16px; border-bottom: 1px solid rgba(245, 158, 11, 0.25); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 1.1rem; border: 1px solid rgba(245, 158, 11, 0.4);">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; border-radius: 8px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 0.95rem; border: 1px solid rgba(245, 158, 11, 0.4);">
                             <i class="fa-solid fa-crown"></i>
                         </span>
                         <div>
-                            <h3 style="margin: 0; color: #fbbf24; font-size: 1.05rem; font-weight: 900; letter-spacing: -0.3px;">
+                            <h3 style="margin: 0; color: #fbbf24; font-size: 0.95rem; font-weight: 800; letter-spacing: -0.015em;">
                                 1235회~ 추천·당첨 상세 리포트
                             </h3>
-                            <span style="font-size: 0.72rem; color: #94a3b8;">빅데이터 퀀트 알고리즘 당첨 결과 &amp; 대외 공유 콘솔</span>
+                            <span style="font-size: 0.68rem; color: #94a3b8;">빅데이터 퀀트 알고리즘 당첨 결과 &amp; 대외 공유 콘솔</span>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-                        <button type="button" onclick="window.shareAdmin1235ReviewAsImage && window.shareAdmin1235ReviewAsImage()" title="카카오톡/SNS로 이미지 전송 (친구/단톡방 선택)" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);">
+                    <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" onclick="window.shareAdmin1235ReviewAsImage && window.shareAdmin1235ReviewAsImage()" title="카카오톡/SNS로 이미지 전송 (친구/단톡방 선택)" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; padding: 5px 9px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.4);">
                             <i class="fa-solid fa-image"></i> 이미지 공유
                         </button>
-                        <button type="button" onclick="window.shareAdmin1235ReviewToKakao && window.shareAdmin1235ReviewToKakao()" title="카카오톡 친구 및 채팅방 선택 공유" style="background: #fee500; color: #191919; border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(254, 229, 0, 0.35);">
+                        <button type="button" onclick="window.shareAdmin1235ReviewToKakao && window.shareAdmin1235ReviewToKakao()" title="카카오톡 친구 및 채팅방 선택 공유" style="background: #fee500; color: #191919; border: none; padding: 5px 9px; border-radius: 6px; font-size: 0.74rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(254, 229, 0, 0.35);">
                             <i class="fa-solid fa-comment"></i> 카톡 공유
                         </button>
-                        <button type="button" onclick="window.downloadAdmin1235ReviewImage && window.downloadAdmin1235ReviewImage()" title="리포트 이미지 파일로 저장" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <button type="button" onclick="window.downloadAdmin1235ReviewImage && window.downloadAdmin1235ReviewImage()" title="리포트 이미지 파일로 저장" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 5px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px;">
                             <i class="fa-solid fa-download"></i> 저장
                         </button>
-                        <button type="button" onclick="window.copyAdmin1235ReviewText && window.copyAdmin1235ReviewText()" title="텍스트 클립보드 복사" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 0.76rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <button type="button" onclick="window.copyAdmin1235ReviewText && window.copyAdmin1235ReviewText()" title="텍스트 클립보드 복사" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; padding: 5px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 3px;">
                             <i class="fa-solid fa-copy"></i> 복사
                         </button>
-                        <button type="button" onclick="document.getElementById('admin1235ReviewModal').style.display='none'" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; font-size: 1.2rem; cursor: pointer; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1;">&times;</button>
+                        <button type="button" onclick="document.getElementById('admin1235ReviewModal').style.display='none'" style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; font-size: 1.15rem; cursor: pointer; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; line-height: 1;">&times;</button>
                     </div>
                 </div>
 
                 <!-- Controls: Round, Member & Pack Selector -->
-                <div style="background: rgba(0, 0, 0, 0.35); padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 8px;">
+                <div style="background: rgba(0, 0, 0, 0.35); padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 7px;">
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                         <div>
-                            <label style="display: block; font-size: 0.72rem; color: #94a3b8; font-weight: 700; margin-bottom: 3px;">
+                            <label style="display: block; font-size: 0.70rem; color: #94a3b8; font-weight: 700; margin-bottom: 3px;">
                                 <i class="fa-solid fa-calendar-check" style="color: #60a5fa;"></i> 조회 대상 회차
                             </label>
-                            <select id="admin1235ModalRoundSelect" onchange="window.onAdmin1235ModalRoundChange(this.value)" style="width: 100%; height: 34px; padding: 0 8px; background: #0f172a; border: 1px solid #334155; color: #fbbf24; border-radius: 6px; font-size: 0.8rem; font-weight: 800; outline: none;">
+                            <button type="button" id="btnAdmin1235RoundTrigger" onclick="window.openSlimRoundPickerFromAdmin1235 && window.openSlimRoundPickerFromAdmin1235()" style="width: 100%; height: 34px; padding: 0 10px; background: #0f172a; border: 1px solid rgba(255,255,255,0.12); color: #fbbf24; border-radius: 8px; font-size: 0.78rem; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: space-between; outline: none; transition: border-color 0.2s;" onmouseover="this.style.borderColor='rgba(245,158,11,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.12)'">
+                                <span id="admin1235RoundDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">회차 선택</span>
+                                <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: 4px;"></i>
+                            </button>
+                            <select id="admin1235ModalRoundSelect" onchange="window.onAdmin1235ModalRoundChange(this.value)" style="display: none;">
                                 <!-- Options dynamically injected -->
                             </select>
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.72rem; color: #94a3b8; font-weight: 700; margin-bottom: 3px;">
+                            <label style="display: block; font-size: 0.70rem; color: #94a3b8; font-weight: 700; margin-bottom: 3px;">
                                 <i class="fa-solid fa-users" style="color: #fbbf24;"></i> 조회 대상 회원
                             </label>
-                            <select id="admin1235ModalUserSelect" onchange="window.onAdmin1235ModalUserChange(this.value)" style="width: 100%; height: 34px; padding: 0 8px; background: #0f172a; border: 1px solid #334155; color: #fff; border-radius: 6px; font-size: 0.8rem; font-weight: 700; outline: none;">
+                            <button type="button" id="btnAdmin1235UserTrigger" onclick="window.openSlimMemberPickerFromAdmin1235 && window.openSlimMemberPickerFromAdmin1235()" style="width: 100%; height: 34px; padding: 0 10px; background: #0f172a; border: 1px solid rgba(255,255,255,0.12); color: #fff; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: space-between; outline: none; transition: border-color 0.2s;" onmouseover="this.style.borderColor='rgba(59,130,246,0.5)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.12)'">
+                                <span id="admin1235UserDisplayLabel" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">회원 선택</span>
+                                <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; color: #94a3b8; margin-left: 4px;"></i>
+                            </button>
+                            <select id="admin1235ModalUserSelect" onchange="window.onAdmin1235ModalUserChange(this.value)" style="display: none;">
                                 <!-- Options dynamically injected -->
                             </select>
                         </div>
@@ -2906,15 +2914,68 @@ export async function openAdmin1235ReviewModal(initialRound = null, initialUser 
         userSelect.innerHTML = userOpts;
     }
 
+    // Sync button labels
+    const rLabel = document.getElementById('admin1235RoundDisplayLabel');
+    if (rLabel) {
+        rLabel.innerText = _currentAdmin1235ModalRound === 'all_rounds' ? '📊 [전체] 1235회~ 누적 종합' : `제 ${_currentAdmin1235ModalRound}회차`;
+    }
+    const uLabel = document.getElementById('admin1235UserDisplayLabel');
+    if (uLabel) {
+        if (_currentAdmin1235ModalUser === 'all') {
+            uLabel.innerText = '🌐 전체 회원 종합 (AI 70G)';
+        } else {
+            const registeredUsers = getAllUnifiedRegisteredUsers();
+            const found = registeredUsers.find(u => (u.id || '').toLowerCase() === String(_currentAdmin1235ModalUser).toLowerCase());
+            uLabel.innerText = found ? `👤 ${found.name || found.id}` : `👤 ${_currentAdmin1235ModalUser}`;
+        }
+    }
+
     modal.style.display = 'flex';
     renderAdmin1235ReviewModalContent();
 }
+
+/**
+ * 🔄 슬림 회차 선택 모달 열기 (1235회차 모달 연동)
+ */
+window.openSlimRoundPickerFromAdmin1235 = function() {
+    if (typeof window.openSlimRoundPickerModal === 'function') {
+        window.openSlimRoundPickerModal({
+            selectedRound: _currentAdmin1235ModalRound,
+            minRound: 1235,
+            title: '1235회~ 조회 대상 회차 선택',
+            onSelect: function(rVal) {
+                window.onAdmin1235ModalRoundChange(rVal);
+            }
+        });
+    }
+};
+
+/**
+ * 🔄 슬림 회원 선택 모달 열기 (1235회차 모달 연동)
+ */
+window.openSlimMemberPickerFromAdmin1235 = function() {
+    if (typeof window.openSlimMemberPickerModal === 'function') {
+        window.openSlimMemberPickerModal({
+            selectedUserId: _currentAdmin1235ModalUser,
+            title: '1235회~ 조회 대상 회원 선택',
+            onSelect: function(uId, uName) {
+                window.onAdmin1235ModalUserChange(uId);
+            }
+        });
+    }
+};
 
 /**
  * 🔄 모달 회차 변경 이벤트
  */
 window.onAdmin1235ModalRoundChange = function(val) {
     _currentAdmin1235ModalRound = val;
+    const rLabel = document.getElementById('admin1235RoundDisplayLabel');
+    if (rLabel) {
+        rLabel.innerText = val === 'all_rounds' ? '📊 [전체] 1235회~ 누적 종합' : `제 ${val}회차`;
+    }
+    const roundSelect = document.getElementById('admin1235ModalRoundSelect');
+    if (roundSelect) roundSelect.value = val;
     renderAdmin1235ReviewModalContent();
 };
 
@@ -2923,6 +2984,16 @@ window.onAdmin1235ModalRoundChange = function(val) {
  */
 window.onAdmin1235ModalUserChange = function(val) {
     _currentAdmin1235ModalUser = val;
+    const uLabel = document.getElementById('admin1235UserDisplayLabel');
+    if (uLabel) {
+        if (val === 'all') {
+            uLabel.innerText = '🌐 전체 회원 종합 (AI 70G)';
+        } else {
+            const registeredUsers = getAllUnifiedRegisteredUsers();
+            const found = registeredUsers.find(u => (u.id || '').toLowerCase() === String(val).toLowerCase());
+            uLabel.innerText = found ? `👤 ${found.name || found.id}` : `👤 ${val}`;
+        }
+    }
     const userSelect = document.getElementById('admin1235ModalUserSelect');
     if (userSelect) userSelect.value = val;
     renderAdmin1235ReviewModalContent();
@@ -3151,7 +3222,13 @@ export async function renderAdmin1235ReviewModalContent() {
             `;
 
             memberAggList.forEach((m, idx) => {
-                const rankBadge = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `${idx + 1}`));
+                const rankBadge = idx === 0 
+                    ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(251,191,36,0.25);color:#fbbf24;border:1px solid rgba(251,191,36,0.45);font-size:0.68rem;font-weight:900;">1</span>' 
+                    : (idx === 1 
+                        ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(148,163,184,0.25);color:#e2e8f0;border:1px solid rgba(148,163,184,0.45);font-size:0.68rem;font-weight:900;">2</span>' 
+                        : (idx === 2 
+                            ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(217,119,6,0.25);color:#f59e0b;border:1px solid rgba(217,119,6,0.45);font-size:0.68rem;font-weight:900;">3</span>' 
+                            : `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;color:#94a3b8;font-size:0.68rem;font-weight:700;">${idx + 1}</span>`));
                 const hitsSummary = `${m.hits[1] ? `<span style="color:#fbbf24;font-weight:900;">1등${m.hits[1]} ` : ''}${m.hits[2] ? `<span style="color:#f87171;font-weight:900;">2등${m.hits[2]} ` : ''}${m.hits[3] ? `<span style="color:#60a5fa;font-weight:900;">3등${m.hits[3]} ` : ''}${m.hits[4] ? `<span style="color:#34d399;">4등${m.hits[4]} ` : ''}${m.hits[5] ? `<span style="color:#a78bfa;">5등${m.hits[5]}` : ''}` || '<span style="color:#64748b;">0건</span>';
                 const roiColor = m.roi >= 100 ? '#34d399' : (m.roi > 0 ? '#fbbf24' : '#94a3b8');
 
@@ -3343,7 +3420,13 @@ export async function renderAdmin1235ReviewModalContent() {
             `;
 
             memberEvals.forEach((m, idx) => {
-                const rankBadge = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `${idx + 1}`));
+                const rankBadge = idx === 0 
+                    ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(251,191,36,0.25);color:#fbbf24;border:1px solid rgba(251,191,36,0.45);font-size:0.68rem;font-weight:900;">1</span>' 
+                    : (idx === 1 
+                        ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(148,163,184,0.25);color:#e2e8f0;border:1px solid rgba(148,163,184,0.45);font-size:0.68rem;font-weight:900;">2</span>' 
+                        : (idx === 2 
+                            ? '<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;background:rgba(217,119,6,0.25);color:#f59e0b;border:1px solid rgba(217,119,6,0.45);font-size:0.68rem;font-weight:900;">3</span>' 
+                            : `<span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:5px;color:#94a3b8;font-size:0.68rem;font-weight:700;">${idx + 1}</span>`));
                 const hitsSummary = `${m.grandHits[1] ? `<span style="color:#fbbf24;font-weight:900;">1등${m.grandHits[1]} ` : ''}${m.grandHits[2] ? `<span style="color:#f87171;font-weight:900;">2등${m.grandHits[2]} ` : ''}${m.grandHits[3] ? `<span style="color:#60a5fa;font-weight:900;">3등${m.grandHits[3]} ` : ''}${m.grandHits[4] ? `<span style="color:#34d399;">4등${m.grandHits[4]} ` : ''}${m.grandHits[5] ? `<span style="color:#a78bfa;">5등${m.grandHits[5]}` : ''}` || '<span style="color:#64748b;">0건</span>';
                 const roiColor = m.roi >= 100 ? '#34d399' : (m.roi > 0 ? '#fbbf24' : '#94a3b8');
 
