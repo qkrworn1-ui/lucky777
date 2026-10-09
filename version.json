@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.09.1543.40",
+  "version": "v2026.10.09.1645",
   "buildDate": "2026-10-09",
   "description": "Fix: Optimize dashboard height to fit within single screen",
-  "buildTimestamp": "2026-10-09T15:43:40.720412",
+  "buildTimestamp": "2026-10-09T16:45:57.519206",
   "buildHistory": [
-    {
-      "version": "v2026.10.09.1323",
-      "buildDate": "2026-10-09",
-      "buildTime": "13:23",
-      "buildDateTime": "2026-10-09 13:23",
-      "buildTimestamp": "2026-10-09T13:23:05.990006",
-      "description": "Security: Enforce strict admin-only check for member picker modals across all tabs"
-    },
-    {
-      "version": "v2026.10.09.1323.30",
-      "buildDate": "2026-10-09",
-      "buildTime": "13:23",
-      "buildDateTime": "2026-10-09 13:23",
-      "buildTimestamp": "2026-10-09T13:23:30.820953",
-      "description": "Security: Enforce strict admin-only check for member picker modals across all tabs"
-    },
     {
       "version": "v2026.10.09.1323.58",
       "buildDate": "2026-10-09",
@@ -119,12 +103,28 @@
     {
       "version": "v2026.10.09.1543.40",
       "buildDate": "2026-10-09",
-      "buildTime": "15:43",
-      "buildDateTime": "2026-10-09 15:43",
-      "buildTimestamp": "2026-10-09T15:43:40.720412",
+      "buildTime": "16:40",
+      "buildDateTime": "2026-10-09 16:40",
+      "buildTimestamp": "2026-10-09T16:40:51.247003",
+      "description": "Fix: Optimize dashboard height to fit within single screen"
+    },
+    {
+      "version": "v2026.10.09.1643",
+      "buildDate": "2026-10-09",
+      "buildTime": "16:43",
+      "buildDateTime": "2026-10-09 16:43",
+      "buildTimestamp": "2026-10-09T16:43:11.912336",
+      "description": "Fix: Optimize dashboard height to fit within single screen"
+    },
+    {
+      "version": "v2026.10.09.1645",
+      "buildDate": "2026-10-09",
+      "buildTime": "16:45",
+      "buildDateTime": "2026-10-09 16:45",
+      "buildTimestamp": "2026-10-09T16:45:57.519206",
       "description": "Fix: Optimize dashboard height to fit within single screen"
     }
   ],
-  "buildTime": "15:43",
-  "buildDateTime": "2026-10-09 15:43"
+  "buildTime": "16:45",
+  "buildDateTime": "2026-10-09 16:45"
 }

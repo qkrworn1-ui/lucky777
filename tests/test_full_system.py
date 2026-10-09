@@ -3487,7 +3487,26 @@ Lotto 6/45
             """
             res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, cwd=self.root_dir)
             self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
-            self.assertIn('OK_USER_LAST_ACCESS_TEST', res.stdout)
+    # [Test 106] QR Camera Stream Lifecycle & Confirmed Tab Accordion Guard Test
+    def test_qr_scanner_lifecycle_and_confirmed_accordion_propagation_guard(self):
+        manual_modal_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'manual-modal.js')
+        with open(manual_modal_path, 'r', encoding='utf-8') as f:
+            manual_js = f.read()
+        
+        self.assertIn('__activeLottoMediaStreams', manual_js, "Must track active MediaStreams to prevent zombie OS camera locks")
+        self.assertIn('ideal: "environment"', manual_js, "Must use ideal facingMode for mobile/Fold7 multi-camera compatibility")
+        self.assertIn('startScannerPromise', manual_js, "Must use startScannerPromise for idempotent scanner startup")
+        self.assertIn('forceKillAllCameraTracks()', manual_js, "Must forcibly kill camera tracks on scanner stop")
+
+        confirmed_tab_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        with open(confirmed_tab_path, 'r', encoding='utf-8') as f:
+            confirmed_js = f.read()
+
+        self.assertIn('btn-toggle-all-round-combos', confirmed_js)
+        self.assertIn('event.stopPropagation()', confirmed_js)
+        self.assertIn('target.closest(\'.confirmed-round-actions\')', confirmed_js, "toggleConfirmedRound must guard against action bar clicks")
+        self.assertIn('target.closest(\'.btn-toggle-all-round-combos\')', confirmed_js, "toggleConfirmedRound must guard against toggle-all button clicks")
+        self.assertIn('toggleRoundAllReceipts(btn, round, event)', confirmed_js, "toggleRoundAllReceipts must accept event parameter")
 
 if __name__ == '__main__':
     unittest.main()

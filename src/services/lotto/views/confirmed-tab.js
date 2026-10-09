@@ -794,7 +794,7 @@ export async function renderConfirmedPurchasesList() {
 
         html += `
             <div class="confirmed-round-card" data-round="${round}" style="box-sizing: border-box; max-width: 100%; overflow: hidden; margin-bottom: 14px; ${isFilterMatched ? '' : 'display: none;'}">
-                <div class="confirmed-round-header" style="display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; cursor:pointer;" onclick="window.toggleConfirmedRound && window.toggleConfirmedRound(this, ${round})">
+                <div class="confirmed-round-header" style="display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; cursor:pointer;" onclick="window.toggleConfirmedRound && window.toggleConfirmedRound(this, ${round}, event)">
                     <div class="confirmed-round-title-row" style="display:flex; align-items:center; flex-wrap: wrap; gap: 6px; width: 100%;">
                         <strong style="font-size: 1.02rem; color: #fff; display: inline-flex; align-items: center; gap: 8px; flex-shrink: 0;">
                             <i class="fa-solid fa-chevron-down chevron-icon" style="transition: transform 0.3s; font-size:0.9rem; color: var(--text-secondary); transform: ${isDefaultExpanded ? 'rotate(180deg)' : 'rotate(0deg)'};"></i>
@@ -813,8 +813,8 @@ export async function renderConfirmedPurchasesList() {
                             ${summaryHTML}
                         </div>
                         <div class="confirmed-round-actions" style="display:inline-flex; align-items:center; flex-wrap: wrap; gap: 5px; flex-shrink: 0; margin-left: auto;" onclick="event.stopPropagation();">
-                            <button type="button" class="btn-toggle-all-round-combos btn-dark-pill" data-round="${round}" onclick="window.toggleRoundAllReceipts && window.toggleRoundAllReceipts(this, ${round})" style="height: 26px; box-sizing: border-box;">
-                                <i class="fa-solid fa-layer-group" style="color: #818cf8;"></i> <span class="toggle-all-text">전체 번호 펼치기</span>
+                            <button type="button" class="btn-toggle-all-round-combos btn-dark-pill" data-round="${round}" onclick="event.stopPropagation(); event.preventDefault(); window.toggleRoundAllReceipts && window.toggleRoundAllReceipts(this, ${round}, event)" style="height: 28px; box-sizing: border-box; padding: 0 10px; cursor: pointer; user-select: none;">
+                                <i class="fa-solid fa-layer-group" style="color: #818cf8; pointer-events: none;"></i> <span class="toggle-all-text" style="pointer-events: none;">전체 번호 펼치기</span>
                             </button>
                             ${isAdmin ? `
                                 ${round === 1238 && purchases.length > 3 && isMaster ? `
@@ -1219,10 +1219,10 @@ export async function renderConfirmedPurchasesList() {
                 <div class="confirmed-receipt-card confirmed-receipt-pass ${hasWonReceipt ? 'confirmed-receipt-won' : ''}" style="border: ${cardBorderStyle}; border-radius: 14px; margin-bottom: 12px; ${cardBgStyle}; position: relative; ${cardShadowStyle} transition: all 0.2s ease;">
                     
                     <!-- 1. 티켓 고유 식별 헤더 바 (원터치 접힘/펼침) -->
-                    <div class="confirmed-receipt-header" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this)" style="${topHeaderBg}; padding: 10px 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; user-select: none; transition: filter 0.15s;" onmouseover="this.style.filter='brightness(1.1)';" onmouseout="this.style.filter='brightness(1)';" title="터치(클릭)하여 번호 및 동행복권 검증 정보를 펼치거나 접습니다">
+                    <div class="confirmed-receipt-header" onclick="window.toggleReceiptCombos && window.toggleReceiptCombos(this, event)" style="${topHeaderBg}; padding: 10px 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; user-select: none; transition: filter 0.15s;" onmouseover="this.style.filter='brightness(1.1)';" onmouseout="this.style.filter='brightness(1)';" title="터치(클릭)하여 번호 및 동행복권 검증 정보를 펼치거나 접습니다">
                         
                         <!-- Left: TICKET #01 Badge + User + Version + Games -->
-                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
+                        <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; pointer-events: none;">
                             <span class="confirmed-ticket-tag" style="${ticketTagBg}; padding: 3px 8px; border-radius: 6px; font-size: 0.74rem; font-weight: 900; font-family: monospace; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0;">
                                 🎟️ TICKET #${String(pIdx + 1).padStart(2, '0')}
                             </span>
@@ -1241,12 +1241,12 @@ export async function renderConfirmedPurchasesList() {
 
                         <!-- Right: Win Result & Actions & Dropdown Arrow -->
                         <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto;">
-                            <div style="display: inline-flex; align-items: center; gap: 4px;">
+                            <div style="display: inline-flex; align-items: center; gap: 4px; pointer-events: none;">
                                 ${winPillBadgeHtml || receiptResultBadge}
                             </div>
                             
                             <!-- Fold / Expand Dropdown Button -->
-                            <div class="btn-toggle-receipt-combos" style="width: 28px; height: 28px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 7px; color: #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; transition: all 0.2s;">
+                            <div class="btn-toggle-receipt-combos" style="width: 28px; height: 28px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 7px; color: #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; transition: all 0.2s; pointer-events: none;">
                                 <i class="fa-solid fa-chevron-down toggle-combos-icon" style="transition: transform 0.25s ease;"></i>
                             </div>
 
@@ -2240,7 +2240,12 @@ export function renderReceiptTrashModalContent() {
 /**
  * 📱 단일 구매영수증의 5게임 번호 조합 목록 펼치기/접기 토글 (A안 실물 티켓 패스 연동)
  */
-export function toggleReceiptCombos(el) {
+export function toggleReceiptCombos(el, event) {
+    if (event) {
+        try {
+            event.stopPropagation();
+        } catch(e) {}
+    }
     if (!el) return;
     const card = el.closest('.confirmed-receipt-card');
     if (!card) return;
@@ -2281,12 +2286,18 @@ export function toggleReceiptCombos(el) {
 /**
  * 📱 해당 회차 내 모든 구매영수증 번호 일괄 펼치기/접기 토글 (A안 실물 티켓 패스 연동)
  */
-export function toggleRoundAllReceipts(btn, round) {
+export function toggleRoundAllReceipts(btn, round, event) {
+    if (event) {
+        try {
+            event.stopPropagation();
+            event.preventDefault();
+        } catch(e) {}
+    }
     if (!btn) return;
     const roundCard = btn.closest('.confirmed-round-card');
     if (!roundCard) return;
 
-    // If the round card itself was folded, expand it first
+    // 회차 카드가 접혀 있다면 먼저 확실히 펼침
     const roundBody = roundCard.querySelector('.confirmed-round-body');
     if (roundBody && (roundBody.style.display === 'none' || getComputedStyle(roundBody).display === 'none')) {
         roundBody.style.display = 'block';
@@ -2337,9 +2348,24 @@ export function toggleRoundAllReceipts(btn, round) {
 }
 
 /**
- * 📱 단일 회차 아코디언 접힘/펼침 토글
+ * 📱 단일 회차 아코디언 접힘/펼침 토글 (버튼 클릭 버블링 방지 가드 탑재)
  */
-export function toggleConfirmedRound(headerEl, roundNum) {
+export function toggleConfirmedRound(headerEl, roundNum, event) {
+    if (event) {
+        // 🔒 클릭된 대상이 액션 버튼 영역이거나 버튼인 경우 회차 아코디언 토글 차단
+        const target = event.target;
+        if (target && (
+            target.closest('.confirmed-round-actions') ||
+            target.closest('.btn-toggle-all-round-combos') ||
+            target.closest('.btn-toggle-lock-round') ||
+            target.closest('.btn-delete-unlocked-round') ||
+            target.closest('.btn-clean-1238-ghosts') ||
+            target.closest('button') ||
+            target.tagName === 'BUTTON'
+        )) {
+            return;
+        }
+    }
     if (!headerEl) return;
     const card = headerEl.closest('.confirmed-round-card') || headerEl.parentElement;
     const body = card ? card.querySelector('.confirmed-round-body') : headerEl.nextElementSibling;
