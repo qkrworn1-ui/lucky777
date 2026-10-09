@@ -1937,119 +1937,93 @@ export function formatConfirmedRoundLabel(rounds, emptyText = '구매확정 없�
 
 
 
+// 🔒 Strict FIFO Promise Serialization Queue per user for Firestore synchronization
+// Prevents out-of-order writes and data corruption during rapid sequential QR registrations
+const _firestoreSyncQueueByUser = new Map();
+
+export function enqueueFirestoreSync(authId, syncTask) {
+    const key = (authId || 'master').toLowerCase().trim();
+    const currentQueue = _firestoreSyncQueueByUser.get(key) || Promise.resolve(true);
+
+    const nextQueue = currentQueue
+        .catch(err => {
+            console.warn(`[Firestore Queue Note] Prior sync task for ${key} finished with note:`, err);
+            return false;
+        })
+        .then(() => syncTask());
+
+    _firestoreSyncQueueByUser.set(key, nextQueue);
+    return nextQueue;
+}
+
 /**
-
  * Directly save ledger state to LocalStorage and Firestore (Full Replacement)
-
  * Ensures deletions and modifications are permanently synced across all devices.
-
  * @param {Object} ledger 
-
  * @param {string} user 
-
  * @param {string} successMsg 
-
  */
-
 export async function saveLedgerDirectly(ledger, user = null, successMsg = null, targetRound = null, isAsyncServerSync = false) {
-
     const incomingLedger = ledger || {};
-
     const authId = (user || (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || 'master').toLowerCase().trim();
-
     const storage = typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage : localStorage;
 
-
-
-    // ??? CRITICAL ISOLATION: Retrieve ONLY this user's existing ledger to prevent cross-contamination
-
+    // 🔒 CRITICAL ISOLATION: Retrieve ONLY this user's existing ledger to prevent cross-contamination
     let existingUserLedger = {};
-
     try {
-
         const raw = storage.getItem(`lotto_actual_ledger_${authId}`);
-
         if (raw) existingUserLedger = JSON.parse(raw);
-
     } catch(e) {}
 
-
-
     const protectedLedger = {};
-
     for (const rKey in incomingLedger) {
-
         if (!Array.isArray(incomingLedger[rKey])) {
-
             protectedLedger[rKey] = incomingLedger[rKey];
-
             continue;
-
         }
-
         let syncedList = incomingLedger[rKey].map(syncPurchaseWithQrUrl);
-
         if (parseInt(rKey, 10) === 1239 && (authId === 'master' || authId === 'admin')) {
-
             syncedList = normalizeMaster1239Order(syncedList);
-
         }
-
         protectedLedger[rKey] = deduplicateReceipts(syncedList);
-
     }
 
-    
+    if (targetRound !== null && targetRound !== undefined) {
+        // If targetRound was specified, ensure other rounds from existingUserLedger are not accidentally omitted
+        for (const existingRound in existingUserLedger) {
+            if (String(existingRound) !== String(targetRound) && !protectedLedger[existingRound]) {
+                protectedLedger[existingRound] = existingUserLedger[existingRound];
+            }
+        }
+    }
 
     // Update active memory ledger if currently viewing this user
-
     const currentLoggedUser = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || 'guest').toLowerCase();
-
     if (currentLoggedUser === authId) {
-
         state.globalLedger = protectedLedger;
-
     } else if (state.adminViewingTarget && state.adminViewingTarget.toLowerCase().trim() === authId) {
-
         state.globalLedger = protectedLedger;
-
     }
 
     state.ledgerFinancialsCache = null; // Invalidate memoized cache
-
     state.allUsersMergedLedger = null; // Invalidate admin merged cache so updates immediately reflect
-
     _allUsersFinancialsCache = null;
 
     if (state.allUsersPurchasesMap) {
-
         if (!state.allUsersPurchasesMap[authId]) {
-
             state.allUsersPurchasesMap[authId] = { ledger: protectedLedger };
-
         } else {
-
             state.allUsersPurchasesMap[authId].ledger = protectedLedger;
-
         }
-
     }
 
     if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
-
         window.clearUser70ReviewCache();
-
     }
 
-    
-
     try {
-
         storage.setItem(`lotto_actual_ledger_${authId}`, JSON.stringify(protectedLedger));
-
     } catch(e) {}
-
-
 
     let isServerSaved = false;
 
@@ -2073,22 +2047,42 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
                 ? [String(targetRound)]
                 : Object.keys(cleanLedger);
 
-            for (const roundKey of roundsToArchive) {
+            const archiveTasks = roundsToArchive.map(async (roundKey) => {
                 const roundReceipts = cleanLedger[roundKey];
                 if (Array.isArray(roundReceipts) && roundReceipts.length > 0) {
                     const archiveDocId = `${authId}_${roundKey}`;
+                    
+                    // Archive double-protection: merge with any existing archive in local storage
+                    let mergedArchiveReceipts = roundReceipts;
                     try {
-                        storage.setItem(`lotto_receipt_archive_${archiveDocId}`, JSON.stringify(roundReceipts));
+                        const rawArc = storage.getItem(`lotto_receipt_archive_${archiveDocId}`);
+                        if (rawArc) {
+                            const parsedArc = JSON.parse(rawArc);
+                            if (Array.isArray(parsedArc) && parsedArc.length > 0) {
+                                mergedArchiveReceipts = deduplicateReceipts([...parsedArc, ...roundReceipts]);
+                            }
+                        }
                     } catch(e) {}
-                    firestore.collection('lotto_receipt_archives').doc(archiveDocId).set({
-                        userId: authId,
-                        round: parseInt(roundKey, 10),
-                        receipts: roundReceipts,
-                        savedAt: new Date().toISOString(),
-                        isImmutable: true
-                    }, { merge: true }).catch(e => console.warn('[Archive Note]', e));
+
+                    try {
+                        storage.setItem(`lotto_receipt_archive_${archiveDocId}`, JSON.stringify(mergedArchiveReceipts));
+                    } catch(e) {}
+
+                    try {
+                        await firestore.collection('lotto_receipt_archives').doc(archiveDocId).set({
+                            userId: authId,
+                            round: parseInt(roundKey, 10),
+                            receipts: mergedArchiveReceipts,
+                            savedAt: new Date().toISOString(),
+                            isImmutable: true
+                        }, { merge: true });
+                    } catch(archErr) {
+                        console.warn('[Archive Note]', archErr);
+                    }
                 }
-            }
+            });
+
+            await Promise.all(archiveTasks);
             return true;
         } catch (err) {
             console.warn("[Firestore] Sync note (saved locally):", err);
@@ -2097,11 +2091,11 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
     };
 
     if (isAsyncServerSync) {
-        // High-speed non-blocking background sync: returns immediately (<5ms)
-        performServerSync().catch(err => console.warn('[Async Server Sync Note]', err));
+        // High-speed non-blocking background sync with strict FIFO queue serialization
+        enqueueFirestoreSync(authId, performServerSync).catch(err => console.warn('[Async Server Sync Note]', err));
         isServerSaved = true;
     } else {
-        isServerSaved = await performServerSync();
+        isServerSaved = await enqueueFirestoreSync(authId, performServerSync);
     }
 
     if (typeof updateDebugMonitor === 'function') updateDebugMonitor(protectedLedger);
@@ -2112,7 +2106,6 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
     }
 
     return isServerSaved;
-
 }
 
 
@@ -2170,34 +2163,35 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
 
     // ??? 1. Retrieve current complete ledger safely (priority: globalLedger if authId matches, allUsersPurchasesMap, then LocalStorage)
 
+    // 🔒 1. Retrieve current complete ledger safely (Multi-tier unified retrieval to prevent any receipt loss)
     let ledger = {};
+    try {
+        const raw = storage.getItem(`lotto_actual_ledger_${authId}`);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && typeof parsed === 'object') ledger = parsed;
+        }
+    } catch(e) {}
 
-    if (currentLoggedUser === authId && state.globalLedger && typeof state.globalLedger === 'object' && Object.keys(state.globalLedger).length > 0) {
-
-        ledger = JSON.parse(JSON.stringify(state.globalLedger));
-
-    } else if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[authId]?.ledger && Object.keys(state.allUsersPurchasesMap[authId].ledger).length > 0) {
-
-        ledger = JSON.parse(JSON.stringify(state.allUsersPurchasesMap[authId].ledger));
-
-    } else {
-
-        try {
-
-            const raw = storage.getItem(`lotto_actual_ledger_${authId}`);
-
-            if (raw) ledger = JSON.parse(raw);
-
-        } catch(e) {}
-
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[authId]?.ledger) {
+        const cloudLedger = state.allUsersPurchasesMap[authId].ledger;
+        for (const rKey in cloudLedger) {
+            if (Array.isArray(cloudLedger[rKey])) {
+                ledger[rKey] = deduplicateReceipts([...(ledger[rKey] || []), ...cloudLedger[rKey]]);
+            }
+        }
     }
 
-
+    if (currentLoggedUser === authId && state.globalLedger && typeof state.globalLedger === 'object') {
+        for (const rKey in state.globalLedger) {
+            if (Array.isArray(state.globalLedger[rKey])) {
+                ledger[rKey] = deduplicateReceipts([...(ledger[rKey] || []), ...state.globalLedger[rKey]]);
+            }
+        }
+    }
 
     if (!ledger[r] || !Array.isArray(ledger[r])) {
-
         ledger[r] = [];
-
     }
 
 

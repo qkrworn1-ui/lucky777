@@ -3508,6 +3508,103 @@ Lotto 6/45
         self.assertIn('target.closest(\'.btn-toggle-all-round-combos\')', confirmed_js, "toggleConfirmedRound must guard against toggle-all button clicks")
         self.assertIn('toggleRoundAllReceipts(btn, round, event)', confirmed_js, "toggleRoundAllReceipts must accept event parameter")
 
+    # [Test 107] Sequential QR Registration & Multi-tier Ledger Storage Integrity Test
+    def test_107_sequential_qr_registration_storage_integrity(self):
+        ledger_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        with open(ledger_path, 'r', encoding='utf-8') as f:
+            ledger_js = f.read()
+
+        # 1. Enqueue Firestore Sync & FIFO Promise Queue verification
+        self.assertIn('_firestoreSyncQueueByUser', ledger_js, "Must maintain per-user serialized Firestore sync queue")
+        self.assertIn('enqueueFirestoreSync', ledger_js, "Must export/use enqueueFirestoreSync for strict FIFO execution")
+        self.assertIn('enqueueFirestoreSync(authId, performServerSync)', ledger_js, "saveLedgerDirectly must use serialized sync queue")
+
+        # 2. Multi-tier unified retrieval in saveToLedger verification
+        self.assertIn('// 🔒 1. Retrieve current complete ledger safely', ledger_js, "saveToLedger must retrieve complete ledger safely")
+        self.assertIn('state.allUsersPurchasesMap[authId]?.ledger', ledger_js, "saveToLedger must check cloud ledger map")
+
+        # 3. Archive Promise.all & local merge double protection
+        self.assertIn('archiveTasks = roundsToArchive.map', ledger_js, "Archive tasks must be mapped and awaited")
+        self.assertIn('Promise.all(archiveTasks)', ledger_js, "All archive tasks must settle concurrently within the queued sync")
+
+        # 4. Snapshot Race Guard verification in lotto/index.js
+        index_js_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'index.js')
+        with open(index_js_path, 'r', encoding='utf-8') as f:
+            index_js = f.read()
+        self.assertIn('// 🛡️ Snapshot Race Guard: Merge incoming remote ledger with active un-trashed local receipts', index_js)
+        self.assertIn('deduplicateReceipts([...mergedIncoming[rKey], ...unTrashedLocal])', index_js)
+
+        # 5. Normalized serial duplicate check in manual-modal.js
+        modal_js_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'manual-modal.js')
+        with open(modal_js_path, 'r', encoding='utf-8') as f:
+            modal_js = f.read()
+        self.assertIn('replace(/[^0-9a-zA-Z]/g, \'\')', modal_js, "findAlreadyRegisteredQrReceipt must normalize serial numbers")
+
+        # 6. Functional Node.js simulation of sequential saves
+        import subprocess, shutil
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_script = """
+            global.window = {
+                onerror: () => {},
+                addEventListener: () => {},
+                removeEventListener: () => {},
+                state: {},
+                location: { search: '' }
+            };
+            global.document = {
+                addEventListener: () => {},
+                getElementById: () => null,
+                querySelector: () => null,
+                querySelectorAll: () => [],
+                createElement: () => ({ setAttribute: () => {}, style: {} }),
+                head: { appendChild: () => {} },
+                body: { appendChild: () => {} }
+            };
+            global.localStorage = {
+                getItem: () => null,
+                setItem: () => {},
+                removeItem: () => {}
+            };
+
+            async function run() {
+                const { deduplicateReceipts } = await import('./src/services/lotto/ledger.js');
+
+                // Verify two receipts with distinct serials and different combos are preserved
+                const r1 = {
+                    receiptId: '124011112222333344',
+                    round: 1240,
+                    user: 'tester',
+                    combos: [{ numbers: [1, 2, 3, 4, 5, 6] }]
+                };
+                const r2 = {
+                    receiptId: '124055556666777788',
+                    round: 1240,
+                    user: 'tester',
+                    combos: [{ numbers: [7, 8, 9, 10, 11, 12] }]
+                };
+
+                const merged = deduplicateReceipts([r1, r2]);
+                if (merged.length !== 2) {
+                    console.error('Expected 2 receipts preserved, got ' + merged.length);
+                    process.exit(1);
+                }
+
+                // Verify identical receipt scanned again is properly deduplicated
+                const duplicateAttempt = deduplicateReceipts([r1, r2, { ...r1 }]);
+                if (duplicateAttempt.length !== 2) {
+                    console.error('Expected duplicate to be deduplicated to 2, got ' + duplicateAttempt.length);
+                    process.exit(2);
+                }
+
+                console.log('OK_SEQUENTIAL_STORAGE_TEST');
+                process.exit(0);
+            }
+            run().catch(e => { console.error(e); process.exit(9); });
+            """
+            res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, cwd=self.root_dir)
+            self.assertEqual(res.returncode, 0, f"Sequential receipt Node test failed: {res.stderr or res.stdout}")
+
 if __name__ == '__main__':
     unittest.main()
 

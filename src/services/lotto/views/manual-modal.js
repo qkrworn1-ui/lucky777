@@ -65,15 +65,15 @@ export function findAlreadyRegisteredQrReceipt(round, serial, combos, targetUser
             .sort()
             .join('|');
 
-        const cleanSerial = String(serial || '').trim();
+        const cleanSerial = String(serial || '').replace(/[^0-9a-zA-Z]/g, '').trim();
         const hasRealSerial = cleanSerial.length >= 10;
         const incomingKey = toKey(combos);
 
         return receipts.find(p => {
             if (!p) return false;
-            const pSerial = String((p.qrMeta && p.qrMeta.qrSerial) || p.qrSerial || p.receiptId || '').trim();
+            const pSerial = String((p.qrMeta && p.qrMeta.qrSerial) || p.qrSerial || p.receiptId || '').replace(/[^0-9a-zA-Z]/g, '').trim();
             // 실물 QR 일련번호가 있으면 일련번호로만 판정 (같은 번호를 다른 용지로 2장 구매한 정상 케이스 허용)
-            if (hasRealSerial) return pSerial === cleanSerial;
+            if (hasRealSerial && pSerial.length >= 10) return pSerial === cleanSerial;
             return !!incomingKey && Array.isArray(p.combos) && toKey(p.combos) === incomingKey;
         }) || null;
     } catch (e) {

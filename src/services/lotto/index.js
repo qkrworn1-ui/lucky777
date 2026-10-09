@@ -199,11 +199,11 @@ export async function initLottoService(force = false) {
                     const rawLedger = doc.data().ledger || {};
                     const isAdmin = (typeof isAdminUser === 'function' ? isAdminUser(authId) : (authId === 'master' || authId === 'admin'));
                     
+                    let incomingLedger = {};
+                    let hadPollution = false;
+
                     if (!isAdmin) {
                         // 🔒 STRICT PURIFICATION: Remove any accidental master/other user receipts from normal user's doc
-                        const cleanLedger = {};
-                        let hadPollution = false;
-
                         for (const r in rawLedger) {
                             if (!Array.isArray(rawLedger[r])) continue;
                             const myOnly = rawLedger[r].filter(p => {
@@ -212,19 +212,47 @@ export async function initLottoService(force = false) {
                                 if (!isMine) hadPollution = true;
                                 return isMine;
                             });
-                            if (myOnly.length > 0) cleanLedger[r] = myOnly;
+                            if (myOnly.length > 0) incomingLedger[r] = myOnly;
                         }
-                        state.globalLedger = cleanLedger;
 
                         if (hadPollution) {
                             console.warn(`[Ledger Purged] Removed polluted receipts for user ${authId}`);
                             try {
-                                await window.db.collection('lotto_purchases').doc(authId).set({ ledger: cleanLedger });
+                                await window.db.collection('lotto_purchases').doc(authId).set({ ledger: incomingLedger });
                             } catch(err) {}
                         }
                     } else {
-                        state.globalLedger = rawLedger;
+                        incomingLedger = rawLedger;
                     }
+
+                    // 🛡️ Snapshot Race Guard: Merge incoming remote ledger with active un-trashed local receipts
+                    // Prevents intermediate in-flight snapshots from overwriting newly added sequential receipts
+                    const trashedList = (typeof getReceiptTrashList === 'function') ? getReceiptTrashList() : [];
+                    const trashedIds = new Set(trashedList.map(t => t.receiptId || t.id || (t.qrMeta && t.qrMeta.qrSerial) || t.qrSerial).filter(Boolean));
+
+                    const currentMemory = (state.globalLedger && typeof state.globalLedger === 'object') ? state.globalLedger : {};
+                    const mergedIncoming = { ...incomingLedger };
+
+                    for (const rKey in currentMemory) {
+                        if (!Array.isArray(currentMemory[rKey])) continue;
+                        const unTrashedLocal = currentMemory[rKey].filter(p => {
+                            if (!p) return false;
+                            const pUser = (p.user || p.userId || '').trim().toLowerCase();
+                            if (!isAdmin && pUser && pUser !== authId) return false;
+                            const pId = p.receiptId || p.id || (p.qrMeta && p.qrMeta.qrSerial) || p.qrSerial;
+                            if (pId && trashedIds.has(pId)) return false;
+                            return true;
+                        });
+                        if (unTrashedLocal.length > 0) {
+                            if (mergedIncoming[rKey] && Array.isArray(mergedIncoming[rKey])) {
+                                mergedIncoming[rKey] = deduplicateReceipts([...mergedIncoming[rKey], ...unTrashedLocal]);
+                            } else {
+                                mergedIncoming[rKey] = unTrashedLocal;
+                            }
+                        }
+                    }
+
+                    state.globalLedger = mergedIncoming;
                 } else {
                     // If no doc on cloud, try user-specific localStorage key ONLY
                     try {
