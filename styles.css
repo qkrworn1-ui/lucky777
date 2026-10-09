@@ -12231,12 +12231,13 @@ body {
     }
 
     /* 3. Service Grid (Service-First Compact Hub) */
+    /* 3. Service Grid (Service-First Compact Hub) */
     .lp-service-grid {
         display: flex !important;
         flex-direction: column !important;
-        gap: 6px !important;
+        gap: 5px !important;
         width: 100% !important;
-        margin-bottom: 8px !important;
+        margin-bottom: 5px !important;
         box-sizing: border-box !important;
     }
 
@@ -12254,11 +12255,11 @@ body {
 
     /* 4. Lotto Service Hero Card (Concept 1 Green Gradient & Mint Dual Buttons) */
     .lp-card-lotto {
-        padding: 12px !important;
-        border-radius: 16px !important;
+        padding: 8px 10px !important;
+        border-radius: 12px !important;
         background: linear-gradient(135deg, rgba(8, 25, 45, 0.7) 0%, rgba(8, 14, 28, 0.95) 50%, rgba(4, 8, 18, 1) 100%) !important;
         border: 1.5px solid rgba(6, 182, 212, 0.45) !important;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(6, 182, 212, 0.15) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 12px rgba(6, 182, 212, 0.12) !important;
         display: block !important;
         width: 100% !important;
         box-sizing: border-box !important;
@@ -12268,16 +12269,16 @@ body {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        gap: 8px !important;
+        gap: 7px !important;
         width: 100% !important;
     }
 
     .lp-card-lotto .lp-card-icon {
-        width: 28px !important;
-        height: 28px !important;
-        min-width: 28px !important;
-        border-radius: 8px !important;
-        font-size: 1.25rem !important;
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        border-radius: 7px !important;
+        font-size: 1.1rem !important;
         margin-bottom: 0 !important;
         display: flex !important;
         align-items: center !important;
@@ -12300,22 +12301,22 @@ body {
     }
 
     .lp-card-lotto .lp-card-title {
-        font-size: 14px !important;
+        font-size: 13px !important;
         font-weight: 900 !important;
         margin: 0 !important;
-        line-height: 1.25 !important;
+        line-height: 1.2 !important;
         color: #ffffff !important;
         display: flex !important;
         align-items: center !important;
-        gap: 6px !important;
+        gap: 5px !important;
     }
 
     .lp-mobile-inline-badge {
         display: inline-flex !important;
         align-items: center !important;
-        font-size: 9px !important;
+        font-size: 8.5px !important;
         font-weight: 800 !important;
-        padding: 1px 6px !important;
+        padding: 1px 5px !important;
         border-radius: 9999px !important;
         background: #06b6d4 !important;
         color: #040814 !important;
@@ -12323,10 +12324,10 @@ body {
     }
 
     .lp-card-lotto .lp-card-desc {
-        font-size: 10px !important;
+        font-size: 9.5px !important;
         color: rgba(103, 232, 249, 0.85) !important;
-        margin: 2px 0 0 0 !important;
-        line-height: 1.25 !important;
+        margin: 1px 0 0 0 !important;
+        line-height: 1.2 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
@@ -12336,20 +12337,20 @@ body {
     .lp-card-lotto .lp-card-actions-row {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
-        gap: 6px !important;
+        gap: 5px !important;
         width: 100% !important;
-        margin-top: 8px !important;
+        margin-top: 5px !important;
     }
 
     .lp-card-lotto .lp-btn-lotto {
         background: linear-gradient(135deg, #06b6d4 0%, #0284c7 100%) !important;
         color: #ffffff !important;
         font-weight: 900 !important;
-        font-size: 12px !important;
-        border-radius: 12px !important;
-        padding: 8px 10px !important;
-        min-height: 36px !important;
-        height: 36px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+        padding: 5px 8px !important;
+        min-height: 31px !important;
+        height: 31px !important;
         border: none !important;
         box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3) !important;
         display: flex !important;
@@ -12362,13 +12363,13 @@ body {
         background: linear-gradient(90deg, #10b981 0%, #0d9488 100%) !important;
         color: #ffffff !important;
         font-weight: 900 !important;
-        font-size: 12px !important;
-        border-radius: 12px !important;
-        padding: 8px 10px !important;
-        min-height: 36px !important;
-        height: 36px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+        padding: 5px 8px !important;
+        min-height: 31px !important;
+        height: 31px !important;
         border: 1px solid #34d399 !important;
-        box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3) !important;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25) !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -12381,12 +12382,12 @@ body {
         flex-direction: row !important;
         align-items: center !important;
         justify-content: space-between !important;
-        padding: 8px 10px !important;
-        border-radius: 12px !important;
+        padding: 5px 8px !important;
+        border-radius: 9px !important;
         background: rgba(10, 16, 32, 0.85) !important;
         border: 1px solid rgba(99, 102, 241, 0.35) !important;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3) !important;
-        gap: 8px !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+        gap: 6px !important;
         box-sizing: border-box !important;
         width: 100% !important;
     }
@@ -12395,17 +12396,17 @@ body {
         display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
-        gap: 8px !important;
+        gap: 7px !important;
         flex: 1 !important;
         min-width: 0 !important;
     }
 
     .lp-card-toto .lp-card-icon {
-        width: 24px !important;
-        height: 24px !important;
-        min-width: 24px !important;
-        border-radius: 6px !important;
-        font-size: 1rem !important;
+        width: 20px !important;
+        height: 20px !important;
+        min-width: 20px !important;
+        border-radius: 5px !important;
+        font-size: 0.85rem !important;
         margin-bottom: 0 !important;
         display: flex !important;
         align-items: center !important;
@@ -12428,22 +12429,22 @@ body {
     }
 
     .lp-card-toto .lp-card-title {
-        font-size: 12px !important;
+        font-size: 11.5px !important;
         font-weight: 800 !important;
         color: #818cf8 !important;
         margin: 0 !important;
-        line-height: 1.25 !important;
+        line-height: 1.2 !important;
         display: flex !important;
         align-items: center !important;
-        gap: 5px !important;
+        gap: 4px !important;
     }
 
     .lp-mobile-inline-badge-amber {
         display: inline-flex !important;
         align-items: center !important;
-        font-size: 8px !important;
+        font-size: 7.5px !important;
         font-weight: 800 !important;
-        padding: 0 4px !important;
+        padding: 0 3px !important;
         border-radius: 3px !important;
         background: rgba(99, 102, 241, 0.2) !important;
         color: #a5b4fc !important;
@@ -12451,10 +12452,10 @@ body {
     }
 
     .lp-card-toto .lp-card-desc {
-        font-size: 9px !important;
+        font-size: 8.5px !important;
         color: #94a3b8 !important;
         margin: 1px 0 0 0 !important;
-        line-height: 1.2 !important;
+        line-height: 1.15 !important;
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
@@ -12466,12 +12467,12 @@ body {
     }
 
     .lp-card-toto .lp-btn-toto-main {
-        padding: 4px 10px !important;
-        min-height: 26px !important;
-        height: 26px !important;
-        font-size: 10px !important;
+        padding: 3px 8px !important;
+        min-height: 23px !important;
+        height: 23px !important;
+        font-size: 9px !important;
         font-weight: 800 !important;
-        border-radius: 8px !important;
+        border-radius: 6px !important;
         background: rgba(37, 99, 235, 0.3) !important;
         border: 1px solid rgba(59, 130, 246, 0.45) !important;
         color: #93c5fd !important;
@@ -15665,70 +15666,142 @@ body.is-admin .btn-snapshot-audit-compact {
 
 
 /* ── 5. 통계 분석 대시보드 탭 (#tab-dashboard) 모바일 최적화 ── */
+/* ── 5. 통계 분석 대시보드 탭 (#tab-dashboard) 모바일 최적화 ── */
 @media (max-width: 768px) {
+    #tab-dashboard .menu-guide-banner {
+        padding: 7px 10px !important;
+        margin-bottom: 6px !important;
+    }
+    #tab-dashboard .guide-header {
+        margin-bottom: 3px !important;
+    }
+    #tab-dashboard .guide-desc {
+        font-size: 0.74rem !important;
+        margin-bottom: 4px !important;
+        line-height: 1.3 !important;
+    }
+    #tab-dashboard .guide-features {
+        gap: 3px !important;
+    }
+    #tab-dashboard .feature-pill {
+        font-size: 0.68rem !important;
+        padding: 1.5px 6px !important;
+    }
+
+    #tab-dashboard .dashboard-user-welcome-card {
+        padding: 8px 10px !important;
+        margin-bottom: 6px !important;
+        border-radius: 10px !important;
+    }
+    #tab-dashboard .dash-welcome-flex {
+        gap: 6px !important;
+    }
+    #tab-dashboard .dash-welcome-avatar-icon {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 0.95rem !important;
+        border-radius: 8px !important;
+    }
+    #tab-dashboard .dash-welcome-title {
+        font-size: 0.90rem !important;
+    }
+    #tab-dashboard .dash-welcome-kpi-group {
+        padding: 4px 8px !important;
+        gap: 6px !important;
+        margin-top: 4px !important;
+        border-radius: 8px !important;
+    }
+    #tab-dashboard .dash-welcome-kpi-lbl {
+        font-size: 0.62rem !important;
+    }
+    #tab-dashboard .dash-welcome-kpi-val {
+        font-size: 0.80rem !important;
+    }
+
+    #tab-dashboard .dashboard-header {
+        margin-bottom: 6px !important;
+        gap: 6px !important;
+    }
+    #tab-dashboard .dashboard-header h2 {
+        font-size: 0.92rem !important;
+        margin: 0 !important;
+    }
+    #tab-dashboard .dashboard-header p {
+        font-size: 0.70rem !important;
+        margin: 1px 0 0 0 !important;
+    }
+
     #tab-dashboard .metrics-grid {
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 8px !important;
+        gap: 5px !important;
+        margin-bottom: 6px !important;
     }
 
     #tab-dashboard .metric-card {
-        padding: 12px 10px !important;
-        gap: 8px !important;
+        padding: 6px 8px !important;
+        gap: 6px !important;
+        border-radius: 8px !important;
     }
 
     #tab-dashboard .metric-icon {
-        width: 38px !important;
-        height: 38px !important;
-        font-size: 1rem !important;
+        width: 28px !important;
+        height: 28px !important;
+        font-size: 0.85rem !important;
+        border-radius: 6px !important;
     }
 
     #tab-dashboard .metric-value {
-        font-size: 1.15rem !important;
+        font-size: 0.95rem !important;
     }
 
     #tab-dashboard .metric-label {
-        font-size: 0.7rem !important;
+        font-size: 0.66rem !important;
+    }
+
+    #tab-dashboard .metric-sub {
+        font-size: 0.62rem !important;
     }
 
     /* 차트 카드 */
     #tab-dashboard .chart-card {
-        padding: 12px 14px !important;
-        border-radius: 12px !important;
+        padding: 10px 12px !important;
+        border-radius: 10px !important;
     }
 
     #tab-dashboard .chart-title h3 {
-        font-size: 0.88rem !important;
+        font-size: 0.84rem !important;
     }
 
     #tab-dashboard .chart-wrapper {
-        height: 200px !important;
+        height: 180px !important;
     }
 
     /* 콜드 넘버 그리드 */
     #coldGroupList {
         display: grid !important;
         grid-template-columns: repeat(2, 1fr) !important;
-        gap: 6px !important;
+        gap: 5px !important;
     }
 
     .cold-item {
-        padding: 6px 8px !important;
+        padding: 5px 6px !important;
     }
 
     .cold-item .lotto-ball {
-        width: 28px !important;
-        height: 28px !important;
-        font-size: 0.75rem !important;
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 0.72rem !important;
     }
 
     .cold-weeks {
-        font-size: 0.68rem !important;
+        font-size: 0.66rem !important;
     }
 }
 
 @media (max-width: 420px) {
     #tab-dashboard .metrics-grid {
-        grid-template-columns: 1fr !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px !important;
     }
     #coldGroupList {
         grid-template-columns: 1fr !important;
@@ -20199,17 +20272,19 @@ body.is-admin .btn-snapshot-audit-compact {
 
 /* 2. Landing Header & Brand */
 #landingPage .lp-header {
-    margin-bottom: 14px !important;
+    margin-bottom: 6px !important;
 }
 .lp-brand-badge {
     background: #111827 !important;
     border: 1px solid #1e293b !important;
     border-radius: 9999px !important;
     box-shadow: none !important;
+    padding: 2px 10px !important;
 }
 .lp-brand-badge-text {
     color: #94a3b8 !important;
     font-weight: 600 !important;
+    font-size: 0.74rem !important;
 }
 .lp-brand-badge .app-version-badge {
     background: #1e293b !important;
@@ -20221,6 +20296,8 @@ body.is-admin .btn-snapshot-audit-compact {
     color: #f8fafc !important;
     text-shadow: none !important;
     font-weight: 900 !important;
+    font-size: clamp(1.4rem, 2.2vw, 1.75rem) !important;
+    margin: 3px 0 1px 0 !important;
 }
 .lp-header-title .lp-accent {
     color: #10b981 !important;
@@ -20228,6 +20305,8 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 .lp-tagline {
     color: #94a3b8 !important;
+    font-size: 0.80rem !important;
+    margin: 0 0 4px 0 !important;
 }
 
 /* 3. D-Day Countdown & Live Ticker Bars */
@@ -20237,8 +20316,9 @@ body.is-admin .btn-snapshot-audit-compact {
 #mobileHeaderRoundCountdown {
     background: #111827 !important;
     border: 1px solid #1e293b !important;
-    border-radius: 14px !important;
+    border-radius: 12px !important;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25) !important;
+    margin-bottom: 6px !important;
 }
 .lp-countdown-container span,
 .lp-ticker-container span {
@@ -20249,7 +20329,8 @@ body.is-admin .btn-snapshot-audit-compact {
 .lp-card {
     background: #111827 !important;
     border: 1px solid #1e293b !important;
-    border-radius: 18px !important;
+    border-radius: 14px !important;
+    padding: 10px 14px !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
     transition: all 0.2s ease-in-out !important;
 }
