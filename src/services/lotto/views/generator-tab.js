@@ -392,7 +392,7 @@ export function getEnsembleWinningHistory(comboObj, comboIndex) {
         purchases.forEach(p => {
             const isMatchingVersion = p.version && (
                 p.version.includes(targetVersionKeyword) ||
-                (useV4 ? (p.version.includes('올라운더') || p.version.includes('V4.0')) : (p.version.includes('올라운더 2') || p.version.includes('올라운더2') || p.version.includes('수학 퀀트') || p.version.includes('수학퀀트') || p.version.includes('V3.0')))
+                (useV4 ? ((p.version.includes('올라운더') && !p.version.includes('올라운더 2') && !p.version.includes('올라운더2') && !p.version.includes('기본 2')) || p.version.includes('기본 1') || p.version.includes('V4.0')) : (p.version.includes('올라운더 2') || p.version.includes('올라운더2') || p.version.includes('기본 2') || p.version.includes('수학 퀀트') || p.version.includes('수학퀀트') || p.version.includes('V3.0')))
             );
             if (!isMatchingVersion && purchases.length > 1) return;
 

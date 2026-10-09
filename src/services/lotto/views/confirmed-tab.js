@@ -361,8 +361,8 @@ export async function renderConfirmedPurchasesList() {
                                     totalPrize += prize;
 
                                     // Determine Algorithm Origin from receipt's recorded version (Instant 0ms)
-                                    if (rVer.includes('올라운더') || rVer.includes('v4') || rVer.includes('4.0') || rVer.includes('행동경제')) algoHits.v4++;
-                                    else if (rVer.includes('수학') || rVer.includes('퀀트') || rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
+                                    if (rVer.includes('올라운더 2') || rVer.includes('올라운더2') || rVer.includes('기본 2') || rVer.includes('수학') || rVer.includes('퀀트') || rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
+                                    else if (rVer.includes('올라운더') || rVer.includes('기본 1') || rVer.includes('v4') || rVer.includes('4.0') || rVer.includes('행동경제')) algoHits.v4++;
                                     else if (rVer.includes('추가') || rVer.includes('extra') || rVer.includes('pack') || rVer.includes('빈틈제로') || rVer.includes('슈퍼') || rVer.includes('멀티') || rVer.includes('흐름') || rVer.includes('트리오')) algoHits.extra++;
                                     else algoHits.manual++;
                                 }
@@ -890,12 +890,12 @@ export async function renderConfirmedPurchasesList() {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); color: #38bdf8; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-globe" style="font-size: 0.65rem;"></i> 온라인영수증</span>`;
             } else if (pVer.includes('QR') || pVer.includes('qr')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-qrcode" style="font-size: 0.65rem;"></i> QR영수증</span>`;
-            } else if (pVer.includes('올라운더') || pVer.includes('V4.0') || pVer.includes('4.0')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 기본 1: 올라운더 팩</span>`;
-            } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
+            } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('기본 2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
                 const v3Title = '기본 2: 올라운더 팩 2';
                 const v3Icon = 'fa-layer-group';
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.25); color: #60a5fa; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.65rem;"></i> ${v3Title}</span>`;
+            } else if (pVer.includes('올라운더') || pVer.includes('기본 1') || pVer.includes('V4.0') || pVer.includes('4.0')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 기본 1: 올라운더 팩</span>`;
             } else {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 2px 7px; border-radius: 6px; font-weight: 600; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-pen-nib" style="font-size: 0.65rem;"></i> 수동구매</span>`;
             }
@@ -1054,10 +1054,13 @@ export async function renderConfirmedPurchasesList() {
                 } else if (pVer.includes('추가')) {
                     const packName = pVer.split(' (')[0] || pVer;
                     aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${packName}</span>`;
-                } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
+                } else if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('기본 2') || pVer.includes('수학 퀀트') || pVer.includes('수학퀀트') || pVer.includes('V3.0') || pVer.includes('3.0')) {
                     const v3Tag = `올라운더2 #${cIdx+1}`;
                     const v3Icon = 'fa-layer-group';
                     aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.6rem;"></i> ${v3Tag}</span>`;
+                } else if (pVer.includes('올라운더') || pVer.includes('기본 1') || pVer.includes('V4.0') || pVer.includes('4.0')) {
+                    const v4Tag = `올라운더 #${cIdx+1}`;
+                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.6rem;"></i> ${v4Tag}</span>`;
                 } else if (round >= 1239) {
                     try {
                         const { uV4, uV3, extraPacks } = getMemoizedRecommendations(round, purchaseUser);
@@ -1075,7 +1078,10 @@ export async function renderConfirmedPurchasesList() {
                                 aiMatchTag = `<span style="background: rgba(6, 182, 212, 0.2); border: 1px solid rgba(6, 182, 212, 0.4); color: #22d3ee; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-cubes" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
                             } else if (match.matchedVersion.includes('추가')) {
                                 aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
-                            } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('V4.0') || match.matchedVersion.includes('4.0')) {
+                            } else if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('기본 2') || match.matchedVersion.includes('수학 퀀트') || match.matchedVersion.includes('수학퀀트') || match.matchedVersion.includes('V3.0') || match.matchedVersion.includes('3.0')) {
+                                const v3Icon = 'fa-layer-group';
+                                aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid ${v3Icon}" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
+                            } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('기본 1') || match.matchedVersion.includes('V4.0') || match.matchedVersion.includes('4.0')) {
                                 aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.6rem;"></i> ${match.label}</span>`;
                             } else {
                                 aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> ${match.label}</span>`;

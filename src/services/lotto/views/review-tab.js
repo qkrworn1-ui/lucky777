@@ -590,13 +590,13 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         const receipts = userLedger ? (userLedger[roundNum] || []) : [];
         receipts.forEach(rcpt => {
             const vStr = (rcpt.version || '');
-            if (vStr.includes('V4') || vStr.includes('올라운더') || vStr.includes('행동경제학')) {
-                if (Array.isArray(rcpt.combos)) {
-                    rcpt.combos.forEach(c => purchasedV4.push(c));
-                }
-            } else if (vStr.includes('V3') || vStr.includes('수학 퀀트') || vStr.includes('수학퀀트') || vStr.includes('하이브리드') || vStr.includes('올라운더 2') || vStr.includes('올라운더2')) {
+            if (vStr.includes('V3') || vStr.includes('수학 퀀트') || vStr.includes('수학퀀트') || vStr.includes('하이브리드') || vStr.includes('올라운더 2') || vStr.includes('올라운더2') || vStr.includes('기본 2')) {
                 if (Array.isArray(rcpt.combos)) {
                     rcpt.combos.forEach(c => purchasedV3.push(c));
+                }
+            } else if (vStr.includes('V4') || vStr.includes('올라운더') || vStr.includes('기본 1') || vStr.includes('행동경제학')) {
+                if (Array.isArray(rcpt.combos)) {
+                    rcpt.combos.forEach(c => purchasedV4.push(c));
                 }
             }
         });

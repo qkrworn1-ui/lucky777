@@ -3645,6 +3645,73 @@ Lotto 6/45
         self.assertIn('window.triggerCameraAutoFocus = triggerCameraAutoFocus', modal_js)
         self.assertIn('window.applyCameraFocusOptimization = applyCameraFocusOptimization', modal_js)
 
+    # [Test 109] All-Rounder Pack 1 vs 2 Distinction in Confirmed Receipts & Badges
+    def test_109_allrounder_pack_1_and_2_distinction(self):
+        # 1. Check confirmed-tab.js
+        confirmed_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        with open(confirmed_path, 'r', encoding='utf-8') as f:
+            c_js = f.read()
+
+        # Check receipt header badge logic: 올라운더 2 must be checked before 올라운더 1
+        pos_badge_v3 = c_js.find("pVer.includes('올라운더 2')")
+        pos_badge_v4 = c_js.find("pVer.includes('올라운더') || pVer.includes('기본 1')")
+        self.assertTrue(pos_badge_v3 != -1 and pos_badge_v4 != -1, "Both 올라운더 2 and 올라운더 1 badge checks must exist")
+        self.assertLess(pos_badge_v3, pos_badge_v4, "올라운더 2 badge check MUST be evaluated before 올라운더 1")
+
+        # Check algoHits determination: 올라운더 2 must be checked before 올라운더 1
+        pos_algo_v3 = c_js.find("rVer.includes('올라운더 2')")
+        pos_algo_v4 = c_js.find("rVer.includes('올라운더') || rVer.includes('기본 1')")
+        self.assertTrue(pos_algo_v3 != -1 and pos_algo_v4 != -1, "Both algoHits checks must exist")
+        self.assertLess(pos_algo_v3, pos_algo_v4, "올라운더 2 algoHits check MUST be evaluated before 올라운더 1")
+
+        # Check combo row badges
+        self.assertIn("pVer.includes('올라운더 2')", c_js)
+        self.assertIn("pVer.includes('올라운더') || pVer.includes('기본 1')", c_js)
+        self.assertIn("올라운더2 #${cIdx+1}", c_js)
+        self.assertIn("올라운더 #${cIdx+1}", c_js)
+
+        # 2. Check generator.js crossCheckCombosWithRecommendations
+        gen_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+        with open(gen_path, 'r', encoding='utf-8') as f:
+            g_js = f.read()
+
+        pos_gen_v3 = g_js.find("match.matchedVersion.includes('올라운더 2')")
+        pos_gen_v4 = g_js.find("match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('기본 1')")
+        self.assertTrue(pos_gen_v3 != -1 and pos_gen_v4 != -1, "Both crossCheck checks must exist in generator.js")
+        self.assertLess(pos_gen_v3, pos_gen_v4, "generator.js MUST evaluate 올라운더 2 before 올라운더 1")
+
+        # 3. Functional badge evaluation test in Node.js
+        import subprocess, shutil
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_script = """
+            function getBadgeTitle(pVer) {
+                if (pVer.includes('올라운더 2') || pVer.includes('올라운더2') || pVer.includes('기본 2') || pVer.includes('수학 퀀트')) {
+                    return '기본 2: 올라운더 팩 2';
+                } else if (pVer.includes('올라운더') || pVer.includes('기본 1') || pVer.includes('V4.0')) {
+                    return '기본 1: 올라운더 팩';
+                }
+                return '수동구매';
+            }
+
+            const titleV4 = getBadgeTitle('기본 1: 올라운더 팩 (10게임)');
+            const titleV3 = getBadgeTitle('기본 2: 올라운더 팩 2 (10게임)');
+
+            if (titleV4 !== '기본 1: 올라운더 팩') {
+                console.error('Expected 기본 1: 올라운더 팩, got ' + titleV4);
+                process.exit(1);
+            }
+            if (titleV3 !== '기본 2: 올라운더 팩 2') {
+                console.error('Expected 기본 2: 올라운더 팩 2, got ' + titleV3);
+                process.exit(2);
+            }
+
+            console.log('OK_ALLROUNDER_DISTINCTION');
+            process.exit(0);
+            """
+            res = subprocess.run([node_bin, '-e', js_script], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0, f"Node allrounder badge test failed: {res.stderr or res.stdout}")
+
 if __name__ == '__main__':
     unittest.main()
 

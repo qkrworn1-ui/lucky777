@@ -938,12 +938,12 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
                 extraMatchCount++;
                 if (match.isExact) extraExactCount++;
                 if (!matchedExtraPackName) matchedExtraPackName = match.matchedVersion;
-            } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('V4.0')) {
-                v4MatchCount++;
-                if (match.isExact) v4ExactCount++;
-            } else if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('수학 퀀트') || match.matchedVersion.includes('수학퀀트') || match.matchedVersion.includes('V3.0')) {
+            } else if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('기본 2') || match.matchedVersion.includes('수학 퀀트') || match.matchedVersion.includes('수학퀀트') || match.matchedVersion.includes('V3.0')) {
                 v3MatchCount++;
                 if (match.isExact) v3ExactCount++;
+            } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('기본 1') || match.matchedVersion.includes('V4.0')) {
+                v4MatchCount++;
+                if (match.isExact) v4ExactCount++;
             }
         }
     });
