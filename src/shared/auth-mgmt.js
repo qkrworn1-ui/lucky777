@@ -7553,6 +7553,16 @@ window.startBatchWinningSend = async function() {
             
             showToast(`💥 [${userId}] 계정이 완전히 영구 삭제되었습니다.`);
 
+            const cleanTarget = String(userId).trim().toLowerCase();
+            if (typeof KNOWN_DELETED_USER_IDS !== 'undefined' && KNOWN_DELETED_USER_IDS.add) {
+                KNOWN_DELETED_USER_IDS.add(cleanTarget);
+            }
+            if (typeof window !== 'undefined') {
+                if (!window.__knownDeletedUserIds) window.__knownDeletedUserIds = new Set();
+                window.__knownDeletedUserIds.add(cleanTarget);
+                window.__knownDeletedUserIds.add(userId);
+            }
+
             // ⚡ 캐시 무효화 및 전체회원 당첨금액 즉시 자동 차감/재계산
             if (typeof window.clearUser70ReviewCache === 'function') {
                 try { window.clearUser70ReviewCache(); } catch(e) {}
@@ -7623,6 +7633,15 @@ window.startBatchWinningSend = async function() {
             for (const u of trashUsers) {
                 const targetId = u.userId || u.id;
                 if (!targetId || targetId === 'master' || targetId === 'admin' || targetId === 'kakao_5070244665') continue;
+                const cleanTarget = String(targetId).trim().toLowerCase();
+                if (typeof KNOWN_DELETED_USER_IDS !== 'undefined' && KNOWN_DELETED_USER_IDS.add) {
+                    KNOWN_DELETED_USER_IDS.add(cleanTarget);
+                }
+                if (typeof window !== 'undefined') {
+                    if (!window.__knownDeletedUserIds) window.__knownDeletedUserIds = new Set();
+                    window.__knownDeletedUserIds.add(cleanTarget);
+                    window.__knownDeletedUserIds.add(targetId);
+                }
                 try {
                     await window.db.collection('lotto_users').doc(targetId).delete();
                     await window.db.collection('lotto_agreements').doc(targetId).delete();

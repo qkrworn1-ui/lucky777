@@ -1471,6 +1471,12 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
     if (firestore) {
         try {
             let uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
+            if (!uDoc || !uDoc.exists) {
+                if (cleanUser !== 'master' && cleanUser !== 'wdy') {
+                    console.warn(`[Snapshot Guard] User ${cleanUser} does not exist in lotto_users. Snapshot blocked.`);
+                    return null;
+                }
+            }
             let uData = (uDoc && uDoc.exists) ? uDoc.data() : null;
             if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) {
                 return null;

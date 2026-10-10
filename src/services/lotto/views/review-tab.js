@@ -454,6 +454,11 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, sna
     try {
         // 🔒 삭제(휴지통) 회원 및 본인인증/미서약 회원 차단: DB 조회 확인
         const uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
+        if (!uDoc || !uDoc.exists) {
+            if (cleanUser !== 'master' && cleanUser !== 'wdy') {
+                return; // User was deleted or does not exist. Never create ghost user doc!
+            }
+        }
         if (uDoc && uDoc.exists) {
             const uData = uDoc.data();
             if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) return;
@@ -479,12 +484,14 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, sna
         }, { merge: true });
 
         // 2. Also save in lotto_users if user doc exists
-        firestore.collection('lotto_users').doc(cleanUser).set({
-            recommendationSnapshots: {
-                [rKey]: snapshotData
-            },
-            updatedAt: new Date().toISOString()
-        }, { merge: true }).catch(() => {});
+        if (uDoc && uDoc.exists) {
+            firestore.collection('lotto_users').doc(cleanUser).set({
+                recommendationSnapshots: {
+                    [rKey]: snapshotData
+                },
+                updatedAt: new Date().toISOString()
+            }, { merge: true }).catch(() => {});
+        }
 
     } catch (e) {
         console.warn('[saveUserWeeklyRecommendationSnapshot Error]', e);
