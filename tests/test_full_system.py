@@ -3837,14 +3837,14 @@ Lotto 6/45
             self.assertEqual(res.returncode, 0, f"Node test 110 failed: {res.stderr or res.stdout}")
 
     def test_111_fortune_guide_smart_2row_layout_and_mini_push_widget(self):
-        """Test 111: Verify Golden Purchase Guide 48px 2-row smart balanced layout and independent mini push widget."""
+        """Test 111: Verify Golden Purchase Guide 54px 2-row smart balanced layout and independent mini push widget."""
         # 1. Verify styles.css
         styles_path = os.path.join(self.root_dir, 'styles.css')
         with open(styles_path, 'r', encoding='utf-8') as f:
             styles_code = f.read()
 
         self.assertIn('.fortune-toggle-bar', styles_code)
-        self.assertIn('height: 48px !important;', styles_code)
+        self.assertIn('height: 54px !important;', styles_code)
         self.assertIn('.fortune-toggle-grid-wrap', styles_code)
         self.assertIn('.fortune-grid-row-top', styles_code)
         self.assertIn('.fortune-grid-row-bottom', styles_code)

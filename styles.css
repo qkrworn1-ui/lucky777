@@ -19362,13 +19362,13 @@ body.is-admin .btn-snapshot-audit-compact {
     box-sizing: border-box;
 }
 
-/* 🔮 [황금구매가이드 위젯 리디자인] 48px 고정 2단 스마트 밸런스형 & 사주 애니메이션 */
+/* 🔮 [황금구매가이드 위젯 리디자인] 54px 2단 스마트 밸런스형 & 사주 애니메이션 */
 .fortune-toggle-bar {
-    height: 48px !important;
-    min-height: 48px !important;
-    max-height: 48px !important;
+    height: 54px !important;
+    min-height: 54px !important;
+    max-height: 54px !important;
     box-sizing: border-box !important;
-    padding: 3px 10px !important;
+    padding: 5px 12px !important;
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
@@ -19428,8 +19428,8 @@ body.is-admin .btn-snapshot-audit-compact {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 18px;
-    line-height: 18px;
+    height: 20px;
+    line-height: 20px;
     min-width: 0;
 }
 
@@ -19437,10 +19437,10 @@ body.is-admin .btn-snapshot-audit-compact {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 18px;
-    line-height: 18px;
+    height: 20px;
+    line-height: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.07);
-    padding-top: 1px;
+    padding-top: 2px;
     min-width: 0;
     gap: 8px;
 }
@@ -19697,7 +19697,10 @@ body.is-admin .btn-snapshot-audit-compact {
 
 @media (max-width: 640px) {
     .fortune-toggle-bar {
-        padding: 3px 8px !important;
+        height: 54px !important;
+        min-height: 54px !important;
+        max-height: 54px !important;
+        padding: 5px 8px !important;
     }
     .fortune-collapsible-content {
         padding: 12px 14px;
