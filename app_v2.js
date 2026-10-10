@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.10.1301 - BUILD_DATE: 2026-10-10] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.10.1328 - BUILD_DATE: 2026-10-10] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.10.1301)
+ * Lucky777 Smart Bundle (v2026.10.10.1328)
  */
 
 
@@ -86,7 +86,7 @@ function isSystemOrDummyUser(userId) {
         clean === 'dashboard_summary_latest' ||
         clean === 'global_trash' || clean === 'global_state' || clean === 'global_saved' || clean === 'extra_history' ||
         clean === 'user_alpha' || clean === 'user_beta' || clean === 'user_gamma' || clean === 'sample' || clean === 'hms' ||
-        clean === 'kakao_5081608503' || clean === 'kakao_5090399860' || clean === 'kakao_5105087435' ||
+        clean === 'kakao_5081608503' || clean === 'kakao_5090399860' || clean === 'kakao_5105087435' || clean === 'kakao_5078158815' ||
         clean.startsWith('test') || clean.startsWith('{') || clean.includes('테스트')) {
         return true;
     }
@@ -1489,14 +1489,13 @@ const DEFAULT_KNOWN_USERS = [
     { id: 'kakao_5071901217', name: '황선영', realName: '황선영', phone: '010-3332-5843', phoneNumber: '010-3332-5843', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-04T05:58:58.537Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
     { id: 'kakao_5072328991', name: '채금조(재우주식회사)', realName: '채금조(재우주식회사)', phone: '010-2596-1107', phoneNumber: '010-2596-1107', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-04T10:34:57.095Z', status: 'suspended_nopurchase', isDeleted: false },
     { id: 'kakao_5073272571', name: '우순애', realName: '우순애', phone: '010-8865-7777', phoneNumber: '010-8865-7777', isAdmin: false, isPermanent: true, userType: 'permanent', createdAt: '2026-09-05T04:26:10.288Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
-    { id: 'kakao_5078158815', name: '이재문', realName: '이재문', phone: '010-9116-3887', phoneNumber: '010-9116-3887', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-08T04:35:33.378Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
     { id: 'kakao_5081166702', name: '은정', realName: '은정', phone: '010-8952-1325', phoneNumber: '010-8952-1325', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-09T15:36:24.439Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
     { id: 'kakao_5084970607', name: '우대웅', realName: '우대웅', phone: '', phoneNumber: '', isAdmin: true, isPermanent: true, userType: 'permanent', createdAt: '2026-09-12T02:58:58.476Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
     { id: 'kakao_5092105478', name: '한미순', realName: '한미순', phone: '010-4322-5053', phoneNumber: '010-4322-5053', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-09-16T05:55:23.110Z', status: 'active', isDeleted: false, hasSignature: true, hasPledgeSigned: true },
     { id: 'kakao_5115956430', name: '김현', realName: '김현', phone: '', phoneNumber: '', isAdmin: false, isPermanent: false, userType: 'regular', createdAt: '2026-10-01T09:55:54.711Z', status: 'active', isDeleted: false }
 ];
 
-const KNOWN_DELETED_USER_IDS = new Set(['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'guest']);
+const KNOWN_DELETED_USER_IDS = new Set(['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'kakao_5078158815', 'guest']);
 
 /**
  * 👤 UserContextManager: Single Source of Truth for User Metadata & Permissions
@@ -6407,7 +6406,10 @@ function setupAuthEvents(initFirebaseAndData) {
                     }
                     return;
                 }
-                if (!uIdClean.startsWith('kakao_') && typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uIdClean)) {
+                if (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uIdClean)) {
+                    return;
+                }
+                if (typeof KNOWN_DELETED_USER_IDS !== 'undefined' && KNOWN_DELETED_USER_IDS.has(uIdClean)) {
                     return;
                 }
                 const docData = doc.data() || {};
@@ -6421,7 +6423,10 @@ function setupAuthEvents(initFirebaseAndData) {
             const knownBaseline = (typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) ? DEFAULT_KNOWN_USERS : [];
             knownBaseline.forEach(defU => {
                 const defId = (defU.id || '').toLowerCase().trim();
-                if (defId && !existingUserIds.has(defId)) {
+                if (!defId) return;
+                if (typeof KNOWN_DELETED_USER_IDS !== 'undefined' && KNOWN_DELETED_USER_IDS.has(defId)) return;
+                if (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(defId)) return;
+                if (!existingUserIds.has(defId)) {
                     const isBaseAdmin = !!(defU.isAdmin || defId === 'master' || defId === 'admin');
                     const hasSig = !!(defU.hasSignature || defU.hasPledgeSigned || isBaseAdmin);
                     users.push({
@@ -12160,7 +12165,7 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
 
         const userNames = {};
         if (!window.__knownDeletedUserIds) {
-            window.__knownDeletedUserIds = new Set(['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'guest']);
+            window.__knownDeletedUserIds = new Set(['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'kakao_5078158815', 'guest']);
         }
         if (uSnapshot && !uSnapshot.empty) {
             state.allRegisteredUsersList = [];
@@ -19776,7 +19781,7 @@ function computeUser70RecommendationsReview(userId, roundNum) {
     }
     cleanUser = cleanUser.toLowerCase().trim();
     if (isSystemOrDummyUser(cleanUser) || cleanUser === 'guest' ||
-        cleanUser === 'kakao_5081608503' || cleanUser === 'kakao_5090399860' || cleanUser === 'kakao_5105087435') {
+        cleanUser === 'kakao_5081608503' || cleanUser === 'kakao_5090399860' || cleanUser === 'kakao_5105087435' || cleanUser === 'kakao_5078158815') {
         const dummyResult = {
             userId: cleanUser,
             roundNum,
@@ -50172,7 +50177,7 @@ function _isDashboardSummaryStale(sData, maxRound, isAdminViewer) {
 
     // 🔒 삭제/휴지통/더미 회원 포함 시 모든 접속자 대상 즉시 무효화 (초고속 재동기화)
     const hasDeletedMember = docIds.some(id => {
-        if (id === 'guest' || id === 'kakao_5081608503' || id === 'kakao_5090399860' || id === 'kakao_5105087435') return true;
+        if (id === 'guest' || id === 'kakao_5081608503' || id === 'kakao_5090399860' || id === 'kakao_5105087435' || id === 'kakao_5078158815') return true;
         if (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(id)) return true;
         return false;
     });
@@ -50405,7 +50410,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             grandTotalWins = grandRank1 + grandRank2 + grandRank3 + grandRank4 + grandRank5;
             latestTotalWins = latestRank1 + latestRank2 + latestRank3 + latestRank4 + latestRank5;
 
-            const activeMemberIds = Array.from(_getDashboardExpectedMemberIds(maxRound)).filter(id => id && id !== 'guest' && id !== 'kakao_5081608503' && id !== 'kakao_5090399860' && id !== 'kakao_5105087435' && !isSystemOrDummyUser(id));
+            const activeMemberIds = Array.from(_getDashboardExpectedMemberIds(maxRound)).filter(id => id && id !== 'guest' && id !== 'kakao_5081608503' && id !== 'kakao_5090399860' && id !== 'kakao_5105087435' && id !== 'kakao_5078158815' && !isSystemOrDummyUser(id));
             summaryData = {
                 maxRound,
                 fromRound,
@@ -50444,7 +50449,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
                 if (fs && typeof fs.collection === 'function') {
                     const auth = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '';
                     const isAdmin = auth === 'master' || auth === 'admin' || (typeof window.isAdminUser === 'function' && window.isAdminUser(auth)) || (typeof window.isAdminSession === 'function' && window.isAdminSession());
-                    const isClean = !activeMemberIds.some(id => id === 'kakao_5081608503' || id === 'kakao_5090399860' || id === 'kakao_5105087435' || id === 'guest' || (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(id)));
+                    const isClean = !activeMemberIds.some(id => id === 'kakao_5081608503' || id === 'kakao_5090399860' || id === 'kakao_5105087435' || id === 'kakao_5078158815' || id === 'guest' || (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(id)));
                     if ((isAdmin || forceRefresh) && isClean && activeMemberIds.length <= 13) {
                         fs.collection('lotto_purchases').doc('dashboard_summary_latest').set(summaryData, { merge: true }).catch(console.warn);
                     }

@@ -3034,7 +3034,7 @@ Lotto 6/45
 
     # [Test 85] Round 1244 & Complete Deleted Users Isolation
     def test_85_round_1244_and_deleted_users_isolation(self):
-        """Test 85: Verify deleted members (kakao_5081608503, kakao_5090399860, kakao_5105087435, guest) are 100% isolated from all 1244 calculations, reviews, and dashboard summaries."""
+        """Test 85: Verify deleted members (kakao_5081608503, kakao_5090399860, kakao_5105087435, kakao_5078158815, guest) are 100% isolated from all 1244 calculations, reviews, and dashboard summaries."""
         # 1. utils.js isSystemOrDummyUser includes deleted members
         utils_path = os.path.join(self.root_dir, 'src', 'shared', 'utils.js')
         with open(utils_path, 'r', encoding='utf-8') as f:
@@ -3042,6 +3042,7 @@ Lotto 6/45
         self.assertIn("kakao_5081608503", utils_code)
         self.assertIn("kakao_5090399860", utils_code)
         self.assertIn("kakao_5105087435", utils_code)
+        self.assertIn("kakao_5078158815", utils_code)
 
         # 2. user-context.js exports KNOWN_DELETED_USER_IDS
         ucontext_path = os.path.join(self.root_dir, 'src', 'shared', 'user-context.js')
@@ -3049,6 +3050,7 @@ Lotto 6/45
             ucontext_code = f.read()
         self.assertIn("KNOWN_DELETED_USER_IDS", ucontext_code)
         self.assertIn("kakao_5081608503", ucontext_code)
+        self.assertIn("kakao_5078158815", ucontext_code)
 
         # 3. review-tab.js computeUser70RecommendationsReview returns dummy prejoin/isDeleted result
         rev_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
@@ -3056,12 +3058,14 @@ Lotto 6/45
             rev_code = f.read()
         self.assertIn("isDeleted: true", rev_code)
         self.assertIn("kakao_5081608503", rev_code)
+        self.assertIn("kakao_5078158815", rev_code)
 
         # 4. landing-dashboard.js _isDashboardSummaryStale invalidates summaries with deleted members or >13 members for round 1244
         landing_path = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
         with open(landing_path, 'r', encoding='utf-8') as f:
             landing_code = f.read()
         self.assertIn("kakao_5081608503", landing_code)
+        self.assertIn("kakao_5078158815", landing_code)
         self.assertIn("docIds.length > 13", landing_code)
 
         # 5. ledger.js fetchAllUsersPurchases excludes deleted users from purchases snapshot
@@ -3073,7 +3077,7 @@ Lotto 6/45
 
     # [Test 86] Winning History & Default Known Users Baseline Integrity
     def test_86_winning_history_and_default_users_baseline(self):
-        """Test 86: Verify all 13 active users are in DEFAULT_KNOWN_USERS, uId is declared, and getAllUnifiedRegisteredUsers runs without error."""
+        """Test 86: Verify all 12 active users are in DEFAULT_KNOWN_USERS, uId is declared, and getAllUnifiedRegisteredUsers runs without error."""
         ucontext_path = os.path.join(self.root_dir, 'src', 'shared', 'user-context.js')
         with open(ucontext_path, 'r', encoding='utf-8') as f:
             ucontext_code = f.read()
@@ -3091,18 +3095,18 @@ Lotto 6/45
             global.localStorage = { getItem: () => null, setItem: () => {} };
             import('./src/shared/user-context.js').then(m => {
                 const users = m.getAllUnifiedRegisteredUsers();
-                if (users.length !== 13) {
-                    console.error('Expected 13 active users, got', users.length);
+                if (users.length !== 12) {
+                    console.error('Expected 12 active users, got', users.length);
                     process.exit(1);
                 }
-                const deleted = ['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'guest'];
+                const deleted = ['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'kakao_5078158815', 'guest'];
                 for (const d of deleted) {
                     if (users.some(u => u.id === d)) {
                         console.error('Deleted user found in active list:', d);
                         process.exit(2);
                     }
                 }
-                console.log('OK_13_USERS');
+                console.log('OK_12_USERS');
                 process.exit(0);
             }).catch(e => {
                 console.error(e);
@@ -3111,7 +3115,7 @@ Lotto 6/45
             """
             res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, cwd=self.root_dir)
             self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
-            self.assertIn('OK_13_USERS', res.stdout)
+            self.assertIn('OK_12_USERS', res.stdout)
 
     def test_102_admin_tab_switch_auto_reset_to_self(self):
         """Test 102: Verify that when switching tabs, admin viewing user auto-resets to self (authId), and tabs do not cross-pollute."""

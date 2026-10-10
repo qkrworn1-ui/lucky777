@@ -508,7 +508,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
     }
     cleanUser = cleanUser.toLowerCase().trim();
     if (isSystemOrDummyUser(cleanUser) || cleanUser === 'guest' ||
-        cleanUser === 'kakao_5081608503' || cleanUser === 'kakao_5090399860' || cleanUser === 'kakao_5105087435') {
+        cleanUser === 'kakao_5081608503' || cleanUser === 'kakao_5090399860' || cleanUser === 'kakao_5105087435' || cleanUser === 'kakao_5078158815') {
         const dummyResult = {
             userId: cleanUser,
             roundNum,

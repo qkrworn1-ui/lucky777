@@ -63,7 +63,7 @@ export function isSystemOrDummyUser(userId) {
         clean === 'dashboard_summary_latest' ||
         clean === 'global_trash' || clean === 'global_state' || clean === 'global_saved' || clean === 'extra_history' ||
         clean === 'user_alpha' || clean === 'user_beta' || clean === 'user_gamma' || clean === 'sample' || clean === 'hms' ||
-        clean === 'kakao_5081608503' || clean === 'kakao_5090399860' || clean === 'kakao_5105087435' ||
+        clean === 'kakao_5081608503' || clean === 'kakao_5090399860' || clean === 'kakao_5105087435' || clean === 'kakao_5078158815' ||
         clean.startsWith('test') || clean.startsWith('{') || clean.includes('테스트')) {
         return true;
     }

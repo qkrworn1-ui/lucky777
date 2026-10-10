@@ -1317,7 +1317,7 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
 
         const userNames = {};
         if (!window.__knownDeletedUserIds) {
-            window.__knownDeletedUserIds = new Set(['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'guest']);
+            window.__knownDeletedUserIds = new Set(['kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'kakao_5078158815', 'guest']);
         }
         if (uSnapshot && !uSnapshot.empty) {
             state.allRegisteredUsersList = [];

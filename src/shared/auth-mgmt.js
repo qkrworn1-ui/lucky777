@@ -4483,7 +4483,10 @@ export function setupAuthEvents(initFirebaseAndData) {
                     }
                     return;
                 }
-                if (!uIdClean.startsWith('kakao_') && typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uIdClean)) {
+                if (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uIdClean)) {
+                    return;
+                }
+                if (typeof KNOWN_DELETED_USER_IDS !== 'undefined' && KNOWN_DELETED_USER_IDS.has(uIdClean)) {
                     return;
                 }
                 const docData = doc.data() || {};
@@ -4497,7 +4500,10 @@ export function setupAuthEvents(initFirebaseAndData) {
             const knownBaseline = (typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) ? DEFAULT_KNOWN_USERS : [];
             knownBaseline.forEach(defU => {
                 const defId = (defU.id || '').toLowerCase().trim();
-                if (defId && !existingUserIds.has(defId)) {
+                if (!defId) return;
+                if (typeof KNOWN_DELETED_USER_IDS !== 'undefined' && KNOWN_DELETED_USER_IDS.has(defId)) return;
+                if (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(defId)) return;
+                if (!existingUserIds.has(defId)) {
                     const isBaseAdmin = !!(defU.isAdmin || defId === 'master' || defId === 'admin');
                     const hasSig = !!(defU.hasSignature || defU.hasPledgeSigned || isBaseAdmin);
                     users.push({
