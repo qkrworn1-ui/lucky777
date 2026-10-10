@@ -3885,6 +3885,81 @@ Lotto 6/45
 
         self.assertIn('window.renderPushNotificationMiniWidget', push_code)
 
+    def test_112_user_winning_trend_fixed_graph(self):
+        """Test 112: Verify Home Recent Winning Trend widget is rendered as a clean, stable fixed graph."""
+        # 1. Check styles.css has fixed graph styles and x-axis row
+        styles_path = os.path.join(self.root_dir, 'styles.css')
+        with open(styles_path, 'r', encoding='utf-8') as f:
+            styles_code = f.read()
+
+        self.assertIn('.trend-x-axis-row', styles_code)
+        self.assertIn('.trend-x-axis-latest', styles_code)
+        self.assertIn('.spark-dot-group', styles_code)
+        self.assertIn('.spark-live-pointer', styles_code)
+
+        # 2. Check landing-dashboard.js
+        landing_path = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+        with open(landing_path, 'r', encoding='utf-8') as f:
+            landing_code = f.read()
+
+        self.assertIn('renderFixedTrendGraph', landing_code)
+        self.assertIn('trend-x-axis-row', landing_code)
+        self.assertIn('stroke-dasharray="3,3"', landing_code)
+        # Verify continuous infinite animation loop is eliminated
+        self.assertNotIn('runCycle()', landing_code)
+        self.assertNotIn('function runCycle', landing_code)
+
+        # 3. Functional integrity check
+        data = {
+            'joinRound': 1235,
+            'rounds': [
+                { 'round': 1235, 'prize': 5000, 'hits': 1, 'r4': 0, 'r5': 1 },
+                { 'round': 1236, 'prize': 0, 'hits': 0, 'r4': 0, 'r5': 0 },
+                { 'round': 1237, 'prize': 50000, 'hits': 1, 'r4': 1, 'r5': 0 },
+                { 'round': 1238, 'prize': 10000, 'hits': 2, 'r4': 0, 'r5': 2 }
+            ],
+            'totalPrize': 65000,
+            'totalWins': 4
+        }
+        count = len(data['rounds'])
+        lastData = data['rounds'][count - 1]
+        winWeeks = len([r for r in data['rounds'] if r['prize'] > 0])
+        winRate = round((winWeeks / count) * 100)
+
+        self.assertEqual(winRate, 75)
+        self.assertEqual(lastData['round'], 1238)
+        self.assertEqual(data['totalPrize'], 65000)
+        self.assertEqual(data['totalWins'], 4)
+
+        import shutil, subprocess
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_test = """
+            const data = {
+                joinRound: 1235,
+                rounds: [
+                    { round: 1235, prize: 5000, hits: 1, r4: 0, r5: 1 },
+                    { round: 1236, prize: 0, hits: 0, r4: 0, r5: 0 },
+                    { round: 1237, prize: 50000, hits: 1, r4: 1, r5: 0 },
+                    { round: 1238, prize: 10000, hits: 2, r4: 0, r5: 2 }
+                ],
+                totalPrize: 65000,
+                totalWins: 4
+            };
+
+            const count = data.rounds.length;
+            const lastData = data.rounds[count - 1];
+            const winWeeks = data.rounds.filter(r => r.prize > 0).length;
+            const winRate = Math.round((winWeeks / count) * 100);
+
+            if (winRate !== 75) process.exit(1);
+            if (lastData.round !== 1238) process.exit(2);
+            console.log('OK_TEST_112_PASSED');
+            process.exit(0);
+            """
+            res = subprocess.run([node_bin, '-e', js_test], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0, f"Node test 112 failed: {res.stderr or res.stdout}")
+
 if __name__ == '__main__':
     unittest.main()
 

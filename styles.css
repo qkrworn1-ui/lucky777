@@ -21673,7 +21673,7 @@ body.is-admin .btn-snapshot-audit-compact {
 
 .trend-sparkline-row {
     width: 100%;
-    height: 38px;
+    height: 42px;
     position: relative;
     margin-top: 2px;
 }
@@ -21685,15 +21685,44 @@ body.is-admin .btn-snapshot-audit-compact {
     display: block;
 }
 
-.trend-sparkline-row .spark-dot {
-    transition: r 0.15s ease, fill 0.15s ease;
+.trend-sparkline-row .spark-dot-group {
     cursor: pointer;
 }
 
-.trend-sparkline-row .spark-dot:hover {
-    r: 4.8;
-    fill: #fbbf24;
-    filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.8));
+.trend-sparkline-row .spark-dot {
+    transition: r 0.15s ease, fill 0.15s ease, filter 0.15s ease;
+    cursor: pointer;
+}
+
+.trend-sparkline-row .spark-dot-group:hover .spark-dot {
+    r: 5.2 !important;
+    fill: #38bdf8 !important;
+    stroke: #ffffff !important;
+    stroke-width: 1.8 !important;
+    filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.9)) !important;
+}
+
+/* 🏷️ 고정 그래프 X축 라벨 행 */
+.trend-x-axis-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.65rem;
+    color: #64748b;
+    margin-top: 2px;
+    padding: 0 4px;
+    font-weight: 600;
+    user-select: none;
+}
+
+.trend-x-axis-row .trend-x-axis-mid {
+    color: #475569;
+    font-size: 0.62rem;
+}
+
+.trend-x-axis-row .trend-x-axis-latest {
+    color: #38bdf8;
+    font-weight: 700;
 }
 
 /* 📱 폴드7 접은 화면 (320px ~ 360px) 최적화 */
@@ -21716,7 +21745,13 @@ body.is-admin .btn-snapshot-audit-compact {
         padding: 1px 4px;
     }
     .trend-sparkline-row {
-        height: 34px;
+        height: 38px;
+    }
+    .trend-x-axis-row {
+        font-size: 0.60rem;
+    }
+    .trend-x-axis-row .trend-x-axis-mid {
+        display: none; /* 폴드7 접은 화면 등 초소형에서는 양쪽 시작-최신 회차만 깔끔히 노출 */
     }
 }
 

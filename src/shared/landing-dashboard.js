@@ -1429,10 +1429,11 @@ export function renderUserWinningTrendBanner(authId, displayName) {
         return path;
     }
 
-    const renderAndAnimateBanner = (data) => {
+    const renderFixedTrendGraph = (data) => {
+        if (_trendBannerAnimId) { cancelAnimationFrame(_trendBannerAnimId); _trendBannerAnimId = null; }
+        if (_trendBannerLoopTimer) { clearTimeout(_trendBannerLoopTimer); _trendBannerLoopTimer = null; }
+
         if (!data || !data.rounds || data.rounds.length === 0) {
-            if (_trendBannerAnimId) { cancelAnimationFrame(_trendBannerAnimId); _trendBannerAnimId = null; }
-            if (_trendBannerLoopTimer) { clearTimeout(_trendBannerLoopTimer); _trendBannerLoopTimer = null; }
             container.innerHTML = `
                 <div class="lp-trend-banner" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => window.switchTab && window.switchTab('tab-generator'), 80); }" title="추천번호 생성 바로가기">
                     <div class="trend-top-row">
@@ -1455,6 +1456,11 @@ export function renderUserWinningTrendBanner(authId, displayName) {
         const joinRound = data.joinRound || data.rounds[0].round;
         const lastData = data.rounds[count - 1];
 
+        const totalPrize = data.totalPrize || data.rounds.reduce((acc, cur) => acc + (cur.prize || 0), 0);
+        const totalWins = data.totalWins || data.rounds.reduce((acc, cur) => acc + (cur.hits || 0), 0);
+        const winWeeks = data.rounds.filter(r => r.prize > 0).length;
+        const winRate = count > 0 ? Math.round((winWeeks / count) * 100) : 0;
+
         // 최신회차 추천번호 당첨내역 포맷팅
         const isLatestMega = lastData.r1 > 0 || lastData.prize >= 100000000;
         const isLatestRank3 = lastData.r3 > 0 || (lastData.prize >= 1000000 && lastData.prize < 100000000);
@@ -1475,14 +1481,18 @@ export function renderUserWinningTrendBanner(authId, displayName) {
         const latestBadgeClass = isLatestMega ? 'is-mega' : (isLatestRank3 ? 'is-orange' : (isLatestHigh ? 'is-gold' : ''));
         const latestIconHtml = isLatestMega ? '<i class="fa-solid fa-crown"></i>' : (lastData.prize > 0 ? '<i class="fa-solid fa-sparkles"></i>' : '<i class="fa-solid fa-circle-check"></i>');
 
-        // SVG 좌표 계산 (너비 290, 높이 40, 패딩 X:8, 상단여백:10, 하단여백:6)
+        const totalPrizeDisp = totalPrize >= 100000000
+            ? '+' + (totalPrize / 100000000).toFixed(1) + '억원'
+            : '+' + totalPrize.toLocaleString() + '원';
+
+        // SVG 좌표 계산 (너비 290, 높이 42, 패딩 X:10, 상단여백:10, 하단여백:8)
         const width = 290;
-        const height = 40;
-        const padX = 8;
+        const height = 42;
+        const padX = 10;
         const padTop = 10;
-        const padBottom = 6;
+        const padBottom = 8;
         const drawW = width - padX * 2;
-        const drawH = height - padTop - padBottom; // 24px safe window
+        const drawH = height - padTop - padBottom; // 24px
 
         const maxPrize = Math.max(...data.rounds.map(d => d.prize), 50000);
 
@@ -1490,7 +1500,7 @@ export function renderUserWinningTrendBanner(authId, displayName) {
             const x = padX + (i / Math.max(1, count - 1)) * drawW;
             const ratio = getNormalizedHeightRatio(d.prize, maxPrize);
             const y = padTop + drawH - (ratio * drawH);
-            return { x, y, data: d, passed: false };
+            return { x, y, data: d };
         });
 
         const lineD = createSmoothPath(points, padTop, padBottom, height);
@@ -1498,9 +1508,65 @@ export function renderUserWinningTrendBanner(authId, displayName) {
 
         const safeId = cleanAuth.replace(/[^a-zA-Z0-9_]/g, '_');
 
+        // 고정 데이터 점(Dots) HTML 생성
+        const dotsHtml = points.map((pt, idx) => {
+            const isMega = pt.data.r1 > 0 || pt.data.prize >= 100000000;
+            const isRank3 = pt.data.r3 > 0 || (pt.data.prize >= 1000000 && pt.data.prize < 100000000);
+            const isRank4 = pt.data.r4 > 0;
+            const isZero = pt.data.prize <= 0;
+            const isLatest = (idx === count - 1);
+
+            let dotColor = '#10b981';
+            let dotRadius = 3.0;
+            let strokeColor = '#070a14';
+            let strokeW = '1.2';
+
+            if (isMega) {
+                dotColor = '#ef4444';
+                dotRadius = 4.8;
+                strokeColor = '#ffffff';
+                strokeW = '1.6';
+            } else if (isRank3) {
+                dotColor = '#f97316';
+                dotRadius = 4.0;
+                strokeColor = '#fff7ed';
+                strokeW = '1.4';
+            } else if (isRank4) {
+                dotColor = '#fbbf24';
+                dotRadius = 3.5;
+            } else if (isZero) {
+                dotColor = '#475569';
+                dotRadius = 2.4;
+            }
+
+            if (isLatest) {
+                dotRadius = Math.max(dotRadius, 3.8);
+                strokeColor = '#38bdf8';
+                strokeW = '1.8';
+            }
+
+            const pStr = pt.data.prize >= 100000000
+                ? (pt.data.prize / 100000000).toFixed(0) + '억원'
+                : (pt.data.prize > 0 ? '+' + pt.data.prize.toLocaleString() + '원' : '0원');
+            const hStr = pt.data.hits > 0 ? `${pt.data.hits}건 적중` : '미당첨';
+            const tipText = `${pt.data.round}회: ${pStr} (${hStr})`;
+
+            return `
+                <g class="spark-dot-group" data-round="${pt.data.round}" data-tip="${tipText}" data-x="${pt.x.toFixed(1)}" data-y="${pt.y.toFixed(1)}" onclick="event.stopPropagation(); if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.switchTab) window.switchTab('tab-review'); if(typeof selectReviewRound === 'function') selectReviewRound(${pt.data.round}); }, 80); }">
+                    ${isLatest ? `<circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="6.2" fill="none" stroke="#38bdf8" stroke-width="1.4" opacity="0.65" />` : ''}
+                    <circle cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${dotRadius}" fill="${dotColor}" stroke="${strokeColor}" stroke-width="${strokeW}" class="spark-dot ${isMega ? 'is-mega-dot' : ''}">
+                        <title>${tipText}</title>
+                    </circle>
+                </g>
+            `;
+        }).join('');
+
+        const startRound = points[0].data.round;
+        const endRound = lastData.round;
+
         container.innerHTML = `
             <div class="lp-trend-banner" id="lpUserTrendBanner_${safeId}" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.switchTab) window.switchTab('tab-review'); if(typeof selectReviewRound === 'function') selectReviewRound(${lastData.round}); }, 80); }" title="클릭 시 최신 ${lastData.round}회 추천번호 당첨결과 탭으로 이동">
-                <!-- Tier 1: Title + Dynamic Sweep Round Indicator (기본 및 완료 시 최신회차 당첨내역 표시) -->
+                <!-- Tier 1: Title + Range / Latest Pill -->
                 <div class="trend-top-row">
                     <div class="trend-title-box">
                         <span>📈</span>
@@ -1514,33 +1580,30 @@ export function renderUserWinningTrendBanner(authId, displayName) {
                     </div>
                 </div>
 
-                <!-- Tier 2: Real-time Accumulating Stats -->
+                <!-- Tier 2: Real-time Accumulating Stats (Fixed Solid Display) -->
                 <div class="trend-stats-row">
                     <div class="trend-stat-main">
-                        <span class="trend-stat-val" id="lpTrendTotalPrizeText_${safeId}">+0원</span>
-                        <span class="trend-stat-sub" id="lpTrendSubHitsText_${safeId}">0건 적중</span>
+                        <span class="trend-stat-val" id="lpTrendTotalPrizeText_${safeId}" ${totalPrize >= 100000000 ? 'style="background:linear-gradient(90deg, #fbbf24 0%, #ef4444 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent;"' : 'style="color:#34d399;"'}>${totalPrizeDisp}</span>
+                        <span class="trend-stat-sub" id="lpTrendSubHitsText_${safeId}">${totalWins}건 적중</span>
                     </div>
                     <div class="trend-stat-rate-pill" id="lpTrendWinRatePill_${safeId}">
-                        <i class="fa-solid fa-fire"></i> 0% 적중
+                        <i class="fa-solid fa-fire"></i> ${winRate}% 적중
                     </div>
                 </div>
 
-                <!-- Tier 3: 100% Full-Width Animated Sparkline with Heat Gradient -->
+                <!-- Tier 3: 100% Full-Width Fixed Solid Sparkline with Heat Gradient -->
                 <div class="trend-sparkline-row">
-                    <svg class="sparkline-svg" id="lpTrendSvg_${safeId}" viewBox="0 0 290 40" preserveAspectRatio="none">
+                    <svg class="sparkline-svg" id="lpTrendSvg_${safeId}" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none">
                         <defs>
-                            <clipPath id="lpTrendClip_${safeId}">
-                                <rect id="lpTrendClipRect_${safeId}" x="0" y="0" width="0" height="40"></rect>
-                            </clipPath>
-                            <!-- Heatmap Gradient for Area (Turns Red near top) -->
+                            <!-- Heatmap Gradient for Area -->
                             <linearGradient id="lpTrendAreaGrad_${safeId}" x1="0" y1="1" x2="0" y2="0">
-                                <stop offset="0%" stop-color="#10b981" stop-opacity="0.03"></stop>
+                                <stop offset="0%" stop-color="#10b981" stop-opacity="0.04"></stop>
                                 <stop offset="38%" stop-color="#10b981" stop-opacity="0.22"></stop>
                                 <stop offset="68%" stop-color="#fbbf24" stop-opacity="0.30"></stop>
                                 <stop offset="86%" stop-color="#f97316" stop-opacity="0.45"></stop>
                                 <stop offset="100%" stop-color="#ef4444" stop-opacity="0.60"></stop>
                             </linearGradient>
-                            <!-- Heatmap Gradient for Stroke Line (Green -> Gold -> Orange -> Neon Red 🔥) -->
+                            <!-- Heatmap Gradient for Stroke Line -->
                             <linearGradient id="lpTrendLineGrad_${safeId}" x1="0" y1="1" x2="0" y2="0">
                                 <stop offset="0%" stop-color="#10b981"></stop>
                                 <stop offset="32%" stop-color="#10b981"></stop>
@@ -1550,287 +1613,72 @@ export function renderUserWinningTrendBanner(authId, displayName) {
                                 <stop offset="100%" stop-color="#ff1744"></stop>
                             </linearGradient>
                             <filter id="lpTrendGlow_${safeId}" x="-20%" y="-20%" width="140%" height="140%">
-                                <feGaussianBlur stdDeviation="2.2" result="coloredBlur"/>
+                                <feGaussianBlur stdDeviation="2.0" result="coloredBlur"/>
                                 <feMerge>
                                     <feMergeNode in="coloredBlur"/>
                                     <feMergeNode in="SourceGraphic"/>
                                 </feMerge>
                             </filter>
                         </defs>
-                        <path id="lpTrendAreaPath_${safeId}" d="${areaD}" fill="url(#lpTrendAreaGrad_${safeId})" clip-path="url(#lpTrendClip_${safeId})"></path>
-                        <path id="lpTrendLinePath_${safeId}" d="${lineD}" fill="none" stroke="url(#lpTrendLineGrad_${safeId})" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#lpTrendGlow_${safeId})"></path>
-                        <circle id="lpTrendTracer_${safeId}" cx="-10" cy="-10" r="4.0" fill="#38bdf8" class="spark-tracer-head"></circle>
-                        <g id="lpTrendDotsGroup_${safeId}"></g>
+                        <!-- 0원 기준 가이드라인 (점선) -->
+                        <line x1="${padX}" y1="${padTop + drawH}" x2="${width - padX}" y2="${padTop + drawH}" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1" stroke-dasharray="3,3" />
+                        <!-- 고정 영역 & 고정 라인 -->
+                        ${areaD ? `<path id="lpTrendAreaPath_${safeId}" d="${areaD}" fill="url(#lpTrendAreaGrad_${safeId})"></path>` : ''}
+                        ${lineD ? `<path id="lpTrendLinePath_${safeId}" d="${lineD}" fill="none" stroke="url(#lpTrendLineGrad_${safeId})" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#lpTrendGlow_${safeId})"></path>` : ''}
+                        <!-- 고정 데이터 점들 -->
+                        <g id="lpTrendDotsGroup_${safeId}">${dotsHtml}</g>
                     </svg>
-                    <div class="spark-live-pointer" id="lpTrendLivePointer_${safeId}">1235회</div>
+                    <!-- 호버/터치 툴팁 포인터 -->
+                    <div class="spark-live-pointer" id="lpTrendLivePointer_${safeId}"></div>
+                </div>
+
+                <!-- 🏷️ 고정 그래프 X축 라벨 행 -->
+                <div class="trend-x-axis-row">
+                    <span>${startRound}회</span>
+                    <span class="trend-x-axis-mid">가입 후 최근 ${count}주간 추천 성과</span>
+                    <span class="trend-x-axis-latest"><strong>${endRound}회</strong> (최신)</span>
                 </div>
             </div>
         `;
 
-        // Start Left-to-Right Drawing Animation Controller (3.8s tempo, 3s loop)
-        const sparkLine = document.getElementById(`lpTrendLinePath_${safeId}`);
-        const sweepClipRect = document.getElementById(`lpTrendClipRect_${safeId}`);
-        const sparkTracer = document.getElementById(`lpTrendTracer_${safeId}`);
-        const sparkLivePointer = document.getElementById(`lpTrendLivePointer_${safeId}`);
-        const sweepPill = document.getElementById(`lpTrendSweepPill_${safeId}`);
-        const totalPrizeText = document.getElementById(`lpTrendTotalPrizeText_${safeId}`);
-        const subHitsText = document.getElementById(`lpTrendSubHitsText_${safeId}`);
-        const winRatePill = document.getElementById(`lpTrendWinRatePill_${safeId}`);
-        const dotsGroup = document.getElementById(`lpTrendDotsGroup_${safeId}`);
-
-        if (!sparkLine || !sweepClipRect || !sparkTracer || !dotsGroup) return;
-
-        const totalLength = sparkLine.getTotalLength ? sparkLine.getTotalLength() : 300;
-        sparkLine.style.strokeDasharray = totalLength;
-        sparkLine.style.strokeDashoffset = totalLength;
-
-        // Render Dots initially hidden (scale 0) with rank-tiered heat coloring
-        dotsGroup.innerHTML = '';
-        const dotElements = points.map((pt, i) => {
-            const isMega = pt.data.r1 > 0 || pt.data.prize >= 100000000;
-            const isRank3 = pt.data.r3 > 0 || (pt.data.prize >= 1000000 && pt.data.prize < 100000000);
-            const isRank4 = pt.data.r4 > 0;
-            const isZero = pt.data.prize <= 0;
-            const isLatestDot = (i === points.length - 1);
-
-            let dotColor = '#10b981'; // 기본: 에메랄드 그린
-            let dotRadius = 2.8;
-            let strokeColor = '#070a14';
-            let strokeW = '1.2';
-
-            if (isMega) {
-                dotColor = '#ef4444'; // 🔥 1등: 강렬한 네온 레드
-                dotRadius = 4.8;
-                strokeColor = '#ffffff';
-                strokeW = '1.6';
-            } else if (isRank3) {
-                dotColor = '#f97316'; // 🥉 3등: 핫 오렌지 레드
-                dotRadius = 4.0;
-                strokeColor = '#fff7ed';
-                strokeW = '1.4';
-            } else if (isRank4) {
-                dotColor = '#fbbf24'; // 4등: 골드 앰버
-                dotRadius = 3.6;
-            } else if (isZero) {
-                dotColor = '#64748b'; // 미당첨: 차분한 그레이
-                dotRadius = 2.2;
-            }
-
-            if (isLatestDot && !isMega) {
-                dotRadius = Math.max(dotRadius, 3.8);
-                strokeColor = '#38bdf8';
-                strokeW = '1.8';
-            }
-
-            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-            circle.setAttribute('cx', pt.x.toFixed(1));
-            circle.setAttribute('cy', pt.y.toFixed(1));
-            circle.setAttribute('r', String(dotRadius));
-            circle.setAttribute('fill', dotColor);
-            circle.setAttribute('stroke', strokeColor);
-            circle.setAttribute('stroke-width', strokeW);
-            circle.setAttribute('class', `spark-dot ${isMega ? 'is-mega-dot' : ''} ${isLatestDot ? 'is-latest-dot' : ''}`);
-            circle.style.opacity = '0';
-            circle.style.transform = 'scale(0)';
-            circle.style.transformBox = 'fill-box';
-            circle.style.transformOrigin = 'center';
-
-            dotsGroup.appendChild(circle);
-            return circle;
-        });
-
-        const duration = 3800; // 3.8초 최적 가독성 속도
-        let startTime = performance.now();
-        let accumulatedPrize = 0;
-        let accumulatedHits = 0;
-        let winWeeksCount = 0;
-
-        function runCycle() {
-            if (_trendBannerAnimId) cancelAnimationFrame(_trendBannerAnimId);
-            if (_trendBannerLoopTimer) clearTimeout(_trendBannerLoopTimer);
-
-            startTime = performance.now();
-            accumulatedPrize = 0;
-            accumulatedHits = 0;
-            winWeeksCount = 0;
-            points.forEach(pt => { pt.passed = false; });
-            dotElements.forEach(el => { el.style.opacity = '0'; el.style.transform = 'scale(0)'; });
-
-            sparkLine.style.strokeDashoffset = totalLength;
-            sweepClipRect.setAttribute('width', '0');
-            sparkTracer.style.opacity = '1';
-            if (sparkLivePointer) sparkLivePointer.classList.remove('visible');
-
-            function animate(now) {
-                const elapsed = now - startTime;
-                const progress = Math.min(1, elapsed / duration);
-                const ease = 1 - Math.pow(1 - progress, 3);
-
-                sparkLine.style.strokeDashoffset = totalLength * (1 - ease);
-                sweepClipRect.setAttribute('width', (width * ease).toFixed(1));
-
-                let curPt = null;
-                try {
-                    curPt = sparkLine.getPointAtLength(totalLength * ease);
-                } catch(e) {
-                    curPt = { x: padX + drawW * ease, y: padTop + drawH / 2 };
-                }
-                sparkTracer.setAttribute('cx', curPt.x.toFixed(1));
-                sparkTracer.setAttribute('cy', curPt.y.toFixed(1));
-
-                // 🔥 고액 당첨 구역(Y축 상단)으로 올라갈수록 헤드 색상이 빨간색으로 점진 전환!
-                const yRatio = Math.max(0, Math.min(1, (height - padBottom - curPt.y) / drawH));
-                if (yRatio >= 0.70) {
-                    sparkTracer.setAttribute('fill', '#ef4444');
-                    sparkTracer.style.filter = 'drop-shadow(0 0 8px #ef4444) drop-shadow(0 0 12px #ff1744)';
-                } else if (yRatio >= 0.45) {
-                    sparkTracer.setAttribute('fill', '#f97316');
-                    sparkTracer.style.filter = 'drop-shadow(0 0 6px #f97316)';
-                } else if (yRatio >= 0.25) {
-                    sparkTracer.setAttribute('fill', '#fbbf24');
-                    sparkTracer.style.filter = 'drop-shadow(0 0 5px #fbbf24)';
-                } else {
-                    sparkTracer.setAttribute('fill', '#38bdf8');
-                    sparkTracer.style.filter = 'drop-shadow(0 0 5px #38bdf8)';
-                }
-
-                // 마일스톤 회차 통과 체크
-                points.forEach((pt, idx) => {
-                    if (!pt.passed && curPt.x >= pt.x - 2) {
-                        pt.passed = true;
-                        const isMega = pt.data.r1 > 0 || pt.data.prize >= 100000000;
-                        const isRank3 = pt.data.r3 > 0 || (pt.data.prize >= 1000000 && pt.data.prize < 100000000);
-                        const isRank4 = pt.data.r4 > 0;
-                        const isHigh = isMega || isRank3 || isRank4;
-
-                        dotElements[idx].style.opacity = '1';
-                        dotElements[idx].style.transform = isMega ? 'scale(1.5)' : (isHigh ? 'scale(1.3)' : 'scale(1.1)');
-                        setTimeout(() => {
-                            if (dotElements[idx]) dotElements[idx].style.transform = 'scale(1.0)';
-                        }, 240);
-
-                        accumulatedPrize += pt.data.prize;
-                        accumulatedHits += pt.data.hits;
-                        if (pt.data.prize > 0) winWeeksCount++;
-
-                        // 실시간 회차 뱃지 업데이트 (고액 레드 테마)
-                        if (sweepPill) {
-                            if (isMega) sweepPill.className = 'trend-sweep-pill is-mega';
-                            else if (isRank3) sweepPill.className = 'trend-sweep-pill is-orange';
-                            else if (isRank4) sweepPill.className = 'trend-sweep-pill is-gold';
-                            else sweepPill.className = 'trend-sweep-pill';
-
-                            let rankLabel = '';
-                            if (isMega) rankLabel = '(1등 20억! 👑)';
-                            else if (isRank3) rankLabel = '(3등 150만! 🥉)';
-                            else if (isRank4) rankLabel = '(4등!)';
-
-                            const dispPrizeStr = pt.data.prize >= 100000000
-                                ? (pt.data.prize / 100000000).toFixed(0) + '억원'
-                                : '+' + pt.data.prize.toLocaleString() + '원';
-
-                            const iconClass = isMega ? 'fa-fire' : (isRank3 ? 'fa-trophy' : (isHigh ? 'fa-star' : 'fa-check'));
-                            sweepPill.innerHTML = `
-                                <i class="fa-solid ${iconClass}" style="font-size:0.65rem;"></i>
-                                <span><strong>${pt.data.round}회:</strong> ${dispPrizeStr} ${rankLabel}</span>
-                            `;
-                        }
-
-                        // 상단 누적 금액 갱신 (1억 이상 골드-레드 메탈릭)
-                        if (totalPrizeText) {
-                            const totalPrizeDisp = accumulatedPrize >= 100000000
-                                ? '+' + (accumulatedPrize / 100000000).toFixed(1) + '억원'
-                                : '+' + accumulatedPrize.toLocaleString() + '원';
-                            totalPrizeText.textContent = totalPrizeDisp;
-                            if (accumulatedPrize >= 100000000) {
-                                totalPrizeText.style.background = 'linear-gradient(90deg, #fbbf24 0%, #ef4444 100%)';
-                                totalPrizeText.style.webkitBackgroundClip = 'text';
-                                totalPrizeText.style.webkitTextFillColor = 'transparent';
-                            } else {
-                                totalPrizeText.style.background = 'none';
-                                totalPrizeText.style.webkitTextFillColor = '#34d399';
-                            }
-                        }
-
-                        if (subHitsText) {
-                            subHitsText.textContent = `${accumulatedHits}건 적중`;
-                        }
-                        if (winRatePill) {
-                            const currentRate = Math.round((winWeeksCount / (idx + 1)) * 100);
-                            winRatePill.innerHTML = `<i class="fa-solid fa-fire"></i> ${currentRate}% 적중`;
-                        }
-
-                        // 실시간 라이브 플로팅 포인터
-                        if (sparkLivePointer) {
-                            let pointerPrefix = '';
-                            if (isMega) {
-                                sparkLivePointer.style.borderColor = '#ef4444';
-                                sparkLivePointer.style.boxShadow = '0 0 10px rgba(239,68,68,0.7)';
-                                pointerPrefix = '🔥 ';
-                            } else if (isRank3) {
-                                sparkLivePointer.style.borderColor = '#f97316';
-                                sparkLivePointer.style.boxShadow = '0 0 8px rgba(249,115,22,0.6)';
-                                pointerPrefix = '🥉 ';
-                            } else if (isRank4) {
-                                sparkLivePointer.style.borderColor = '#fbbf24';
-                                sparkLivePointer.style.boxShadow = '0 0 8px rgba(251,191,36,0.5)';
-                                pointerPrefix = '★ ';
-                            } else {
-                                sparkLivePointer.style.borderColor = '#38bdf8';
-                                sparkLivePointer.style.boxShadow = '0 4px 12px rgba(0,0,0,0.8)';
-                                pointerPrefix = '';
-                            }
-                            sparkLivePointer.innerHTML = `<strong>${pointerPrefix}${pt.data.round}회</strong>`;
-                            const pctX = (pt.x / width) * 100;
-                            sparkLivePointer.style.left = `${pctX}%`;
-                            sparkLivePointer.style.top = `${pt.y}px`;
-                            sparkLivePointer.classList.add('visible');
-                        }
+        // 마우스오버 / 터치 인터랙션 바인딩
+        const bannerEl = document.getElementById(`lpUserTrendBanner_${safeId}`);
+        const pointerEl = document.getElementById(`lpTrendLivePointer_${safeId}`);
+        if (bannerEl && pointerEl) {
+            const dotGroups = bannerEl.querySelectorAll('.spark-dot-group');
+            dotGroups.forEach(grp => {
+                const showTip = () => {
+                    const tip = grp.dataset.tip;
+                    const x = parseFloat(grp.dataset.x);
+                    const y = parseFloat(grp.dataset.y);
+                    if (tip && !isNaN(x) && !isNaN(y)) {
+                        pointerEl.innerHTML = `<strong>${tip}</strong>`;
+                        const pctX = (x / width) * 100;
+                        pointerEl.style.left = `${pctX}%`;
+                        pointerEl.style.top = `${y}px`;
+                        pointerEl.classList.add('visible');
                     }
-                });
+                };
+                const hideTip = () => {
+                    pointerEl.classList.remove('visible');
+                };
 
-                if (progress < 1) {
-                    _trendBannerAnimId = requestAnimationFrame(animate);
-                } else {
-                    // 완료 상태: 🎯 그래프 마지막은 최신회차 추천번호 당첨내역으로 선명하게 고정 유지!
-                    sparkTracer.style.opacity = '0';
+                grp.addEventListener('mouseenter', showTip);
+                grp.addEventListener('mouseleave', hideTip);
+                grp.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                    showTip();
+                }, { passive: true });
+            });
 
-                    const lastPt = points[points.length - 1];
-                    const latest = lastPt.data;
-
-                    if (sweepPill) {
-                        sweepPill.className = `trend-sweep-pill ${latestBadgeClass}`;
-                        sweepPill.innerHTML = `
-                            ${latestIconHtml}
-                            <span><strong>최신 ${latest.round}회:</strong> ${latestPrizeStr} (${latestHitsStr}${latestRankTag ? ' · ' + latestRankTag : ''})</span>
-                        `;
-                    }
-
-                    // 최신회차 마지막 점 위에 플로팅 포인터를 3초간 유지하여 최신 당첨금 강조
-                    if (sparkLivePointer) {
-                        const pctX = (lastPt.x / width) * 100;
-                        sparkLivePointer.style.left = `${pctX}%`;
-                        sparkLivePointer.style.top = `${lastPt.y}px`;
-                        sparkLivePointer.style.borderColor = isLatestMega ? '#ef4444' : (isLatestHigh ? '#fbbf24' : '#10b981');
-                        sparkLivePointer.innerHTML = `<strong>최신 ${latest.round}회 (${latestPrizeStr})</strong>`;
-                        sparkLivePointer.classList.add('visible');
-                    }
-
-                    // 🔁 완료 후 3초 뒤 자동 반복 실행
-                    _trendBannerLoopTimer = setTimeout(() => {
-                        runCycle();
-                    }, 3000);
-                }
-            }
-
-            _trendBannerAnimId = requestAnimationFrame(animate);
+            bannerEl.addEventListener('mouseleave', () => {
+                pointerEl.classList.remove('visible');
+            });
         }
-
-        runCycle();
     };
 
     if (cached) {
-        renderAndAnimateBanner(cached);
+        renderFixedTrendGraph(cached);
     }
 
     // 2. 가입일(joinRound) 이후 회차만 필터링하여 최신 데이터 산출
@@ -1846,7 +1694,7 @@ export function renderUserWinningTrendBanner(authId, displayName) {
 
         if (targetRounds.length === 0) {
             if (!cached) {
-                renderAndAnimateBanner({ rounds: [], joinRound });
+                renderFixedTrendGraph({ rounds: [], joinRound });
             }
             return;
         }
@@ -1881,7 +1729,7 @@ export function renderUserWinningTrendBanner(authId, displayName) {
             localStorage.setItem(cacheKey, JSON.stringify(freshData));
         } catch(e) {}
 
-        renderAndAnimateBanner(freshData);
+        renderFixedTrendGraph(freshData);
     } catch(err) {
         console.warn('[User Trend Banner Compute Error]', err);
     }
