@@ -326,16 +326,31 @@ export function renderWinProbModalContent(tabId = 'v4') {
             </div>
         </div>
 
-        <!-- 3. Full Comparison Table (1등 ~ 5등) -->
+        <!-- 3. Full Comparison Section (1등 ~ 5등) -->
         <div class="win-prob-table-wrap">
             <div class="win-prob-table-title-row">
-                <h4 class="win-prob-section-title"><i class="fa-solid fa-table-list"></i> 1등 ~ 5등 전 등위 공식 확률 vs 실전 성적 1:1 대조표</h4>
-                <span class="win-prob-target-tag">${data.name}</span>
+                <div class="win-prob-title-group">
+                    <h4 class="win-prob-section-title"><i class="fa-solid fa-table-list"></i> 1등 ~ 5등 전 등위 공식 확률 vs 실전 성적</h4>
+                    <span class="win-prob-target-tag">${data.name}</span>
+                </div>
+                <!-- View Mode Toggle (Card vs Table) -->
+                <div class="win-prob-view-toggle">
+                    <button type="button" class="btn-toggle-view active" id="btnViewCard" onclick="window.switchWinProbViewMode('card')">
+                        <i class="fa-solid fa-mobile-screen"></i> <span>카드 요약</span>
+                    </button>
+                    <button type="button" class="btn-toggle-view" id="btnViewTable" onclick="window.switchWinProbViewMode('table')">
+                        <i class="fa-solid fa-table"></i> <span>전체 표</span>
+                    </button>
+                </div>
             </div>
+
+            <!-- Mobile Swipe Hint (visible in table mode) -->
             <div class="win-prob-scroll-hint">
                 <i class="fa-solid fa-arrows-left-right"></i>
                 <span>좌우로 밀어서 5개 항목 전체 대조표 보기</span>
             </div>
+
+            <!-- 3-A. Desktop Table View -->
             <div class="win-prob-responsive-table">
                 <table class="win-prob-table">
                     <thead>
@@ -494,6 +509,166 @@ export function renderWinProbModalContent(tabId = 'v4') {
                     </tbody>
                 </table>
             </div>
+
+            <!-- 3-B. Mobile Rank Cards (Fold 7 및 모바일 완벽 대응 - 가로스크롤 및 글자 겹침 100% 박멸) -->
+            <div class="win-prob-mobile-card-list">
+                <!-- 1등 -->
+                <div class="win-prob-m-card">
+                    <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                            <span class="rank-badge rank-1">🥇 1등</span>
+                            <span class="win-prob-m-cond">${theo.ranks[1].condition}</span>
+                        </div>
+                        <span class="badge-neutral">이론치 추종</span>
+                    </div>
+                    <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                            <span class="stat-lbl">로또 자동 (이론치)</span>
+                            <span class="stat-val">${theo.ranks[1].prob}%</span>
+                            <span class="stat-sub">${theo.ranks[1].ratioStr}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box">
+                            <span class="stat-lbl">당 프로그램 실전</span>
+                            <span class="stat-val">${data.rankHits[1]}건 (${data.rates[1]}%)</span>
+                            <span class="stat-sub">${data.totalGames}게임 전수</span>
+                        </div>
+                    </div>
+                    <div class="win-prob-m-note">${data.notes[1]}</div>
+                </div>
+
+                <!-- 2등 -->
+                <div class="win-prob-m-card">
+                    <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                            <span class="rank-badge rank-2">🥈 2등</span>
+                            <span class="win-prob-m-cond">${theo.ranks[2].condition}</span>
+                        </div>
+                        <span class="badge-neutral">이론치 추종</span>
+                    </div>
+                    <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                            <span class="stat-lbl">로또 자동 (이론치)</span>
+                            <span class="stat-val">${theo.ranks[2].prob}%</span>
+                            <span class="stat-sub">${theo.ranks[2].ratioStr}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box">
+                            <span class="stat-lbl">당 프로그램 실전</span>
+                            <span class="stat-val">${data.rankHits[2]}건 (${data.rates[2]}%)</span>
+                            <span class="stat-sub">${data.totalGames}게임 전수</span>
+                        </div>
+                    </div>
+                    <div class="win-prob-m-note">${data.notes[2]}</div>
+                </div>
+
+                <!-- 3등 -->
+                <div class="win-prob-m-card">
+                    <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                            <span class="rank-badge rank-3">🥉 3등</span>
+                            <span class="win-prob-m-cond">${theo.ranks[3].condition}</span>
+                        </div>
+                        <span class="badge-neutral">초근접 포획중</span>
+                    </div>
+                    <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                            <span class="stat-lbl">로또 자동 (이론치)</span>
+                            <span class="stat-val">${theo.ranks[3].prob}%</span>
+                            <span class="stat-sub">${theo.ranks[3].ratioStr}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box">
+                            <span class="stat-lbl">당 프로그램 실전</span>
+                            <span class="stat-val">${data.rankHits[3]}건 (${data.rates[3]}%)</span>
+                            <span class="stat-sub">${data.totalGames}게임 전수</span>
+                        </div>
+                    </div>
+                    <div class="win-prob-m-note">${data.notes[3]}</div>
+                </div>
+
+                <!-- 4등 (핵심 하이라이트) -->
+                <div class="win-prob-m-card highlight-gold">
+                    <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                            <span class="rank-badge rank-4">✨ 4등</span>
+                            <span class="win-prob-m-cond">${theo.ranks[4].condition}</span>
+                        </div>
+                        <span class="badge-surge-lg">${data.multipliers[4]}</span>
+                    </div>
+                    <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                            <span class="stat-lbl">로또 자동 (이론치)</span>
+                            <span class="stat-val">${theo.ranks[4].prob}%</span>
+                            <span class="stat-sub">${theo.ranks[4].ratioStr}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box highlight">
+                            <span class="stat-lbl">당 프로그램 실전</span>
+                            <span class="stat-val text-gold">${data.rankHits[4]}건 (${data.rates[4]}%)</span>
+                            <span class="stat-sub text-gold">${data.cycleGames[4]}</span>
+                        </div>
+                    </div>
+                    <div class="win-prob-m-note highlight text-gold">
+                        <strong>${data.notes[4]}</strong>
+                        <span class="win-prob-m-zscore">Z-검정: ${data.zScores[4]}</span>
+                    </div>
+                </div>
+
+                <!-- 5등 (핵심 하이라이트) -->
+                <div class="win-prob-m-card highlight-emerald">
+                    <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                            <span class="rank-badge rank-5">⭐ 5등</span>
+                            <span class="win-prob-m-cond">${theo.ranks[5].condition}</span>
+                        </div>
+                        <span class="badge-green-lg">${data.multipliers[5]}</span>
+                    </div>
+                    <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                            <span class="stat-lbl">로또 자동 (이론치)</span>
+                            <span class="stat-val">${theo.ranks[5].prob}%</span>
+                            <span class="stat-sub">${theo.ranks[5].ratioStr}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box highlight">
+                            <span class="stat-lbl">당 프로그램 실전</span>
+                            <span class="stat-val text-emerald">${data.rankHits[5]}건 (${data.rates[5]}%)</span>
+                            <span class="stat-sub text-emerald">${data.cycleGames[5]}</span>
+                        </div>
+                    </div>
+                    <div class="win-prob-m-note highlight text-emerald">
+                        <strong>${data.notes[5]}</strong>
+                        <span class="win-prob-m-zscore">Z-검정: ${data.zScores[5]}</span>
+                    </div>
+                </div>
+
+                <!-- 총 당첨 합계 -->
+                <div class="win-prob-m-card total-card">
+                    <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                            <strong style="font-size:0.84rem; color:#f8fafc;">🏆 총 당첨 합계 (5등 이상)</strong>
+                        </div>
+                        <span class="badge-cyan-lg">${data.multipliers.total}</span>
+                    </div>
+                    <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                            <span class="stat-lbl">로또 자동 합계</span>
+                            <span class="stat-val">${theo.totalWin.prob}%</span>
+                            <span class="stat-sub">${theo.totalWin.ratioStr}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box highlight">
+                            <span class="stat-lbl">당 프로그램 합계</span>
+                            <span class="stat-val text-cyan">${data.totalHits}건 (${data.totalRate}%)</span>
+                            <span class="stat-sub text-cyan">${data.cycleGames.total}</span>
+                        </div>
+                    </div>
+                    <div class="win-prob-m-note" style="background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.3);">
+                        <strong style="color: #fde047; font-size: 0.78rem;">실전 환급률: ${data.roi}% (+${data.totalPrize.toLocaleString()}원 회수)</strong>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- 4. Why Lucky777 Outperforms Auto (3 Science Pillars) -->
@@ -526,10 +701,35 @@ export function renderWinProbModalContent(tabId = 'v4') {
     `;
 }
 
+let currentViewMode = 'card';
+
+/**
+ * Switch table vs mobile card view mode
+ */
+export function switchWinProbViewMode(mode) {
+    currentViewMode = mode;
+    const wrap = document.querySelector('.win-prob-table-wrap');
+    const btnCard = document.getElementById('btnViewCard');
+    const btnTable = document.getElementById('btnViewTable');
+    if (!wrap) return;
+    if (mode === 'table') {
+        wrap.classList.add('force-table-mode');
+        wrap.classList.remove('force-card-mode');
+        if (btnTable) btnTable.classList.add('active');
+        if (btnCard) btnCard.classList.remove('active');
+    } else {
+        wrap.classList.add('force-card-mode');
+        wrap.classList.remove('force-table-mode');
+        if (btnCard) btnCard.classList.add('active');
+        if (btnTable) btnTable.classList.remove('active');
+    }
+}
+
 // Global window bindings
 if (typeof window !== 'undefined') {
     window.openWinProbComparisonModal = openWinProbComparisonModal;
     window.closeWinProbComparisonModal = closeWinProbComparisonModal;
     window.switchWinProbTab = switchWinProbTab;
     window.renderWinProbModalContent = renderWinProbModalContent;
+    window.switchWinProbViewMode = switchWinProbViewMode;
 }

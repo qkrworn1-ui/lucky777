@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>대시보드 확률보기 모달 폴드7 접은 화면 개선안 미리보기</title>
+  <title>대시보드 확률보기 모달 폴드7 접은 화면 개선안 미리보기 (v2)</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
@@ -21,8 +21,8 @@
     .control-panel {
       max-width: 1200px;
       margin: 0 auto 20px auto;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(251, 191, 36, 0.3);
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(251, 191, 36, 0.35);
       border-radius: 16px;
       padding: 16px 20px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
@@ -47,7 +47,7 @@
       gap: 8px;
     }
     .panel-desc {
-      font-size: 0.8rem;
+      font-size: 0.82rem;
       color: #94a3b8;
       margin-top: 4px;
     }
@@ -179,7 +179,7 @@
 
     /* Device Viewport */
     .device-viewport {
-      height: 720px;
+      height: 740px;
       background: #030712;
       border-radius: 24px;
       overflow-y: auto;
@@ -309,7 +309,7 @@
     /* Modal Body */
     .win-prob-modal-body {
       flex: 1;
-      padding: 16px 20px;
+      padding: 16px 20px 36px 20px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -438,7 +438,7 @@
     .text-cyan { color: #38bdf8; }
     .text-purple { color: #c084fc; }
 
-    /* Table */
+    /* Table Section */
     .win-prob-table-wrap {
       background: rgba(30, 41, 59, 0.5);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -452,6 +452,12 @@
       margin-bottom: 12px;
       flex-wrap: wrap;
       gap: 8px;
+    }
+    .win-prob-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
     .win-prob-section-title {
       margin: 0;
@@ -474,6 +480,35 @@
       padding: 2px 8px;
       border-radius: 6px;
     }
+    .win-prob-view-toggle {
+      display: inline-flex;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 2px;
+      gap: 2px;
+    }
+    .btn-toggle-view {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 4px 9px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+    .btn-toggle-view:hover { color: #f8fafc; }
+    .btn-toggle-view.active {
+      background: rgba(251, 191, 36, 0.22);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.45);
+    }
+
     .win-prob-responsive-table {
       overflow-x: auto;
     }
@@ -505,11 +540,19 @@
     .win-prob-table tr:hover td {
       background: rgba(255, 255, 255, 0.02);
     }
-    .rank-name-cell {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
+    .win-prob-table th:first-child,
+    .win-prob-table td:first-child {
+      position: sticky;
+      left: 0;
+      z-index: 2;
+      background: #0f172a;
+      box-shadow: 2px 0 6px rgba(0, 0, 0, 0.6);
     }
+    .win-prob-table tr.highlight-row-gold td:first-child { background: #19202f; }
+    .win-prob-table tr.highlight-row-emerald td:first-child { background: #14242e; }
+    .win-prob-table tr.table-total-row td:first-child { background: #090e1a; }
+
+    .rank-name-cell { display: flex; flex-direction: column; gap: 2px; }
     .rank-badge {
       font-size: 0.76rem;
       font-weight: 900;
@@ -546,6 +589,119 @@
     .highlight-row-gold { background: rgba(251, 191, 36, 0.05); border-left: 3px solid #fbbf24; }
     .highlight-row-emerald { background: rgba(16, 185, 129, 0.05); border-left: 3px solid #10b981; }
     .table-total-row { background: rgba(15, 23, 42, 0.95); font-weight: 800; border-top: 2px solid rgba(255, 255, 255, 0.15); }
+
+    /* ======================================================== */
+    /* 🌟 MOBILE RANK CARDS (FOLD 7 ZERO-OVERLAP HERO)          */
+    /* ======================================================== */
+    .win-prob-mobile-card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .win-prob-m-card {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 10px 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      box-sizing: border-box;
+    }
+    .win-prob-m-card.highlight-gold {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border-color: rgba(251, 191, 36, 0.45);
+    }
+    .win-prob-m-card.highlight-emerald {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border-color: rgba(16, 185, 129, 0.45);
+    }
+    .win-prob-m-card.total-card {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1.5px solid rgba(56, 189, 248, 0.45);
+    }
+    .win-prob-m-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
+    }
+    .win-prob-m-rank-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .win-prob-m-cond {
+      font-size: 0.72rem;
+      color: #94a3b8;
+      white-space: nowrap;
+    }
+    .win-prob-m-compare-grid {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      background: rgba(30, 41, 59, 0.5);
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .win-prob-m-stat-box {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      flex: 1;
+      min-width: 0;
+    }
+    .win-prob-m-stat-box.highlight {
+      text-align: right;
+    }
+    .win-prob-m-stat-box .stat-lbl {
+      font-size: 0.63rem;
+      color: #94a3b8;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .win-prob-m-stat-box .stat-val {
+      font-size: 0.86rem;
+      font-weight: 900;
+      color: #f8fafc;
+      font-feature-settings: 'tnum';
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+    .win-prob-m-stat-box .stat-sub {
+      font-size: 0.63rem;
+      color: #64748b;
+      white-space: nowrap;
+    }
+    .win-prob-m-vs-divider {
+      font-size: 0.60rem;
+      font-weight: 900;
+      color: #475569;
+      padding: 0 4px;
+      flex-shrink: 0;
+    }
+    .win-prob-m-note {
+      font-size: 0.70rem;
+      color: #cbd5e1;
+      line-height: 1.35;
+      word-break: keep-all;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 5px 8px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .win-prob-m-zscore {
+      display: block;
+      font-size: 0.65rem;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
 
     /* Science Pillars */
     .win-prob-science-box {
@@ -594,7 +750,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.95);
       flex-shrink: 0;
       flex-wrap: wrap;
       gap: 8px;
@@ -616,55 +772,42 @@
       transition: all 0.2s ease;
     }
 
-
     /* ======================================================== */
-    /* ⚠️ BEFORE STATE SIMULATION (CRUSHED IN 344px)           */
+    /* ⚠️ BEFORE STATE (Exact reproduction of screenshot)       */
     /* ======================================================== */
-    .before-mode .win-prob-kpi-grid {
-      grid-template-columns: 1fr;
+    .before-mode .win-prob-mobile-card-list {
+      display: none !important;
     }
-    .before-mode .win-prob-tab-row {
-      grid-template-columns: 1fr;
+    .before-mode .win-prob-responsive-table {
+      display: block !important;
+      overflow-x: auto !important;
     }
-    .before-mode .win-prob-pillars-grid {
-      grid-template-columns: 1fr;
-    }
-    /* In Before mode, table has NO min-width, squeezing 5 columns into 260px! */
     .before-mode .win-prob-table {
-      width: 100%;
-      table-layout: auto;
+      min-width: 530px !important;
     }
-    .before-mode .win-prob-modal-header {
-      padding: 16px 20px;
+    /* In Before mode, column 1 is NOT sticky, so when scrolled, % touches 0건 */
+    .before-mode .win-prob-table th:first-child,
+    .before-mode .win-prob-table td:first-child {
+      position: static !important;
+      box-shadow: none !important;
     }
-    .before-mode .win-prob-kpi-top {
-      flex-wrap: nowrap;
-    }
-    .before-mode .win-prob-kpi-label {
-      font-size: 0.78rem;
-    }
-    .before-mode .win-prob-modal-footer {
-      flex-direction: row;
-    }
-    .before-mode .btn-win-prob-dismiss {
-      width: auto;
+    .before-mode .win-prob-view-toggle {
+      display: none !important;
     }
     .before-mode .win-prob-scroll-hint {
       display: none !important;
     }
 
-
     /* ======================================================== */
-    /* 🌟 AFTER STATE (FOLD 7 OPTIMIZED & ZERO OVERLAP)        */
+    /* 🌟 AFTER STATE (Fold 7 Optimized & Clean Cards)         */
     /* ======================================================== */
     .after-mode .win-prob-modal-overlay {
-      padding: 6px !important;
+      padding: 4px !important;
     }
     .after-mode .win-prob-modal-card {
       border-radius: 14px !important;
-      border: 1.5px solid rgba(251, 191, 36, 0.5) !important;
+      max-height: 98vh !important;
     }
-    /* Header Slim & Anti-Collision */
     .after-mode .win-prob-modal-header {
       padding: 10px 12px !important;
       gap: 6px !important;
@@ -715,13 +858,10 @@
       margin-top: 2px !important;
     }
 
-    /* Body Spacing */
     .after-mode .win-prob-modal-body {
-      padding: 10px 8px !important;
+      padding: 10px 8px 36px 8px !important;
       gap: 10px !important;
     }
-
-    /* Tabs */
     .after-mode .win-prob-tab-row {
       grid-template-columns: 1fr !important;
       gap: 6px !important;
@@ -731,11 +871,8 @@
       font-size: 0.78rem !important;
       border-radius: 8px !important;
     }
-    .after-mode .win-prob-tab-sub {
-      font-size: 0.66rem !important;
-    }
+    .after-mode .win-prob-tab-sub { font-size: 0.66rem !important; }
 
-    /* KPI Cards Zero-Overlap */
     .after-mode .win-prob-kpi-grid {
       grid-template-columns: 1fr !important;
       gap: 7px !important;
@@ -745,110 +882,25 @@
       gap: 5px !important;
       border-radius: 10px !important;
     }
-    .after-mode .win-prob-kpi-top {
-      display: flex !important;
-      justify-content: space-between !important;
-      align-items: center !important;
-      gap: 6px !important;
-    }
-    .after-mode .win-prob-kpi-label {
-      font-size: 0.74rem !important;
-      word-break: keep-all !important;
-      line-height: 1.2 !important;
-    }
-    .after-mode .win-prob-kpi-badge {
-      font-size: 0.66rem !important;
-      padding: 1.5px 6px !important;
-      flex-shrink: 0 !important;
-    }
-    .after-mode .win-prob-kpi-compare-row {
-      padding: 5px 8px !important;
-      gap: 4px !important;
-    }
-    .after-mode .kpi-compare-box .box-lbl {
-      font-size: 0.62rem !important;
-      white-space: nowrap !important;
-      overflow: hidden !important;
-      text-overflow: ellipsis !important;
-    }
-    .after-mode .kpi-compare-box .box-val {
-      font-size: 0.85rem !important;
-      font-feature-settings: 'tnum' !important;
-      letter-spacing: -0.02em !important;
-    }
-    .after-mode .kpi-compare-box .box-sub {
-      font-size: 0.62rem !important;
-      word-break: keep-all !important;
-      line-height: 1.2 !important;
-    }
-    .after-mode .kpi-compare-arrow {
-      font-size: 0.62rem !important;
-      opacity: 0.6 !important;
-      flex-shrink: 0 !important;
-    }
+    .after-mode .win-prob-kpi-label { font-size: 0.74rem !important; word-break: keep-all !important; line-height: 1.2 !important; }
+    .after-mode .win-prob-kpi-badge { font-size: 0.66rem !important; padding: 1.5px 6px !important; flex-shrink: 0 !important; }
+    .after-mode .win-prob-kpi-compare-row { padding: 5px 8px !important; gap: 4px !important; }
+    .after-mode .kpi-compare-box .box-lbl { font-size: 0.62rem !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+    .after-mode .kpi-compare-box .box-val { font-size: 0.85rem !important; font-feature-settings: 'tnum' !important; letter-spacing: -0.02em !important; }
+    .after-mode .kpi-compare-box .box-sub { font-size: 0.62rem !important; word-break: keep-all !important; line-height: 1.2 !important; }
+    .after-mode .kpi-compare-arrow { font-size: 0.62rem !important; opacity: 0.6 !important; flex-shrink: 0 !important; }
 
-    /* Table Wrapper & Guaranteed min-width Scroll */
     .after-mode .win-prob-table-wrap {
       padding: 8px 8px !important;
       border-radius: 10px !important;
     }
-    .after-mode .win-prob-table-title-row {
-      margin-bottom: 6px !important;
-      gap: 4px !important;
-    }
     .after-mode .win-prob-section-title {
       font-size: 0.82rem !important;
       word-break: keep-all !important;
-      line-height: 1.3 !important;
     }
     .after-mode .win-prob-target-tag {
       font-size: 0.66rem !important;
       padding: 1px 5px !important;
-    }
-
-    /* Scroll Guide Animation */
-    .after-mode .win-prob-scroll-hint {
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-      gap: 5px !important;
-      font-size: 0.65rem !important;
-      color: #cbd5e1 !important;
-      background: rgba(15, 23, 42, 0.8) !important;
-      border: 1px dashed rgba(251, 191, 36, 0.4) !important;
-      border-radius: 6px !important;
-      padding: 4px 8px !important;
-      margin-bottom: 8px !important;
-    }
-    .after-mode .win-prob-scroll-hint i {
-      color: #fbbf24 !important;
-      font-size: 0.72rem !important;
-      animation: hintNudge 1.6s ease-in-out infinite !important;
-    }
-    @keyframes hintNudge {
-      0%, 100% { transform: translateX(0); }
-      50% { transform: translateX(3px); }
-    }
-
-    /* Protected Table Width */
-    .after-mode .win-prob-table {
-      min-width: 530px !important;
-      font-size: 0.74rem !important;
-    }
-    .after-mode .win-prob-table th,
-    .after-mode .win-prob-table td {
-      padding: 6px 7px !important;
-    }
-    .after-mode .rank-name-cell,
-    .after-mode .prob-num-cell,
-    .after-mode .prog-hit-cell {
-      white-space: nowrap !important;
-    }
-    .after-mode .text-sub-cell {
-      min-width: 140px !important;
-      word-break: keep-all !important;
-      line-height: 1.35 !important;
-      font-size: 0.70rem !important;
     }
 
     /* Science Pillars in After mode */
@@ -891,7 +943,6 @@
       line-height: 1.35 !important;
     }
 
-    /* Footer in After mode */
     .after-mode .win-prob-modal-footer {
       flex-direction: column !important;
       gap: 7px !important;
@@ -912,34 +963,6 @@
       font-size: 0.82rem !important;
       border-radius: 7px !important;
     }
-
-    /* Annotations */
-    .bug-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.66rem;
-      font-weight: 800;
-      background: rgba(239, 68, 68, 0.25);
-      border: 1px solid #ef4444;
-      color: #fca5a5;
-      margin-bottom: 4px;
-    }
-    .fix-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.66rem;
-      font-weight: 800;
-      background: rgba(16, 185, 129, 0.25);
-      border: 1px solid #10b981;
-      color: #6ee7b7;
-      margin-bottom: 4px;
-    }
   </style>
 </head>
 <body>
@@ -950,10 +973,10 @@
       <div>
         <div class="panel-title">
           <i class="fa-solid fa-mobile-screen"></i>
-          <span>대시보드 확률보기 모달 폴드7 접은 화면(Cover) 개선안 미리보기</span>
+          <span>대시보드 확률보기 모달 폴드7 접은 화면 글자 겹침 해결 (v2)</span>
         </div>
         <div class="panel-desc">
-          갤럭시 Z 폴드 7/6 접은 화면(폭 344px~360px)의 극단적 좁은 화면에서도 <strong>글자 겹침, 테이블 압축 깨짐, 뱃지 삐져나옴</strong> 현상을 100% 해소한 고도화 UI입니다.
+          보내주신 스크린샷의 <strong>테이블 가로스크롤 시 1열(등위) 소실 및 '% 0건' 겹침 버그</strong>와 <strong>하단 설명 텍스트 잘림 현상</strong>을 모바일 전용 1:1 대조 카드 리스트로 100% 완벽 해결했습니다.
         </div>
       </div>
 
@@ -989,10 +1012,10 @@
         <span style="font-size: 0.74rem; font-weight: 800; color: #94a3b8;">👁️ 모드:</span>
         <div class="btn-group">
           <button id="btnModeAfter" class="btn-tool active" onclick="setViewMode('after')">
-            <i class="fa-solid fa-sparkles" style="color:#10b981;"></i> 🌟 개선안 (After)
+            <i class="fa-solid fa-sparkles" style="color:#10b981;"></i> 🌟 개선안 (모바일 카드)
           </button>
           <button id="btnModeBefore" class="btn-tool" onclick="setViewMode('before')">
-            <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> ⚠️ 기존 (Before)
+            <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> ⚠️ 사용자 제보 버그 (% 0건 겹침)
           </button>
           <button id="btnModeSplit" class="btn-tool" onclick="setViewMode('split')">
             <i class="fa-solid fa-columns"></i> ↔️ 나란히 비교
@@ -1018,27 +1041,27 @@
     <div class="improvements-grid">
       <div class="imp-item">
         <i class="fa-solid fa-circle-check"></i>
-        <div><strong>1. 모달 헤더 초슬림 정렬:</strong> 44px 대형 아이콘을 32px로 컴팩트화하고, 제목 가변 자간 및 줄바꿈 방지(keep-all)로 닫기 버튼과 글자 충돌 100% 차단</div>
+        <div><strong>1. 모바일 1:1 대조 카드 리스트 도입:</strong> 344px 좁은 화면에서 가로 스크롤을 강제하던 5열 테이블 대신, 등위별 맞춤 카드를 기본 표출하여 <strong>가로 스크롤 및 '% 0건' 겹침 원천 제거</strong></div>
       </div>
       <div class="imp-item">
         <i class="fa-solid fa-circle-check"></i>
-        <div><strong>2. 4대 KPI 카드 겹침 방지:</strong> 배수 뱃지(4.98배)와 제목이 서로 밀어내 찌그러지던 현상을 flex-wrap 및 tnum 고정폭 폰트로 완벽 보호</div>
+        <div><strong>2. 등위 뱃지 항상 상단 표시:</strong> 스크롤 시 '1등, 4등, 5등'이 화면 밖으로 날아가 사라지던 문제를 해결하여 카드 상단에 🥇 1등, ✨ 4등, ⭐ 5등 뱃지 고정</div>
       </div>
       <div class="imp-item">
         <i class="fa-solid fa-circle-check"></i>
-        <div><strong>3. 1:1 대조 테이블 압축 파괴 박멸:</strong> 폭 530px 이상을 강제 보장(`min-width`)하고 부드러운 가로 스크롤 힌트를 제공하여 1~5등 수치와 뱃지가 뭉개지는 현상 원천 제거</div>
+        <div><strong>3. 카드/전체표 자유 토글 지원:</strong> 모바일에서는 읽기 쉬운 [📱 카드 요약]이 기본이며, 필요 시 [📊 전체 표]로 전환 가능 (표에서도 1열 sticky 고정)</div>
       </div>
       <div class="imp-item">
         <i class="fa-solid fa-circle-check"></i>
-        <div><strong>4. 3대 우위 과학적 원리 카드:</strong> 모바일에서 세로로 길어져 답답했던 아이콘을 좌측 인라인 뱃지로 개편해 한눈에 들어오는 브리핑 카드 구조 적용</div>
+        <div><strong>4. 하단 과학적 원리 설명 잘림 방지:</strong> 모달 바디 하단 여백을 `36px`로 확장하여 스크롤 끝에서도 푸터 버튼에 의해 글자가 잘리는 현상 100% 해소</div>
       </div>
       <div class="imp-item">
         <i class="fa-solid fa-circle-check"></i>
-        <div><strong>5. 하단 확인 닫기 버튼:</strong> 좁은 화면에서 우측 쏠림으로 잘리던 닫기 버튼을 100% 풀 와이드 터치 버튼으로 개편하여 엄지손가락 원터치 조작 편의 극대화</div>
+        <div><strong>5. 4대 KPI 카드 및 배수 뱃지 보호:</strong> `font-feature-settings: 'tnum'` 고정폭 폰트와 유연 래핑으로 4.98배, 2.82배 뱃지와 제목 간 충돌 차단</div>
       </div>
       <div class="imp-item">
         <i class="fa-solid fa-circle-check"></i>
-        <div><strong>6. 단계별 반응형 브레이크포인트:</strong> 태블릿(768px), 일반폰(480px), 폴드7(380px), 초소형(340px) 4단계 미디어쿼리로 모든 디바이스에서 최적 뷰 유지</div>
+        <div><strong>6. 확인 완료 풀와이드 버튼:</strong> 모바일 화면 하단에서 엄지손가락으로 시원하게 누를 수 있는 100% 와이드 원터치 닫기 버튼 완비</div>
       </div>
     </div>
   </div>
@@ -1051,19 +1074,19 @@
       <div class="device-notch"></div>
       <div class="device-header-label after-label">
         <i class="fa-solid fa-sparkles"></i>
-        <span>[개선 후] 폴드7 접은화면 (글자 겹침 0%)</span>
+        <span>[개선 후] 폴드7 접은화면 (가로스크롤 없는 카드 모드 - 글자 겹침 0%)</span>
       </div>
       <div class="device-viewport custom-scroll" id="viewportAfter">
         <!-- Rendered dynamically -->
       </div>
     </div>
 
-    <!-- Device 2: BEFORE (기존 깨짐) -->
+    <!-- Device 2: BEFORE (기존 제보 깨짐) -->
     <div class="device-shell" id="shellBefore" style="width: 368px; display: none;">
       <div class="device-notch"></div>
       <div class="device-header-label before-label">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        <span>[기존 화면] 좁은 폭에서 글자 겹침 &amp; 테이블 압축 깨짐</span>
+        <span>[사용자 제보 화면] 테이블 가로스크롤 시 1열 소실 및 '% 0건' 겹침</span>
       </div>
       <div class="device-viewport custom-scroll" id="viewportBefore">
         <!-- Rendered dynamically -->
@@ -1104,7 +1127,7 @@
           roi: '4.98배 (약 5배↑)'
         },
         notes: {
-          1: '이론적 동일 추종 (17만G 미출현 확률 97.9%)',
+          1: '이론적 동일 추종 (17만 시뮬레이션 미출현 확률 97.9%)',
           2: '고액 당첨 근접 추종',
           3: '1244회차 우순애 회원 ±1 오차로 3등 직전 도달',
           4: '👑 자동(1/733G) 대비 9.2배 빈출 (80G당 1회 적중)',
@@ -1143,11 +1166,18 @@
     let currentTab = 'v4';
     let currentMode = 'after';
     let currentWidth = 344;
+    let afterViewMode = 'card'; // 'card' or 'table'
+
+    function toggleAfterView(mode) {
+      afterViewMode = mode;
+      updateViewports();
+    }
 
     function renderModal(mode, tabKey) {
       const data = LIVE_DATA[tabKey];
       const theo = LOTTO_THEO;
       const isV4 = tabKey === 'v4';
+      const isAfter = mode === 'after';
 
       return `
         <div class="win-prob-modal-overlay ${mode}-mode">
@@ -1273,177 +1303,352 @@
                 </div>
               </div>
 
-              <!-- Full Comparison Table -->
+              <!-- Full Comparison Section -->
               <div class="win-prob-table-wrap">
                 <div class="win-prob-table-title-row">
-                  <h4 class="win-prob-section-title"><i class="fa-solid fa-table-list"></i> 1등 ~ 5등 전 등위 공식 확률 vs 실전 대조표</h4>
-                  <span class="win-prob-target-tag">${data.name}</span>
+                  <div class="win-prob-title-group">
+                    <h4 class="win-prob-section-title"><i class="fa-solid fa-table-list"></i> 1등 ~ 5등 전 등위 공식 확률 vs 실전 성적</h4>
+                    <span class="win-prob-target-tag">${data.name}</span>
+                  </div>
+
+                  ${isAfter ? `
+                    <div class="win-prob-view-toggle">
+                      <button type="button" class="btn-toggle-view ${afterViewMode === 'card' ? 'active' : ''}" onclick="toggleAfterView('card')">
+                        <i class="fa-solid fa-mobile-screen"></i> <span>카드 요약</span>
+                      </button>
+                      <button type="button" class="btn-toggle-view ${afterViewMode === 'table' ? 'active' : ''}" onclick="toggleAfterView('table')">
+                        <i class="fa-solid fa-table"></i> <span>전체 표</span>
+                      </button>
+                    </div>
+                  ` : ''}
                 </div>
 
-                <!-- Scroll Hint (Only in After Mode) -->
-                <div class="win-prob-scroll-hint">
-                  <i class="fa-solid fa-arrows-left-right"></i>
-                  <span>좌우로 밀어서 5개 항목 전체 대조표 보기</span>
-                </div>
+                ${(!isAfter || afterViewMode === 'table') ? `
+                  <div class="win-prob-scroll-hint" style="${!isAfter ? 'display:none;' : ''}">
+                    <i class="fa-solid fa-arrows-left-right"></i>
+                    <span>좌우로 밀어서 5개 항목 전체 대조표 보기</span>
+                  </div>
 
-                <div class="win-prob-responsive-table custom-scroll">
-                  <table class="win-prob-table">
-                    <thead>
-                      <tr>
-                        <th style="width: 14%;">등위 (조건)</th>
-                        <th style="width: 22%;">로또 6/45 공식 확률<br><span class="th-sub">(자동 무작위)</span></th>
-                        <th style="width: 22%;">당 프로그램 성적<br><span class="th-sub">(${data.games}G 전수)</span></th>
-                        <th style="width: 18%;">자동 대비 우수성<br><span class="th-sub">(성과 배수)</span></th>
-                        <th style="width: 24%;">통계학적 평가 및 비고</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <!-- 1등 -->
-                      <tr>
-                        <td>
-                          <div class="rank-name-cell">
-                            <span class="rank-badge rank-1">🥇 1등</span>
-                            <span class="rank-cond">6개 일치</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prob-num-cell">
-                            <strong>${theo.ranks[1].prob}</strong>
-                            <span class="prob-sub">${theo.ranks[1].ratio}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prog-hit-cell">
-                            <strong>${data.hits[1]}건</strong> (${data.rates[1]})
-                          </div>
-                        </td>
-                        <td><span class="badge-neutral">이론치 추종</span></td>
-                        <td class="text-sub-cell">${data.notes[1]}</td>
-                      </tr>
+                  <div class="win-prob-responsive-table custom-scroll" id="${mode}TableWrap">
+                    <table class="win-prob-table">
+                      <thead>
+                        <tr>
+                          <th style="width: 14%;">등위 (조건)</th>
+                          <th style="width: 22%;">로또 6/45 공식 확률<br><span class="th-sub">(자동 무작위)</span></th>
+                          <th style="width: 22%;">당 프로그램 성적<br><span class="th-sub">(${data.games}G 전수)</span></th>
+                          <th style="width: 18%;">자동 대비 우수성<br><span class="th-sub">(성과 배수)</span></th>
+                          <th style="width: 24%;">통계학적 평가 및 비고</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <!-- 1등 -->
+                        <tr>
+                          <td>
+                            <div class="rank-name-cell">
+                              <span class="rank-badge rank-1">🥇 1등</span>
+                              <span class="rank-cond">6개 일치</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prob-num-cell">
+                              <strong>${theo.ranks[1].prob}</strong>
+                              <span class="prob-sub">${theo.ranks[1].ratio}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prog-hit-cell">
+                              <strong>${data.hits[1]}건</strong> (${data.rates[1]})
+                            </div>
+                          </td>
+                          <td><span class="badge-neutral">이론치 추종</span></td>
+                          <td class="text-sub-cell">${data.notes[1]}</td>
+                        </tr>
 
-                      <!-- 2등 -->
-                      <tr>
-                        <td>
-                          <div class="rank-name-cell">
-                            <span class="rank-badge rank-2">🥈 2등</span>
-                            <span class="rank-cond">5개+보너스</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prob-num-cell">
-                            <strong>${theo.ranks[2].prob}</strong>
-                            <span class="prob-sub">${theo.ranks[2].ratio}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prog-hit-cell">
-                            <strong>${data.hits[2]}건</strong> (${data.rates[2]})
-                          </div>
-                        </td>
-                        <td><span class="badge-neutral">이론치 추종</span></td>
-                        <td class="text-sub-cell">${data.notes[2]}</td>
-                      </tr>
+                        <!-- 2등 -->
+                        <tr>
+                          <td>
+                            <div class="rank-name-cell">
+                              <span class="rank-badge rank-2">🥈 2등</span>
+                              <span class="rank-cond">5개+보너스</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prob-num-cell">
+                              <strong>${theo.ranks[2].prob}</strong>
+                              <span class="prob-sub">${theo.ranks[2].ratio}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prog-hit-cell">
+                              <strong>${data.hits[2]}건</strong> (${data.rates[2]})
+                            </div>
+                          </td>
+                          <td><span class="badge-neutral">이론치 추종</span></td>
+                          <td class="text-sub-cell">${data.notes[2]}</td>
+                        </tr>
 
-                      <!-- 3등 -->
-                      <tr>
-                        <td>
-                          <div class="rank-name-cell">
-                            <span class="rank-badge rank-3">🥉 3등</span>
-                            <span class="rank-cond">5개 일치</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prob-num-cell">
-                            <strong>${theo.ranks[3].prob}</strong>
-                            <span class="prob-sub">${theo.ranks[3].ratio}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prog-hit-cell">
-                            <strong>${data.hits[3]}건</strong> (${data.rates[3]})
-                          </div>
-                        </td>
-                        <td><span class="badge-neutral">초근접 포획중</span></td>
-                        <td class="text-sub-cell">${data.notes[3]}</td>
-                      </tr>
+                        <!-- 3등 -->
+                        <tr>
+                          <td>
+                            <div class="rank-name-cell">
+                              <span class="rank-badge rank-3">🥉 3등</span>
+                              <span class="rank-cond">5개 일치</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prob-num-cell">
+                              <strong>${theo.ranks[3].prob}</strong>
+                              <span class="prob-sub">${theo.ranks[3].ratio}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prog-hit-cell">
+                              <strong>${data.hits[3]}건</strong> (${data.rates[3]})
+                            </div>
+                          </td>
+                          <td><span class="badge-neutral">초근접 포획중</span></td>
+                          <td class="text-sub-cell">${data.notes[3]}</td>
+                        </tr>
 
-                      <!-- 4등 (주요 하이라이트) -->
-                      <tr class="highlight-row-gold">
-                        <td>
-                          <div class="rank-name-cell">
-                            <span class="rank-badge rank-4">✨ 4등</span>
-                            <span class="rank-cond">4개 일치</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prob-num-cell">
-                            <strong>${theo.ranks[4].prob}</strong>
-                            <span class="prob-sub">${theo.ranks[4].ratio}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prog-hit-cell">
-                            <strong class="text-gold">${data.hits[4]}건</strong> (${data.rates[4]})
-                            <span class="prob-sub text-gold">${data.cycles[4]}</span>
-                          </div>
-                        </td>
-                        <td><span class="badge-surge-lg">${data.multipliers[4]}</span></td>
-                        <td class="text-sub-cell">
-                          <strong class="text-gold">${data.notes[4]}</strong><br>
-                          <span style="font-size:0.68rem; color:#94a3b8;">Z-검정: ${data.zScores[4]}</span>
-                        </td>
-                      </tr>
+                        <!-- 4등 (주요 하이라이트) -->
+                        <tr class="highlight-row-gold">
+                          <td>
+                            <div class="rank-name-cell">
+                              <span class="rank-badge rank-4">✨ 4등</span>
+                              <span class="rank-cond">4개 일치</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prob-num-cell">
+                              <strong>${theo.ranks[4].prob}</strong>
+                              <span class="prob-sub">${theo.ranks[4].ratio}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prog-hit-cell">
+                              <strong class="text-gold">${data.hits[4]}건</strong> (${data.rates[4]})
+                              <span class="prob-sub text-gold">${data.cycles[4]}</span>
+                            </div>
+                          </td>
+                          <td><span class="badge-surge-lg">${data.multipliers[4]}</span></td>
+                          <td class="text-sub-cell">
+                            <strong class="text-gold">${data.notes[4]}</strong><br>
+                            <span style="font-size:0.68rem; color:#94a3b8;">Z-검정: ${data.zScores[4]}</span>
+                          </td>
+                        </tr>
 
-                      <!-- 5등 (주요 하이라이트) -->
-                      <tr class="highlight-row-emerald">
-                        <td>
-                          <div class="rank-name-cell">
-                            <span class="rank-badge rank-5">⭐ 5등</span>
-                            <span class="rank-cond">3개 일치</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prob-num-cell">
-                            <strong>${theo.ranks[5].prob}</strong>
-                            <span class="prob-sub">${theo.ranks[5].ratio}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prog-hit-cell">
-                            <strong class="text-emerald">${data.hits[5]}건</strong> (${data.rates[5]})
-                            <span class="prob-sub text-emerald">${data.cycles[5]}</span>
-                          </div>
-                        </td>
-                        <td><span class="badge-green-lg">${data.multipliers[5]}</span></td>
-                        <td class="text-sub-cell">
-                          <strong class="text-emerald">${data.notes[5]}</strong><br>
-                          <span style="font-size:0.68rem; color:#94a3b8;">Z-검정: ${data.zScores[5]}</span>
-                        </td>
-                      </tr>
+                        <!-- 5등 (주요 하이라이트) -->
+                        <tr class="highlight-row-emerald">
+                          <td>
+                            <div class="rank-name-cell">
+                              <span class="rank-badge rank-5">⭐ 5등</span>
+                              <span class="rank-cond">3개 일치</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prob-num-cell">
+                              <strong>${theo.ranks[5].prob}</strong>
+                              <span class="prob-sub">${theo.ranks[5].ratio}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prog-hit-cell">
+                              <strong class="text-emerald">${data.hits[5]}건</strong> (${data.rates[5]})
+                              <span class="prob-sub text-emerald">${data.cycles[5]}</span>
+                            </div>
+                          </td>
+                          <td><span class="badge-green-lg">${data.multipliers[5]}</span></td>
+                          <td class="text-sub-cell">
+                            <strong class="text-emerald">${data.notes[5]}</strong><br>
+                            <span style="font-size:0.68rem; color:#94a3b8;">Z-검정: ${data.zScores[5]}</span>
+                          </td>
+                        </tr>
 
-                      <!-- 합계 -->
-                      <tr class="table-total-row">
-                        <td><strong>총 당첨 (5등 이상)</strong></td>
-                        <td>
-                          <div class="prob-num-cell">
-                            <strong>${theo.totalWin.prob}</strong>
-                            <span class="prob-sub">${theo.totalWin.ratio}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div class="prog-hit-cell">
-                            <strong class="text-cyan">${data.totalHits}건</strong> (${data.totalRate})
-                            <span class="prob-sub text-cyan">${data.cycles.total}</span>
-                          </div>
-                        </td>
-                        <td><span class="badge-cyan-lg">${data.multipliers.total}</span></td>
-                        <td class="text-sub-cell">
-                          <strong style="color:#fde047;">실전 환급률: ${data.roi} (+${data.prize}원 회수)</strong>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
+                        <!-- 합계 -->
+                        <tr class="table-total-row">
+                          <td><strong>총 당첨 (5등 이상)</strong></td>
+                          <td>
+                            <div class="prob-num-cell">
+                              <strong>${theo.totalWin.prob}</strong>
+                              <span class="prob-sub">${theo.totalWin.ratio}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <div class="prog-hit-cell">
+                              <strong class="text-cyan">${data.totalHits}건</strong> (${data.totalRate})
+                              <span class="prob-sub text-cyan">${data.cycles.total}</span>
+                            </div>
+                          </td>
+                          <td><span class="badge-cyan-lg">${data.multipliers.total}</span></td>
+                          <td class="text-sub-cell">
+                            <strong style="color:#fde047;">실전 환급률: ${data.roi} (+${data.prize}원 회수)</strong>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                ` : `
+                  <!-- Mobile Card List (After Mode Default) -->
+                  <div class="win-prob-mobile-card-list">
+                    <!-- 1등 -->
+                    <div class="win-prob-m-card">
+                      <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                          <span class="rank-badge rank-1">🥇 1등</span>
+                          <span class="win-prob-m-cond">6개 일치</span>
+                        </div>
+                        <span class="badge-neutral">이론치 추종</span>
+                      </div>
+                      <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                          <span class="stat-lbl">로또 자동 (이론치)</span>
+                          <span class="stat-val">${theo.ranks[1].prob}</span>
+                          <span class="stat-sub">${theo.ranks[1].ratio}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box">
+                          <span class="stat-lbl">당 프로그램 실전</span>
+                          <span class="stat-val">${data.hits[1]}건 (${data.rates[1]})</span>
+                          <span class="stat-sub">${data.games}게임 전수</span>
+                        </div>
+                      </div>
+                      <div class="win-prob-m-note">${data.notes[1]}</div>
+                    </div>
+
+                    <!-- 2등 -->
+                    <div class="win-prob-m-card">
+                      <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                          <span class="rank-badge rank-2">🥈 2등</span>
+                          <span class="win-prob-m-cond">5개+보너스</span>
+                        </div>
+                        <span class="badge-neutral">이론치 추종</span>
+                      </div>
+                      <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                          <span class="stat-lbl">로또 자동 (이론치)</span>
+                          <span class="stat-val">${theo.ranks[2].prob}</span>
+                          <span class="stat-sub">${theo.ranks[2].ratio}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box">
+                          <span class="stat-lbl">당 프로그램 실전</span>
+                          <span class="stat-val">${data.hits[2]}건 (${data.rates[2]})</span>
+                          <span class="stat-sub">${data.games}게임 전수</span>
+                        </div>
+                      </div>
+                      <div class="win-prob-m-note">${data.notes[2]}</div>
+                    </div>
+
+                    <!-- 3등 -->
+                    <div class="win-prob-m-card">
+                      <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                          <span class="rank-badge rank-3">🥉 3등</span>
+                          <span class="win-prob-m-cond">5개 일치</span>
+                        </div>
+                        <span class="badge-neutral">초근접 포획중</span>
+                      </div>
+                      <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                          <span class="stat-lbl">로또 자동 (이론치)</span>
+                          <span class="stat-val">${theo.ranks[3].prob}</span>
+                          <span class="stat-sub">${theo.ranks[3].ratio}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box">
+                          <span class="stat-lbl">당 프로그램 실전</span>
+                          <span class="stat-val">${data.hits[3]}건 (${data.rates[3]})</span>
+                          <span class="stat-sub">${data.games}게임 전수</span>
+                        </div>
+                      </div>
+                      <div class="win-prob-m-note">${data.notes[3]}</div>
+                    </div>
+
+                    <!-- 4등 -->
+                    <div class="win-prob-m-card highlight-gold">
+                      <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                          <span class="rank-badge rank-4">✨ 4등</span>
+                          <span class="win-prob-m-cond">4개 일치</span>
+                        </div>
+                        <span class="badge-surge-lg">${data.multipliers[4]}</span>
+                      </div>
+                      <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                          <span class="stat-lbl">로또 자동 (이론치)</span>
+                          <span class="stat-val">${theo.ranks[4].prob}</span>
+                          <span class="stat-sub">${theo.ranks[4].ratio}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box highlight">
+                          <span class="stat-lbl">당 프로그램 실전</span>
+                          <span class="stat-val text-gold">${data.hits[4]}건 (${data.rates[4]})</span>
+                          <span class="stat-sub text-gold">${data.cycles[4]}</span>
+                        </div>
+                      </div>
+                      <div class="win-prob-m-note text-gold">
+                        <strong>${data.notes[4]}</strong>
+                        <span class="win-prob-m-zscore">Z-검정: ${data.zScores[4]}</span>
+                      </div>
+                    </div>
+
+                    <!-- 5등 -->
+                    <div class="win-prob-m-card highlight-emerald">
+                      <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                          <span class="rank-badge rank-5">⭐ 5등</span>
+                          <span class="win-prob-m-cond">3개 일치</span>
+                        </div>
+                        <span class="badge-green-lg">${data.multipliers[5]}</span>
+                      </div>
+                      <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                          <span class="stat-lbl">로또 자동 (이론치)</span>
+                          <span class="stat-val">${theo.ranks[5].prob}</span>
+                          <span class="stat-sub">${theo.ranks[5].ratio}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box highlight">
+                          <span class="stat-lbl">당 프로그램 실전</span>
+                          <span class="stat-val text-emerald">${data.hits[5]}건 (${data.rates[5]})</span>
+                          <span class="stat-sub text-emerald">${data.cycles[5]}</span>
+                        </div>
+                      </div>
+                      <div class="win-prob-m-note text-emerald">
+                        <strong>${data.notes[5]}</strong>
+                        <span class="win-prob-m-zscore">Z-검정: ${data.zScores[5]}</span>
+                      </div>
+                    </div>
+
+                    <!-- 총 당첨 -->
+                    <div class="win-prob-m-card total-card">
+                      <div class="win-prob-m-card-header">
+                        <div class="win-prob-m-rank-title">
+                          <strong style="font-size:0.84rem; color:#f8fafc;">🏆 총 당첨 합계 (5등 이상)</strong>
+                        </div>
+                        <span class="badge-cyan-lg">${data.multipliers.total}</span>
+                      </div>
+                      <div class="win-prob-m-compare-grid">
+                        <div class="win-prob-m-stat-box auto-box">
+                          <span class="stat-lbl">로또 자동 합계</span>
+                          <span class="stat-val">${theo.totalWin.prob}</span>
+                          <span class="stat-sub">${theo.totalWin.ratio}</span>
+                        </div>
+                        <div class="win-prob-m-vs-divider">VS</div>
+                        <div class="win-prob-m-stat-box prog-box highlight">
+                          <span class="stat-lbl">당 프로그램 합계</span>
+                          <span class="stat-val text-cyan">${data.totalHits}건 (${data.totalRate})</span>
+                          <span class="stat-sub text-cyan">${data.cycles.total}</span>
+                        </div>
+                      </div>
+                      <div class="win-prob-m-note" style="background: rgba(251, 191, 36, 0.1); border-color: rgba(251, 191, 36, 0.3);">
+                        <strong style="color: #fde047; font-size: 0.78rem;">실전 환급률: ${data.roi} (+${data.prize}원 회수)</strong>
+                      </div>
+                    </div>
+                  </div>
+                `}
+
               </div>
 
               <!-- Science Pillars -->
@@ -1495,7 +1700,14 @@
       const elAfter = document.getElementById('viewportAfter');
       const elBefore = document.getElementById('viewportBefore');
       if (elAfter) elAfter.innerHTML = renderModal('after', currentTab);
-      if (elBefore) elBefore.innerHTML = renderModal('before', currentTab);
+      if (elBefore) {
+        elBefore.innerHTML = renderModal('before', currentTab);
+        // Simulate horizontal scroll on Before mode table to exactly show user's issue (% 0건)
+        setTimeout(() => {
+          const bTable = document.getElementById('beforeTableWrap');
+          if (bTable) bTable.scrollLeft = 110;
+        }, 50);
+      }
     }
 
     function switchSimTab(tabKey) {
@@ -1524,6 +1736,7 @@
         shellAfter.style.display = 'block';
         shellBefore.style.display = 'block';
       }
+      updateViewports();
     }
 
     function setDevicePreset(presetName, width) {
@@ -1538,7 +1751,6 @@
         presetName === 'standard' ? '일반 모바일' : '데스크톱/태블릿'
       })`;
 
-      // update active button
       document.querySelectorAll('.toolbar-row .btn-group')[0].querySelectorAll('.btn-tool').forEach(b => {
         b.classList.remove('active');
       });

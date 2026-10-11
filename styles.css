@@ -20050,7 +20050,7 @@ body.is-admin .btn-snapshot-audit-compact {
 .win-prob-modal-body {
     flex: 1 !important;
     overflow-y: auto !important;
-    padding: 16px 20px !important;
+    padding: 16px 20px 36px 20px !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 16px !important;
@@ -20217,7 +20217,41 @@ body.is-admin .btn-snapshot-audit-compact {
     background: rgba(251, 191, 36, 0.15) !important;
     border: 1px solid rgba(251, 191, 36, 0.4) !important;
     padding: 2px 8px !important;
+.win-prob-title-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+}
+.win-prob-view-toggle {
+    display: inline-flex !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    padding: 2px !important;
+    gap: 2px !important;
+}
+.btn-toggle-view {
+    background: transparent !important;
+    border: none !important;
+    color: #94a3b8 !important;
+    padding: 4px 9px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
     border-radius: 6px !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    transition: all 0.15s ease !important;
+}
+.btn-toggle-view:hover {
+    color: #f8fafc !important;
+}
+.btn-toggle-view.active {
+    background: rgba(251, 191, 36, 0.22) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(251, 191, 36, 0.45) !important;
 }
 
 .win-prob-responsive-table {
@@ -20250,6 +20284,136 @@ body.is-admin .btn-snapshot-audit-compact {
 }
 .win-prob-table tr:hover td {
     background: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* 테이블 1열 고정 (스크롤 시에도 등위가 사라지거나 %와 겹치는 현상 원천 방지) */
+.win-prob-table th:first-child,
+.win-prob-table td:first-child {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    background: #0f172a !important;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.6) !important;
+}
+.win-prob-table tr.highlight-row-gold td:first-child {
+    background: #19202f !important;
+}
+.win-prob-table tr.highlight-row-emerald td:first-child {
+    background: #14242e !important;
+}
+.win-prob-table tr.table-total-row td:first-child {
+    background: #090e1a !important;
+}
+
+/* 모바일 1:1 대조 카드 리스트 (Fold 7 및 모바일 전용 - 가로스크롤 및 글자 겹침 100% 박멸) */
+.win-prob-mobile-card-list {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+}
+.win-prob-m-card {
+    background: rgba(15, 23, 42, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+    padding: 10px 11px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+    box-sizing: border-box !important;
+}
+.win-prob-m-card.highlight-gold {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+    border-color: rgba(251, 191, 36, 0.45) !important;
+}
+.win-prob-m-card.highlight-emerald {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.85) 100%) !important;
+    border-color: rgba(16, 185, 129, 0.45) !important;
+}
+.win-prob-m-card.total-card {
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1.5px solid rgba(56, 189, 248, 0.4) !important;
+}
+.win-prob-m-card-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+.win-prob-m-rank-title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    min-width: 0 !important;
+}
+.win-prob-m-cond {
+    font-size: 0.72rem !important;
+    color: #94a3b8 !important;
+    white-space: nowrap !important;
+}
+.win-prob-m-compare-grid {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
+    background: rgba(30, 41, 59, 0.5) !important;
+    padding: 6px 8px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+.win-prob-m-stat-box {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1px !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+.win-prob-m-stat-box.highlight {
+    text-align: right !important;
+}
+.win-prob-m-stat-box .stat-lbl {
+    font-size: 0.63rem !important;
+    color: #94a3b8 !important;
+    font-weight: 600 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+.win-prob-m-stat-box .stat-val {
+    font-size: 0.86rem !important;
+    font-weight: 900 !important;
+    color: #f8fafc !important;
+    font-feature-settings: 'tnum' !important;
+    letter-spacing: -0.02em !important;
+    white-space: nowrap !important;
+}
+.win-prob-m-stat-box .stat-sub {
+    font-size: 0.63rem !important;
+    color: #64748b !important;
+    white-space: nowrap !important;
+}
+.win-prob-m-vs-divider {
+    font-size: 0.60rem !important;
+    font-weight: 900 !important;
+    color: #475569 !important;
+    padding: 0 4px !important;
+    flex-shrink: 0 !important;
+}
+.win-prob-m-note {
+    font-size: 0.70rem !important;
+    color: #cbd5e1 !important;
+    line-height: 1.35 !important;
+    word-break: keep-all !important;
+    background: rgba(0, 0, 0, 0.25) !important;
+    padding: 5px 8px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+.win-prob-m-zscore {
+    display: block !important;
+    font-size: 0.65rem !important;
+    color: #94a3b8 !important;
+    margin-top: 2px !important;
 }
 
 .rank-name-cell {
@@ -20462,6 +20626,39 @@ body.is-admin .btn-snapshot-audit-compact {
     }
 }
 
+/* 모바일 기본: 대조 테이블 대신 100% 가로폭 맞춤형 모바일 카드 리스트 표출 (글자 겹침 0%) */
+@media (max-width: 640px) {
+    .win-prob-responsive-table {
+        display: none !important;
+    }
+    .win-prob-scroll-hint {
+        display: none !important;
+    }
+    .win-prob-mobile-card-list {
+        display: flex !important;
+    }
+    /* 사용자가 '전체 표' 버튼을 눌렀을 때만 가로 스크롤 테이블 표시 */
+    .win-prob-table-wrap.force-table-mode .win-prob-responsive-table {
+        display: block !important;
+    }
+    .win-prob-table-wrap.force-table-mode .win-prob-scroll-hint {
+        display: flex !important;
+    }
+    .win-prob-table-wrap.force-table-mode .win-prob-mobile-card-list {
+        display: none !important;
+    }
+    /* 사용자가 '카드 요약' 버튼을 눌렀을 때 */
+    .win-prob-table-wrap.force-card-mode .win-prob-responsive-table {
+        display: none !important;
+    }
+    .win-prob-table-wrap.force-card-mode .win-prob-scroll-hint {
+        display: none !important;
+    }
+    .win-prob-table-wrap.force-card-mode .win-prob-mobile-card-list {
+        display: flex !important;
+    }
+}
+
 @media (max-width: 480px) {
     .win-prob-modal-overlay {
         padding: 8px !important;
@@ -20519,7 +20716,7 @@ body.is-admin .btn-snapshot-audit-compact {
         margin-top: 2px !important;
     }
     .win-prob-modal-body {
-        padding: 12px 10px !important;
+        padding: 12px 10px 36px 10px !important;
         gap: 12px !important;
     }
     .win-prob-tab-row {
@@ -20739,7 +20936,7 @@ body.is-admin .btn-snapshot-audit-compact {
         font-size: 1.15rem !important;
     }
     .win-prob-modal-body {
-        padding: 10px 8px !important;
+        padding: 10px 8px 36px 8px !important;
         gap: 10px !important;
     }
     .win-prob-tab-btn {
