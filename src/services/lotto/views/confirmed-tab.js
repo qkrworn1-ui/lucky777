@@ -370,9 +370,9 @@ export async function renderConfirmedPurchasesList() {
 
                                     // Determine Algorithm Origin: Snapshot-driven evaluation for round >= 1239
                                     let algoClassified = false;
-                                    if (rnd >= 1239) {
+                                    if (round >= 1239) {
                                         try {
-                                            const { uV4, uV3, extraPacks } = getMemoizedRecommendations(rnd, uId);
+                                            const { uV4, uV3, extraPacks } = getMemoizedRecommendations(round, uId);
                                             const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
                                             if (match && match.isExact) {
                                                 if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('기본 2') || (match.label && match.label.includes('올라운더2'))) {
@@ -2627,6 +2627,7 @@ export function openSlimMemberPickerForConfirmed() {
     });
 
     openSlimMemberPickerModal({
+        selectedUserId: curTarget,
         currentUserId: curTarget,
         includeAll: true,
         allCardLabel: '👥 전체 회원 통합 보기',

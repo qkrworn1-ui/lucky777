@@ -178,15 +178,18 @@ export function openSlimMemberPickerModal(options = {}) {
 
     const {
         onSelect = null,
-        selectedUserId = 'all',
+        selectedUserId = null,
+        currentUserId = null,
         title = '조회 대상 회원 선택',
         subtitle = '회원을 탭하면 즉시 선택되어 전환됩니다.',
         includeAll = true,
+        allCardLabel = '전체 회원 통합 보기',
+        allCardSub = '(ALL)',
         customUserList = null
     } = options;
 
     _activeMemberPickerCallback = onSelect;
-    _tempSelectedMemberId = selectedUserId || 'all';
+    _tempSelectedMemberId = selectedUserId || currentUserId || 'all';
     _activeMemberCustomList = customUserList;
     _activeMemberIncludeAll = (includeAll !== false);
 
@@ -221,14 +224,14 @@ export function openSlimMemberPickerModal(options = {}) {
 
                 <!-- All Users Single-Line Item -->
                 <div id="slimMemberAllCardWrap" style="padding: 6px 12px 2px 12px; box-sizing: border-box;">
-                    <div id="slimMemberItem-all" onclick="window._pickSlimMemberAndClose('all', '전체 회원 통합 보기')" class="slim-picker-item" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.3);">
+                    <div id="slimMemberItem-all" role="button" tabindex="0" onclick="window._pickSlimMemberAndClose('all', '전체 회원 통합 보기')" class="slim-picker-item" style="background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.3);">
                         <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
                             <div style="width: 26px; height: 26px; border-radius: 50%; background: rgba(59, 130, 246, 0.2); color: #60a5fa; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; flex-shrink: 0;">
                                 <i class="fa-solid fa-users"></i>
                             </div>
                             <div style="display: flex; align-items: baseline; gap: 6px;">
-                                <span style="font-size: 0.82rem; font-weight: 700; color: #60a5fa;">전체 회원 통합 보기</span>
-                                <span style="font-size: 0.68rem; color: #94a3b8; font-family: monospace;">(ALL)</span>
+                                <span class="slim-member-all-label" style="font-size: 0.82rem; font-weight: 700; color: #60a5fa;">${allCardLabel}</span>
+                                <span class="slim-member-all-sub" style="font-size: 0.68rem; color: #94a3b8; font-family: monospace;">${allCardSub}</span>
                             </div>
                         </div>
                         <i class="fa-solid fa-angle-right" style="color: #64748b; font-size: 0.75rem;"></i>
@@ -261,6 +264,10 @@ export function openSlimMemberPickerModal(options = {}) {
     const allWrap = document.getElementById('slimMemberAllCardWrap');
     if (allWrap) {
         allWrap.style.display = _activeMemberIncludeAll ? 'block' : 'none';
+        const lbl = allWrap.querySelector('.slim-member-all-label');
+        if (lbl) lbl.textContent = allCardLabel || '전체 회원 통합 보기';
+        const sub = allWrap.querySelector('.slim-member-all-sub');
+        if (sub) sub.textContent = allCardSub || '(ALL)';
     }
 
     overlay.style.display = 'flex';
@@ -314,7 +321,7 @@ window._renderSlimMemberList = function() {
 
         const safeName = uDisplayName.replace(/'/g, "\\'");
         html += `
-            <div id="slimMemberItem-${uId}" onclick="window._pickSlimMemberAndClose('${uId}', '${safeName}')" class="slim-picker-item ${isSelected ? 'selected' : ''}">
+            <div id="slimMemberItem-${uId}" role="button" tabindex="0" onclick="window._pickSlimMemberAndClose('${uId}', '${safeName}')" class="slim-picker-item ${isSelected ? 'selected' : ''}">
                 <div style="display:flex; align-items:center; gap:9px; min-width:0; flex:1;">
                     <div style="width:26px; height:26px; border-radius:50%; background:${isAdm ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255,255,255,0.06)'}; border:1px solid ${isAdm ? 'rgba(245, 158, 11, 0.4)' : 'rgba(255,255,255,0.1)'}; color:${isAdm ? '#fbbf24' : '#94a3b8'}; font-size:0.72rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                         ${isAdm ? '<i class="fa-solid fa-crown" style="font-size:0.7rem;"></i>' : (uDisplayName[0] || 'U')}
@@ -334,13 +341,18 @@ window._renderSlimMemberList = function() {
 };
 
 window._pickSlimMemberAndClose = function(userId, displayName, rawObj) {
-    _tempSelectedMemberId = userId;
-    _tempSelectedMemberName = displayName;
-    if (typeof _activeMemberPickerCallback === 'function') {
-        const userObj = rawObj || { id: userId, name: displayName, userId: userId };
-        _activeMemberPickerCallback(userObj, userId);
+    try {
+        _tempSelectedMemberId = userId;
+        _tempSelectedMemberName = displayName;
+        if (typeof _activeMemberPickerCallback === 'function') {
+            const userObj = rawObj || { id: userId, name: displayName, userId: userId };
+            _activeMemberPickerCallback(userObj, userId);
+        }
+    } catch (err) {
+        console.error('[SlimMemberPicker] Error in onSelect callback:', err);
+    } finally {
+        window.closeSlimMemberPickerModal();
     }
-    window.closeSlimMemberPickerModal();
 };
 
 window._selectSlimMemberTemp = function(userId, displayName) {
@@ -373,7 +385,7 @@ export function openSlimRoundPickerModal(options = {}) {
         onSelect = null,
         selectedRound = 'all_rounds',
         title = '조회 대상 회차 선택',
-        subtitle = '회차를 탭하면 즉시 적용되어 창이 닫힙니다 (1235회~).',
+        subtitle = '회차를 탭하면 즉시 적용되어 창이 닫힙니다.',
         minRound = 1235,
         maxRound = null,
         includeAllRounds = true,
@@ -418,11 +430,11 @@ export function openSlimRoundPickerModal(options = {}) {
 
                 <!-- All Rounds Single-Line Item -->
                 <div id="slimRoundAllCardWrap" style="padding: 8px 14px 2px 14px; box-sizing: border-box;">
-                    <div id="slimRoundItem-all_rounds" onclick="window._pickSlimRoundAndClose('all_rounds', '전체 회차 누적 종합')" class="slim-picker-item" style="background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.3);">
+                    <div id="slimRoundItem-all_rounds" role="button" tabindex="0" onclick="window._pickSlimRoundAndClose('all_rounds', '전체 회차 누적 종합')" class="slim-picker-item" style="background: rgba(245, 158, 11, 0.08); border-color: rgba(245, 158, 11, 0.3);">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-layer-group text-amber-400" style="color: #fbbf24; font-size: 0.85rem;"></i>
                             <span style="font-size: 0.84rem; font-weight: 800; color: #fbbf24;">전체 회차 누적 종합</span>
-                            <span style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-weight: 800;">1235회~</span>
+                            <span id="slimRoundAllBadge" style="font-size: 0.65rem; padding: 1px 5px; border-radius: 4px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-weight: 800;">${_activeRoundMin >= 1235 ? '1235회~' : '전체'}</span>
                         </div>
                         <i class="fa-solid fa-angle-right" style="color: #64748b; font-size: 0.75rem;"></i>
                     </div>
@@ -435,7 +447,7 @@ export function openSlimRoundPickerModal(options = {}) {
 
                 <!-- Minimal Footer -->
                 <div class="slim-picker-footer" style="padding: 8px 14px; justify-content: space-between;">
-                    <span style="font-size: 0.72rem; color: #94a3b8;">⚡ 회차를 터치하면 즉시 적용 후 창이 닫힙니다 (1235회~).</span>
+                    <span style="font-size: 0.72rem; color: #94a3b8;">⚡ 회차를 터치하면 즉시 적용 후 창이 닫힙니다.</span>
                     <button type="button" onclick="window.closeSlimRoundPickerModal()" style="padding: 5px 12px; border-radius: 6px; font-size: 0.74rem; font-weight: 600; color: #cbd5e1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); cursor: pointer;">닫기</button>
                 </div>
             </div>
@@ -454,6 +466,8 @@ export function openSlimRoundPickerModal(options = {}) {
     const allRoundWrap = document.getElementById('slimRoundAllCardWrap');
     if (allRoundWrap) {
         allRoundWrap.style.display = _activeRoundIncludeAll ? 'block' : 'none';
+        const badge = document.getElementById('slimRoundAllBadge');
+        if (badge) badge.innerText = _activeRoundMin >= 1235 ? '1235회~' : '전체';
     }
 
     overlay.style.display = 'flex';
@@ -484,7 +498,7 @@ window._renderSlimRoundList = function(minRound = null, maxRound = null) {
         ? Math.max(window.state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || fallbackLatest));
 
-    const effectiveMin = Math.max(1235, (typeof minRound === 'number' && minRound > 0 ? minRound : (_activeRoundMin || 1235)));
+    const effectiveMin = (typeof minRound === 'number' && minRound > 0) ? minRound : (_activeRoundMin || 1235);
 
     let roundNumbers = [];
     if (_activeRoundAvailableRounds && _activeRoundAvailableRounds.length > 0) {
@@ -501,7 +515,7 @@ window._renderSlimRoundList = function(minRound = null, maxRound = null) {
     }
 
     if (roundNumbers.length === 0) {
-        container.innerHTML = `<div style="text-align:center; padding: 24px 10px; color:#64748b; font-size:0.75rem;">선택 가능한 1235회 이후 회차가 없습니다.</div>`;
+        container.innerHTML = `<div style="text-align:center; padding: 24px 10px; color:#64748b; font-size:0.75rem;">선택 가능한 회차가 없습니다.</div>`;
         return;
     }
 
@@ -511,7 +525,7 @@ window._renderSlimRoundList = function(minRound = null, maxRound = null) {
         const isSelected = String(_tempSelectedRoundVal) === String(r);
 
         html += `
-            <div id="slimRoundItem-${r}" onclick="window._pickSlimRoundAndClose('${r}', '제 ${r}회차')" class="slim-picker-item ${isSelected ? 'selected-round' : ''}">
+            <div id="slimRoundItem-${r}" role="button" tabindex="0" onclick="window._pickSlimRoundAndClose('${r}', '제 ${r}회차')" class="slim-picker-item ${isSelected ? 'selected-round' : ''}">
                 <div style="display:flex; align-items:center; gap:8px;">
                     <span style="font-size:0.88rem; font-weight:800; color:${isLatest ? '#fbbf24' : '#f8fafc'};">제 ${r}회</span>
                     ${isLatest ? '<span style="font-size:0.65rem; padding:1px 6px; border-radius:4px; background:rgba(245,158,11,0.2); color:#fbbf24; font-weight:800;">최신 회차</span>' : ''}
@@ -525,12 +539,17 @@ window._renderSlimRoundList = function(minRound = null, maxRound = null) {
 };
 
 window._pickSlimRoundAndClose = function(roundVal, displayName) {
-    _tempSelectedRoundVal = roundVal;
-    _tempSelectedRoundName = displayName;
-    if (typeof _activeRoundPickerCallback === 'function') {
-        _activeRoundPickerCallback(roundVal, displayName);
+    try {
+        _tempSelectedRoundVal = roundVal;
+        _tempSelectedRoundName = displayName;
+        if (typeof _activeRoundPickerCallback === 'function') {
+            _activeRoundPickerCallback(roundVal, displayName);
+        }
+    } catch (err) {
+        console.error('[SlimRoundPicker] Error in onSelect callback:', err);
+    } finally {
+        window.closeSlimRoundPickerModal();
     }
-    window.closeSlimRoundPickerModal();
 };
 
 window._selectSlimRoundTemp = function(roundVal, display) {

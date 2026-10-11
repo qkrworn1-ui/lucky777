@@ -22726,6 +22726,9 @@ body.lotto-mode-active .app-container {
     border-radius: 10px;
     padding: 7px 10px;
     cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
     transition: all 0.15s ease;
     display: flex;
     align-items: center;
@@ -22738,6 +22741,11 @@ body.lotto-mode-active .app-container {
     border-color: rgba(255, 255, 255, 0.18);
     background: rgba(30, 41, 59, 0.7);
     transform: translateY(-1px);
+}
+
+.slim-picker-item:active {
+    transform: scale(0.985);
+    background: rgba(30, 41, 59, 0.9);
 }
 
 .slim-picker-item.selected {

@@ -514,6 +514,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
+    const cacheKey = `${cleanUser}_${roundNum}`;
     if (isSystemOrDummyUser(cleanUser) || cleanUser === 'guest' ||
         cleanUser === 'kakao_5081608503' || cleanUser === 'kakao_5090399860' || cleanUser === 'kakao_5105087435' || cleanUser === 'kakao_5078158815') {
         const dummyResult = {
@@ -545,7 +546,6 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         _user70ReviewCache[cacheKey] = dummyResult;
         return dummyResult;
     }
-    const cacheKey = `${cleanUser}_${roundNum}`;
     if (_user70ReviewCache[cacheKey]) {
         return _user70ReviewCache[cacheKey];
     }
