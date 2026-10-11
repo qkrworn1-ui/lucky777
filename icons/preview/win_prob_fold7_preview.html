@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>대시보드 확률보기 모달 폴드7 접은 화면 개선안 미리보기</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    body {
+      margin: 0;
+      padding: 16px;
+      background: #060913;
+      color: #f8fafc;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Control Bar */
+    .control-panel {
+      max-width: 1200px;
+      margin: 0 auto 20px auto;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(251, 191, 36, 0.3);
+      border-radius: 16px;
+      padding: 16px 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      backdrop-filter: blur(10px);
+    }
+    .panel-header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 12px;
+    }
+    .panel-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-desc {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-top: 4px;
+    }
+    .toolbar-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .btn-group {
+      display: inline-flex;
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 3px;
+    }
+    .btn-tool {
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-tool:hover {
+      color: #f8fafc;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .btn-tool.active {
+      background: #fbbf24;
+      color: #0f172a;
+      box-shadow: 0 2px 8px rgba(251, 191, 36, 0.35);
+    }
+    .cur-res-badge {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      padding: 4px 10px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    /* Improvement Summary Pill List */
+    .improvements-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .imp-item {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      font-size: 0.74rem;
+      color: #cbd5e1;
+      background: rgba(30, 41, 59, 0.35);
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .imp-item i {
+      color: #10b981;
+      font-size: 0.85rem;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+    .imp-item strong {
+      color: #f8fafc;
+    }
+
+    /* Main Showcase Area */
+    .showcase-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+
+    /* Device Mockup Shell */
+    .device-shell {
+      background: #090d16;
+      border: 3px solid #334155;
+      border-radius: 36px;
+      padding: 12px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05);
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .device-notch {
+      width: 60px;
+      height: 4px;
+      background: #1e293b;
+      border-radius: 4px;
+      margin: 0 auto 10px auto;
+    }
+    .device-header-label {
+      text-align: center;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: #94a3b8;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .device-header-label.after-label {
+      color: #34d399;
+    }
+    .device-header-label.before-label {
+      color: #f87171;
+    }
+
+    /* Device Viewport */
+    .device-viewport {
+      height: 720px;
+      background: #030712;
+      border-radius: 24px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      border: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+    }
+
+    /* Custom Scrollbar */
+    .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.3); border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(251, 191, 36, 0.5); }
+
+    /* ======================================================== */
+    /* MODAL BASE STYLES                                        */
+    /* ======================================================== */
+    .win-prob-modal-overlay {
+      background: rgba(5, 10, 24, 0.95);
+      min-height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+    .win-prob-modal-card {
+      background: #0f172a;
+      border: 1.5px solid rgba(251, 191, 36, 0.45);
+      border-radius: 18px;
+      max-width: 900px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 65px rgba(0, 0, 0, 0.9), 0 0 30px rgba(251, 191, 36, 0.15);
+      overflow: hidden;
+      box-sizing: border-box;
+      color: #f8fafc;
+    }
+
+    /* Header */
+    .win-prob-modal-header {
+      padding: 16px 22px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%);
+      flex-shrink: 0;
+    }
+    .win-prob-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+    .win-prob-header-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(251, 191, 36, 0.15);
+      border: 1.5px solid rgba(251, 191, 36, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fbbf24;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+    }
+    .win-prob-header-titles {
+      min-width: 0;
+    }
+    .win-prob-header-badge-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+      flex-wrap: wrap;
+    }
+    .win-prob-title-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+    .win-prob-sample-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+      padding: 2px 7px;
+      border-radius: 6px;
+    }
+    .win-prob-title {
+      margin: 0;
+      font-size: 1.12rem;
+      font-weight: 900;
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+    }
+    .win-prob-subtitle {
+      margin: 2px 0 0 0;
+      font-size: 0.78rem;
+      color: #94a3b8;
+      line-height: 1.3;
+    }
+    .win-prob-close-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      font-size: 1.4rem;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* Modal Body */
+    .win-prob-modal-body {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-sizing: border-box;
+    }
+
+    /* Tabs */
+    .win-prob-tab-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .win-prob-tab-btn {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      color: #cbd5e1;
+      font-size: 0.88rem;
+      font-weight: 800;
+      transition: all 0.2s ease;
+    }
+    .win-prob-tab-btn.active {
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(30, 41, 59, 0.95) 100%);
+      border-color: #fbbf24;
+      color: #fbbf24;
+      box-shadow: 0 4px 15px rgba(251, 191, 36, 0.2);
+    }
+    .win-prob-tab-sub {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #94a3b8;
+    }
+    .win-prob-tab-btn.active .win-prob-tab-sub {
+      color: #fde047;
+    }
+
+    /* KPI Cards */
+    .win-prob-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .win-prob-kpi-card {
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-sizing: border-box;
+    }
+    .win-prob-kpi-card.highlight-gold { border-color: rgba(251, 191, 36, 0.45); background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(30, 41, 59, 0.7) 100%); }
+    .win-prob-kpi-card.highlight-emerald { border-color: rgba(16, 185, 129, 0.45); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(30, 41, 59, 0.7) 100%); }
+    .win-prob-kpi-card.highlight-cyan { border-color: rgba(6, 182, 212, 0.45); background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(30, 41, 59, 0.7) 100%); }
+    .win-prob-kpi-card.highlight-purple { border-color: rgba(168, 85, 247, 0.45); background: linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(30, 41, 59, 0.7) 100%); }
+
+    .win-prob-kpi-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 4px;
+    }
+    .win-prob-kpi-label {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #cbd5e1;
+    }
+    .win-prob-kpi-badge {
+      font-size: 0.72rem;
+      font-weight: 900;
+      padding: 2px 7px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .badge-surge { background: rgba(251, 191, 36, 0.25); color: #fbbf24; border: 1px solid #fbbf24; }
+    .badge-green { background: rgba(16, 185, 129, 0.25); color: #34d399; border: 1px solid #10b981; }
+    .badge-cyan { background: rgba(6, 182, 212, 0.25); color: #38bdf8; border: 1px solid #06b6d4; }
+    .badge-purple { background: rgba(168, 85, 247, 0.25); color: #c084fc; border: 1px solid #a855f7; }
+
+    .win-prob-kpi-compare-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .kpi-compare-box {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+      flex: 1;
+    }
+    .kpi-compare-box .box-lbl {
+      font-size: 0.68rem;
+      color: #94a3b8;
+      font-weight: 600;
+    }
+    .kpi-compare-box .box-val {
+      font-size: 0.95rem;
+      font-weight: 900;
+      color: #f8fafc;
+    }
+    .kpi-compare-box .box-sub {
+      font-size: 0.68rem;
+      color: #64748b;
+    }
+    .kpi-compare-arrow {
+      color: #64748b;
+      font-size: 0.75rem;
+    }
+    .kpi-compare-box.highlight {
+      text-align: right;
+    }
+    .text-gold { color: #fbbf24; }
+    .text-emerald { color: #34d399; }
+    .text-cyan { color: #38bdf8; }
+    .text-purple { color: #c084fc; }
+
+    /* Table */
+    .win-prob-table-wrap {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .win-prob-table-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .win-prob-section-title {
+      margin: 0;
+      font-size: 0.95rem;
+      font-weight: 800;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .win-prob-section-title i {
+      color: #fbbf24;
+    }
+    .win-prob-target-tag {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #fbbf24;
+      background: rgba(251, 191, 36, 0.15);
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    .win-prob-responsive-table {
+      overflow-x: auto;
+    }
+    .win-prob-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      text-align: left;
+    }
+    .win-prob-table th {
+      background: rgba(15, 23, 42, 0.8);
+      color: #94a3b8;
+      font-weight: 800;
+      padding: 10px 12px;
+      border-bottom: 1.5px solid rgba(255, 255, 255, 0.1);
+      vertical-align: middle;
+    }
+    .win-prob-table th .th-sub {
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: #64748b;
+    }
+    .win-prob-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      vertical-align: middle;
+      color: #cbd5e1;
+    }
+    .win-prob-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .rank-name-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .rank-badge {
+      font-size: 0.76rem;
+      font-weight: 900;
+      padding: 2px 6px;
+      border-radius: 4px;
+      display: inline-block;
+      width: fit-content;
+    }
+    .rank-badge.rank-1 { background: rgba(251, 191, 36, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.4); }
+    .rank-badge.rank-2 { background: rgba(96, 165, 250, 0.2); color: #93c5fd; border: 1px solid rgba(96, 165, 250, 0.4); }
+    .rank-badge.rank-3 { background: rgba(52, 211, 153, 0.2); color: #6ee7b7; border: 1px solid rgba(52, 211, 153, 0.4); }
+    .rank-badge.rank-4 { background: rgba(167, 139, 250, 0.2); color: #c4b5fd; border: 1px solid rgba(167, 139, 250, 0.4); }
+    .rank-badge.rank-5 { background: rgba(244, 114, 182, 0.2); color: #f472b6; border: 1px solid rgba(244, 114, 182, 0.4); }
+    .rank-cond { font-size: 0.72rem; color: #94a3b8; }
+    .prob-num-cell { display: flex; flex-direction: column; gap: 1px; }
+    .prob-sub { font-size: 0.72rem; color: #64748b; }
+    .prog-hit-cell { display: flex; flex-direction: column; gap: 1px; }
+    .badge-neutral { font-size: 0.72rem; color: #94a3b8; background: rgba(255, 255, 255, 0.06); padding: 2px 6px; border-radius: 4px; }
+    .badge-surge-lg {
+      font-size: 0.78rem; font-weight: 900; color: #fbbf24;
+      background: rgba(251, 191, 36, 0.2); border: 1px solid #fbbf24;
+      padding: 3px 8px; border-radius: 6px; box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+    }
+    .badge-green-lg {
+      font-size: 0.78rem; font-weight: 900; color: #34d399;
+      background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981;
+      padding: 3px 8px; border-radius: 6px; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+    }
+    .badge-cyan-lg {
+      font-size: 0.78rem; font-weight: 900; color: #38bdf8;
+      background: rgba(6, 182, 212, 0.2); border: 1px solid #06b6d4;
+      padding: 3px 8px; border-radius: 6px;
+    }
+    .highlight-row-gold { background: rgba(251, 191, 36, 0.05); border-left: 3px solid #fbbf24; }
+    .highlight-row-emerald { background: rgba(16, 185, 129, 0.05); border-left: 3px solid #10b981; }
+    .table-total-row { background: rgba(15, 23, 42, 0.95); font-weight: 800; border-top: 2px solid rgba(255, 255, 255, 0.15); }
+
+    /* Science Pillars */
+    .win-prob-science-box {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 14px 16px;
+    }
+    .win-prob-pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .pillar-card {
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .pillar-icon {
+      font-size: 1.2rem;
+      color: #fbbf24;
+      margin-bottom: 2px;
+    }
+    .pillar-content strong {
+      font-size: 0.82rem;
+      color: #f8fafc;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .pillar-content p {
+      margin: 0;
+      font-size: 0.74rem;
+      color: #94a3b8;
+      line-height: 1.45;
+    }
+
+    /* Modal Footer */
+    .win-prob-modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.9);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .win-prob-footer-source {
+      font-size: 0.72rem;
+      color: #64748b;
+    }
+    .btn-win-prob-dismiss {
+      background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+      color: #0f172a;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 0.85rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+      transition: all 0.2s ease;
+    }
+
+
+    /* ======================================================== */
+    /* ⚠️ BEFORE STATE SIMULATION (CRUSHED IN 344px)           */
+    /* ======================================================== */
+    .before-mode .win-prob-kpi-grid {
+      grid-template-columns: 1fr;
+    }
+    .before-mode .win-prob-tab-row {
+      grid-template-columns: 1fr;
+    }
+    .before-mode .win-prob-pillars-grid {
+      grid-template-columns: 1fr;
+    }
+    /* In Before mode, table has NO min-width, squeezing 5 columns into 260px! */
+    .before-mode .win-prob-table {
+      width: 100%;
+      table-layout: auto;
+    }
+    .before-mode .win-prob-modal-header {
+      padding: 16px 20px;
+    }
+    .before-mode .win-prob-kpi-top {
+      flex-wrap: nowrap;
+    }
+    .before-mode .win-prob-kpi-label {
+      font-size: 0.78rem;
+    }
+    .before-mode .win-prob-modal-footer {
+      flex-direction: row;
+    }
+    .before-mode .btn-win-prob-dismiss {
+      width: auto;
+    }
+    .before-mode .win-prob-scroll-hint {
+      display: none !important;
+    }
+
+
+    /* ======================================================== */
+    /* 🌟 AFTER STATE (FOLD 7 OPTIMIZED & ZERO OVERLAP)        */
+    /* ======================================================== */
+    .after-mode .win-prob-modal-overlay {
+      padding: 6px !important;
+    }
+    .after-mode .win-prob-modal-card {
+      border-radius: 14px !important;
+      border: 1.5px solid rgba(251, 191, 36, 0.5) !important;
+    }
+    /* Header Slim & Anti-Collision */
+    .after-mode .win-prob-modal-header {
+      padding: 10px 12px !important;
+      gap: 6px !important;
+      align-items: flex-start !important;
+    }
+    .after-mode .win-prob-header-left {
+      gap: 8px !important;
+      align-items: flex-start !important;
+      flex: 1 !important;
+      min-width: 0 !important;
+    }
+    .after-mode .win-prob-header-icon {
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      font-size: 0.95rem !important;
+      border-radius: 8px !important;
+      margin-top: 1px !important;
+    }
+    .after-mode .win-prob-header-badge-row {
+      gap: 4px !important;
+      margin-bottom: 2px !important;
+    }
+    .after-mode .win-prob-title-badge,
+    .after-mode .win-prob-sample-badge {
+      font-size: 0.63rem !important;
+      padding: 1px 5px !important;
+      line-height: 1.3 !important;
+    }
+    .after-mode .win-prob-title {
+      font-size: 0.92rem !important;
+      line-height: 1.25 !important;
+      letter-spacing: -0.03em !important;
+      word-break: keep-all !important;
+    }
+    .after-mode .win-prob-subtitle {
+      font-size: 0.67rem !important;
+      line-height: 1.32 !important;
+      word-break: keep-all !important;
+      margin-top: 3px !important;
+      color: #94a3b8 !important;
+    }
+    .after-mode .win-prob-close-btn {
+      width: 28px !important;
+      height: 28px !important;
+      min-width: 28px !important;
+      font-size: 1.15rem !important;
+      margin-top: 2px !important;
+    }
+
+    /* Body Spacing */
+    .after-mode .win-prob-modal-body {
+      padding: 10px 8px !important;
+      gap: 10px !important;
+    }
+
+    /* Tabs */
+    .after-mode .win-prob-tab-row {
+      grid-template-columns: 1fr !important;
+      gap: 6px !important;
+    }
+    .after-mode .win-prob-tab-btn {
+      padding: 7px 10px !important;
+      font-size: 0.78rem !important;
+      border-radius: 8px !important;
+    }
+    .after-mode .win-prob-tab-sub {
+      font-size: 0.66rem !important;
+    }
+
+    /* KPI Cards Zero-Overlap */
+    .after-mode .win-prob-kpi-grid {
+      grid-template-columns: 1fr !important;
+      gap: 7px !important;
+    }
+    .after-mode .win-prob-kpi-card {
+      padding: 8px 10px !important;
+      gap: 5px !important;
+      border-radius: 10px !important;
+    }
+    .after-mode .win-prob-kpi-top {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      gap: 6px !important;
+    }
+    .after-mode .win-prob-kpi-label {
+      font-size: 0.74rem !important;
+      word-break: keep-all !important;
+      line-height: 1.2 !important;
+    }
+    .after-mode .win-prob-kpi-badge {
+      font-size: 0.66rem !important;
+      padding: 1.5px 6px !important;
+      flex-shrink: 0 !important;
+    }
+    .after-mode .win-prob-kpi-compare-row {
+      padding: 5px 8px !important;
+      gap: 4px !important;
+    }
+    .after-mode .kpi-compare-box .box-lbl {
+      font-size: 0.62rem !important;
+      white-space: nowrap !important;
+      overflow: hidden !important;
+      text-overflow: ellipsis !important;
+    }
+    .after-mode .kpi-compare-box .box-val {
+      font-size: 0.85rem !important;
+      font-feature-settings: 'tnum' !important;
+      letter-spacing: -0.02em !important;
+    }
+    .after-mode .kpi-compare-box .box-sub {
+      font-size: 0.62rem !important;
+      word-break: keep-all !important;
+      line-height: 1.2 !important;
+    }
+    .after-mode .kpi-compare-arrow {
+      font-size: 0.62rem !important;
+      opacity: 0.6 !important;
+      flex-shrink: 0 !important;
+    }
+
+    /* Table Wrapper & Guaranteed min-width Scroll */
+    .after-mode .win-prob-table-wrap {
+      padding: 8px 8px !important;
+      border-radius: 10px !important;
+    }
+    .after-mode .win-prob-table-title-row {
+      margin-bottom: 6px !important;
+      gap: 4px !important;
+    }
+    .after-mode .win-prob-section-title {
+      font-size: 0.82rem !important;
+      word-break: keep-all !important;
+      line-height: 1.3 !important;
+    }
+    .after-mode .win-prob-target-tag {
+      font-size: 0.66rem !important;
+      padding: 1px 5px !important;
+    }
+
+    /* Scroll Guide Animation */
+    .after-mode .win-prob-scroll-hint {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 5px !important;
+      font-size: 0.65rem !important;
+      color: #cbd5e1 !important;
+      background: rgba(15, 23, 42, 0.8) !important;
+      border: 1px dashed rgba(251, 191, 36, 0.4) !important;
+      border-radius: 6px !important;
+      padding: 4px 8px !important;
+      margin-bottom: 8px !important;
+    }
+    .after-mode .win-prob-scroll-hint i {
+      color: #fbbf24 !important;
+      font-size: 0.72rem !important;
+      animation: hintNudge 1.6s ease-in-out infinite !important;
+    }
+    @keyframes hintNudge {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(3px); }
+    }
+
+    /* Protected Table Width */
+    .after-mode .win-prob-table {
+      min-width: 530px !important;
+      font-size: 0.74rem !important;
+    }
+    .after-mode .win-prob-table th,
+    .after-mode .win-prob-table td {
+      padding: 6px 7px !important;
+    }
+    .after-mode .rank-name-cell,
+    .after-mode .prob-num-cell,
+    .after-mode .prog-hit-cell {
+      white-space: nowrap !important;
+    }
+    .after-mode .text-sub-cell {
+      min-width: 140px !important;
+      word-break: keep-all !important;
+      line-height: 1.35 !important;
+      font-size: 0.70rem !important;
+    }
+
+    /* Science Pillars in After mode */
+    .after-mode .win-prob-science-box {
+      padding: 9px 10px !important;
+      border-radius: 10px !important;
+    }
+    .after-mode .win-prob-pillars-grid {
+      grid-template-columns: 1fr !important;
+      gap: 7px !important;
+    }
+    .after-mode .pillar-card {
+      padding: 8px 9px !important;
+      flex-direction: row !important;
+      gap: 8px !important;
+      align-items: flex-start !important;
+      border-radius: 8px !important;
+    }
+    .after-mode .pillar-icon {
+      font-size: 0.95rem !important;
+      width: 24px !important;
+      height: 24px !important;
+      min-width: 24px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: rgba(251, 191, 36, 0.12) !important;
+      border-radius: 6px !important;
+      margin-top: 1px !important;
+    }
+    .after-mode .pillar-content strong {
+      font-size: 0.74rem !important;
+      word-break: keep-all !important;
+      line-height: 1.25 !important;
+      margin-bottom: 2px !important;
+    }
+    .after-mode .pillar-content p {
+      font-size: 0.67rem !important;
+      word-break: keep-all !important;
+      line-height: 1.35 !important;
+    }
+
+    /* Footer in After mode */
+    .after-mode .win-prob-modal-footer {
+      flex-direction: column !important;
+      gap: 7px !important;
+      padding: 9px 10px !important;
+      align-items: stretch !important;
+    }
+    .after-mode .win-prob-footer-source {
+      font-size: 0.63rem !important;
+      text-align: center !important;
+      word-break: keep-all !important;
+      line-height: 1.3 !important;
+    }
+    .after-mode .btn-win-prob-dismiss {
+      width: 100% !important;
+      text-align: center !important;
+      justify-content: center !important;
+      padding: 9px 12px !important;
+      font-size: 0.82rem !important;
+      border-radius: 7px !important;
+    }
+
+    /* Annotations */
+    .bug-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.66rem;
+      font-weight: 800;
+      background: rgba(239, 68, 68, 0.25);
+      border: 1px solid #ef4444;
+      color: #fca5a5;
+      margin-bottom: 4px;
+    }
+    .fix-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.66rem;
+      font-weight: 800;
+      background: rgba(16, 185, 129, 0.25);
+      border: 1px solid #10b981;
+      color: #6ee7b7;
+      margin-bottom: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Controller Bar -->
+  <div class="control-panel">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">
+          <i class="fa-solid fa-mobile-screen"></i>
+          <span>대시보드 확률보기 모달 폴드7 접은 화면(Cover) 개선안 미리보기</span>
+        </div>
+        <div class="panel-desc">
+          갤럭시 Z 폴드 7/6 접은 화면(폭 344px~360px)의 극단적 좁은 화면에서도 <strong>글자 겹침, 테이블 압축 깨짐, 뱃지 삐져나옴</strong> 현상을 100% 해소한 고도화 UI입니다.
+        </div>
+      </div>
+
+      <div class="cur-res-badge" id="resIndicator">
+        <i class="fa-solid fa-ruler-combined"></i>
+        <span>현재 뷰포트: <strong id="resText">344px (Fold 7 접은 화면)</strong></span>
+      </div>
+    </div>
+
+    <!-- Toolbar Row -->
+    <div class="toolbar-row">
+      <!-- 1. Device Preset Buttons -->
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-size: 0.74rem; font-weight: 800; color: #94a3b8;">📱 기기 해상도 프리셋:</span>
+        <div class="btn-group">
+          <button class="btn-tool active" onclick="setDevicePreset('fold7', 344)">
+            <i class="fa-solid fa-mobile"></i> 폴드7 접은화면 (344px)
+          </button>
+          <button class="btn-tool" onclick="setDevicePreset('fold6', 360)">
+            <i class="fa-solid fa-mobile"></i> 폴드6 커버 (360px)
+          </button>
+          <button class="btn-tool" onclick="setDevicePreset('standard', 390)">
+            <i class="fa-solid fa-mobile-screen-button"></i> 일반폰 (390px)
+          </button>
+          <button class="btn-tool" onclick="setDevicePreset('desktop', 820)">
+            <i class="fa-solid fa-laptop"></i> 데스크톱/태블릿
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. View Mode Toggle -->
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-size: 0.74rem; font-weight: 800; color: #94a3b8;">👁️ 모드:</span>
+        <div class="btn-group">
+          <button id="btnModeAfter" class="btn-tool active" onclick="setViewMode('after')">
+            <i class="fa-solid fa-sparkles" style="color:#10b981;"></i> 🌟 개선안 (After)
+          </button>
+          <button id="btnModeBefore" class="btn-tool" onclick="setViewMode('before')">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444;"></i> ⚠️ 기존 (Before)
+          </button>
+          <button id="btnModeSplit" class="btn-tool" onclick="setViewMode('split')">
+            <i class="fa-solid fa-columns"></i> ↔️ 나란히 비교
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Modal Tab Switcher -->
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <span style="font-size: 0.74rem; font-weight: 800; color: #94a3b8;">🎯 모달 탭:</span>
+        <div class="btn-group">
+          <button id="btnSimV4" class="btn-tool active" onclick="switchSimTab('v4')">
+            👑 올라운더 팩 (1위)
+          </button>
+          <button id="btnSimAll" class="btn-tool" onclick="switchSimTab('all')">
+            🌐 7대 알고리즘 전체
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 Key Improvement Points Summary -->
+    <div class="improvements-grid">
+      <div class="imp-item">
+        <i class="fa-solid fa-circle-check"></i>
+        <div><strong>1. 모달 헤더 초슬림 정렬:</strong> 44px 대형 아이콘을 32px로 컴팩트화하고, 제목 가변 자간 및 줄바꿈 방지(keep-all)로 닫기 버튼과 글자 충돌 100% 차단</div>
+      </div>
+      <div class="imp-item">
+        <i class="fa-solid fa-circle-check"></i>
+        <div><strong>2. 4대 KPI 카드 겹침 방지:</strong> 배수 뱃지(4.98배)와 제목이 서로 밀어내 찌그러지던 현상을 flex-wrap 및 tnum 고정폭 폰트로 완벽 보호</div>
+      </div>
+      <div class="imp-item">
+        <i class="fa-solid fa-circle-check"></i>
+        <div><strong>3. 1:1 대조 테이블 압축 파괴 박멸:</strong> 폭 530px 이상을 강제 보장(`min-width`)하고 부드러운 가로 스크롤 힌트를 제공하여 1~5등 수치와 뱃지가 뭉개지는 현상 원천 제거</div>
+      </div>
+      <div class="imp-item">
+        <i class="fa-solid fa-circle-check"></i>
+        <div><strong>4. 3대 우위 과학적 원리 카드:</strong> 모바일에서 세로로 길어져 답답했던 아이콘을 좌측 인라인 뱃지로 개편해 한눈에 들어오는 브리핑 카드 구조 적용</div>
+      </div>
+      <div class="imp-item">
+        <i class="fa-solid fa-circle-check"></i>
+        <div><strong>5. 하단 확인 닫기 버튼:</strong> 좁은 화면에서 우측 쏠림으로 잘리던 닫기 버튼을 100% 풀 와이드 터치 버튼으로 개편하여 엄지손가락 원터치 조작 편의 극대화</div>
+      </div>
+      <div class="imp-item">
+        <i class="fa-solid fa-circle-check"></i>
+        <div><strong>6. 단계별 반응형 브레이크포인트:</strong> 태블릿(768px), 일반폰(480px), 폴드7(380px), 초소형(340px) 4단계 미디어쿼리로 모든 디바이스에서 최적 뷰 유지</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Showcase Area -->
+  <div class="showcase-container" id="showcaseContainer">
+
+    <!-- Device 1: AFTER (개선안) -->
+    <div class="device-shell" id="shellAfter" style="width: 368px;">
+      <div class="device-notch"></div>
+      <div class="device-header-label after-label">
+        <i class="fa-solid fa-sparkles"></i>
+        <span>[개선 후] 폴드7 접은화면 (글자 겹침 0%)</span>
+      </div>
+      <div class="device-viewport custom-scroll" id="viewportAfter">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Device 2: BEFORE (기존 깨짐) -->
+    <div class="device-shell" id="shellBefore" style="width: 368px; display: none;">
+      <div class="device-notch"></div>
+      <div class="device-header-label before-label">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>[기존 화면] 좁은 폭에서 글자 겹침 &amp; 테이블 압축 깨짐</span>
+      </div>
+      <div class="device-viewport custom-scroll" id="viewportBefore">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const LOTTO_THEO = {
+      ranks: {
+        1: { prob: '0.000012277%', ratio: '1 / 8,145,060' },
+        2: { prob: '0.000073664%', ratio: '1 / 1,357,510' },
+        3: { prob: '0.002799238%', ratio: '1 / 35,724' },
+        4: { prob: '0.136463%', ratio: '1 / 733' },
+        5: { prob: '2.24406%', ratio: '1 / 44.6' }
+      },
+      totalWin: { prob: '2.38341%', ratio: '1 / 42.0' },
+      roiFloor: '18.04%'
+    };
+
+    const LIVE_DATA = {
+      v4: {
+        name: '기본 1: 올라운더 팩 (1위)',
+        games: 640,
+        prize: '575,000',
+        roi: '89.84%',
+        roiSub: '원금 90% 방어 회수',
+        hits: { 1: 0, 2: 0, 3: 0, 4: 8, 5: 35 },
+        rates: { 1: '0.0%', 2: '0.0%', 3: '0.0%', 4: '1.25%', 5: '5.47%' },
+        cycles: { 4: '80게임당 1회', 5: '18게임당 1회', total: '15게임당 1회' },
+        totalHits: 43,
+        totalRate: '6.72%',
+        multipliers: {
+          4: '9.16배 (916%↑)',
+          5: '2.44배 (244%↑)',
+          total: '2.82배 (282%↑)',
+          roi: '4.98배 (약 5배↑)'
+        },
+        notes: {
+          1: '이론적 동일 추종 (17만G 미출현 확률 97.9%)',
+          2: '고액 당첨 근접 추종',
+          3: '1244회차 우순애 회원 ±1 오차로 3등 직전 도달',
+          4: '👑 자동(1/733G) 대비 9.2배 빈출 (80G당 1회 적중)',
+          5: '⭐ 자동(1/45G) 대비 2.4배 빈출 (원금 방어 엔진)'
+        },
+        zScores: { 4: '+7.63 (초고도 유의)', 5: '+5.51 (초고도 유의)' }
+      },
+      all: {
+        name: '7대 알고리즘 전체 합산 종합',
+        games: 4480,
+        prize: '1,190,000',
+        roi: '26.56%',
+        roiSub: '당첨금 119만원 회수',
+        hits: { 1: 0, 2: 0, 3: 0, 4: 11, 5: 128 },
+        rates: { 1: '0.0%', 2: '0.0%', 3: '0.0%', 4: '0.25%', 5: '2.86%' },
+        cycles: { 4: '407게임당 1회', 5: '35게임당 1회', total: '32게임당 1회' },
+        totalHits: 139,
+        totalRate: '3.10%',
+        multipliers: {
+          4: '1.80배 (180%↑)',
+          5: '1.27배 (127%↑)',
+          total: '1.30배 (130%↑)',
+          roi: '1.47배 (약 1.5배↑)'
+        },
+        notes: {
+          1: '이론적 동일 추종',
+          2: '고액 당첨 근접 추종',
+          3: '트리오 마스터 팩 3수 고정틀 연계',
+          4: '✨ 올라운더(8)+트리오(2)+올라운더2(1) 총 11건 배출',
+          5: '⭐ 7대 알고리즘 전반에 걸친 안정적 5등 방어망'
+        },
+        zScores: { 4: '+2.13 (유의미)', 5: '+2.75 (유의미)' }
+      }
+    };
+
+    let currentTab = 'v4';
+    let currentMode = 'after';
+    let currentWidth = 344;
+
+    function renderModal(mode, tabKey) {
+      const data = LIVE_DATA[tabKey];
+      const theo = LOTTO_THEO;
+      const isV4 = tabKey === 'v4';
+
+      return `
+        <div class="win-prob-modal-overlay ${mode}-mode">
+          <div class="win-prob-modal-card">
+
+            <!-- 1. Header -->
+            <div class="win-prob-modal-header">
+              <div class="win-prob-header-left">
+                <div class="win-prob-header-icon">
+                  <i class="fa-solid fa-scale-balanced"></i>
+                </div>
+                <div class="win-prob-header-titles">
+                  <div class="win-prob-header-badge-row">
+                    <span class="win-prob-title-badge"><i class="fa-solid fa-chart-line"></i> 통계학적 검증 리포트</span>
+                    <span class="win-prob-sample-badge">최근 10회차 4,480G 전수 대조</span>
+                  </div>
+                  <h3 class="win-prob-title">로또 6/45 통계적 확률 vs 당 프로그램 당첨확률</h3>
+                  <p class="win-prob-subtitle">순수 '자동' 무작위 구매의 이론적 기대치와 Lucky777 실제 추천번호 스냅샷의 1:1 비교 분석</p>
+                </div>
+              </div>
+              <button type="button" class="win-prob-close-btn" title="닫기">&times;</button>
+            </div>
+
+            <!-- 2. Body -->
+            <div class="win-prob-modal-body">
+
+              <!-- Tabs -->
+              <div class="win-prob-tab-row">
+                <button type="button" class="win-prob-tab-btn ${isV4 ? 'active' : ''}" onclick="switchSimTab('v4')">
+                  <span>👑 기본 1: 올라운더 팩 (1위 640G)</span>
+                  <span class="win-prob-tab-sub">환급률 89.8% / 4등 8건</span>
+                </button>
+                <button type="button" class="win-prob-tab-btn ${!isV4 ? 'active' : ''}" onclick="switchSimTab('all')">
+                  <span>🌐 7대 알고리즘 전체 합산 (4,480G)</span>
+                  <span class="win-prob-tab-sub">총 139건 적중 종합</span>
+                </button>
+              </div>
+
+              <!-- Top 4 KPI Cards -->
+              <div class="win-prob-kpi-grid">
+                <!-- KPI 1: 4등 -->
+                <div class="win-prob-kpi-card highlight-gold">
+                  <div class="win-prob-kpi-top">
+                    <span class="win-prob-kpi-label">4등 적중률 (4개 일치)</span>
+                    <span class="win-prob-kpi-badge badge-surge">${data.multipliers[4]}</span>
+                  </div>
+                  <div class="win-prob-kpi-compare-row">
+                    <div class="kpi-compare-box">
+                      <span class="box-lbl">로또 자동 (이론치)</span>
+                      <span class="box-val">${theo.ranks[4].prob}</span>
+                      <span class="box-sub">약 733게임당 1회</span>
+                    </div>
+                    <div class="kpi-compare-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    <div class="kpi-compare-box highlight">
+                      <span class="box-lbl">당 프로그램 실전</span>
+                      <span class="box-val text-gold">${data.rates[4]}</span>
+                      <span class="box-sub text-gold">${data.cycles[4]}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- KPI 2: 5등 -->
+                <div class="win-prob-kpi-card highlight-emerald">
+                  <div class="win-prob-kpi-top">
+                    <span class="win-prob-kpi-label">5등 적중률 (3개 일치)</span>
+                    <span class="win-prob-kpi-badge badge-green">${data.multipliers[5]}</span>
+                  </div>
+                  <div class="win-prob-kpi-compare-row">
+                    <div class="kpi-compare-box">
+                      <span class="box-lbl">로또 자동 (이론치)</span>
+                      <span class="box-val">${theo.ranks[5].prob}</span>
+                      <span class="box-sub">약 45게임당 1회</span>
+                    </div>
+                    <div class="kpi-compare-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    <div class="kpi-compare-box highlight">
+                      <span class="box-lbl">당 프로그램 실전</span>
+                      <span class="box-val text-emerald">${data.rates[5]}</span>
+                      <span class="box-sub text-emerald">${data.cycles[5]}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- KPI 3: 전체 당첨률 -->
+                <div class="win-prob-kpi-card highlight-cyan">
+                  <div class="win-prob-kpi-top">
+                    <span class="win-prob-kpi-label">전체 당첨 확률 (5등 이상)</span>
+                    <span class="win-prob-kpi-badge badge-cyan">${data.multipliers.total}</span>
+                  </div>
+                  <div class="win-prob-kpi-compare-row">
+                    <div class="kpi-compare-box">
+                      <span class="box-lbl">로또 자동 (이론치)</span>
+                      <span class="box-val">${theo.totalWin.prob}</span>
+                      <span class="box-sub">약 42게임당 1회</span>
+                    </div>
+                    <div class="kpi-compare-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    <div class="kpi-compare-box highlight">
+                      <span class="box-lbl">당 프로그램 실전</span>
+                      <span class="box-val text-cyan">${data.totalRate}</span>
+                      <span class="box-sub text-cyan">${data.cycles.total}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- KPI 4: 환급률 -->
+                <div class="win-prob-kpi-card highlight-purple">
+                  <div class="win-prob-kpi-top">
+                    <span class="win-prob-kpi-label">원금 회수율 (실전 환급률)</span>
+                    <span class="win-prob-kpi-badge badge-purple">${data.multipliers.roi}</span>
+                  </div>
+                  <div class="win-prob-kpi-compare-row">
+                    <div class="kpi-compare-box">
+                      <span class="box-lbl">자동 4·5등 기대치</span>
+                      <span class="box-val">${theo.roiFloor}</span>
+                      <span class="box-sub">1천원당 180원</span>
+                    </div>
+                    <div class="kpi-compare-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+                    <div class="kpi-compare-box highlight">
+                      <span class="box-lbl">당 프로그램 실전</span>
+                      <span class="box-val text-purple">${data.roi}</span>
+                      <span class="box-sub text-purple">${data.roiSub}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Full Comparison Table -->
+              <div class="win-prob-table-wrap">
+                <div class="win-prob-table-title-row">
+                  <h4 class="win-prob-section-title"><i class="fa-solid fa-table-list"></i> 1등 ~ 5등 전 등위 공식 확률 vs 실전 대조표</h4>
+                  <span class="win-prob-target-tag">${data.name}</span>
+                </div>
+
+                <!-- Scroll Hint (Only in After Mode) -->
+                <div class="win-prob-scroll-hint">
+                  <i class="fa-solid fa-arrows-left-right"></i>
+                  <span>좌우로 밀어서 5개 항목 전체 대조표 보기</span>
+                </div>
+
+                <div class="win-prob-responsive-table custom-scroll">
+                  <table class="win-prob-table">
+                    <thead>
+                      <tr>
+                        <th style="width: 14%;">등위 (조건)</th>
+                        <th style="width: 22%;">로또 6/45 공식 확률<br><span class="th-sub">(자동 무작위)</span></th>
+                        <th style="width: 22%;">당 프로그램 성적<br><span class="th-sub">(${data.games}G 전수)</span></th>
+                        <th style="width: 18%;">자동 대비 우수성<br><span class="th-sub">(성과 배수)</span></th>
+                        <th style="width: 24%;">통계학적 평가 및 비고</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <!-- 1등 -->
+                      <tr>
+                        <td>
+                          <div class="rank-name-cell">
+                            <span class="rank-badge rank-1">🥇 1등</span>
+                            <span class="rank-cond">6개 일치</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prob-num-cell">
+                            <strong>${theo.ranks[1].prob}</strong>
+                            <span class="prob-sub">${theo.ranks[1].ratio}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prog-hit-cell">
+                            <strong>${data.hits[1]}건</strong> (${data.rates[1]})
+                          </div>
+                        </td>
+                        <td><span class="badge-neutral">이론치 추종</span></td>
+                        <td class="text-sub-cell">${data.notes[1]}</td>
+                      </tr>
+
+                      <!-- 2등 -->
+                      <tr>
+                        <td>
+                          <div class="rank-name-cell">
+                            <span class="rank-badge rank-2">🥈 2등</span>
+                            <span class="rank-cond">5개+보너스</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prob-num-cell">
+                            <strong>${theo.ranks[2].prob}</strong>
+                            <span class="prob-sub">${theo.ranks[2].ratio}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prog-hit-cell">
+                            <strong>${data.hits[2]}건</strong> (${data.rates[2]})
+                          </div>
+                        </td>
+                        <td><span class="badge-neutral">이론치 추종</span></td>
+                        <td class="text-sub-cell">${data.notes[2]}</td>
+                      </tr>
+
+                      <!-- 3등 -->
+                      <tr>
+                        <td>
+                          <div class="rank-name-cell">
+                            <span class="rank-badge rank-3">🥉 3등</span>
+                            <span class="rank-cond">5개 일치</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prob-num-cell">
+                            <strong>${theo.ranks[3].prob}</strong>
+                            <span class="prob-sub">${theo.ranks[3].ratio}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prog-hit-cell">
+                            <strong>${data.hits[3]}건</strong> (${data.rates[3]})
+                          </div>
+                        </td>
+                        <td><span class="badge-neutral">초근접 포획중</span></td>
+                        <td class="text-sub-cell">${data.notes[3]}</td>
+                      </tr>
+
+                      <!-- 4등 (주요 하이라이트) -->
+                      <tr class="highlight-row-gold">
+                        <td>
+                          <div class="rank-name-cell">
+                            <span class="rank-badge rank-4">✨ 4등</span>
+                            <span class="rank-cond">4개 일치</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prob-num-cell">
+                            <strong>${theo.ranks[4].prob}</strong>
+                            <span class="prob-sub">${theo.ranks[4].ratio}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prog-hit-cell">
+                            <strong class="text-gold">${data.hits[4]}건</strong> (${data.rates[4]})
+                            <span class="prob-sub text-gold">${data.cycles[4]}</span>
+                          </div>
+                        </td>
+                        <td><span class="badge-surge-lg">${data.multipliers[4]}</span></td>
+                        <td class="text-sub-cell">
+                          <strong class="text-gold">${data.notes[4]}</strong><br>
+                          <span style="font-size:0.68rem; color:#94a3b8;">Z-검정: ${data.zScores[4]}</span>
+                        </td>
+                      </tr>
+
+                      <!-- 5등 (주요 하이라이트) -->
+                      <tr class="highlight-row-emerald">
+                        <td>
+                          <div class="rank-name-cell">
+                            <span class="rank-badge rank-5">⭐ 5등</span>
+                            <span class="rank-cond">3개 일치</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prob-num-cell">
+                            <strong>${theo.ranks[5].prob}</strong>
+                            <span class="prob-sub">${theo.ranks[5].ratio}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prog-hit-cell">
+                            <strong class="text-emerald">${data.hits[5]}건</strong> (${data.rates[5]})
+                            <span class="prob-sub text-emerald">${data.cycles[5]}</span>
+                          </div>
+                        </td>
+                        <td><span class="badge-green-lg">${data.multipliers[5]}</span></td>
+                        <td class="text-sub-cell">
+                          <strong class="text-emerald">${data.notes[5]}</strong><br>
+                          <span style="font-size:0.68rem; color:#94a3b8;">Z-검정: ${data.zScores[5]}</span>
+                        </td>
+                      </tr>
+
+                      <!-- 합계 -->
+                      <tr class="table-total-row">
+                        <td><strong>총 당첨 (5등 이상)</strong></td>
+                        <td>
+                          <div class="prob-num-cell">
+                            <strong>${theo.totalWin.prob}</strong>
+                            <span class="prob-sub">${theo.totalWin.ratio}</span>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="prog-hit-cell">
+                            <strong class="text-cyan">${data.totalHits}건</strong> (${data.totalRate})
+                            <span class="prob-sub text-cyan">${data.cycles.total}</span>
+                          </div>
+                        </td>
+                        <td><span class="badge-cyan-lg">${data.multipliers.total}</span></td>
+                        <td class="text-sub-cell">
+                          <strong style="color:#fde047;">실전 환급률: ${data.roi} (+${data.prize}원 회수)</strong>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Science Pillars -->
+              <div class="win-prob-science-box">
+                <h4 class="win-prob-section-title"><i class="fa-solid fa-atom"></i> 왜 당 프로그램이 순수 '자동'보다 압도적으로 우수한가?</h4>
+                <div class="win-prob-pillars-grid">
+                  <div class="pillar-card">
+                    <div class="pillar-icon"><i class="fa-solid fa-filter-circle-xmark"></i></div>
+                    <div class="pillar-content">
+                      <strong>1. 7-Point 퀀트 필터링</strong>
+                      <p>비효율 쓰레기 번호 조합을 사전 70% 차단 폐기하여 1등 유효 사거리 번호만 엄선 추출합니다.</p>
+                    </div>
+                  </div>
+                  <div class="pillar-card">
+                    <div class="pillar-icon"><i class="fa-solid fa-circle-nodes"></i></div>
+                    <div class="pillar-content">
+                      <strong>2. Maximal Clique 결합</strong>
+                      <p>동시 출현 확률이 가장 높은 코어 군집을 앵커로 묶어 3~4수 연쇄 동반 적중을 창출합니다.</p>
+                    </div>
+                  </div>
+                  <div class="pillar-card">
+                    <div class="pillar-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="pillar-content">
+                      <strong>3. 상호보완 분산망</strong>
+                      <p>회원 간 번호 중복 낭비를 막고 8~10번 치트키 슬롯에서 확률 밀도를 집중 타격합니다.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 3. Footer -->
+            <div class="win-prob-modal-footer">
+              <span class="win-prob-footer-source">
+                <i class="fa-solid fa-circle-info"></i> 동행복권 공식 통계(1~1244회) 및 회원 14인 실제 추천번호 스냅샷 실측치 기준
+              </span>
+              <button type="button" class="btn-win-prob-dismiss">
+                확인 완료 (닫기)
+              </button>
+            </div>
+
+          </div>
+        </div>
+      `;
+    }
+
+    function updateViewports() {
+      const elAfter = document.getElementById('viewportAfter');
+      const elBefore = document.getElementById('viewportBefore');
+      if (elAfter) elAfter.innerHTML = renderModal('after', currentTab);
+      if (elBefore) elBefore.innerHTML = renderModal('before', currentTab);
+    }
+
+    function switchSimTab(tabKey) {
+      currentTab = tabKey;
+      document.getElementById('btnSimV4').classList.toggle('active', tabKey === 'v4');
+      document.getElementById('btnSimAll').classList.toggle('active', tabKey === 'all');
+      updateViewports();
+    }
+
+    function setViewMode(mode) {
+      currentMode = mode;
+      document.getElementById('btnModeAfter').classList.toggle('active', mode === 'after');
+      document.getElementById('btnModeBefore').classList.toggle('active', mode === 'before');
+      document.getElementById('btnModeSplit').classList.toggle('active', mode === 'split');
+
+      const shellAfter = document.getElementById('shellAfter');
+      const shellBefore = document.getElementById('shellBefore');
+
+      if (mode === 'after') {
+        shellAfter.style.display = 'block';
+        shellBefore.style.display = 'none';
+      } else if (mode === 'before') {
+        shellAfter.style.display = 'none';
+        shellBefore.style.display = 'block';
+      } else if (mode === 'split') {
+        shellAfter.style.display = 'block';
+        shellBefore.style.display = 'block';
+      }
+    }
+
+    function setDevicePreset(presetName, width) {
+      currentWidth = width;
+      const shellWidth = (width + 24) + 'px';
+      document.getElementById('shellAfter').style.width = shellWidth;
+      document.getElementById('shellBefore').style.width = shellWidth;
+
+      document.getElementById('resText').innerText = `${width}px (${
+        presetName === 'fold7' ? 'Fold 7 접은 화면' :
+        presetName === 'fold6' ? 'Fold 6 커버 화면' :
+        presetName === 'standard' ? '일반 모바일' : '데스크톱/태블릿'
+      })`;
+
+      // update active button
+      document.querySelectorAll('.toolbar-row .btn-group')[0].querySelectorAll('.btn-tool').forEach(b => {
+        b.classList.remove('active');
+      });
+      event.currentTarget.classList.add('active');
+    }
+
+    // Initial render
+    updateViewports();
+  </script>
+</body>
+</html>

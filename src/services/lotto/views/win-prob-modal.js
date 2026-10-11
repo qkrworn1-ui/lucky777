@@ -332,6 +332,10 @@ export function renderWinProbModalContent(tabId = 'v4') {
                 <h4 class="win-prob-section-title"><i class="fa-solid fa-table-list"></i> 1등 ~ 5등 전 등위 공식 확률 vs 실전 성적 1:1 대조표</h4>
                 <span class="win-prob-target-tag">${data.name}</span>
             </div>
+            <div class="win-prob-scroll-hint">
+                <i class="fa-solid fa-arrows-left-right"></i>
+                <span>좌우로 밀어서 5개 항목 전체 대조표 보기</span>
+            </div>
             <div class="win-prob-responsive-table">
                 <table class="win-prob-table">
                     <thead>
