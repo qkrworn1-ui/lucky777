@@ -5,6 +5,7 @@ import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, isUserVerifiedAndPledged } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, fetchAllUsersPurchases, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
+import { getAllUnifiedRegisteredUsers, getUserRealName, UserContextManager } from '../../../shared/user-context.js';
 
 let reviewAdminViewingUser = null; // null (defaults to authId) or 'all' or specific userId
 let activeReviewFilter = 'all'; // 'all' | 'v4' | 'v3' | 'extra_1' ... 'extra_5'
@@ -127,7 +128,7 @@ export function getUserJoinRound(userId) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (cleanUser === 'all') return 1235;
+    if (cleanUser === 'all' || cleanUser === 'master' || cleanUser === 'admin' || cleanUser === 'wdy' || cleanUser === 'guest') return 1235;
 
     let createdAt = null;
 
@@ -221,7 +222,12 @@ export function getUserJoinRound(userId) {
                 if (diff >= 0) {
                     const weeks = Math.floor(diff / (7 * 24 * 60 * 60 * 1000));
                     const calcedRound = 2 + weeks;
-                    return Math.max(calcedRound, 1235);
+                    const historyRounds = Object.keys(state.mergedHistory || {}).map(Number).filter(n => !isNaN(n) && n >= 1);
+                    const fallbackMax = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1244;
+                    const latestDrawn = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
+                        ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackMax))
+                        : (historyRounds.length ? Math.max(...historyRounds) : fallbackMax);
+                    return Math.max(1235, Math.min(calcedRound, latestDrawn));
                 }
             }
         } catch(e) {}
@@ -514,8 +520,9 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
+    if (cleanUser === 'guest' || !cleanUser) cleanUser = 'master';
     const cacheKey = `${cleanUser}_${roundNum}`;
-    if (isSystemOrDummyUser(cleanUser) || cleanUser === 'guest' ||
+    if (isSystemOrDummyUser(cleanUser) ||
         cleanUser === 'kakao_5081608503' || cleanUser === 'kakao_5090399860' || cleanUser === 'kakao_5105087435' || cleanUser === 'kakao_5078158815') {
         const dummyResult = {
             userId: cleanUser,
@@ -895,7 +902,7 @@ export async function renderReviewTab() {
             } else if (typeof window !== 'undefined' && window.selectedAdminViewingUser) {
                 reviewAdminViewingUser = window.selectedAdminViewingUser;
             } else if (!reviewAdminViewingUser) {
-                reviewAdminViewingUser = authId;
+                reviewAdminViewingUser = 'all';
                 if (typeof window !== 'undefined') window.selectedAdminViewingUser = reviewAdminViewingUser;
             }
             // 관리자이며 회원 목록이 전혀 로드되지 않은 경우에만 1회 백그라운드 지연 로드
@@ -950,7 +957,7 @@ export async function renderReviewTab() {
             if (reviewAdminViewingUser.toLowerCase() === cleanAuth) {
                 reviewUserLabel = `👑 관리자 본인 (${cleanAuth})`;
             } else if (reviewAdminViewingUser !== 'all') {
-                const foundU = unifiedUsers.find(u => (u.id || '').toLowerCase().trim() === reviewAdminViewingUser.toLowerCase());
+                const foundU = registeredUsers.find(u => (u.id || '').toLowerCase().trim() === reviewAdminViewingUser.toLowerCase());
                 reviewUserLabel = foundU ? `👤 ${(foundU.name || foundU.realName || foundU.id)} (${foundU.id})` : `👤 ${reviewAdminViewingUser}`;
             }
 
@@ -1028,11 +1035,11 @@ export function updateReviewRoundSelector(selectedRound = null) {
 
     const currentVal = selectedRound !== null ? selectedRound : (reviewRoundSelector.value || null);
     let validSelected;
-    if (currentVal === 'all_rounds' || String(currentVal) === 'all_rounds') {
+    if (!currentVal || currentVal === 'all_rounds' || String(currentVal) === 'all_rounds') {
         validSelected = 'all_rounds';
     } else {
         const numVal = parseInt(currentVal);
-        validSelected = (!isNaN(numVal) && numVal >= minReviewRound && numVal <= effectiveMax) ? numVal : effectiveMax;
+        validSelected = (!isNaN(numVal) && numVal >= minReviewRound && numVal <= effectiveMax) ? numVal : 'all_rounds';
     }
 
     let optionsHtml = `<option value="all_rounds" ${validSelected === 'all_rounds' ? 'selected' : ''} style="font-weight:800; color:#fbbf24; background:#1e293b;">📊 [전체 회차 조회] ${minReviewRound}회 ~ ${effectiveMax}회 누적 종합 성과</option>`;

@@ -137,12 +137,14 @@ export const UserContextManager = {
         if (cleanId === 'all') return 1235;
         if (cleanId === 'master' || cleanId === 'admin') return 1235;
         if (cleanId === 'wdy') return 1235;
+        if (cleanId === 'guest') return 1235;
 
         // Check if user has explicit createdAt
         const createdAt = this.getUserCreatedAt(cleanId);
         if (createdAt) {
             const calced = LottoTimeService.calcRoundFromDate(createdAt);
-            return Math.max(calced, 1235);
+            const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1244;
+            return Math.max(1235, Math.min(calced, fallbackLatest));
         }
 
         // Fallback for Kakao users without registered date (default baseline 1240)
@@ -155,9 +157,11 @@ export const UserContextManager = {
 
     getValidRoundsForUser(userId, latestRound) {
         const joinRound = this.getUserJoinRound(userId);
-        const minRound = Math.max(1235, joinRound);
+        const curLatest = latestRound || (typeof window !== 'undefined' && window.getLatestDrawnRound ? window.getLatestDrawnRound() : 1244);
+        const minRound = Math.max(1235, Math.min(joinRound, curLatest));
+        const maxRound = Math.max(minRound, curLatest);
         const rounds = [];
-        for (let r = latestRound; r >= minRound; r--) {
+        for (let r = maxRound; r >= minRound; r--) {
             rounds.push(r);
         }
         return rounds.length > 0 ? rounds : [minRound];
