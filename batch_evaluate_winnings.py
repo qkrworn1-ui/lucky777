@@ -15,6 +15,7 @@ import sys
 import time
 import datetime
 import urllib.request
+import hashlib
 
 sys.dont_write_bytecode = True
 
@@ -153,12 +154,16 @@ def push_whole_document(collection_name, doc_id, data_dict):
         'Content-Type': 'application/json',
         'User-Agent': 'Lucky777-Evaluator'
     })
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            return resp.status in (200, 204)
-    except Exception as e:
-        print(f"[!] Error writing to {collection_name}/{doc_id}: {e}")
-        return False
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                return resp.status in (200, 204)
+        except Exception as e:
+            if attempt == 2:
+                print(f"[!] Error writing to {collection_name}/{doc_id}: {e}")
+                return False
+            time.sleep(1)
+    return False
 
 def parse_data_js(file_path='data.js'):
     if not os.path.exists(file_path):
@@ -509,7 +514,14 @@ def run_evaluation_batch():
     latest_total_wins = latest_rank1 + latest_rank2 + latest_rank3 + latest_rank4 + latest_rank5
     latest_active_members = len(latest_records)
     
+    # 🔒 무결성 검증용 SHA-256 체크섬 생성 (정규화된 서명)
+    sorted_member_ids = sorted([rec['userId'] for rec in latest_records])
+    canonical_chk = f"v2|{max_round}|{grand_total_prize}|{grand_total_wins}|{latest_total_prize}|{','.join(sorted_member_ids)}"
+    checksum = hashlib.sha256(canonical_chk.encode('utf-8')).hexdigest()
+
     dashboard_payload = {
+        "schemaVersion": 2,
+        "checksum": checksum,
         "maxRound": max_round,
         "fromRound": 1235,
         "roundRangeLabel": f"1235회 ~ {max_round}회",
@@ -536,7 +548,8 @@ def run_evaluation_batch():
         "grandTotalWins": grand_total_wins,
         "activeMemberCount": len(user_ranking_map),
         "userRankings": list(user_ranking_map.values()),
-        "updatedAt": datetime.datetime.now().isoformat()
+        "updatedAt": datetime.datetime.now().isoformat(),
+        "generatedBy": "server_batch_py"
     }
     
     # Save to lotto_purchases/dashboard_summary_latest

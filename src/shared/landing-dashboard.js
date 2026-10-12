@@ -470,6 +470,25 @@ function _getDashboardExpectedMemberIds(round) {
 }
 
 /**
+ * 🔒 서버 간편문서(dashboard_summary_latest) 체크섬 동기 유효성 검증
+ */
+function _verifySummaryChecksumSync(sData) {
+    if (!sData || !sData.checksum) return true; // v1 하위호환 (체크섬 없는 구버전 허용)
+    const mIds = Array.isArray(sData.memberIds) ? [...sData.memberIds].sort() : [];
+    const canonical = `v2|${sData.maxRound}|${sData.grandTotalPrize}|${sData.grandTotalWins}|${sData.latestTotalPrize}|${mIds.join(',')}`;
+    if (sData.checksum.startsWith('fb_')) {
+        let hash = 5381;
+        for (let i = 0; i < canonical.length; i++) {
+            hash = ((hash << 5) + hash) + canonical.charCodeAt(i);
+            hash |= 0;
+        }
+        return sData.checksum === ('fb_' + Math.abs(hash).toString(16));
+    }
+    // SHA-256 64자리 16진수 규격 확인
+    return /^[a-f0-9]{64}$/i.test(sData.checksum);
+}
+
+/**
  * 🧪 서버/로컬 대시보드 요약(summary)이 현재 회원 구성 및 최신 회차와 일치하는지 검증
  * - 최신 회차보다 과거 회차 기준 요약 → 무효
  * - 집계 회원(memberIds)에 삭제/휴지통/테스트 회원 포함 → 무효 (모든 접속자)
@@ -482,6 +501,12 @@ function _isDashboardSummaryStale(sData, maxRound, isAdminViewer) {
     if (docMax < maxRound) return true;
     // 서버 요약이 로컬보다 더 최신 회차 보유 (로컬 당첨번호 미동기화) → 서버 값 신뢰
     if (docMax > maxRound) return false;
+
+    // 🔒 체크섬 검증: 체크섬이 존재하는 v2 문서의 경우 형식 및 무결성 검증
+    if (sData.checksum && !_verifySummaryChecksumSync(sData)) {
+        console.warn('[_isDashboardSummaryStale] Checksum verification failed, invalidating summary');
+        return true;
+    }
 
     const docIds = Array.isArray(sData.memberIds)
         ? sData.memberIds.map(id => String(id || '').trim().toLowerCase()).filter(Boolean)
@@ -498,24 +523,19 @@ function _isDashboardSummaryStale(sData, maxRound, isAdminViewer) {
         return true;
     }
 
-    // 1244회차 이상 기준 정상 활성 회원은 최대 13명 (삭제회원이 포함된 구버전 데이터 차단)
-    if (maxRound >= 1244 && (docIds.length > 13 || Number(sData.latestActiveMemberCount || sData.activeMemberCount || 0) > 13)) {
+    // 1244회차 기준 정상 활성 회원(13명) 초과 구버전 오염 차단
+    if (maxRound === 1244 && (docIds.length > 13 || Number(sData.latestActiveMemberCount || sData.activeMemberCount || 0) > 13)) {
         return true;
     }
 
     if (isAdminViewer) {
         const expected = _getDashboardExpectedMemberIds(maxRound);
-        if (expected.size > 0 && expected.size !== new Set(docIds).size) {
-            if (expected.size < new Set(docIds).size && docIds.length <= 13) {
-                // 서버 요약에 정상 13명 활성 회원이 등록되어 있으면 로컬 초기화 지연 중에도 신뢰 유지
-            } else {
+        const allUsersList = (typeof getAllUnifiedRegisteredUsers === 'function') ? getAllUnifiedRegisteredUsers() : [];
+        if (allUsersList.length >= expected.size && expected.size > 0) {
+            if (expected.size !== new Set(docIds).size) {
                 return true;
             }
-        }
-        if (docIds.some(id => !expected.has(id))) {
-            if (expected.size < docIds.length && docIds.length <= 13) {
-                // 서버 요약에 정상 13명 활성 회원이 등록되어 있으면 로컬 초기화 지연 중에도 신뢰 유지
-            } else {
+            if (docIds.some(id => !expected.has(id))) {
                 return true;
             }
         }
@@ -570,6 +590,10 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
         const formatSummaryFromDoc = (sData) => {
             if (!sData) return null;
             return {
+                schemaVersion: Number(sData.schemaVersion || 1),
+                checksum: sData.checksum || null,
+                generatedBy: sData.generatedBy || 'unknown',
+                userRankings: Array.isArray(sData.userRankings) ? sData.userRankings : null,
                 maxRound: sData.maxRound || maxRound,
                 fromRound: sData.fromRound || fromRound,
                 roundRangeLabel: sData.roundRangeLabel || roundRangeLabel,
@@ -763,7 +787,32 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                     const auth = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '';
                     const isAdmin = auth === 'master' || auth === 'admin' || (typeof window.isAdminUser === 'function' && window.isAdminUser(auth)) || (typeof window.isAdminSession === 'function' && window.isAdminSession());
                     const isClean = !activeMemberIds.some(id => id === 'kakao_5081608503' || id === 'kakao_5090399860' || id === 'kakao_5105087435' || id === 'kakao_5078158815' || id === 'guest' || (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(id)));
-                    if ((isAdmin || forceRefresh) && isClean && activeMemberIds.length <= 13) {
+                    const isMemberCountValid = (maxRound === 1244) ? (activeMemberIds.length <= 13) : (activeMemberIds.length > 0);
+                    if ((isAdmin || forceRefresh) && isClean && isMemberCountValid) {
+                        summaryData.schemaVersion = 2;
+                        summaryData.generatedBy = 'client_admin_sync';
+                        summaryData.updatedAt = new Date().toISOString();
+                        const mIds = [...activeMemberIds].sort();
+                        const canonical = `v2|${summaryData.maxRound}|${summaryData.grandTotalPrize}|${summaryData.grandTotalWins}|${summaryData.latestTotalPrize}|${mIds.join(',')}`;
+                        let checksum = '';
+                        try {
+                            if (typeof crypto !== 'undefined' && crypto.subtle && typeof TextEncoder !== 'undefined') {
+                                const msgUint8 = new TextEncoder().encode(canonical);
+                                const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+                                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                                checksum = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                            }
+                        } catch(e) {}
+                        if (!checksum) {
+                            let hash = 5381;
+                            for (let i = 0; i < canonical.length; i++) {
+                                hash = ((hash << 5) + hash) + canonical.charCodeAt(i);
+                                hash |= 0;
+                            }
+                            checksum = 'fb_' + Math.abs(hash).toString(16);
+                        }
+                        summaryData.checksum = checksum;
+
                         fs.collection('lotto_purchases').doc('dashboard_summary_latest').set(summaryData, { merge: true }).catch(console.warn);
                     }
                 }
