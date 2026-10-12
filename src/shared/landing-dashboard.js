@@ -380,7 +380,7 @@ export function updateHomeServiceCardsPermissions() {
                 badge.innerHTML = '<i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> 서비스 운영중';
             }
             if (btn) {
-                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>추천번호 확인</span>';
+                btn.innerHTML = '<span class="lp-desktop-text"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>추천번호 확인</span></span><span class="lp-mobile-text"><span>✨</span> <span>추천번호 확인</span></span>';
                 btn.style.opacity = '1';
             }
             lottoCard.style.opacity = '1';

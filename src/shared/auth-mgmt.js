@@ -387,12 +387,11 @@ export function formatLastAccessTime(timestamp) {
                         dt.getMonth() === now.getMonth() &&
                         dt.getDate() === now.getDate();
 
-        const pad = (n) => String(n).padStart(2, '0');
+        const diffMin = Math.floor(diffMs / 60000);
+        if (diffMin < 1) return '방금 전';
+        if (diffMin < 60) return `${diffMin}분 전`;
 
         if (isToday) {
-            const diffMin = Math.floor(diffMs / 60000);
-            if (diffMin < 1) return '방금 전';
-            if (diffMin < 60) return `${diffMin}분 전`;
             const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
             return `오늘 ${timeStr}`;
         }

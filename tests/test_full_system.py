@@ -3489,7 +3489,7 @@ Lotto 6/45
             }
             run().catch(e => { console.error(e); process.exit(9); });
             """
-            res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, cwd=self.root_dir)
+            res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, encoding='utf-8', errors='replace', cwd=self.root_dir)
             self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
     # [Test 106] QR Camera Stream Lifecycle & Confirmed Tab Accordion Guard Test
     def test_qr_scanner_lifecycle_and_confirmed_accordion_propagation_guard(self):

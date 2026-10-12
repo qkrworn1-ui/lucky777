@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.12.2342 - BUILD_DATE: 2026-10-12] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.0005 - BUILD_DATE: 2026-10-13] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.12.2342)
+ * Lucky777 Smart Bundle (v2026.10.13.0005)
  */
 
 
@@ -2329,12 +2329,11 @@ function formatLastAccessTime(timestamp) {
                         dt.getMonth() === now.getMonth() &&
                         dt.getDate() === now.getDate();
 
-        const pad = (n) => String(n).padStart(2, '0');
+        const diffMin = Math.floor(diffMs / 60000);
+        if (diffMin < 1) return '방금 전';
+        if (diffMin < 60) return `${diffMin}분 전`;
 
         if (isToday) {
-            const diffMin = Math.floor(diffMs / 60000);
-            if (diffMin < 1) return '방금 전';
-            if (diffMin < 60) return `${diffMin}분 전`;
             const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
             return `오늘 ${timeStr}`;
         }
@@ -50125,7 +50124,7 @@ function updateHomeServiceCardsPermissions() {
                 badge.innerHTML = '<i class="fa-solid fa-circle" style="font-size:0.5rem;"></i> 서비스 운영중';
             }
             if (btn) {
-                btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i> <span>추천번호 확인</span>';
+                btn.innerHTML = '<span class="lp-desktop-text"><i class="fa-solid fa-wand-magic-sparkles"></i> <span>추천번호 확인</span></span><span class="lp-mobile-text"><span>✨</span> <span>추천번호 확인</span></span>';
                 btn.style.opacity = '1';
             }
             lottoCard.style.opacity = '1';
