@@ -456,7 +456,9 @@ export async function calculate7AlgorithmsPerformance(fromRound = 1235, targetUs
                 bonus: draw ? draw.bonus : null,
                 totalGames: roundCombosCount,
                 prize: roundPrize,
-                hits: roundHits
+                roundPrize: roundPrize,
+                hits: roundHits,
+                hitCount: roundHits.length
             });
         });
 

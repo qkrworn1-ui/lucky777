@@ -147,9 +147,13 @@ export async function render7AlgorithmsRealReviewSection() {
 
         let roundRowsHtml = '';
         (algo.roundDetails || []).forEach(rd => {
+            const rHits = Array.isArray(rd.hits) ? rd.hits : [];
+            const rHitCount = (typeof rd.hitCount === 'number') ? rd.hitCount : rHits.length;
+            const rPrize = (typeof rd.prize === 'number') ? rd.prize : ((typeof rd.roundPrize === 'number') ? rd.roundPrize : 0);
+
             let hitItemsHtml = '';
-            if (rd.hits && rd.hits.length > 0) {
-                hitItemsHtml = rd.hits.map(h => {
+            if (rHits.length > 0) {
+                hitItemsHtml = rHits.map(h => {
                     const rankColor = h.rank === 1 ? '#fbbf24' : h.rank === 2 ? '#f87171' : h.rank === 3 ? '#60a5fa' : h.rank === 4 ? '#34d399' : '#a78bfa';
                     const ballsHtml = (h.nums || []).map(n => {
                         const isHit = (h.matchedNums || []).includes(n);
@@ -192,8 +196,8 @@ export async function render7AlgorithmsRealReviewSection() {
                             <strong style="color: #f8fafc;">제 ${rd.round}회</strong>
                             <span style="font-size: 0.7rem; color: #64748b;">${rd.date || ''}</span>
                         </div>
-                        <div style="font-size: 0.74rem; font-weight: 700; color: ${rd.roundPrize > 0 ? '#34d399' : '#64748b'};">
-                            ${rd.hitCount > 0 ? `🎯 ${rd.hitCount}게임 적중 (+${(rd.roundPrize || 0).toLocaleString()}원)` : '낙첨'}
+                        <div style="font-size: 0.74rem; font-weight: 700; color: ${rPrize > 0 ? '#34d399' : '#64748b'};">
+                            ${rHitCount > 0 ? `🎯 ${rHitCount}게임 적중 (+${rPrize.toLocaleString()}원)` : '낙첨'}
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 4px; margin-top: 4px; flex-wrap: wrap;">
