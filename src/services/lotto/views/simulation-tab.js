@@ -7,6 +7,8 @@ import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 
 let realSimCache = null;
 const liveSimCacheMap = {};
+let _simResultViewMode = 'totals';
+let _simAlgoSortMode = 'prize';
 
 export function getEffectiveTargetUser() {
     let authId = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (window.SafeAuth ? window.SafeAuth.get() : '')) || 'guest';
@@ -94,6 +96,8 @@ export function getSingleUserCombosForRound(round, cfg, userId, userName = null)
         v4Combos.forEach(c => {
             const clone = { ...c, meta: { ...(c.meta || {}) } };
             if (userName) clone.meta.ownerName = userName;
+            clone.algoId = 'v4';
+            clone.algoName = '올라운더 팩 (AI 4.0 딥뉴럴)';
             combos.push(clone);
         });
     }
@@ -102,15 +106,21 @@ export function getSingleUserCombosForRound(round, cfg, userId, userName = null)
         v3Combos.forEach(c => {
             const clone = { ...c, meta: { ...(c.meta || {}) } };
             if (userName) clone.meta.ownerName = userName;
+            clone.algoId = 'v3';
+            clone.algoName = '올라운더 팩 2 (AI 3.0 베이지안)';
             combos.push(clone);
         });
     }
+    const extraPackNames = { 1: '빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
     cfg.selectedExtraPacks.forEach(pIdx => {
         const extraPack = generateExtraAddonPack(pIdx, round, userId);
         if (extraPack && Array.isArray(extraPack.combos)) {
             extraPack.combos.forEach(c => {
                 const clone = { ...c, meta: { ...(c.meta || {}) } };
                 if (userName) clone.meta.ownerName = userName;
+                clone.algoId = `extra_${pIdx}`;
+                clone.packIdx = pIdx;
+                clone.algoName = `추가${pIdx}: ${extraPackNames[pIdx] || (extraPack && extraPack.name) || `추가팩 #${pIdx}`}`;
                 combos.push(clone);
             });
         }
@@ -471,6 +481,7 @@ export function renderSimulationTab(targetRound = null) {
     if (btnRankFilter4) btnRankFilter4.onclick = () => renderAccumulatedWins(4);
     if (btnRankFilter5) btnRankFilter5.onclick = () => renderAccumulatedWins(5);
 
+    renderAlgorithmPrizeTotals();
     renderAccumulatedWins(0);
     renderSimulationCharts(hit1st, hit2nd, hit3rd, hit4th, hit5th, totalHits);
 }
@@ -480,6 +491,25 @@ export function renderAccumulatedWins(rankFilter) {
     const accumulatedWinsContainer = document.getElementById('accumulatedWinsListContainer');
     if (!accumulatedWinsContainer) return;
     accumulatedWinsContainer.innerHTML = '';
+
+    // Synchronize Dual View Mode sections
+    const totalsSec = document.getElementById('simAlgoTotalsSection');
+    const feedSec = document.getElementById('simDetailFeedSection');
+    const btnTotals = document.getElementById('btnSimViewTotals');
+    const btnFeed = document.getElementById('btnSimViewFeed');
+    if (totalsSec && feedSec) {
+        if (_simResultViewMode === 'totals') {
+            totalsSec.style.display = 'block';
+            feedSec.style.display = 'none';
+            if (btnTotals) btnTotals.classList.add('active');
+            if (btnFeed) btnFeed.classList.remove('active');
+        } else {
+            totalsSec.style.display = 'none';
+            feedSec.style.display = 'block';
+            if (btnTotals) btnTotals.classList.remove('active');
+            if (btnFeed) btnFeed.classList.add('active');
+        }
+    }
     
     const btnRankFilterAll = document.getElementById('btnRankFilterAll');
     const btnRankFilter1 = document.getElementById('btnRankFilter1');
@@ -645,6 +675,447 @@ export function renderSimulationCharts(hit1st, hit2nd, hit3rd, hit4th, hit5th, t
     }
 }
 
+export function detectComboAlgoId(combo) {
+    if (combo && combo.algoId) return combo.algoId;
+    const name = (combo && combo.meta && combo.meta.name) ? combo.meta.name : (combo ? (combo.name || '') : '');
+    const clean = String(name).toLowerCase();
+    if (clean.includes('4.0') || (clean.includes('올라운더') && !clean.includes('2') && !clean.includes('팩 2'))) return 'v4';
+    if (clean.includes('3.0') || clean.includes('올라운더 팩 2') || clean.includes('올라운더 2')) return 'v3';
+    if (clean.includes('빈틈제로') || clean.includes('추가1') || clean.includes('팩 1')) return 'extra_1';
+    if (clean.includes('슈퍼잭팟') || clean.includes('추가2') || clean.includes('팩 2')) return 'extra_2';
+    if (clean.includes('멀티히트') || clean.includes('추가3') || clean.includes('팩 3')) return 'extra_3';
+    if (clean.includes('흐름부스터') || clean.includes('추가4') || clean.includes('팩 4')) return 'extra_4';
+    if (clean.includes('트리오마스터') || clean.includes('추가5') || clean.includes('팩 5')) return 'extra_5';
+    if (combo && combo.packIdx) return `extra_${combo.packIdx}`;
+    if (combo && combo.packId) return `extra_${combo.packId}`;
+    return 'v4';
+}
+
+export function formatKoreanPrize(amount) {
+    if (!amount || amount <= 0) return '0 원';
+    const num = Math.round(Number(amount));
+    if (num >= 100000000) {
+        const eok = Math.floor(num / 100000000);
+        const man = Math.floor((num % 100000000) / 10000);
+        if (man > 0) {
+            return `${eok.toLocaleString()}억 ${man.toLocaleString()}만 원`;
+        }
+        return `${eok.toLocaleString()}억 원`;
+    }
+    if (num >= 10000) {
+        const man = Math.floor(num / 10000);
+        const rem = num % 10000;
+        if (rem > 0) {
+            return `${man.toLocaleString()}만 ${rem.toLocaleString()} 원`;
+        }
+        return `${man.toLocaleString()}만 원`;
+    }
+    return `${num.toLocaleString()} 원`;
+}
+
+export function switchSimResultViewMode(mode) {
+    _simResultViewMode = mode;
+    const totalsSec = document.getElementById('simAlgoTotalsSection');
+    const feedSec = document.getElementById('simDetailFeedSection');
+    const btnTotals = document.getElementById('btnSimViewTotals');
+    const btnFeed = document.getElementById('btnSimViewFeed');
+
+    if (btnTotals) {
+        if (mode === 'totals') btnTotals.classList.add('active');
+        else btnTotals.classList.remove('active');
+    }
+    if (btnFeed) {
+        if (mode === 'feed') btnFeed.classList.add('active');
+        else btnFeed.classList.remove('active');
+    }
+    if (totalsSec) totalsSec.style.display = (mode === 'totals') ? 'block' : 'none';
+    if (feedSec) feedSec.style.display = (mode === 'feed') ? 'block' : 'none';
+
+    if (mode === 'totals') {
+        renderAlgorithmPrizeTotals();
+    } else {
+        renderAccumulatedWins(0);
+    }
+}
+
+export function setSimAlgoSortMode(sort) {
+    _simAlgoSortMode = sort;
+    ['prize', 'hits', 'order'].forEach(s => {
+        const btn = document.getElementById(`btnSimSort_${s}`);
+        if (btn) {
+            if (s === sort) btn.classList.add('active');
+            else btn.classList.remove('active');
+        }
+    });
+    renderAlgorithmPrizeTotals();
+}
+
+export function renderAlgorithmPrizeTotals() {
+    const container = document.getElementById('simAlgoTotalsGridContainer');
+    const heroCard = document.getElementById('simGrandSummaryHeroCard');
+    if (!container) return;
+
+    const cfg = getSelectedSimulationConfig();
+    const effectiveTarget = getEffectiveTargetUser();
+    const cfgKey = `${effectiveTarget}_${JSON.stringify(cfg)}`;
+    const hasExecutedSim = !!(liveSimCacheMap[cfgKey] && liveSimCacheMap[cfgKey].length > 0);
+
+    const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : (state.mergedHistory ? Math.max(...Object.keys(state.mergedHistory).map(Number)) : 1243));
+    const userCount = (state.allRegisteredUsersList && state.allRegisteredUsersList.length > 0) ? state.allRegisteredUsersList.length : 1;
+    const userMul = (effectiveTarget === '__ALL__') ? userCount : 1;
+
+    let targetTitle = '관리자 본인';
+    if (effectiveTarget === '__ALL__') {
+        targetTitle = `전체 등록 회원 (${userCount}명 종합)`;
+    } else {
+        const foundU = (state.allRegisteredUsersList || []).find(u => (u.id || '').toLowerCase() === effectiveTarget.toLowerCase());
+        if (foundU) targetTitle = `회원: ${(foundU.name || foundU.realName || foundU.id)} (${foundU.id})`;
+        else if (effectiveTarget !== 'admin' && effectiveTarget !== 'master' && effectiveTarget !== 'guest') targetTitle = `회원: ${effectiveTarget}`;
+    }
+
+    if (!hasExecutedSim) {
+        if (heroCard) heroCard.style.display = 'none';
+
+        const selectedNames = [];
+        if (cfg.includeV4) selectedNames.push('올라운더 팩(10G)');
+        if (cfg.includeV3) selectedNames.push('올라운더 팩 2(10G)');
+        const packNames = { 1: '추가1: 빈틈제로(10G)', 2: '추가2: 슈퍼잭팟(10G)', 3: '추가3: 멀티히트(10G)', 4: '추가4: 흐름부스터(10G)', 5: '추가5: 트리오마스터(10G)' };
+        cfg.selectedExtraPacks.forEach(p => {
+            if (packNames[p]) selectedNames.push(packNames[p]);
+        });
+
+        const badgesHtml = selectedNames.length > 0 
+            ? selectedNames.map(n => `<span class="sim-opt-badge"><i class="fa-solid fa-check"></i> ${n}</span>`).join(' ')
+            : `<span class="sim-opt-badge" style="color: #f87171;">선택된 알고리즘 없음</span>`;
+
+        container.innerHTML = `
+            <div class="sim-empty-state" style="padding: 32px 20px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(10, 15, 28, 0.9) 100%); border: 1.5px dashed rgba(245, 158, 11, 0.35); border-radius: 14px; grid-column: 1 / -1;">
+                <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: #fbbf24; font-size: 1.6rem;">
+                    <i class="fa-solid fa-flask-vial"></i>
+                </div>
+                <strong style="font-size: 1.05rem; color: #f8fafc; display: block; margin-bottom: 6px;">
+                    시뮬레이션 실행 대기 중 (옵션 설정 완료)
+                </strong>
+                <p style="font-size: 0.82rem; color: #94a3b8; max-width: 540px; margin: 0 auto 14px auto; line-height: 1.6;">
+                    현재 설정된 옵션에 맞춰 역대 <strong style="color:#fbbf24;">1회 ~ ${maxR}회</strong> 실제 당첨 번호와의 1:1 전수 대조를 준비 중입니다.<br>
+                    상단의 <strong style="color: #fbbf24;">[1회~최신 전 회차 리얼 백테스팅 시작]</strong> 버튼을 누르시면, 선택하신 각 알고리즘별 총 당첨금액과 수익률이 즉시 나타납니다.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 10px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); max-width: 620px; margin: 0 auto;">
+                    <div style="font-size: 0.76rem; color: #cbd5e1; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-sliders text-amber-400"></i> 현재 선택된 시뮬레이션 옵션:
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">
+                        <span class="sim-opt-badge" style="color: #38bdf8;"><i class="fa-solid fa-user-tag"></i> 대상: ${targetTitle}</span>
+                        ${badgesHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    // Has executed: calculate totals for each selected algorithm
+    if (heroCard) heroCard.style.display = 'block';
+
+    const allWins = liveSimCacheMap[cfgKey] || [];
+    
+    // Define 7 algorithms with full metadata
+    const algoDefinitions = [
+        {
+            id: 'v4',
+            name: '올라운더 팩 (AI 4.0 딥뉴럴)',
+            shortName: '올라운더 팩',
+            packType: '코어 앙상블',
+            icon: 'fa-bullseye',
+            color: '#fbbf24',
+            badgeBg: 'rgba(251, 191, 36, 0.2)',
+            badgeBorder: 'rgba(251, 191, 36, 0.5)',
+            order: 1,
+            isSelected: cfg.includeV4
+        },
+        {
+            id: 'v3',
+            name: '올라운더 팩 2 (AI 3.0 베이지안)',
+            shortName: '올라운더 팩 2',
+            packType: '코어 베이지안',
+            icon: 'fa-layer-group',
+            color: '#38bdf8',
+            badgeBg: 'rgba(56, 189, 248, 0.2)',
+            badgeBorder: 'rgba(56, 189, 248, 0.5)',
+            order: 2,
+            isSelected: cfg.includeV3
+        },
+        {
+            id: 'extra_1',
+            name: '추가1: 빈틈제로 (핫넘버 집중)',
+            shortName: '추가1: 빈틈제로',
+            packType: '애드온 팩 #1',
+            icon: 'fa-shield-halved',
+            color: '#10b981',
+            badgeBg: 'rgba(16, 185, 129, 0.2)',
+            badgeBorder: 'rgba(16, 185, 129, 0.5)',
+            order: 3,
+            isSelected: cfg.selectedExtraPacks.includes(1)
+        },
+        {
+            id: 'extra_2',
+            name: '추가2: 슈퍼잭팟 (콜드넘버 반등)',
+            shortName: '추가2: 슈퍼잭팟',
+            packType: '애드온 팩 #2',
+            icon: 'fa-sack-dollar',
+            color: '#818cf8',
+            badgeBg: 'rgba(129, 140, 248, 0.2)',
+            badgeBorder: 'rgba(129, 140, 248, 0.5)',
+            order: 4,
+            isSelected: cfg.selectedExtraPacks.includes(2)
+        },
+        {
+            id: 'extra_3',
+            name: '추가3: 멀티히트 (연번/동끝수)',
+            shortName: '추가3: 멀티히트',
+            packType: '애드온 팩 #3',
+            icon: 'fa-dharmachakra',
+            color: '#f472b6',
+            badgeBg: 'rgba(244, 114, 182, 0.2)',
+            badgeBorder: 'rgba(244, 114, 182, 0.5)',
+            order: 5,
+            isSelected: cfg.selectedExtraPacks.includes(3)
+        },
+        {
+            id: 'extra_4',
+            name: '추가4: 흐름부스터 (홀짝/고저 균형)',
+            shortName: '추가4: 흐름부스터',
+            packType: '애드온 팩 #4',
+            icon: 'fa-bolt',
+            color: '#fb923c',
+            badgeBg: 'rgba(251, 146, 60, 0.2)',
+            badgeBorder: 'rgba(251, 146, 60, 0.5)',
+            order: 6,
+            isSelected: cfg.selectedExtraPacks.includes(4)
+        },
+        {
+            id: 'extra_5',
+            name: '추가5: 트리오마스터 (합계구간 집중)',
+            shortName: '추가5: 트리오마스터',
+            packType: '애드온 팩 #5',
+            icon: 'fa-crown',
+            color: '#c084fc',
+            badgeBg: 'rgba(192, 132, 252, 0.2)',
+            badgeBorder: 'rgba(192, 132, 252, 0.5)',
+            order: 7,
+            isSelected: cfg.selectedExtraPacks.includes(5)
+        }
+    ];
+
+    // Filter to ONLY selected algorithms matching the active options!
+    const activeAlgos = algoDefinitions.filter(a => a.isSelected);
+
+    if (activeAlgos.length === 0) {
+        container.innerHTML = `
+            <div class="sim-empty-state" style="grid-column: 1 / -1;">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i>
+                <strong>선택된 알고리즘이 없습니다.</strong><br>
+                <span>상단의 알고리즘 선택 체크박스에서 1개 이상의 팩을 선택해주세요.</span>
+            </div>
+        `;
+        return;
+    }
+
+    // Initialize stats map for active algos
+    const statsMap = {};
+    activeAlgos.forEach(a => {
+        statsMap[a.id] = {
+            ...a,
+            totalPrize: 0,
+            hit1st: 0,
+            hit2nd: 0,
+            hit3rd: 0,
+            hit4th: 0,
+            hit5th: 0,
+            totalHits: 0,
+            cost: maxR * 10 * userMul * 1000,
+            roi: 0,
+            sharePct: 0
+        };
+    });
+
+    function getHistoricalDrawPrize(round) {
+        const h = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(round) || (state.mergedHistory ? state.mergedHistory[round] : null)) : (state.mergedHistory ? state.mergedHistory[round] : null);
+        return (h && (h.rank1Prize || h.firstWinamnt)) ? (h.rank1Prize || h.firstWinamnt) : 2000000000;
+    }
+
+    let grandTotalPrize = 0;
+    let grandTotalHits = 0;
+
+    allWins.forEach(w => {
+        const algoId = detectComboAlgoId(w.combo);
+        if (statsMap[algoId]) {
+            let prize = 0;
+            if (w.prizeRank === 1) {
+                prize = getHistoricalDrawPrize(w.round);
+                statsMap[algoId].hit1st++;
+            } else if (w.prizeRank === 2) {
+                prize = 50000000;
+                statsMap[algoId].hit2nd++;
+            } else if (w.prizeRank === 3) {
+                prize = 1500000;
+                statsMap[algoId].hit3rd++;
+            } else if (w.prizeRank === 4) {
+                prize = 50000;
+                statsMap[algoId].hit4th++;
+            } else if (w.prizeRank === 5) {
+                prize = 5000;
+                statsMap[algoId].hit5th++;
+            }
+            statsMap[algoId].totalPrize += prize;
+            statsMap[algoId].totalHits++;
+            grandTotalPrize += prize;
+            grandTotalHits++;
+        }
+    });
+
+    const algoList = Object.values(statsMap).map(a => {
+        const roi = a.cost > 0 ? ((a.totalPrize / a.cost) * 100).toFixed(0) : 0;
+        const sharePct = grandTotalPrize > 0 ? ((a.totalPrize / grandTotalPrize) * 100).toFixed(1) : 0;
+        return { ...a, roi: Number(roi), sharePct: Number(sharePct) };
+    });
+
+    const totalSelectedGamesPerRound = activeAlgos.length * 10 * userMul;
+    const grandTotalCost = maxR * totalSelectedGamesPerRound * 1000;
+    const grandRoiGross = grandTotalCost > 0 ? ((grandTotalPrize / grandTotalCost) * 100).toFixed(1) : 0;
+    const netProfit = grandTotalPrize - grandTotalCost;
+
+    const bestAlgo = [...algoList].sort((a, b) => b.totalPrize - a.totalPrize)[0];
+
+    if (heroCard) {
+        heroCard.innerHTML = `
+            <div class="sim-grand-summary-card">
+                <div class="sim-grand-header-row">
+                    <div class="sim-grand-title-wrap">
+                        <span class="sim-grand-badge"><i class="fa-solid fa-trophy"></i> 퀀트 시뮬레이션 완주 성과</span>
+                        <h3 class="sim-grand-title">
+                            선택된 ${activeAlgos.length}대 알고리즘 총 당첨금 요약
+                        </h3>
+                    </div>
+                    <div class="sim-grand-tags-wrap">
+                        <span class="sim-grand-scope-tag"><i class="fa-solid fa-user-check"></i> ${targetTitle}</span>
+                        <span class="sim-grand-rounds-tag"><i class="fa-solid fa-calendar"></i> 1~${maxR}회 (${maxR.toLocaleString()}회차 전수)</span>
+                        <span class="sim-grand-games-tag"><i class="fa-solid fa-dice"></i> 회차당 ${totalSelectedGamesPerRound.toLocaleString()}게임</span>
+                    </div>
+                </div>
+
+                <div class="sim-grand-body-grid">
+                    <div class="sim-grand-metric-main">
+                        <div class="sim-grand-label">선택 옵션 합산 총 당첨금</div>
+                        <div class="sim-grand-prize-hero">${formatKoreanPrize(grandTotalPrize)}</div>
+                        <div class="sim-grand-prize-sub">${grandTotalPrize.toLocaleString()} 원 (총 ${grandTotalHits.toLocaleString()}회 적중)</div>
+                    </div>
+                    <div class="sim-grand-metric-roi">
+                        <div class="sim-grand-label">종합 환급 수익률 (ROI)</div>
+                        <div class="sim-grand-roi-hero" style="color: ${netProfit >= 0 ? '#34d399' : '#f87171'};">
+                            +${Number(grandRoiGross).toLocaleString()}%
+                        </div>
+                        <div class="sim-grand-roi-sub">
+                            투자 ${formatKoreanPrize(grandTotalCost)} · 순수익 ${netProfit >= 0 ? '+' : ''}${formatKoreanPrize(netProfit)}
+                        </div>
+                    </div>
+                    ${bestAlgo ? `
+                    <div class="sim-grand-metric-best">
+                        <div class="sim-grand-label">최고 실적 알고리즘 1위</div>
+                        <div class="sim-grand-best-name" style="color: ${bestAlgo.color};">
+                            <i class="fa-solid ${bestAlgo.icon}"></i> ${bestAlgo.shortName}
+                        </div>
+                        <div class="sim-grand-best-val">
+                            ${formatKoreanPrize(bestAlgo.totalPrize)} (점유율 ${bestAlgo.sharePct}%)
+                        </div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+    if (_simAlgoSortMode === 'prize') {
+        algoList.sort((a, b) => b.totalPrize - a.totalPrize);
+    } else if (_simAlgoSortMode === 'hits') {
+        algoList.sort((a, b) => b.totalHits - a.totalHits);
+    } else {
+        algoList.sort((a, b) => a.order - b.order);
+    }
+
+    const cardsHtml = algoList.map(a => {
+        const has1st = a.hit1st > 0;
+        const has2nd = a.hit2nd > 0;
+        const badgeHighlight = has1st 
+            ? `<span class="sim-card-jackpot-badge gold"><i class="fa-solid fa-crown"></i> 1등 ${a.hit1st}회 적중!</span>`
+            : (has2nd ? `<span class="sim-card-jackpot-badge silver"><i class="fa-solid fa-medal"></i> 2등 ${a.hit2nd}회 적중</span>` : (a.hit3rd > 0 ? `<span class="sim-card-jackpot-badge bronze"><i class="fa-solid fa-award"></i> 3등 ${a.hit3rd}회</span>` : ''));
+
+        return `
+            <div class="sim-algo-card" style="border-top: 3px solid ${a.color};">
+                <div class="sim-algo-card-head">
+                    <div class="sim-algo-id-tag" style="background: ${a.badgeBg}; border: 1px solid ${a.badgeBorder}; color: ${a.color};">
+                        <i class="fa-solid ${a.icon}"></i> ${a.name}
+                    </div>
+                    ${badgeHighlight}
+                </div>
+
+                <div class="sim-algo-prize-block">
+                    <div class="sim-algo-prize-label">총 당첨금액</div>
+                    <div class="sim-algo-prize-val" style="color: ${a.totalPrize > 0 ? '#fde047' : '#94a3b8'};">
+                        ${formatKoreanPrize(a.totalPrize)}
+                    </div>
+                    <div class="sim-algo-prize-raw">${a.totalPrize.toLocaleString()} 원</div>
+                </div>
+
+                <div class="sim-algo-share-bar-wrap">
+                    <div class="sim-algo-share-labels">
+                        <span>전체 당첨금 기여도</span>
+                        <strong style="color: ${a.color};">${a.sharePct}%</strong>
+                    </div>
+                    <div class="sim-algo-progress-track">
+                        <div class="sim-algo-progress-fill" style="width: ${Math.min(100, Math.max(2, a.sharePct))}%; background: ${a.color}; box-shadow: 0 0 8px ${a.color};"></div>
+                    </div>
+                </div>
+
+                <div class="sim-algo-hits-row">
+                    <div class="sim-mini-hit ${a.hit1st > 0 ? 'highlight-gold' : ''}">
+                        <span class="hit-label">1등</span>
+                        <span class="hit-val">${a.hit1st}회</span>
+                    </div>
+                    <div class="sim-mini-hit ${a.hit2nd > 0 ? 'highlight-blue' : ''}">
+                        <span class="hit-label">2등</span>
+                        <span class="hit-val">${a.hit2nd}회</span>
+                    </div>
+                    <div class="sim-mini-hit ${a.hit3rd > 0 ? 'highlight-green' : ''}">
+                        <span class="hit-label">3등</span>
+                        <span class="hit-val">${a.hit3rd}회</span>
+                    </div>
+                    <div class="sim-mini-hit">
+                        <span class="hit-label">4등</span>
+                        <span class="hit-val">${a.hit4th.toLocaleString()}회</span>
+                    </div>
+                    <div class="sim-mini-hit">
+                        <span class="hit-label">5등</span>
+                        <span class="hit-val">${a.hit5th.toLocaleString()}회</span>
+                    </div>
+                </div>
+
+                <div class="sim-algo-card-footer">
+                    <div class="sim-algo-invest-info">
+                        <span>단독 투자: <strong>${formatKoreanPrize(a.cost)}</strong></span>
+                        <span>단독 ROI: <strong style="color: ${a.roi >= 100 ? '#34d399' : '#fbbf24'};">+${Number(a.roi).toLocaleString()}%</strong></span>
+                    </div>
+                    <div class="sim-algo-total-hits-tag">
+                        총 ${a.totalHits.toLocaleString()}회 적중
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = cardsHtml;
+}
+
 /**
  * Execute real historical walk-forward backtesting across all historical draws (1 to 1238)
  */
@@ -798,6 +1269,7 @@ export async function runRealHistoricalSimulation() {
         showToast("시뮬레이션할 알고리즘을 1개 이상 선택해주세요.");
         return;
     }
+    _simRoundCombosCache.clear();
 
     const btn = document.getElementById('btnRunRealSim');
     const progContainer = document.getElementById('simProgressContainer');
@@ -1177,6 +1649,10 @@ if (typeof window !== 'undefined') {
     window.setSimSpeed = setSimSpeed;
     window.stopRealHistoricalSimulation = stopRealHistoricalSimulation;
     window.fireSimConfetti = fireSimConfetti;
+    window.switchSimResultViewMode = switchSimResultViewMode;
+    window.setSimAlgoSortMode = setSimAlgoSortMode;
+    window.renderAlgorithmPrizeTotals = renderAlgorithmPrizeTotals;
+    window.formatKoreanPrize = formatKoreanPrize;
     window.changeSimAdminViewingUser = function(val) {
         state.simAdminTargetUserId = val;
         const userLabelEl = document.getElementById('simUserDisplayLabel');

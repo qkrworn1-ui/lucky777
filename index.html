@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=700">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=700">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.13.1922">
+    <link rel="stylesheet" href="styles.css?v=2026.10.13.1942.55">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.13.1922
+                        v2026.10.13.1942.55
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -177,7 +177,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.13.1922 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.13.1942.55 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -654,7 +654,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.13.1922
+                                v2026.10.13.1942.55
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1435,58 +1435,63 @@
 
                 <div class="first-place-evidence-card">
 
-                    <div class="evidence-header">
-
-                        <div class="evidence-title">
-
-                            <span class="gold-badge"><i class="fa-solid fa-trophy"></i> 전체 회차 1등~5등 당첨 집계</span>
-
-                            <h3 id="simHistoryTitle">👑 제 1~<span id="simHistoryMaxRound">1,239</span>회 등수별 당첨 횟수 & 해당 회차 총 리스트</h3>
-
+                    <!-- Dual View Mode Switcher Header -->
+                    <div class="sim-view-mode-bar">
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <button type="button" id="btnSimViewTotals" class="sim-view-mode-btn active" onclick="window.switchSimResultViewMode && window.switchSimResultViewMode('totals')">
+                                <i class="fa-solid fa-sack-dollar text-amber-400"></i> 알고리즘별 총 당첨금액 요약
+                            </button>
+                            <button type="button" id="btnSimViewFeed" class="sim-view-mode-btn" onclick="window.switchSimResultViewMode && window.switchSimResultViewMode('feed')">
+                                <i class="fa-solid fa-list-check text-sky-400"></i> 회차별 상세 적중 피드
+                            </button>
                         </div>
-
-                        <div class="filter-actions" style="display:flex; gap:4px; flex-wrap:wrap;">
-
-                            <button id="btnRankFilterAll" class="btn-secondary active-filter" style="font-size:0.75rem; padding:4px 8px;">전체 (대기)</button>
-
-                            <button id="btnRankFilter1" class="btn-secondary" style="font-size:0.75rem; padding:4px 8px; border-color:var(--accent-gold); color:var(--accent-gold-light);">🥇 1등 (-)</button>
-
-                            <button id="btnRankFilter2" class="btn-secondary" style="font-size:0.75rem; padding:4px 8px; border-color:#3b82f6; color:#93c5fd;">🥈 2등 (-)</button>
-
-                            <button id="btnRankFilter3" class="btn-secondary" style="font-size:0.75rem; padding:4px 8px; border-color:#10b981; color:#6ee7b7;">🥉 3등 (-)</button>
-
-                            <button id="btnRankFilter4" class="btn-secondary" style="font-size:0.75rem; padding:4px 8px;">✨ 4등 (-)</button>
-
-                            <button id="btnRankFilter5" class="btn-secondary" style="font-size:0.75rem; padding:4px 8px;">🎁 5등 (-)</button>
-
+                        <div id="simTotalsSortBar" style="display:flex; gap:6px; align-items:center;">
+                            <span style="font-size:0.72rem; color:#94a3b8; font-weight:700;"><i class="fa-solid fa-arrow-down-wide-short"></i> 정렬:</span>
+                            <button type="button" id="btnSimSort_prize" class="sim-sort-pill-btn active" onclick="window.setSimAlgoSortMode && window.setSimAlgoSortMode('prize')">당첨금액순</button>
+                            <button type="button" id="btnSimSort_hits" class="sim-sort-pill-btn" onclick="window.setSimAlgoSortMode && window.setSimAlgoSortMode('hits')">적중횟수순</button>
+                            <button type="button" id="btnSimSort_order" class="sim-sort-pill-btn" onclick="window.setSimAlgoSortMode && window.setSimAlgoSortMode('order')">팩 순서</button>
                         </div>
-
                     </div>
 
-                    <!-- 시뮬레이션 당첨율 차트 (반응형) -->
+                    <!-- 1. Algorithm Totals Section (Active by Default) -->
+                    <div id="simAlgoTotalsSection" style="display:block;">
+                        <div id="simGrandSummaryHeroCard" style="display:none; margin-bottom:14px;"></div>
+                        <div id="simAlgoTotalsGridContainer" class="sim-algo-totals-grid"></div>
+                    </div>
 
-                    <div id="simChartContainer" style="display: none; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; margin-top: 12px; margin-bottom: 12px; flex-direction: column; align-items: center; justify-content: center; max-height: 250px; overflow: hidden;">
-
-                        <div style="font-size: 0.8rem; font-weight: bold; color: #cbd5e1; margin-bottom: 8px;"><i class="fa-solid fa-chart-pie"></i> 등수별 당첨 분포 (백테스팅 결과)</div>
-
-                        <div style="width: 100%; max-width: 220px; max-height: 180px; position: relative; margin: 0 auto;">
-
-                            <canvas id="simPrizeRatioChart"></canvas>
-
+                    <!-- 2. Detail Feed Section (Historical 1:1 List) -->
+                    <div id="simDetailFeedSection" style="display:none;">
+                        <div class="evidence-header">
+                            <div class="evidence-title">
+                                <span class="gold-badge"><i class="fa-solid fa-trophy"></i> 회차별 1:1 당첨 대조 피드</span>
+                                <h3 id="simHistoryTitle">👑 제 1~<span id="simHistoryMaxRound">1,239</span>회 등수별 당첨 횟수 &amp; 해당 회차 총 리스트</h3>
+                            </div>
+                            <div class="filter-actions" style="display:flex; gap:4px; flex-wrap:wrap;">
+                                <button id="btnRankFilterAll" class="btn-secondary active-filter" style="font-size:0.75rem; padding:4px 8px;">전체 (대기)</button>
+                                <button id="btnRankFilter1" class="btn-secondary" style="font-size:0.75rem; padding:4px 8px; border-color:var(--accent-gold); color:var(--accent-gold-light);">🥇 1등 (-)</button>
+                                <button id="btnRankFilter2" class="btn-secondary" style="font-size:0.75rem; padding:4px 8px; border-color:#3b82f6; color:#93c5fd;">🥈 2등 (-)</button>
+                                <button id="btnRankFilter3" class="btn-secondary" style="font-size:0.75rem; padding:4px 8px; border-color:#10b981; color:#6ee7b7;">🥉 3등 (-)</button>
+                                <button id="btnRankFilter4" class="btn-secondary" style="font-size:0.75rem; padding:4px 8px;">✨ 4등 (-)</button>
+                                <button id="btnRankFilter5" class="btn-secondary" style="font-size:0.75rem; padding:4px 8px;">🎁 5등 (-)</button>
+                            </div>
                         </div>
 
-                    </div>
+                        <!-- 시뮬레이션 당첨율 차트 (반응형) -->
+                        <div id="simChartContainer" style="display: none; background: rgba(0,0,0,0.15); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; margin-top: 12px; margin-bottom: 12px; flex-direction: column; align-items: center; justify-content: center; max-height: 250px; overflow: hidden;">
+                            <div style="font-size: 0.8rem; font-weight: bold; color: #cbd5e1; margin-bottom: 8px;"><i class="fa-solid fa-chart-pie"></i> 등수별 당첨 분포 (백테스팅 결과)</div>
+                            <div style="width: 100%; max-width: 220px; max-height: 180px; position: relative; margin: 0 auto;">
+                                <canvas id="simPrizeRatioChart"></canvas>
+                            </div>
+                        </div>
 
-                    <!-- Rank Summary Counters Grid -->
+                        <!-- Rank Summary Counters Grid -->
+                        <div id="simWinDetailsList" style="margin-top:12px; margin-bottom:14px; max-height: 400px; overflow-y: auto; padding-right: 10px;">
+                            <!-- Dynamic win details cards -->
+                        </div>
 
-                    <div id="simWinDetailsList" style="margin-top:12px; margin-bottom:14px; max-height: 400px; overflow-y: auto; padding-right: 10px;">
-
-                        <!-- Dynamic win details cards -->
-
-                    </div>
-
-                    <div class="evidence-content" id="accumulatedWinsListContainer" style="width:100%; box-sizing:border-box;">
-                        <!-- Dynamic accumulated winning cards list -->
+                        <div class="evidence-content" id="accumulatedWinsListContainer" style="width:100%; box-sizing:border-box;">
+                            <!-- Dynamic accumulated winning cards list -->
+                        </div>
                     </div>
 
                 </div>
@@ -2241,7 +2246,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.13.1922
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.13.1942.55
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -4537,7 +4542,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.13.1922';
+        window.APP_VERSION = 'v2026.10.13.1942.55';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4608,7 +4613,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.13.1922';
+            var v = ver || window.APP_VERSION || 'v2026.10.13.1942.55';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4865,7 +4870,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.13.1922';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.13.1942.55';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -5012,7 +5017,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.13.1922')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.13.1942.55')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -5265,8 +5270,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.13.1922"></script>
-    <script src="app_v2.js?v=2026.10.13.1922"></script>
+    <script src="data.js?v=2026.10.13.1942.55"></script>
+    <script src="app_v2.js?v=2026.10.13.1942.55"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->

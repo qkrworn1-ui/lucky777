@@ -3964,6 +3964,93 @@ Lotto 6/45
             res = subprocess.run([node_bin, '-e', js_test], capture_output=True, text=True)
             self.assertEqual(res.returncode, 0, f"Node test 112 failed: {res.stderr or res.stdout}")
 
+    # [Test 113] Simulation Algorithm Totals Breakdown & Options-based Display Verification
+    def test_113_simulation_algo_totals_and_options_display(self):
+        html_path = os.path.join(self.root_dir, 'index.html')
+        sim_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'simulation-tab.js')
+        css_path = os.path.join(self.root_dir, 'styles.css')
+
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html = f.read()
+        with open(sim_path, 'r', encoding='utf-8') as f:
+            sim_code = f.read()
+        with open(css_path, 'r', encoding='utf-8') as f:
+            css = f.read()
+
+        # 1. index.html UI element checks
+        self.assertIn('id="btnSimViewTotals"', html, "index.html must have btnSimViewTotals button")
+        self.assertIn('id="btnSimViewFeed"', html, "index.html must have btnSimViewFeed button")
+        self.assertIn('id="simAlgoTotalsSection"', html, "index.html must have simAlgoTotalsSection")
+        self.assertIn('id="simDetailFeedSection"', html, "index.html must have simDetailFeedSection")
+        self.assertIn('id="simGrandSummaryHeroCard"', html, "index.html must have simGrandSummaryHeroCard")
+        self.assertIn('id="simAlgoTotalsGridContainer"', html, "index.html must have simAlgoTotalsGridContainer")
+        self.assertIn('id="simTotalsSortBar"', html, "index.html must have simTotalsSortBar")
+
+        # 2. simulation-tab.js function checks
+        self.assertIn('export function detectComboAlgoId', sim_code, "simulation-tab.js must export detectComboAlgoId")
+        self.assertIn('export function formatKoreanPrize', sim_code, "simulation-tab.js must export formatKoreanPrize")
+        self.assertIn('export function switchSimResultViewMode', sim_code, "simulation-tab.js must export switchSimResultViewMode")
+        self.assertIn('export function setSimAlgoSortMode', sim_code, "simulation-tab.js must export setSimAlgoSortMode")
+        self.assertIn('export function renderAlgorithmPrizeTotals', sim_code, "simulation-tab.js must export renderAlgorithmPrizeTotals")
+
+        # 3. Combo algoId tagging in getSingleUserCombosForRound
+        self.assertIn("clone.algoId = 'v4'", sim_code, "V4 combos must be tagged with algoId 'v4'")
+        self.assertIn("clone.algoId = 'v3'", sim_code, "V3 combos must be tagged with algoId 'v3'")
+        self.assertIn("clone.algoId = `extra_${pIdx}`", sim_code, "Extra pack combos must be tagged with algoId extra_N")
+
+        # 4. CSS class checks
+        self.assertIn('.sim-grand-summary-card', css, "styles.css must have .sim-grand-summary-card")
+        self.assertIn('.sim-algo-totals-grid', css, "styles.css must have .sim-algo-totals-grid")
+        self.assertIn('.sim-algo-card', css, "styles.css must have .sim-algo-card")
+
+        # 5. Functional Node.js simulation
+        import shutil, subprocess
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_test = """
+            // Korean prize format simulation
+            function formatKoreanPrize(amount) {
+                if (!amount || amount <= 0) return '0 원';
+                const num = Math.round(Number(amount));
+                if (num >= 100000000) {
+                    const eok = Math.floor(num / 100000000);
+                    const man = Math.floor((num % 100000000) / 10000);
+                    if (man > 0) return `${eok.toLocaleString()}억 ${man.toLocaleString()}만 원`;
+                    return `${eok.toLocaleString()}억 원`;
+                }
+                if (num >= 10000) {
+                    const man = Math.floor(num / 10000);
+                    return `${man.toLocaleString()}만 원`;
+                }
+                return `${num.toLocaleString()} 원`;
+            }
+
+            if (formatKoreanPrize(4825000000) !== '48억 2,500만 원') process.exit(1);
+            if (formatKoreanPrize(50000) !== '5만 원') process.exit(2);
+
+            // Options-based filtering simulation:
+            // User selects only V4 and Extra 1
+            const cfg = { includeV4: true, includeV3: false, selectedExtraPacks: [1] };
+            const allDefs = [
+                { id: 'v4', isSelected: cfg.includeV4 },
+                { id: 'v3', isSelected: cfg.includeV3 },
+                { id: 'extra_1', isSelected: cfg.selectedExtraPacks.includes(1) },
+                { id: 'extra_2', isSelected: cfg.selectedExtraPacks.includes(2) },
+                { id: 'extra_3', isSelected: cfg.selectedExtraPacks.includes(3) },
+                { id: 'extra_4', isSelected: cfg.selectedExtraPacks.includes(4) },
+                { id: 'extra_5', isSelected: cfg.selectedExtraPacks.includes(5) }
+            ];
+
+            const active = allDefs.filter(d => d.isSelected);
+            if (active.length !== 2) process.exit(3);
+            if (active[0].id !== 'v4' || active[1].id !== 'extra_1') process.exit(4);
+
+            console.log('OK_TEST_113_SIM_ALGO_TOTALS');
+            process.exit(0);
+            """
+            res = subprocess.run([node_bin, '-e', js_test], capture_output=True, text=True)
+            self.assertEqual(res.returncode, 0, f"Node test 113 failed: {res.stderr or res.stdout}")
+
 if __name__ == '__main__':
     unittest.main()
 

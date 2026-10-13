@@ -22334,3 +22334,455 @@ body.lotto-mode-active .app-container {
     border-color: rgba(16, 185, 129, 0.65);
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
 }
+
+/* ========================================================
+   Simulation Algorithm Totals & Dual View Mode (2026.10)
+   ======================================================== */
+.sim-view-mode-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sim-view-mode-btn {
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #94a3b8;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.80rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.sim-view-mode-btn:hover {
+    background: rgba(30, 41, 59, 0.9);
+    color: #f8fafc;
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.sim-view-mode-btn.active {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.25) 100%);
+    border-color: #fbbf24;
+    color: #fde047;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.25);
+}
+
+.sim-sort-pill-btn {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.sim-sort-pill-btn:hover {
+    color: #e2e8f0;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.sim-sort-pill-btn.active {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: #3b82f6;
+    color: #93c5fd;
+    font-weight: 800;
+}
+
+.sim-opt-badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Grand Summary Card */
+.sim-grand-summary-card {
+    background: linear-gradient(145deg, rgba(20, 28, 48, 0.95) 0%, rgba(11, 15, 26, 0.98) 100%);
+    border: 1.5px solid rgba(245, 158, 11, 0.45);
+    border-radius: 14px;
+    padding: 16px 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 20px rgba(245, 158, 11, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.sim-grand-summary-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #fbbf24 0%, #38bdf8 50%, #10b981 100%);
+}
+
+.sim-grand-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.sim-grand-badge {
+    font-size: 0.70rem;
+    font-weight: 800;
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    padding: 2px 7px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.sim-grand-title {
+    font-size: 1.05rem;
+    font-weight: 900;
+    color: #f8fafc;
+    margin: 0;
+}
+
+.sim-grand-tags-wrap {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.sim-grand-scope-tag,
+.sim-grand-rounds-tag,
+.sim-grand-games-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sim-grand-scope-tag {
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: #7dd3fc;
+}
+
+.sim-grand-rounds-tag {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
+}
+
+.sim-grand-games-tag {
+    background: rgba(168, 85, 247, 0.15);
+    border: 1px solid rgba(168, 85, 247, 0.35);
+    color: #d8b4fe;
+}
+
+.sim-grand-body-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1.1fr 1fr;
+    gap: 12px;
+}
+
+.sim-grand-metric-main,
+.sim-grand-metric-roi,
+.sim-grand-metric-best {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.sim-grand-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+
+.sim-grand-prize-hero {
+    font-size: 1.55rem;
+    font-weight: 900;
+    color: #fbbf24;
+    font-family: "Space Grotesk", monospace, sans-serif;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+    text-shadow: 0 0 16px rgba(251, 191, 36, 0.4);
+}
+
+.sim-grand-prize-sub {
+    font-size: 0.74rem;
+    color: #cbd5e1;
+    margin-top: 3px;
+    font-family: monospace;
+}
+
+.sim-grand-roi-hero {
+    font-size: 1.4rem;
+    font-weight: 900;
+    font-family: "Space Grotesk", monospace, sans-serif;
+    line-height: 1.2;
+}
+
+.sim-grand-roi-sub {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    margin-top: 3px;
+    line-height: 1.35;
+}
+
+.sim-grand-best-name {
+    font-size: 0.95rem;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.sim-grand-best-val {
+    font-size: 0.76rem;
+    color: #cbd5e1;
+    margin-top: 3px;
+}
+
+/* Algorithm Cards Grid */
+.sim-algo-totals-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.sim-algo-card {
+    background: linear-gradient(145deg, rgba(17, 24, 39, 0.9) 0%, rgba(11, 15, 26, 0.95) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s, border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.sim-algo-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.sim-algo-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+}
+
+.sim-algo-id-tag {
+    font-size: 0.76rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.sim-card-jackpot-badge {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 4px;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sim-card-jackpot-badge.gold {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.sim-card-jackpot-badge.silver {
+    background: rgba(96, 165, 250, 0.2);
+    color: #93c5fd;
+    border: 1px solid rgba(96, 165, 250, 0.5);
+}
+
+.sim-card-jackpot-badge.bronze {
+    background: rgba(52, 211, 153, 0.2);
+    color: #6ee7b7;
+    border: 1px solid rgba(52, 211, 153, 0.5);
+}
+
+.sim-algo-prize-block {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+}
+
+.sim-algo-prize-label {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.sim-algo-prize-val {
+    font-size: 1.45rem;
+    font-weight: 900;
+    font-family: "Space Grotesk", monospace, sans-serif;
+    letter-spacing: -0.5px;
+    line-height: 1.25;
+    margin-top: 2px;
+}
+
+.sim-algo-prize-raw {
+    font-size: 0.70rem;
+    color: #64748b;
+    font-family: monospace;
+    margin-top: 2px;
+}
+
+.sim-algo-share-bar-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sim-algo-share-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.70rem;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.sim-algo-progress-track {
+    width: 100%;
+    height: 7px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.sim-algo-progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.sim-algo-hits-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 6px;
+    padding: 5px 4px;
+}
+
+.sim-mini-hit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 0;
+    border-radius: 4px;
+}
+
+.sim-mini-hit .hit-label {
+    font-size: 0.62rem;
+    font-weight: 800;
+    color: #64748b;
+}
+
+.sim-mini-hit .hit-val {
+    font-size: 0.74rem;
+    font-weight: 900;
+    color: #cbd5e1;
+    font-family: monospace;
+    margin-top: 1px;
+}
+
+.sim-mini-hit.highlight-gold .hit-label { color: #fbbf24; }
+.sim-mini-hit.highlight-gold .hit-val { color: #fde047; }
+.sim-mini-hit.highlight-blue .hit-label { color: #60a5fa; }
+.sim-mini-hit.highlight-blue .hit-val { color: #93c5fd; }
+.sim-mini-hit.highlight-green .hit-label { color: #34d399; }
+.sim-mini-hit.highlight-green .hit-val { color: #6ee7b7; }
+
+.sim-algo-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding-top: 8px;
+    font-size: 0.70rem;
+    color: #94a3b8;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.sim-algo-invest-info {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.sim-algo-total-hits-tag {
+    font-weight: 800;
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+@media (max-width: 640px) {
+    .sim-grand-body-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+    .sim-algo-totals-grid {
+        grid-template-columns: 1fr;
+    }
+    .sim-grand-prize-hero {
+        font-size: 1.35rem;
+    }
+}
