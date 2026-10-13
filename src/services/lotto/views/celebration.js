@@ -328,7 +328,7 @@ export function showCelebrationOverlay(celebrationData) {
                 `</div>` +
                 `<span style="color:#fbbf24;font-weight:700;font-size:0.9rem;">${game.prize > 0 ? game.prize.toLocaleString() + '원' : '당첨'}</span>` +
             `</div>` +
-            `<div style="display:flex;justify-content:center;gap:8px;padding:4px 0 8px 0;">` +
+            `<div style="display:flex;justify-content:center;gap:8px;padding:4px 0 14px 0;">` +
                 `${ballsHtml}` +
             `</div>` +
         `</div>`;

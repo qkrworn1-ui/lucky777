@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1953.45 - BUILD_DATE: 2026-10-13] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.2019 - BUILD_DATE: 2026-10-13] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.13.1953.45)
+ * Lucky777 Smart Bundle (v2026.10.13.2019)
  */
 
 
@@ -24795,7 +24795,7 @@ async function renderAlgorithmsTab(fromRound = null) {
                 </div>
 
                 <!-- KPI Metric Grid -->
-                <div style="background: rgba(0,0,0,0.35); border-radius: 8px; padding: 8px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center;">
+                <div class="algo-perf-metrics-grid" style="background: rgba(0,0,0,0.35); border-radius: 8px; padding: 8px 12px; text-align: center;">
                     <div>
                         <span style="font-size: 0.68rem; color: #94a3b8; display: block;">누적 당첨금</span>
                         <strong style="font-size: 0.92rem; color: #34d399;">+${algo.totalPrize.toLocaleString()}원</strong>
@@ -40073,7 +40073,7 @@ function showCelebrationOverlay(celebrationData) {
                 `</div>` +
                 `<span style="color:#fbbf24;font-weight:700;font-size:0.9rem;">${game.prize > 0 ? game.prize.toLocaleString() + '원' : '당첨'}</span>` +
             `</div>` +
-            `<div style="display:flex;justify-content:center;gap:8px;padding:4px 0 8px 0;">` +
+            `<div style="display:flex;justify-content:center;gap:8px;padding:4px 0 14px 0;">` +
                 `${ballsHtml}` +
             `</div>` +
         `</div>`;

@@ -753,7 +753,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                 </div>
 
                 <!-- KPI Metric Grid -->
-                <div style="background: rgba(0,0,0,0.35); border-radius: 8px; padding: 8px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center;">
+                <div class="algo-perf-metrics-grid" style="background: rgba(0,0,0,0.35); border-radius: 8px; padding: 8px 12px; text-align: center;">
                     <div>
                         <span style="font-size: 0.68rem; color: #94a3b8; display: block;">누적 당첨금</span>
                         <strong style="font-size: 0.92rem; color: #34d399;">+${algo.totalPrize.toLocaleString()}원</strong>

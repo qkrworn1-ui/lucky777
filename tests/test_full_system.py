@@ -4078,6 +4078,53 @@ Lotto 6/45
         self.assertIn('.sim-standby-card', css, "styles.css must style .sim-standby-card")
         self.assertIn('.sim-standby-opts-box', css, "styles.css must style .sim-standby-opts-box")
 
+    # [Test 115] Full Lotto Program All-Round Anti-Overflow & Text Anti-Overlap Safeguards
+    def test_115_lotto_all_round_anti_overflow_and_text_overlap_safeguards(self):
+        """Verify comprehensive responsive safeguards across all Lotto tabs, modals, tables, and KPI cards."""
+        html_path = os.path.join(self.root_dir, 'index.html')
+        css_path = os.path.join(self.root_dir, 'styles.css')
+        algo_tab_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'algorithms-tab.js')
+        celeb_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'celebration.js')
+
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html = f.read()
+        with open(css_path, 'r', encoding='utf-8') as f:
+            css = f.read()
+        with open(algo_tab_path, 'r', encoding='utf-8') as f:
+            algo_code = f.read()
+        with open(celeb_path, 'r', encoding='utf-8') as f:
+            celeb_code = f.read()
+
+        # 1. Verification of Draw Banner Prize Table overflow protection
+        self.assertIn('class="latest-draw-prize-details-wrapper"', html, "index.html prize details must have wrapper class")
+        self.assertIn('.latest-draw-prize-details-wrapper', css, "styles.css must style .latest-draw-prize-details-wrapper")
+        self.assertIn('.latest-draw-prize-table', css, "styles.css must style .latest-draw-prize-table")
+
+        # 2. Verification of Algorithms Tab 3-Column Metrics Grid Anti-Overlap
+        self.assertIn('class="algo-perf-metrics-grid"', algo_code, "algorithms-tab.js must use .algo-perf-metrics-grid")
+        self.assertIn('.algo-perf-metrics-grid', css, "styles.css must define .algo-perf-metrics-grid")
+
+        # 3. Verification of Win Probability Modal Table Protection
+        self.assertIn('.win-prob-table', css, "styles.css must style .win-prob-table")
+        self.assertIn('min-width: 620px', css, "styles.css must ensure min-width on .win-prob-table to prevent column squishing")
+
+        # 4. Verification of Dashboard Welcome KPI Group 2x2 grid on ultra-narrow screens
+        self.assertIn('.dash-welcome-kpi-group', css, "styles.css must style .dash-welcome-kpi-group")
+        self.assertIn('grid-template-columns: 1fr 1fr', css, "styles.css must adapt .dash-welcome-kpi-group on <= 380px")
+
+        # 5. Verification of Dashboard Win Prob Compare button responsive wrap
+        self.assertIn('.btn-win-prob-compare', css, "styles.css must style .btn-win-prob-compare")
+
+        # 6. Verification of Legal Tab button flex-shrink safeguard
+        self.assertIn('.legal-tab-btn', css, "styles.css must style .legal-tab-btn")
+
+        # 7. Verification of Prediction Report Modal responsiveness
+        self.assertIn('class="modal-card prediction-report-modal-card"', html, "index.html must have prediction-report-modal-card")
+        self.assertIn('.prediction-report-modal-card', css, "styles.css must style .prediction-report-modal-card")
+
+        # 8. Verification of Celebration Bonus Ball label breathing room
+        self.assertIn('padding:4px 0 14px 0;', celeb_code, "celebration.js must provide 14px bottom padding for bonus label")
+
 if __name__ == '__main__':
     unittest.main()
 
