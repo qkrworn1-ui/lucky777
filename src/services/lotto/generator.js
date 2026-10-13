@@ -60,6 +60,23 @@ export function getUserRoundSeed(userId, round, algoId = 'default') {
     return Math.abs(hash) + 1;
 }
 
+export function getUserDispersionIndex(userId) {
+    const cleanUser = String(userId || '').trim().toLowerCase();
+    if (!cleanUser || cleanUser === 'master' || cleanUser === 'admin') return 0;
+    if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList) && state.allRegisteredUsersList.length > 0) {
+        const idx = state.allRegisteredUsersList.findIndex(u => (u.id || '').toLowerCase().trim() === cleanUser);
+        if (idx >= 0) return idx + 1;
+    }
+    let h1 = 0xdeadbeef, h2 = 0x41c64e6d;
+    for (let i = 0; i < cleanUser.length; i++) {
+        const ch = cleanUser.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    return (Math.abs(h1) % 997) + 1;
+}
+
 export function createDeterministicRng(seed) {
     let s = (seed >>> 0) || 123456789;
     return function() {
@@ -80,6 +97,7 @@ export function seededShuffle(array, rng) {
 
 let _historyIsolationDepth = 0;
 const _globalHistoryBackup = {};
+let _historicalWinningSetsBackup = null;
 
 export function enterHistoryIsolation(targetRound, maxKnownDrawnRound) {
     if (targetRound === null || targetRound === undefined || targetRound > maxKnownDrawnRound) {
@@ -93,6 +111,16 @@ export function enterHistoryIsolation(targetRound, maxKnownDrawnRound) {
             }
         }
         recalculateGroups();
+        if (state.HISTORICAL_WINNING_SETS) {
+            _historicalWinningSetsBackup = new Set(state.HISTORICAL_WINNING_SETS);
+            state.HISTORICAL_WINNING_SETS.clear();
+            for (let key in state.mergedHistory) {
+                const d = state.mergedHistory[key];
+                if (d && Array.isArray(d.numbers) && d.numbers.length === 6) {
+                    state.HISTORICAL_WINNING_SETS.add([...d.numbers].sort((a,b)=>a-b).join(','));
+                }
+            }
+        }
     }
     _historyIsolationDepth++;
     return true;
@@ -108,6 +136,10 @@ export function exitHistoryIsolation(wasIsolated) {
             delete _globalHistoryBackup[key];
         }
         recalculateGroups();
+        if (_historicalWinningSetsBackup) {
+            state.HISTORICAL_WINNING_SETS = _historicalWinningSetsBackup;
+            _historicalWinningSetsBackup = null;
+        }
     }
 }
 
@@ -456,22 +488,28 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                 ];
                 
                 let baseSet = new Set(cheatKeys[i - 7]);
-                const userMutSeed = getUserRoundSeed(effectiveUserId, roundForSeed, `v4_cheat_mut_${i}`);
-                const userMutRng = createDeterministicRng(userMutSeed);
-
-                let arr = Array.from(baseSet);
-                let shuffled = seededShuffle(arr, userMutRng);
-                baseSet = new Set([shuffled[0], shuffled[1], shuffled[2], shuffled[3]]);
-
-                let pool = warmNumbers.filter(n => !baseSet.has(n));
-                if (pool.length < 10) pool = Array.from({ length: 45 }, (_, k) => k + 1).filter(n => !baseSet.has(n));
-                while (baseSet.size < 6) {
-                    if (pool && pool.length > 0) {
-                        let pick = pool[Math.floor(userMutRng() * pool.length)];
-                        baseSet.add(pick);
-                    } else {
-                        baseSet.add(Math.floor(seededRandom() * 45) + 1);
+                let arr = [...cheatKeys[i - 7]];
+                if (effectiveUserId === 'master') {
+                    if (seededRandom() > 0.5) {
+                        let mutIdx = Math.floor(seededRandom() * arr.length);
+                        let mutatedVal = Math.min(45, Math.max(1, arr[mutIdx] + (seededRandom() > 0.5 ? 1 : -1)));
+                        baseSet.delete(arr[mutIdx]);
+                        baseSet.add(mutatedVal);
                     }
+                } else {
+                    const uIdx = getUserDispersionIndex(effectiveUserId);
+                    const mutRng = createDeterministicRng(getUserRoundSeed(effectiveUserId, roundForSeed, `v4_cheat_mut_${i}`));
+                    let mutIdx = Math.floor(mutRng() * arr.length);
+                    let pool = (typeof warmNumbers !== 'undefined' && warmNumbers.length > 0) ? warmNumbers : Array.from({ length: 45 }, (_, k) => k + 1);
+                    pool = pool.filter(n => !arr.includes(n));
+                    let repIdx = (Math.floor(mutRng() * pool.length) + uIdx) % pool.length;
+                    let rep = pool[repIdx] || Math.min(45, Math.max(1, arr[mutIdx] + (uIdx % 2 === 0 ? 1 : -1)));
+                    baseSet = new Set(arr);
+                    baseSet.delete(arr[mutIdx]);
+                    baseSet.add(rep);
+                }
+                while (baseSet.size < 6) {
+                    baseSet.add(Math.floor(seededRandom() * 45) + 1);
                 }
                 let nums = Array.from(baseSet).sort((a, b) => a - b);
                 if (state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(nums.join(','))) {
@@ -717,18 +755,30 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                     [8, 17, 24, 30, 39, 45]
                 ];
 
-                const userMutSeed = getUserRoundSeed(effectiveUserId, roundForSeed, `v3_clique_mut_${i}`);
-                const userMutRng = createDeterministicRng(userMutSeed);
-
-                let arr = Array.from(cliqueSetB[i - 7]);
-                let shuffled = seededShuffle(arr, userMutRng);
-                let baseSet = new Set([shuffled[0], shuffled[1], shuffled[2], shuffled[3]]);
-
-                let pool = warmNumbers.filter(n => !baseSet.has(n));
-                if (pool.length < 10) pool = Array.from({ length: 45 }, (_, k) => k + 1).filter(n => !baseSet.has(n));
+                let arr = [...cliqueSetB[i - 7]];
+                let baseSet;
+                if (effectiveUserId === 'master') {
+                    baseSet = new Set(arr);
+                    if (seededRandom() > 0.5) {
+                        let mutIdx = Math.floor(seededRandom() * arr.length);
+                        let mutatedVal = Math.min(45, Math.max(1, arr[mutIdx] + (seededRandom() > 0.5 ? 1 : -1)));
+                        baseSet.delete(arr[mutIdx]);
+                        baseSet.add(mutatedVal);
+                    }
+                } else {
+                    const uIdx = getUserDispersionIndex(effectiveUserId);
+                    const mutRng = createDeterministicRng(getUserRoundSeed(effectiveUserId, roundForSeed, `v3_clique_mut_${i}`));
+                    let mutIdx = Math.floor(mutRng() * arr.length);
+                    let pool = (markovMomentumPool && markovMomentumPool.length > 0) ? markovMomentumPool : warmNumbers;
+                    pool = pool.filter(n => !arr.includes(n));
+                    let repIdx = (Math.floor(mutRng() * pool.length) + uIdx) % pool.length;
+                    let rep = pool[repIdx] || Math.min(45, Math.max(1, arr[mutIdx] + (uIdx % 2 === 0 ? 1 : -1)));
+                    baseSet = new Set(arr);
+                    baseSet.delete(arr[mutIdx]);
+                    baseSet.add(rep);
+                }
                 while (baseSet.size < 6) {
-                    let pick = pool[Math.floor(userMutRng() * pool.length)];
-                    baseSet.add(pick);
+                    baseSet.add(Math.floor(seededRandom() * 45) + 1);
                 }
                 let nums = Array.from(baseSet).sort((a, b) => a - b);
                 if (state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(nums.join(','))) {
@@ -1143,9 +1193,6 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
             if (baseUsageCounts[n] === 0) missingNumbers.push(n);
             else if (baseUsageCounts[n] === 1) lowUsedNumbers.push(n);
         }
-        // Bayesian Cold Recovery Sorting: prioritize numbers with highest missing weeks
-        missingNumbers.sort((a, b) => (state.MISSING_WEEKS[b] || 0) - (state.MISSING_WEEKS[a] || 0));
-
         // 직전 회차 당첨번호 (이월수 후보)
         const prevDrawNums = (state.PREVIOUS_DRAW && Array.isArray(state.PREVIOUS_DRAW) && state.PREVIOUS_DRAW.length > 0)
             ? [...state.PREVIOUS_DRAW]
@@ -1220,9 +1267,6 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
             const lows = nums.filter(n => n <= 22).length;
             if (packId !== 2) {
                 if (lows < 2 || lows > 4) return false;
-            } else {
-                const highCount = nums.filter(n => n >= 25).length;
-                if (highCount < 3) return false;
             }
 
             // 5. No 3 Consecutive Numbers (e.g. 14, 15, 16 prohibited)
@@ -1285,6 +1329,7 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
         }
 
         const allNumbers1To45 = Array.from({ length: 45 }, (_, i) => i + 1);
+        const userShift = getUserDispersionIndex(effectiveUserId);
 
         for (let i = 0; i < 10; i++) {
             let attempts = 0;
@@ -1296,23 +1341,15 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
 
                 if (pIdx === 1) {
                     // ====================================================
-                    // Pack 1: 30-Game Keystone Coverage 100% + Top Anchor Matrix + Carryover
+                    // Pack 1: 30-Game Keystone Coverage 100% + Top Anchor Matrix
                     // ====================================================
-                    const assignedMissing = pack1MissingDistribution[i] || [];
+                    const assignedMissing = pack1MissingDistribution[(i + userShift) % 10] || [];
                     assignedMissing.forEach(n => candidate.add(n));
 
-                    const anchor1 = topHotAnchors[i % topHotAnchors.length];
+                    const anchor1 = topHotAnchors[(i + userShift) % topHotAnchors.length];
+                    const anchor2 = topHotAnchors[(i + userShift + 3) % topHotAnchors.length];
                     candidate.add(anchor1);
-
-                    // Inject 1 carryover from previous draw (62% probability)
-                    if (prevDrawNums.length > 0 && candidate.size < 5) {
-                        candidate.add(prevDrawNums[i % prevDrawNums.length]);
-                    }
-
-                    if (candidate.size < 5 && packRandom() < 0.4) {
-                        const anchor2 = topHotAnchors[(i + 3) % topHotAnchors.length];
-                        candidate.add(anchor2);
-                    }
+                    if (packRandom() < 0.6) candidate.add(anchor2);
 
                     while (candidate.size < 6) {
                         const picked = pickWeightedNumber(allNumbers1To45, candidate);
@@ -1322,20 +1359,17 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
 
                 } else if (pIdx === 2) {
                     // ====================================================
-                    // Pack 2: Realistic Super Jackpot (25~45 High Numbers + 2 Consecutive Pair + Carryover)
+                    // Pack 2: High EV Monopoly (High Numbers 30~45 + 2 Consecutive Pair)
                     // ====================================================
-                    const high25_45 = allNumbers1To45.filter(n => n >= 25);
-                    const pairStart = 25 + Math.floor(packRandom() * 19);
-                    candidate.add(pairStart);
-                    candidate.add(pairStart + 1);
+                    const highStart = 30 + Math.floor(packRandom() * 14);
+                    candidate.add(highStart);
+                    candidate.add(highStart + 1);
 
-                    // 1 more high number in 25~45 (total 3 high numbers in 25~45)
-                    const thirdHigh = pickWeightedNumber(high25_45, candidate);
-                    if (thirdHigh) candidate.add(thirdHigh);
-
-                    // 60% probability of 1 carryover number
-                    if (packRandom() < 0.6 && prevDrawNums.length > 0) {
-                        candidate.add(prevDrawNums[i % prevDrawNums.length]);
+                    const highPool = [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
+                    while (candidate.size < 5) {
+                        const n = pickWeightedNumber(highPool, candidate);
+                        if (n) candidate.add(n);
+                        else break;
                     }
 
                     while (candidate.size < 6) {
@@ -1346,19 +1380,19 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
 
                 } else if (pIdx === 3) {
                     // ====================================================
-                    // Pack 3: Multi-Hit Realistic 2-2-2 Harmonic Clustering Wheeling
-                    // 3 Sections: 1~15 (Low), 16~30 (Mid), 31~45 (High) -> Exactly 2 from each section
+                    // Pack 3: Geometric Harmonic 5-Section Balanced Wheeling
                     // ====================================================
-                    const sec1 = allNumbers1To45.filter(n => n <= 15);
-                    const sec2 = allNumbers1To45.filter(n => n >= 16 && n <= 30);
-                    const sec3 = allNumbers1To45.filter(n => n >= 31);
+                    const sec1 = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                    const sec2 = [10, 11, 12, 13, 14, 15, 16, 17, 18];
+                    const sec3 = [19, 20, 21, 22, 23, 24, 25, 26, 27];
+                    const sec4 = [28, 29, 30, 31, 32, 33, 34, 35, 36];
+                    const sec5 = [37, 38, 39, 40, 41, 42, 43, 44, 45];
 
-                    candidate.add(pickWeightedNumber(sec1, candidate) || sec1[i % sec1.length]);
-                    candidate.add(pickWeightedNumber(sec1, candidate) || sec1[(i + 1) % sec1.length]);
-                    candidate.add(pickWeightedNumber(sec2, candidate) || sec2[i % sec2.length]);
-                    candidate.add(pickWeightedNumber(sec2, candidate) || sec2[(i + 1) % sec2.length]);
-                    candidate.add(pickWeightedNumber(sec3, candidate) || sec3[i % sec3.length]);
-                    candidate.add(pickWeightedNumber(sec3, candidate) || sec3[(i + 1) % sec3.length]);
+                    candidate.add(pickWeightedNumber(sec1, candidate) || sec1[(i + userShift) % sec1.length]);
+                    candidate.add(pickWeightedNumber(sec2, candidate) || sec2[(i + userShift) % sec2.length]);
+                    candidate.add(pickWeightedNumber(sec3, candidate) || sec3[(i + userShift) % sec3.length]);
+                    candidate.add(pickWeightedNumber(sec4, candidate) || sec4[(i + userShift) % sec4.length]);
+                    candidate.add(pickWeightedNumber(sec5, candidate) || sec5[(i + userShift) % sec5.length]);
 
                     while (candidate.size < 6) {
                         const picked = pickWeightedNumber(allNumbers1To45, candidate);
@@ -1368,10 +1402,10 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
 
                 } else if (pIdx === 4) {
                     // ====================================================
-                    // Pack 4: Markov 2nd-Order Transition & Top Pair Matrix + Carryover + Hot Anchor
+                    // Pack 4: Markov 2nd-Order Transition & Top Pair Matrix
                     // ====================================================
                     if (prevDrawNums.length > 0) {
-                        const pNum = prevDrawNums[i % prevDrawNums.length];
+                        const pNum = prevDrawNums[(i + userShift) % prevDrawNums.length];
                         candidate.add(pNum);
 
                         if (state.PAIR_FREQUENCIES && state.PAIR_FREQUENCIES[pNum]) {
@@ -1382,10 +1416,6 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
                         }
                     }
 
-                    // Top hot anchor
-                    const hotAnchor = topHotAnchors[i % topHotAnchors.length];
-                    if (hotAnchor) candidate.add(hotAnchor);
-
                     while (candidate.size < 6) {
                         const picked = pickWeightedNumber(allNumbers1To45, candidate);
                         if (picked) candidate.add(picked);
@@ -1394,20 +1424,14 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
 
                 } else {
                     // ====================================================
-                    // Pack 5: Golden Clique Key Trios Master All-In + Carryover
+                    // Pack 5: Golden Clique Key Trios Master All-In
                     // ====================================================
                     const goldenTrios = [
                         [1, 13, 38], [11, 29, 36], [4, 17, 43], [7, 16, 44], [10, 23, 37],
                         [2, 18, 42], [5, 14, 31], [8, 20, 39], [3, 19, 35], [12, 26, 45]
                     ];
-                    const trio = goldenTrios[i % goldenTrios.length];
+                    const trio = goldenTrios[(i + userShift) % goldenTrios.length];
                     trio.forEach(n => candidate.add(n));
-
-                    // Inject 1 carryover if possible
-                    if (prevDrawNums.length > 0) {
-                        const carryNum = prevDrawNums[(i * 2) % prevDrawNums.length];
-                        candidate.add(carryNum);
-                    }
 
                     while (candidate.size < 6) {
                         const picked = pickWeightedNumber(allNumbers1To45, candidate);
