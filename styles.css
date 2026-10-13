@@ -22774,15 +22774,427 @@ body.lotto-mode-active .app-container {
     border-radius: 4px;
 }
 
+/* ==========================================================================
+   Fold 7 Cover Screen (280px ~ 360px) & Mobile Responsive Architecture
+   Simulation Tab Zero-Overflow Safeguards
+   ========================================================================== */
+
+/* Universal Simulation Zero-Overflow Safeguards */
+#tab-simulation {
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+}
+
+#tab-simulation * {
+    box-sizing: border-box;
+}
+
+/* Standby Empty State Styling */
+.sim-standby-card {
+    padding: 24px 16px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(10, 15, 28, 0.9) 100%);
+    border: 1.5px dashed rgba(245, 158, 11, 0.35);
+    border-radius: 14px;
+    grid-column: 1 / -1;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.sim-standby-opts-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    max-width: 620px;
+    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.financial-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 14px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.financial-summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.sim-trophy-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 12px;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ── Mobile Standard (< 640px) ── */
 @media (max-width: 640px) {
+    .financial-summary-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+    .financial-summary-panel {
+        padding: 12px 10px !important;
+    }
+    .financial-summary-panel h3 {
+        font-size: 0.90rem !important;
+        line-height: 1.35 !important;
+    }
+    .sim-trophy-metrics-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+    }
     .sim-grand-body-grid {
-        grid-template-columns: 1fr;
-        gap: 8px;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
     }
     .sim-algo-totals-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
     .sim-grand-prize-hero {
-        font-size: 1.35rem;
+        font-size: 1.35rem !important;
+    }
+    #tab-simulation .metrics-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+    }
+    #tab-simulation .metric-card {
+        padding: 10px 8px !important;
+        gap: 8px !important;
+    }
+    #tab-simulation .metric-value {
+        font-size: 1.05rem !important;
+    }
+}
+
+/* ── Galaxy Z Fold 7 Cover Screen & Ultra-Narrow (< 380px) ── */
+@media (max-width: 380px) {
+    /* 1. Root & Container Bounds */
+    #tab-simulation {
+        padding: 0 !important;
+    }
+    .first-place-evidence-card,
+    .financial-summary-panel,
+    .sim-control-card,
+    .evolution-status-card {
+        padding: 10px 7px !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        border-radius: 10px !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    /* 2. Dual View Mode Header */
+    .sim-view-mode-bar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        padding-bottom: 8px !important;
+        margin-bottom: 10px !important;
+    }
+    .sim-view-mode-bar > div:first-child {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px !important;
+        width: 100% !important;
+    }
+    .sim-view-mode-btn {
+        padding: 6px 3px !important;
+        font-size: 0.68rem !important;
+        justify-content: center !important;
+        text-align: center !important;
+        width: 100% !important;
+        white-space: nowrap !important;
+        letter-spacing: -0.3px !important;
+    }
+    #simTotalsSortBar {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 3px !important;
+    }
+    .sim-sort-pill-btn {
+        flex: 1 1 0 !important;
+        text-align: center !important;
+        padding: 4px 1px !important;
+        font-size: 0.66rem !important;
+        white-space: nowrap !important;
+    }
+
+    /* 3. Grand Summary Hero Card */
+    .sim-grand-summary-card {
+        padding: 10px 8px !important;
+        gap: 8px !important;
+        border-radius: 10px !important;
+    }
+    .sim-grand-header-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 6px !important;
+    }
+    .sim-grand-title {
+        font-size: 0.88rem !important;
+        line-height: 1.3 !important;
+    }
+    .sim-grand-tags-wrap {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 3px !important;
+        width: 100% !important;
+    }
+    .sim-grand-scope-tag,
+    .sim-grand-rounds-tag,
+    .sim-grand-games-tag {
+        font-size: 0.64rem !important;
+        padding: 2px 5px !important;
+        max-width: 100% !important;
+        word-break: break-all !important;
+    }
+    .sim-grand-body-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 6px !important;
+    }
+    .sim-grand-metric-main,
+    .sim-grand-metric-roi,
+    .sim-grand-metric-best {
+        padding: 8px 8px !important;
+        border-radius: 8px !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+    .sim-grand-label {
+        font-size: 0.66rem !important;
+    }
+    .sim-grand-prize-hero {
+        font-size: 1.25rem !important;
+        letter-spacing: -0.5px !important;
+        line-height: 1.2 !important;
+        word-break: break-all !important;
+        overflow-wrap: anywhere !important;
+    }
+    .sim-grand-prize-sub,
+    .sim-grand-roi-sub,
+    .sim-grand-best-val {
+        font-size: 0.66rem !important;
+        word-break: break-all !important;
+    }
+    .sim-grand-roi-hero {
+        font-size: 1.15rem !important;
+    }
+    .sim-grand-best-name {
+        font-size: 0.80rem !important;
+        word-break: break-word !important;
+    }
+
+    /* 4. Standby Card */
+    .sim-standby-card {
+        padding: 16px 8px !important;
+    }
+    .sim-standby-card p {
+        font-size: 0.74rem !important;
+        line-height: 1.45 !important;
+    }
+    .sim-opt-badge {
+        font-size: 0.65rem !important;
+        padding: 2px 5px !important;
+        max-width: 100% !important;
+        word-break: break-all !important;
+    }
+
+    /* 5. Algorithm Cards */
+    .sim-algo-totals-grid {
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+    }
+    .sim-algo-card {
+        padding: 10px 8px !important;
+        gap: 8px !important;
+        border-radius: 10px !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+    .sim-algo-card-head {
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        width: 100% !important;
+    }
+    .sim-algo-id-tag {
+        font-size: 0.70rem !important;
+        padding: 2px 5px !important;
+        max-width: 100% !important;
+        word-break: break-all !important;
+        white-space: normal !important;
+        line-height: 1.3 !important;
+    }
+    .sim-card-jackpot-badge {
+        font-size: 0.62rem !important;
+        padding: 2px 5px !important;
+        margin-left: auto !important;
+    }
+    .sim-algo-prize-block {
+        padding: 6px 6px !important;
+    }
+    .sim-algo-prize-label {
+        font-size: 0.64rem !important;
+    }
+    .sim-algo-prize-val {
+        font-size: 1.25rem !important;
+        letter-spacing: -0.5px !important;
+        word-break: break-all !important;
+        overflow-wrap: anywhere !important;
+    }
+    .sim-algo-prize-raw {
+        font-size: 0.65rem !important;
+        word-break: break-all !important;
+    }
+    .sim-algo-hits-row {
+        gap: 2px !important;
+        padding: 4px 1px !important;
+    }
+    .sim-mini-hit {
+        padding: 2px 0 !important;
+    }
+    .sim-mini-hit .hit-label {
+        font-size: 0.56rem !important;
+    }
+    .sim-mini-hit .hit-val {
+        font-size: 0.62rem !important;
+        letter-spacing: -0.5px !important;
+        word-break: break-all !important;
+    }
+    .sim-algo-card-footer {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+        font-size: 0.66rem !important;
+    }
+    .sim-algo-invest-info {
+        font-size: 0.65rem !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 2px !important;
+        width: 100% !important;
+        word-break: break-all !important;
+    }
+    .sim-algo-total-hits-tag {
+        font-size: 0.64rem !important;
+        align-self: flex-start !important;
+    }
+
+    /* 6. Feed Section Rank Filter Buttons */
+    .filter-actions {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 3px !important;
+        width: 100% !important;
+    }
+    .filter-actions button {
+        padding: 4px 1px !important;
+        font-size: 0.64rem !important;
+        text-align: center !important;
+        width: 100% !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    /* 7. 4 Overview Metrics Cards */
+    #tab-simulation .metrics-grid {
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+        margin-top: 14px !important;
+    }
+    #tab-simulation .metric-card {
+        padding: 8px 10px !important;
+        gap: 10px !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+    }
+    #tab-simulation .metric-icon {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        font-size: 0.90rem !important;
+    }
+    #tab-simulation .metric-info {
+        min-width: 0 !important;
+        width: 100% !important;
+        overflow: hidden !important;
+    }
+    #tab-simulation .metric-value {
+        font-size: 0.90rem !important;
+        word-break: break-all !important;
+        overflow-wrap: anywhere !important;
+        line-height: 1.3 !important;
+    }
+    #tab-simulation .metric-sub {
+        font-size: 0.65rem !important;
+        word-break: break-all !important;
+        overflow-wrap: anywhere !important;
+    }
+
+    /* 8. Financial Summary Items */
+    .financial-summary-grid {
+        grid-template-columns: 1fr !important;
+        gap: 6px !important;
+        margin-top: 8px !important;
+    }
+    .financial-summary-item {
+        padding: 7px 10px !important;
+        font-size: 0.78rem !important;
+    }
+    .financial-summary-item strong {
+        font-size: 1.0rem !important;
+        word-break: break-all !important;
+    }
+}
+
+/* ── Extreme Narrow (< 320px Fold 1/2 Cover) ── */
+@media (max-width: 320px) {
+    .sim-grand-title {
+        font-size: 0.82rem !important;
+    }
+    .sim-grand-prize-hero {
+        font-size: 1.15rem !important;
+    }
+    .sim-algo-prize-val {
+        font-size: 1.15rem !important;
+    }
+    .sim-view-mode-btn {
+        font-size: 0.63rem !important;
+    }
+    .sim-sort-pill-btn {
+        font-size: 0.60rem !important;
+    }
+    .filter-actions {
+        grid-template-columns: repeat(2, 1fr) !important;
     }
 }

@@ -4051,6 +4051,33 @@ Lotto 6/45
             res = subprocess.run([node_bin, '-e', js_test], capture_output=True, text=True)
             self.assertEqual(res.returncode, 0, f"Node test 113 failed: {res.stderr or res.stdout}")
 
+    # [Test 114] Galaxy Z Fold 7 Cover Screen (Folded) Zero-Overflow Responsive Safeguards
+    def test_114_simulation_fold7_zero_overflow_safeguards(self):
+        html_path = os.path.join(self.root_dir, 'index.html')
+        css_path = os.path.join(self.root_dir, 'styles.css')
+
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html = f.read()
+        with open(css_path, 'r', encoding='utf-8') as f:
+            css = f.read()
+
+        # 1. Verification of class names in HTML
+        self.assertIn('class="sim-trophy-metrics-grid"', html, "index.html celebration card must have sim-trophy-metrics-grid")
+        self.assertIn('class="financial-summary-grid"', html, "index.html financial panel must have financial-summary-grid")
+        self.assertIn('class="financial-summary-item"', html, "index.html financial panel must have financial-summary-item")
+
+        # 2. Verification of responsive media queries in CSS
+        self.assertIn('@media (max-width: 380px)', css, "styles.css must have @media (max-width: 380px) for Fold 7 cover screen")
+        self.assertIn('@media (max-width: 320px)', css, "styles.css must have @media (max-width: 320px) for extreme narrow screens")
+        self.assertIn('#tab-simulation', css, "styles.css must target #tab-simulation")
+        self.assertIn('overflow-x: hidden !important', css, "styles.css must prevent horizontal overflow on #tab-simulation")
+
+        # 3. Verification of Fold 7 component styling safeguards
+        self.assertIn('.financial-summary-grid', css, "styles.css must style .financial-summary-grid")
+        self.assertIn('.sim-trophy-metrics-grid', css, "styles.css must style .sim-trophy-metrics-grid")
+        self.assertIn('.sim-standby-card', css, "styles.css must style .sim-standby-card")
+        self.assertIn('.sim-standby-opts-box', css, "styles.css must style .sim-standby-opts-box")
+
 if __name__ == '__main__':
     unittest.main()
 

@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1942.55 - BUILD_DATE: 2026-10-13] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1953.45 - BUILD_DATE: 2026-10-13] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.13.1942.55)
+ * Lucky777 Smart Bundle (v2026.10.13.1953.45)
  */
 
 
@@ -29610,22 +29610,22 @@ function renderAlgorithmPrizeTotals() {
             : `<span class="sim-opt-badge" style="color: #f87171;">선택된 알고리즘 없음</span>`;
 
         container.innerHTML = `
-            <div class="sim-empty-state" style="padding: 32px 20px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(10, 15, 28, 0.9) 100%); border: 1.5px dashed rgba(245, 158, 11, 0.35); border-radius: 14px; grid-column: 1 / -1;">
-                <div style="width: 52px; height: 52px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: #fbbf24; font-size: 1.6rem;">
+            <div class="sim-empty-state sim-standby-card">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); display: flex; align-items: center; justify-content: center; margin: 0 auto 10px auto; color: #fbbf24; font-size: 1.5rem;">
                     <i class="fa-solid fa-flask-vial"></i>
                 </div>
-                <strong style="font-size: 1.05rem; color: #f8fafc; display: block; margin-bottom: 6px;">
+                <strong style="font-size: 1.0rem; color: #f8fafc; display: block; margin-bottom: 5px;">
                     시뮬레이션 실행 대기 중 (옵션 설정 완료)
                 </strong>
-                <p style="font-size: 0.82rem; color: #94a3b8; max-width: 540px; margin: 0 auto 14px auto; line-height: 1.6;">
+                <p style="font-size: 0.78rem; color: #94a3b8; max-width: 520px; margin: 0 auto 12px auto; line-height: 1.55;">
                     현재 설정된 옵션에 맞춰 역대 <strong style="color:#fbbf24;">1회 ~ ${maxR}회</strong> 실제 당첨 번호와의 1:1 전수 대조를 준비 중입니다.<br>
                     상단의 <strong style="color: #fbbf24;">[1회~최신 전 회차 리얼 백테스팅 시작]</strong> 버튼을 누르시면, 선택하신 각 알고리즘별 총 당첨금액과 수익률이 즉시 나타납니다.
                 </p>
-                <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; background: rgba(0,0,0,0.3); padding: 10px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); max-width: 620px; margin: 0 auto;">
-                    <div style="font-size: 0.76rem; color: #cbd5e1; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                <div class="sim-standby-opts-box">
+                    <div style="font-size: 0.74rem; color: #cbd5e1; font-weight: 700; display: flex; align-items: center; gap: 5px;">
                         <i class="fa-solid fa-sliders text-amber-400"></i> 현재 선택된 시뮬레이션 옵션:
                     </div>
-                    <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">
+                    <div style="display: flex; gap: 5px; flex-wrap: wrap; justify-content: center;">
                         <span class="sim-opt-badge" style="color: #38bdf8;"><i class="fa-solid fa-user-tag"></i> 대상: ${targetTitle}</span>
                         ${badgesHtml}
                     </div>
