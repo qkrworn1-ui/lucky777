@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1645 - BUILD_DATE: 2026-10-13] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1649.59 - BUILD_DATE: 2026-10-13] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.13.1645)
+ * Lucky777 Smart Bundle (v2026.10.13.1649.59)
  */
 
 
@@ -18804,13 +18804,11 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
             }
 
             if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks) {
-                // 1245회차 3단계 최적화 업그레이드 검사: 1245회차에 최적화 플래그(is3StageOptimized)가 없거나 옛 수학 퀀트가 들어있으면 캐시 무시하고 새로 생성하여 덮어쓰기!
                 const hasLegacyMathQuant = (roundNum === 1245) && Array.isArray(existingData.v3Combos) && existingData.v3Combos.some(c => 
                     (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
                     (c.customLabel && c.customLabel.includes('수학퀀트'))
                 );
-                const needs3StageUpgrade = (roundNum === 1245 && !existingData.is3StageOptimized);
-                if (!hasLegacyMathQuant && !needs3StageUpgrade) {
+                if (!hasLegacyMathQuant) {
                     if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                     state.userRecommendationSnapshots[docKey] = existingData;
                     try { SafeLocalStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
