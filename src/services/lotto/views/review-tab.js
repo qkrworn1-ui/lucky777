@@ -481,12 +481,17 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, sna
             if (pData && (pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted')) return;
         }
 
+        // 🔒 1MB 단일 문서 한도 원천 방어: 초경량 스냅샷으로 Firestore 저장
+        const leanData = (typeof makeLeanSnapshot === 'function')
+            ? makeLeanSnapshot(snapshotData)
+            : (typeof window !== 'undefined' && typeof window.makeLeanSnapshot === 'function' ? window.makeLeanSnapshot(snapshotData) : snapshotData);
+
         // 1. Save in lotto_purchases
         await firestore.collection('lotto_purchases').doc(cleanUser).set({
             userId: cleanUser,
             realName: snapshotData.realName || cleanUser,
             recommendationSnapshots: {
-                [rKey]: snapshotData
+                [rKey]: leanData
             },
             updatedAt: new Date().toISOString()
         }, { merge: true });
@@ -495,7 +500,7 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, sna
         if (uDoc && uDoc.exists) {
             firestore.collection('lotto_users').doc(cleanUser).set({
                 recommendationSnapshots: {
-                    [rKey]: snapshotData
+                    [rKey]: leanData
                 },
                 updatedAt: new Date().toISOString()
             }, { merge: true }).catch(() => {});

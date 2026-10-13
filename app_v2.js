@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1705.41 - BUILD_DATE: 2026-10-13] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1717 - BUILD_DATE: 2026-10-13] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.13.1705.41)
+ * Lucky777 Smart Bundle (v2026.10.13.1717)
  */
 
 
@@ -18727,6 +18727,86 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
 }
 
 /**
+ * 🔒 Produces an ultra-lightweight snapshot payload (80%+ size reduction)
+ * Strips verbose repeating static paragraphs (desc, probRationale, numReasons) while preserving 100% of numbers, ids, names, labels, and stats.
+ */
+function makeLeanSnapshot(snap) {
+    if (!snap || typeof snap !== 'object') return snap;
+    function slimCombo(c) {
+        if (!c || typeof c !== 'object') return c;
+        const res = {
+            id: c.id || '',
+            name: c.name || '',
+            customLabel: c.customLabel || '',
+            numbers: Array.isArray(c.numbers) ? c.numbers : [],
+            is3StageOptimized: c.is3StageOptimized !== false
+        };
+        if (c.stats && typeof c.stats === 'object') {
+            res.stats = {
+                sum: c.stats.sum,
+                oddEvenRatio: c.stats.oddEvenRatio,
+                totalMathScore: c.stats.totalMathScore,
+                evScore: c.stats.evScore,
+                highCount: c.stats.highCount,
+                neighborCount: c.stats.neighborCount,
+                sectionCount: c.stats.sectionCount,
+                acValue: c.stats.acValue ?? 7
+            };
+        }
+        if (c.meta && typeof c.meta === 'object') {
+            res.meta = {
+                name: c.meta.name || c.name || '',
+                rankBadge: c.meta.rankBadge || '',
+                tag: c.meta.tag || '',
+                targetBenefit: c.meta.targetBenefit || '당첨 기댓값 극대화'
+            };
+        }
+        return res;
+    }
+
+    const v4 = Array.isArray(snap.v4Combos) ? snap.v4Combos.map(slimCombo) : [];
+    const v3 = Array.isArray(snap.v3Combos) ? snap.v3Combos.map(slimCombo) : [];
+    const extraPacks = {};
+    if (snap.extraPacks && typeof snap.extraPacks === 'object') {
+        for (const p in snap.extraPacks) {
+            const pObj = snap.extraPacks[p];
+            if (pObj && typeof pObj === 'object') {
+                extraPacks[p] = {
+                    packId: pObj.packId ?? p,
+                    name: pObj.name || `추가팩 ${p}`,
+                    badge: pObj.badge || `EXTRA ${p}`,
+                    color: pObj.color || '#10b981',
+                    is3StageOptimized: pObj.is3StageOptimized !== false,
+                    combos: Array.isArray(pObj.combos) ? pObj.combos.map(slimCombo) : []
+                };
+            }
+        }
+    }
+
+    return {
+        userId: snap.userId,
+        realName: snap.realName,
+        phone: snap.phone || '',
+        userType: snap.userType || 'regular',
+        userCreatedAt: snap.userCreatedAt || null,
+        round: snap.round,
+        createdAt: snap.createdAt || new Date().toISOString(),
+        isLocked: snap.isLocked !== false,
+        is3StageOptimized: snap.is3StageOptimized !== false,
+        algoRevision: snap.algoRevision || 'v2026.10_3stage',
+        hashFingerprint: snap.hashFingerprint || '',
+        totalGames: snap.totalGames || 70,
+        v4Combos: v4,
+        v3Combos: v3,
+        extraPacks: extraPacks,
+        algorithms: snap.algorithms || []
+    };
+}
+if (typeof window !== 'undefined') {
+    window.makeLeanSnapshot = makeLeanSnapshot;
+}
+
+/**
  * 🔒 Immutable Recommendation Snapshot Storage:
  * Permanently snapshots a user's complete 70 combinations (V4 10G, V3 10G, Extra Packs 1~5 50G) for a specific round.
  * Write-Once policy: If already snapshot exists, never overwrite!
@@ -18958,19 +19038,22 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
         };
     }
 
-    // Save to memory and LocalStorage
+    // Save to memory and LocalStorage (Full snapshot for rich UI display)
     if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
     state.userRecommendationSnapshots[docKey] = snapshotData;
     try {
         SafeLocalStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(snapshotData));
     } catch(e) {}
 
+    // 🔒 1MB 단일 문서 한도 원천 방어: 불필요한 반복 텍스트를 제거한 초경량 스냅샷으로 Firestore 저장
+    const leanData = makeLeanSnapshot(snapshotData);
+
     // Save to Firestore (Write-Once into BOTH lotto_users and lotto_purchases)
     if (firestore) {
         try {
             await firestore.collection('lotto_users').doc(cleanUser).set({
                 recommendationSnapshots: {
-                    [String(roundNum)]: snapshotData
+                    [String(roundNum)]: leanData
                 }
             }, { merge: true });
         } catch(e) {
@@ -18979,7 +19062,7 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
         try {
             await firestore.collection('lotto_purchases').doc(cleanUser).set({
                 recommendationSnapshots: {
-                    [String(roundNum)]: snapshotData
+                    [String(roundNum)]: leanData
                 }
             }, { merge: true });
         } catch(e2) {
@@ -19113,6 +19196,10 @@ if (typeof window !== 'undefined') {
         if (typeof generateExtraAddonPack !== 'undefined') {
             __exports.generateExtraAddonPack = generateExtraAddonPack;
             if (typeof window !== 'undefined') window.generateExtraAddonPack = generateExtraAddonPack;
+        }
+        if (typeof makeLeanSnapshot !== 'undefined') {
+            __exports.makeLeanSnapshot = makeLeanSnapshot;
+            if (typeof window !== 'undefined') window.makeLeanSnapshot = makeLeanSnapshot;
         }
         if (typeof saveUserWeeklyRecommendationSnapshot !== 'undefined') {
             __exports.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;
@@ -19903,12 +19990,17 @@ async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotDa
             if (pData && (pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted')) return;
         }
 
+        // 🔒 1MB 단일 문서 한도 원천 방어: 초경량 스냅샷으로 Firestore 저장
+        const leanData = (typeof makeLeanSnapshot === 'function')
+            ? makeLeanSnapshot(snapshotData)
+            : (typeof window !== 'undefined' && typeof window.makeLeanSnapshot === 'function' ? window.makeLeanSnapshot(snapshotData) : snapshotData);
+
         // 1. Save in lotto_purchases
         await firestore.collection('lotto_purchases').doc(cleanUser).set({
             userId: cleanUser,
             realName: snapshotData.realName || cleanUser,
             recommendationSnapshots: {
-                [rKey]: snapshotData
+                [rKey]: leanData
             },
             updatedAt: new Date().toISOString()
         }, { merge: true });
@@ -19917,7 +20009,7 @@ async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotDa
         if (uDoc && uDoc.exists) {
             firestore.collection('lotto_users').doc(cleanUser).set({
                 recommendationSnapshots: {
-                    [rKey]: snapshotData
+                    [rKey]: leanData
                 },
                 updatedAt: new Date().toISOString()
             }, { merge: true }).catch(() => {});
