@@ -4,7 +4,15 @@ import { createBallHtml } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, isUserVerifiedAndPledged, getUserRealName } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, fetchAllUsersPurchases, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
-import { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
+import { 
+    computeAbsoluteTop10Combinations, 
+    generateExtraAddonPack, 
+    enterHistoryIsolation, 
+    exitHistoryIsolation,
+    getUserWeeklyRecommendationSnapshotSync as canonicalGetUserSnapshot,
+    saveUserWeeklyRecommendationSnapshot as canonicalSaveUserSnapshot,
+    hydrateLeanSnapshot
+} from '../generator.js';
 import { getAllUnifiedRegisteredUsers, UserContextManager } from '../../../shared/user-context.js';
 
 let reviewAdminViewingUser = null; // null (defaults to authId) or 'all' or specific userId
@@ -367,7 +375,7 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (isSystemOrDummyUser(cleanUser)) return null;
+    if (isSystemOrDummyUser(cleanUser) || cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest') return null;
     const rNum = parseInt(roundNum, 10);
     const rKey = String(rNum);
 
@@ -384,7 +392,7 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
             const uId = String(u.id || '').toLowerCase().trim();
             const uName = String(u.name || '').toLowerCase().trim();
             const uReal = String(u.realName || '').toLowerCase().trim();
-            if (uId === cleanUser || uName === cleanUser || uReal === cleanUser) {
+            if (uId !== 'dashboard_summary_latest' && (uId === cleanUser || uName === cleanUser || uReal === cleanUser)) {
                 if (uId) candidateIds.add(uId);
                 if (uName) candidateIds.add(uName);
                 if (uReal) candidateIds.add(uReal);
@@ -392,40 +400,65 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         });
     }
 
+    if (typeof UserContextManager !== 'undefined' && typeof UserContextManager.getAllKnownUsers === 'function') {
+        try {
+            const allUsers = UserContextManager.getAllKnownUsers();
+            if (Array.isArray(allUsers)) {
+                allUsers.forEach(u => {
+                    if (!u) return;
+                    const uId = String(u.id || '').toLowerCase().trim();
+                    const uName = String(u.name || '').toLowerCase().trim();
+                    const uReal = String(u.realName || '').toLowerCase().trim();
+                    if (uId !== 'dashboard_summary_latest' && (uId === cleanUser || uName === cleanUser || uReal === cleanUser)) {
+                        if (uId) candidateIds.add(uId);
+                        if (uName) candidateIds.add(uName);
+                        if (uReal) candidateIds.add(uReal);
+                    }
+                });
+            }
+        } catch(e) {}
+    }
+
     for (const cId of candidateIds) {
         const cacheKey = `${cId}_${rNum}`;
         // 1. In-memory state snapshots
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cacheKey]) {
-            return state.userRecommendationSnapshots[cacheKey];
+            return hydrateLeanSnapshot(state.userRecommendationSnapshots[cacheKey]);
         }
         // 2. LocalStorage cache
         try {
             const raw = localStorage.getItem(`lotto_rec_snapshot_${cacheKey}`);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (parsed && (parsed.v4Combos || parsed.v3Combos)) {
-                    return parsed;
+                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
+                    return hydrateLeanSnapshot(parsed);
                 }
             }
         } catch(e) {}
         // 3. state.allUsersPurchasesMap (User's Single Master Document)
         if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
             const pDoc = state.allUsersPurchasesMap[cId];
-            if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
-                return pDoc.recommendationSnapshots[rKey];
+            const pSnaps = pDoc.recommendationSnapshots;
+            if (pSnaps && (pSnaps[rKey] || pSnaps[rNum])) {
+                return hydrateLeanSnapshot(pSnaps[rKey] || pSnaps[rNum]);
             }
         }
         // 4. state.allRegisteredUsersList
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
-            if (u && u.recommendationSnapshots && u.recommendationSnapshots[rKey]) {
-                return u.recommendationSnapshots[rKey];
+            const uSnaps = u ? u.recommendationSnapshots : null;
+            if (uSnaps && (uSnaps[rKey] || uSnaps[rNum])) {
+                return hydrateLeanSnapshot(uSnaps[rKey] || uSnaps[rNum]);
             }
         }
     }
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
-        return state.userRecommendationSnapshots[rKey];
+        return hydrateLeanSnapshot(state.userRecommendationSnapshots[rKey]);
+    }
+
+    if (typeof canonicalGetUserSnapshot === 'function') {
+        return canonicalGetUserSnapshot(cleanUser, rNum);
     }
 
     return null;
@@ -436,16 +469,16 @@ if (typeof window !== 'undefined') {
 
 /**
  * 🔒 Asynchronously persists a user's immutable weekly recommendation snapshot to Firestore
+ * Supports both 2-arg (auto-generate & save) and 3-arg (explicit snapshot save) signatures
  */
-export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotData) {
-    if (!userId || !roundNum || !snapshotData) return;
+export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotData = null) {
+    if (!userId || !roundNum) return null;
     const cleanUser = String(userId).toLowerCase().trim();
-    if (cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || isSystemOrDummyUser(cleanUser)) return;
-    const rKey = String(roundNum);
+    if (cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || isSystemOrDummyUser(cleanUser)) return null;
 
     // 🔒 가입일 이전 회차는 추천번호 영구 스냅샷 저장 원천 차단 (가입 전 발급 불가)
     const joinRound = getUserJoinRound(cleanUser);
-    if (Number(roundNum) < joinRound) return;
+    if (Number(roundNum) < joinRound) return null;
 
     // 🔒 본인인증 미완료 및 미서약 사용자 추천번호 영구 스냅샷 저장 원천 차단
     const isPledged = (typeof isUserVerifiedAndPledged === 'function')
@@ -453,62 +486,22 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, sna
         : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(cleanUser) : true);
     if (!isPledged) {
         console.warn(`[ReviewTab Guard] User ${cleanUser} is not verified/pledged. Snapshot save blocked.`);
-        return;
+        return null;
     }
 
-    const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
-    if (!firestore) return;
-
-    try {
-        // 🔒 삭제(휴지통) 회원 및 본인인증/미서약 회원 차단: DB 조회 확인
-        const uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
-        if (!uDoc || !uDoc.exists) {
-            if (cleanUser !== 'master' && cleanUser !== 'wdy') {
-                return; // User was deleted or does not exist. Never create ghost user doc!
-            }
+    // If snapshotData is not passed, delegate to canonical generator implementation which computes 70 combos & saves
+    if (!snapshotData) {
+        if (typeof canonicalSaveUserSnapshot === 'function') {
+            return await canonicalSaveUserSnapshot(cleanUser, roundNum);
         }
-        if (uDoc && uDoc.exists) {
-            const uData = uDoc.data();
-            if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) return;
-            if (uData && typeof isUserVerifiedAndPledged === 'function' && !isUserVerifiedAndPledged(cleanUser, uData)) {
-                console.warn(`[ReviewTab Guard] User ${cleanUser} profile/pledge incomplete in Firestore. Snapshot save blocked.`);
-                return;
-            }
-        }
-        const pDoc = await firestore.collection('lotto_purchases').doc(cleanUser).get();
-        if (pDoc && pDoc.exists) {
-            const pData = pDoc.data();
-            if (pData && (pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted')) return;
-        }
-
-        // 🔒 1MB 단일 문서 한도 원천 방어: 초경량 스냅샷으로 Firestore 저장
-        const leanData = (typeof makeLeanSnapshot === 'function')
-            ? makeLeanSnapshot(snapshotData)
-            : (typeof window !== 'undefined' && typeof window.makeLeanSnapshot === 'function' ? window.makeLeanSnapshot(snapshotData) : snapshotData);
-
-        // 1. Save in lotto_purchases
-        await firestore.collection('lotto_purchases').doc(cleanUser).set({
-            userId: cleanUser,
-            realName: snapshotData.realName || cleanUser,
-            recommendationSnapshots: {
-                [rKey]: leanData
-            },
-            updatedAt: new Date().toISOString()
-        }, { merge: true });
-
-        // 2. Also save in lotto_users if user doc exists
-        if (uDoc && uDoc.exists) {
-            firestore.collection('lotto_users').doc(cleanUser).set({
-                recommendationSnapshots: {
-                    [rKey]: leanData
-                },
-                updatedAt: new Date().toISOString()
-            }, { merge: true }).catch(() => {});
-        }
-
-    } catch (e) {
-        console.warn('[saveUserWeeklyRecommendationSnapshot Error]', e);
+        return null;
     }
+
+    // If explicit snapshotData is passed, delegate to canonicalSaveUserSnapshot with the 3rd argument
+    if (typeof canonicalSaveUserSnapshot === 'function') {
+        return await canonicalSaveUserSnapshot(cleanUser, roundNum, snapshotData);
+    }
+    return null;
 }
 if (typeof window !== 'undefined') {
     window.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;

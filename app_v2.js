@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1908.51 - BUILD_DATE: 2026-10-13] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1922 - BUILD_DATE: 2026-10-13] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.13.1908.51)
+ * Lucky777 Smart Bundle (v2026.10.13.1922)
  */
 
 
@@ -17422,8 +17422,9 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
     
     // 1245회차 올라운더 2 업그레이드 바이패스: 1245회차에서 v3Combos에 옛 수학퀀트가 남아있으면 캐시 무시하고 재생성
     const isRound1245 = (roundForSeed === 1245);
+    const isPastDrawnRound = (maxKnownDrawnRound && roundForSeed <= maxKnownDrawnRound);
 
-    if (!forceRegenerate && state.localComboCache[cacheKey] && Array.isArray(state.localComboCache[cacheKey]) && state.localComboCache[cacheKey].length > 0) {
+    if ((!forceRegenerate || isPastDrawnRound) && state.localComboCache[cacheKey] && Array.isArray(state.localComboCache[cacheKey]) && state.localComboCache[cacheKey].length > 0) {
         const hasLegacy = !useReportLogic && isRound1245 && state.localComboCache[cacheKey].some(c => 
             (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
             (c.customLabel && c.customLabel.includes('수학퀀트'))
@@ -17434,8 +17435,8 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
     }
 
     // 🔒 1순위: 이미 저장된 불변 추천번호 스냅샷이 존재하는 경우, 알고리즘 업데이트와 무관하게 기존 스냅샷 반환
-    // (단, 1245회차에서 옛 수학퀀트 번호가 캐시되었거나 3단계 최적화 미적용인 경우 무효화하고 새 3단계 최적화 올라운더 2로 산출)
-    if (!forceRegenerate && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
+    // (과거 추첨 완료 회차는 forceRegenerate 여부와 무관하게 기존 스냅샷 100% 영구 불변 보존)
+    if ((!forceRegenerate || isPastDrawnRound) && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
         const snapshot = (typeof getUserWeeklyRecommendationSnapshotSync === 'function')
             ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, roundForSeed)
             : null;
@@ -19112,6 +19113,14 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
     // 🔒 1MB 단일 문서 한도 원천 방어: 불필요한 반복 텍스트를 제거한 초경량 스냅샷으로 Firestore 저장
     const leanData = makeLeanSnapshot(snapshotData);
 
+    // Also synchronously update in-memory state.allUsersPurchasesMap for instant SSOT reflection
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
+        if (!state.allUsersPurchasesMap[cleanUser].recommendationSnapshots) {
+            state.allUsersPurchasesMap[cleanUser].recommendationSnapshots = {};
+        }
+        state.allUsersPurchasesMap[cleanUser].recommendationSnapshots[String(roundNum)] = leanData;
+    }
+
     // Save to Firestore (Write-Once into BOTH lotto_users and lotto_purchases)
     if (firestore) {
         try {
@@ -19175,6 +19184,25 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
         });
     }
 
+    if (typeof UserContextManager !== 'undefined' && typeof UserContextManager.getAllKnownUsers === 'function') {
+        try {
+            const allUsers = UserContextManager.getAllKnownUsers();
+            if (Array.isArray(allUsers)) {
+                allUsers.forEach(u => {
+                    if (!u) return;
+                    const uId = String(u.id || '').toLowerCase().trim();
+                    const uName = String(u.name || '').toLowerCase().trim();
+                    const uReal = String(u.realName || '').toLowerCase().trim();
+                    if (uId === cleanUser || uName === cleanUser || uReal === cleanUser) {
+                        if (uId) candidateIds.add(uId);
+                        if (uName) candidateIds.add(uName);
+                        if (uReal) candidateIds.add(uReal);
+                    }
+                });
+            }
+        } catch(e) {}
+    }
+
     for (const cId of candidateIds) {
         const cKey = `${cId}_${roundNum}`;
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cKey]) {
@@ -19182,14 +19210,16 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
         }
         if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
             const pDoc = state.allUsersPurchasesMap[cId];
-            if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[String(roundNum)]) {
-                return hydrateLeanSnapshot(pDoc.recommendationSnapshots[String(roundNum)]);
+            const pSnaps = pDoc.recommendationSnapshots;
+            if (pSnaps && (pSnaps[String(roundNum)] || pSnaps[roundNum])) {
+                return hydrateLeanSnapshot(pSnaps[String(roundNum)] || pSnaps[roundNum]);
             }
         }
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
-            if (u && u.recommendationSnapshots && u.recommendationSnapshots[String(roundNum)]) {
-                return hydrateLeanSnapshot(u.recommendationSnapshots[String(roundNum)]);
+            const uSnaps = u ? u.recommendationSnapshots : null;
+            if (uSnaps && (uSnaps[String(roundNum)] || uSnaps[roundNum])) {
+                return hydrateLeanSnapshot(uSnaps[String(roundNum)] || uSnaps[roundNum]);
             }
         }
         try {
@@ -19586,7 +19616,15 @@ const { createBallHtml } = (typeof __M_shared_components !== 'undefined' ? __M_s
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser, isUserVerifiedAndPledged, getUserRealName } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getComboNumbers, fetchAllUsersPurchases, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
-const { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { 
+    computeAbsoluteTop10Combinations, 
+    generateExtraAddonPack, 
+    enterHistoryIsolation, 
+    exitHistoryIsolation,
+    getUserWeeklyRecommendationSnapshotSync: canonicalGetUserSnapshot,
+    saveUserWeeklyRecommendationSnapshot: canonicalSaveUserSnapshot,
+    hydrateLeanSnapshot
+} = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { getAllUnifiedRegisteredUsers, UserContextManager } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
 
 let reviewAdminViewingUser = null; // null (defaults to authId) or 'all' or specific userId
@@ -19949,7 +19987,7 @@ function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (isSystemOrDummyUser(cleanUser)) return null;
+    if (isSystemOrDummyUser(cleanUser) || cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest') return null;
     const rNum = parseInt(roundNum, 10);
     const rKey = String(rNum);
 
@@ -19966,7 +20004,7 @@ function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
             const uId = String(u.id || '').toLowerCase().trim();
             const uName = String(u.name || '').toLowerCase().trim();
             const uReal = String(u.realName || '').toLowerCase().trim();
-            if (uId === cleanUser || uName === cleanUser || uReal === cleanUser) {
+            if (uId !== 'dashboard_summary_latest' && (uId === cleanUser || uName === cleanUser || uReal === cleanUser)) {
                 if (uId) candidateIds.add(uId);
                 if (uName) candidateIds.add(uName);
                 if (uReal) candidateIds.add(uReal);
@@ -19974,40 +20012,65 @@ function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         });
     }
 
+    if (typeof UserContextManager !== 'undefined' && typeof UserContextManager.getAllKnownUsers === 'function') {
+        try {
+            const allUsers = UserContextManager.getAllKnownUsers();
+            if (Array.isArray(allUsers)) {
+                allUsers.forEach(u => {
+                    if (!u) return;
+                    const uId = String(u.id || '').toLowerCase().trim();
+                    const uName = String(u.name || '').toLowerCase().trim();
+                    const uReal = String(u.realName || '').toLowerCase().trim();
+                    if (uId !== 'dashboard_summary_latest' && (uId === cleanUser || uName === cleanUser || uReal === cleanUser)) {
+                        if (uId) candidateIds.add(uId);
+                        if (uName) candidateIds.add(uName);
+                        if (uReal) candidateIds.add(uReal);
+                    }
+                });
+            }
+        } catch(e) {}
+    }
+
     for (const cId of candidateIds) {
         const cacheKey = `${cId}_${rNum}`;
         // 1. In-memory state snapshots
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cacheKey]) {
-            return state.userRecommendationSnapshots[cacheKey];
+            return hydrateLeanSnapshot(state.userRecommendationSnapshots[cacheKey]);
         }
         // 2. LocalStorage cache
         try {
             const raw = SafeLocalStorage.getItem(`lotto_rec_snapshot_${cacheKey}`);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (parsed && (parsed.v4Combos || parsed.v3Combos)) {
-                    return parsed;
+                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
+                    return hydrateLeanSnapshot(parsed);
                 }
             }
         } catch(e) {}
         // 3. state.allUsersPurchasesMap (User's Single Master Document)
         if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
             const pDoc = state.allUsersPurchasesMap[cId];
-            if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
-                return pDoc.recommendationSnapshots[rKey];
+            const pSnaps = pDoc.recommendationSnapshots;
+            if (pSnaps && (pSnaps[rKey] || pSnaps[rNum])) {
+                return hydrateLeanSnapshot(pSnaps[rKey] || pSnaps[rNum]);
             }
         }
         // 4. state.allRegisteredUsersList
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
-            if (u && u.recommendationSnapshots && u.recommendationSnapshots[rKey]) {
-                return u.recommendationSnapshots[rKey];
+            const uSnaps = u ? u.recommendationSnapshots : null;
+            if (uSnaps && (uSnaps[rKey] || uSnaps[rNum])) {
+                return hydrateLeanSnapshot(uSnaps[rKey] || uSnaps[rNum]);
             }
         }
     }
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
-        return state.userRecommendationSnapshots[rKey];
+        return hydrateLeanSnapshot(state.userRecommendationSnapshots[rKey]);
+    }
+
+    if (typeof canonicalGetUserSnapshot === 'function') {
+        return canonicalGetUserSnapshot(cleanUser, rNum);
     }
 
     return null;
@@ -20018,16 +20081,16 @@ if (typeof window !== 'undefined') {
 
 /**
  * 🔒 Asynchronously persists a user's immutable weekly recommendation snapshot to Firestore
+ * Supports both 2-arg (auto-generate & save) and 3-arg (explicit snapshot save) signatures
  */
-async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotData) {
-    if (!userId || !roundNum || !snapshotData) return;
+async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotData = null) {
+    if (!userId || !roundNum) return null;
     const cleanUser = String(userId).toLowerCase().trim();
-    if (cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || isSystemOrDummyUser(cleanUser)) return;
-    const rKey = String(roundNum);
+    if (cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || isSystemOrDummyUser(cleanUser)) return null;
 
     // 🔒 가입일 이전 회차는 추천번호 영구 스냅샷 저장 원천 차단 (가입 전 발급 불가)
     const joinRound = getUserJoinRound(cleanUser);
-    if (Number(roundNum) < joinRound) return;
+    if (Number(roundNum) < joinRound) return null;
 
     // 🔒 본인인증 미완료 및 미서약 사용자 추천번호 영구 스냅샷 저장 원천 차단
     const isPledged = (typeof isUserVerifiedAndPledged === 'function')
@@ -20035,62 +20098,22 @@ async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotDa
         : (typeof window !== 'undefined' && typeof window.isUserVerifiedAndPledged === 'function' ? window.isUserVerifiedAndPledged(cleanUser) : true);
     if (!isPledged) {
         console.warn(`[ReviewTab Guard] User ${cleanUser} is not verified/pledged. Snapshot save blocked.`);
-        return;
+        return null;
     }
 
-    const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
-    if (!firestore) return;
-
-    try {
-        // 🔒 삭제(휴지통) 회원 및 본인인증/미서약 회원 차단: DB 조회 확인
-        const uDoc = await firestore.collection('lotto_users').doc(cleanUser).get();
-        if (!uDoc || !uDoc.exists) {
-            if (cleanUser !== 'master' && cleanUser !== 'wdy') {
-                return; // User was deleted or does not exist. Never create ghost user doc!
-            }
+    // If snapshotData is not passed, delegate to canonical generator implementation which computes 70 combos & saves
+    if (!snapshotData) {
+        if (typeof canonicalSaveUserSnapshot === 'function') {
+            return await canonicalSaveUserSnapshot(cleanUser, roundNum);
         }
-        if (uDoc && uDoc.exists) {
-            const uData = uDoc.data();
-            if (uData && (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted')) return;
-            if (uData && typeof isUserVerifiedAndPledged === 'function' && !isUserVerifiedAndPledged(cleanUser, uData)) {
-                console.warn(`[ReviewTab Guard] User ${cleanUser} profile/pledge incomplete in Firestore. Snapshot save blocked.`);
-                return;
-            }
-        }
-        const pDoc = await firestore.collection('lotto_purchases').doc(cleanUser).get();
-        if (pDoc && pDoc.exists) {
-            const pData = pDoc.data();
-            if (pData && (pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted')) return;
-        }
-
-        // 🔒 1MB 단일 문서 한도 원천 방어: 초경량 스냅샷으로 Firestore 저장
-        const leanData = (typeof makeLeanSnapshot === 'function')
-            ? makeLeanSnapshot(snapshotData)
-            : (typeof window !== 'undefined' && typeof window.makeLeanSnapshot === 'function' ? window.makeLeanSnapshot(snapshotData) : snapshotData);
-
-        // 1. Save in lotto_purchases
-        await firestore.collection('lotto_purchases').doc(cleanUser).set({
-            userId: cleanUser,
-            realName: snapshotData.realName || cleanUser,
-            recommendationSnapshots: {
-                [rKey]: leanData
-            },
-            updatedAt: new Date().toISOString()
-        }, { merge: true });
-
-        // 2. Also save in lotto_users if user doc exists
-        if (uDoc && uDoc.exists) {
-            firestore.collection('lotto_users').doc(cleanUser).set({
-                recommendationSnapshots: {
-                    [rKey]: leanData
-                },
-                updatedAt: new Date().toISOString()
-            }, { merge: true }).catch(() => {});
-        }
-
-    } catch (e) {
-        console.warn('[saveUserWeeklyRecommendationSnapshot Error]', e);
+        return null;
     }
+
+    // If explicit snapshotData is passed, delegate to canonicalSaveUserSnapshot with the 3rd argument
+    if (typeof canonicalSaveUserSnapshot === 'function') {
+        return await canonicalSaveUserSnapshot(cleanUser, roundNum, snapshotData);
+    }
+    return null;
 }
 if (typeof window !== 'undefined') {
     window.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;

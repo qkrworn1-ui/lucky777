@@ -181,8 +181,9 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
     
     // 1245회차 올라운더 2 업그레이드 바이패스: 1245회차에서 v3Combos에 옛 수학퀀트가 남아있으면 캐시 무시하고 재생성
     const isRound1245 = (roundForSeed === 1245);
+    const isPastDrawnRound = (maxKnownDrawnRound && roundForSeed <= maxKnownDrawnRound);
 
-    if (!forceRegenerate && state.localComboCache[cacheKey] && Array.isArray(state.localComboCache[cacheKey]) && state.localComboCache[cacheKey].length > 0) {
+    if ((!forceRegenerate || isPastDrawnRound) && state.localComboCache[cacheKey] && Array.isArray(state.localComboCache[cacheKey]) && state.localComboCache[cacheKey].length > 0) {
         const hasLegacy = !useReportLogic && isRound1245 && state.localComboCache[cacheKey].some(c => 
             (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
             (c.customLabel && c.customLabel.includes('수학퀀트'))
@@ -193,8 +194,8 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
     }
 
     // 🔒 1순위: 이미 저장된 불변 추천번호 스냅샷이 존재하는 경우, 알고리즘 업데이트와 무관하게 기존 스냅샷 반환
-    // (단, 1245회차에서 옛 수학퀀트 번호가 캐시되었거나 3단계 최적화 미적용인 경우 무효화하고 새 3단계 최적화 올라운더 2로 산출)
-    if (!forceRegenerate && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
+    // (과거 추첨 완료 회차는 forceRegenerate 여부와 무관하게 기존 스냅샷 100% 영구 불변 보존)
+    if ((!forceRegenerate || isPastDrawnRound) && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
         const snapshot = (typeof getUserWeeklyRecommendationSnapshotSync === 'function')
             ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, roundForSeed)
             : null;
@@ -1871,6 +1872,14 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
     // 🔒 1MB 단일 문서 한도 원천 방어: 불필요한 반복 텍스트를 제거한 초경량 스냅샷으로 Firestore 저장
     const leanData = makeLeanSnapshot(snapshotData);
 
+    // Also synchronously update in-memory state.allUsersPurchasesMap for instant SSOT reflection
+    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
+        if (!state.allUsersPurchasesMap[cleanUser].recommendationSnapshots) {
+            state.allUsersPurchasesMap[cleanUser].recommendationSnapshots = {};
+        }
+        state.allUsersPurchasesMap[cleanUser].recommendationSnapshots[String(roundNum)] = leanData;
+    }
+
     // Save to Firestore (Write-Once into BOTH lotto_users and lotto_purchases)
     if (firestore) {
         try {
@@ -1934,6 +1943,25 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
         });
     }
 
+    if (typeof UserContextManager !== 'undefined' && typeof UserContextManager.getAllKnownUsers === 'function') {
+        try {
+            const allUsers = UserContextManager.getAllKnownUsers();
+            if (Array.isArray(allUsers)) {
+                allUsers.forEach(u => {
+                    if (!u) return;
+                    const uId = String(u.id || '').toLowerCase().trim();
+                    const uName = String(u.name || '').toLowerCase().trim();
+                    const uReal = String(u.realName || '').toLowerCase().trim();
+                    if (uId === cleanUser || uName === cleanUser || uReal === cleanUser) {
+                        if (uId) candidateIds.add(uId);
+                        if (uName) candidateIds.add(uName);
+                        if (uReal) candidateIds.add(uReal);
+                    }
+                });
+            }
+        } catch(e) {}
+    }
+
     for (const cId of candidateIds) {
         const cKey = `${cId}_${roundNum}`;
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cKey]) {
@@ -1941,14 +1969,16 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
         }
         if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
             const pDoc = state.allUsersPurchasesMap[cId];
-            if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[String(roundNum)]) {
-                return hydrateLeanSnapshot(pDoc.recommendationSnapshots[String(roundNum)]);
+            const pSnaps = pDoc.recommendationSnapshots;
+            if (pSnaps && (pSnaps[String(roundNum)] || pSnaps[roundNum])) {
+                return hydrateLeanSnapshot(pSnaps[String(roundNum)] || pSnaps[roundNum]);
             }
         }
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
-            if (u && u.recommendationSnapshots && u.recommendationSnapshots[String(roundNum)]) {
-                return hydrateLeanSnapshot(u.recommendationSnapshots[String(roundNum)]);
+            const uSnaps = u ? u.recommendationSnapshots : null;
+            if (uSnaps && (uSnaps[String(roundNum)] || uSnaps[roundNum])) {
+                return hydrateLeanSnapshot(uSnaps[String(roundNum)] || uSnaps[roundNum]);
             }
         }
         try {
