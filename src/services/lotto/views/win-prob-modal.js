@@ -330,7 +330,10 @@ export function renderWinProbModalContent(tabId = 'v4') {
         <div class="win-prob-table-wrap">
             <div class="win-prob-table-title-row">
                 <h4 class="win-prob-section-title"><i class="fa-solid fa-table-list"></i> 1등 ~ 5등 전 등위 공식 확률 vs 실전 성적 1:1 대조표</h4>
-                <span class="win-prob-target-tag">${data.name}</span>
+                <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <span class="win-prob-scroll-hint" style="font-size: 0.68rem; color: #94a3b8; background: rgba(255,255,255,0.06); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);"><i class="fa-solid fa-arrows-left-right" style="color: #60a5fa;"></i> 좌우 터치 스크롤</span>
+                    <span class="win-prob-target-tag">${data.name}</span>
+                </div>
             </div>
             <div class="win-prob-responsive-table">
                 <table class="win-prob-table">

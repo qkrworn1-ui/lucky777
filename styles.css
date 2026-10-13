@@ -20436,11 +20436,172 @@ body.is-admin .btn-snapshot-audit-compact {
     }
 }
 @media (max-width: 480px) {
+    .win-prob-modal-overlay {
+        padding: 10px 8px !important;
+    }
+    .win-prob-modal-header {
+        padding: 12px 14px !important;
+    }
+    .win-prob-modal-body {
+        padding: 12px 10px !important;
+        gap: 12px !important;
+    }
     .win-prob-kpi-grid {
         grid-template-columns: 1fr !important;
     }
     .win-prob-tab-row {
         grid-template-columns: 1fr !important;
+    }
+    .win-prob-modal-footer {
+        padding: 10px 14px !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        align-items: stretch !important;
+    }
+    .win-prob-footer-source {
+        text-align: center !important;
+        font-size: 0.68rem !important;
+        line-height: 1.35 !important;
+    }
+    .btn-win-prob-dismiss {
+        width: 100% !important;
+        text-align: center !important;
+        justify-content: center !important;
+        padding: 9px 12px !important;
+    }
+}
+
+/* ── 갤럭시 Z 폴드7 접은 화면 (<= 380px) 글자 겹침 및 화면 삐져나감 완전 방어 ── */
+@media (max-width: 380px) {
+    .win-prob-modal-overlay {
+        padding: 6px 4px !important;
+    }
+    .win-prob-modal-card {
+        border-radius: 12px !important;
+        max-height: 98vh !important;
+    }
+    .win-prob-modal-header {
+        padding: 10px 10px !important;
+        gap: 6px !important;
+    }
+    .win-prob-header-left {
+        gap: 8px !important;
+    }
+    .win-prob-header-icon {
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        font-size: 0.95rem !important;
+        border-radius: 8px !important;
+    }
+    .win-prob-close-btn {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        font-size: 1.15rem !important;
+    }
+    .win-prob-title {
+        font-size: 0.90rem !important;
+        line-height: 1.25 !important;
+        word-break: keep-all !important;
+    }
+    .win-prob-subtitle {
+        font-size: 0.68rem !important;
+        line-height: 1.25 !important;
+        word-break: keep-all !important;
+    }
+    .win-prob-title-badge,
+    .win-prob-sample-badge {
+        font-size: 0.62rem !important;
+        padding: 1px 5px !important;
+    }
+    .win-prob-modal-body {
+        padding: 10px 6px !important;
+        gap: 10px !important;
+    }
+    .win-prob-tab-btn {
+        padding: 8px 10px !important;
+        font-size: 0.78rem !important;
+        word-break: keep-all !important;
+        text-align: center !important;
+    }
+    .win-prob-tab-sub {
+        font-size: 0.66rem !important;
+    }
+    .win-prob-kpi-card {
+        padding: 8px 8px !important;
+        gap: 6px !important;
+    }
+    .win-prob-kpi-label {
+        font-size: 0.70rem !important;
+    }
+    .win-prob-kpi-badge {
+        font-size: 0.64rem !important;
+        padding: 1px 5px !important;
+    }
+    .win-prob-kpi-compare-row {
+        padding: 6px 6px !important;
+        gap: 4px !important;
+    }
+    .kpi-compare-box .box-lbl {
+        font-size: 0.62rem !important;
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+    }
+    .kpi-compare-box .box-val {
+        font-size: 0.84rem !important;
+        font-family: monospace !important;
+    }
+    .kpi-compare-box .box-sub {
+        font-size: 0.60rem !important;
+        white-space: nowrap !important;
+        word-break: keep-all !important;
+    }
+    .kpi-compare-arrow {
+        font-size: 0.65rem !important;
+        flex-shrink: 0 !important;
+    }
+    .win-prob-table-wrap {
+        padding: 8px 6px !important;
+    }
+    .win-prob-section-title {
+        font-size: 0.78rem !important;
+        word-break: keep-all !important;
+    }
+    .win-prob-target-tag {
+        font-size: 0.66rem !important;
+        padding: 1px 5px !important;
+    }
+    .win-prob-table th,
+    .win-prob-table td {
+        padding: 6px 8px !important;
+        font-size: 0.72rem !important;
+    }
+    .win-prob-science-box {
+        padding: 10px 8px !important;
+    }
+    .pillar-card {
+        padding: 8px 8px !important;
+        gap: 4px !important;
+    }
+    .pillar-content strong {
+        font-size: 0.75rem !important;
+        word-break: keep-all !important;
+    }
+    .pillar-content p {
+        font-size: 0.68rem !important;
+        line-height: 1.35 !important;
+        word-break: keep-all !important;
+    }
+    .win-prob-modal-footer {
+        padding: 8px 8px !important;
+    }
+    .win-prob-footer-source {
+        font-size: 0.64rem !important;
+    }
+    .btn-win-prob-dismiss {
+        font-size: 0.80rem !important;
+        padding: 8px 10px !important;
     }
 }
 

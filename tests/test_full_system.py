@@ -4167,6 +4167,26 @@ Lotto 6/45
         self.assertIn('.sim-live-odometer-grid', css, "styles.css must style .sim-live-odometer-grid")
         self.assertIn('scroll-margin-top: 75px', css, "styles.css must define scroll-margin-top for sticky nav buffer")
 
+    # [Test 117] Win Probability Comparison Modal Fold 7 Cover Screen Zero-Overlap Safeguards
+    def test_117_win_prob_modal_fold7_responsive_safeguards(self):
+        """Verify Win Probability Comparison Modal adapts seamlessly to Fold 7 cover screens without text overlapping or layout blowouts."""
+        css_path = os.path.join(self.root_dir, 'styles.css')
+        modal_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'win-prob-modal.js')
+
+        with open(css_path, 'r', encoding='utf-8') as f:
+            css = f.read()
+        with open(modal_path, 'r', encoding='utf-8') as f:
+            modal_code = f.read()
+
+        # 1. Verification of touch scroll hint in JS template
+        self.assertIn('class="win-prob-scroll-hint"', modal_code, "win-prob-modal.js must include scroll hint pill")
+
+        # 2. Verification of Fold 7 media query styles for win-prob modal
+        self.assertIn('.win-prob-modal-overlay', css, "styles.css must style .win-prob-modal-overlay for mobile")
+        self.assertIn('.win-prob-kpi-compare-row', css, "styles.css must adapt .win-prob-kpi-compare-row on small screens")
+        self.assertIn('.kpi-compare-box .box-lbl', css, "styles.css must format .box-lbl for Fold 7")
+        self.assertIn('white-space: nowrap !important', css, "styles.css must prevent awkward word fragment wrapping in compare boxes")
+
 if __name__ == '__main__':
     unittest.main()
 
