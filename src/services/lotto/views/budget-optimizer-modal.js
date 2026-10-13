@@ -202,9 +202,10 @@ export function openBudgetOptimizerModal() {
     }
 
     const input = document.getElementById('txtBudgetAmount');
-    if (input && (!input.value || input.value === '0')) {
-        input.value = '10000'; // Default 10,000 KRW additional
-    }
+    const curVal = input && input.value ? parseInt(input.value, 10) : 10000;
+    const safeAmt = (!isNaN(curVal) && curVal >= 5000) ? curVal : 10000;
+    if (input) input.value = safeAmt;
+    updateBudgetChipStyles(safeAmt);
 
     const runningHUD = document.getElementById('optRunningHUD');
     if (runningHUD) runningHUD.style.display = 'none';
@@ -238,18 +239,53 @@ export function clearOwnedPacksSelection() {
     });
 }
 
+export function updateBudgetChipStyles(amount) {
+    const num = parseInt(amount, 10) || 0;
+    document.querySelectorAll('.budget-chip-btn').forEach(btn => {
+        const btnAmt = parseInt(btn.getAttribute('data-amount'), 10);
+        if (btnAmt === num) {
+            btn.classList.add('active-budget-chip');
+            btn.style.border = '1.5px solid #fbbf24';
+            btn.style.borderColor = '#fbbf24';
+            btn.style.background = 'rgba(245, 158, 11, 0.25)';
+            btn.style.color = '#fde047';
+            btn.style.fontWeight = '800';
+            btn.style.boxShadow = '0 0 12px rgba(245, 158, 11, 0.4)';
+        } else {
+            btn.classList.remove('active-budget-chip');
+            btn.style.border = '1px solid #475569';
+            btn.style.borderColor = '#475569';
+            btn.style.background = 'rgba(15, 23, 42, 0.7)';
+            btn.style.color = '#cbd5e1';
+            btn.style.fontWeight = '600';
+            btn.style.boxShadow = 'none';
+        }
+    });
+
+    const txtAmount = document.getElementById('optSelectedAmountText');
+    const txtGames = document.getElementById('optSelectedGamesText');
+    if (txtAmount) {
+        txtAmount.innerText = `${num.toLocaleString()}원`;
+    }
+    if (txtGames) {
+        const games = Math.max(0, Math.floor(num / 1000));
+        const packs = Math.round(games / 10);
+        txtGames.innerText = `(+${games}게임 / ${packs}팩 탐색)`;
+    }
+}
+
+export function handleBudgetAmountInput(value) {
+    const num = parseInt(value, 10) || 0;
+    updateBudgetChipStyles(num);
+}
+
 export function setBudgetAmount(amount) {
     const input = document.getElementById('txtBudgetAmount');
+    const num = parseInt(amount, 10) || 10000;
     if (input) {
-        input.value = amount;
-        document.querySelectorAll('.budget-chip-btn').forEach(btn => {
-            if (parseInt(btn.getAttribute('data-amount')) === amount) {
-                btn.classList.add('active-budget-chip');
-            } else {
-                btn.classList.remove('active-budget-chip');
-            }
-        });
+        input.value = num;
     }
+    updateBudgetChipStyles(num);
 }
 
 /**
@@ -838,6 +874,8 @@ if (typeof window !== 'undefined') {
     window.closeBudgetOptimizerModal = closeBudgetOptimizerModal;
     window.clearOwnedPacksSelection = clearOwnedPacksSelection;
     window.setBudgetAmount = setBudgetAmount;
+    window.updateBudgetChipStyles = updateBudgetChipStyles;
+    window.handleBudgetAmountInput = handleBudgetAmountInput;
     window.runBudgetOptimizationSimulation = runBudgetOptimizationSimulation;
     window.applyOptimizedCombinationToApp = applyOptimizedCombinationToApp;
     window.toggleOptSound = toggleOptSound;
