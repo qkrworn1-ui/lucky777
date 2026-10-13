@@ -1203,6 +1203,26 @@ export function setSimSpeed(speed, btnEl) {
     }
 }
 
+/**
+ * Smoothly centers a target element in the viewport
+ * Optimized for Fold 7 cover screens and mobile viewport constraints
+ */
+export function scrollElementToViewportCenter(el) {
+    if (!el) return;
+    try {
+        if (typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+    } catch(e) {}
+    try {
+        const rect = el.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const targetY = scrollTop + rect.top - (window.innerHeight / 2) + (rect.height / 2);
+        window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+    } catch(e) {}
+}
+
 export function stopRealHistoricalSimulation() {
     _simAbortRequested = true;
 }
@@ -1297,6 +1317,12 @@ export async function runRealHistoricalSimulation() {
     progContainer.style.display = 'block';
     if (telemetryCard) telemetryCard.style.display = 'flex';
     if (celebrationCard) celebrationCard.style.display = 'none';
+
+    // Auto-center simulation status screen smoothly in viewport (Fold 7 / mobile optimization)
+    setTimeout(() => {
+        const target = telemetryCard || progContainer;
+        scrollElementToViewportCenter(target);
+    }, 50);
 
     // Reset live stats
     let live1st = 0, live2nd = 0, live3rd = 0, live4th = 0, live5th = 0, livePrize = 0;
@@ -1515,6 +1541,10 @@ export async function runRealHistoricalSimulation() {
             if (telemetryCard) telemetryCard.style.display = 'none';
             if (celebrationCard) {
                 celebrationCard.style.display = 'block';
+                // Auto-center celebration trophy card smoothly in viewport (Fold 7 / mobile optimization)
+                setTimeout(() => {
+                    scrollElementToViewportCenter(celebrationCard);
+                }, 50);
                 const trophyTitle = document.getElementById('simTrophyTitle');
                 const trophyDesc = document.getElementById('simTrophyDesc');
                 const tHit1 = document.getElementById('trophyHit1st');

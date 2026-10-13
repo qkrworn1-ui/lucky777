@@ -4125,6 +4125,48 @@ Lotto 6/45
         # 8. Verification of Celebration Bonus Ball label breathing room
         self.assertIn('padding:4px 0 14px 0;', celeb_code, "celebration.js must provide 14px bottom padding for bonus label")
 
+    # [Test 116] Simulation Status Screen Viewport Auto-Centering Safeguards (Fold 7 / Mobile)
+    def test_116_simulation_status_center_alignment_safeguards(self):
+        """Verify simulation status screens automatically center in the viewport for Fold 7 cover screens and mobile devices."""
+        html_path = os.path.join(self.root_dir, 'index.html')
+        css_path = os.path.join(self.root_dir, 'styles.css')
+        budget_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'budget-optimizer-modal.js')
+        sim_tab_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'simulation-tab.js')
+
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html = f.read()
+        with open(css_path, 'r', encoding='utf-8') as f:
+            css = f.read()
+        with open(budget_path, 'r', encoding='utf-8') as f:
+            budget_code = f.read()
+        with open(sim_tab_path, 'r', encoding='utf-8') as f:
+            sim_code = f.read()
+
+        # 1. Budget Optimizer Modal Centering verification
+        self.assertIn('scrollModalElementToCenter', budget_code, "budget-optimizer-modal.js must define scrollModalElementToCenter")
+        self.assertIn('scrollModalElementToCenter(runningHUD)', budget_code, "budget-optimizer-modal.js must auto-center runningHUD on start")
+        self.assertIn('scrollModalElementToCenter(resultContainer)', budget_code, "budget-optimizer-modal.js must auto-center resultContainer on finish")
+        self.assertIn('class="opt-running-hud"', html, "index.html must have opt-running-hud class")
+        self.assertIn('class="opt-sim-result-container"', html, "index.html must have opt-sim-result-container class")
+
+        # 2. Simulation Tab Centering verification
+        self.assertIn('scrollElementToViewportCenter', sim_code, "simulation-tab.js must define scrollElementToViewportCenter")
+        self.assertIn('scrollElementToViewportCenter(target)', sim_code, "simulation-tab.js must auto-center telemetryCard on simulation start")
+        self.assertIn('scrollElementToViewportCenter(celebrationCard)', sim_code, "simulation-tab.js must auto-center celebrationCard on complete")
+        self.assertIn('class="sim-telemetry-hud-container"', html, "index.html must have sim-telemetry-hud-container class")
+        self.assertIn('class="sim-telemetry-card"', html, "index.html must have sim-telemetry-card class")
+        self.assertIn('class="sim-celebration-trophy-card"', html, "index.html must have sim-celebration-trophy-card class")
+        self.assertIn('class="sim-live-odometer-grid"', html, "index.html must have sim-live-odometer-grid class")
+
+        # 3. CSS scroll-margin and responsive layout verification
+        self.assertIn('.sim-telemetry-hud-container', css, "styles.css must style .sim-telemetry-hud-container")
+        self.assertIn('.sim-telemetry-card', css, "styles.css must style .sim-telemetry-card")
+        self.assertIn('.sim-celebration-trophy-card', css, "styles.css must style .sim-celebration-trophy-card")
+        self.assertIn('.opt-running-hud', css, "styles.css must style .opt-running-hud")
+        self.assertIn('.opt-sim-result-container', css, "styles.css must style .opt-sim-result-container")
+        self.assertIn('.sim-live-odometer-grid', css, "styles.css must style .sim-live-odometer-grid")
+        self.assertIn('scroll-margin-top: 75px', css, "styles.css must define scroll-margin-top for sticky nav buffer")
+
 if __name__ == '__main__':
     unittest.main()
 

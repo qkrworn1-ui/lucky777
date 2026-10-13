@@ -23377,3 +23377,73 @@ body.lotto-mode-active .app-container {
         font-size: 0.68rem !important;
     }
 }
+
+/* ==========================================================================
+   🎯 시뮬레이션 상태 화면 중앙 정렬 및 현황 확인 편의성 최적화
+   (Simulation Live Status Viewport Auto-Centering Engine for Fold 7 & Mobile)
+   ========================================================================== */
+
+/* 1. AI 시뮬레이션 연구소 텔레메트리 HUD 컨테이너 중앙 정렬 스크롤 앵커 */
+.sim-telemetry-hud-container {
+    scroll-margin-top: 75px !important;
+    scroll-margin-bottom: 30px !important;
+    scroll-margin: 75px 0 30px 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* 2. 시뮬레이션 실시간 HUD 카드 시각적 포커스 및 중앙 배치 */
+.sim-telemetry-card {
+    scroll-margin-top: 75px !important;
+    scroll-margin-bottom: 30px !important;
+    scroll-margin: 75px 0 30px 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 0 25px rgba(59, 130, 246, 0.35), 0 10px 35px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* 3. 완주 트로피 축하 카드 중앙 정렬 */
+.sim-celebration-trophy-card {
+    scroll-margin-top: 75px !important;
+    scroll-margin-bottom: 30px !important;
+    scroll-margin: 75px 0 30px 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 0 30px rgba(245, 158, 11, 0.35), 0 12px 40px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* 4. 예산 맞춤 AI 최적팩 실시간 셔플 HUD 모달 중앙 정렬 */
+.opt-running-hud {
+    scroll-margin-top: 30px !important;
+    scroll-margin-bottom: 20px !important;
+    scroll-margin: 30px 0 20px 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* 5. 예산 맞춤 AI 최적팩 최종 결과 카드 모달 중앙 정렬 */
+.opt-sim-result-container {
+    scroll-margin-top: 30px !important;
+    scroll-margin-bottom: 20px !important;
+    scroll-margin: 30px 0 20px 0 !important;
+    margin: 0 auto !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* 6. 폴드7 접은 화면 (<= 380px) 실시간 오도미터 계기판 3열 반응형 보정 */
+@media (max-width: 380px) {
+    .sim-live-odometer-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 4px !important;
+    }
+    .sim-live-odometer-grid > div {
+        padding: 4px 2px !important;
+    }
+}
+

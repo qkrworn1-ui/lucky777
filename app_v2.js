@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.2019 - BUILD_DATE: 2026-10-13] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.2028 - BUILD_DATE: 2026-10-13] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.13.2019)
+ * Lucky777 Smart Bundle (v2026.10.13.2028)
  */
 
 
@@ -27941,6 +27941,29 @@ function toggleOptSound() {
     if (_optSoundEnabled) playOptWinFanfare();
 }
 
+/**
+ * Smoothly centers a target element inside the modal body/viewport
+ * Especially optimized for Fold 7 cover screens and mobile viewport constraints
+ */
+function scrollModalElementToCenter(el) {
+    if (!el) return;
+    try {
+        if (typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+    } catch(e) {}
+    try {
+        const modalBody = el.closest('.modal-body') || el.parentElement;
+        if (modalBody) {
+            const bodyRect = modalBody.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+            const offset = (elRect.top - bodyRect.top) - (bodyRect.height / 2) + (elRect.height / 2);
+            modalBody.scrollBy({ top: offset, behavior: 'smooth' });
+        }
+    } catch(e) {}
+}
+
 function fireOptConfetti() {
     const canvas = document.getElementById('optConfettiCanvas');
     if (!canvas) return;
@@ -28074,6 +28097,9 @@ function openBudgetOptimizerModal() {
     const runningHUD = document.getElementById('optRunningHUD');
     if (runningHUD) runningHUD.style.display = 'none';
 
+    const modalBody = modal.querySelector('.modal-body');
+    if (modalBody) modalBody.scrollTop = 0;
+
     const liveFeed = document.getElementById('optLiveCandidateFeed');
     if (liveFeed) liveFeed.innerHTML = '';
 
@@ -28178,7 +28204,13 @@ async function runBudgetOptimizationSimulation() {
     const resultContainer = document.getElementById('optSimResultContainer');
 
     if (btn) btn.disabled = true;
-    if (runningHUD) runningHUD.style.display = 'flex';
+    if (runningHUD) {
+        runningHUD.style.display = 'flex';
+        // Auto-center simulation status screen smoothly in modal viewport (Fold 7 / mobile optimization)
+        setTimeout(() => {
+            scrollModalElementToCenter(runningHUD);
+        }, 50);
+    }
     if (resultContainer) resultContainer.style.display = 'none';
     if (liveFeed) liveFeed.innerHTML = '';
     if (terminal) terminal.innerHTML = '';
@@ -28652,7 +28684,10 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
         </div>
     `;
 
-    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Auto-center optimal recommendation result smoothly in modal viewport
+    setTimeout(() => {
+        scrollModalElementToCenter(resultContainer);
+    }, 60);
 }
 
 function applyOptimizedCombinationToApp() {
@@ -28769,6 +28804,10 @@ if (typeof window !== 'undefined') {
         if (typeof toggleOptSound !== 'undefined') {
             __exports.toggleOptSound = toggleOptSound;
             if (typeof window !== 'undefined') window.toggleOptSound = toggleOptSound;
+        }
+        if (typeof scrollModalElementToCenter !== 'undefined') {
+            __exports.scrollModalElementToCenter = scrollModalElementToCenter;
+            if (typeof window !== 'undefined') window.scrollModalElementToCenter = scrollModalElementToCenter;
         }
         if (typeof fireOptConfetti !== 'undefined') {
             __exports.fireOptConfetti = fireOptConfetti;
@@ -30024,6 +30063,26 @@ function setSimSpeed(speed, btnEl) {
     }
 }
 
+/**
+ * Smoothly centers a target element in the viewport
+ * Optimized for Fold 7 cover screens and mobile viewport constraints
+ */
+function scrollElementToViewportCenter(el) {
+    if (!el) return;
+    try {
+        if (typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+    } catch(e) {}
+    try {
+        const rect = el.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const targetY = scrollTop + rect.top - (window.innerHeight / 2) + (rect.height / 2);
+        window.scrollTo({ top: Math.max(0, targetY), behavior: 'smooth' });
+    } catch(e) {}
+}
+
 function stopRealHistoricalSimulation() {
     _simAbortRequested = true;
 }
@@ -30118,6 +30177,12 @@ async function runRealHistoricalSimulation() {
     progContainer.style.display = 'block';
     if (telemetryCard) telemetryCard.style.display = 'flex';
     if (celebrationCard) celebrationCard.style.display = 'none';
+
+    // Auto-center simulation status screen smoothly in viewport (Fold 7 / mobile optimization)
+    setTimeout(() => {
+        const target = telemetryCard || progContainer;
+        scrollElementToViewportCenter(target);
+    }, 50);
 
     // Reset live stats
     let live1st = 0, live2nd = 0, live3rd = 0, live4th = 0, live5th = 0, livePrize = 0;
@@ -30336,6 +30401,10 @@ async function runRealHistoricalSimulation() {
             if (telemetryCard) telemetryCard.style.display = 'none';
             if (celebrationCard) {
                 celebrationCard.style.display = 'block';
+                // Auto-center celebration trophy card smoothly in viewport (Fold 7 / mobile optimization)
+                setTimeout(() => {
+                    scrollElementToViewportCenter(celebrationCard);
+                }, 50);
                 const trophyTitle = document.getElementById('simTrophyTitle');
                 const trophyDesc = document.getElementById('simTrophyDesc');
                 const tHit1 = document.getElementById('trophyHit1st');
@@ -30563,6 +30632,10 @@ if (typeof window !== 'undefined') {
         if (typeof setSimSpeed !== 'undefined') {
             __exports.setSimSpeed = setSimSpeed;
             if (typeof window !== 'undefined') window.setSimSpeed = setSimSpeed;
+        }
+        if (typeof scrollElementToViewportCenter !== 'undefined') {
+            __exports.scrollElementToViewportCenter = scrollElementToViewportCenter;
+            if (typeof window !== 'undefined') window.scrollElementToViewportCenter = scrollElementToViewportCenter;
         }
         if (typeof stopRealHistoricalSimulation !== 'undefined') {
             __exports.stopRealHistoricalSimulation = stopRealHistoricalSimulation;

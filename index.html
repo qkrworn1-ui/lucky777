@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=700">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=700">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.13.2019">
+    <link rel="stylesheet" href="styles.css?v=2026.10.13.2028">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.13.2019
+                        v2026.10.13.2028
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -177,7 +177,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.13.2019 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.13.2028 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -654,7 +654,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.13.2019
+                                v2026.10.13.2028
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1253,12 +1253,12 @@
                     </div>
 
                     <!-- Enhanced Dynamic Telemetry HUD Container -->
-                    <div id="simProgressContainer" style="display: none; margin-top: 14px; position: relative;">
+                    <div id="simProgressContainer" class="sim-telemetry-hud-container" style="display: none; margin-top: 14px; position: relative; scroll-margin: 75px 0;">
                         <!-- Confetti Canvas -->
                         <canvas id="simConfettiCanvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50;"></canvas>
 
                         <!-- HUD Card Wrapper -->
-                        <div id="simTelemetryCard" style="background: linear-gradient(155deg, rgba(15, 23, 42, 0.95) 0%, rgba(9, 13, 22, 0.98) 100%); border: 1.5px solid rgba(59, 130, 246, 0.4); border-radius: 14px; padding: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 10px; transition: all 0.3s ease;">
+                        <div id="simTelemetryCard" class="sim-telemetry-card" style="background: linear-gradient(155deg, rgba(15, 23, 42, 0.95) 0%, rgba(9, 13, 22, 0.98) 100%); border: 1.5px solid rgba(59, 130, 246, 0.4); border-radius: 14px; padding: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); display: flex; flex-direction: column; gap: 10px; transition: all 0.3s ease; scroll-margin: 75px 0;">
                             
                             <!-- HUD Header: Live Status & Target Round & Mini Ball Row -->
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
@@ -1296,7 +1296,7 @@
                             </div>
 
                             <!-- Live Odometer Grid (1st ~ 5th + Total Prize & ROI) -->
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 5px;">
+                            <div class="sim-live-odometer-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 5px;">
                                 <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 8px; padding: 5px 3px; text-align: center;">
                                     <div style="font-size: 0.65rem; color: #fbbf24; font-weight: 800;"><i class="fa-solid fa-crown"></i> 1등 (6개)</div>
                                     <div id="simLiveCount1st" style="font-size: 1.1rem; font-weight: 900; color: #fde047; font-family: monospace;">0</div>
@@ -1354,7 +1354,7 @@
                         </div>
 
                         <!-- Completion Trophy Card -->
-                        <div id="simCelebrationTrophyCard" style="display: none; background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(15, 23, 42, 0.98) 100%); border: 2px solid rgba(245, 158, 11, 0.5); border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.8);">
+                        <div id="simCelebrationTrophyCard" class="sim-celebration-trophy-card" style="display: none; background: linear-gradient(135deg, rgba(245, 158, 11, 0.18) 0%, rgba(15, 23, 42, 0.98) 100%); border: 2px solid rgba(245, 158, 11, 0.5); border-radius: 14px; padding: 14px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.8); scroll-margin: 75px 0;">
                             <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: #0f172a; font-size: 1.5rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px auto; box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);">
                                 <i class="fa-solid fa-trophy"></i>
                             </div>
@@ -2246,7 +2246,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.13.2019
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.13.2028
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3866,7 +3866,7 @@
                 </div>
 
                 <!-- DYNAMIC RUNNING TELEMETRY & SLOT ROULETTE HUD -->
-                <div id="optRunningHUD" style="display: none; flex-direction: column; gap: 8px;">
+                <div id="optRunningHUD" class="opt-running-hud" style="display: none; flex-direction: column; gap: 8px; scroll-margin: 30px 0;">
                     <!-- Slot Roulette & Coverage Card -->
                     <div style="background: linear-gradient(135deg, #090d16 0%, #172554 100%); border: 1.5px solid rgba(59, 130, 246, 0.5); border-radius: 12px; padding: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); position: relative; overflow: hidden;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
@@ -3940,7 +3940,7 @@
                 </div>
 
                 <!-- Optimal Result Container (Shown after simulation completes) -->
-                <div id="optSimResultContainer" style="display: none;">
+                <div id="optSimResultContainer" class="opt-sim-result-container" style="display: none; scroll-margin: 30px 0;">
                     <!-- Dynamically populated by JS -->
                 </div>
             </div>
@@ -4542,7 +4542,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.13.2019';
+        window.APP_VERSION = 'v2026.10.13.2028';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4613,7 +4613,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.13.2019';
+            var v = ver || window.APP_VERSION || 'v2026.10.13.2028';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4870,7 +4870,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.13.2019';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.13.2028';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -5017,7 +5017,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.13.2019')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.13.2028')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -5270,8 +5270,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.13.2019"></script>
-    <script src="app_v2.js?v=2026.10.13.2019"></script>
+    <script src="data.js?v=2026.10.13.2028"></script>
+    <script src="app_v2.js?v=2026.10.13.2028"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->

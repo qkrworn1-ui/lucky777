@@ -80,6 +80,29 @@ export function toggleOptSound() {
     if (_optSoundEnabled) playOptWinFanfare();
 }
 
+/**
+ * Smoothly centers a target element inside the modal body/viewport
+ * Especially optimized for Fold 7 cover screens and mobile viewport constraints
+ */
+export function scrollModalElementToCenter(el) {
+    if (!el) return;
+    try {
+        if (typeof el.scrollIntoView === 'function') {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+    } catch(e) {}
+    try {
+        const modalBody = el.closest('.modal-body') || el.parentElement;
+        if (modalBody) {
+            const bodyRect = modalBody.getBoundingClientRect();
+            const elRect = el.getBoundingClientRect();
+            const offset = (elRect.top - bodyRect.top) - (bodyRect.height / 2) + (elRect.height / 2);
+            modalBody.scrollBy({ top: offset, behavior: 'smooth' });
+        }
+    } catch(e) {}
+}
+
 export function fireOptConfetti() {
     const canvas = document.getElementById('optConfettiCanvas');
     if (!canvas) return;
@@ -213,6 +236,9 @@ export function openBudgetOptimizerModal() {
     const runningHUD = document.getElementById('optRunningHUD');
     if (runningHUD) runningHUD.style.display = 'none';
 
+    const modalBody = modal.querySelector('.modal-body');
+    if (modalBody) modalBody.scrollTop = 0;
+
     const liveFeed = document.getElementById('optLiveCandidateFeed');
     if (liveFeed) liveFeed.innerHTML = '';
 
@@ -317,7 +343,13 @@ export async function runBudgetOptimizationSimulation() {
     const resultContainer = document.getElementById('optSimResultContainer');
 
     if (btn) btn.disabled = true;
-    if (runningHUD) runningHUD.style.display = 'flex';
+    if (runningHUD) {
+        runningHUD.style.display = 'flex';
+        // Auto-center simulation status screen smoothly in modal viewport (Fold 7 / mobile optimization)
+        setTimeout(() => {
+            scrollModalElementToCenter(runningHUD);
+        }, 50);
+    }
     if (resultContainer) resultContainer.style.display = 'none';
     if (liveFeed) liveFeed.innerHTML = '';
     if (terminal) terminal.innerHTML = '';
@@ -791,7 +823,10 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
         </div>
     `;
 
-    resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Auto-center optimal recommendation result smoothly in modal viewport
+    setTimeout(() => {
+        scrollModalElementToCenter(resultContainer);
+    }, 60);
 }
 
 export function applyOptimizedCombinationToApp() {
