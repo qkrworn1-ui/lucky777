@@ -286,6 +286,8 @@ def run_evaluation_batch():
             "joinRound": get_user_join_round(uid, u.get('createdAt'), bool(u.get('isAdmin') or uid in ('master', 'admin')))
         }
     
+    user_docs_map = {u.get('id'): u for u in users}
+    
     # Evaluate per user
     user_evaluations_by_user = {}
     evaluations_by_round = {}
@@ -309,7 +311,23 @@ def run_evaluation_batch():
         
         real_name = u_meta['realName']
         join_round = u_meta['joinRound']
-        snaps = p.get('recommendationSnapshots') or {}
+        
+        # 🔒 두 컬렉션(lotto_purchases, lotto_users)의 스냅샷을 100% 완전 결합
+        u_doc = user_docs_map.get(uid) or {}
+        p_snaps = p.get('recommendationSnapshots') or {}
+        u_snaps = u_doc.get('recommendationSnapshots') or {}
+        
+        snaps = {}
+        for r_k in set(list(p_snaps.keys()) + list(u_snaps.keys())):
+            sp = p_snaps.get(r_k)
+            su = u_snaps.get(r_k)
+            if sp and isinstance(sp, dict) and (sp.get('v4Combos') or sp.get('v3Combos')):
+                snaps[r_k] = sp
+            elif su and isinstance(su, dict) and (su.get('v4Combos') or su.get('v3Combos')):
+                snaps[r_k] = su
+            else:
+                snaps[r_k] = sp or su
+
         ledger = p.get('ledger') or {}
         if isinstance(ledger, str):
             try:

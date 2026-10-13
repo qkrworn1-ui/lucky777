@@ -4594,7 +4594,8 @@ export function setupAuthEvents(initFirebaseAndData) {
                     hasPledgeSigned: u.hasPledgeSigned,
                     hasSignature: u.hasPledgeSigned,
                     agreementDoc: u.data.agreementDoc || null,
-                    agreedTerms: u.data.agreedTerms || null
+                    agreedTerms: u.data.agreedTerms || null,
+                    recommendationSnapshots: u.data.recommendationSnapshots || null
                 }));
                 try {
                     localStorage.setItem('lotto_all_users_list_cache', JSON.stringify(window.state.allRegisteredUsersList));

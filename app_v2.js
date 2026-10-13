@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1649.59 - BUILD_DATE: 2026-10-13] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1705.41 - BUILD_DATE: 2026-10-13] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.13.1649.59)
+ * Lucky777 Smart Bundle (v2026.10.13.1705.41)
  */
 
 
@@ -6540,7 +6540,8 @@ function setupAuthEvents(initFirebaseAndData) {
                     hasPledgeSigned: u.hasPledgeSigned,
                     hasSignature: u.hasPledgeSigned,
                     agreementDoc: u.data.agreementDoc || null,
-                    agreedTerms: u.data.agreedTerms || null
+                    agreedTerms: u.data.agreedTerms || null,
+                    recommendationSnapshots: u.data.recommendationSnapshots || null
                 }));
                 try {
                     localStorage.setItem('lotto_all_users_list_cache', JSON.stringify(window.state.allRegisteredUsersList));
@@ -18804,16 +18805,10 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
             }
 
             if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks) {
-                const hasLegacyMathQuant = (roundNum === 1245) && Array.isArray(existingData.v3Combos) && existingData.v3Combos.some(c => 
-                    (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
-                    (c.customLabel && c.customLabel.includes('수학퀀트'))
-                );
-                if (!hasLegacyMathQuant) {
-                    if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                    state.userRecommendationSnapshots[docKey] = existingData;
-                    try { SafeLocalStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
-                    return existingData;
-                }
+                if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                state.userRecommendationSnapshots[docKey] = existingData;
+                try { SafeLocalStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
+                return existingData;
             }
         } catch(e) {
             console.warn('[Snapshot Check from Firestore Failed]', e);
@@ -18825,26 +18820,14 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
     if (explicitSnapshot && explicitSnapshot.v4Combos && explicitSnapshot.v3Combos && explicitSnapshot.extraPacks) {
         snapshotData = { ...explicitSnapshot, is3StageOptimized: true, algoRevision: 'v2026.10_3stage' };
     } else if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey] && state.userRecommendationSnapshots[docKey].v4Combos) {
-        const hasLegacyMathQuant = (roundNum === 1245) && Array.isArray(state.userRecommendationSnapshots[docKey].v3Combos) && state.userRecommendationSnapshots[docKey].v3Combos.some(c => 
-            (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
-            (c.customLabel && c.customLabel.includes('수학퀀트'))
-        );
-        if (!hasLegacyMathQuant) {
-            snapshotData = state.userRecommendationSnapshots[docKey];
-        }
+        snapshotData = state.userRecommendationSnapshots[docKey];
     } else {
         try {
             const localRaw = SafeLocalStorage.getItem(`lotto_rec_snapshot_${docKey}`);
             if (localRaw) {
                 const parsed = JSON.parse(localRaw);
                 if (parsed && parsed.v4Combos && parsed.v3Combos && parsed.extraPacks) {
-                    const hasLegacyMathQuant = (roundNum === 1245) && Array.isArray(parsed.v3Combos) && parsed.v3Combos.some(c => 
-                        (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
-                        (c.customLabel && c.customLabel.includes('수학퀀트'))
-                    );
-                    if (!hasLegacyMathQuant) {
-                        snapshotData = parsed;
-                    }
+                    snapshotData = parsed;
                 }
             }
         } catch(e) {}
@@ -20243,38 +20226,44 @@ function computeUser70RecommendationsReview(userId, roundNum) {
 
     if (preEval && preEval.recSummary && typeof preEval.recSummary === 'object' && !preEval.isPreJoin) {
         const s = preEval.recSummary;
-        if (s.totalPrize !== undefined) finalPrize = Number(s.totalPrize || 0);
-        if (s.hits && typeof s.hits === 'object') {
-            finalHits = {
-                1: Number(s.hits['1'] ?? s.hits[1] ?? grandHits[1]),
-                2: Number(s.hits['2'] ?? s.hits[2] ?? grandHits[2]),
-                3: Number(s.hits['3'] ?? s.hits[3] ?? grandHits[3]),
-                4: Number(s.hits['4'] ?? s.hits[4] ?? grandHits[4]),
-                5: Number(s.hits['5'] ?? s.hits[5] ?? grandHits[5]),
-            };
-            finalWins = finalHits[1] + finalHits[2] + finalHits[3] + finalHits[4] + finalHits[5];
-        } else if (s.totalWins !== undefined) {
-            finalWins = Number(s.totalWins || 0);
-        }
-        if (s.roi !== undefined) finalRoi = Number(s.roi || 0);
-        else finalRoi = (70 * 1000) > 0 ? (finalPrize / (70 * 1000)) * 100 : 0;
+        const evalGames = Number(s.totalGames || 0);
+        const actualComboGames = (v4Combos.length + v3Combos.length + extraPackEvals.reduce((sum, p) => sum + ((p.combos && p.combos.length) || 0), 0));
+        
+        // 🛡️ 서버 사전 판별에 실제 게임이 평가되었거나, 로컬 조합도 없는 경우에만 덮어쓰기 (빈 판별문서로 인한 0원 오염 방어)
+        if (evalGames > 0 || actualComboGames === 0) {
+            if (s.totalPrize !== undefined) finalPrize = Number(s.totalPrize || 0);
+            if (s.hits && typeof s.hits === 'object') {
+                finalHits = {
+                    1: Number(s.hits['1'] ?? s.hits[1] ?? grandHits[1]),
+                    2: Number(s.hits['2'] ?? s.hits[2] ?? grandHits[2]),
+                    3: Number(s.hits['3'] ?? s.hits[3] ?? grandHits[3]),
+                    4: Number(s.hits['4'] ?? s.hits[4] ?? grandHits[4]),
+                    5: Number(s.hits['5'] ?? s.hits[5] ?? grandHits[5]),
+                };
+                finalWins = finalHits[1] + finalHits[2] + finalHits[3] + finalHits[4] + finalHits[5];
+            } else if (s.totalWins !== undefined) {
+                finalWins = Number(s.totalWins || 0);
+            }
+            if (s.roi !== undefined) finalRoi = Number(s.roi || 0);
+            else finalRoi = (70 * 1000) > 0 ? (finalPrize / (70 * 1000)) * 100 : 0;
 
-        // 알고리즘별 실적도 단일 문서의 algoSummaries와 정밀 동기화
-        if (s.algoSummaries && typeof s.algoSummaries === 'object') {
-            if (s.algoSummaries.v4 && v4Eval) {
-                v4Eval.totalPrize = Number(s.algoSummaries.v4.prize ?? v4Eval.totalPrize);
-            }
-            if (s.algoSummaries.v3 && v3Eval) {
-                v3Eval.totalPrize = Number(s.algoSummaries.v3.prize ?? v3Eval.totalPrize);
-            }
-            extraPackEvals.forEach(ep => {
-                const k1 = `extra_${ep.packId}`;
-                const k2 = String(ep.packId);
-                const aObj = s.algoSummaries[k1] || s.algoSummaries[k2];
-                if (aObj && ep.evalData) {
-                    ep.evalData.totalPrize = Number(aObj.prize ?? ep.evalData.totalPrize);
+            // 알고리즘별 실적도 단일 문서의 algoSummaries와 정밀 동기화
+            if (s.algoSummaries && typeof s.algoSummaries === 'object') {
+                if (s.algoSummaries.v4 && v4Eval) {
+                    v4Eval.totalPrize = Number(s.algoSummaries.v4.prize ?? v4Eval.totalPrize);
                 }
-            });
+                if (s.algoSummaries.v3 && v3Eval) {
+                    v3Eval.totalPrize = Number(s.algoSummaries.v3.prize ?? v3Eval.totalPrize);
+                }
+                extraPackEvals.forEach(ep => {
+                    const k1 = `extra_${ep.packId}`;
+                    const k2 = String(ep.packId);
+                    const aObj = s.algoSummaries[k1] || s.algoSummaries[k2];
+                    if (aObj && ep.evalData) {
+                        ep.evalData.totalPrize = Number(aObj.prize ?? ep.evalData.totalPrize);
+                    }
+                });
+            }
         }
     }
 

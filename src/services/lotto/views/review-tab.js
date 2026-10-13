@@ -804,38 +804,44 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
 
     if (preEval && preEval.recSummary && typeof preEval.recSummary === 'object' && !preEval.isPreJoin) {
         const s = preEval.recSummary;
-        if (s.totalPrize !== undefined) finalPrize = Number(s.totalPrize || 0);
-        if (s.hits && typeof s.hits === 'object') {
-            finalHits = {
-                1: Number(s.hits['1'] ?? s.hits[1] ?? grandHits[1]),
-                2: Number(s.hits['2'] ?? s.hits[2] ?? grandHits[2]),
-                3: Number(s.hits['3'] ?? s.hits[3] ?? grandHits[3]),
-                4: Number(s.hits['4'] ?? s.hits[4] ?? grandHits[4]),
-                5: Number(s.hits['5'] ?? s.hits[5] ?? grandHits[5]),
-            };
-            finalWins = finalHits[1] + finalHits[2] + finalHits[3] + finalHits[4] + finalHits[5];
-        } else if (s.totalWins !== undefined) {
-            finalWins = Number(s.totalWins || 0);
-        }
-        if (s.roi !== undefined) finalRoi = Number(s.roi || 0);
-        else finalRoi = (70 * 1000) > 0 ? (finalPrize / (70 * 1000)) * 100 : 0;
+        const evalGames = Number(s.totalGames || 0);
+        const actualComboGames = (v4Combos.length + v3Combos.length + extraPackEvals.reduce((sum, p) => sum + ((p.combos && p.combos.length) || 0), 0));
+        
+        // 🛡️ 서버 사전 판별에 실제 게임이 평가되었거나, 로컬 조합도 없는 경우에만 덮어쓰기 (빈 판별문서로 인한 0원 오염 방어)
+        if (evalGames > 0 || actualComboGames === 0) {
+            if (s.totalPrize !== undefined) finalPrize = Number(s.totalPrize || 0);
+            if (s.hits && typeof s.hits === 'object') {
+                finalHits = {
+                    1: Number(s.hits['1'] ?? s.hits[1] ?? grandHits[1]),
+                    2: Number(s.hits['2'] ?? s.hits[2] ?? grandHits[2]),
+                    3: Number(s.hits['3'] ?? s.hits[3] ?? grandHits[3]),
+                    4: Number(s.hits['4'] ?? s.hits[4] ?? grandHits[4]),
+                    5: Number(s.hits['5'] ?? s.hits[5] ?? grandHits[5]),
+                };
+                finalWins = finalHits[1] + finalHits[2] + finalHits[3] + finalHits[4] + finalHits[5];
+            } else if (s.totalWins !== undefined) {
+                finalWins = Number(s.totalWins || 0);
+            }
+            if (s.roi !== undefined) finalRoi = Number(s.roi || 0);
+            else finalRoi = (70 * 1000) > 0 ? (finalPrize / (70 * 1000)) * 100 : 0;
 
-        // 알고리즘별 실적도 단일 문서의 algoSummaries와 정밀 동기화
-        if (s.algoSummaries && typeof s.algoSummaries === 'object') {
-            if (s.algoSummaries.v4 && v4Eval) {
-                v4Eval.totalPrize = Number(s.algoSummaries.v4.prize ?? v4Eval.totalPrize);
-            }
-            if (s.algoSummaries.v3 && v3Eval) {
-                v3Eval.totalPrize = Number(s.algoSummaries.v3.prize ?? v3Eval.totalPrize);
-            }
-            extraPackEvals.forEach(ep => {
-                const k1 = `extra_${ep.packId}`;
-                const k2 = String(ep.packId);
-                const aObj = s.algoSummaries[k1] || s.algoSummaries[k2];
-                if (aObj && ep.evalData) {
-                    ep.evalData.totalPrize = Number(aObj.prize ?? ep.evalData.totalPrize);
+            // 알고리즘별 실적도 단일 문서의 algoSummaries와 정밀 동기화
+            if (s.algoSummaries && typeof s.algoSummaries === 'object') {
+                if (s.algoSummaries.v4 && v4Eval) {
+                    v4Eval.totalPrize = Number(s.algoSummaries.v4.prize ?? v4Eval.totalPrize);
                 }
-            });
+                if (s.algoSummaries.v3 && v3Eval) {
+                    v3Eval.totalPrize = Number(s.algoSummaries.v3.prize ?? v3Eval.totalPrize);
+                }
+                extraPackEvals.forEach(ep => {
+                    const k1 = `extra_${ep.packId}`;
+                    const k2 = String(ep.packId);
+                    const aObj = s.algoSummaries[k1] || s.algoSummaries[k2];
+                    if (aObj && ep.evalData) {
+                        ep.evalData.totalPrize = Number(aObj.prize ?? ep.evalData.totalPrize);
+                    }
+                });
+            }
         }
     }
 

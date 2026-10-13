@@ -1571,16 +1571,10 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
             }
 
             if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks) {
-                const hasLegacyMathQuant = (roundNum === 1245) && Array.isArray(existingData.v3Combos) && existingData.v3Combos.some(c => 
-                    (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
-                    (c.customLabel && c.customLabel.includes('수학퀀트'))
-                );
-                if (!hasLegacyMathQuant) {
-                    if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                    state.userRecommendationSnapshots[docKey] = existingData;
-                    try { localStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
-                    return existingData;
-                }
+                if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                state.userRecommendationSnapshots[docKey] = existingData;
+                try { localStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
+                return existingData;
             }
         } catch(e) {
             console.warn('[Snapshot Check from Firestore Failed]', e);
@@ -1592,26 +1586,14 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
     if (explicitSnapshot && explicitSnapshot.v4Combos && explicitSnapshot.v3Combos && explicitSnapshot.extraPacks) {
         snapshotData = { ...explicitSnapshot, is3StageOptimized: true, algoRevision: 'v2026.10_3stage' };
     } else if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey] && state.userRecommendationSnapshots[docKey].v4Combos) {
-        const hasLegacyMathQuant = (roundNum === 1245) && Array.isArray(state.userRecommendationSnapshots[docKey].v3Combos) && state.userRecommendationSnapshots[docKey].v3Combos.some(c => 
-            (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
-            (c.customLabel && c.customLabel.includes('수학퀀트'))
-        );
-        if (!hasLegacyMathQuant) {
-            snapshotData = state.userRecommendationSnapshots[docKey];
-        }
+        snapshotData = state.userRecommendationSnapshots[docKey];
     } else {
         try {
             const localRaw = localStorage.getItem(`lotto_rec_snapshot_${docKey}`);
             if (localRaw) {
                 const parsed = JSON.parse(localRaw);
                 if (parsed && parsed.v4Combos && parsed.v3Combos && parsed.extraPacks) {
-                    const hasLegacyMathQuant = (roundNum === 1245) && Array.isArray(parsed.v3Combos) && parsed.v3Combos.some(c => 
-                        (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
-                        (c.customLabel && c.customLabel.includes('수학퀀트'))
-                    );
-                    if (!hasLegacyMathQuant) {
-                        snapshotData = parsed;
-                    }
+                    snapshotData = parsed;
                 }
             }
         } catch(e) {}
