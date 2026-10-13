@@ -396,34 +396,60 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         const cacheKey = `${cId}_${rNum}`;
         // 1. In-memory state snapshots
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cacheKey]) {
-            return state.userRecommendationSnapshots[cacheKey];
+            const snap = state.userRecommendationSnapshots[cacheKey];
+            if (rNum === 1245 && !snap.is3StageOptimized) {
+                // bypass old unoptimized snapshot for 1245
+            } else {
+                return snap;
+            }
         }
         // 2. LocalStorage cache
         try {
             const raw = localStorage.getItem(`lotto_rec_snapshot_${cacheKey}`);
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (parsed && (parsed.v4Combos || parsed.v3Combos)) return parsed;
+                if (parsed && (parsed.v4Combos || parsed.v3Combos)) {
+                    if (rNum === 1245 && !parsed.is3StageOptimized) {
+                        // bypass old unoptimized snapshot for 1245
+                    } else {
+                        return parsed;
+                    }
+                }
             }
         } catch(e) {}
         // 3. state.allUsersPurchasesMap (User's Single Master Document)
         if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
             const pDoc = state.allUsersPurchasesMap[cId];
             if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
-                return pDoc.recommendationSnapshots[rKey];
+                const snap = pDoc.recommendationSnapshots[rKey];
+                if (rNum === 1245 && !snap.is3StageOptimized) {
+                    // bypass old unoptimized snapshot for 1245
+                } else {
+                    return snap;
+                }
             }
         }
         // 4. state.allRegisteredUsersList
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
             if (u && u.recommendationSnapshots && u.recommendationSnapshots[rKey]) {
-                return u.recommendationSnapshots[rKey];
+                const snap = u.recommendationSnapshots[rKey];
+                if (rNum === 1245 && !snap.is3StageOptimized) {
+                    // bypass old unoptimized snapshot for 1245
+                } else {
+                    return snap;
+                }
             }
         }
     }
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
-        return state.userRecommendationSnapshots[rKey];
+        const snap = state.userRecommendationSnapshots[rKey];
+        if (rNum === 1245 && !snap.is3StageOptimized) {
+            // bypass old unoptimized snapshot for 1245
+        } else {
+            return snap;
+        }
     }
 
     return null;
@@ -759,6 +785,8 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
             round: roundNum,
             createdAt: new Date().toISOString(),
             isLocked: true,
+            is3StageOptimized: true,
+            algoRevision: 'v2026.10_3stage',
             totalGames: 70,
             v4Combos,
             v3Combos,
