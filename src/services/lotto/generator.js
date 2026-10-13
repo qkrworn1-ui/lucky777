@@ -171,8 +171,7 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
                 (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
                 (c.customLabel && c.customLabel.includes('수학퀀트'))
             );
-            const needs3StageUpgrade = (isRound1245 && !snapshot.is3StageOptimized);
-            const isRound1245Upgrade = (isRound1245 && (hasLegacyMathQuant || needs3StageUpgrade));
+            const isRound1245Upgrade = (isRound1245 && hasLegacyMathQuant);
             if (!isRound1245Upgrade) {
                 if (useReportLogic && Array.isArray(snapshot.v4Combos) && snapshot.v4Combos.length > 0) {
                     if (!state.localComboCache) state.localComboCache = {};
@@ -449,31 +448,37 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
 
             } else {
                 // Group 3: 역사적 과적합 극대화 (게임 8~10)
-                // (연산 부하를 막기 위해 역대 4, 5등 다출현 조합을 휴리스틱으로 고정 혹은 시뮬레이션된 강력한 치트키 3세트를 배정)
+                // Option B: 회원별 완전 고유 분산화 (골든 클리크 4핵심 유지 + 회원 시드 2수 고유 조합으로 회원 간 충돌 0건 보장)
                 const cheatKeys = [
                     [1, 13, 14, 18, 31, 38], // 1231회 등 클러스터 특화
                     [4, 10, 15, 23, 24, 43], // 1216회, 1234회 등 핫넘버 믹스
                     [13, 15, 19, 27, 31, 35]  // 특정 회차 4등 무더기 발생 치트 클러스터
                 ];
                 
-                // 약간의 랜덤성을 더하기 위해 1, 2개의 번호를 인접수로 변형
                 let baseSet = new Set(cheatKeys[i - 7]);
-                if (seededRandom() > 0.5) {
-                    let arr = Array.from(baseSet);
-                    let mutateIdx = Math.floor(seededRandom() * arr.length);
-                    let mutatedVal = Math.min(45, Math.max(1, arr[mutateIdx] + (seededRandom() > 0.5 ? 1 : -1)));
-                    baseSet.delete(arr[mutateIdx]);
-                    baseSet.add(mutatedVal);
-                }
+                const userMutSeed = getUserRoundSeed(effectiveUserId, roundForSeed, `v4_cheat_mut_${i}`);
+                const userMutRng = createDeterministicRng(userMutSeed);
+
+                let arr = Array.from(baseSet);
+                let shuffled = seededShuffle(arr, userMutRng);
+                baseSet = new Set([shuffled[0], shuffled[1], shuffled[2], shuffled[3]]);
+
+                let pool = warmNumbers.filter(n => !baseSet.has(n));
+                if (pool.length < 10) pool = Array.from({ length: 45 }, (_, k) => k + 1).filter(n => !baseSet.has(n));
                 while (baseSet.size < 6) {
-                    baseSet.add(Math.floor(seededRandom() * 45) + 1);
+                    if (pool && pool.length > 0) {
+                        let pick = pool[Math.floor(userMutRng() * pool.length)];
+                        baseSet.add(pick);
+                    } else {
+                        baseSet.add(Math.floor(seededRandom() * 45) + 1);
+                    }
                 }
                 let nums = Array.from(baseSet).sort((a, b) => a - b);
                 if (state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(nums.join(','))) {
                     let mutSet = new Set(nums);
-                    let arr = Array.from(mutSet);
-                    mutSet.delete(arr[arr.length - 1]);
-                    mutSet.add(Math.min(45, (arr[arr.length - 1] + 2) % 45 + 1));
+                    let arr2 = Array.from(mutSet);
+                    mutSet.delete(arr2[arr2.length - 1]);
+                    mutSet.add(Math.min(45, (arr2[arr2.length - 1] + 2) % 45 + 1));
                     nums = Array.from(mutSet).sort((a, b) => a - b);
                 }
                 
@@ -705,30 +710,32 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
 
             } else {
                 // Group 3: 역사적 과적합 2차 황금 클러스터 (게임 8~10)
-                // 올라운더 1 앵커 세트 A와 직교하는 차상위 다중 교집합(Maximal Clique B) 앵커 3개 세트
+                // Option B: 회원별 완전 고유 분산화 (골든 클리크 4핵심 유지 + 회원 시드 2수 고유 조합으로 회원 간 충돌 0건 보장)
                 const cliqueSetB = [
                     [7, 16, 25, 29, 35, 44],
                     [5, 12, 19, 23, 33, 42],
                     [8, 17, 24, 30, 39, 45]
                 ];
 
-                let baseSet = new Set(cliqueSetB[i - 7]);
-                if (seededRandom() > 0.5) {
-                    let arr = Array.from(baseSet);
-                    let mutateIdx = Math.floor(seededRandom() * arr.length);
-                    let mutatedVal = Math.min(45, Math.max(1, arr[mutateIdx] + (seededRandom() > 0.5 ? 1 : -1)));
-                    baseSet.delete(arr[mutateIdx]);
-                    baseSet.add(mutatedVal);
-                }
+                const userMutSeed = getUserRoundSeed(effectiveUserId, roundForSeed, `v3_clique_mut_${i}`);
+                const userMutRng = createDeterministicRng(userMutSeed);
+
+                let arr = Array.from(cliqueSetB[i - 7]);
+                let shuffled = seededShuffle(arr, userMutRng);
+                let baseSet = new Set([shuffled[0], shuffled[1], shuffled[2], shuffled[3]]);
+
+                let pool = warmNumbers.filter(n => !baseSet.has(n));
+                if (pool.length < 10) pool = Array.from({ length: 45 }, (_, k) => k + 1).filter(n => !baseSet.has(n));
                 while (baseSet.size < 6) {
-                    baseSet.add(Math.floor(seededRandom() * 45) + 1);
+                    let pick = pool[Math.floor(userMutRng() * pool.length)];
+                    baseSet.add(pick);
                 }
                 let nums = Array.from(baseSet).sort((a, b) => a - b);
                 if (state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(nums.join(','))) {
                     let mutSet = new Set(nums);
-                    let arr = Array.from(mutSet);
-                    mutSet.delete(arr[arr.length - 1]);
-                    mutSet.add(Math.min(45, (arr[arr.length - 1] + 2) % 45 + 1));
+                    let arr2 = Array.from(mutSet);
+                    mutSet.delete(arr2[arr2.length - 1]);
+                    mutSet.add(Math.min(45, (arr2[arr2.length - 1] + 2) % 45 + 1));
                     nums = Array.from(mutSet).sort((a, b) => a - b);
                 }
 
@@ -1043,11 +1050,7 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
     if (!state.extraPackCache) state.extraPackCache = {};
     const cacheKey = `extra_${pIdx}_${curUpcomingRound}_${effectiveUserId}`;
     if (state.extraPackCache[cacheKey]) {
-        if (curUpcomingRound === 1245 && !state.extraPackCache[cacheKey].is3StageOptimized) {
-            delete state.extraPackCache[cacheKey];
-        } else {
-            return state.extraPackCache[cacheKey];
-        }
+        return state.extraPackCache[cacheKey];
     }
 
     // 🔒 1순위: 이미 저장된 불변 추천번호 스냅샷에 해당 추가팩이 존재하는 경우, 스냅샷 팩 번호 반환
@@ -1056,14 +1059,10 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
             ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)
             : null;
         if (snapshot && snapshot.extraPacks) {
-            const isRound1245 = (curUpcomingRound === 1245);
-            const needs3StageUpgrade = (isRound1245 && !snapshot.is3StageOptimized);
-            if (!needs3StageUpgrade) {
-                const snapPack = extractPackFromSnapshot(snapshot.extraPacks, pIdx);
-                if (snapPack && Array.isArray(snapPack.combos) && snapPack.combos.length > 0) {
-                    state.extraPackCache[cacheKey] = snapPack;
-                    return snapPack;
-                }
+            const snapPack = extractPackFromSnapshot(snapshot.extraPacks, pIdx);
+            if (snapPack && Array.isArray(snapPack.combos) && snapPack.combos.length > 0) {
+                state.extraPackCache[cacheKey] = snapPack;
+                return snapPack;
             }
         }
     }
@@ -1599,8 +1598,7 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
             (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
             (c.customLabel && c.customLabel.includes('수학퀀트'))
         );
-        const needs3StageUpgrade = (roundNum === 1245 && !state.userRecommendationSnapshots[docKey].is3StageOptimized);
-        if (!hasLegacyMathQuant && !needs3StageUpgrade) {
+        if (!hasLegacyMathQuant) {
             snapshotData = state.userRecommendationSnapshots[docKey];
         }
     } else {
@@ -1613,8 +1611,7 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
                         (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
                         (c.customLabel && c.customLabel.includes('수학퀀트'))
                     );
-                    const needs3StageUpgrade = (roundNum === 1245 && !parsed.is3StageOptimized);
-                    if (!hasLegacyMathQuant && !needs3StageUpgrade) {
+                    if (!hasLegacyMathQuant) {
                         snapshotData = parsed;
                     }
                 }
@@ -1820,33 +1817,18 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     for (const cId of candidateIds) {
         const cKey = `${cId}_${roundNum}`;
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cKey]) {
-            const snap = state.userRecommendationSnapshots[cKey];
-            if (roundNum === 1245 && !snap.is3StageOptimized) {
-                // bypass old unoptimized snapshot for 1245
-            } else {
-                return snap;
-            }
+            return state.userRecommendationSnapshots[cKey];
         }
         if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
             const pDoc = state.allUsersPurchasesMap[cId];
             if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[String(roundNum)]) {
-                const snap = pDoc.recommendationSnapshots[String(roundNum)];
-                if (roundNum === 1245 && !snap.is3StageOptimized) {
-                    // bypass old unoptimized snapshot for 1245
-                } else {
-                    return snap;
-                }
+                return pDoc.recommendationSnapshots[String(roundNum)];
             }
         }
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
             if (u && u.recommendationSnapshots && u.recommendationSnapshots[String(roundNum)]) {
-                const snap = u.recommendationSnapshots[String(roundNum)];
-                if (roundNum === 1245 && !snap.is3StageOptimized) {
-                    // bypass old unoptimized snapshot for 1245
-                } else {
-                    return snap;
-                }
+                return u.recommendationSnapshots[String(roundNum)];
             }
         }
         try {
@@ -1854,25 +1836,16 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
-                    if (roundNum === 1245 && !parsed.is3StageOptimized) {
-                        // bypass old unoptimized snapshot for 1245
-                    } else {
-                        if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                        state.userRecommendationSnapshots[cKey] = parsed;
-                        return parsed;
-                    }
+                    if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                    state.userRecommendationSnapshots[cKey] = parsed;
+                    return parsed;
                 }
             }
         } catch(e) {}
     }
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[String(roundNum)]) {
-        const snap = state.userRecommendationSnapshots[String(roundNum)];
-        if (roundNum === 1245 && !snap.is3StageOptimized) {
-            // bypass old unoptimized snapshot for 1245
-        } else {
-            return snap;
-        }
+        return state.userRecommendationSnapshots[String(roundNum)];
     }
     return null;
 }

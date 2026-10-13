@@ -2,10 +2,10 @@ import { state } from '../state.js';
 import { getBallHexColor, showToast, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml } from '../../../shared/components.js';
 import { db } from '../../../shared/db.js';
-import { SafeAuth, isAdminUser, isUserVerifiedAndPledged } from '../../../shared/auth-mgmt.js';
+import { SafeAuth, isAdminUser, isUserVerifiedAndPledged, getUserRealName } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, fetchAllUsersPurchases, getUserPurchasesForRound, getLedger, exportImmutableUnifiedArchive, importImmutableUnifiedArchive, getSafeActualDraw } from '../ledger.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, enterHistoryIsolation, exitHistoryIsolation } from '../generator.js';
-import { getAllUnifiedRegisteredUsers, getUserRealName, UserContextManager } from '../../../shared/user-context.js';
+import { getAllUnifiedRegisteredUsers, UserContextManager } from '../../../shared/user-context.js';
 
 let reviewAdminViewingUser = null; // null (defaults to authId) or 'all' or specific userId
 let activeReviewFilter = 'all'; // 'all' | 'v4' | 'v3' | 'extra_1' ... 'extra_5'
@@ -396,12 +396,7 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         const cacheKey = `${cId}_${rNum}`;
         // 1. In-memory state snapshots
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cacheKey]) {
-            const snap = state.userRecommendationSnapshots[cacheKey];
-            if (rNum === 1245 && !snap.is3StageOptimized) {
-                // bypass old unoptimized snapshot for 1245
-            } else {
-                return snap;
-            }
+            return state.userRecommendationSnapshots[cacheKey];
         }
         // 2. LocalStorage cache
         try {
@@ -409,11 +404,7 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (parsed && (parsed.v4Combos || parsed.v3Combos)) {
-                    if (rNum === 1245 && !parsed.is3StageOptimized) {
-                        // bypass old unoptimized snapshot for 1245
-                    } else {
-                        return parsed;
-                    }
+                    return parsed;
                 }
             }
         } catch(e) {}
@@ -421,35 +412,20 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
             const pDoc = state.allUsersPurchasesMap[cId];
             if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[rKey]) {
-                const snap = pDoc.recommendationSnapshots[rKey];
-                if (rNum === 1245 && !snap.is3StageOptimized) {
-                    // bypass old unoptimized snapshot for 1245
-                } else {
-                    return snap;
-                }
+                return pDoc.recommendationSnapshots[rKey];
             }
         }
         // 4. state.allRegisteredUsersList
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
             if (u && u.recommendationSnapshots && u.recommendationSnapshots[rKey]) {
-                const snap = u.recommendationSnapshots[rKey];
-                if (rNum === 1245 && !snap.is3StageOptimized) {
-                    // bypass old unoptimized snapshot for 1245
-                } else {
-                    return snap;
-                }
+                return u.recommendationSnapshots[rKey];
             }
         }
     }
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
-        const snap = state.userRecommendationSnapshots[rKey];
-        if (rNum === 1245 && !snap.is3StageOptimized) {
-            // bypass old unoptimized snapshot for 1245
-        } else {
-            return snap;
-        }
+        return state.userRecommendationSnapshots[rKey];
     }
 
     return null;
