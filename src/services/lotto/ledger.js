@@ -1369,7 +1369,10 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                 if (d.recommendationSnapshots && typeof d.recommendationSnapshots === 'object') {
                     if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                     for (const rKey in d.recommendationSnapshots) {
-                        const snapData = d.recommendationSnapshots[rKey];
+                        const rawSnap = d.recommendationSnapshots[rKey];
+                        const snapData = (typeof window !== 'undefined' && typeof window.hydrateLeanSnapshot === 'function')
+                            ? window.hydrateLeanSnapshot(rawSnap)
+                            : rawSnap;
                         if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
                             state.userRecommendationSnapshots[`${uId}_${parseInt(rKey, 10)}`] = snapData;
                         }
@@ -1434,7 +1437,10 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
             if (data.recommendationSnapshots && typeof data.recommendationSnapshots === 'object') {
                 if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                 for (const rKey in data.recommendationSnapshots) {
-                    const snapData = data.recommendationSnapshots[rKey];
+                    const rawSnap = data.recommendationSnapshots[rKey];
+                    const snapData = (typeof window !== 'undefined' && typeof window.hydrateLeanSnapshot === 'function')
+                        ? window.hydrateLeanSnapshot(rawSnap)
+                        : rawSnap;
                     if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
                         state.userRecommendationSnapshots[`${userId}_${parseInt(rKey, 10)}`] = snapData;
                     }

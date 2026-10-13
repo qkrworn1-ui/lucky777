@@ -1531,24 +1531,12 @@ export function makeLeanSnapshot(snap) {
             numbers: Array.isArray(c.numbers) ? c.numbers : [],
             is3StageOptimized: c.is3StageOptimized !== false
         };
+        // Ultra-light stats (only store sum and acValue, other stats dynamically rehydrated)
         if (c.stats && typeof c.stats === 'object') {
             res.stats = {
                 sum: c.stats.sum,
-                oddEvenRatio: c.stats.oddEvenRatio,
-                totalMathScore: c.stats.totalMathScore,
-                evScore: c.stats.evScore,
-                highCount: c.stats.highCount,
-                neighborCount: c.stats.neighborCount,
-                sectionCount: c.stats.sectionCount,
-                acValue: c.stats.acValue ?? 7
-            };
-        }
-        if (c.meta && typeof c.meta === 'object') {
-            res.meta = {
-                name: c.meta.name || c.name || '',
-                rankBadge: c.meta.rankBadge || '',
-                tag: c.meta.tag || '',
-                targetBenefit: c.meta.targetBenefit || '당첨 기댓값 극대화'
+                acValue: c.stats.acValue ?? 7,
+                oddEvenRatio: c.stats.oddEvenRatio || ''
             };
         }
         return res;
@@ -1592,8 +1580,53 @@ export function makeLeanSnapshot(snap) {
         algorithms: snap.algorithms || []
     };
 }
+
+/**
+ * 🔒 Hydrates a lean snapshot with full runtime properties (stats, meta, badges) on read
+ * Ensures 100% transparent backward compatibility with legacy snapshots while keeping Firestore storage ultra-lean.
+ */
+export function hydrateLeanSnapshot(snap) {
+    if (!snap || typeof snap !== 'object') return snap;
+
+    function hydrateCombo(c, defaultName = 'AI 퀀트 추천', defaultBadge = 'AI-QUANT') {
+        if (!c || typeof c !== 'object') return c;
+        const nums = Array.isArray(c.numbers) ? c.numbers : [];
+        if (!c.stats || Object.keys(c.stats).length <= 3) {
+            const calculated = (typeof calculateStats === 'function') ? calculateStats(nums) : null;
+            c.stats = { ...(calculated || {}), ...(c.stats || {}) };
+        }
+        if (!c.meta || typeof c.meta !== 'object' || !c.meta.targetBenefit) {
+            c.meta = {
+                name: c.name || defaultName,
+                rankBadge: c.meta?.rankBadge || defaultBadge,
+                tag: c.meta?.tag || 'AI 퀀트 3단계 최적화',
+                targetBenefit: c.meta?.targetBenefit || '당첨 기댓값 극대화',
+                ...(c.meta || {})
+            };
+        }
+        return c;
+    }
+
+    if (Array.isArray(snap.v4Combos)) {
+        snap.v4Combos.forEach((c, idx) => hydrateCombo(c, `올라운더 1-${idx + 1}`, `V4-${idx + 1}`));
+    }
+    if (Array.isArray(snap.v3Combos)) {
+        snap.v3Combos.forEach((c, idx) => hydrateCombo(c, `올라운더 2-${idx + 1}`, `V3-${idx + 1}`));
+    }
+    if (snap.extraPacks && typeof snap.extraPacks === 'object') {
+        for (const p in snap.extraPacks) {
+            const pObj = snap.extraPacks[p];
+            if (pObj && Array.isArray(pObj.combos)) {
+                pObj.combos.forEach((c, idx) => hydrateCombo(c, `${pObj.name || `추가팩 ${p}`}-${idx + 1}`, `EXTRA-${p}-${idx + 1}`));
+            }
+        }
+    }
+    return snap;
+}
+
 if (typeof window !== 'undefined') {
     window.makeLeanSnapshot = makeLeanSnapshot;
+    window.hydrateLeanSnapshot = hydrateLeanSnapshot;
 }
 
 /**
@@ -1904,18 +1937,18 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     for (const cId of candidateIds) {
         const cKey = `${cId}_${roundNum}`;
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cKey]) {
-            return state.userRecommendationSnapshots[cKey];
+            return hydrateLeanSnapshot(state.userRecommendationSnapshots[cKey]);
         }
         if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
             const pDoc = state.allUsersPurchasesMap[cId];
             if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[String(roundNum)]) {
-                return pDoc.recommendationSnapshots[String(roundNum)];
+                return hydrateLeanSnapshot(pDoc.recommendationSnapshots[String(roundNum)]);
             }
         }
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
             if (u && u.recommendationSnapshots && u.recommendationSnapshots[String(roundNum)]) {
-                return u.recommendationSnapshots[String(roundNum)];
+                return hydrateLeanSnapshot(u.recommendationSnapshots[String(roundNum)]);
             }
         }
         try {
@@ -1923,16 +1956,17 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
+                    const hydrated = hydrateLeanSnapshot(parsed);
                     if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                    state.userRecommendationSnapshots[cKey] = parsed;
-                    return parsed;
+                    state.userRecommendationSnapshots[cKey] = hydrated;
+                    return hydrated;
                 }
             }
         } catch(e) {}
     }
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[String(roundNum)]) {
-        return state.userRecommendationSnapshots[String(roundNum)];
+        return hydrateLeanSnapshot(state.userRecommendationSnapshots[String(roundNum)]);
     }
     return null;
 }

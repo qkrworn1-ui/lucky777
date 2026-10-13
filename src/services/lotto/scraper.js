@@ -331,12 +331,13 @@ export function getRoundDrawDateTime(roundNum) {
 }
 
 /**
- * Check if the given round is already drawn (after Saturday 21:00 KST)
+ * Check if the given round is already drawn (after Saturday 20:40 KST)
  */
 export function isRoundDrawnYet(roundNum) {
     const drawDate = getRoundDrawDateTime(roundNum);
     if (!drawDate) return false;
-    return Date.now() >= drawDate.getTime();
+    // Allow scraping starting from 20:40 KST on draw day (20 minutes before 21:00)
+    return Date.now() >= (drawDate.getTime() - 20 * 60 * 1000);
 }
 
 /**

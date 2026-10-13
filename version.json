@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.13.1814.26",
+  "version": "v2026.10.13.1908.51",
   "buildDate": "2026-10-13",
   "description": "Fix: Optimize dashboard height to fit within single screen",
-  "buildTimestamp": "2026-10-13T18:14:26.230923",
+  "buildTimestamp": "2026-10-13T19:08:51.399944",
   "buildHistory": [
-    {
-      "version": "v2026.10.13.0025.29",
-      "buildDate": "2026-10-13",
-      "buildTime": "00:25",
-      "buildDateTime": "2026-10-13 00:25",
-      "buildTimestamp": "2026-10-13T00:25:29.111643",
-      "description": "Fix: Optimize dashboard height to fit within single screen"
-    },
-    {
-      "version": "v2026.10.13.1624",
-      "buildDate": "2026-10-13",
-      "buildTime": "16:24",
-      "buildDateTime": "2026-10-13 16:24",
-      "buildTimestamp": "2026-10-13T16:24:11.635159",
-      "description": "Fix: Optimize dashboard height to fit within single screen"
-    },
     {
       "version": "v2026.10.13.1624.48",
       "buildDate": "2026-10-13",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-13 18:14",
       "buildTimestamp": "2026-10-13T18:14:26.230923",
       "description": "Fix: Optimize dashboard height to fit within single screen"
+    },
+    {
+      "version": "v2026.10.13.1908",
+      "buildDate": "2026-10-13",
+      "buildTime": "19:08",
+      "buildDateTime": "2026-10-13 19:08",
+      "buildTimestamp": "2026-10-13T19:08:22.900630",
+      "description": "Fix: Optimize dashboard height to fit within single screen"
+    },
+    {
+      "version": "v2026.10.13.1908.51",
+      "buildDate": "2026-10-13",
+      "buildTime": "19:08",
+      "buildDateTime": "2026-10-13 19:08",
+      "buildTimestamp": "2026-10-13T19:08:51.399944",
+      "description": "Fix: Optimize dashboard height to fit within single screen"
     }
   ],
-  "buildTime": "18:14",
-  "buildDateTime": "2026-10-13 18:14"
+  "buildTime": "19:08",
+  "buildDateTime": "2026-10-13 19:08"
 }

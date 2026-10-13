@@ -33,6 +33,16 @@ export function generateAccumulatedWinsHistory() {
     if (liveSimCacheMap[cfgKey] && liveSimCacheMap[cfgKey].length > 0) {
         return liveSimCacheMap[cfgKey];
     }
+    try {
+        const cached = sessionStorage.getItem(`sim_cache_history_${cfgKey}`);
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                liveSimCacheMap[cfgKey] = parsed;
+                return parsed;
+            }
+        }
+    } catch(e) {}
     return []; // No mock data! Return empty until real simulation is run
 }
 
@@ -114,9 +124,16 @@ export function getSingleUserCombosForRound(round, cfg, userId, userName = null)
  * @param {Object} config 
  * @param {string} customUserId
  */
+const _simRoundCombosCache = new Map();
+
 export function getCombosForSimulationRound(round, config = null, customUserId = null) {
     const cfg = config || getSelectedSimulationConfig();
     const effectiveTarget = customUserId || getEffectiveTargetUser();
+    const roundCacheKey = `${effectiveTarget}_R${round}_${JSON.stringify(cfg)}`;
+
+    if (_simRoundCombosCache.has(roundCacheKey)) {
+        return _simRoundCombosCache.get(roundCacheKey);
+    }
     
     const drawnRounds = Object.keys(state.mergedHistory || {})
         .filter(rnd => state.mergedHistory[rnd] && Array.isArray(state.mergedHistory[rnd].numbers))
@@ -125,6 +142,7 @@ export function getCombosForSimulationRound(round, config = null, customUserId =
     const wasIsolated = enterHistoryIsolation(round, maxKnownDrawnRound);
 
     try {
+        let resultCombos;
         if (effectiveTarget === '__ALL__') {
             let userList = state.allRegisteredUsersList;
             if (!userList || userList.length === 0) {
@@ -152,10 +170,12 @@ export function getCombosForSimulationRound(round, config = null, customUserId =
                 const uCombos = getSingleUserCombosForRound(round, cfg, u.id, u.name || u.id);
                 allCombos.push(...uCombos);
             });
-            return allCombos;
+            resultCombos = allCombos;
         } else {
-            return getSingleUserCombosForRound(round, cfg, effectiveTarget);
+            resultCombos = getSingleUserCombosForRound(round, cfg, effectiveTarget);
         }
+        _simRoundCombosCache.set(roundCacheKey, resultCombos);
+        return resultCombos;
     } finally {
         exitHistoryIsolation(wasIsolated);
     }
@@ -1010,6 +1030,9 @@ export async function runRealHistoricalSimulation() {
             const cfgKey = `${effectiveTarget}_${JSON.stringify(cfg)}`;
             liveSimCacheMap[cfgKey] = results;
             realSimCache = results;
+            try {
+                sessionStorage.setItem(`sim_cache_history_${cfgKey}`, JSON.stringify(results));
+            } catch(e) {}
 
             playSimJackpotSound();
             fireSimConfetti();

@@ -65,6 +65,9 @@ export function playOptWinFanfare() {
     } catch(e) {}
 }
 
+// Module-level persistent cache for distinct pack simulation results across rounds
+const _optMatrixMemoryCache = new Map();
+
 export function toggleOptSound() {
     _optSoundEnabled = !_optSoundEnabled;
     const label = document.getElementById('optSoundLabel');
@@ -423,6 +426,15 @@ export async function runBudgetOptimizationSimulation() {
 
     for (let pIdx = 0; pIdx < distinctPacks.length; pIdx++) {
         const pack = distinctPacks[pIdx];
+        const matrixCacheKey = `${effectiveUserId}_${pack.id}_${maxRound}`;
+
+        if (_optMatrixMemoryCache.has(matrixCacheKey)) {
+            packEvals.set(pack.id, _optMatrixMemoryCache.get(matrixCacheKey));
+            const packPct = Math.round(((pIdx + 1) / totalSteps) * 50);
+            if (progBar) progBar.style.width = `${packPct}%`;
+            if (progPct) progPct.innerText = `${packPct}%`;
+            continue;
+        }
 
         if (rouletteEl) {
             rouletteEl.innerText = pack.name;
@@ -474,6 +486,7 @@ export async function runBudgetOptimizationSimulation() {
         }
 
         packEvals.set(pack.id, roundResults);
+        _optMatrixMemoryCache.set(matrixCacheKey, roundResults);
 
         const packPct = Math.round(((pIdx + 1) / totalSteps) * 50);
         if (progBar) progBar.style.width = `${packPct}%`;

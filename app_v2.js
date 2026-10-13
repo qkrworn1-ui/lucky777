@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1814.26 - BUILD_DATE: 2026-10-13] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.13.1908.51 - BUILD_DATE: 2026-10-13] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.13.1814.26)
+ * Lucky777 Smart Bundle (v2026.10.13.1908.51)
  */
 
 
@@ -12259,7 +12259,10 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                 if (d.recommendationSnapshots && typeof d.recommendationSnapshots === 'object') {
                     if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                     for (const rKey in d.recommendationSnapshots) {
-                        const snapData = d.recommendationSnapshots[rKey];
+                        const rawSnap = d.recommendationSnapshots[rKey];
+                        const snapData = (typeof window !== 'undefined' && typeof window.hydrateLeanSnapshot === 'function')
+                            ? window.hydrateLeanSnapshot(rawSnap)
+                            : rawSnap;
                         if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
                             state.userRecommendationSnapshots[`${uId}_${parseInt(rKey, 10)}`] = snapData;
                         }
@@ -12324,7 +12327,10 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
             if (data.recommendationSnapshots && typeof data.recommendationSnapshots === 'object') {
                 if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                 for (const rKey in data.recommendationSnapshots) {
-                    const snapData = data.recommendationSnapshots[rKey];
+                    const rawSnap = data.recommendationSnapshots[rKey];
+                    const snapData = (typeof window !== 'undefined' && typeof window.hydrateLeanSnapshot === 'function')
+                        ? window.hydrateLeanSnapshot(rawSnap)
+                        : rawSnap;
                     if (snapData && (snapData.v4Combos || snapData.v3Combos || snapData.extraPacks)) {
                         state.userRecommendationSnapshots[`${userId}_${parseInt(rKey, 10)}`] = snapData;
                     }
@@ -17001,12 +17007,13 @@ function getRoundDrawDateTime(roundNum) {
 }
 
 /**
- * Check if the given round is already drawn (after Saturday 21:00 KST)
+ * Check if the given round is already drawn (after Saturday 20:40 KST)
  */
 function isRoundDrawnYet(roundNum) {
     const drawDate = getRoundDrawDateTime(roundNum);
     if (!drawDate) return false;
-    return Date.now() >= drawDate.getTime();
+    // Allow scraping starting from 20:40 KST on draw day (20 minutes before 21:00)
+    return Date.now() >= (drawDate.getTime() - 20 * 60 * 1000);
 }
 
 /**
@@ -18765,24 +18772,12 @@ function makeLeanSnapshot(snap) {
             numbers: Array.isArray(c.numbers) ? c.numbers : [],
             is3StageOptimized: c.is3StageOptimized !== false
         };
+        // Ultra-light stats (only store sum and acValue, other stats dynamically rehydrated)
         if (c.stats && typeof c.stats === 'object') {
             res.stats = {
                 sum: c.stats.sum,
-                oddEvenRatio: c.stats.oddEvenRatio,
-                totalMathScore: c.stats.totalMathScore,
-                evScore: c.stats.evScore,
-                highCount: c.stats.highCount,
-                neighborCount: c.stats.neighborCount,
-                sectionCount: c.stats.sectionCount,
-                acValue: c.stats.acValue ?? 7
-            };
-        }
-        if (c.meta && typeof c.meta === 'object') {
-            res.meta = {
-                name: c.meta.name || c.name || '',
-                rankBadge: c.meta.rankBadge || '',
-                tag: c.meta.tag || '',
-                targetBenefit: c.meta.targetBenefit || '당첨 기댓값 극대화'
+                acValue: c.stats.acValue ?? 7,
+                oddEvenRatio: c.stats.oddEvenRatio || ''
             };
         }
         return res;
@@ -18826,8 +18821,53 @@ function makeLeanSnapshot(snap) {
         algorithms: snap.algorithms || []
     };
 }
+
+/**
+ * 🔒 Hydrates a lean snapshot with full runtime properties (stats, meta, badges) on read
+ * Ensures 100% transparent backward compatibility with legacy snapshots while keeping Firestore storage ultra-lean.
+ */
+function hydrateLeanSnapshot(snap) {
+    if (!snap || typeof snap !== 'object') return snap;
+
+    function hydrateCombo(c, defaultName = 'AI 퀀트 추천', defaultBadge = 'AI-QUANT') {
+        if (!c || typeof c !== 'object') return c;
+        const nums = Array.isArray(c.numbers) ? c.numbers : [];
+        if (!c.stats || Object.keys(c.stats).length <= 3) {
+            const calculated = (typeof calculateStats === 'function') ? calculateStats(nums) : null;
+            c.stats = { ...(calculated || {}), ...(c.stats || {}) };
+        }
+        if (!c.meta || typeof c.meta !== 'object' || !c.meta.targetBenefit) {
+            c.meta = {
+                name: c.name || defaultName,
+                rankBadge: c.meta?.rankBadge || defaultBadge,
+                tag: c.meta?.tag || 'AI 퀀트 3단계 최적화',
+                targetBenefit: c.meta?.targetBenefit || '당첨 기댓값 극대화',
+                ...(c.meta || {})
+            };
+        }
+        return c;
+    }
+
+    if (Array.isArray(snap.v4Combos)) {
+        snap.v4Combos.forEach((c, idx) => hydrateCombo(c, `올라운더 1-${idx + 1}`, `V4-${idx + 1}`));
+    }
+    if (Array.isArray(snap.v3Combos)) {
+        snap.v3Combos.forEach((c, idx) => hydrateCombo(c, `올라운더 2-${idx + 1}`, `V3-${idx + 1}`));
+    }
+    if (snap.extraPacks && typeof snap.extraPacks === 'object') {
+        for (const p in snap.extraPacks) {
+            const pObj = snap.extraPacks[p];
+            if (pObj && Array.isArray(pObj.combos)) {
+                pObj.combos.forEach((c, idx) => hydrateCombo(c, `${pObj.name || `추가팩 ${p}`}-${idx + 1}`, `EXTRA-${p}-${idx + 1}`));
+            }
+        }
+    }
+    return snap;
+}
+
 if (typeof window !== 'undefined') {
     window.makeLeanSnapshot = makeLeanSnapshot;
+    window.hydrateLeanSnapshot = hydrateLeanSnapshot;
 }
 
 /**
@@ -19138,18 +19178,18 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     for (const cId of candidateIds) {
         const cKey = `${cId}_${roundNum}`;
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cKey]) {
-            return state.userRecommendationSnapshots[cKey];
+            return hydrateLeanSnapshot(state.userRecommendationSnapshots[cKey]);
         }
         if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
             const pDoc = state.allUsersPurchasesMap[cId];
             if (pDoc.recommendationSnapshots && pDoc.recommendationSnapshots[String(roundNum)]) {
-                return pDoc.recommendationSnapshots[String(roundNum)];
+                return hydrateLeanSnapshot(pDoc.recommendationSnapshots[String(roundNum)]);
             }
         }
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
             if (u && u.recommendationSnapshots && u.recommendationSnapshots[String(roundNum)]) {
-                return u.recommendationSnapshots[String(roundNum)];
+                return hydrateLeanSnapshot(u.recommendationSnapshots[String(roundNum)]);
             }
         }
         try {
@@ -19157,16 +19197,17 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
             if (raw) {
                 const parsed = JSON.parse(raw);
                 if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
+                    const hydrated = hydrateLeanSnapshot(parsed);
                     if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                    state.userRecommendationSnapshots[cKey] = parsed;
-                    return parsed;
+                    state.userRecommendationSnapshots[cKey] = hydrated;
+                    return hydrated;
                 }
             }
         } catch(e) {}
     }
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[String(roundNum)]) {
-        return state.userRecommendationSnapshots[String(roundNum)];
+        return hydrateLeanSnapshot(state.userRecommendationSnapshots[String(roundNum)]);
     }
     return null;
 }
@@ -19228,6 +19269,10 @@ if (typeof window !== 'undefined') {
         if (typeof makeLeanSnapshot !== 'undefined') {
             __exports.makeLeanSnapshot = makeLeanSnapshot;
             if (typeof window !== 'undefined') window.makeLeanSnapshot = makeLeanSnapshot;
+        }
+        if (typeof hydrateLeanSnapshot !== 'undefined') {
+            __exports.hydrateLeanSnapshot = hydrateLeanSnapshot;
+            if (typeof window !== 'undefined') window.hydrateLeanSnapshot = hydrateLeanSnapshot;
         }
         if (typeof saveUserWeeklyRecommendationSnapshot !== 'undefined') {
             __exports.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;
@@ -27858,6 +27903,9 @@ function playOptWinFanfare() {
     } catch(e) {}
 }
 
+// Module-level persistent cache for distinct pack simulation results across rounds
+const _optMatrixMemoryCache = new Map();
+
 function toggleOptSound() {
     _optSoundEnabled = !_optSoundEnabled;
     const label = document.getElementById('optSoundLabel');
@@ -28216,6 +28264,15 @@ async function runBudgetOptimizationSimulation() {
 
     for (let pIdx = 0; pIdx < distinctPacks.length; pIdx++) {
         const pack = distinctPacks[pIdx];
+        const matrixCacheKey = `${effectiveUserId}_${pack.id}_${maxRound}`;
+
+        if (_optMatrixMemoryCache.has(matrixCacheKey)) {
+            packEvals.set(pack.id, _optMatrixMemoryCache.get(matrixCacheKey));
+            const packPct = Math.round(((pIdx + 1) / totalSteps) * 50);
+            if (progBar) progBar.style.width = `${packPct}%`;
+            if (progPct) progPct.innerText = `${packPct}%`;
+            continue;
+        }
 
         if (rouletteEl) {
             rouletteEl.innerText = pack.name;
@@ -28267,6 +28324,7 @@ async function runBudgetOptimizationSimulation() {
         }
 
         packEvals.set(pack.id, roundResults);
+        _optMatrixMemoryCache.set(matrixCacheKey, roundResults);
 
         const packPct = Math.round(((pIdx + 1) / totalSteps) * 50);
         if (progBar) progBar.style.width = `${packPct}%`;
@@ -28773,6 +28831,16 @@ function generateAccumulatedWinsHistory() {
     if (liveSimCacheMap[cfgKey] && liveSimCacheMap[cfgKey].length > 0) {
         return liveSimCacheMap[cfgKey];
     }
+    try {
+        const cached = SafeStorage.getItem(`sim_cache_history_${cfgKey}`);
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                liveSimCacheMap[cfgKey] = parsed;
+                return parsed;
+            }
+        }
+    } catch(e) {}
     return []; // No mock data! Return empty until real simulation is run
 }
 
@@ -28854,9 +28922,16 @@ function getSingleUserCombosForRound(round, cfg, userId, userName = null) {
  * @param {Object} config 
  * @param {string} customUserId
  */
+const _simRoundCombosCache = new Map();
+
 function getCombosForSimulationRound(round, config = null, customUserId = null) {
     const cfg = config || getSelectedSimulationConfig();
     const effectiveTarget = customUserId || getEffectiveTargetUser();
+    const roundCacheKey = `${effectiveTarget}_R${round}_${JSON.stringify(cfg)}`;
+
+    if (_simRoundCombosCache.has(roundCacheKey)) {
+        return _simRoundCombosCache.get(roundCacheKey);
+    }
     
     const drawnRounds = Object.keys(state.mergedHistory || {})
         .filter(rnd => state.mergedHistory[rnd] && Array.isArray(state.mergedHistory[rnd].numbers))
@@ -28865,6 +28940,7 @@ function getCombosForSimulationRound(round, config = null, customUserId = null) 
     const wasIsolated = enterHistoryIsolation(round, maxKnownDrawnRound);
 
     try {
+        let resultCombos;
         if (effectiveTarget === '__ALL__') {
             let userList = state.allRegisteredUsersList;
             if (!userList || userList.length === 0) {
@@ -28892,10 +28968,12 @@ function getCombosForSimulationRound(round, config = null, customUserId = null) 
                 const uCombos = getSingleUserCombosForRound(round, cfg, u.id, u.name || u.id);
                 allCombos.push(...uCombos);
             });
-            return allCombos;
+            resultCombos = allCombos;
         } else {
-            return getSingleUserCombosForRound(round, cfg, effectiveTarget);
+            resultCombos = getSingleUserCombosForRound(round, cfg, effectiveTarget);
         }
+        _simRoundCombosCache.set(roundCacheKey, resultCombos);
+        return resultCombos;
     } finally {
         exitHistoryIsolation(wasIsolated);
     }
@@ -29750,6 +29828,9 @@ async function runRealHistoricalSimulation() {
             const cfgKey = `${effectiveTarget}_${JSON.stringify(cfg)}`;
             liveSimCacheMap[cfgKey] = results;
             realSimCache = results;
+            try {
+                SafeStorage.setItem(`sim_cache_history_${cfgKey}`, JSON.stringify(results));
+            } catch(e) {}
 
             playSimJackpotSound();
             fireSimConfetti();
@@ -41658,7 +41739,9 @@ var __M_services_lotto_views_sync = (function() {
     try {
 const { state, applyNewDrawData } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
-const { showToast, removeUndefined } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
+const { showToast, removeUndefined, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
+const { UserContextManager } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
+const { saveUserWeeklyRecommendationSnapshot } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { recalculateGroups } = (typeof __M_services_lotto_statistics !== 'undefined' ? __M_services_lotto_statistics : {});
 const { 
     scrapeCompleteRoundResult, 
@@ -41962,6 +42045,21 @@ async function autoSyncMissingDraws(showModal = false) {
             }
         }
 
+        // 5. 🔮 [차기 회차 스냅샷 자동 사전 생성] 신규 회차가 수집되었으므로 다음 회차 불변 스냅샷을 백그라운드에서 자동 사전 생성
+        if (syncedCount > 0) {
+            const latestNum = currentMaxRound + syncedCount;
+            if (showModal) {
+                appendScrapingLog(`🔮 [차기 회차 자동 발급] 제 ${latestNum + 1}회 회원별 추천번호 불변 스냅샷 백그라운드 자동 사전 생성 시작...`, 'header');
+            }
+            triggerAutoDrawFollowupTasks(latestNum).then(() => {
+                if (showModal) {
+                    appendScrapingLog(`✅ 제 ${latestNum + 1}회 전 회원 추천번호 불변 스냅샷 사전 발급 완료!`, 'info');
+                }
+            }).catch(err => {
+                console.warn('[AutoDraw] triggerAutoDrawFollowupTasks error:', err);
+            });
+        }
+
         if (showModal) {
             appendScrapingLog(`🎉 신규 ${syncedCount}개 회차 등록 및 ${repairedCount}개 회차 당첨금 보충 완료! 화면이 갱신되었습니다.`, 'success');
             updateScrapingStatus(`동기화 완료 (신규 +${syncedCount}회, 보충 +${repairedCount}회)`, true);
@@ -41998,12 +42096,69 @@ async function handleFetchLatestDrawClick() {
     }
 }
 
+/**
+ * 🔮 신규 회차 수집 후 후속 백그라운드 자동화 작업
+ * 차기 회차(+1)에 대해 등록된 모든 유효 회원 대상 불변 추천번호 스냅샷 사전 자동 발급 및 영구 저장
+ */
+async function triggerAutoDrawFollowupTasks(newLatestRound) {
+    if (!newLatestRound || isNaN(newLatestRound)) return;
+    const nextRound = Number(newLatestRound) + 1;
+    console.log(`[AutoDraw] Starting background follow-up tasks for new round ${newLatestRound}, next round ${nextRound}...`);
+    
+    let users = [];
+    try {
+        if (typeof UserContextManager !== 'undefined' && typeof UserContextManager.getAllUnifiedUsers === 'function') {
+            users = UserContextManager.getAllUnifiedUsers();
+        } else if (typeof window !== 'undefined' && window.UserContextManager && typeof window.UserContextManager.getAllUnifiedUsers === 'function') {
+            users = window.UserContextManager.getAllUnifiedUsers();
+        } else if (state && Array.isArray(state.allRegisteredUsersList) && state.allRegisteredUsersList.length > 0) {
+            users = state.allRegisteredUsersList;
+        }
+    } catch (e) {
+        console.warn('[AutoDraw] Failed to get user list:', e);
+    }
+    
+    if (!Array.isArray(users) || users.length === 0) {
+        console.log('[AutoDraw] No active registered users found for pre-generating snapshots.');
+        return;
+    }
+
+    console.log(`[AutoDraw] Pre-generating next round (${nextRound}) recommendation snapshots for ${users.length} registered users...`);
+
+    let generatedCount = 0;
+    for (let i = 0; i < users.length; i++) {
+        const u = users[i];
+        const uId = (u && (u.id || u.userId)) ? String(u.id || u.userId).trim().toLowerCase() : '';
+        if (!uId || (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uId))) continue;
+        if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted') continue;
+
+        try {
+            if (typeof saveUserWeeklyRecommendationSnapshot === 'function') {
+                const snap = await saveUserWeeklyRecommendationSnapshot(uId, nextRound);
+                if (snap) generatedCount++;
+            } else if (typeof window !== 'undefined' && typeof window.saveUserWeeklyRecommendationSnapshot === 'function') {
+                const snap = await window.saveUserWeeklyRecommendationSnapshot(uId, nextRound);
+                if (snap) generatedCount++;
+            }
+        } catch (err) {
+            console.warn(`[AutoDraw] Failed to pre-generate snapshot for user ${uId}:`, err);
+        }
+        
+        // Non-blocking yield to event loop every 3 users
+        if (i % 3 === 0) {
+            await new Promise(res => setTimeout(res, 25));
+        }
+    }
+    console.log(`[AutoDraw] Background snapshot pre-generation completed for round ${nextRound} (${generatedCount} snapshots ready).`);
+}
+
 if (typeof window !== 'undefined') {
     window.handleFetchLatestDrawClick = handleFetchLatestDrawClick;
     window.autoSyncMissingDraws = autoSyncMissingDraws;
     window.repairMissingPrizeHistory = repairMissingPrizeHistory;
     window.openScrapingLogModal = openScrapingLogModal;
     window.closeScrapingLogModal = closeScrapingLogModal;
+    window.triggerAutoDrawFollowupTasks = triggerAutoDrawFollowupTasks;
 }
 
 function setupSyncEvents() {
@@ -42021,12 +42176,11 @@ function setupSyncEvents() {
     }
 }
 
-
-
 /**
- * ⏰ 매주 토요일 21:00:00 최신 로또 당첨번호 자동 스크랩 및 동기화 스케줄러
+ * ⏰ 매주 토요일 20:40 ~ 23:59 최신 로또 당첨번호 자동 스크랩 및 동기화 스케줄러 (KST 기준)
  */
 let saturdayScrapeTimer = null;
+let lastSaturdayScrapedRound = null;
 
 function setupSaturdayAutoScrapeAndBroadcast() {
     if (typeof window === 'undefined' || saturdayScrapeTimer) return;
@@ -42034,17 +42188,37 @@ function setupSaturdayAutoScrapeAndBroadcast() {
     // Check time every 60 seconds
     saturdayScrapeTimer = setInterval(() => {
         const now = new Date();
-        const day = now.getDay(); // 6 = Saturday
-        const hour = now.getHours();
-        const minute = now.getMinutes();
+        // Convert client time to KST (UTC+9)
+        const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const kstDate = new Date(utcTime + (9 * 3600000));
+        const day = kstDate.getDay(); // 6 = Saturday
+        const hour = kstDate.getHours();
+        const minute = kstDate.getMinutes();
 
-        // Target: Saturday between 21:00 and 21:35 (every 3 minutes)
-        if (day === 6 && hour === 21 && minute >= 0 && minute <= 35) {
-            if (minute % 3 === 0 && now.getSeconds() < 10) {
-                console.log('[Saturday 21:00 Scheduler Triggered] Checking latest draw...');
-                if (typeof autoSyncMissingDraws === 'function') {
-                    autoSyncMissingDraws(false);
-                }
+        // Target: Saturday between 20:40 and 23:59 KST
+        const isSaturdayNight = (day === 6 && ((hour === 20 && minute >= 40) || (hour >= 21 && hour <= 23)));
+        if (!isSaturdayNight) return;
+
+        const currentMaxRound = state.mergedHistory 
+            ? Math.max(...Object.keys(state.mergedHistory).map(Number).filter(n => !isNaN(n)), 1237) 
+            : 1237;
+        const targetRound = currentMaxRound + 1;
+
+        // If today's target round is already synced, avoid repetitive scraping
+        if (lastSaturdayScrapedRound === targetRound) return;
+
+        // Poll every 3 minutes (at minute % 3 === 0)
+        if (minute % 3 === 0 && kstDate.getSeconds() < 15) {
+            console.log(`[Saturday Auto-Scrape Triggered (KST ${hour}:${String(minute).padStart(2, '0')})] Checking target round ${targetRound}...`);
+            if (typeof autoSyncMissingDraws === 'function') {
+                autoSyncMissingDraws(false).then(syncedCount => {
+                    if (syncedCount > 0) {
+                        lastSaturdayScrapedRound = targetRound;
+                        console.log(`[Saturday Auto-Scrape Success] Round ${targetRound} synced successfully!`);
+                    }
+                }).catch(err => {
+                    console.warn('[Saturday Auto-Scrape Error]', err);
+                });
             }
         }
     }, 60000);
@@ -42067,6 +42241,10 @@ if (typeof window !== 'undefined') {
         if (typeof handleFetchLatestDrawClick !== 'undefined') {
             __exports.handleFetchLatestDrawClick = handleFetchLatestDrawClick;
             if (typeof window !== 'undefined') window.handleFetchLatestDrawClick = handleFetchLatestDrawClick;
+        }
+        if (typeof triggerAutoDrawFollowupTasks !== 'undefined') {
+            __exports.triggerAutoDrawFollowupTasks = triggerAutoDrawFollowupTasks;
+            if (typeof window !== 'undefined') window.triggerAutoDrawFollowupTasks = triggerAutoDrawFollowupTasks;
         }
         if (typeof setupSyncEvents !== 'undefined') {
             __exports.setupSyncEvents = setupSyncEvents;
