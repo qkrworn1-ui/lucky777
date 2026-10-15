@@ -23715,15 +23715,38 @@ body.lotto-mode-active .app-container {
     transform: translateY(-3px) !important;
 }
 
-/* 2. 메인 액션 버튼: 토스 스타일 황금 앰버 풀버튼 */
-.lp-card-actions-row {
+/* ========================================================
+   🏦 [디자인 A안: 토스 핀테크형 미니멀 대시보드 - 폴드7 및 모바일 완벽 최적화]
+   ======================================================== */
+
+/* 1. 서비스 카드 및 배경 클린화 */
+.lp-card-lotto {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 16px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    padding: 18px !important;
+    box-sizing: border-box !important;
+    width: 100% !important;
+}
+
+.lp-card-lotto::after,
+.lp-card-toto::after,
+.lp-card-glow-lotto {
+    display: none !important; /* 번쩍이는 네온 잔상 제거 */
+}
+
+/* 2. 토스형 액션 버튼 시스템 (100% 메인 풀버튼 + 2분할 서브 버튼) */
+.lp-card-toss-actions {
     display: flex !important;
     flex-direction: column !important;
     gap: 8px !important;
     width: 100% !important;
+    margin-top: 10px !important;
+    box-sizing: border-box !important;
 }
 
-.lp-btn-lotto {
+.lp-btn-toss-primary {
     width: 100% !important;
     height: 48px !important;
     background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
@@ -23736,68 +23759,352 @@ body.lotto-mode-active .app-container {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 6px !important;
+    gap: 8px !important;
+    cursor: pointer !important;
     transition: all 0.2s ease !important;
+    box-sizing: border-box !important;
+    text-decoration: none !important;
 }
 
-.lp-btn-lotto:hover {
+.lp-btn-toss-primary:hover {
     background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
     transform: translateY(-1px) !important;
+    box-shadow: 0 6px 18px rgba(245, 158, 11, 0.45) !important;
 }
 
-.lp-btn-qr-action {
+.lp-btn-toss-primary:active {
+    transform: scale(0.99) !important;
+}
+
+.lp-toss-sub-actions-row {
+    display: flex !important;
+    gap: 8px !important;
     width: 100% !important;
-    height: 40px !important;
+    box-sizing: border-box !important;
+}
+
+.lp-btn-toss-sub {
+    flex: 1 !important;
+    height: 38px !important;
     background: #1e293b !important;
     border: 1px solid #334155 !important;
     color: #cbd5e1 !important;
-    font-size: 0.82rem !important;
+    font-size: 0.80rem !important;
     font-weight: 800 !important;
     border-radius: 10px !important;
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 6px !important;
-    box-shadow: none !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    box-sizing: border-box !important;
+    white-space: nowrap !important;
 }
 
-.lp-btn-qr-action:hover {
+.lp-btn-toss-sub:hover {
     background: #334155 !important;
     color: #ffffff !important;
+    border-color: #475569 !important;
 }
 
-/* 3. 모바일 & 폴드7 (max-width: 640px) 토스 핀테크형 단정 레이아웃 */
+/* 3. 토스 핀테크형 통합 자산 카드 (.lp-toss-fin-card) */
+.lp-financial-summary.lp-toss-fin-card {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 16px !important;
+    padding: 14px 16px !important;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.4) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 auto 10px auto !important;
+}
+
+.lp-toss-fin-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px solid #1e293b !important;
+    padding-bottom: 6px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.lp-toss-fin-title-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 0.84rem !important;
+    font-weight: 800 !important;
+    color: #f8fafc !important;
+}
+
+.lp-toss-fin-icon {
+    font-size: 0.95rem !important;
+}
+
+.lp-toss-fin-badge-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.lp-toss-fin-main-val {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    padding: 4px 0 !important;
+    box-sizing: border-box !important;
+}
+
+.lp-toss-val-left {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+}
+
+.lp-toss-val-sub {
+    font-size: 0.68rem !important;
+    color: #94a3b8 !important;
+    font-weight: 700 !important;
+}
+
+.lp-toss-big-prize {
+    font-size: 1.35rem !important;
+    font-weight: 900 !important;
+    color: #10b981 !important;
+    letter-spacing: -0.5px !important;
+    line-height: 1.15 !important;
+}
+
+.lp-toss-val-right {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    gap: 3px !important;
+}
+
+.lp-toss-metric-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+}
+
+.lp-toss-metric-lbl {
+    font-size: 0.65rem !important;
+    color: #64748b !important;
+    font-weight: 700 !important;
+}
+
+.lp-toss-metric-val {
+    font-size: 0.78rem !important;
+    font-weight: 800 !important;
+    color: #f8fafc !important;
+}
+
+.lp-toss-invest-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 0.72rem !important;
+    color: #94a3b8 !important;
+    padding-bottom: 2px !important;
+    box-sizing: border-box !important;
+}
+
+.lp-toss-invest-val {
+    color: #cbd5e1 !important;
+    font-weight: 700 !important;
+}
+
+/* 4. 3분할 퀵 내비게이션 칩 (기존 미니 카드 3장의 짤림 및 중복을 100% 해결) */
+.lp-toss-nav-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 5px !important;
+    width: 100% !important;
+    margin-top: 4px !important;
+    box-sizing: border-box !important;
+}
+
+.lp-toss-nav-chip {
+    background: #111827 !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 9px !important;
+    padding: 7px 4px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+    box-sizing: border-box !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    text-align: center !important;
+}
+
+.lp-toss-nav-chip:hover {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    transform: translateY(-1px) !important;
+}
+
+.lp-toss-nav-chip .lp-chip-sub {
+    font-size: 0.65rem !important;
+    color: #94a3b8 !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+}
+
+.lp-toss-nav-chip .lp-chip-action {
+    font-size: 0.72rem !important;
+    font-weight: 900 !important;
+    white-space: nowrap !important;
+}
+
+/* 5. 사주 길일·길시 스마트 알림 배너 단정화 */
+.lp-push-banner {
+    width: 100% !important;
+    max-width: 900px !important;
+    margin: 0 auto 8px auto !important;
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+    border-radius: 14px !important;
+    padding: 10px 14px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+.lp-push-banner-content {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+}
+
+.lp-push-banner-icon {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 10px !important;
+    background: rgba(245, 158, 11, 0.18) !important;
+    color: #fbbf24 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1rem !important;
+    flex-shrink: 0 !important;
+    border: 1px solid rgba(245, 158, 11, 0.35) !important;
+}
+
+.lp-push-banner-text {
+    min-width: 0 !important;
+    flex: 1 !important;
+}
+
+.lp-push-banner-title {
+    font-size: 0.82rem !important;
+    font-weight: 800 !important;
+    color: #f8fafc !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    flex-wrap: wrap !important;
+}
+
+.lp-push-badge {
+    font-size: 0.62rem !important;
+    color: #fbbf24 !important;
+    background: rgba(245, 158, 11, 0.15) !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    padding: 1px 5px !important;
+    border-radius: 4px !important;
+    font-weight: 800 !important;
+}
+
+.lp-push-banner-desc {
+    font-size: 0.68rem !important;
+    color: #94a3b8 !important;
+    margin-top: 1px !important;
+    line-height: 1.35 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 100% !important;
+}
+
+.lp-btn-push-action {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    color: #0f172a !important;
+    border: none !important;
+    padding: 7px 14px !important;
+    border-radius: 9px !important;
+    font-size: 0.76rem !important;
+    font-weight: 900 !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    box-shadow: 0 2px 10px rgba(245, 158, 11, 0.3) !important;
+    transition: transform 0.15s ease !important;
+}
+
+.lp-btn-push-action:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.45) !important;
+}
+
+/* 6. 모바일 (max-width: 640px) 반응형 규칙 */
 @media (max-width: 640px) {
     .lp-service-grid {
+        display: flex !important;
+        flex-direction: column !important;
         gap: 10px !important;
-        margin-bottom: 12px !important;
+        width: 100% !important;
+        margin-bottom: 10px !important;
+        box-sizing: border-box !important;
     }
 
     .lp-card {
-        padding: 16px 14px !important;
+        padding: 14px 12px !important;
     }
 
     .lp-card-features {
-        display: none !important; /* 모바일에서 긴 체크리스트 숨김으로 단정화 */
+        display: none !important;
     }
 
     .lp-card-desc {
         font-size: 0.76rem !important;
         color: #94a3b8 !important;
-        margin: 4px 0 10px 0 !important;
+        margin: 3px 0 8px 0 !important;
         line-height: 1.35 !important;
     }
 
     .lp-card-title {
-        font-size: 1.05rem !important;
+        font-size: 1.02rem !important;
         font-weight: 900 !important;
     }
 
-    /* 토토 서비스 카드 슬림화 (로또 집중) */
+    /* 토토 서비스 카드 슬림화 */
     .lp-card-toto {
         background: #0f172a !important;
         border: 1px solid #1e293b !important;
-        padding: 10px 14px !important;
+        padding: 10px 12px !important;
     }
 
     .lp-card-toto .lp-card-desc,
@@ -23810,156 +24117,129 @@ body.lotto-mode-active .app-container {
     }
 
     .lp-btn-toto-main {
-        padding: 6px 12px !important;
-        font-size: 0.75rem !important;
-        height: 32px !important;
-    }
-
-    /* 4. 금융 자산 요약 보드 토스형 단정화 */
-    .lp-financial-summary {
-        background: #0f172a !important;
-        border: 1px solid #1e293b !important;
-        border-radius: 14px !important;
-        padding: 12px 14px !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
-    }
-
-    .lp-fin-mobile-header {
-        border-bottom: 1px solid #1e293b !important;
-        padding-bottom: 6px !important;
-        margin-bottom: 8px !important;
-    }
-
-    .lp-fin-mobile-title {
-        font-size: 0.82rem !important;
-        font-weight: 800 !important;
-        color: #f8fafc !important;
-    }
-
-    .lp-fin-stats {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 6px !important;
-        margin-bottom: 8px !important;
-    }
-
-    .lp-stat-item {
-        background: #1e293b !important;
-        border: 1px solid rgba(255, 255, 255, 0.05) !important;
-        border-radius: 8px !important;
-        padding: 6px 10px !important;
-    }
-
-    .lp-stat-label {
-        font-size: 0.65rem !important;
-        color: #94a3b8 !important;
-    }
-
-    .lp-stat-val {
-        font-size: 0.88rem !important;
-        font-weight: 800 !important;
-        color: #f8fafc !important;
-    }
-
-    /* 미니 카드 3종 가로 3분할 슬림 칩 정돈 */
-    .lp-compact-win-row {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 5px !important;
-        margin-top: 6px !important;
-    }
-
-    .lp-mini-win-card {
-        padding: 6px 4px !important;
-        border-radius: 8px !important;
-        background: #111827 !important;
-        border: 1px solid #1e293b !important;
-        text-align: center !important;
-        display: flex !important;
-        flex-direction: column !important;
-        justify-content: center !important;
-        align-items: center !important;
-    }
-
-    .lp-mini-win-card .mini-win-top-row {
-        margin-bottom: 2px !important;
-    }
-
-    .lp-mini-win-card .mini-win-arrow {
-        display: none !important;
-    }
-
-    .lp-mini-win-card .mini-win-icon {
-        display: none !important;
-    }
-
-    .lp-mini-win-card .mini-win-title {
-        font-size: 0.68rem !important;
-        font-weight: 700 !important;
-        white-space: nowrap !important;
-    }
-
-    .lp-mini-win-card .mini-win-sub {
-        display: none !important;
-    }
-
-    .lp-mini-win-card .mini-win-prize {
-        font-size: 0.72rem !important;
-        font-weight: 800 !important;
-        white-space: nowrap !important;
-    }
-
-    .lp-mini-win-card .mini-win-hits {
-        font-size: 0.62rem !important;
-        display: block !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-        max-width: 90px !important;
-    }
-
-    /* 사주 알림 배너 단정화 */
-    .lp-push-banner {
-        background: #0f172a !important;
-        border: 1px solid #1e293b !important;
-        border-radius: 12px !important;
-        padding: 8px 12px !important;
-        box-shadow: none !important;
+        padding: 5px 10px !important;
+        font-size: 0.74rem !important;
+        height: 30px !important;
     }
 }
 
-/* 5. 폴드7 초슬림 접은 화면 (max-width: 360px) 전용 극단 단정화 */
+/* 7. 폴드7 접은 화면 (max-width: 360px) 극단 초슬림 최적화 (가로 스크롤 0px & 짤림 100% 차단) */
 @media (max-width: 360px) {
+    #landingPage,
+    .lp-service-grid,
+    .lp-card,
+    .lp-financial-summary,
+    .lp-push-banner,
+    .lp-countdown-container,
+    .lp-ticker-container,
+    #lpUserTrendBannerContainer,
+    #landingFortuneAdvisorContainer,
+    #lpAllMembersReviewSection {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+
     .lp-card {
         padding: 12px 10px !important;
         border-radius: 14px !important;
     }
 
-    .lp-btn-lotto {
+    .lp-btn-toss-primary {
         height: 44px !important;
-        font-size: 0.88rem !important;
+        font-size: 0.85rem !important;
     }
 
-    .lp-btn-qr-action {
-        height: 36px !important;
-        font-size: 0.78rem !important;
+    .lp-btn-toss-sub {
+        height: 35px !important;
+        font-size: 0.72rem !important;
+        padding: 0 4px !important;
     }
 
-    .lp-stat-val {
-        font-size: 0.80rem !important;
+    .lp-financial-summary.lp-toss-fin-card {
+        padding: 10px 10px !important;
+        border-radius: 12px !important;
     }
 
-    .lp-mini-win-card .mini-win-title {
-        font-size: 0.62rem !important;
+    .lp-toss-fin-title-wrap {
+        font-size: 0.76rem !important;
     }
 
-    .lp-mini-win-card .mini-win-prize {
-        font-size: 0.68rem !important;
+    .lp-toss-big-prize {
+        font-size: 1.15rem !important;
     }
 
-    .lp-mini-win-card .mini-win-hits {
-        font-size: 0.58rem !important;
-        max-width: 75px !important;
+    .lp-toss-metric-val {
+        font-size: 0.72rem !important;
+    }
+
+    .lp-toss-nav-grid {
+        gap: 3px !important;
+    }
+
+    .lp-toss-nav-chip {
+        padding: 5px 2px !important;
+    }
+
+    .lp-toss-nav-chip .lp-chip-sub {
+        font-size: 0.60rem !important;
+    }
+
+    .lp-toss-nav-chip .lp-chip-action {
+        font-size: 0.66rem !important;
+    }
+
+    /* 사주 알림 배너 320px 최적화: 세로 스택 & 100% 버튼 */
+    .lp-push-banner {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        padding: 8px 10px !important;
+    }
+
+    .lp-push-banner-content {
+        gap: 8px !important;
+    }
+
+    .lp-push-banner-title {
+        font-size: 0.76rem !important;
+    }
+
+    .lp-push-banner-desc {
+        white-space: normal !important;
+        font-size: 0.64rem !important;
+    }
+
+    .lp-btn-push-action {
+        width: 100% !important;
+        height: 32px !important;
+        justify-content: center !important;
+        font-size: 0.74rem !important;
+    }
+
+    /* 추천 당첨추이 배너 320px 최적화 */
+    .lp-trend-banner {
+        padding: 8px 10px !important;
+        box-sizing: border-box !important;
+        max-width: 100% !important;
+    }
+
+    .trend-top-row {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 4px !important;
+    }
+
+    .trend-top-right {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+
+    .trend-stat-val {
+        font-size: 1.00rem !important;
     }
 }
 

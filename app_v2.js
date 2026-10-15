@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.15.2150.40 - BUILD_DATE: 2026-10-15] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.15.2200.45 - BUILD_DATE: 2026-10-15] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.15.2150.40)
+ * Lucky777 Smart Bundle (v2026.10.15.2200.45)
  */
 
 
@@ -52742,6 +52742,14 @@ function updateMobileDdayBadge() {
         if (subtitleEl && targetRound) {
             subtitleEl.textContent = targetRound;
         }
+        const tossDeskEl = document.getElementById('lpTossBtnRoundDesktop');
+        if (tossDeskEl && targetRound) {
+            tossDeskEl.textContent = targetRound;
+        }
+        const tossMobEl = document.getElementById('lpTossBtnRoundMobile');
+        if (tossMobEl && targetRound) {
+            tossMobEl.textContent = targetRound;
+        }
     } catch(e) {
         console.warn('[updateMobileDdayBadge error]', e);
     }
@@ -53090,11 +53098,12 @@ function renderUserWinningTrendBanner(authId, displayName) {
                 <div class="trend-top-row">
                     <div class="trend-title-box">
                         <span>📈</span>
-                        <span><strong>${name} 님</strong> 최근 추천 당첨추이</span>
+                        <span class="lp-desktop-text"><strong>${name} 님</strong> AI추천(10게임) 시뮬레이션 성과</span>
+                        <span class="lp-mobile-text"><strong>${name} 님</strong> AI추천 성과</span>
                     </div>
                     <div class="trend-top-right">
                         <span class="trend-sweep-pill ${latestBadgeClass}" id="lpTrendSweepPill_${safeId}">
-                            ${latestIconHtml} <span><strong>최신 ${lastData.round}회:</strong> ${latestPrizeStr} (${latestHitsStr}${latestRankTag ? ' · ' + latestRankTag : ''})</span>
+                            ${latestIconHtml} <span class="lp-desktop-text"><strong>최신 ${lastData.round}회:</strong> ${latestPrizeStr} (${latestHitsStr}${latestRankTag ? ' · ' + latestRankTag : ''})</span><span class="lp-mobile-text"><strong>${lastData.round}회:</strong> ${latestPrizeStr}</span>
                         </span>
                         <i class="fa-solid fa-chevron-right trend-arrow-icon"></i>
                     </div>
