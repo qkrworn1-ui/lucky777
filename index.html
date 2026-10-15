@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=700">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=700">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.15.2207.27">
+    <link rel="stylesheet" href="styles.css?v=2026.10.15.2212">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.15.2207.27
+                        v2026.10.15.2212
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -177,7 +177,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.15.2207.27 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.15.2212 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -367,46 +367,24 @@
             </div>
         </div>
 
-        <!-- ⚡ 실시간 서버 스냅샷 동기화 스트립 (Fold 7 및 모바일 대시보드 신뢰도 표시) -->
-        <div id="lpServerSyncStrip" class="lp-server-sync-strip" onclick="window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 스냅샷 상태 확인 (클릭 시 상세 모달)">
-            <div class="lp-sync-strip-left">
-                <span class="lp-sync-icon">⚡</span>
-                <span class="lp-sync-text" id="lpSyncStripText">서버 스냅샷: 16인 동기화 완료</span>
-            </div>
-            <div class="lp-sync-strip-right">
-                <span class="lp-sync-badge-cloud" id="lpSyncBadgeCloud">Cloud 🟢</span>
-            </div>
+        <!-- 🔮 [A안 5번: 사주 길일·길시 미니멀 1줄 스트립] -->
+        <div id="landingFortuneAdvisorContainer" style="width: 100%; max-width: 900px; margin: 0 auto 6px auto; box-sizing: border-box;"></div>
+
+        <!-- ⚡ [A안 6번: 클라우드 영구 스냅샷 1줄 텍스트] -->
+        <div id="lpServerSyncStrip" class="lp-toss-sync-strip" onclick="window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 스냅샷 상태 확인 (클릭 시 상세 모달)">
+            <span class="lp-toss-sync-dot">●</span> <span id="lpSyncStripText">클라우드 영구 스냅샷 16인 동기화 완료</span>
         </div>
 
-        <!-- 🔔 [신규] 사주 길일·길시 1시간 전 & 당첨 발표 스마트 알림 신청 배너 (홈화면 전면 배치) -->
-        <div id="lpPushNotificationBanner" class="lp-push-banner">
-            <div class="lp-push-banner-content">
-                <div class="lp-push-banner-icon">
-                    <i class="fa-solid fa-bell"></i>
-                </div>
-                <div class="lp-push-banner-text">
-                    <div class="lp-push-banner-title">
-                        <span>사주 길일·길시 1시간 전 알림</span>
-                        <span class="lp-push-badge">안심 케어</span>
-                    </div>
-                    <div class="lp-push-banner-desc">
-                        회원님 맞춤 길시 1시간 전 알림 (구매등록 시 자동 생략)
-                    </div>
-                </div>
-            </div>
-            <button type="button" class="lp-btn-push-action" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();">
-                <i class="fa-solid fa-bell"></i> <span>알림 신청하기</span>
-            </button>
+        <!-- 🔔 사주 스마트 알림 배너 (사주 1줄 스트립으로 통합되어 홈 화면에서는 숨김) -->
+        <div id="lpPushNotificationBanner" class="lp-push-banner" style="display: none !important;">
+            <button type="button" class="lp-btn-push-action" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();"></button>
         </div>
 
-        <!-- 🔮 [신규] 개인 생년월일 기반 로또 구매 추천 요일 및 길시 (명리학 어드바이저) -->
-        <div id="landingFortuneAdvisorContainer" class="fortune-advisor-target-container" style="width: 100%; max-width: 900px; margin: 0 auto 6px auto; box-sizing: border-box;"></div>
+        <!-- 📈 당첨그래프 배너 (A안 미니멀 룩 적용: 홈 화면에서는 숨김, 상단 [AI 추천 복기 >] 버튼으로 확인) -->
+        <div id="lpUserTrendBannerContainer" style="display: none !important;"></div>
 
-        <!-- 📈 [신규] 로그인 회원 최근 추천 당첨추이 슬림 배너 (가입일 이후 한정, 폴드7 320px 최적화) -->
-        <div id="lpUserTrendBannerContainer" style="width: 100%; max-width: 900px; margin: 0 auto 10px auto; box-sizing: border-box;"></div>
-
-        <!-- 🔮 제 XXX회차 전체 회원 AI 추천번호 당첨 결과 내역 요약 박스 (아코디언 접기/펼치기) -->
-        <div id="lpAllMembersReviewSection" class="lp-accordion-card" style="width: 100%; max-width: 900px; margin-bottom: 8px; background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 8px 14px; box-sizing: border-box; box-shadow: 0 4px 16px rgba(0,0,0,0.3);">
+        <!-- 🔮 전체 회원 AI 추천번호 당첨 결과 내역 (A안 미니멀 룩 적용: 홈 화면에서는 숨김) -->
+        <div id="lpAllMembersReviewSection" class="lp-accordion-card" style="display: none !important;">
             <div class="lp-accordion-header" onclick="window.toggleLandingAccordion && window.toggleLandingAccordion('lpReviewAccordionBody', 'lpReviewChevron')" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; cursor: pointer; user-select: none;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <i class="fa-solid fa-brain" style="color: #10b981; font-size: 1.15rem;"></i>
@@ -626,7 +604,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.15.2207.27
+                                v2026.10.15.2212
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -2218,7 +2196,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.15.2207.27
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.15.2212
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -4519,7 +4497,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.15.2207.27';
+        window.APP_VERSION = 'v2026.10.15.2212';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4590,7 +4568,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.15.2207.27';
+            var v = ver || window.APP_VERSION || 'v2026.10.15.2212';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4847,7 +4825,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.15.2207.27';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.15.2212';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4994,7 +4972,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.15.2207.27')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.15.2212')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -5247,8 +5225,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.15.2207.27"></script>
-    <script src="app_v2.js?v=2026.10.15.2207.27"></script>
+    <script src="data.js?v=2026.10.15.2212"></script>
+    <script src="app_v2.js?v=2026.10.15.2212"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->

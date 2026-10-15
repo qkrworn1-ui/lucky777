@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.15.2207.27 - BUILD_DATE: 2026-10-15] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.15.2212 - BUILD_DATE: 2026-10-15] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.15.2207.27)
+ * Lucky777 Smart Bundle (v2026.10.15.2212)
  */
 
 
@@ -35783,8 +35783,27 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
         <div class="fortune-push-mini-wrap" style="display:none;"></div>
     `;
 
-    // 모든 대상 컨테이너(랜딩 페이지 대시보드 및 통계분석 탭 대시보드)에 일괄 반영
+    // 모든 대상 컨테이너(랜딩 페이지 대시보드 및 통계분석 탭 대시보드)에 반영
     targets.forEach(el => {
+        if (el.id === 'landingFortuneAdvisorContainer') {
+            // 🏦 [A안: 토스 핀테크형 미니멀 1줄 스트립]
+            const fortuneDay = (profile && profile.stem && profile.stem.primaryDay) ? profile.stem.primaryDay.split(' ')[0] : '목요일';
+            const fortuneTime = timeSlotClean || '17:00~19:00 (유시)';
+            const dispText = shouldShowInput ? '생년월일 등록 시 맞춤 길시 추천' : `${fortuneDay} ${fortuneTime}`;
+            el.innerHTML = `
+                <div class="lp-toss-fortune-strip" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.switchTab) window.switchTab('tab-dashboard'); }, 80); }" title="이번 주 사주 길일·길시 상세 분석 보기 (클릭 시 이동)">
+                    <div class="lp-fortune-strip-left">
+                        <span class="lp-fortune-strip-icon">🔮</span>
+                        <div class="lp-fortune-strip-text">
+                            <span class="lp-fortune-strip-label">이번 주 사주 길일·길시</span>
+                            <span class="lp-fortune-strip-val">${dispText}</span>
+                        </div>
+                    </div>
+                    <span class="lp-fortune-strip-btn">길일 &gt;</span>
+                </div>
+            `;
+            return;
+        }
         el.innerHTML = finalHtml;
     });
 
