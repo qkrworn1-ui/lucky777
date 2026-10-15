@@ -537,9 +537,9 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
             v3Eval: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 },
             extraPackEvals: [1, 2, 3, 4, 5].map(pId => ({
                 packId: pId,
-                name: `추가팩 ${pId}`,
-                badge: `EXTRA ${pId}`,
-                color: '#38bdf8',
+                name: pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : `추가팩 ${pId}`,
+                badge: pId === 1 ? 'ALL-ROUNDER 3' : `EXTRA ${pId}`,
+                color: pId === 1 ? '#10b981' : '#38bdf8',
                 combos: [],
                 evalData: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 }
             })),
@@ -583,9 +583,9 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
             v3Eval: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 },
             extraPackEvals: [1, 2, 3, 4, 5].map(pId => ({
                 packId: pId,
-                name: `추가팩 ${pId}`,
-                badge: `EXTRA ${pId}`,
-                color: '#38bdf8',
+                name: pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : `추가팩 ${pId}`,
+                badge: pId === 1 ? 'ALL-ROUNDER 3' : `EXTRA ${pId}`,
+                color: pId === 1 ? '#10b981' : '#38bdf8',
                 combos: [],
                 evalData: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 }
             })),
@@ -617,14 +617,22 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
         v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
         for (let pId = 1; pId <= 5; pId++) {
-            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId) || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] };
+            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId) || { name: pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : `추가팩 ${pId}`, badge: pId === 1 ? 'ALL-ROUNDER 3' : `EXTRA ${pId}`, color: pId === 1 ? '#10b981' : '#38bdf8', combos: [] };
             const pCombos = (packObj && Array.isArray(packObj.combos)) ? packObj.combos : (Array.isArray(packObj) ? packObj : []);
             const evalData = evaluateRecommendationSet(pCombos, actualDraw);
+            const defaultName = pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : `추가팩 ${pId}`;
+            const defaultBadge = pId === 1 ? 'ALL-ROUNDER 3' : `EXTRA ${pId}`;
+            let packName = packObj.name || defaultName;
+            let packBadge = packObj.badge || defaultBadge;
+            if (pId === 1) {
+                packName = '기본 3: 올라운더 팩 3 (빈틈제로 10게임)';
+                packBadge = 'ALL-ROUNDER 3';
+            }
             extraPackEvals.push({
                 packId: pId,
-                name: packObj.name || `추가팩 ${pId}`,
-                badge: packObj.badge || `EXTRA ${pId}`,
-                color: packObj.color || '#38bdf8',
+                name: packName,
+                badge: packBadge,
+                color: packObj.color || (pId === 1 ? '#10b981' : '#38bdf8'),
                 combos: pCombos,
                 evalData: evalData
             });
@@ -1192,7 +1200,7 @@ export async function renderAllRoundsReviewDetail() {
     const algoPacks = [
         { id: 'v4', name: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#8b5cf6' },
         { id: 'v3', name: '기본 2: 올라운더 팩 2 (10게임)', badge: 'ALL-ROUNDER 2', color: '#3b82f6' },
-        { id: 'extra_1', name: '추가 1: 빈틈제로 팩 (10게임)', badge: 'ZERO-GAP', color: '#10b981' },
+        { id: 'extra_1', name: '기본 3: 올라운더 팩 3 (빈틈제로 10게임)', badge: 'ALL-ROUNDER 3', color: '#10b981' },
         { id: 'extra_2', name: '추가 2: 슈퍼 잭팟 팩 (10게임)', badge: 'SUPER JACKPOT', color: '#f59e0b' },
         { id: 'extra_3', name: '추가 3: 멀티 히트 팩 (10게임)', badge: 'MULTI-HIT', color: '#8b5cf6' },
         { id: 'extra_4', name: '추가 4: 흐름 부스터 팩 (10게임)', badge: 'FLOW BOOSTER', color: '#06b6d4' },
@@ -2063,7 +2071,7 @@ export async function renderAllRoundsReviewDetail() {
             const algoLabels = [
                 ['기본1', '올라운더1'],
                 ['기본2', '올라운더2'],
-                ['추가1', '빈틈제로'],
+                ['기본3', '올라운더3'],
                 ['추가2', '슈퍼잭팟'],
                 ['추가3', '멀티히트'],
                 ['추가4', '흐름부스터'],
@@ -2597,7 +2605,7 @@ export async function renderReviewDetail(r) {
         ];
 
         const extraPackShortNames = {
-            1: '빈틈제로',
+            1: '올라운더3',
             2: '슈퍼잭팟',
             3: '멀티히트',
             4: '흐름부스터',
@@ -2937,7 +2945,7 @@ export async function openAdmin1235ReviewModal(initialRound = null, initialUser 
                         <button type="button" class="admin1235-filter-btn active" data-filter="all" onclick="window.setAdmin1235ModalFilter('all')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: 1px solid #f59e0b; background: #f59e0b; color: #0f172a; white-space: nowrap;">전체 (70G)</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="v4" onclick="window.setAdmin1235ModalFilter('v4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #c4b5fd; white-space: nowrap;">올라운더 (10G)</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="v3" onclick="window.setAdmin1235ModalFilter('v3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.15); color: #93c5fd; white-space: nowrap;">올라운더2 (10G)</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">추가1 빈틈제로</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">기본3 올라운더3</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="extra_2" onclick="window.setAdmin1235ModalFilter('extra_2')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.15); color: #fde047; white-space: nowrap;">추가2 슈퍼잭팟</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="extra_3" onclick="window.setAdmin1235ModalFilter('extra_3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #d8b4fe; white-space: nowrap;">추가3 멀티히트</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="extra_4" onclick="window.setAdmin1235ModalFilter('extra_4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(6,182,212,0.4); background: rgba(6,182,212,0.15); color: #67e8f9; white-space: nowrap;">추가4 흐름부스터</button>

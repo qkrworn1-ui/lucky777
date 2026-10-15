@@ -636,7 +636,10 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
 
         const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-        const isV4 = chkReportLogic ? chkReportLogic.checked : (localStorage.getItem('lotto_pref_v4') !== 'false');
+        const localPref = localStorage.getItem('lotto_pref_v4');
+        const currentAlgo = state.currentSelectedAlgoId || (localPref === 'ar3' || localPref === 'extra1' || localPref === 'v5' ? 'extra1' : (localPref === 'false' ? 'v3' : 'v4'));
+        const isAr3 = (currentAlgo === 'extra1' || currentAlgo === 'ar3' || currentAlgo === 'v5');
+        const isV4 = isAr3 ? false : (chkReportLogic ? chkReportLogic.checked : (localPref !== 'false'));
 
         // 🛡️ 포렌식 다이내믹 워터마크 (화면 캡처 유출 시 배정자 즉시 추적)
         const watermarkEl = document.createElement('div');
@@ -650,7 +653,15 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         container.appendChild(watermarkEl);
 
         let allCombos;
-        if (isV4) {
+        if (isAr3) {
+            allCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'ar3', true, effectiveUserId);
+            if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
+                allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'ar3', true, effectiveUserId);
+            }
+            state.fixedTop5Combinations_ar3 = allCombos;
+            state.fixedTop5Combinations_ar3_userId = effectiveUserId;
+            state.fixedTop5Combinations_ar3_round = curUpcomingRound;
+        } else if (isV4) {
             allCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
             if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
                 allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
@@ -669,7 +680,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         }
 
         if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
-            allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, isV4 ? 'v4' : 'v3', true, effectiveUserId);
+            allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, isAr3 ? 'ar3' : (isV4 ? 'v4' : 'v3'), true, effectiveUserId);
         }
 
         // 🔒 차기 회차에 대해 사용자별 7대 알고리즘 영구 불변 스냅샷 자동 생성/보존 (Write-Once)
@@ -1296,7 +1307,10 @@ export function renderSavedList() {
 
 export function handleGenerateAllClick() {
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-    const isV4 = chkReportLogic ? chkReportLogic.checked : true;
+    const localPref = localStorage.getItem('lotto_pref_v4');
+    const currentAlgo = state.currentSelectedAlgoId || (localPref === 'ar3' || localPref === 'extra1' || localPref === 'v5' ? 'extra1' : (localPref === 'false' ? 'v3' : 'v4'));
+    const isAr3 = (currentAlgo === 'extra1' || currentAlgo === 'ar3' || currentAlgo === 'v5');
+    const isV4 = isAr3 ? false : (chkReportLogic ? chkReportLogic.checked : true);
     const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
     const effectiveUserId = getEffectiveGeneratorUserId();
     
@@ -1312,7 +1326,14 @@ export function handleGenerateAllClick() {
         state.fixedTop5Combinations_v4 = existingSnap.v4Combos;
         state.fixedTop5Combinations_v4_userId = effectiveUserId;
         state.fixedTop5Combinations_v4_round = curUpcomingRound;
-        state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
+        const snapPack1 = existingSnap.ar3Combos || (existingSnap.extraPacks && (existingSnap.extraPacks[1] || existingSnap.extraPacks['1']));
+        state.fixedTop5Combinations_ar3 = (snapPack1 && Array.isArray(snapPack1.combos)) ? snapPack1.combos : (Array.isArray(snapPack1) ? snapPack1 : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'ar3', true, effectiveUserId));
+        state.fixedTop5Combinations_ar3_userId = effectiveUserId;
+        state.fixedTop5Combinations_ar3_round = curUpcomingRound;
+
+        state.fixedTop5Combinations = isAr3 
+            ? state.fixedTop5Combinations_ar3 
+            : (isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3);
         
         renderTop5Combinations(true);
 
@@ -1329,14 +1350,20 @@ export function handleGenerateAllClick() {
         return;
     }
 
-    // Force recalculate both v3 and v4 distinctly and explicitly for the current effective user & round
+    // Force recalculate v3, v4, and ar3 distinctly and explicitly for the current effective user & round
     state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
     state.fixedTop5Combinations_v3_userId = effectiveUserId;
     state.fixedTop5Combinations_v3_round = curUpcomingRound;
     state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
     state.fixedTop5Combinations_v4_userId = effectiveUserId;
     state.fixedTop5Combinations_v4_round = curUpcomingRound;
-    state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
+    state.fixedTop5Combinations_ar3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'ar3', true, effectiveUserId);
+    state.fixedTop5Combinations_ar3_userId = effectiveUserId;
+    state.fixedTop5Combinations_ar3_round = curUpcomingRound;
+
+    state.fixedTop5Combinations = isAr3 
+        ? state.fixedTop5Combinations_ar3 
+        : (isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3);
     
     // 🔒 즉시 영구 불변 스냅샷으로 저장하여 이후 변경 방지
     if (typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
@@ -1359,8 +1386,13 @@ export function handleGenerateAllClick() {
 
 export async function handleConfirmPurchaseHeroClick() {
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-    const useV4 = chkReportLogic ? chkReportLogic.checked : false;
-    const versionStr = useV4 ? '기본 1: 올라운더 팩 (10게임)' : '기본 2: 올라운더 팩 2 (10게임)';
+    const localPref = localStorage.getItem('lotto_pref_v4');
+    const currentAlgo = state.currentSelectedAlgoId || (localPref === 'ar3' || localPref === 'extra1' || localPref === 'v5' ? 'extra1' : (localPref === 'false' ? 'v3' : 'v4'));
+    const isAr3 = (currentAlgo === 'extra1' || currentAlgo === 'ar3' || currentAlgo === 'v5');
+    const useV4 = isAr3 ? false : (chkReportLogic ? chkReportLogic.checked : false);
+    const versionStr = isAr3 
+        ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)'
+        : (useV4 ? '기본 1: 올라운더 팩 (10게임)' : '기본 2: 올라운더 팩 2 (10게임)');
     
     const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
     const nextRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
@@ -1370,11 +1402,18 @@ export async function handleConfirmPurchaseHeroClick() {
         state.fixedTop5Combinations_v4_userId === effectiveUserId && state.fixedTop5Combinations_v4_round === nextRound);
     const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
         state.fixedTop5Combinations_v3_userId === effectiveUserId && state.fixedTop5Combinations_v3_round === nextRound);
+    const isAr3Valid = (state.fixedTop5Combinations_ar3 && state.fixedTop5Combinations_ar3.length === 10 &&
+        state.fixedTop5Combinations_ar3_userId === effectiveUserId && state.fixedTop5Combinations_ar3_round === nextRound);
 
-    const rawCombos = (useV4
-        ? (isV4Valid ? state.fixedTop5Combinations_v4 : computeAbsoluteTop10Combinations(false, nextRound, 'v4', true, effectiveUserId))
-        : (isV3Valid ? state.fixedTop5Combinations_v3 : computeAbsoluteTop10Combinations(false, nextRound, 'v3', true, effectiveUserId))
-    ) || [];
+    let rawCombos;
+    if (isAr3) {
+        rawCombos = isAr3Valid ? state.fixedTop5Combinations_ar3 : computeAbsoluteTop10Combinations(false, nextRound, 'ar3', true, effectiveUserId);
+    } else if (useV4) {
+        rawCombos = isV4Valid ? state.fixedTop5Combinations_v4 : computeAbsoluteTop10Combinations(false, nextRound, 'v4', true, effectiveUserId);
+    } else {
+        rawCombos = isV3Valid ? state.fixedTop5Combinations_v3 : computeAbsoluteTop10Combinations(false, nextRound, 'v3', true, effectiveUserId);
+    }
+    rawCombos = rawCombos || [];
     const currentCombos = rawCombos.length > 0 ? rawCombos.slice(0, comboCount) : [];
     if (!currentCombos || currentCombos.length === 0) {
         alert('구매 확정할 추천 번호 조합이 없습니다. 먼저 번호를 생성해주세요.');
@@ -1752,22 +1791,22 @@ export function renderExtraAddonPacksSection() {
 
     if (!isEligible) {
         if (headerActions) headerActions.style.display = 'none';
-        if (lblCount) lblCount.textContent = `🔒 실구매 인증 잠김 (0 / 5팩)`;
+        if (lblCount) lblCount.textContent = `🔒 실구매 인증 잠김 (기본 30G 활성)`;
         listEl.innerHTML = `
             <div class="extra-packs-locked-banner">
                 <div class="locked-icon-wrap">
                     <i class="fa-solid fa-lock"></i>
                 </div>
                 <div class="locked-title">
-                    🔒 실구매 인증 회원 전용 [추가 5팩 50게임]
+                    🔒 실구매 인증 회원 전용 [스페셜 추가팩 40게임]
                 </div>
                 <p class="locked-desc">
-                    기본 20게임(올라운더 1 + 올라운더 2)은 상시 무료로 열람 가능하며,<br>
-                    <strong style="color: #fbbf24;">추가 1~5팩(빈틈제로, 슈퍼 잭팟, 멀티 히트 등 50게임)</strong>은<br>
+                    기본 30게임 코어(올라운더 1 + 2 + 3)는 상시 무료로 열람 가능하며,<br>
+                    <strong style="color: #fbbf24;">스페셜 추가 2~5팩(슈퍼 잭팟, 멀티 히트, 흐름 부스터, 트리오 마스터 등 40게임)</strong>은<br>
                     <strong>매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원</strong>님께 무료로 잠금 해제됩니다.
                 </p>
                 <button type="button" onclick="if(window.openManualLedgerModal) { window.openManualLedgerModal(); } else if(window.switchLottoTab) { window.switchLottoTab('tab-confirmed-list'); }" class="btn-locked-qr">
-                    <i class="fa-solid fa-qrcode"></i> 실구매 QR 등록하고 추가 5팩 잠금 해제
+                    <i class="fa-solid fa-qrcode"></i> 실구매 QR 등록하고 스페셜 4팩(40G) 잠금 해제
                 </button>
             </div>
         `;
@@ -1786,7 +1825,7 @@ export function renderExtraAddonPacksSection() {
 
     // Update Header Pill Buttons State (추가 1 ~ 추가 5)
     const packColors = { 1: '#10b981', 2: '#f59e0b', 3: '#8b5cf6', 4: '#06b6d4', 5: '#ec4899' };
-    const packNames = { 1: '추가 1: 빈틈제로', 2: '추가 2: 슈퍼잭팟', 3: '추가 3: 멀티히트', 4: '추가 4: 흐름부스터', 5: '추가 5: 트리오마스터' };
+    const packNames = { 1: '기본 3: 올라운더 3', 2: '추가 2: 슈퍼잭팟', 3: '추가 3: 멀티히트', 4: '추가 4: 흐름부스터', 5: '추가 5: 트리오마스터' };
 
     for (let p = 1; p <= 5; p++) {
         const btn = document.getElementById(`btnQuickPack_${p}`);
@@ -2168,6 +2207,53 @@ if (typeof window !== 'undefined') {
     window.handleGenerateAll70Games = handleGenerateAll70Games;
     window.handleGenerateAllClick = handleGenerateAllClick;
     window.handleConfirmPurchaseHeroClick = handleConfirmPurchaseHeroClick;
+    window.copyGolden30Games = copyGolden30Games;
+}
+
+/**
+ * 📋 황금 30게임 코어 (올라운더 1 + 2 + 3 = 30게임) 원클릭 복사
+ */
+export async function copyGolden30Games() {
+    try {
+        const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
+        const effectiveUserId = getEffectiveGeneratorUserId();
+
+        const v4 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId) || [];
+        const v3 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId) || [];
+        const pack1 = generateExtraAddonPack(1, curUpcomingRound, effectiveUserId);
+        const ar3 = (pack1 && pack1.combos) ? pack1.combos : (computeAbsoluteTop10Combinations(false, curUpcomingRound, 'ar3', true, effectiveUserId) || []);
+
+        let text = `[LUCKY777] 제${curUpcomingRound}회 황금 30게임 코어 추천 (올라운더 1·2·3)\n`;
+        text += `배정 회원: ${effectiveUserId} | 1~45번 100% 완전 전수 커버 (빈틈 0%)\n\n`;
+
+        text += `■ [기본 1: 올라운더 팩 1 (10게임)]\n`;
+        v4.forEach((c, i) => {
+            const nums = (c.numbers || c).map(n => String(n).padStart(2, '0')).join(', ');
+            text += `${(i + 1).toString().padStart(2, '0')}. ${nums}\n`;
+        });
+
+        text += `\n■ [기본 2: 올라운더 팩 2 (10게임)]\n`;
+        v3.forEach((c, i) => {
+            const nums = (c.numbers || c).map(n => String(n).padStart(2, '0')).join(', ');
+            text += `${(i + 1).toString().padStart(2, '0')}. ${nums}\n`;
+        });
+
+        text += `\n■ [기본 3: 올라운더 팩 3 - 빈틈제로 (10게임)]\n`;
+        ar3.forEach((c, i) => {
+            const nums = (c.numbers || c).map(n => String(n).padStart(2, '0')).join(', ');
+            text += `${(i + 1).toString().padStart(2, '0')}. ${nums}\n`;
+        });
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            showToast(`📋 제${curUpcomingRound}회 황금 30게임 코어가 클립보드에 복사되었습니다!`);
+        } else {
+            showToast('클립보드 복사를 지원하지 않는 환경입니다.');
+        }
+    } catch (e) {
+        console.warn('[copyGolden30Games error]', e);
+        showToast('황금 30게임 복사 중 오류가 발생했습니다.');
+    }
 }
 
 
@@ -2234,27 +2320,29 @@ export function updateTop7AlgoUI() {
             } else {
                 statusBanner.className = 'purchase-status-banner unverified';
                 const countMsg = (confirmedGameCount > 0) ? ` (${confirmedGameCount}/5게임 등록)` : '';
-                txtStatus.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> [제 ${curUpcomingRound}회차] 실구매 미등록${countMsg}</strong> 매주 5게임 이상 실구매 영수증(QR) 등록 시 7대 알고리즘(추가 50게임)이 즉시 무료 잠금 해제됩니다!`;
+                txtStatus.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> [제 ${curUpcomingRound}회차] 실구매 미등록${countMsg}</strong> 매주 5게임 이상 실구매 영수증(QR) 등록 시 7대 알고리즘(스페셜 추가 40게임)이 즉시 무료 잠금 해제됩니다!`;
                 if (btnStatusBanner) {
                     btnStatusBanner.style.background = 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)';
                     btnStatusBanner.style.color = '#0f172a';
                     btnStatusBanner.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.35)';
-                    btnStatusBanner.innerHTML = '<i class="fa-solid fa-qrcode"></i> 실구매 영수증(5게임) 등록하고 추가 50게임 잠금해제';
+                    btnStatusBanner.innerHTML = '<i class="fa-solid fa-qrcode"></i> 실구매 영수증(5게임) 등록하고 스페셜 40게임 잠금해제';
                 }
             }
         }
 
-        // 2. Update Active V3 / V4 State
-        const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-        const isV4 = chkReportLogic ? chkReportLogic.checked : (localStorage.getItem('lotto_pref_v4') !== 'false');
+        // 2. Update Active V4 / V3 / AR3(extra1) State
+        const savedPref = localStorage.getItem('lotto_pref_v4');
+        const currentAlgo = state.currentSelectedAlgoId || (savedPref === 'ar3' || savedPref === 'extra1' || savedPref === 'v5' ? 'extra1' : (savedPref === 'false' ? 'v3' : 'v4'));
 
         const cardV4 = document.getElementById('topAlgoCard_v4');
         const badgeV4 = document.getElementById('topAlgoBadge_v4');
         const cardV3 = document.getElementById('topAlgoCard_v3');
         const badgeV3 = document.getElementById('topAlgoBadge_v3');
+        const cardExtra1 = document.getElementById('topAlgoCard_extra1');
+        const badgeExtra1 = document.getElementById('topAlgoBadge_extra1');
 
         if (cardV4 && badgeV4) {
-            if (isV4) {
+            if (currentAlgo === 'v4') {
                 cardV4.classList.add('active');
                 badgeV4.className = 'algo-status-badge active';
                 badgeV4.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>선택됨 (10G)</span>';
@@ -2266,7 +2354,7 @@ export function updateTop7AlgoUI() {
         }
 
         if (cardV3 && badgeV3) {
-            if (!isV4) {
+            if (currentAlgo === 'v3') {
                 cardV3.classList.add('active');
                 badgeV3.className = 'algo-status-badge active';
                 badgeV3.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>선택됨 (10G)</span>';
@@ -2277,11 +2365,24 @@ export function updateTop7AlgoUI() {
             }
         }
 
-        // 3. Update Extra Packs 1~5 Cards State
+        if (cardExtra1 && badgeExtra1) {
+            cardExtra1.classList.remove('locked');
+            if (currentAlgo === 'extra1' || currentAlgo === 'ar3' || currentAlgo === 'v5') {
+                cardExtra1.classList.add('active');
+                badgeExtra1.className = 'algo-status-badge active';
+                badgeExtra1.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>선택됨 (10G)</span>';
+            } else {
+                cardExtra1.classList.remove('active');
+                badgeExtra1.className = 'algo-status-badge';
+                badgeExtra1.innerHTML = '<i class="fa-regular fa-circle"></i> <span>선택하기</span>';
+            }
+        }
+
+        // 3. Update Extra Packs 2~5 Cards State (실구매 혜택 40G)
         const activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
         const activeSet = new Set(activePackIds);
 
-        for (let p = 1; p <= 5; p++) {
+        for (let p = 2; p <= 5; p++) {
             const card = document.getElementById(`topAlgoCard_extra${p}`);
             const badge = document.getElementById(`topAlgoBadge_extra${p}`);
             if (card && badge) {
@@ -2319,6 +2420,7 @@ export async function selectGeneratorAlgo(algoId) {
 
     // V4.0 Selected
     if (algoId === 'v4') {
+        state.currentSelectedAlgoId = 'v4';
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
         if (chkReportLogic) chkReportLogic.checked = true;
         localStorage.setItem('lotto_pref_v4', 'true');
@@ -2340,6 +2442,7 @@ export async function selectGeneratorAlgo(algoId) {
 
     // V3.0 Selected
     if (algoId === 'v3') {
+        state.currentSelectedAlgoId = 'v3';
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
         if (chkReportLogic) chkReportLogic.checked = false;
         localStorage.setItem('lotto_pref_v4', 'false');
@@ -2359,7 +2462,37 @@ export async function selectGeneratorAlgo(algoId) {
         return;
     }
 
-    // Extra Packs (extra1 ~ extra5)
+    // AR3 (Extra 1) Selected - Basic 30-game core, Always Unlocked!
+    if (algoId === 'extra1' || algoId === 'ar3' || algoId === 'v5') {
+        state.currentSelectedAlgoId = 'extra1';
+        localStorage.setItem('lotto_pref_v4', 'ar3');
+        const pack1 = generateExtraAddonPack(1, curUpcomingRound, effectiveUserId);
+        const p1Combos = (pack1 && Array.isArray(pack1.combos) && pack1.combos.length > 0)
+            ? pack1.combos
+            : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'ar3', true, effectiveUserId);
+        state.fixedTop5Combinations_ar3 = p1Combos;
+        state.fixedTop5Combinations_ar3_userId = effectiveUserId;
+        state.fixedTop5Combinations_ar3_round = curUpcomingRound;
+        state.fixedTop5Combinations = p1Combos;
+
+        // Ensure pack 1 is registered in active packs
+        const currentActive = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
+        if (!currentActive.includes(1)) {
+            saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [...currentActive, 1]);
+        }
+
+        renderTop5Combinations(true);
+        updateTop7AlgoUI();
+        const compactModal = document.getElementById('compactViewModal');
+        if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+            if (typeof openCompactView === 'function') openCompactView('extra_1');
+            else if (typeof window !== 'undefined' && window.openCompactView) window.openCompactView('extra_1');
+        }
+        showToast('🛡️ 기본 3: 올라운더 팩 3 (빈틈제로 10게임)이 선택되었습니다.');
+        return;
+    }
+
+    // Extra Packs (extra2 ~ extra5)
     if (algoId.startsWith('extra')) {
         const packNum = parseInt(algoId.replace('extra', ''));
         const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function' ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
@@ -2369,7 +2502,7 @@ export async function selectGeneratorAlgo(algoId) {
             : false;
 
         if (!isEligible) {
-            const wantConfirm = confirm('🔒 [실구매 인증 회원 전용 혜택]\n\n추가 1~5팩(총 50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n지금 실구매 영수증(QR)을 등록하고 추가 50게임을 즉시 잠금 해제하시겠습니까?');
+            const wantConfirm = confirm('🔒 [실구매 인증 회원 전용 혜택]\n\n추가 2~5팩(총 40게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(기본 30게임(올라운더 1+2+3)은 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하고 추가 40게임을 즉시 잠금 해제하시겠습니까?');
             if (wantConfirm) {
                 if (typeof window.openManualLedgerModal === 'function') {
                     window.openManualLedgerModal();
@@ -2404,11 +2537,16 @@ export async function handleGenerateAll70Games() {
         state.fixedTop5Combinations_v4 = existingSnap.v4Combos;
         state.fixedTop5Combinations_v4_userId = effectiveUserId;
         state.fixedTop5Combinations_v4_round = curUpcomingRound;
+        const snapPack1 = existingSnap.ar3Combos || (existingSnap.extraPacks && (existingSnap.extraPacks[1] || existingSnap.extraPacks['1']));
+        state.fixedTop5Combinations_ar3 = (snapPack1 && Array.isArray(snapPack1.combos)) ? snapPack1.combos : (Array.isArray(snapPack1) ? snapPack1 : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'ar3', true, effectiveUserId));
+        state.fixedTop5Combinations_ar3_userId = effectiveUserId;
+        state.fixedTop5Combinations_ar3_round = curUpcomingRound;
         state.fixedTop5Combinations = state.fixedTop5Combinations_v4;
     } else {
-        // 1. Force compute both V3 and V4 (20 Games)
+        // 1. Force compute V4, V3 and AR3 (30 Games Core)
         state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
         state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
+        state.fixedTop5Combinations_ar3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'ar3', true, effectiveUserId);
         state.fixedTop5Combinations = state.fixedTop5Combinations_v4;
 
         if (typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
@@ -2416,24 +2554,32 @@ export async function handleGenerateAll70Games() {
         }
     }
 
+    // Always ensure pack 1 (올라운더 3) is active
+    const curActive = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
+    if (!curActive.includes(1)) {
+        saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [...curActive, 1]);
+    }
+
     const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
         ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
         : false;
 
     if (isEligible) {
-        // 2. Compute Extra 1~5 (50 Games)
+        // 2. Compute Extra 1~5 (50 Games) -> Total 70 Games
         saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [1, 2, 3, 4, 5]);
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
         updateTop7AlgoUI();
         showToast(existingSnap 
-            ? `🔒 제${curUpcomingRound}회 확정 불변 70게임(기본 20G + 추가 50G)이 유지되었습니다!` 
-            : `🎉 7대 퀀트 알고리즘 70게임(기본 20G + 추가 50G) 전수가 생성되어 불변 저장되었습니다!`);
+            ? `🔒 제${curUpcomingRound}회 확정 불변 70게임(기본 30G + 추가 40G)이 유지되었습니다!` 
+            : `🎉 7대 퀀트 알고리즘 70게임(기본 30G + 추가 40G) 전수가 생성되어 불변 저장되었습니다!`);
     } else {
+        // Only 1 is active (core 30G = AR1 + AR2 + AR3)
+        saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [1]);
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
         updateTop7AlgoUI();
-        const wantRegister = confirm(`⚡ 기본 20게임(올라운더 1 + 올라운더 2)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 5팩(50게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
+        const wantRegister = confirm(`⚡ 기본 30게임(올라운더 1 + 올라운더 2 + 올라운더 3)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 4팩(40게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();

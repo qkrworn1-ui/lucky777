@@ -111,7 +111,7 @@ export function getSingleUserCombosForRound(round, cfg, userId, userName = null)
             combos.push(clone);
         });
     }
-    const extraPackNames = { 1: '빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
+    const extraPackNames = { 1: '올라운더3: 빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
     cfg.selectedExtraPacks.forEach(pIdx => {
         const extraPack = generateExtraAddonPack(pIdx, round, userId);
         if (extraPack && Array.isArray(extraPack.combos)) {
@@ -120,7 +120,9 @@ export function getSingleUserCombosForRound(round, cfg, userId, userName = null)
                 if (userName) clone.meta.ownerName = userName;
                 clone.algoId = `extra_${pIdx}`;
                 clone.packIdx = pIdx;
-                clone.algoName = `추가${pIdx}: ${extraPackNames[pIdx] || (extraPack && extraPack.name) || `추가팩 #${pIdx}`}`;
+                clone.algoName = pIdx === 1
+                    ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)'
+                    : `추가${pIdx}: ${extraPackNames[pIdx] || (extraPack && extraPack.name) || `추가팩 #${pIdx}`}`;
                 combos.push(clone);
             });
         }
@@ -372,7 +374,7 @@ export function renderSimulationTab(targetRound = null) {
     const totalDraws = maxR;
     const totalCombosEvaluated = totalDraws * evaluatedGamesPerRound;
 
-    const packNames = { 1: '빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
+    const packNames = { 1: '올라운더3', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
     const engineParts = [];
     if (cfg.includeV4) engineParts.push('올라운더(10G)');
     if (cfg.includeV3) engineParts.push('올라운더2(10G)');
@@ -679,13 +681,13 @@ export function detectComboAlgoId(combo) {
     if (combo && combo.algoId) return combo.algoId;
     const name = (combo && combo.meta && combo.meta.name) ? combo.meta.name : (combo ? (combo.name || '') : '');
     const clean = String(name).toLowerCase();
-    if (clean.includes('4.0') || (clean.includes('올라운더') && !clean.includes('2') && !clean.includes('팩 2'))) return 'v4';
+    if (clean.includes('올라운더 3') || clean.includes('올라운더3') || clean.includes('올라운더 팩 3') || clean.includes('ar3') || clean.includes('빈틈제로') || clean.includes('추가1')) return 'extra_1';
     if (clean.includes('3.0') || clean.includes('올라운더 팩 2') || clean.includes('올라운더 2')) return 'v3';
-    if (clean.includes('빈틈제로') || clean.includes('추가1') || clean.includes('팩 1')) return 'extra_1';
-    if (clean.includes('슈퍼잭팟') || clean.includes('추가2') || clean.includes('팩 2')) return 'extra_2';
-    if (clean.includes('멀티히트') || clean.includes('추가3') || clean.includes('팩 3')) return 'extra_3';
-    if (clean.includes('흐름부스터') || clean.includes('추가4') || clean.includes('팩 4')) return 'extra_4';
-    if (clean.includes('트리오마스터') || clean.includes('추가5') || clean.includes('팩 5')) return 'extra_5';
+    if (clean.includes('4.0') || (clean.includes('올라운더') && !clean.includes('2') && !clean.includes('3') && !clean.includes('팩 2') && !clean.includes('팩 3'))) return 'v4';
+    if (clean.includes('슈퍼잭팟') || clean.includes('추가2') || clean.includes('스페셜 2')) return 'extra_2';
+    if (clean.includes('멀티히트') || clean.includes('추가3') || clean.includes('스페셜 3') || (clean.includes('팩 3') && !clean.includes('올라운더'))) return 'extra_3';
+    if (clean.includes('흐름부스터') || clean.includes('추가4') || clean.includes('스페셜 4')) return 'extra_4';
+    if (clean.includes('트리오마스터') || clean.includes('추가5') || clean.includes('스페셜 5')) return 'extra_5';
     if (combo && combo.packIdx) return `extra_${combo.packIdx}`;
     if (combo && combo.packId) return `extra_${combo.packId}`;
     return 'v4';
@@ -783,7 +785,7 @@ export function renderAlgorithmPrizeTotals() {
         const selectedNames = [];
         if (cfg.includeV4) selectedNames.push('올라운더 팩(10G)');
         if (cfg.includeV3) selectedNames.push('올라운더 팩 2(10G)');
-        const packNames = { 1: '추가1: 빈틈제로(10G)', 2: '추가2: 슈퍼잭팟(10G)', 3: '추가3: 멀티히트(10G)', 4: '추가4: 흐름부스터(10G)', 5: '추가5: 트리오마스터(10G)' };
+        const packNames = { 1: '기본3: 올라운더3(10G)', 2: '추가2: 슈퍼잭팟(10G)', 3: '추가3: 멀티히트(10G)', 4: '추가4: 흐름부스터(10G)', 5: '추가5: 트리오마스터(10G)' };
         cfg.selectedExtraPacks.forEach(p => {
             if (packNames[p]) selectedNames.push(packNames[p]);
         });
@@ -851,9 +853,9 @@ export function renderAlgorithmPrizeTotals() {
         },
         {
             id: 'extra_1',
-            name: '추가1: 빈틈제로 (핫넘버 집중)',
-            shortName: '추가1: 빈틈제로',
-            packType: '애드온 팩 #1',
+            name: '기본 3: 올라운더 팩 3 (빈틈제로 100% 커버)',
+            shortName: '기본3: 올라운더3',
+            packType: '기본 코어 #3',
             icon: 'fa-shield-halved',
             color: '#10b981',
             badgeBg: 'rgba(16, 185, 129, 0.2)',

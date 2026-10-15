@@ -1,33 +1,9 @@
 {
-  "version": "v2026.10.15.1545",
+  "version": "v2026.10.15.1925",
   "buildDate": "2026-10-15",
   "description": "Fix: Optimize dashboard height to fit within single screen",
-  "buildTimestamp": "2026-10-15T15:45:27.034796",
+  "buildTimestamp": "2026-10-15T19:25:11.055189",
   "buildHistory": [
-    {
-      "version": "v2026.10.13.1942.55",
-      "buildDate": "2026-10-13",
-      "buildTime": "19:42",
-      "buildDateTime": "2026-10-13 19:42",
-      "buildTimestamp": "2026-10-13T19:42:55.723272",
-      "description": "Fix: Optimize dashboard height to fit within single screen"
-    },
-    {
-      "version": "v2026.10.13.1953",
-      "buildDate": "2026-10-13",
-      "buildTime": "19:53",
-      "buildDateTime": "2026-10-13 19:53",
-      "buildTimestamp": "2026-10-13T19:53:33.060847",
-      "description": "Fix: Optimize dashboard height to fit within single screen"
-    },
-    {
-      "version": "v2026.10.13.1953.45",
-      "buildDate": "2026-10-13",
-      "buildTime": "19:53",
-      "buildDateTime": "2026-10-13 19:53",
-      "buildTimestamp": "2026-10-13T19:53:45.112846",
-      "description": "Fix: Optimize dashboard height to fit within single screen"
-    },
     {
       "version": "v2026.10.13.2018",
       "buildDate": "2026-10-13",
@@ -123,8 +99,32 @@
       "buildDateTime": "2026-10-15 15:45",
       "buildTimestamp": "2026-10-15T15:45:27.034796",
       "description": "Fix: Optimize dashboard height to fit within single screen"
+    },
+    {
+      "version": "v2026.10.15.1923",
+      "buildDate": "2026-10-15",
+      "buildTime": "19:23",
+      "buildDateTime": "2026-10-15 19:23",
+      "buildTimestamp": "2026-10-15T19:23:50.608764",
+      "description": "Fix: Optimize dashboard height to fit within single screen"
+    },
+    {
+      "version": "v2026.10.15.1924",
+      "buildDate": "2026-10-15",
+      "buildTime": "19:24",
+      "buildDateTime": "2026-10-15 19:24",
+      "buildTimestamp": "2026-10-15T19:24:44.896153",
+      "description": "Fix: Optimize dashboard height to fit within single screen"
+    },
+    {
+      "version": "v2026.10.15.1925",
+      "buildDate": "2026-10-15",
+      "buildTime": "19:25",
+      "buildDateTime": "2026-10-15 19:25",
+      "buildTimestamp": "2026-10-15T19:25:11.055189",
+      "description": "Fix: Optimize dashboard height to fit within single screen"
     }
   ],
-  "buildTime": "15:45",
-  "buildDateTime": "2026-10-15 15:45"
+  "buildTime": "19:25",
+  "buildDateTime": "2026-10-15 19:25"
 }

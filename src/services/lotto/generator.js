@@ -155,6 +155,11 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
     const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
 
     // Determine version: explicit override takes HIGHEST priority (device-agnostic)
+    if (overrideVersion === 'v5' || overrideVersion === 'ar3' || overrideVersion === 'v5.0' || overrideVersion === 'extra1') {
+        const pack3 = generateExtraAddonPack(1, roundForSeed, effectiveUserId);
+        return (pack3 && Array.isArray(pack3.combos)) ? pack3.combos : [];
+    }
+
     let useReportLogic;
     if (overrideVersion === 'v4' || overrideVersion === 'V4.0') {
         useReportLogic = true;
@@ -169,6 +174,10 @@ export function computeAbsoluteTop10Combinations(forceRegenerate = false, target
             useReportLogic = chkReportLogic.checked;
         } else {
             const localPref = localStorage.getItem('lotto_pref_v4');
+            if (localPref === 'ar3' || localPref === 'extra1' || localPref === 'v5') {
+                const pack3 = generateExtraAddonPack(1, roundForSeed, effectiveUserId);
+                return (pack3 && Array.isArray(pack3.combos)) ? pack3.combos : [];
+            }
             useReportLogic = (localPref !== null) ? (localPref === 'true') : true;
         }
     }
@@ -895,17 +904,20 @@ export function findBestRecommendationMatch(userNums, v4Combos = [], v3Combos = 
     const userSorted = [...userNums].sort((a,b) => a - b);
     const userKey = userSorted.join(',');
 
-    // 1. Exact (6/6) match check for Extra Booster Packs
+    // 1. Exact (6/6) match check for Extra Booster Packs / All-Rounder 3
     if (Array.isArray(extraPacks)) {
         for (const p of extraPacks) {
             if (!p || !Array.isArray(p.combos)) continue;
             for (let i = 0; i < p.combos.length; i++) {
                 const cNums = p.combos[i].numbers || p.combos[i];
                 if (Array.isArray(cNums) && toKey(cNums) === userKey) {
+                    const isPack1 = (p.packId === 1 || Number(p.packId) === 1 || (p.name && (p.name.includes('올라운더 3') || p.name.includes('빈틈제로'))));
+                    const vName = isPack1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : (p.name || `[${p.shortName}] 추가 팩`);
+                    const lbl = isPack1 ? `올라운더3 #${i + 1}` : `${p.shortName || '추가'} #${i + 1}`;
                     return {
-                        matchedVersion: p.name || `[${p.shortName}] 추가 팩`,
-                        label: `${p.shortName || '추가'} #${i + 1}`,
-                        shortLabel: `${p.shortName || '추가'} #${i + 1}`,
+                        matchedVersion: vName,
+                        label: lbl,
+                        shortLabel: lbl,
                         index: i + 1,
                         packId: p.packId,
                         matchCount: 6,
@@ -1124,12 +1136,12 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
 
     const packMetas = {
         1: {
-            name: '추가 1: 빈틈제로 팩 (10게임)',
-            shortName: '추가 1: 빈틈제로',
-            badge: 'ZERO-GAP 100%',
+            name: '기본 3: 올라운더 팩 3 (빈틈제로 10게임)',
+            shortName: '올라운더 3: 빈틈제로',
+            badge: 'ALL-ROUNDER 3 (ZERO-GAP 100%)',
             color: '#10b981',
-            desc: '기본 20게임 미선택 번호 중 결손 회귀 가능성 높은 번호와 핫 앵커·이월수를 결합한 사각지대 제로 포트폴리오',
-            tag: '30게임 완성형 | 결손 회귀 앵커 | 직전 이월수 결합'
+            desc: '기본 20게임 미선택 번호 중 결손 회귀 가능성 높은 번호와 핫 앵커·이월수를 결합한 사각지대 제로 포트폴리오 (1~45번 100% 전수 방어망)',
+            tag: '올라운더 3 | 1~45번 100% 완전 커버 | 결손 회귀 앵커 | AC 7+'
         },
         2: {
             name: '추가 2: 슈퍼 잭팟 팩 (10게임)',
@@ -1463,15 +1475,15 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
             const sum = bestNums.reduce((a, b) => a + b, 0);
 
             generatedCombos.push({
-                id: `EXT${pIdx}-${i + 1}`,
+                id: (pIdx === 1) ? `AR3-${i + 1}` : `EXT${pIdx}-${i + 1}`,
                 name: `${cfg.name} (게임 ${i + 1})`,
                 numbers: bestNums,
                 stats: stats,
                 meta: {
-                    rankBadge: `추가 ${pIdx}-${i + 1}`,
+                    rankBadge: (pIdx === 1) ? `올라운더 3-${i + 1}` : `추가 ${pIdx}-${i + 1}`,
                     rankClass: `top-${(i % 5) + 1}-badge`,
-                    badgeClass: `strategy-b`,
-                    name: `${cfg.shortName} 게임 #${i + 1}`,
+                    badgeClass: (pIdx === 1) ? `strategy-a` : `strategy-b`,
+                    name: (pIdx === 1) ? `올라운더 3: 빈틈제로 #${i + 1}` : `${cfg.shortName} 게임 #${i + 1}`,
                     tag: `합계 ${sum} | AC ${ac} | ${stats.evScore || 95}pt`,
                     desc: cfg.desc,
                     lawName: cfg.name,
@@ -1550,10 +1562,11 @@ export function makeLeanSnapshot(snap) {
         for (const p in snap.extraPacks) {
             const pObj = snap.extraPacks[p];
             if (pObj && typeof pObj === 'object') {
+                const isPack1 = (Number(p) === 1 || pObj.packId === 1 || (pObj.name && pObj.name.includes('빈틈제로')));
                 extraPacks[p] = {
                     packId: pObj.packId ?? p,
-                    name: pObj.name || `추가팩 ${p}`,
-                    badge: pObj.badge || `EXTRA ${p}`,
+                    name: isPack1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : (pObj.name || `추가팩 ${p}`),
+                    badge: isPack1 ? 'ALL-ROUNDER 3 (ZERO-GAP 100%)' : (pObj.badge || `EXTRA ${p}`),
                     color: pObj.color || '#10b981',
                     is3StageOptimized: pObj.is3StageOptimized !== false,
                     combos: Array.isArray(pObj.combos) ? pObj.combos.map(slimCombo) : []
@@ -1577,6 +1590,7 @@ export function makeLeanSnapshot(snap) {
         totalGames: snap.totalGames || 70,
         v4Combos: v4,
         v3Combos: v3,
+        ar3Combos: (extraPacks[1] && extraPacks[1].combos) ? extraPacks[1].combos : [],
         extraPacks: extraPacks,
         algorithms: snap.algorithms || []
     };
@@ -1618,8 +1632,16 @@ export function hydrateLeanSnapshot(snap) {
         for (const p in snap.extraPacks) {
             const pObj = snap.extraPacks[p];
             if (pObj && Array.isArray(pObj.combos)) {
-                pObj.combos.forEach((c, idx) => hydrateCombo(c, `${pObj.name || `추가팩 ${p}`}-${idx + 1}`, `EXTRA-${p}-${idx + 1}`));
+                const isPack1 = (Number(p) === 1 || pObj.packId === 1 || (pObj.name && pObj.name.includes('빈틈제로')));
+                pObj.combos.forEach((c, idx) => {
+                    const defaultName = isPack1 ? `올라운더 3-${idx + 1}` : `${pObj.name || `추가팩 ${p}`}-${idx + 1}`;
+                    const defaultBadge = isPack1 ? `AR3-${idx + 1}` : `EXTRA-${p}-${idx + 1}`;
+                    hydrateCombo(c, defaultName, defaultBadge);
+                });
             }
+        }
+        if (snap.extraPacks[1] && Array.isArray(snap.extraPacks[1].combos)) {
+            snap.ar3Combos = snap.extraPacks[1].combos;
         }
     }
     return snap;

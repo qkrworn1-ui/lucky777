@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.15.1545 - BUILD_DATE: 2026-10-15] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.15.1925 - BUILD_DATE: 2026-10-15] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.15.1545)
+ * Lucky777 Smart Bundle (v2026.10.15.1925)
  */
 
 
@@ -17454,6 +17454,11 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
     const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
 
     // Determine version: explicit override takes HIGHEST priority (device-agnostic)
+    if (overrideVersion === 'v5' || overrideVersion === 'ar3' || overrideVersion === 'v5.0' || overrideVersion === 'extra1') {
+        const pack3 = generateExtraAddonPack(1, roundForSeed, effectiveUserId);
+        return (pack3 && Array.isArray(pack3.combos)) ? pack3.combos : [];
+    }
+
     let useReportLogic;
     if (overrideVersion === 'v4' || overrideVersion === 'V4.0') {
         useReportLogic = true;
@@ -17468,6 +17473,10 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
             useReportLogic = chkReportLogic.checked;
         } else {
             const localPref = SafeLocalStorage.getItem('lotto_pref_v4');
+            if (localPref === 'ar3' || localPref === 'extra1' || localPref === 'v5') {
+                const pack3 = generateExtraAddonPack(1, roundForSeed, effectiveUserId);
+                return (pack3 && Array.isArray(pack3.combos)) ? pack3.combos : [];
+            }
             useReportLogic = (localPref !== null) ? (localPref === 'true') : true;
         }
     }
@@ -18194,17 +18203,20 @@ function findBestRecommendationMatch(userNums, v4Combos = [], v3Combos = [], ext
     const userSorted = [...userNums].sort((a,b) => a - b);
     const userKey = userSorted.join(',');
 
-    // 1. Exact (6/6) match check for Extra Booster Packs
+    // 1. Exact (6/6) match check for Extra Booster Packs / All-Rounder 3
     if (Array.isArray(extraPacks)) {
         for (const p of extraPacks) {
             if (!p || !Array.isArray(p.combos)) continue;
             for (let i = 0; i < p.combos.length; i++) {
                 const cNums = p.combos[i].numbers || p.combos[i];
                 if (Array.isArray(cNums) && toKey(cNums) === userKey) {
+                    const isPack1 = (p.packId === 1 || Number(p.packId) === 1 || (p.name && (p.name.includes('올라운더 3') || p.name.includes('빈틈제로'))));
+                    const vName = isPack1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : (p.name || `[${p.shortName}] 추가 팩`);
+                    const lbl = isPack1 ? `올라운더3 #${i + 1}` : `${p.shortName || '추가'} #${i + 1}`;
                     return {
-                        matchedVersion: p.name || `[${p.shortName}] 추가 팩`,
-                        label: `${p.shortName || '추가'} #${i + 1}`,
-                        shortLabel: `${p.shortName || '추가'} #${i + 1}`,
+                        matchedVersion: vName,
+                        label: lbl,
+                        shortLabel: lbl,
                         index: i + 1,
                         packId: p.packId,
                         matchCount: 6,
@@ -18423,12 +18435,12 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
 
     const packMetas = {
         1: {
-            name: '추가 1: 빈틈제로 팩 (10게임)',
-            shortName: '추가 1: 빈틈제로',
-            badge: 'ZERO-GAP 100%',
+            name: '기본 3: 올라운더 팩 3 (빈틈제로 10게임)',
+            shortName: '올라운더 3: 빈틈제로',
+            badge: 'ALL-ROUNDER 3 (ZERO-GAP 100%)',
             color: '#10b981',
-            desc: '기본 20게임 미선택 번호 중 결손 회귀 가능성 높은 번호와 핫 앵커·이월수를 결합한 사각지대 제로 포트폴리오',
-            tag: '30게임 완성형 | 결손 회귀 앵커 | 직전 이월수 결합'
+            desc: '기본 20게임 미선택 번호 중 결손 회귀 가능성 높은 번호와 핫 앵커·이월수를 결합한 사각지대 제로 포트폴리오 (1~45번 100% 전수 방어망)',
+            tag: '올라운더 3 | 1~45번 100% 완전 커버 | 결손 회귀 앵커 | AC 7+'
         },
         2: {
             name: '추가 2: 슈퍼 잭팟 팩 (10게임)',
@@ -18762,15 +18774,15 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
             const sum = bestNums.reduce((a, b) => a + b, 0);
 
             generatedCombos.push({
-                id: `EXT${pIdx}-${i + 1}`,
+                id: (pIdx === 1) ? `AR3-${i + 1}` : `EXT${pIdx}-${i + 1}`,
                 name: `${cfg.name} (게임 ${i + 1})`,
                 numbers: bestNums,
                 stats: stats,
                 meta: {
-                    rankBadge: `추가 ${pIdx}-${i + 1}`,
+                    rankBadge: (pIdx === 1) ? `올라운더 3-${i + 1}` : `추가 ${pIdx}-${i + 1}`,
                     rankClass: `top-${(i % 5) + 1}-badge`,
-                    badgeClass: `strategy-b`,
-                    name: `${cfg.shortName} 게임 #${i + 1}`,
+                    badgeClass: (pIdx === 1) ? `strategy-a` : `strategy-b`,
+                    name: (pIdx === 1) ? `올라운더 3: 빈틈제로 #${i + 1}` : `${cfg.shortName} 게임 #${i + 1}`,
                     tag: `합계 ${sum} | AC ${ac} | ${stats.evScore || 95}pt`,
                     desc: cfg.desc,
                     lawName: cfg.name,
@@ -18849,10 +18861,11 @@ function makeLeanSnapshot(snap) {
         for (const p in snap.extraPacks) {
             const pObj = snap.extraPacks[p];
             if (pObj && typeof pObj === 'object') {
+                const isPack1 = (Number(p) === 1 || pObj.packId === 1 || (pObj.name && pObj.name.includes('빈틈제로')));
                 extraPacks[p] = {
                     packId: pObj.packId ?? p,
-                    name: pObj.name || `추가팩 ${p}`,
-                    badge: pObj.badge || `EXTRA ${p}`,
+                    name: isPack1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : (pObj.name || `추가팩 ${p}`),
+                    badge: isPack1 ? 'ALL-ROUNDER 3 (ZERO-GAP 100%)' : (pObj.badge || `EXTRA ${p}`),
                     color: pObj.color || '#10b981',
                     is3StageOptimized: pObj.is3StageOptimized !== false,
                     combos: Array.isArray(pObj.combos) ? pObj.combos.map(slimCombo) : []
@@ -18876,6 +18889,7 @@ function makeLeanSnapshot(snap) {
         totalGames: snap.totalGames || 70,
         v4Combos: v4,
         v3Combos: v3,
+        ar3Combos: (extraPacks[1] && extraPacks[1].combos) ? extraPacks[1].combos : [],
         extraPacks: extraPacks,
         algorithms: snap.algorithms || []
     };
@@ -18917,8 +18931,16 @@ function hydrateLeanSnapshot(snap) {
         for (const p in snap.extraPacks) {
             const pObj = snap.extraPacks[p];
             if (pObj && Array.isArray(pObj.combos)) {
-                pObj.combos.forEach((c, idx) => hydrateCombo(c, `${pObj.name || `추가팩 ${p}`}-${idx + 1}`, `EXTRA-${p}-${idx + 1}`));
+                const isPack1 = (Number(p) === 1 || pObj.packId === 1 || (pObj.name && pObj.name.includes('빈틈제로')));
+                pObj.combos.forEach((c, idx) => {
+                    const defaultName = isPack1 ? `올라운더 3-${idx + 1}` : `${pObj.name || `추가팩 ${p}`}-${idx + 1}`;
+                    const defaultBadge = isPack1 ? `AR3-${idx + 1}` : `EXTRA-${p}-${idx + 1}`;
+                    hydrateCombo(c, defaultName, defaultBadge);
+                });
             }
+        }
+        if (snap.extraPacks[1] && Array.isArray(snap.extraPacks[1].combos)) {
+            snap.ar3Combos = snap.extraPacks[1].combos;
         }
     }
     return snap;
@@ -20207,9 +20229,9 @@ function computeUser70RecommendationsReview(userId, roundNum) {
             v3Eval: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 },
             extraPackEvals: [1, 2, 3, 4, 5].map(pId => ({
                 packId: pId,
-                name: `추가팩 ${pId}`,
-                badge: `EXTRA ${pId}`,
-                color: '#38bdf8',
+                name: pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : `추가팩 ${pId}`,
+                badge: pId === 1 ? 'ALL-ROUNDER 3' : `EXTRA ${pId}`,
+                color: pId === 1 ? '#10b981' : '#38bdf8',
                 combos: [],
                 evalData: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 }
             })),
@@ -20253,9 +20275,9 @@ function computeUser70RecommendationsReview(userId, roundNum) {
             v3Eval: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 },
             extraPackEvals: [1, 2, 3, 4, 5].map(pId => ({
                 packId: pId,
-                name: `추가팩 ${pId}`,
-                badge: `EXTRA ${pId}`,
-                color: '#38bdf8',
+                name: pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : `추가팩 ${pId}`,
+                badge: pId === 1 ? 'ALL-ROUNDER 3' : `EXTRA ${pId}`,
+                color: pId === 1 ? '#10b981' : '#38bdf8',
                 combos: [],
                 evalData: { items: [], hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, fail: 0 }, totalPrize: 0, maxMatch: 0, totalWins: 0 }
             })),
@@ -20287,14 +20309,22 @@ function computeUser70RecommendationsReview(userId, roundNum) {
         v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
         v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
         for (let pId = 1; pId <= 5; pId++) {
-            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId) || { name: `추가팩 ${pId}`, badge: `EXTRA ${pId}`, color: '#38bdf8', combos: [] };
+            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId) || { name: pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : `추가팩 ${pId}`, badge: pId === 1 ? 'ALL-ROUNDER 3' : `EXTRA ${pId}`, color: pId === 1 ? '#10b981' : '#38bdf8', combos: [] };
             const pCombos = (packObj && Array.isArray(packObj.combos)) ? packObj.combos : (Array.isArray(packObj) ? packObj : []);
             const evalData = evaluateRecommendationSet(pCombos, actualDraw);
+            const defaultName = pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : `추가팩 ${pId}`;
+            const defaultBadge = pId === 1 ? 'ALL-ROUNDER 3' : `EXTRA ${pId}`;
+            let packName = packObj.name || defaultName;
+            let packBadge = packObj.badge || defaultBadge;
+            if (pId === 1) {
+                packName = '기본 3: 올라운더 팩 3 (빈틈제로 10게임)';
+                packBadge = 'ALL-ROUNDER 3';
+            }
             extraPackEvals.push({
                 packId: pId,
-                name: packObj.name || `추가팩 ${pId}`,
-                badge: packObj.badge || `EXTRA ${pId}`,
-                color: packObj.color || '#38bdf8',
+                name: packName,
+                badge: packBadge,
+                color: packObj.color || (pId === 1 ? '#10b981' : '#38bdf8'),
                 combos: pCombos,
                 evalData: evalData
             });
@@ -20862,7 +20892,7 @@ async function renderAllRoundsReviewDetail() {
     const algoPacks = [
         { id: 'v4', name: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#8b5cf6' },
         { id: 'v3', name: '기본 2: 올라운더 팩 2 (10게임)', badge: 'ALL-ROUNDER 2', color: '#3b82f6' },
-        { id: 'extra_1', name: '추가 1: 빈틈제로 팩 (10게임)', badge: 'ZERO-GAP', color: '#10b981' },
+        { id: 'extra_1', name: '기본 3: 올라운더 팩 3 (빈틈제로 10게임)', badge: 'ALL-ROUNDER 3', color: '#10b981' },
         { id: 'extra_2', name: '추가 2: 슈퍼 잭팟 팩 (10게임)', badge: 'SUPER JACKPOT', color: '#f59e0b' },
         { id: 'extra_3', name: '추가 3: 멀티 히트 팩 (10게임)', badge: 'MULTI-HIT', color: '#8b5cf6' },
         { id: 'extra_4', name: '추가 4: 흐름 부스터 팩 (10게임)', badge: 'FLOW BOOSTER', color: '#06b6d4' },
@@ -21733,7 +21763,7 @@ async function renderAllRoundsReviewDetail() {
             const algoLabels = [
                 ['기본1', '올라운더1'],
                 ['기본2', '올라운더2'],
-                ['추가1', '빈틈제로'],
+                ['기본3', '올라운더3'],
                 ['추가2', '슈퍼잭팟'],
                 ['추가3', '멀티히트'],
                 ['추가4', '흐름부스터'],
@@ -22267,7 +22297,7 @@ async function renderReviewDetail(r) {
         ];
 
         const extraPackShortNames = {
-            1: '빈틈제로',
+            1: '올라운더3',
             2: '슈퍼잭팟',
             3: '멀티히트',
             4: '흐름부스터',
@@ -22607,7 +22637,7 @@ async function openAdmin1235ReviewModal(initialRound = null, initialUser = null)
                         <button type="button" class="admin1235-filter-btn active" data-filter="all" onclick="window.setAdmin1235ModalFilter('all')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: 1px solid #f59e0b; background: #f59e0b; color: #0f172a; white-space: nowrap;">전체 (70G)</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="v4" onclick="window.setAdmin1235ModalFilter('v4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #c4b5fd; white-space: nowrap;">올라운더 (10G)</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="v3" onclick="window.setAdmin1235ModalFilter('v3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.15); color: #93c5fd; white-space: nowrap;">올라운더2 (10G)</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">추가1 빈틈제로</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">기본3 올라운더3</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="extra_2" onclick="window.setAdmin1235ModalFilter('extra_2')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.15); color: #fde047; white-space: nowrap;">추가2 슈퍼잭팟</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="extra_3" onclick="window.setAdmin1235ModalFilter('extra_3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #d8b4fe; white-space: nowrap;">추가3 멀티히트</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="extra_4" onclick="window.setAdmin1235ModalFilter('extra_4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(6,182,212,0.4); background: rgba(6,182,212,0.15); color: #67e8f9; white-space: nowrap;">추가4 흐름부스터</button>
@@ -25964,7 +25994,10 @@ async function renderTop5Combinations(isRollingAnimation = false) {
 
         const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-        const isV4 = chkReportLogic ? chkReportLogic.checked : (SafeLocalStorage.getItem('lotto_pref_v4') !== 'false');
+        const localPref = SafeLocalStorage.getItem('lotto_pref_v4');
+        const currentAlgo = state.currentSelectedAlgoId || (localPref === 'ar3' || localPref === 'extra1' || localPref === 'v5' ? 'extra1' : (localPref === 'false' ? 'v3' : 'v4'));
+        const isAr3 = (currentAlgo === 'extra1' || currentAlgo === 'ar3' || currentAlgo === 'v5');
+        const isV4 = isAr3 ? false : (chkReportLogic ? chkReportLogic.checked : (localPref !== 'false'));
 
         // 🛡️ 포렌식 다이내믹 워터마크 (화면 캡처 유출 시 배정자 즉시 추적)
         const watermarkEl = document.createElement('div');
@@ -25978,7 +26011,15 @@ async function renderTop5Combinations(isRollingAnimation = false) {
         container.appendChild(watermarkEl);
 
         let allCombos;
-        if (isV4) {
+        if (isAr3) {
+            allCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'ar3', true, effectiveUserId);
+            if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
+                allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'ar3', true, effectiveUserId);
+            }
+            state.fixedTop5Combinations_ar3 = allCombos;
+            state.fixedTop5Combinations_ar3_userId = effectiveUserId;
+            state.fixedTop5Combinations_ar3_round = curUpcomingRound;
+        } else if (isV4) {
             allCombos = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId);
             if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
                 allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
@@ -25997,7 +26038,7 @@ async function renderTop5Combinations(isRollingAnimation = false) {
         }
 
         if (!allCombos || !Array.isArray(allCombos) || allCombos.length === 0) {
-            allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, isV4 ? 'v4' : 'v3', true, effectiveUserId);
+            allCombos = computeAbsoluteTop10Combinations(true, curUpcomingRound, isAr3 ? 'ar3' : (isV4 ? 'v4' : 'v3'), true, effectiveUserId);
         }
 
         // 🔒 차기 회차에 대해 사용자별 7대 알고리즘 영구 불변 스냅샷 자동 생성/보존 (Write-Once)
@@ -26624,7 +26665,10 @@ function renderSavedList() {
 
 function handleGenerateAllClick() {
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-    const isV4 = chkReportLogic ? chkReportLogic.checked : true;
+    const localPref = SafeLocalStorage.getItem('lotto_pref_v4');
+    const currentAlgo = state.currentSelectedAlgoId || (localPref === 'ar3' || localPref === 'extra1' || localPref === 'v5' ? 'extra1' : (localPref === 'false' ? 'v3' : 'v4'));
+    const isAr3 = (currentAlgo === 'extra1' || currentAlgo === 'ar3' || currentAlgo === 'v5');
+    const isV4 = isAr3 ? false : (chkReportLogic ? chkReportLogic.checked : true);
     const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
     const effectiveUserId = getEffectiveGeneratorUserId();
     
@@ -26640,7 +26684,14 @@ function handleGenerateAllClick() {
         state.fixedTop5Combinations_v4 = existingSnap.v4Combos;
         state.fixedTop5Combinations_v4_userId = effectiveUserId;
         state.fixedTop5Combinations_v4_round = curUpcomingRound;
-        state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
+        const snapPack1 = existingSnap.ar3Combos || (existingSnap.extraPacks && (existingSnap.extraPacks[1] || existingSnap.extraPacks['1']));
+        state.fixedTop5Combinations_ar3 = (snapPack1 && Array.isArray(snapPack1.combos)) ? snapPack1.combos : (Array.isArray(snapPack1) ? snapPack1 : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'ar3', true, effectiveUserId));
+        state.fixedTop5Combinations_ar3_userId = effectiveUserId;
+        state.fixedTop5Combinations_ar3_round = curUpcomingRound;
+
+        state.fixedTop5Combinations = isAr3 
+            ? state.fixedTop5Combinations_ar3 
+            : (isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3);
         
         renderTop5Combinations(true);
 
@@ -26657,14 +26708,20 @@ function handleGenerateAllClick() {
         return;
     }
 
-    // Force recalculate both v3 and v4 distinctly and explicitly for the current effective user & round
+    // Force recalculate v3, v4, and ar3 distinctly and explicitly for the current effective user & round
     state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
     state.fixedTop5Combinations_v3_userId = effectiveUserId;
     state.fixedTop5Combinations_v3_round = curUpcomingRound;
     state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
     state.fixedTop5Combinations_v4_userId = effectiveUserId;
     state.fixedTop5Combinations_v4_round = curUpcomingRound;
-    state.fixedTop5Combinations = isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3;
+    state.fixedTop5Combinations_ar3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'ar3', true, effectiveUserId);
+    state.fixedTop5Combinations_ar3_userId = effectiveUserId;
+    state.fixedTop5Combinations_ar3_round = curUpcomingRound;
+
+    state.fixedTop5Combinations = isAr3 
+        ? state.fixedTop5Combinations_ar3 
+        : (isV4 ? state.fixedTop5Combinations_v4 : state.fixedTop5Combinations_v3);
     
     // 🔒 즉시 영구 불변 스냅샷으로 저장하여 이후 변경 방지
     if (typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
@@ -26687,8 +26744,13 @@ function handleGenerateAllClick() {
 
 async function handleConfirmPurchaseHeroClick() {
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-    const useV4 = chkReportLogic ? chkReportLogic.checked : false;
-    const versionStr = useV4 ? '기본 1: 올라운더 팩 (10게임)' : '기본 2: 올라운더 팩 2 (10게임)';
+    const localPref = SafeLocalStorage.getItem('lotto_pref_v4');
+    const currentAlgo = state.currentSelectedAlgoId || (localPref === 'ar3' || localPref === 'extra1' || localPref === 'v5' ? 'extra1' : (localPref === 'false' ? 'v3' : 'v4'));
+    const isAr3 = (currentAlgo === 'extra1' || currentAlgo === 'ar3' || currentAlgo === 'v5');
+    const useV4 = isAr3 ? false : (chkReportLogic ? chkReportLogic.checked : false);
+    const versionStr = isAr3 
+        ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)'
+        : (useV4 ? '기본 1: 올라운더 팩 (10게임)' : '기본 2: 올라운더 팩 2 (10게임)');
     
     const comboCount = (typeof getSelectedComboCountOption === 'function') ? getSelectedComboCountOption() : 10;
     const nextRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
@@ -26698,11 +26760,18 @@ async function handleConfirmPurchaseHeroClick() {
         state.fixedTop5Combinations_v4_userId === effectiveUserId && state.fixedTop5Combinations_v4_round === nextRound);
     const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
         state.fixedTop5Combinations_v3_userId === effectiveUserId && state.fixedTop5Combinations_v3_round === nextRound);
+    const isAr3Valid = (state.fixedTop5Combinations_ar3 && state.fixedTop5Combinations_ar3.length === 10 &&
+        state.fixedTop5Combinations_ar3_userId === effectiveUserId && state.fixedTop5Combinations_ar3_round === nextRound);
 
-    const rawCombos = (useV4
-        ? (isV4Valid ? state.fixedTop5Combinations_v4 : computeAbsoluteTop10Combinations(false, nextRound, 'v4', true, effectiveUserId))
-        : (isV3Valid ? state.fixedTop5Combinations_v3 : computeAbsoluteTop10Combinations(false, nextRound, 'v3', true, effectiveUserId))
-    ) || [];
+    let rawCombos;
+    if (isAr3) {
+        rawCombos = isAr3Valid ? state.fixedTop5Combinations_ar3 : computeAbsoluteTop10Combinations(false, nextRound, 'ar3', true, effectiveUserId);
+    } else if (useV4) {
+        rawCombos = isV4Valid ? state.fixedTop5Combinations_v4 : computeAbsoluteTop10Combinations(false, nextRound, 'v4', true, effectiveUserId);
+    } else {
+        rawCombos = isV3Valid ? state.fixedTop5Combinations_v3 : computeAbsoluteTop10Combinations(false, nextRound, 'v3', true, effectiveUserId);
+    }
+    rawCombos = rawCombos || [];
     const currentCombos = rawCombos.length > 0 ? rawCombos.slice(0, comboCount) : [];
     if (!currentCombos || currentCombos.length === 0) {
         alert('구매 확정할 추천 번호 조합이 없습니다. 먼저 번호를 생성해주세요.');
@@ -27080,22 +27149,22 @@ function renderExtraAddonPacksSection() {
 
     if (!isEligible) {
         if (headerActions) headerActions.style.display = 'none';
-        if (lblCount) lblCount.textContent = `🔒 실구매 인증 잠김 (0 / 5팩)`;
+        if (lblCount) lblCount.textContent = `🔒 실구매 인증 잠김 (기본 30G 활성)`;
         listEl.innerHTML = `
             <div class="extra-packs-locked-banner">
                 <div class="locked-icon-wrap">
                     <i class="fa-solid fa-lock"></i>
                 </div>
                 <div class="locked-title">
-                    🔒 실구매 인증 회원 전용 [추가 5팩 50게임]
+                    🔒 실구매 인증 회원 전용 [스페셜 추가팩 40게임]
                 </div>
                 <p class="locked-desc">
-                    기본 20게임(올라운더 1 + 올라운더 2)은 상시 무료로 열람 가능하며,<br>
-                    <strong style="color: #fbbf24;">추가 1~5팩(빈틈제로, 슈퍼 잭팟, 멀티 히트 등 50게임)</strong>은<br>
+                    기본 30게임 코어(올라운더 1 + 2 + 3)는 상시 무료로 열람 가능하며,<br>
+                    <strong style="color: #fbbf24;">스페셜 추가 2~5팩(슈퍼 잭팟, 멀티 히트, 흐름 부스터, 트리오 마스터 등 40게임)</strong>은<br>
                     <strong>매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원</strong>님께 무료로 잠금 해제됩니다.
                 </p>
                 <button type="button" onclick="if(window.openManualLedgerModal) { window.openManualLedgerModal(); } else if(window.switchLottoTab) { window.switchLottoTab('tab-confirmed-list'); }" class="btn-locked-qr">
-                    <i class="fa-solid fa-qrcode"></i> 실구매 QR 등록하고 추가 5팩 잠금 해제
+                    <i class="fa-solid fa-qrcode"></i> 실구매 QR 등록하고 스페셜 4팩(40G) 잠금 해제
                 </button>
             </div>
         `;
@@ -27114,7 +27183,7 @@ function renderExtraAddonPacksSection() {
 
     // Update Header Pill Buttons State (추가 1 ~ 추가 5)
     const packColors = { 1: '#10b981', 2: '#f59e0b', 3: '#8b5cf6', 4: '#06b6d4', 5: '#ec4899' };
-    const packNames = { 1: '추가 1: 빈틈제로', 2: '추가 2: 슈퍼잭팟', 3: '추가 3: 멀티히트', 4: '추가 4: 흐름부스터', 5: '추가 5: 트리오마스터' };
+    const packNames = { 1: '기본 3: 올라운더 3', 2: '추가 2: 슈퍼잭팟', 3: '추가 3: 멀티히트', 4: '추가 4: 흐름부스터', 5: '추가 5: 트리오마스터' };
 
     for (let p = 1; p <= 5; p++) {
         const btn = document.getElementById(`btnQuickPack_${p}`);
@@ -27496,6 +27565,53 @@ if (typeof window !== 'undefined') {
     window.handleGenerateAll70Games = handleGenerateAll70Games;
     window.handleGenerateAllClick = handleGenerateAllClick;
     window.handleConfirmPurchaseHeroClick = handleConfirmPurchaseHeroClick;
+    window.copyGolden30Games = copyGolden30Games;
+}
+
+/**
+ * 📋 황금 30게임 코어 (올라운더 1 + 2 + 3 = 30게임) 원클릭 복사
+ */
+async function copyGolden30Games() {
+    try {
+        const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
+        const effectiveUserId = getEffectiveGeneratorUserId();
+
+        const v4 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v4', true, effectiveUserId) || [];
+        const v3 = computeAbsoluteTop10Combinations(false, curUpcomingRound, 'v3', true, effectiveUserId) || [];
+        const pack1 = generateExtraAddonPack(1, curUpcomingRound, effectiveUserId);
+        const ar3 = (pack1 && pack1.combos) ? pack1.combos : (computeAbsoluteTop10Combinations(false, curUpcomingRound, 'ar3', true, effectiveUserId) || []);
+
+        let text = `[LUCKY777] 제${curUpcomingRound}회 황금 30게임 코어 추천 (올라운더 1·2·3)\n`;
+        text += `배정 회원: ${effectiveUserId} | 1~45번 100% 완전 전수 커버 (빈틈 0%)\n\n`;
+
+        text += `■ [기본 1: 올라운더 팩 1 (10게임)]\n`;
+        v4.forEach((c, i) => {
+            const nums = (c.numbers || c).map(n => String(n).padStart(2, '0')).join(', ');
+            text += `${(i + 1).toString().padStart(2, '0')}. ${nums}\n`;
+        });
+
+        text += `\n■ [기본 2: 올라운더 팩 2 (10게임)]\n`;
+        v3.forEach((c, i) => {
+            const nums = (c.numbers || c).map(n => String(n).padStart(2, '0')).join(', ');
+            text += `${(i + 1).toString().padStart(2, '0')}. ${nums}\n`;
+        });
+
+        text += `\n■ [기본 3: 올라운더 팩 3 - 빈틈제로 (10게임)]\n`;
+        ar3.forEach((c, i) => {
+            const nums = (c.numbers || c).map(n => String(n).padStart(2, '0')).join(', ');
+            text += `${(i + 1).toString().padStart(2, '0')}. ${nums}\n`;
+        });
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            showToast(`📋 제${curUpcomingRound}회 황금 30게임 코어가 클립보드에 복사되었습니다!`);
+        } else {
+            showToast('클립보드 복사를 지원하지 않는 환경입니다.');
+        }
+    } catch (e) {
+        console.warn('[copyGolden30Games error]', e);
+        showToast('황금 30게임 복사 중 오류가 발생했습니다.');
+    }
 }
 
 
@@ -27562,27 +27678,29 @@ function updateTop7AlgoUI() {
             } else {
                 statusBanner.className = 'purchase-status-banner unverified';
                 const countMsg = (confirmedGameCount > 0) ? ` (${confirmedGameCount}/5게임 등록)` : '';
-                txtStatus.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> [제 ${curUpcomingRound}회차] 실구매 미등록${countMsg}</strong> 매주 5게임 이상 실구매 영수증(QR) 등록 시 7대 알고리즘(추가 50게임)이 즉시 무료 잠금 해제됩니다!`;
+                txtStatus.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> [제 ${curUpcomingRound}회차] 실구매 미등록${countMsg}</strong> 매주 5게임 이상 실구매 영수증(QR) 등록 시 7대 알고리즘(스페셜 추가 40게임)이 즉시 무료 잠금 해제됩니다!`;
                 if (btnStatusBanner) {
                     btnStatusBanner.style.background = 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)';
                     btnStatusBanner.style.color = '#0f172a';
                     btnStatusBanner.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.35)';
-                    btnStatusBanner.innerHTML = '<i class="fa-solid fa-qrcode"></i> 실구매 영수증(5게임) 등록하고 추가 50게임 잠금해제';
+                    btnStatusBanner.innerHTML = '<i class="fa-solid fa-qrcode"></i> 실구매 영수증(5게임) 등록하고 스페셜 40게임 잠금해제';
                 }
             }
         }
 
-        // 2. Update Active V3 / V4 State
-        const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
-        const isV4 = chkReportLogic ? chkReportLogic.checked : (SafeLocalStorage.getItem('lotto_pref_v4') !== 'false');
+        // 2. Update Active V4 / V3 / AR3(extra1) State
+        const savedPref = SafeLocalStorage.getItem('lotto_pref_v4');
+        const currentAlgo = state.currentSelectedAlgoId || (savedPref === 'ar3' || savedPref === 'extra1' || savedPref === 'v5' ? 'extra1' : (savedPref === 'false' ? 'v3' : 'v4'));
 
         const cardV4 = document.getElementById('topAlgoCard_v4');
         const badgeV4 = document.getElementById('topAlgoBadge_v4');
         const cardV3 = document.getElementById('topAlgoCard_v3');
         const badgeV3 = document.getElementById('topAlgoBadge_v3');
+        const cardExtra1 = document.getElementById('topAlgoCard_extra1');
+        const badgeExtra1 = document.getElementById('topAlgoBadge_extra1');
 
         if (cardV4 && badgeV4) {
-            if (isV4) {
+            if (currentAlgo === 'v4') {
                 cardV4.classList.add('active');
                 badgeV4.className = 'algo-status-badge active';
                 badgeV4.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>선택됨 (10G)</span>';
@@ -27594,7 +27712,7 @@ function updateTop7AlgoUI() {
         }
 
         if (cardV3 && badgeV3) {
-            if (!isV4) {
+            if (currentAlgo === 'v3') {
                 cardV3.classList.add('active');
                 badgeV3.className = 'algo-status-badge active';
                 badgeV3.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>선택됨 (10G)</span>';
@@ -27605,11 +27723,24 @@ function updateTop7AlgoUI() {
             }
         }
 
-        // 3. Update Extra Packs 1~5 Cards State
+        if (cardExtra1 && badgeExtra1) {
+            cardExtra1.classList.remove('locked');
+            if (currentAlgo === 'extra1' || currentAlgo === 'ar3' || currentAlgo === 'v5') {
+                cardExtra1.classList.add('active');
+                badgeExtra1.className = 'algo-status-badge active';
+                badgeExtra1.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>선택됨 (10G)</span>';
+            } else {
+                cardExtra1.classList.remove('active');
+                badgeExtra1.className = 'algo-status-badge';
+                badgeExtra1.innerHTML = '<i class="fa-regular fa-circle"></i> <span>선택하기</span>';
+            }
+        }
+
+        // 3. Update Extra Packs 2~5 Cards State (실구매 혜택 40G)
         const activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
         const activeSet = new Set(activePackIds);
 
-        for (let p = 1; p <= 5; p++) {
+        for (let p = 2; p <= 5; p++) {
             const card = document.getElementById(`topAlgoCard_extra${p}`);
             const badge = document.getElementById(`topAlgoBadge_extra${p}`);
             if (card && badge) {
@@ -27647,6 +27778,7 @@ async function selectGeneratorAlgo(algoId) {
 
     // V4.0 Selected
     if (algoId === 'v4') {
+        state.currentSelectedAlgoId = 'v4';
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
         if (chkReportLogic) chkReportLogic.checked = true;
         SafeLocalStorage.setItem('lotto_pref_v4', 'true');
@@ -27668,6 +27800,7 @@ async function selectGeneratorAlgo(algoId) {
 
     // V3.0 Selected
     if (algoId === 'v3') {
+        state.currentSelectedAlgoId = 'v3';
         const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
         if (chkReportLogic) chkReportLogic.checked = false;
         SafeLocalStorage.setItem('lotto_pref_v4', 'false');
@@ -27687,7 +27820,37 @@ async function selectGeneratorAlgo(algoId) {
         return;
     }
 
-    // Extra Packs (extra1 ~ extra5)
+    // AR3 (Extra 1) Selected - Basic 30-game core, Always Unlocked!
+    if (algoId === 'extra1' || algoId === 'ar3' || algoId === 'v5') {
+        state.currentSelectedAlgoId = 'extra1';
+        SafeLocalStorage.setItem('lotto_pref_v4', 'ar3');
+        const pack1 = generateExtraAddonPack(1, curUpcomingRound, effectiveUserId);
+        const p1Combos = (pack1 && Array.isArray(pack1.combos) && pack1.combos.length > 0)
+            ? pack1.combos
+            : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'ar3', true, effectiveUserId);
+        state.fixedTop5Combinations_ar3 = p1Combos;
+        state.fixedTop5Combinations_ar3_userId = effectiveUserId;
+        state.fixedTop5Combinations_ar3_round = curUpcomingRound;
+        state.fixedTop5Combinations = p1Combos;
+
+        // Ensure pack 1 is registered in active packs
+        const currentActive = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
+        if (!currentActive.includes(1)) {
+            saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [...currentActive, 1]);
+        }
+
+        renderTop5Combinations(true);
+        updateTop7AlgoUI();
+        const compactModal = document.getElementById('compactViewModal');
+        if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+            if (typeof openCompactView === 'function') openCompactView('extra_1');
+            else if (typeof window !== 'undefined' && window.openCompactView) window.openCompactView('extra_1');
+        }
+        showToast('🛡️ 기본 3: 올라운더 팩 3 (빈틈제로 10게임)이 선택되었습니다.');
+        return;
+    }
+
+    // Extra Packs (extra2 ~ extra5)
     if (algoId.startsWith('extra')) {
         const packNum = parseInt(algoId.replace('extra', ''));
         const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function' ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
@@ -27697,7 +27860,7 @@ async function selectGeneratorAlgo(algoId) {
             : false;
 
         if (!isEligible) {
-            const wantConfirm = confirm('🔒 [실구매 인증 회원 전용 혜택]\n\n추가 1~5팩(총 50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n지금 실구매 영수증(QR)을 등록하고 추가 50게임을 즉시 잠금 해제하시겠습니까?');
+            const wantConfirm = confirm('🔒 [실구매 인증 회원 전용 혜택]\n\n추가 2~5팩(총 40게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(기본 30게임(올라운더 1+2+3)은 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하고 추가 40게임을 즉시 잠금 해제하시겠습니까?');
             if (wantConfirm) {
                 if (typeof window.openManualLedgerModal === 'function') {
                     window.openManualLedgerModal();
@@ -27732,11 +27895,16 @@ async function handleGenerateAll70Games() {
         state.fixedTop5Combinations_v4 = existingSnap.v4Combos;
         state.fixedTop5Combinations_v4_userId = effectiveUserId;
         state.fixedTop5Combinations_v4_round = curUpcomingRound;
+        const snapPack1 = existingSnap.ar3Combos || (existingSnap.extraPacks && (existingSnap.extraPacks[1] || existingSnap.extraPacks['1']));
+        state.fixedTop5Combinations_ar3 = (snapPack1 && Array.isArray(snapPack1.combos)) ? snapPack1.combos : (Array.isArray(snapPack1) ? snapPack1 : computeAbsoluteTop10Combinations(false, curUpcomingRound, 'ar3', true, effectiveUserId));
+        state.fixedTop5Combinations_ar3_userId = effectiveUserId;
+        state.fixedTop5Combinations_ar3_round = curUpcomingRound;
         state.fixedTop5Combinations = state.fixedTop5Combinations_v4;
     } else {
-        // 1. Force compute both V3 and V4 (20 Games)
+        // 1. Force compute V4, V3 and AR3 (30 Games Core)
         state.fixedTop5Combinations_v3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v3', true, effectiveUserId);
         state.fixedTop5Combinations_v4 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'v4', true, effectiveUserId);
+        state.fixedTop5Combinations_ar3 = computeAbsoluteTop10Combinations(true, curUpcomingRound, 'ar3', true, effectiveUserId);
         state.fixedTop5Combinations = state.fixedTop5Combinations_v4;
 
         if (typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
@@ -27744,24 +27912,32 @@ async function handleGenerateAll70Games() {
         }
     }
 
+    // Always ensure pack 1 (올라운더 3) is active
+    const curActive = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
+    if (!curActive.includes(1)) {
+        saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [...curActive, 1]);
+    }
+
     const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
         ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
         : false;
 
     if (isEligible) {
-        // 2. Compute Extra 1~5 (50 Games)
+        // 2. Compute Extra 1~5 (50 Games) -> Total 70 Games
         saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [1, 2, 3, 4, 5]);
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
         updateTop7AlgoUI();
         showToast(existingSnap 
-            ? `🔒 제${curUpcomingRound}회 확정 불변 70게임(기본 20G + 추가 50G)이 유지되었습니다!` 
-            : `🎉 7대 퀀트 알고리즘 70게임(기본 20G + 추가 50G) 전수가 생성되어 불변 저장되었습니다!`);
+            ? `🔒 제${curUpcomingRound}회 확정 불변 70게임(기본 30G + 추가 40G)이 유지되었습니다!` 
+            : `🎉 7대 퀀트 알고리즘 70게임(기본 30G + 추가 40G) 전수가 생성되어 불변 저장되었습니다!`);
     } else {
+        // Only 1 is active (core 30G = AR1 + AR2 + AR3)
+        saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [1]);
         renderTop5Combinations(true);
         renderExtraAddonPacksSection();
         updateTop7AlgoUI();
-        const wantRegister = confirm(`⚡ 기본 20게임(올라운더 1 + 올라운더 2)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 5팩(50게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
+        const wantRegister = confirm(`⚡ 기본 30게임(올라운더 1 + 올라운더 2 + 올라운더 3)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 4팩(40게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();
@@ -27895,6 +28071,10 @@ async function handleGenerateAll70Games() {
         if (typeof openSlimMemberPickerForGenerator !== 'undefined') {
             __exports.openSlimMemberPickerForGenerator = openSlimMemberPickerForGenerator;
             if (typeof window !== 'undefined') window.openSlimMemberPickerForGenerator = openSlimMemberPickerForGenerator;
+        }
+        if (typeof copyGolden30Games !== 'undefined') {
+            __exports.copyGolden30Games = copyGolden30Games;
+            if (typeof window !== 'undefined') window.copyGolden30Games = copyGolden30Games;
         }
         if (typeof updateTop7AlgoUI !== 'undefined') {
             __exports.updateTop7AlgoUI = updateTop7AlgoUI;
@@ -28081,7 +28261,7 @@ function fireOptConfetti() {
 const ALL_PACK_DEFS = [
     { id: 'v4', type: 'engine', version: 'v4', name: '기본 1: 올라운더 팩 (10게임)', shortName: '올라운더(10)', games: 10, color: '#10b981' },
     { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 올라운더 팩 2 (10게임)', shortName: '올라운더2(10)', games: 10, color: '#3b82f6' },
-    { id: 'extra1', type: 'extra', packId: 1, name: '추가 1: 빈틈제로 팩 (10게임)', shortName: '빈틈제로(10)', games: 10, color: '#10b981' },
+    { id: 'extra1', type: 'extra', packId: 1, name: '기본 3: 올라운더 팩 3 (빈틈제로 10게임)', shortName: '올라운더3(10)', games: 10, color: '#10b981' },
     { id: 'extra2', type: 'extra', packId: 2, name: '추가 2: 슈퍼 잭팟 팩 (10게임)', shortName: '슈퍼잭팟(10)', games: 10, color: '#f59e0b' },
     { id: 'extra3', type: 'extra', packId: 3, name: '추가 3: 멀티 히트 팩 (10게임)', shortName: '멀티히트(10)', games: 10, color: '#8b5cf6' },
     { id: 'extra4', type: 'extra', packId: 4, name: '추가 4: 흐름 부스터 팩 (10게임)', shortName: '흐름부스터(10)', games: 10, color: '#06b6d4' },
@@ -28116,7 +28296,7 @@ function openBudgetOptimizerModal() {
             : false));
 
     if (!isEligible) {
-        const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 20게임(올라운더 1 + 올라운더 2) 추천번호가 상시 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);
+        const wantRegister = confirm(`🔒 [실구매 인증 정회원 전용 혜택]\n\n[예산 맞춤 AI 최적팩] 및 7대 퀀트 시뮬레이션은 매주 5게임(1장 / 5,000원) 이상의 실구매 영수증(QR)을 등록하신 정회원 전용 기능입니다.\n\n(실구매 미등록 고객은 기본 30게임(올라운더 1 + 2 + 3) 추천번호가 상시 무료 제공됩니다.)\n\n지금 실구매 복권 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             if (typeof window.openManualLedgerModal === 'function') {
                 window.openManualLedgerModal();
@@ -29029,7 +29209,7 @@ function getSingleUserCombosForRound(round, cfg, userId, userName = null) {
             combos.push(clone);
         });
     }
-    const extraPackNames = { 1: '빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
+    const extraPackNames = { 1: '올라운더3: 빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
     cfg.selectedExtraPacks.forEach(pIdx => {
         const extraPack = generateExtraAddonPack(pIdx, round, userId);
         if (extraPack && Array.isArray(extraPack.combos)) {
@@ -29038,7 +29218,9 @@ function getSingleUserCombosForRound(round, cfg, userId, userName = null) {
                 if (userName) clone.meta.ownerName = userName;
                 clone.algoId = `extra_${pIdx}`;
                 clone.packIdx = pIdx;
-                clone.algoName = `추가${pIdx}: ${extraPackNames[pIdx] || (extraPack && extraPack.name) || `추가팩 #${pIdx}`}`;
+                clone.algoName = pIdx === 1
+                    ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)'
+                    : `추가${pIdx}: ${extraPackNames[pIdx] || (extraPack && extraPack.name) || `추가팩 #${pIdx}`}`;
                 combos.push(clone);
             });
         }
@@ -29290,7 +29472,7 @@ function renderSimulationTab(targetRound = null) {
     const totalDraws = maxR;
     const totalCombosEvaluated = totalDraws * evaluatedGamesPerRound;
 
-    const packNames = { 1: '빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
+    const packNames = { 1: '올라운더3', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
     const engineParts = [];
     if (cfg.includeV4) engineParts.push('올라운더(10G)');
     if (cfg.includeV3) engineParts.push('올라운더2(10G)');
@@ -29597,13 +29779,13 @@ function detectComboAlgoId(combo) {
     if (combo && combo.algoId) return combo.algoId;
     const name = (combo && combo.meta && combo.meta.name) ? combo.meta.name : (combo ? (combo.name || '') : '');
     const clean = String(name).toLowerCase();
-    if (clean.includes('4.0') || (clean.includes('올라운더') && !clean.includes('2') && !clean.includes('팩 2'))) return 'v4';
+    if (clean.includes('올라운더 3') || clean.includes('올라운더3') || clean.includes('올라운더 팩 3') || clean.includes('ar3') || clean.includes('빈틈제로') || clean.includes('추가1')) return 'extra_1';
     if (clean.includes('3.0') || clean.includes('올라운더 팩 2') || clean.includes('올라운더 2')) return 'v3';
-    if (clean.includes('빈틈제로') || clean.includes('추가1') || clean.includes('팩 1')) return 'extra_1';
-    if (clean.includes('슈퍼잭팟') || clean.includes('추가2') || clean.includes('팩 2')) return 'extra_2';
-    if (clean.includes('멀티히트') || clean.includes('추가3') || clean.includes('팩 3')) return 'extra_3';
-    if (clean.includes('흐름부스터') || clean.includes('추가4') || clean.includes('팩 4')) return 'extra_4';
-    if (clean.includes('트리오마스터') || clean.includes('추가5') || clean.includes('팩 5')) return 'extra_5';
+    if (clean.includes('4.0') || (clean.includes('올라운더') && !clean.includes('2') && !clean.includes('3') && !clean.includes('팩 2') && !clean.includes('팩 3'))) return 'v4';
+    if (clean.includes('슈퍼잭팟') || clean.includes('추가2') || clean.includes('스페셜 2')) return 'extra_2';
+    if (clean.includes('멀티히트') || clean.includes('추가3') || clean.includes('스페셜 3') || (clean.includes('팩 3') && !clean.includes('올라운더'))) return 'extra_3';
+    if (clean.includes('흐름부스터') || clean.includes('추가4') || clean.includes('스페셜 4')) return 'extra_4';
+    if (clean.includes('트리오마스터') || clean.includes('추가5') || clean.includes('스페셜 5')) return 'extra_5';
     if (combo && combo.packIdx) return `extra_${combo.packIdx}`;
     if (combo && combo.packId) return `extra_${combo.packId}`;
     return 'v4';
@@ -29701,7 +29883,7 @@ function renderAlgorithmPrizeTotals() {
         const selectedNames = [];
         if (cfg.includeV4) selectedNames.push('올라운더 팩(10G)');
         if (cfg.includeV3) selectedNames.push('올라운더 팩 2(10G)');
-        const packNames = { 1: '추가1: 빈틈제로(10G)', 2: '추가2: 슈퍼잭팟(10G)', 3: '추가3: 멀티히트(10G)', 4: '추가4: 흐름부스터(10G)', 5: '추가5: 트리오마스터(10G)' };
+        const packNames = { 1: '기본3: 올라운더3(10G)', 2: '추가2: 슈퍼잭팟(10G)', 3: '추가3: 멀티히트(10G)', 4: '추가4: 흐름부스터(10G)', 5: '추가5: 트리오마스터(10G)' };
         cfg.selectedExtraPacks.forEach(p => {
             if (packNames[p]) selectedNames.push(packNames[p]);
         });
@@ -29769,9 +29951,9 @@ function renderAlgorithmPrizeTotals() {
         },
         {
             id: 'extra_1',
-            name: '추가1: 빈틈제로 (핫넘버 집중)',
-            shortName: '추가1: 빈틈제로',
-            packType: '애드온 팩 #1',
+            name: '기본 3: 올라운더 팩 3 (빈틈제로 100% 커버)',
+            shortName: '기본3: 올라운더3',
+            packType: '기본 코어 #3',
             icon: 'fa-shield-halved',
             color: '#10b981',
             badgeBg: 'rgba(16, 185, 129, 0.2)',
@@ -31049,7 +31231,7 @@ async function renderConfirmedPurchasesList() {
                 let totalInvest = 0;
                 let totalPrize = 0;
                 const rankHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-                const algoHits = { v4: 0, v3: 0, extra: 0, manual: 0 };
+                const algoHits = { v4: 0, v3: 0, ar3: 0, extra: 0, manual: 0 };
 
                 const roundsKeys = Object.keys(uLedger);
                 let _rCntConfirmed = 0;
@@ -31109,13 +31291,16 @@ async function renderConfirmedPurchasesList() {
                                             const { uV4, uV3, extraPacks } = getMemoizedRecommendations(round, uId);
                                             const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
                                             if (match && match.isExact) {
-                                                if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('기본 2') || (match.label && match.label.includes('올라운더2'))) {
+                                                if (match.matchedVersion.includes('올라운더 3') || match.matchedVersion.includes('올라운더3') || match.matchedVersion.includes('기본 3') || match.matchedVersion.includes('빈틈제로') || (match.label && (match.label.includes('올라운더3') || match.label.includes('빈틈제로')))) {
+                                                    algoHits.ar3++;
+                                                    algoClassified = true;
+                                                } else if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('기본 2') || (match.label && match.label.includes('올라운더2'))) {
                                                     algoHits.v3++;
                                                     algoClassified = true;
                                                 } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('기본 1') || (match.label && match.label.includes('올라운더'))) {
                                                     algoHits.v4++;
                                                     algoClassified = true;
-                                                } else if (match.matchedVersion.includes('추가') || (match.label && (match.label.includes('빈틈') || match.label.includes('슈퍼') || match.label.includes('멀티') || match.label.includes('흐름') || match.label.includes('트리오')))) {
+                                                } else if (match.matchedVersion.includes('추가') || (match.label && (match.label.includes('슈퍼') || match.label.includes('멀티') || match.label.includes('흐름') || match.label.includes('트리오')))) {
                                                     algoHits.extra++;
                                                     algoClassified = true;
                                                 }
@@ -31124,9 +31309,10 @@ async function renderConfirmedPurchasesList() {
                                     }
 
                                     if (!algoClassified) {
-                                        if (rVer.includes('올라운더 2') || rVer.includes('올라운더2') || rVer.includes('기본 2') || rVer.includes('수학') || rVer.includes('퀀트') || rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
+                                        if (rVer.includes('올라운더 3') || rVer.includes('올라운더3') || rVer.includes('기본 3') || rVer.includes('빈틈제로')) algoHits.ar3++;
+                                        else if (rVer.includes('올라운더 2') || rVer.includes('올라운더2') || rVer.includes('기본 2') || rVer.includes('수학') || rVer.includes('퀀트') || rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
                                         else if (rVer.includes('올라운더') || rVer.includes('기본 1') || rVer.includes('v4') || rVer.includes('4.0') || rVer.includes('행동경제')) algoHits.v4++;
-                                        else if (rVer.includes('추가') || rVer.includes('extra') || rVer.includes('pack') || rVer.includes('빈틈제로') || rVer.includes('슈퍼') || rVer.includes('멀티') || rVer.includes('흐름') || rVer.includes('트리오')) algoHits.extra++;
+                                        else if (rVer.includes('추가') || rVer.includes('extra') || rVer.includes('pack') || rVer.includes('슈퍼') || rVer.includes('멀티') || rVer.includes('흐름') || rVer.includes('트리오')) algoHits.extra++;
                                         else algoHits.manual++;
                                     }
                                 }
@@ -31162,6 +31348,7 @@ async function renderConfirmedPurchasesList() {
             const grandR5 = memberStatsList.reduce((a, b) => a + b.rankHits[5], 0);
             const grandAlgoV4 = memberStatsList.reduce((a, b) => a + b.algoHits.v4, 0);
             const grandAlgoV3 = memberStatsList.reduce((a, b) => a + b.algoHits.v3, 0);
+            const grandAlgoAr3 = memberStatsList.reduce((a, b) => a + (b.algoHits.ar3 || 0), 0);
             const grandAlgoExtra = memberStatsList.reduce((a, b) => a + b.algoHits.extra, 0);
             const grandAlgoManual = memberStatsList.reduce((a, b) => a + b.algoHits.manual, 0);
 
@@ -31194,9 +31381,10 @@ async function renderConfirmedPurchasesList() {
                             <span style="padding: 1px 5px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${m.rankHits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${m.rankHits[5]}</span>
                         </td>
                         <td style="padding: 8px 10px; text-align: center; white-space: nowrap; font-size: 0.72rem;">
-                            <span title="올라운더 팩 적중" style="color: #c4b5fd; font-weight: 700;">올라운더:${m.algoHits.v4}</span> ·
-                            <span title="올라운더 팩 2 적중" style="color: #fbbf24; font-weight: 700;">올라운더2:${m.algoHits.v3}</span> ·
-                            <span title="추가팩 적중" style="color: #6ee7b7; font-weight: 700;">추가:${m.algoHits.extra}</span> ·
+                            <span title="올라운더 1 적중" style="color: #c4b5fd; font-weight: 700;">AR1:${m.algoHits.v4}</span> ·
+                            <span title="올라운더 2 적중" style="color: #60a5fa; font-weight: 700;">AR2:${m.algoHits.v3}</span> ·
+                            <span title="올라운더 3 적중" style="color: #34d399; font-weight: 700;">AR3:${m.algoHits.ar3 || 0}</span> ·
+                            <span title="추가팩 적중" style="color: #fbbf24; font-weight: 700;">스페셜:${m.algoHits.extra}</span> ·
                             <span title="수동 적중" style="color: #94a3b8;">수동:${m.algoHits.manual}</span>
                         </td>
                         <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${m.totalPrize > 0 ? '#34d399' : '#94a3b8'}; white-space: nowrap;">
@@ -31273,9 +31461,10 @@ async function renderConfirmedPurchasesList() {
                                     <td style="padding: 10px; text-align: center; color: #34d399;">${grandR4}</td>
                                     <td style="padding: 10px; text-align: center; color: #a78bfa;">${grandR5}</td>
                                     <td style="padding: 10px; text-align: center; font-size: 0.74rem;">
-                                        <span style="color: #c4b5fd;">올라운더:${grandAlgoV4}</span> ·
-                                        <span style="color: #fbbf24;">올라운더2:${grandAlgoV3}</span> ·
-                                        <span style="color: #6ee7b7;">추가:${grandAlgoExtra}</span> ·
+                                        <span style="color: #c4b5fd;">AR1:${grandAlgoV4}</span> ·
+                                        <span style="color: #60a5fa;">AR2:${grandAlgoV3}</span> ·
+                                        <span style="color: #34d399;">AR3:${grandAlgoAr3}</span> ·
+                                        <span style="color: #fbbf24;">스페셜:${grandAlgoExtra}</span> ·
                                         <span style="color: #94a3b8;">수동:${grandAlgoManual}</span>
                                     </td>
                                     <td style="padding: 10px; text-align: right; color: #34d399;">+${grandPrize.toLocaleString()}원</td>
@@ -31711,6 +31900,10 @@ async function renderConfirmedPurchasesList() {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); color: #c4b5fd; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-wave-square" style="font-size: 0.65rem;"></i> 추가 4: 흐름 부스터 팩</span>`;
             } else if (pVer.includes('트리오 마스터') || pVer.includes('트리오마스터') || pVer.includes('추가 5') || pVer.includes('extra_5')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); color: #22d3ee; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-cubes" style="font-size: 0.65rem;"></i> 추가 5: 트리오 마스터 팩</span>`;
+            } else if (pVer.includes('올라운더 3') || pVer.includes('올라운더3') || pVer.includes('기본 3') || pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
+                const v5Title = '기본 3: 올라운더 팩 3';
+                const v5Icon = 'fa-shield-halved';
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid ${v5Icon}" style="font-size: 0.65rem;"></i> ${v5Title}</span>`;
             } else if (pVer.includes('추가')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.65rem;"></i> ${pVer.split(' (')[0]}</span>`;
             } else if (pVer.includes('온라인') || (purchase.qrMeta && purchase.qrMeta.channel === 'online')) {
@@ -31877,7 +32070,7 @@ async function renderConfirmedPurchasesList() {
                 }
 
                 if (snapshotMatch && snapshotMatch.isExact) {
-                    if (snapshotMatch.matchedVersion.includes('빈틈제로') || snapshotMatch.matchedVersion.includes('추가 1')) {
+                    if (snapshotMatch.matchedVersion.includes('올라운더 3') || snapshotMatch.matchedVersion.includes('올라운더3') || snapshotMatch.matchedVersion.includes('기본 3') || snapshotMatch.matchedVersion.includes('빈틈제로') || snapshotMatch.matchedVersion.includes('추가 1')) {
                         aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.6rem;"></i> ${snapshotMatch.label}</span>`;
                     } else if (snapshotMatch.matchedVersion.includes('슈퍼 잭팟') || snapshotMatch.matchedVersion.includes('슈퍼잭팟') || snapshotMatch.matchedVersion.includes('추가 2')) {
                         aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.6rem;"></i> ${snapshotMatch.label}</span>`;
@@ -31897,8 +32090,8 @@ async function renderConfirmedPurchasesList() {
                     } else {
                         aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> ${snapshotMatch.label}</span>`;
                     }
-                } else if (pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
-                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.6rem;"></i> 빈틈제로 #${cIdx+1}</span>`;
+                } else if (pVer.includes('올라운더 3') || pVer.includes('올라운더3') || pVer.includes('기본 3') || pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
+                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.6rem;"></i> 올라운더3 #${cIdx+1}</span>`;
                 } else if (pVer.includes('슈퍼 잭팟') || pVer.includes('슈퍼잭팟') || pVer.includes('추가 2') || pVer.includes('extra_2')) {
                     aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.6rem;"></i> 슈퍼잭팟 #${cIdx+1}</span>`;
                 } else if (pVer.includes('멀티 히트') || pVer.includes('멀티히트') || pVer.includes('추가 3') || pVer.includes('extra_3')) {
@@ -36007,8 +36200,8 @@ function generatePredictionReport() {
                 <i class="fa-solid fa-lightbulb"></i> 💡 [${displayName}] 님을 위한 이번 주 최적 포트폴리오 운영 전략
             </strong>
             <div style="font-size: 0.82rem; color: #e2e8f0; line-height: 1.55;">
-                1. <strong>기본 20게임(올라운더 1 + 올라운더 2) 필수 운영</strong>: 전구간 균형 방어망(올라운더 1)과 다이나믹 모멘텀 공격망(올라운더 2)이 상호 결합되어 매주 투입 자금을 탄탄하게 방어합니다.<br>
-                2. <strong>예산 맞춤 추가팩 확장 권장</strong>: 과거 복기 실적상 다중 적중을 극대화하려면 <span style="color:#10b981; font-weight:700;">추가 1(빈틈제로 팩)</span> 또는 <span style="color:#8b5cf6; font-weight:700;">추가 3(멀티 히트 팩)</span>을 병행하여 3등·4등 연쇄 적중 포획망을 가동하는 것을 권장합니다.
+                1. <strong>기본 30게임 코어(올라운더 1 + 2 + 3) 필수 운영</strong>: 전구간 균형 방어망(올라운더 1), 다이나믹 모멘텀 공격망(올라운더 2), 빈틈제로 100% 번호커버(올라운더 3)가 3각 결합되어 회수율 29.9% 1위 및 탄탄한 당첨 방어망을 가동합니다.<br>
+                2. <strong>예산 맞춤 스페셜 추가팩 확장 권장</strong>: 주당 예산 3만원 이상 투자 시, 과거 복기 실적상 다중 적중을 극대화할 수 있도록 <span style="color:#818cf8; font-weight:700;">스페셜 2(슈퍼잭팟)</span> 또는 <span style="color:#a855f7; font-weight:700;">스페셜 3(멀티히트)</span>을 병행하여 3등·4등 연쇄 적중 포획망을 가동하는 것을 권장합니다.
             </div>
         </div>
     `;
@@ -36412,7 +36605,7 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
         };
     } else if (typeof algo === 'string' && algo.startsWith('extra_')) {
         const packId = parseInt(algo.replace('extra_', ''), 10);
-        if (!isEligible) {
+        if (!isEligible && packId !== 1) {
             return {
                 versionLabel: `추가 ${packId} (실구매 잠김)`,
                 badgeColor: '#64748b',
@@ -36424,34 +36617,44 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             };
         }
         const pack = generateExtraAddonPack(packId, targetRound, effectiveUserId);
+        const pCombos = (pack && Array.isArray(pack.combos) && pack.combos.length > 0)
+            ? pack.combos
+            : (packId === 1 ? computeAbsoluteTop10Combinations(false, targetRound, 'ar3', true, effectiveUserId) : []);
+        const packTitle = packId === 1 ? '기본 3: 올라운더 팩 3' : (pack.name || `추가팩 ${packId}`);
+        const packShort = packId === 1 ? '올라운더3' : (pack.shortName || ('추가' + packId));
         return {
-            versionLabel: pack.name || `추가팩 ${packId}`,
+            versionLabel: packTitle,
             badgeColor: pack.color || '#10b981',
-            combos: (pack.combos || []).map((c, i) => ({
+            combos: (pCombos || []).map((c, i) => ({
                 ...c,
-                customLabel: `${pack.shortName || ('추가' + packId)}-${alphabet[i] || (i + 1)}`
+                customLabel: `${packShort}-${alphabet[i] || (i + 1)}`
             })),
             effectiveUserId,
             targetRound,
             isLocked: false
         };
     } else {
-        // 'all' -> Combines V3 + V4 (+ all active Extra Packs if eligible)
+        // 'all' -> Combines V4 + V3 + AR3 (30G Basic Core) (+ all active Extra Packs 2~5 if eligible)
         const v3Combos = isV3Valid
             ? state.fixedTop5Combinations_v3
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
         const v4Combos = isV4Valid
             ? state.fixedTop5Combinations_v4
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
+        const pack1 = generateExtraAddonPack(1, targetRound, effectiveUserId);
+        const p1Combos = (pack1 && Array.isArray(pack1.combos) && pack1.combos.length > 0)
+            ? pack1.combos
+            : (computeAbsoluteTop10Combinations(false, targetRound, 'ar3', true, effectiveUserId) || []);
 
         const allCombos = [
+            ...v4Combos.map((c, i) => ({ ...c, customLabel: `올라운더-${alphabet[i] || (i + 1)}`, groupTag: '기본 1: 올라운더 팩 (10조합)' })),
             ...v3Combos.map((c, i) => ({ ...c, customLabel: `올라운더2-${alphabet[i] || (i + 1)}`, groupTag: '기본 2: 올라운더 팩 2 (10조합)' })),
-            ...v4Combos.map((c, i) => ({ ...c, customLabel: `올라운더-${alphabet[i] || (i + 1)}`, groupTag: '기본 1: 올라운더 팩 (10조합)' }))
+            ...p1Combos.map((c, i) => ({ ...c, customLabel: `올라운더3-${alphabet[i] || (i + 1)}`, groupTag: '기본 3: 올라운더 팩 3 (10조합)' }))
         ];
 
-        // Include all 5 Booster Add-on packs ONLY if eligible
+        // Include 4 Booster Add-on packs 2~5 ONLY if eligible
         if (isEligible) {
-            for (let pId = 1; pId <= 5; pId++) {
+            for (let pId = 2; pId <= 5; pId++) {
                 const pack = generateExtraAddonPack(pId, targetRound, effectiveUserId);
                 if (pack && Array.isArray(pack.combos) && pack.combos.length > 0) {
                     pack.combos.forEach((c, i) => {
@@ -36466,7 +36669,7 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
         }
 
         return { 
-            versionLabel: isEligible ? `전체 통합 (${allCombos.length}조합)` : `기본 통합 (${allCombos.length}조합)`,
+            versionLabel: isEligible ? `7대 알고리즘 전체 통합 (${allCombos.length}조합)` : `기본 30게임 코어 통합 (${allCombos.length}조합)`,
             badgeColor: '#fbbf24',
             combos: allCombos,
             effectiveUserId,
@@ -36549,17 +36752,17 @@ function switchQuickViewAlgo(algo) {
         (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243))));
     const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);
 
-    if (!isEligible && algo.startsWith('extra_')) {
+    if (!isEligible && algo.startsWith('extra_') && algo !== 'extra_1') {
         const pId = parseInt(algo.replace('extra_', ''), 10);
         const extraNames = {
-            1: '추가 1: 빈틈제로 팩',
+            1: '기본 3: 올라운더 팩 3',
             2: '추가 2: 슈퍼 잭팟 팩',
             3: '추가 3: 멀티 히트 팩',
             4: '추가 4: 흐름 부스터 팩',
             5: '추가 5: 트리오 마스터 팩'
         };
         const packTitle = extraNames[pId] || `추가 ${pId}팩`;
-        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n${packTitle}(10게임)을 포함한 추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 20게임(올라운더 1 + 올라운더 2)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
+        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n${packTitle}(10게임)을 포함한 추가 4팩(40게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 30게임(올라운더 1 + 2 + 3)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             closeCompactView();
             if (typeof window.openManualLedgerModal === 'function') {
@@ -36579,11 +36782,11 @@ function switchQuickViewAlgo(algo) {
     let label = '추천번호';
     if (algo === 'v4') label = '기본 1: 올라운더 팩 (10조합)';
     else if (algo === 'v3') label = '기본 2: 올라운더 팩 2 (10조합)';
-    else if (algo === 'all') label = isEligible ? '전체 통합 조합 (70조합)' : '기본 통합 조합 (20조합)';
+    else if (algo === 'all') label = isEligible ? '7대 알고리즘 전체 통합 (70조합)' : '기본 30게임 코어 통합 (30조합)';
     else if (algo.startsWith('extra_')) {
         const pId = parseInt(algo.replace('extra_', ''), 10);
         const extraLabels = {
-            1: '추가 1: 빈틈제로 팩 (10조합)',
+            1: '기본 3: 올라운더 팩 3 (10조합)',
             2: '추가 2: 슈퍼 잭팟 팩 (10조합)',
             3: '추가 3: 멀티 히트 팩 (10조합)',
             4: '추가 4: 흐름 부스터 팩 (10조합)',
@@ -36607,7 +36810,7 @@ function updateQuickViewAlgoButtons() {
         (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243))));
     const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);
 
-    const totalGames = isEligible ? 70 : 20;
+    const totalGames = isEligible ? 70 : 30;
 
     let buttonsHtml = `
         <button type="button" onclick="window.switchQuickViewAlgo('v4')" class="quick-algo-btn ${currentQuickAlgo === 'v4' ? 'active' : ''}" style="flex: 1 1 72px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v4' ? '#10b981' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v4' ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v4' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v4' ? '800' : '600'};">
@@ -36620,7 +36823,7 @@ function updateQuickViewAlgoButtons() {
 
     // Dynamic Extra Pack Buttons
     const extraMeta = {
-        1: { name: '빈틈제로', icon: 'fa-shield-halved', color: '#10b981' },
+        1: { name: '올라운더 3', icon: 'fa-shield-halved', color: '#10b981' },
         2: { name: '슈퍼잭팟', icon: 'fa-trophy', color: '#f59e0b' },
         3: { name: '멀티히트', icon: 'fa-chart-line', color: '#ec4899' },
         4: { name: '흐름부스터', icon: 'fa-wave-square', color: '#8b5cf6' },
@@ -36633,7 +36836,7 @@ function updateQuickViewAlgoButtons() {
         const meta = extraMeta[pId] || { name: `추가 ${pId}`, icon: 'fa-rocket', color: '#10b981' };
         const color = meta.color;
 
-        if (isEligible) {
+        if (isEligible || pId === 1) {
             buttonsHtml += `
                 <button type="button" onclick="window.switchQuickViewAlgo('${packKey}')" class="quick-algo-btn ${isActive ? 'active' : ''}" style="flex: 1 1 75px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${isActive ? color : 'rgba(255,255,255,0.08)'}; background: ${isActive ? `linear-gradient(135deg, ${color}, #059669)` : 'rgba(30,41,59,0.6)'}; color: ${isActive ? '#fff' : '#cbd5e1'}; font-weight: ${isActive ? '800' : '600'};">
                     <i class="fa-solid ${meta.icon}"></i> ${meta.name} (10)
@@ -40984,7 +41187,7 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
                 recStatus = 'locked';
                 recGames = snap.totalGames || 70;
                 recModified = snap.updatedAt || snap.createdAt || snap.generatedAt || user.docUpdateTime;
-                recAlgoDesc = 'V4(10) + V3(10) + 추가(50)';
+                recAlgoDesc = '올라운더 1·2·3(30G) + 스페셜(40G)';
                 
                 // Aggregate combos
                 recCombos = snap.combos || [];
@@ -41296,7 +41499,7 @@ async function renderSnapshotAuditView(forceRefresh = false) {
                         <tr style="background: rgba(15, 23, 42, 0.9); border-bottom: 1.5px solid rgba(59, 130, 246, 0.4); color: #94a3b8; font-size: 0.75rem; text-transform: uppercase;">
                             <th style="padding: 10px 12px; font-weight: 800; min-width: 140px;">사용자</th>
                             <th style="padding: 10px 12px; font-weight: 800; min-width: 80px;">회차</th>
-                            <th style="padding: 10px 12px; font-weight: 800; min-width: 220px;">🔮 추천번호 스냅샷 (70G)</th>
+                            <th style="padding: 10px 12px; font-weight: 800; min-width: 220px;">🔮 추천번호 스냅샷 (코어 30G + 스페셜 40G)</th>
                             <th style="padding: 10px 12px; font-weight: 800; min-width: 210px;">🧾 구매확정현황 스냅샷</th>
                             <th style="padding: 10px 12px; font-weight: 800; min-width: 140px;">서버 최종 수정일</th>
                             <th style="padding: 10px 12px; font-weight: 800; text-align: center; min-width: 90px;">상세 검사</th>

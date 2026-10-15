@@ -217,7 +217,7 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
         };
     } else if (typeof algo === 'string' && algo.startsWith('extra_')) {
         const packId = parseInt(algo.replace('extra_', ''), 10);
-        if (!isEligible) {
+        if (!isEligible && packId !== 1) {
             return {
                 versionLabel: `추가 ${packId} (실구매 잠김)`,
                 badgeColor: '#64748b',
@@ -229,34 +229,44 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             };
         }
         const pack = generateExtraAddonPack(packId, targetRound, effectiveUserId);
+        const pCombos = (pack && Array.isArray(pack.combos) && pack.combos.length > 0)
+            ? pack.combos
+            : (packId === 1 ? computeAbsoluteTop10Combinations(false, targetRound, 'ar3', true, effectiveUserId) : []);
+        const packTitle = packId === 1 ? '기본 3: 올라운더 팩 3' : (pack.name || `추가팩 ${packId}`);
+        const packShort = packId === 1 ? '올라운더3' : (pack.shortName || ('추가' + packId));
         return {
-            versionLabel: pack.name || `추가팩 ${packId}`,
+            versionLabel: packTitle,
             badgeColor: pack.color || '#10b981',
-            combos: (pack.combos || []).map((c, i) => ({
+            combos: (pCombos || []).map((c, i) => ({
                 ...c,
-                customLabel: `${pack.shortName || ('추가' + packId)}-${alphabet[i] || (i + 1)}`
+                customLabel: `${packShort}-${alphabet[i] || (i + 1)}`
             })),
             effectiveUserId,
             targetRound,
             isLocked: false
         };
     } else {
-        // 'all' -> Combines V3 + V4 (+ all active Extra Packs if eligible)
+        // 'all' -> Combines V4 + V3 + AR3 (30G Basic Core) (+ all active Extra Packs 2~5 if eligible)
         const v3Combos = isV3Valid
             ? state.fixedTop5Combinations_v3
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
         const v4Combos = isV4Valid
             ? state.fixedTop5Combinations_v4
             : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
+        const pack1 = generateExtraAddonPack(1, targetRound, effectiveUserId);
+        const p1Combos = (pack1 && Array.isArray(pack1.combos) && pack1.combos.length > 0)
+            ? pack1.combos
+            : (computeAbsoluteTop10Combinations(false, targetRound, 'ar3', true, effectiveUserId) || []);
 
         const allCombos = [
+            ...v4Combos.map((c, i) => ({ ...c, customLabel: `올라운더-${alphabet[i] || (i + 1)}`, groupTag: '기본 1: 올라운더 팩 (10조합)' })),
             ...v3Combos.map((c, i) => ({ ...c, customLabel: `올라운더2-${alphabet[i] || (i + 1)}`, groupTag: '기본 2: 올라운더 팩 2 (10조합)' })),
-            ...v4Combos.map((c, i) => ({ ...c, customLabel: `올라운더-${alphabet[i] || (i + 1)}`, groupTag: '기본 1: 올라운더 팩 (10조합)' }))
+            ...p1Combos.map((c, i) => ({ ...c, customLabel: `올라운더3-${alphabet[i] || (i + 1)}`, groupTag: '기본 3: 올라운더 팩 3 (10조합)' }))
         ];
 
-        // Include all 5 Booster Add-on packs ONLY if eligible
+        // Include 4 Booster Add-on packs 2~5 ONLY if eligible
         if (isEligible) {
-            for (let pId = 1; pId <= 5; pId++) {
+            for (let pId = 2; pId <= 5; pId++) {
                 const pack = generateExtraAddonPack(pId, targetRound, effectiveUserId);
                 if (pack && Array.isArray(pack.combos) && pack.combos.length > 0) {
                     pack.combos.forEach((c, i) => {
@@ -271,7 +281,7 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
         }
 
         return { 
-            versionLabel: isEligible ? `전체 통합 (${allCombos.length}조합)` : `기본 통합 (${allCombos.length}조합)`,
+            versionLabel: isEligible ? `7대 알고리즘 전체 통합 (${allCombos.length}조합)` : `기본 30게임 코어 통합 (${allCombos.length}조합)`,
             badgeColor: '#fbbf24',
             combos: allCombos,
             effectiveUserId,
@@ -354,17 +364,17 @@ export function switchQuickViewAlgo(algo) {
         (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243))));
     const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);
 
-    if (!isEligible && algo.startsWith('extra_')) {
+    if (!isEligible && algo.startsWith('extra_') && algo !== 'extra_1') {
         const pId = parseInt(algo.replace('extra_', ''), 10);
         const extraNames = {
-            1: '추가 1: 빈틈제로 팩',
+            1: '기본 3: 올라운더 팩 3',
             2: '추가 2: 슈퍼 잭팟 팩',
             3: '추가 3: 멀티 히트 팩',
             4: '추가 4: 흐름 부스터 팩',
             5: '추가 5: 트리오 마스터 팩'
         };
         const packTitle = extraNames[pId] || `추가 ${pId}팩`;
-        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n${packTitle}(10게임)을 포함한 추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 20게임(올라운더 1 + 올라운더 2)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
+        const wantRegister = confirm(`🔒 [실구매 인증 회원 전용 혜택]\n\n${packTitle}(10게임)을 포함한 추가 4팩(40게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(실구매 미등록 회원은 기본 30게임(올라운더 1 + 2 + 3)이 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하시겠습니까?`);
         if (wantRegister) {
             closeCompactView();
             if (typeof window.openManualLedgerModal === 'function') {
@@ -384,11 +394,11 @@ export function switchQuickViewAlgo(algo) {
     let label = '추천번호';
     if (algo === 'v4') label = '기본 1: 올라운더 팩 (10조합)';
     else if (algo === 'v3') label = '기본 2: 올라운더 팩 2 (10조합)';
-    else if (algo === 'all') label = isEligible ? '전체 통합 조합 (70조합)' : '기본 통합 조합 (20조합)';
+    else if (algo === 'all') label = isEligible ? '7대 알고리즘 전체 통합 (70조합)' : '기본 30게임 코어 통합 (30조합)';
     else if (algo.startsWith('extra_')) {
         const pId = parseInt(algo.replace('extra_', ''), 10);
         const extraLabels = {
-            1: '추가 1: 빈틈제로 팩 (10조합)',
+            1: '기본 3: 올라운더 팩 3 (10조합)',
             2: '추가 2: 슈퍼 잭팟 팩 (10조합)',
             3: '추가 3: 멀티 히트 팩 (10조합)',
             4: '추가 4: 흐름 부스터 팩 (10조합)',
@@ -412,7 +422,7 @@ export function updateQuickViewAlgoButtons() {
         (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243))));
     const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);
 
-    const totalGames = isEligible ? 70 : 20;
+    const totalGames = isEligible ? 70 : 30;
 
     let buttonsHtml = `
         <button type="button" onclick="window.switchQuickViewAlgo('v4')" class="quick-algo-btn ${currentQuickAlgo === 'v4' ? 'active' : ''}" style="flex: 1 1 72px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${currentQuickAlgo === 'v4' ? '#10b981' : 'rgba(255,255,255,0.08)'}; background: ${currentQuickAlgo === 'v4' ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(30,41,59,0.6)'}; color: ${currentQuickAlgo === 'v4' ? '#fff' : '#94a3b8'}; font-weight: ${currentQuickAlgo === 'v4' ? '800' : '600'};">
@@ -425,7 +435,7 @@ export function updateQuickViewAlgoButtons() {
 
     // Dynamic Extra Pack Buttons
     const extraMeta = {
-        1: { name: '빈틈제로', icon: 'fa-shield-halved', color: '#10b981' },
+        1: { name: '올라운더 3', icon: 'fa-shield-halved', color: '#10b981' },
         2: { name: '슈퍼잭팟', icon: 'fa-trophy', color: '#f59e0b' },
         3: { name: '멀티히트', icon: 'fa-chart-line', color: '#ec4899' },
         4: { name: '흐름부스터', icon: 'fa-wave-square', color: '#8b5cf6' },
@@ -438,7 +448,7 @@ export function updateQuickViewAlgoButtons() {
         const meta = extraMeta[pId] || { name: `추가 ${pId}`, icon: 'fa-rocket', color: '#10b981' };
         const color = meta.color;
 
-        if (isEligible) {
+        if (isEligible || pId === 1) {
             buttonsHtml += `
                 <button type="button" onclick="window.switchQuickViewAlgo('${packKey}')" class="quick-algo-btn ${isActive ? 'active' : ''}" style="flex: 1 1 75px; padding: 6px 4px; font-size: 0.74rem; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 3px; border: 1px solid ${isActive ? color : 'rgba(255,255,255,0.08)'}; background: ${isActive ? `linear-gradient(135deg, ${color}, #059669)` : 'rgba(30,41,59,0.6)'}; color: ${isActive ? '#fff' : '#cbd5e1'}; font-weight: ${isActive ? '800' : '600'};">
                     <i class="fa-solid ${meta.icon}"></i> ${meta.name} (10)

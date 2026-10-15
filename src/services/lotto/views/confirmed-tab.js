@@ -315,7 +315,7 @@ export async function renderConfirmedPurchasesList() {
                 let totalInvest = 0;
                 let totalPrize = 0;
                 const rankHits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-                const algoHits = { v4: 0, v3: 0, extra: 0, manual: 0 };
+                const algoHits = { v4: 0, v3: 0, ar3: 0, extra: 0, manual: 0 };
 
                 const roundsKeys = Object.keys(uLedger);
                 let _rCntConfirmed = 0;
@@ -375,13 +375,16 @@ export async function renderConfirmedPurchasesList() {
                                             const { uV4, uV3, extraPacks } = getMemoizedRecommendations(round, uId);
                                             const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
                                             if (match && match.isExact) {
-                                                if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('기본 2') || (match.label && match.label.includes('올라운더2'))) {
+                                                if (match.matchedVersion.includes('올라운더 3') || match.matchedVersion.includes('올라운더3') || match.matchedVersion.includes('기본 3') || match.matchedVersion.includes('빈틈제로') || (match.label && (match.label.includes('올라운더3') || match.label.includes('빈틈제로')))) {
+                                                    algoHits.ar3++;
+                                                    algoClassified = true;
+                                                } else if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('기본 2') || (match.label && match.label.includes('올라운더2'))) {
                                                     algoHits.v3++;
                                                     algoClassified = true;
                                                 } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('기본 1') || (match.label && match.label.includes('올라운더'))) {
                                                     algoHits.v4++;
                                                     algoClassified = true;
-                                                } else if (match.matchedVersion.includes('추가') || (match.label && (match.label.includes('빈틈') || match.label.includes('슈퍼') || match.label.includes('멀티') || match.label.includes('흐름') || match.label.includes('트리오')))) {
+                                                } else if (match.matchedVersion.includes('추가') || (match.label && (match.label.includes('슈퍼') || match.label.includes('멀티') || match.label.includes('흐름') || match.label.includes('트리오')))) {
                                                     algoHits.extra++;
                                                     algoClassified = true;
                                                 }
@@ -390,9 +393,10 @@ export async function renderConfirmedPurchasesList() {
                                     }
 
                                     if (!algoClassified) {
-                                        if (rVer.includes('올라운더 2') || rVer.includes('올라운더2') || rVer.includes('기본 2') || rVer.includes('수학') || rVer.includes('퀀트') || rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
+                                        if (rVer.includes('올라운더 3') || rVer.includes('올라운더3') || rVer.includes('기본 3') || rVer.includes('빈틈제로')) algoHits.ar3++;
+                                        else if (rVer.includes('올라운더 2') || rVer.includes('올라운더2') || rVer.includes('기본 2') || rVer.includes('수학') || rVer.includes('퀀트') || rVer.includes('v3') || rVer.includes('3.0') || rVer.includes('하이브리')) algoHits.v3++;
                                         else if (rVer.includes('올라운더') || rVer.includes('기본 1') || rVer.includes('v4') || rVer.includes('4.0') || rVer.includes('행동경제')) algoHits.v4++;
-                                        else if (rVer.includes('추가') || rVer.includes('extra') || rVer.includes('pack') || rVer.includes('빈틈제로') || rVer.includes('슈퍼') || rVer.includes('멀티') || rVer.includes('흐름') || rVer.includes('트리오')) algoHits.extra++;
+                                        else if (rVer.includes('추가') || rVer.includes('extra') || rVer.includes('pack') || rVer.includes('슈퍼') || rVer.includes('멀티') || rVer.includes('흐름') || rVer.includes('트리오')) algoHits.extra++;
                                         else algoHits.manual++;
                                     }
                                 }
@@ -428,6 +432,7 @@ export async function renderConfirmedPurchasesList() {
             const grandR5 = memberStatsList.reduce((a, b) => a + b.rankHits[5], 0);
             const grandAlgoV4 = memberStatsList.reduce((a, b) => a + b.algoHits.v4, 0);
             const grandAlgoV3 = memberStatsList.reduce((a, b) => a + b.algoHits.v3, 0);
+            const grandAlgoAr3 = memberStatsList.reduce((a, b) => a + (b.algoHits.ar3 || 0), 0);
             const grandAlgoExtra = memberStatsList.reduce((a, b) => a + b.algoHits.extra, 0);
             const grandAlgoManual = memberStatsList.reduce((a, b) => a + b.algoHits.manual, 0);
 
@@ -460,9 +465,10 @@ export async function renderConfirmedPurchasesList() {
                             <span style="padding: 1px 5px; border-radius: 4px; background: rgba(167,139,250,0.15); color: ${m.rankHits[5] > 0 ? '#a78bfa' : '#64748b'}; font-weight: 700;">${m.rankHits[5]}</span>
                         </td>
                         <td style="padding: 8px 10px; text-align: center; white-space: nowrap; font-size: 0.72rem;">
-                            <span title="올라운더 팩 적중" style="color: #c4b5fd; font-weight: 700;">올라운더:${m.algoHits.v4}</span> ·
-                            <span title="올라운더 팩 2 적중" style="color: #fbbf24; font-weight: 700;">올라운더2:${m.algoHits.v3}</span> ·
-                            <span title="추가팩 적중" style="color: #6ee7b7; font-weight: 700;">추가:${m.algoHits.extra}</span> ·
+                            <span title="올라운더 1 적중" style="color: #c4b5fd; font-weight: 700;">AR1:${m.algoHits.v4}</span> ·
+                            <span title="올라운더 2 적중" style="color: #60a5fa; font-weight: 700;">AR2:${m.algoHits.v3}</span> ·
+                            <span title="올라운더 3 적중" style="color: #34d399; font-weight: 700;">AR3:${m.algoHits.ar3 || 0}</span> ·
+                            <span title="추가팩 적중" style="color: #fbbf24; font-weight: 700;">스페셜:${m.algoHits.extra}</span> ·
                             <span title="수동 적중" style="color: #94a3b8;">수동:${m.algoHits.manual}</span>
                         </td>
                         <td style="padding: 8px 10px; text-align: right; font-weight: 800; color: ${m.totalPrize > 0 ? '#34d399' : '#94a3b8'}; white-space: nowrap;">
@@ -539,9 +545,10 @@ export async function renderConfirmedPurchasesList() {
                                     <td style="padding: 10px; text-align: center; color: #34d399;">${grandR4}</td>
                                     <td style="padding: 10px; text-align: center; color: #a78bfa;">${grandR5}</td>
                                     <td style="padding: 10px; text-align: center; font-size: 0.74rem;">
-                                        <span style="color: #c4b5fd;">올라운더:${grandAlgoV4}</span> ·
-                                        <span style="color: #fbbf24;">올라운더2:${grandAlgoV3}</span> ·
-                                        <span style="color: #6ee7b7;">추가:${grandAlgoExtra}</span> ·
+                                        <span style="color: #c4b5fd;">AR1:${grandAlgoV4}</span> ·
+                                        <span style="color: #60a5fa;">AR2:${grandAlgoV3}</span> ·
+                                        <span style="color: #34d399;">AR3:${grandAlgoAr3}</span> ·
+                                        <span style="color: #fbbf24;">스페셜:${grandAlgoExtra}</span> ·
                                         <span style="color: #94a3b8;">수동:${grandAlgoManual}</span>
                                     </td>
                                     <td style="padding: 10px; text-align: right; color: #34d399;">+${grandPrize.toLocaleString()}원</td>
@@ -977,6 +984,10 @@ export async function renderConfirmedPurchasesList() {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.25); color: #c4b5fd; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-wave-square" style="font-size: 0.65rem;"></i> 추가 4: 흐름 부스터 팩</span>`;
             } else if (pVer.includes('트리오 마스터') || pVer.includes('트리오마스터') || pVer.includes('추가 5') || pVer.includes('extra_5')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(6, 182, 212, 0.08); border: 1px solid rgba(6, 182, 212, 0.25); color: #22d3ee; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-cubes" style="font-size: 0.65rem;"></i> 추가 5: 트리오 마스터 팩</span>`;
+            } else if (pVer.includes('올라운더 3') || pVer.includes('올라운더3') || pVer.includes('기본 3') || pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
+                const v5Title = '기본 3: 올라운더 팩 3';
+                const v5Icon = 'fa-shield-halved';
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid ${v5Icon}" style="font-size: 0.65rem;"></i> ${v5Title}</span>`;
             } else if (pVer.includes('추가')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.65rem;"></i> ${pVer.split(' (')[0]}</span>`;
             } else if (pVer.includes('온라인') || (purchase.qrMeta && purchase.qrMeta.channel === 'online')) {
@@ -1143,7 +1154,7 @@ export async function renderConfirmedPurchasesList() {
                 }
 
                 if (snapshotMatch && snapshotMatch.isExact) {
-                    if (snapshotMatch.matchedVersion.includes('빈틈제로') || snapshotMatch.matchedVersion.includes('추가 1')) {
+                    if (snapshotMatch.matchedVersion.includes('올라운더 3') || snapshotMatch.matchedVersion.includes('올라운더3') || snapshotMatch.matchedVersion.includes('기본 3') || snapshotMatch.matchedVersion.includes('빈틈제로') || snapshotMatch.matchedVersion.includes('추가 1')) {
                         aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.6rem;"></i> ${snapshotMatch.label}</span>`;
                     } else if (snapshotMatch.matchedVersion.includes('슈퍼 잭팟') || snapshotMatch.matchedVersion.includes('슈퍼잭팟') || snapshotMatch.matchedVersion.includes('추가 2')) {
                         aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.6rem;"></i> ${snapshotMatch.label}</span>`;
@@ -1163,8 +1174,8 @@ export async function renderConfirmedPurchasesList() {
                     } else {
                         aiMatchTag = `<span style="background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); color: #60a5fa; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-calculator" style="font-size: 0.6rem;"></i> ${snapshotMatch.label}</span>`;
                     }
-                } else if (pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
-                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.6rem;"></i> 빈틈제로 #${cIdx+1}</span>`;
+                } else if (pVer.includes('올라운더 3') || pVer.includes('올라운더3') || pVer.includes('기본 3') || pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
+                    aiMatchTag = `<span style="background: rgba(16, 185, 129, 0.2); border: 1px solid rgba(16, 185, 129, 0.4); color: #6ee7b7; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.6rem;"></i> 올라운더3 #${cIdx+1}</span>`;
                 } else if (pVer.includes('슈퍼 잭팟') || pVer.includes('슈퍼잭팟') || pVer.includes('추가 2') || pVer.includes('extra_2')) {
                     aiMatchTag = `<span style="background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 0.68rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; display: inline-flex; align-items: center; gap: 2px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.6rem;"></i> 슈퍼잭팟 #${cIdx+1}</span>`;
                 } else if (pVer.includes('멀티 히트') || pVer.includes('멀티히트') || pVer.includes('추가 3') || pVer.includes('extra_3')) {

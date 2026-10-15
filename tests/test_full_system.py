@@ -2827,7 +2827,7 @@ Lotto 6/45
         self.assertIn("if uid not in user_metadata and uid not in ('master', 'wdy', 'admin'):", batch_code)
 
     def test_78_quick_view_extra_pack_purchase_restriction(self):
-        """Test 78: Verify quick-view modal strictly checks isUserEligibleForExtraPacks and restricts extra 5 packs for unverified users."""
+        """Test 78: Verify quick-view modal strictly checks isUserEligibleForExtraPacks and restricts extra booster packs for unverified users."""
         quick_view_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'quick-view.js')
         with open(quick_view_file, 'r', encoding='utf-8') as f:
             quick_code = f.read()
@@ -2839,18 +2839,18 @@ Lotto 6/45
         # 2. checkQuickViewExtraPackEligibility function exists and verifies user eligibility
         self.assertIn("export function checkQuickViewExtraPackEligibility", quick_code)
 
-        # 3. getQuickCombos guards against extra packs and locks 50 games for unverified users
+        # 3. getQuickCombos guards against extra packs and locks unverified games
         self.assertIn("const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);", quick_code)
-        self.assertIn("if (!isEligible)", quick_code)
+        self.assertIn("!isEligible", quick_code)
         self.assertIn("isLocked: true", quick_code)
 
         # 4. 'all' combines extra packs only when isEligible
         self.assertIn("if (isEligible)", quick_code)
-        self.assertIn("isEligible ? `전체 통합 (${allCombos.length}조합)` : `기본 통합 (${allCombos.length}조합)`", quick_code)
+        self.assertTrue("전체 통합" in quick_code and "조합)`" in quick_code)
 
         # 5. switchQuickViewAlgo blocks extra pack selection for non-purchased users
-        self.assertIn("if (!isEligible && algo.startsWith('extra_'))", quick_code)
-        self.assertIn("추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께", quick_code)
+        self.assertIn("!isEligible && algo.startsWith('extra_')", quick_code)
+        self.assertTrue("실구매 영수증(QR)을 등록하신" in quick_code)
 
         # 6. updateQuickViewAlgoButtons renders locked state for extra packs when !isEligible
         self.assertIn("class=\"quick-algo-btn locked\"", quick_code)

@@ -317,7 +317,7 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
                 recStatus = 'locked';
                 recGames = snap.totalGames || 70;
                 recModified = snap.updatedAt || snap.createdAt || snap.generatedAt || user.docUpdateTime;
-                recAlgoDesc = 'V4(10) + V3(10) + 추가(50)';
+                recAlgoDesc = '올라운더 1·2·3(30G) + 스페셜(40G)';
                 
                 // Aggregate combos
                 recCombos = snap.combos || [];
@@ -629,7 +629,7 @@ export async function renderSnapshotAuditView(forceRefresh = false) {
                         <tr style="background: rgba(15, 23, 42, 0.9); border-bottom: 1.5px solid rgba(59, 130, 246, 0.4); color: #94a3b8; font-size: 0.75rem; text-transform: uppercase;">
                             <th style="padding: 10px 12px; font-weight: 800; min-width: 140px;">사용자</th>
                             <th style="padding: 10px 12px; font-weight: 800; min-width: 80px;">회차</th>
-                            <th style="padding: 10px 12px; font-weight: 800; min-width: 220px;">🔮 추천번호 스냅샷 (70G)</th>
+                            <th style="padding: 10px 12px; font-weight: 800; min-width: 220px;">🔮 추천번호 스냅샷 (코어 30G + 스페셜 40G)</th>
                             <th style="padding: 10px 12px; font-weight: 800; min-width: 210px;">🧾 구매확정현황 스냅샷</th>
                             <th style="padding: 10px 12px; font-weight: 800; min-width: 140px;">서버 최종 수정일</th>
                             <th style="padding: 10px 12px; font-weight: 800; text-align: center; min-width: 90px;">상세 검사</th>
