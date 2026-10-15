@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.15.1943.37 - BUILD_DATE: 2026-10-15] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.15.2142 - BUILD_DATE: 2026-10-15] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.15.1943.37)
+ * Lucky777 Smart Bundle (v2026.10.15.2142)
  */
 
 
@@ -24156,7 +24156,91 @@ let algoDetailAccordionMap = {};
 let algoAdminViewingUser = 'all';
 
 /**
- * 7대 알고리즘 정밀 정의 메타데이터 (조합 원리, 핵심 이론, 번호 구성 방식, 타겟 등)
+ * 알고리즘 탭 전용 3D 로또볼 및 직관 애니메이션 CSS 스타일 동적 주입
+ */
+function ensureAlgoAnimationStyles() {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('algoAnimationStyles')) return;
+    const styleEl = document.createElement('style');
+    styleEl.id = 'algoAnimationStyles';
+    styleEl.textContent = `
+        /* 3D 로또볼 실물 입체 스타일 */
+        .lotto-ball-3d {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9999px;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+            box-shadow: inset -2px -2px 5px rgba(0,0,0,0.4), inset 2px 2px 4px rgba(255,255,255,0.7), 0 2px 5px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+        .ball-yellow { background: radial-gradient(circle at 35% 35%, #fde047 0%, #eab308 60%, #ca8a04 100%); color: #422006; text-shadow: 0 1px 1px rgba(255,255,255,0.4); }
+        .ball-blue { background: radial-gradient(circle at 35% 35%, #60a5fa 0%, #2563eb 60%, #1d4ed8 100%); }
+        .ball-red { background: radial-gradient(circle at 35% 35%, #f87171 0%, #dc2626 60%, #991b1b 100%); }
+        .ball-gray { background: radial-gradient(circle at 35% 35%, #94a3b8 0%, #475569 60%, #1e293b 100%); }
+        .ball-green { background: radial-gradient(circle at 35% 35%, #4ade80 0%, #16a34a 60%, #14532d 100%); }
+
+        /* 저울 시소 모션 (올라운더 1) */
+        @keyframes algoMiniSway {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+        .anim-algo-sway { animation: algoMiniSway 4s ease-in-out infinite; }
+
+        /* 이월수 비행 모션 (올라운더 2) */
+        @keyframes algoMiniFly {
+            0% { transform: translate(0, 0) scale(1); box-shadow: 0 0 0 rgba(251,191,36,0); }
+            40% { transform: translate(45px, -18px) scale(1.25); box-shadow: 0 0 16px rgba(251,191,36,0.9); }
+            80%, 100% { transform: translate(95px, 0) scale(1); }
+        }
+        .anim-algo-fly { animation: algoMiniFly 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+        /* 자석 연번/단짝 결합 모션 (올라운더 2, 흐름부스터) */
+        @keyframes algoMiniMagnet {
+            0%, 60% { transform: translateX(12px); opacity: 0.5; }
+            80%, 100% { transform: translateX(0); opacity: 1; }
+        }
+        .anim-algo-magnet { animation: algoMiniMagnet 2.2s cubic-bezier(0.34, 1.56, 0.64, 1) infinite; }
+
+        /* 45개 전구 올점등 모션 (올라운더 3) */
+        @keyframes algoMiniBulb {
+            0%, 30% { background: #334155; color: #64748b; box-shadow: none; }
+            50%, 100% { background: #10b981; color: #ffffff; box-shadow: 0 0 10px #34d399; }
+        }
+        .anim-algo-bulb { animation: algoMiniBulb 2s ease-in-out infinite; }
+
+        /* 황금 코인 샤워 모션 (슈퍼잭팟) */
+        @keyframes algoMiniCoin {
+            0% { transform: translateY(-10px); opacity: 0; }
+            50% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(0) scale(1.1); filter: drop-shadow(0 0 6px #fbbf24); }
+        }
+        .anim-algo-coin { animation: algoMiniCoin 1.8s ease-in-out infinite alternate; }
+
+        /* 3구간 드롭 모션 (멀티히트) */
+        @keyframes algoMiniDrop {
+            0% { transform: translateY(-16px); opacity: 0; }
+            60% { transform: translateY(2px); opacity: 1; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+        .anim-algo-drop { animation: algoMiniDrop 1.6s cubic-bezier(0.34, 1.56, 0.64, 1) infinite; }
+
+        /* 황금 3수 락온 펄스 (트리오마스터) */
+        @keyframes algoMiniTrio {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px #ec4899); }
+            50% { transform: scale(1.08); filter: drop-shadow(0 0 12px #f43f5e); }
+        }
+        .anim-algo-trio { animation: algoMiniTrio 2.5s ease-in-out infinite; }
+    `;
+    document.head.appendChild(styleEl);
+}
+
+/**
+ * 7대 알고리즘 정밀 정의 메타데이터 (조합 원리, 핵심 이론, 직관 애니메이션, 쉬운 요약 등)
  */
 const SEVEN_ALGORITHMS_INFO = [
     {
@@ -24169,6 +24253,50 @@ const SEVEN_ALGORITHMS_INFO = [
         badgeColor: '#a78bfa',
         bgGradient: 'linear-gradient(135deg, rgba(167, 139, 250, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(167, 139, 250, 0.45)',
+        simpleBadge: '⚖️ 완벽한 3:3 균형',
+        simpleCatch: '"홀수 3개 + 짝수 3개로 완벽한 수평 맞추기!"',
+        simpleSummary: '홀수만 몰리거나 짝수만 몰리지 않게 딱 반반(3:3)으로 균형을 맞춰 가장 안정적으로 당첨을 방어합니다.',
+        renderMiniMotion: () => `
+            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(167, 139, 250, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
+                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #c4b5fd; margin-bottom: 8px;">
+                    "홀수 3개 + 짝수 3개로 완벽한 수평 맞추기!"
+                </div>
+                <div style="height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+                    <!-- Balance Beam -->
+                    <div class="anim-algo-sway" style="width: 200px; height: 5px; background: linear-gradient(90deg, #f43f5e 0%, #818cf8 50%, #38bdf8 100%); border-radius: 999px; position: relative; box-shadow: 0 2px 6px rgba(0,0,0,0.5);">
+                        <!-- Center Pin -->
+                        <div style="position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 12px; height: 12px; background: #ffffff; border-radius: 50%; border: 2px solid #6366f1; z-index: 10;"></div>
+                        <!-- Left Basket (Odd 3) -->
+                        <div style="position: absolute; left: -8px; top: 8px; display: flex; flex-direction: column; align-items: center;">
+                            <div style="width: 1.5px; height: 12px; background: #64748b;"></div>
+                            <div style="background: rgba(225, 29, 72, 0.25); border: 1.5px solid #f43f5e; border-radius: 8px; padding: 3px 5px; display: flex; gap: 3px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);">
+                                <span class="lotto-ball-3d ball-yellow" style="width: 20px; height: 20px; font-size: 10px;">7</span>
+                                <span class="lotto-ball-3d ball-blue" style="width: 20px; height: 20px; font-size: 10px;">15</span>
+                                <span class="lotto-ball-3d ball-gray" style="width: 20px; height: 20px; font-size: 10px;">31</span>
+                            </div>
+                            <span style="font-size: 9px; font-weight: 900; color: #fb7185; margin-top: 2px;">홀수 3개</span>
+                        </div>
+                        <!-- Right Basket (Even 3) -->
+                        <div style="position: absolute; right: -8px; top: 8px; display: flex; flex-direction: column; align-items: center;">
+                            <div style="width: 1.5px; height: 12px; background: #64748b;"></div>
+                            <div style="background: rgba(14, 165, 233, 0.25); border: 1.5px solid #38bdf8; border-radius: 8px; padding: 3px 5px; display: flex; gap: 3px; box-shadow: 0 4px 10px rgba(0,0,0,0.4);">
+                                <span class="lotto-ball-3d ball-blue" style="width: 20px; height: 20px; font-size: 10px;">16</span>
+                                <span class="lotto-ball-3d ball-gray" style="width: 20px; height: 20px; font-size: 10px;">32</span>
+                                <span class="lotto-ball-3d ball-green" style="width: 20px; height: 20px; font-size: 10px;">44</span>
+                            </div>
+                            <span style="font-size: 9px; font-weight: 900; color: #7dd3fc; margin-top: 2px;">짝수 3개</span>
+                        </div>
+                    </div>
+                    <!-- Stand -->
+                    <div style="width: 3px; height: 20px; background: #475569; margin-top: 2px;"></div>
+                    <div style="width: 44px; height: 5px; background: #334155; border-radius: 3px 3px 0 0;"></div>
+                </div>
+                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
+                    <span style="color: #cbd5e1; font-weight: 700;">✨ 역대 1등 80%가 나오는 황금 비율</span>
+                    <span style="color: #34d399; font-weight: 900;">수평 밸런스 100%</span>
+                </div>
+            </div>
+        `,
         corePhilosophy: '대중의 번호 마킹 편향(생일·연속·기하학 패턴)을 역이용하여 당첨 시 독점 수령금을 극대화하고, 통계적 안정망으로 4·5등 당첨을 방어하는 올라운더 균형 포트폴리오 모델',
         comboMethod: [
             {
@@ -24201,6 +24329,53 @@ const SEVEN_ALGORITHMS_INFO = [
         badgeColor: '#3b82f6',
         bgGradient: 'linear-gradient(135deg, rgba(59, 130, 246, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(59, 130, 246, 0.45)',
+        simpleBadge: '🚀 지난주 공 이어받기',
+        simpleCatch: '"지난주 나온 공 하나가 슈웅 날아와 찰칵 결합!"',
+        simpleSummary: '로또 10번 중 6번은 지난주 번호가 또 나옵니다. 그 흐름을 잡고 연속된 쌍둥이 번호를 붙여 연속 당첨을 노립니다.',
+        renderMiniMotion: () => `
+            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
+                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #93c5fd; margin-bottom: 8px;">
+                    "지난주 나온 공 하나가 슈웅 날아와 찰칵 결합!"
+                </div>
+                <div style="height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px; position: relative;">
+                    <!-- Last Week Box -->
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <span style="font-size: 9px; font-weight: 900; color: #94a3b8; margin-bottom: 3px;">지난주 당첨</span>
+                        <div style="background: rgba(15, 23, 42, 0.9); border: 1.5px solid #475569; border-radius: 10px; padding: 4px 6px; display: flex; gap: 4px; position: relative;">
+                            <span class="lotto-ball-3d ball-blue" style="width: 22px; height: 22px; font-size: 11px; position: relative;">
+                                18
+                                <span class="lotto-ball-3d ball-blue anim-algo-fly" style="width: 22px; height: 22px; font-size: 11px; position: absolute; inset: 0; pointer-events: none;">18</span>
+                            </span>
+                            <span class="lotto-ball-3d ball-gray" style="width: 22px; height: 22px; font-size: 11px; opacity: 0.35;">26</span>
+                        </div>
+                    </div>
+                    <!-- Trajectory Arrow -->
+                    <div style="flex: 1; margin: 0 10px; display: flex; flex-direction: column; align-items: center; position: relative;">
+                        <span style="font-size: 9px; font-weight: 900; color: #fbbf24;">슝~ 날아서 착탄!</span>
+                        <div style="width: 100%; height: 3px; background: linear-gradient(90deg, #3b82f6 0%, #fbbf24 50%, #10b981 100%); border-radius: 999px; margin: 3px 0;"></div>
+                        <span style="font-size: 8px; color: #94a3b8;">이월 확률 62%</span>
+                    </div>
+                    <!-- This Week Slot & Twin Consecutive Balls -->
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <span style="font-size: 9px; font-weight: 900; color: #fbbf24; margin-bottom: 3px;">이번주 추천</span>
+                        <div style="background: rgba(30, 58, 138, 0.35); border: 1.5px solid #38bdf8; border-radius: 10px; padding: 4px 6px; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);">
+                            <div style="width: 22px; height: 22px; border-radius: 50%; border: 1.5px dashed #fbbf24; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.5);">
+                                <span style="font-size: 10px; font-weight: 900; color: #fbbf24;">18</span>
+                            </div>
+                            <div class="anim-algo-magnet" style="display: flex; align-items: center; gap: 2px;">
+                                <span class="lotto-ball-3d ball-gray" style="width: 22px; height: 22px; font-size: 11px;">34</span>
+                                <span style="font-size: 9px; color: #fbbf24; font-weight: 900;">🔗</span>
+                                <span class="lotto-ball-3d ball-gray" style="width: 22px; height: 22px; font-size: 11px;">35</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
+                    <span style="color: #cbd5e1; font-weight: 700;">🎯 지난주 번호 재출현 + [34-35] 쌍둥이 연번</span>
+                    <span style="color: #60a5fa; font-weight: 900;">모멘텀 적중</span>
+                </div>
+            </div>
+        `,
         corePhilosophy: '올라운더 팩 1(정통 밸런스·저번호 연번)과 완벽히 상호보완 작용하도록 설계된 자매 모델. 마르코프 2차 전이 모멘텀, 23~45번대 고번호 연번, 직전 회차 이월수 및 차상위 황금 클리크 앵커를 결합한 다이나믹 모멘텀 포트폴리오',
         comboMethod: [
             {
@@ -24225,14 +24400,51 @@ const SEVEN_ALGORITHMS_INFO = [
     },
     {
         id: 'extra1',
-        name: '추가 1: 빈틈제로 팩 (10게임)',
-        shortName: '추가 1: 빈틈제로',
+        name: '기본 3: 올라운더 팩 3 (10게임)',
+        shortName: '올라운더 팩 3',
         tag: '기본 20게임 누락 번호 100% 포섭 + 핫 앵커 & 이월수 결합 (10게임)',
         icon: 'fa-shield-halved',
         badge: 'ZERO-GAP 100%',
         badgeColor: '#10b981',
         bgGradient: 'linear-gradient(135deg, rgba(16, 185, 129, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(16, 185, 129, 0.45)',
+        simpleBadge: '🧩 빠진 번호 0개 (빈틈제로)',
+        simpleCatch: '"1번부터 45번까지 전구 45개를 100% 싹 다 켜기!"',
+        simpleSummary: '내가 안 산 번호에서 1등이 나오는 억울함을 막기 위해, 1번부터 45번까지 모든 번호를 빠짐없이 싹 다 챙깁니다.',
+        renderMiniMotion: () => `
+            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
+                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #6ee7b7; margin-bottom: 8px;">
+                    "1번부터 45번까지 전구 45개를 100% 싹 다 켜기!"
+                </div>
+                <div style="height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative;">
+                    <div style="width: 100%; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 6px 10px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem; font-weight: 700; margin-bottom: 5px;">
+                            <span style="color: #94a3b8;">1·2팩 미출현 번호: <strong style="color: #f43f5e;">[4][6][22]</strong></span>
+                            <span style="color: #34d399; font-weight: 900;">💡 100% 올점등 완료!</span>
+                        </div>
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 3px;">
+                            <span class="lotto-ball-3d ball-yellow" style="width: 20px; height: 20px; font-size: 10px;">1</span>
+                            <span class="lotto-ball-3d ball-yellow" style="width: 20px; height: 20px; font-size: 10px;">2</span>
+                            <span class="lotto-ball-3d ball-yellow" style="width: 20px; height: 20px; font-size: 10px;">3</span>
+                            <span class="lotto-ball-3d anim-algo-bulb" style="width: 22px; height: 22px; font-size: 10px; border: 1.5px solid #ffffff;">4</span>
+                            <span class="lotto-ball-3d ball-yellow" style="width: 20px; height: 20px; font-size: 10px;">5</span>
+                            <span class="lotto-ball-3d anim-algo-bulb" style="width: 22px; height: 22px; font-size: 10px; border: 1.5px solid #ffffff;">6</span>
+                            <span style="color: #64748b; font-size: 10px; font-weight: 900;">···</span>
+                            <span class="lotto-ball-3d anim-algo-bulb" style="width: 22px; height: 22px; font-size: 10px; border: 1.5px solid #ffffff;">22</span>
+                            <span style="color: #64748b; font-size: 10px; font-weight: 900;">···</span>
+                            <span class="lotto-ball-3d ball-green" style="width: 20px; height: 20px; font-size: 10px;">45</span>
+                        </div>
+                        <div style="width: 100%; height: 5px; background: rgba(0,0,0,0.6); border-radius: 999px; margin-top: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="width: 100%; height: 100%; background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #2dd4bf 100%);"></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
+                    <span style="color: #cbd5e1; font-weight: 700;">🛡️ 30게임 구매 시 1~45번 중 누락 0개</span>
+                    <span style="color: #34d399; font-weight: 900;">100% 완전 방어 (Zero-Gap)</span>
+                </div>
+            </div>
+        `,
         corePhilosophy: '기본 20게임(올라운더 1 10G + 올라운더 2 10G)에서 한 번도 선택되지 않은 사각지대 번호 중 장기 결손 회귀 가능성이 높은 번호를 선별하고, 핫 앵커 및 직전 회차 이월수(출현율 62%)를 융합하여 30게임 구매 시 전수 포섭과 적중 안정성을 동시에 완성하는 빈틈없는 전수 커버리지 모델',
         comboMethod: [
             {
@@ -24265,6 +24477,36 @@ const SEVEN_ALGORITHMS_INFO = [
         badgeColor: '#f59e0b',
         bgGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(245, 158, 11, 0.45)',
+        simpleBadge: '💰 혼자서 40억 독식!',
+        simpleCatch: '"사람들 몰리는 생일 번호 피해서 당첨금 독차지!"',
+        simpleSummary: '남들이 가족 생일(1~31) 찍을 때, 아무도 안 찍는 큰 번호(25~45)를 찍어 1등 당첨금을 나눠 갖지 않고 혼자 독차지합니다.',
+        renderMiniMotion: () => `
+            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
+                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #fde68a; margin-bottom: 8px;">
+                    "사람들 몰리는 생일 번호 피해서 당첨금 독차지!"
+                </div>
+                <div style="height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative;">
+                    <!-- Birthday Zone (Crowded) -->
+                    <div style="flex: 1; background: rgba(15, 23, 42, 0.9); border: 1px solid #475569; border-radius: 10px; padding: 5px 6px; text-align: center; opacity: 0.7;">
+                        <span style="font-size: 9px; font-weight: 900; color: #fb7185; display: block;">1~31번 (생일수)</span>
+                        <div style="font-size: 11px; margin: 2px 0;">👥 👥 👥</div>
+                        <span style="font-size: 9px; color: #94a3b8; text-decoration: line-through; display: block;">14명 쪼개짐 (15억)</span>
+                    </div>
+                    <!-- Right Arrow -->
+                    <div style="font-size: 12px; font-weight: 900; color: #fbbf24;">▶</div>
+                    <!-- High Number Jackpot Zone (Monopoly) -->
+                    <div style="flex: 1; background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1.5px solid #fbbf24; border-radius: 10px; padding: 5px 6px; text-align: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);">
+                        <span style="font-size: 9px; font-weight: 900; color: #fbbf24; display: block;">25~45번 (고번호)</span>
+                        <div class="anim-algo-coin" style="font-size: 12px; margin: 2px 0;">👑 💰 💰</div>
+                        <span style="font-size: 10px; font-weight: 900; color: #fde047; display: block;">단독 독식 48억 폭등!</span>
+                    </div>
+                </div>
+                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
+                    <span style="color: #cbd5e1; font-weight: 700;">👑 생일 번호(1~31) 배제</span>
+                    <span style="color: #fbbf24; font-weight: 900;">당첨금 2.5배 싹쓸이</span>
+                </div>
+            </div>
+        `,
         corePhilosophy: '대부분의 구매자가 생일(1~31) 및 저번호대를 선호한다는 점에 착안, 25~45번대 고번호 3개와 2연번, 이월수(60%)를 집중 배치하여 1등 당첨 시 당첨자 수가 급감하고 1인당 수령금이 30~50억 이상으로 폭등하도록 설계한 슈퍼 잭팟 초고배당 특화 모델',
         comboMethod: [
             {
@@ -24297,6 +24539,49 @@ const SEVEN_ALGORITHMS_INFO = [
         badgeColor: '#8b5cf6',
         bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(139, 92, 246, 0.45)',
+        simpleBadge: '🎡 3개 구역 2-2-2 조화',
+        simpleCatch: '"앞쪽 2개, 중간 2개, 뒤쪽 2개씩 골고루 쏙쏙!"',
+        simpleSummary: '한쪽 번호대에 쏠리지 않도록 저(1~15)·중(16~30)·고(31~45) 3개 구역에서 2개씩 공평하게 뽑아 3·4·5등 여러 개를 한 번에 맞춥니다.',
+        renderMiniMotion: () => `
+            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(139, 92, 246, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
+                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #c4b5fd; margin-bottom: 8px;">
+                    "앞쪽 2개, 중간 2개, 뒤쪽 2개씩 골고루 쏙쏙!"
+                </div>
+                <div style="height: 72px; display: flex; align-items: center; justify-content: space-around; position: relative;">
+                    <!-- 3 Zone Baskets -->
+                    <div class="anim-algo-drop" style="display: flex; flex-direction: column; align-items: center;">
+                        <span style="font-size: 9px; font-weight: 900; color: #fde047; margin-bottom: 2px;">1~15구역</span>
+                        <div style="background: rgba(234, 179, 8, 0.2); border: 1px solid #eab308; border-radius: 8px; padding: 3px 5px; display: flex; gap: 3px;">
+                            <span class="lotto-ball-3d ball-yellow" style="width: 20px; height: 20px; font-size: 10px;">3</span>
+                            <span class="lotto-ball-3d ball-yellow" style="width: 20px; height: 20px; font-size: 10px;">11</span>
+                        </div>
+                        <span style="font-size: 9px; font-weight: 900; color: #fde047; margin-top: 2px;">2개 쏙!</span>
+                    </div>
+                    <span style="font-size: 11px; font-weight: 900; color: #64748b;">+</span>
+                    <div class="anim-algo-drop" style="display: flex; flex-direction: column; align-items: center; animation-delay: 0.2s;">
+                        <span style="font-size: 9px; font-weight: 900; color: #60a5fa; margin-bottom: 2px;">16~30구역</span>
+                        <div style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; border-radius: 8px; padding: 3px 5px; display: flex; gap: 3px;">
+                            <span class="lotto-ball-3d ball-blue" style="width: 20px; height: 20px; font-size: 10px;">19</span>
+                            <span class="lotto-ball-3d ball-red" style="width: 20px; height: 20px; font-size: 10px;">28</span>
+                        </div>
+                        <span style="font-size: 9px; font-weight: 900; color: #60a5fa; margin-top: 2px;">2개 쏙!</span>
+                    </div>
+                    <span style="font-size: 11px; font-weight: 900; color: #64748b;">+</span>
+                    <div class="anim-algo-drop" style="display: flex; flex-direction: column; align-items: center; animation-delay: 0.4s;">
+                        <span style="font-size: 9px; font-weight: 900; color: #f43f5e; margin-bottom: 2px;">31~45구역</span>
+                        <div style="background: rgba(244, 63, 94, 0.2); border: 1px solid #f43f5e; border-radius: 8px; padding: 3px 5px; display: flex; gap: 3px;">
+                            <span class="lotto-ball-3d ball-gray" style="width: 20px; height: 20px; font-size: 10px;">36</span>
+                            <span class="lotto-ball-3d ball-green" style="width: 20px; height: 20px; font-size: 10px;">42</span>
+                        </div>
+                        <span style="font-size: 9px; font-weight: 900; color: #f43f5e; margin-top: 2px;">2개 쏙!</span>
+                    </div>
+                </div>
+                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
+                    <span style="color: #cbd5e1; font-weight: 700;">🎡 3개 구역 2-2-2 균등 분산</span>
+                    <span style="color: #a78bfa; font-weight: 900;">3·4·5등 복수 다중 당첨 최적화</span>
+                </div>
+            </div>
+        `,
         corePhilosophy: '로또 번호 45개를 1~15, 16~30, 31~45의 3대 자연 구역으로 분할하고, 각 구역에서 번호를 2개씩 균형 추출(2-2-2)하여 결합하는 자연 군집 휠링 시스템(Harmonic Clustering Wheel). 특정 구간 쏠림을 원천 차단하여 3등(150만원), 4등(5만원), 5등(5천원) 복수 다중 적중 확률을 극대화한 멀티 히트 구조적 모델',
         comboMethod: [
             {
@@ -24329,6 +24614,31 @@ const SEVEN_ALGORITHMS_INFO = [
         badgeColor: '#06b6d4',
         bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(6, 182, 212, 0.45)',
+        simpleBadge: '⚡ 최강 2수 듀오 결합',
+        simpleCatch: '"역사상 가장 자주 같이 나온 영혼의 단짝 2수 결합!"',
+        simpleSummary: '역대 1,200회 추첨 중 가장 많이 손잡고 나온 \'최강 단짝 번호 2개\'를 필수 결합하여 당첨 흐름을 가속합니다.',
+        renderMiniMotion: () => `
+            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(6, 182, 212, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
+                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #67e8f9; margin-bottom: 8px;">
+                    "역사상 가장 자주 같이 나온 영혼의 단짝 2수 결합!"
+                </div>
+                <div style="height: 72px; display: flex; align-items: center; justify-content: center; gap: 14px; position: relative;">
+                    <div class="anim-algo-magnet" style="display: flex; align-items: center; gap: 6px;">
+                        <span class="lotto-ball-3d ball-blue" style="width: 26px; height: 26px; font-size: 12px;">11</span>
+                        <div style="font-size: 16px; color: #fde047; font-weight: 900; text-shadow: 0 0 8px #f59e0b;">⚡</div>
+                        <span class="lotto-ball-3d ball-red" style="width: 26px; height: 26px; font-size: 12px;">29</span>
+                    </div>
+                    <div style="background: rgba(6, 182, 212, 0.15); border: 1px solid #06b6d4; border-radius: 8px; padding: 4px 8px; font-size: 0.72rem; color: #e0f2fe; text-align: left;">
+                        <div style="font-weight: 900; color: #67e8f9;">동반 출현 1위 콤비</div>
+                        <div style="font-size: 9px; color: #94a3b8;">역대 최다 동시 출현 39회</div>
+                    </div>
+                </div>
+                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
+                    <span style="color: #cbd5e1; font-weight: 700;">⚡ 역대 최강 2수 듀오 결합</span>
+                    <span style="color: #22d3ee; font-weight: 900;">2·3등 중고액 적중 정밀 타격</span>
+                </div>
+            </div>
+        `,
         corePhilosophy: '로또 추첨의 강력한 연속성을 포착하기 위해 직전 회차 당첨 번호로부터의 마르코프 1/2차 전이 확률과 역대 1,200여 회차 중 가장 높은 빈도로 함께 출현한 2수 페어(Co-occurrence Pair)를 결합한 흐름 부스터 모멘텀 타격 모델',
         comboMethod: [
             {
@@ -24361,6 +24671,36 @@ const SEVEN_ALGORITHMS_INFO = [
         badgeColor: '#ec4899',
         bgGradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
         borderColor: 'rgba(236, 72, 153, 0.45)',
+        simpleBadge: '🔺 황금 3수 클러스터',
+        simpleCatch: '"역대 가장 많이 같이 당첨된 황금 3형제 번호 고정!"',
+        simpleSummary: '역대 데이터상 3개가 동시에 나온 횟수가 가장 많은 3수 황금틀을 고정하고, 3수가 맞는 즉시 1등까지 연쇄 폭발을 노립니다.',
+        renderMiniMotion: () => `
+            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(236, 72, 153, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
+                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #f472b6; margin-bottom: 8px;">
+                    "역대 가장 많이 같이 당첨된 황금 3형제 번호 고정!"
+                </div>
+                <div style="height: 72px; display: flex; align-items: center; justify-content: center; position: relative;">
+                    <!-- Golden Triangle Cluster -->
+                    <div class="anim-algo-trio" style="display: flex; flex-direction: column; align-items: center;">
+                        <!-- Top Vertex -->
+                        <span class="lotto-ball-3d ball-yellow" style="width: 22px; height: 22px; font-size: 11px; margin-bottom: 3px;">1</span>
+                        <!-- Bottom Pair -->
+                        <div style="display: flex; gap: 14px;">
+                            <span class="lotto-ball-3d ball-blue" style="width: 22px; height: 22px; font-size: 11px;">13</span>
+                            <span class="lotto-ball-3d ball-gray" style="width: 22px; height: 22px; font-size: 11px;">38</span>
+                        </div>
+                    </div>
+                    <div style="position: absolute; right: 14px; background: rgba(236, 72, 153, 0.15); border: 1px solid #ec4899; border-radius: 8px; padding: 4px 8px; font-size: 0.70rem; color: #fce7f3; text-align: left;">
+                        <div style="font-weight: 900; color: #f472b6;">황금 삼각 락온</div>
+                        <div style="font-size: 8px; color: #94a3b8;">3수 적중 시 1등 연쇄 폭발</div>
+                    </div>
+                </div>
+                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
+                    <span style="color: #cbd5e1; font-weight: 700;">🔺 상위 10대 황금 3수 클러스터 고정</span>
+                    <span style="color: #f472b6; font-weight: 900;">3수 적중 시 연쇄 고액 당첨</span>
+                </div>
+            </div>
+        `,
         corePhilosophy: '역대 1,200여 회의 전수 데이터 중 3개 번호가 동시에 출현한 빈도가 통계적으로 가장 높은 상위 10대 "황금 트리오(Golden Trios)"를 각 게임의 3수 고정틀로 채택하고, 나머지 3수를 퀀트 최적화하여 3수가 적중되는 즉시 5등(3수)→4등(4수)→3등(5수)→1등으로 이어지는 연쇄 당첨 폭발력을 노리는 트리오 마스터 모델',
         comboMethod: [
             {
@@ -24673,6 +25013,8 @@ async function renderAlgorithmsTab(fromRound = null) {
     const container = document.getElementById('tab-algorithms');
     if (!container || (!container.classList.contains('active') && container.style.display === 'none')) return;
 
+    ensureAlgoAnimationStyles();
+
     if (fromRound !== null) {
         currentAlgoStartRound = parseInt(fromRound, 10);
     }
@@ -24788,7 +25130,7 @@ async function renderAlgorithmsTab(fromRound = null) {
         `;
     }
 
-    // 1. 알고리즘 소개 섹션 카드 HTML 생성 (기본 설명 유지 + 세부 메커니즘 접기/펼치기)
+    // 1. 알고리즘 소개 섹션 카드 HTML 생성 (접은 화면 초직관 애니메이션 + 세부 메커니즘 토글 확장)
     const algoIntroCardsHtml = SEVEN_ALGORITHMS_INFO.map((algo, idx) => {
         const isDetailOpen = !!algoDetailAccordionMap[algo.id];
 
@@ -24831,15 +25173,18 @@ async function renderAlgorithmsTab(fromRound = null) {
                             </h3>
                         </div>
                     </div>
+                    <span style="font-size: 0.70rem; font-weight: 800; color: ${algo.badgeColor}; background: ${algo.badgeColor}18; border: 1px solid ${algo.badgeColor}40; padding: 2px 8px; border-radius: 12px; white-space: nowrap;">
+                        ${algo.simpleBadge || algo.badge}
+                    </span>
                 </div>
 
-                <!-- Philosophy / Tag (기본 설명) -->
-                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 10px;">
-                    <div style="font-size: 0.70rem; color: #94a3b8; margin-bottom: 2px;">
-                        <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>조합 철학 &amp; 핵심 이론</strong>
-                    </div>
+                <!-- ★ 접은 화면 초직관 애니메이션 무대 (글자 없이 1초 만에 이해) -->
+                ${algo.renderMiniMotion ? algo.renderMiniMotion() : ''}
+
+                <!-- 1줄 직관 쉬운 요약 -->
+                <div style="background: rgba(0,0,0,0.3); border-radius: 8px; padding: 8px 10px; border-left: 3px solid ${algo.badgeColor};">
                     <p style="margin: 0; font-size: 0.75rem; color: #e2e8f0; line-height: 1.42;">
-                        ${algo.corePhilosophy}
+                        ${algo.simpleSummary || algo.corePhilosophy}
                     </p>
                 </div>
 
@@ -24848,8 +25193,18 @@ async function renderAlgorithmsTab(fromRound = null) {
                     ${featuresHtml}
                 </div>
 
-                <!-- Step-by-Step Combo Method (상세 메커니즘 - 기본 접힘 / 토글 가능) -->
-                <div id="algoDetail_${algo.id}" class="algo-detail-body" style="display: ${isDetailOpen ? 'block' : 'none'}; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 8px; margin-top: 2px;">
+                <!-- Step-by-Step Combo Method & Core Philosophy (상세 메커니즘 - 기본 접힘 / 토글 시 확장) -->
+                <div id="algoDetail_${algo.id}" class="algo-detail-body" style="display: ${isDetailOpen ? 'block' : 'none'}; border-top: 1px dashed rgba(255,255,255,0.12); padding-top: 10px; margin-top: 2px;">
+                    <!-- 학술적 조합 철학 원문 -->
+                    <div style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 8px 10px; margin-bottom: 8px;">
+                        <div style="font-size: 0.70rem; color: #94a3b8; margin-bottom: 2px;">
+                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24;"></i> <strong>학술적 조합 철학 &amp; 퀀트 이론</strong>
+                        </div>
+                        <p style="margin: 0; font-size: 0.73rem; color: #cbd5e1; line-height: 1.42;">
+                            ${algo.corePhilosophy}
+                        </p>
+                    </div>
+
                     <div style="font-size: 0.74rem; font-weight: 800; color: #f8fafc; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-cubes-stacked" style="color: ${algo.badgeColor};"></i> 세부 번호 조합 및 추출 메커니즘
                     </div>
@@ -24859,7 +25214,7 @@ async function renderAlgorithmsTab(fromRound = null) {
                 <!-- 접기/펼치기 토글 버튼 -->
                 <div style="margin-top: 2px; display: flex; justify-content: flex-end;">
                     <button type="button" id="algoDetailBtn_${algo.id}" class="btn-toggle-algo-detail ${isDetailOpen ? 'active' : ''}" onclick="window.toggleAlgoSpecDetail && window.toggleAlgoSpecDetail('${algo.id}')" style="background: ${isDetailOpen ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)'}; border: 1px solid ${isDetailOpen ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.15)'}; color: #cbd5e1; border-radius: 7px; padding: 4px 10px; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
-                        <span id="algoDetailText_${algo.id}" class="algo-detail-text">${isDetailOpen ? '세부 메커니즘 접기' : '세부 조합 메커니즘 펼치기'}</span>
+                        <span id="algoDetailText_${algo.id}" class="algo-detail-text">${isDetailOpen ? '세부 공식 및 수학적 메커니즘 접기' : '자세한 조합 공식 및 메커니즘 펼치기'}</span>
                         <i id="algoDetailIcon_${algo.id}" class="algo-detail-icon fa-solid ${isDetailOpen ? 'fa-chevron-up' : 'fa-chevron-down'}" style="font-size: 0.68rem; color: ${algo.badgeColor};"></i>
                     </button>
                 </div>
@@ -25123,7 +25478,7 @@ function toggleAlgoSpecDetail(algoId) {
     const isExpanded = detailEl.style.display !== 'none';
     if (isExpanded) {
         detailEl.style.display = 'none';
-        if (textEl) textEl.textContent = '세부 조합 메커니즘 펼치기';
+        if (textEl) textEl.textContent = '자세한 조합 공식 및 메커니즘 펼치기';
         if (iconEl) {
             iconEl.classList.remove('fa-chevron-up');
             iconEl.classList.add('fa-chevron-down');
@@ -25136,7 +25491,7 @@ function toggleAlgoSpecDetail(algoId) {
         algoDetailAccordionMap[algoId] = false;
     } else {
         detailEl.style.display = 'block';
-        if (textEl) textEl.textContent = '세부 메커니즘 접기';
+        if (textEl) textEl.textContent = '세부 공식 및 수학적 메커니즘 접기';
         if (iconEl) {
             iconEl.classList.remove('fa-chevron-down');
             iconEl.classList.add('fa-chevron-up');
@@ -25173,7 +25528,7 @@ function toggleAllAlgoSpecDetails() {
             detailEl.style.display = anyClosed ? 'block' : 'none';
         }
         if (textEl) {
-            textEl.textContent = anyClosed ? '세부 메커니즘 접기' : '세부 조합 메커니즘 펼치기';
+            textEl.textContent = anyClosed ? '세부 공식 및 수학적 메커니즘 접기' : '자세한 조합 공식 및 메커니즘 펼치기';
         }
         if (iconEl) {
             iconEl.className = anyClosed ? 'algo-detail-icon fa-solid fa-chevron-up' : 'algo-detail-icon fa-solid fa-chevron-down';
@@ -25186,7 +25541,7 @@ function toggleAllAlgoSpecDetails() {
         }
     });
 
-    if (mainBtnText) mainBtnText.textContent = anyClosed ? '세부 설명 전체 접기' : '세부 설명 전체 펼치기';
+    if (mainBtnText) mainBtnText.textContent = anyClosed ? '세부 공식 전체 접기' : '세부 공식 전체 펼치기';
     if (mainBtnIcon) mainBtnIcon.className = anyClosed ? 'fa-solid fa-angles-up' : 'fa-solid fa-angles-down';
 }
 
