@@ -24162,8 +24162,23 @@ body.lotto-mode-active .app-container {
         border-radius: 12px !important;
     }
 
+    .lp-toss-fin-header {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 5px !important;
+    }
+
     .lp-toss-fin-title-wrap {
-        font-size: 0.76rem !important;
+        font-size: 0.82rem !important;
+        white-space: nowrap !important;
+        width: 100% !important;
+    }
+
+    .lp-toss-fin-badge-wrap {
+        width: 100% !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
     }
 
     .lp-toss-big-prize {
