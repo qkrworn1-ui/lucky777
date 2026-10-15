@@ -23679,3 +23679,287 @@ body.lotto-mode-active .app-container {
     }
 }
 
+/* ==========================================================================
+   [A안: 토스 핀테크형 미니멀] 폴드7(320px) 및 모바일 대시보드 심플·단정 리뉴얼
+   ========================================================================== */
+
+/* 1. 과도한 네온/발광 효과 제거 및 모던 슬레이트 룩앤필 */
+.lp-card-glow-lotto,
+.lp-card-glow-stock {
+    display: none !important;
+}
+
+.lp-card {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+    border-radius: 16px !important;
+}
+
+.lp-card::before {
+    display: none !important;
+}
+
+.lp-card-lotto {
+    background: #0f172a !important;
+    border: 1.5px solid #1e293b !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.lp-card-lotto::after,
+.lp-card-toto::after {
+    display: none !important;
+}
+
+.lp-card-lotto:hover {
+    border-color: rgba(245, 158, 11, 0.5) !important;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6) !important;
+    transform: translateY(-3px) !important;
+}
+
+/* 2. 메인 액션 버튼: 토스 스타일 황금 앰버 풀버튼 */
+.lp-card-actions-row {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    width: 100% !important;
+}
+
+.lp-btn-lotto {
+    width: 100% !important;
+    height: 48px !important;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+    color: #0f172a !important;
+    font-size: 0.95rem !important;
+    font-weight: 900 !important;
+    border-radius: 12px !important;
+    border: none !important;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    transition: all 0.2s ease !important;
+}
+
+.lp-btn-lotto:hover {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%) !important;
+    transform: translateY(-1px) !important;
+}
+
+.lp-btn-qr-action {
+    width: 100% !important;
+    height: 40px !important;
+    background: #1e293b !important;
+    border: 1px solid #334155 !important;
+    color: #cbd5e1 !important;
+    font-size: 0.82rem !important;
+    font-weight: 800 !important;
+    border-radius: 10px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    box-shadow: none !important;
+}
+
+.lp-btn-qr-action:hover {
+    background: #334155 !important;
+    color: #ffffff !important;
+}
+
+/* 3. 모바일 & 폴드7 (max-width: 640px) 토스 핀테크형 단정 레이아웃 */
+@media (max-width: 640px) {
+    .lp-service-grid {
+        gap: 10px !important;
+        margin-bottom: 12px !important;
+    }
+
+    .lp-card {
+        padding: 16px 14px !important;
+    }
+
+    .lp-card-features {
+        display: none !important; /* 모바일에서 긴 체크리스트 숨김으로 단정화 */
+    }
+
+    .lp-card-desc {
+        font-size: 0.76rem !important;
+        color: #94a3b8 !important;
+        margin: 4px 0 10px 0 !important;
+        line-height: 1.35 !important;
+    }
+
+    .lp-card-title {
+        font-size: 1.05rem !important;
+        font-weight: 900 !important;
+    }
+
+    /* 토토 서비스 카드 슬림화 (로또 집중) */
+    .lp-card-toto {
+        background: #0f172a !important;
+        border: 1px solid #1e293b !important;
+        padding: 10px 14px !important;
+    }
+
+    .lp-card-toto .lp-card-desc,
+    .lp-card-toto .lp-card-features {
+        display: none !important;
+    }
+
+    .lp-card-toto-action-wrap {
+        margin-top: 0 !important;
+    }
+
+    .lp-btn-toto-main {
+        padding: 6px 12px !important;
+        font-size: 0.75rem !important;
+        height: 32px !important;
+    }
+
+    /* 4. 금융 자산 요약 보드 토스형 단정화 */
+    .lp-financial-summary {
+        background: #0f172a !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 14px !important;
+        padding: 12px 14px !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .lp-fin-mobile-header {
+        border-bottom: 1px solid #1e293b !important;
+        padding-bottom: 6px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .lp-fin-mobile-title {
+        font-size: 0.82rem !important;
+        font-weight: 800 !important;
+        color: #f8fafc !important;
+    }
+
+    .lp-fin-stats {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .lp-stat-item {
+        background: #1e293b !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 8px !important;
+        padding: 6px 10px !important;
+    }
+
+    .lp-stat-label {
+        font-size: 0.65rem !important;
+        color: #94a3b8 !important;
+    }
+
+    .lp-stat-val {
+        font-size: 0.88rem !important;
+        font-weight: 800 !important;
+        color: #f8fafc !important;
+    }
+
+    /* 미니 카드 3종 가로 3분할 슬림 칩 정돈 */
+    .lp-compact-win-row {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 5px !important;
+        margin-top: 6px !important;
+    }
+
+    .lp-mini-win-card {
+        padding: 6px 4px !important;
+        border-radius: 8px !important;
+        background: #111827 !important;
+        border: 1px solid #1e293b !important;
+        text-align: center !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+
+    .lp-mini-win-card .mini-win-top-row {
+        margin-bottom: 2px !important;
+    }
+
+    .lp-mini-win-card .mini-win-arrow {
+        display: none !important;
+    }
+
+    .lp-mini-win-card .mini-win-icon {
+        display: none !important;
+    }
+
+    .lp-mini-win-card .mini-win-title {
+        font-size: 0.68rem !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+    }
+
+    .lp-mini-win-card .mini-win-sub {
+        display: none !important;
+    }
+
+    .lp-mini-win-card .mini-win-prize {
+        font-size: 0.72rem !important;
+        font-weight: 800 !important;
+        white-space: nowrap !important;
+    }
+
+    .lp-mini-win-card .mini-win-hits {
+        font-size: 0.62rem !important;
+        display: block !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 90px !important;
+    }
+
+    /* 사주 알림 배너 단정화 */
+    .lp-push-banner {
+        background: #0f172a !important;
+        border: 1px solid #1e293b !important;
+        border-radius: 12px !important;
+        padding: 8px 12px !important;
+        box-shadow: none !important;
+    }
+}
+
+/* 5. 폴드7 초슬림 접은 화면 (max-width: 360px) 전용 극단 단정화 */
+@media (max-width: 360px) {
+    .lp-card {
+        padding: 12px 10px !important;
+        border-radius: 14px !important;
+    }
+
+    .lp-btn-lotto {
+        height: 44px !important;
+        font-size: 0.88rem !important;
+    }
+
+    .lp-btn-qr-action {
+        height: 36px !important;
+        font-size: 0.78rem !important;
+    }
+
+    .lp-stat-val {
+        font-size: 0.80rem !important;
+    }
+
+    .lp-mini-win-card .mini-win-title {
+        font-size: 0.62rem !important;
+    }
+
+    .lp-mini-win-card .mini-win-prize {
+        font-size: 0.68rem !important;
+    }
+
+    .lp-mini-win-card .mini-win-hits {
+        font-size: 0.58rem !important;
+        max-width: 75px !important;
+    }
+}
+
