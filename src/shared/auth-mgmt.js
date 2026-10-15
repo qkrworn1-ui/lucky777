@@ -1220,11 +1220,22 @@ export function updateLoggedInUserHeaderUI(targetAuthId = null) {
         if (dAvatar) {
             dAvatar.innerHTML = isAdmin ? '<i class="fa-solid fa-crown"></i>' : (isKakao ? '<i class="fa-solid fa-shield-cat"></i>' : '<i class="fa-solid fa-user-check"></i>');
             dAvatar.className = `dash-welcome-avatar-icon ${isAdmin ? 'avatar-admin' : (isKakao ? 'avatar-kakao' : 'avatar-member')}`;
+            dAvatar.style.cursor = 'pointer';
+            dAvatar.setAttribute('title', '클릭 시 회원 정보 및 관리 메뉴');
+            dAvatar.onclick = (e) => { e.stopPropagation(); toggleUserProfilePopover(dAvatar); };
         }
-        if (dName) dName.textContent = displayName;
+        if (dName) {
+            dName.textContent = displayName;
+            dName.style.cursor = 'pointer';
+            dName.setAttribute('title', '클릭 시 회원 정보 및 관리 메뉴');
+            dName.onclick = (e) => { e.stopPropagation(); toggleUserProfilePopover(dName); };
+        }
         if (dRole) {
             dRole.textContent = roleBadge;
             dRole.className = `dash-welcome-badge ${isAdmin ? 'badge-admin' : (isKakao ? 'badge-kakao' : 'badge-member')}`;
+            dRole.style.cursor = 'pointer';
+            dRole.setAttribute('title', '클릭 시 회원 정보 및 관리 메뉴');
+            dRole.onclick = (e) => { e.stopPropagation(); toggleUserProfilePopover(dRole); };
         }
         if (dJoin) dJoin.textContent = `제 ${joinRound}회 가입`;
         if (dQrStatus) {
@@ -1369,18 +1380,54 @@ export function toggleUserProfilePopover(anchorEl = null) {
     const isOnline = !!window.db;
     updateServerConnectionStatus(isOnline);
 
-    if (anchorEl) {
+    // 요소 크기 측정을 위한 임시 표시
+    popover.style.visibility = 'hidden';
+    popover.style.display = 'block';
+
+    const popWidth = Math.min(320, window.innerWidth - 20);
+    const popHeight = popover.offsetHeight || 420;
+
+    if (anchorEl && typeof anchorEl.getBoundingClientRect === 'function') {
         const rect = anchorEl.getBoundingClientRect();
-        const popWidth = 290;
-        let left = rect.right - popWidth;
-        if (left < 10) left = 10;
-        if (left + popWidth > window.innerWidth - 10) left = window.innerWidth - popWidth - 10;
         
-        popover.style.top = `${rect.bottom + 8}px`;
-        popover.style.left = `${left}px`;
+        // 가로 위치: 앵커가 화면 우측 절반에 있으면 우측 정렬, 좌측이면 좌측 정렬
+        let left;
+        const anchorCenter = rect.left + rect.width / 2;
+        if (anchorCenter > window.innerWidth / 2) {
+            left = rect.right - popWidth;
+        } else {
+            left = rect.left;
+        }
+
+        // 화면 좌우 여백 10px 보정 (화면 벗어남 완전 방지)
+        const minLeft = 10;
+        const maxLeft = Math.max(10, window.innerWidth - popWidth - 10);
+        left = Math.max(minLeft, Math.min(left, maxLeft));
+
+        // 세로 위치: 하단 공간 부족 시 상단 배치 또는 화면 내 완벽 클램핑
+        const spaceBelow = window.innerHeight - rect.bottom - 10;
+        const spaceAbove = rect.top - 10;
+
+        let top;
+        if (spaceBelow >= popHeight || spaceBelow >= 200) {
+            top = rect.bottom + 8;
+            if (top + popHeight > window.innerHeight - 10) {
+                top = Math.max(10, window.innerHeight - popHeight - 10);
+            }
+        } else if (spaceAbove >= popHeight) {
+            top = rect.top - popHeight - 8;
+        } else {
+            top = Math.max(10, Math.min(rect.bottom + 8, window.innerHeight - popHeight - 10));
+        }
+
+        popover.style.top = `${Math.round(top)}px`;
+        popover.style.left = `${Math.round(left)}px`;
+    } else {
+        popover.style.top = '65px';
+        popover.style.left = `${Math.max(10, window.innerWidth - popWidth - 15)}px`;
     }
 
-    popover.style.display = 'block';
+    popover.style.visibility = 'visible';
     popover.classList.add('active');
 }
 
@@ -1393,7 +1440,16 @@ if (typeof window !== 'undefined') {
     window.addEventListener('click', (e) => {
         const popover = document.getElementById('userProfilePopover');
         if (popover && popover.classList.contains('active')) {
-            if (!popover.contains(e.target) && !e.target.closest('.header-user-chip') && !e.target.closest('.lp-mobile-user-badge')) {
+            if (
+                !popover.contains(e.target) &&
+                !e.target.closest('.header-user-chip') &&
+                !e.target.closest('.lp-mobile-user-badge') &&
+                !e.target.closest('#dashWelcomeUserName') &&
+                !e.target.closest('#dashWelcomeAvatar') &&
+                !e.target.closest('#dashWelcomeRoleBadge') &&
+                !e.target.closest('#serverStatusPillLanding') &&
+                !e.target.closest('#lpServerSyncStrip')
+            ) {
                 popover.classList.remove('active');
                 popover.style.display = 'none';
             }
