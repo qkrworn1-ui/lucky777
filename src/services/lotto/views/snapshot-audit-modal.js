@@ -30,7 +30,8 @@ const OFFICIAL_DRAWS = {
     1240: { numbers: [11, 13, 19, 20, 31, 44], bonus: 27, rank1Prize: 2000000000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.05' },
     1241: { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Prize: 1628391980, rank2Prize: 54279733, rank3Prize: 1501284, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.12' },
     1242: { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Prize: 3281029250, rank2Prize: 47322538, rank3Prize: 1535105, rank4Prize: 50000, rank5Prize: 5000, date: '2026.09.19' },
-    1243: { numbers: [9, 18, 24, 38, 43, 44], bonus: 35, rank1Winners: 12, rank1Prize: 2592525282, rank2Winners: 115, rank2Prize: 45087397, rank3Winners: 3591, rank3Prize: 1443902, rank4Winners: 174306, rank4Prize: 50000, rank5Winners: 2853501, rank5Prize: 5000, date: '2026.09.26' }
+    1243: { numbers: [9, 18, 24, 38, 43, 44], bonus: 35, rank1Winners: 12, rank1Prize: 2592525282, rank2Winners: 115, rank2Prize: 45087397, rank3Winners: 3591, rank3Prize: 1443902, rank4Winners: 174306, rank4Prize: 50000, rank5Winners: 2853501, rank5Prize: 5000, date: '2026.09.26' },
+    1244: { numbers: [1, 13, 18, 26, 34, 38], bonus: 25, rank1Winners: 18, rank1Prize: 1604686625, rank2Winners: 80, rank2Prize: 60175749, rank3Winners: 3734, rank3Prize: 1290287, rank4Winners: 173542, rank4Prize: 50000, rank5Winners: 2800000, rank5Prize: 5000, date: '2026.10.03' }
 };
 
 function getDrawDataForAudit(round) {
@@ -207,7 +208,7 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
 
     // Process Purchases & Snapshots
     const processedUsers = [];
-    const allRoundsSet = new Set([1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243]);
+    const allRoundsSet = new Set([1235, 1236, 1237, 1238, 1239, 1240, 1241, 1242, 1243, 1244]);
 
     const purchasesMap = {};
     purchasesDocs.forEach(p => {
