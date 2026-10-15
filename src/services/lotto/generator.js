@@ -1006,9 +1006,11 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
 
     let v3MatchCount = 0;
     let v4MatchCount = 0;
+    let ar3MatchCount = 0;
     let extraMatchCount = 0;
     let v3ExactCount = 0;
     let v4ExactCount = 0;
+    let ar3ExactCount = 0;
     let extraExactCount = 0;
     let matchedExtraPackName = '';
     const matchDetails = [];
@@ -1026,7 +1028,10 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
             match.gameIdx = gIdx;
             matchDetails.push(match);
 
-            if (match.matchedVersion.includes('추가')) {
+            if (match.matchedVersion.includes('올라운더 3') || match.matchedVersion.includes('올라운더3') || match.matchedVersion.includes('기본 3') || (match.label && match.label.includes('올라운더3')) || (match.packId === 1 || Number(match.packId) === 1)) {
+                ar3MatchCount++;
+                if (match.isExact) ar3ExactCount++;
+            } else if (match.matchedVersion.includes('추가')) {
                 extraMatchCount++;
                 if (match.isExact) extraExactCount++;
                 if (!matchedExtraPackName) matchedExtraPackName = match.matchedVersion;
@@ -1043,7 +1048,15 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
     let detectedVersion = '수동/직접입력';
     let summaryMessage = '';
 
-    if (extraMatchCount > 0 && extraMatchCount >= v4MatchCount && extraMatchCount >= v3MatchCount) {
+    if (ar3MatchCount > 0 && ar3MatchCount >= v4MatchCount && ar3MatchCount >= v3MatchCount && ar3MatchCount >= extraMatchCount) {
+        detectedVersion = '기본 3: 올라운더 팩 3 (10게임)';
+        if (ar3ExactCount === rawCombosList.length) {
+            summaryMessage = `🛡️ [올라운더 팩 3 자동 감지] 총 ${rawCombosList.length}게임 모두 올라운더 3 (빈틈제로) 추천번호와 100% 일치!`;
+        } else {
+            const manualCount = matchDetails.filter(m => m.isManual).length;
+            summaryMessage = `🛡️ [올라운더 팩 3 감지] 올라운더 3 추천 ${ar3MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
+        }
+    } else if (extraMatchCount > 0 && extraMatchCount >= v4MatchCount && extraMatchCount >= v3MatchCount) {
         detectedVersion = matchedExtraPackName || '추가 팩 추천 조합';
         if (extraExactCount === rawCombosList.length) {
             summaryMessage = `🚀 [추가 팩 자동 감지] 총 ${rawCombosList.length}게임 모두 [${detectedVersion}] 번호와 100% 일치!`;
@@ -1077,9 +1090,11 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
         detectedVersion,
         v3MatchCount,
         v4MatchCount,
+        ar3MatchCount,
         extraMatchCount,
         v3ExactCount,
         v4ExactCount,
+        ar3ExactCount,
         extraExactCount,
         summaryMessage,
         matchDetails

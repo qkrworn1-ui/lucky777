@@ -914,6 +914,7 @@ export async function renderConfirmedPurchasesList() {
 
             let recV3Exact = 0;
             let recV4Exact = 0;
+            let recAr3Exact = 0;
             let recExtraExact = 0;
             let recExtraLabel = '';
 
@@ -924,13 +925,13 @@ export async function renderConfirmedPurchasesList() {
                         const nums = getComboNumbers(combo);
                         const match = findBestRecommendationMatch(nums, uV4, uV3, extraPacks);
                         if (match && match.isExact) {
-                            if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('기본 2') || (match.label && match.label.includes('올라운더2'))) {
+                            if (match.matchedVersion.includes('올라운더 3') || match.matchedVersion.includes('올라운더3') || match.matchedVersion.includes('기본 3') || (match.label && match.label.includes('올라운더3')) || (match.packId === 1 || Number(match.packId) === 1)) {
+                                recAr3Exact++;
+                                recExtraLabel = '기본 3: 올라운더 팩 3';
+                            } else if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('기본 2') || (match.label && match.label.includes('올라운더2'))) {
                                 recV3Exact++;
                             } else if (match.matchedVersion.includes('올라운더') || match.matchedVersion.includes('기본 1') || (match.label && match.label.includes('올라운더'))) {
                                 recV4Exact++;
-                            } else if (match.matchedVersion.includes('빈틈제로') || match.matchedVersion.includes('추가 1')) {
-                                recExtraExact++;
-                                recExtraLabel = '추가 1: 빈틈제로 팩';
                             } else if (match.matchedVersion.includes('슈퍼 잭팟') || match.matchedVersion.includes('슈퍼잭팟') || match.matchedVersion.includes('추가 2')) {
                                 recExtraExact++;
                                 recExtraLabel = '추가 2: 슈퍼 잭팟 팩';
@@ -952,8 +953,12 @@ export async function renderConfirmedPurchasesList() {
                 } catch (e) {}
             }
 
-            if (recV3Exact > 0 && recV4Exact > 0) {
+            if (recV4Exact > 0 && recV3Exact > 0 && recAr3Exact > 0) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-crown" style="font-size: 0.65rem;"></i> 기본 30게임: 올라운더 1+2+3</span>`;
+            } else if (recV3Exact > 0 && recV4Exact > 0) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); color: #818cf8; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-shapes" style="font-size: 0.65rem;"></i> 기본 20게임: 올라운더 1+2</span>`;
+            } else if (recAr3Exact > 0 && recAr3Exact >= recV4Exact && recAr3Exact >= recV3Exact) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.65rem;"></i> 기본 3: 올라운더 팩 3</span>`;
             } else if (recV3Exact > 0 && recV3Exact >= recV4Exact) {
                 const v3Title = '기본 2: 올라운더 팩 2';
                 const v3Icon = 'fa-layer-group';
@@ -961,8 +966,8 @@ export async function renderConfirmedPurchasesList() {
             } else if (recV4Exact > 0 && recV4Exact > recV3Exact) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-bullseye" style="font-size: 0.65rem;"></i> 기본 1: 올라운더 팩</span>`;
             } else if (recExtraExact > 0 && recExtraLabel) {
-                if (recExtraLabel.includes('빈틈제로')) {
-                    versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.65rem;"></i> 추가 1: 빈틈제로 팩</span>`;
+                if (recExtraLabel.includes('빈틈제로') || recExtraLabel.includes('올라운더 3') || recExtraLabel.includes('올라운더3') || recExtraLabel.includes('기본 3')) {
+                    versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.65rem;"></i> 기본 3: 올라운더 팩 3</span>`;
                 } else if (recExtraLabel.includes('슈퍼 잭팟') || recExtraLabel.includes('슈퍼잭팟')) {
                     versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.65rem;"></i> 추가 2: 슈퍼 잭팟 팩</span>`;
                 } else if (recExtraLabel.includes('멀티 히트') || recExtraLabel.includes('멀티히트')) {
@@ -974,8 +979,8 @@ export async function renderConfirmedPurchasesList() {
                 } else {
                     versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-rocket" style="font-size: 0.65rem;"></i> ${recExtraLabel}</span>`;
                 }
-            } else if (pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
-                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.65rem;"></i> 추가 1: 빈틈제로 팩</span>`;
+            } else if (pVer.includes('올라운더 3') || pVer.includes('올라운더3') || pVer.includes('기본 3') || pVer.includes('빈틈제로') || pVer.includes('추가 1') || pVer.includes('extra_1')) {
+                versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); color: #34d399; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-shield-halved" style="font-size: 0.65rem;"></i> 기본 3: 올라운더 팩 3</span>`;
             } else if (pVer.includes('슈퍼 잭팟') || pVer.includes('슈퍼잭팟') || pVer.includes('추가 2') || pVer.includes('extra_2')) {
                 versionBadgeHtml = `<span class="confirmed-version-badge" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); color: #fbbf24; padding: 2px 7px; border-radius: 6px; font-weight: 700; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap;"><i class="fa-solid fa-trophy" style="font-size: 0.65rem;"></i> 추가 2: 슈퍼 잭팟 팩</span>`;
             } else if (pVer.includes('멀티 히트') || pVer.includes('멀티히트') || pVer.includes('추가 3') || pVer.includes('extra_3')) {
