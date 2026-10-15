@@ -129,7 +129,7 @@ export async function renderConfirmedPurchasesList() {
             : totalPrize.toLocaleString() + '원';
     }
     if (elGlanceRoi) {
-        elGlanceRoi.textContent = (totalRoi > 0 ? '+' : '') + totalRoi.toFixed(1) + '%';
+        elGlanceRoi.textContent = (totalRoi >= 100 ? '+' : '') + totalRoi.toFixed(1) + '%';
         elGlanceRoi.style.color = totalRoi >= 100 ? '#10b981' : (totalRoi > 0 ? '#34d399' : '#fbbf24');
     }
 

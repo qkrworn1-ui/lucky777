@@ -692,8 +692,12 @@ export function detectComboAlgoId(combo) {
 }
 
 export function formatKoreanPrize(amount) {
-    if (!amount || amount <= 0) return '0 원';
+    if (amount === undefined || amount === null || amount === '' || Number(amount) === 0) return '0 원';
     const num = Math.round(Number(amount));
+    if (num === 0) return '0 원';
+    if (num < 0) {
+        return `-${formatKoreanPrize(Math.abs(num))}`;
+    }
     if (num >= 100000000) {
         const eok = Math.floor(num / 100000000);
         const man = Math.floor((num % 100000000) / 10000);
@@ -1013,10 +1017,10 @@ export function renderAlgorithmPrizeTotals() {
                     <div class="sim-grand-metric-roi">
                         <div class="sim-grand-label">종합 환급 수익률 (ROI)</div>
                         <div class="sim-grand-roi-hero" style="color: ${netProfit >= 0 ? '#34d399' : '#f87171'};">
-                            +${Number(grandRoiGross).toLocaleString()}%
+                            ${grandRoiGross >= 100 ? '+' : ''}${Number(grandRoiGross).toLocaleString()}%
                         </div>
                         <div class="sim-grand-roi-sub">
-                            투자 ${formatKoreanPrize(grandTotalCost)} · 순수익 ${netProfit >= 0 ? '+' : ''}${formatKoreanPrize(netProfit)}
+                            투자 ${formatKoreanPrize(grandTotalCost)} · 순수익 ${netProfit > 0 ? '+' : ''}${formatKoreanPrize(netProfit)}
                         </div>
                     </div>
                     ${bestAlgo ? `
@@ -1103,7 +1107,7 @@ export function renderAlgorithmPrizeTotals() {
                 <div class="sim-algo-card-footer">
                     <div class="sim-algo-invest-info">
                         <span>단독 투자: <strong>${formatKoreanPrize(a.cost)}</strong></span>
-                        <span>단독 ROI: <strong style="color: ${a.roi >= 100 ? '#34d399' : '#fbbf24'};">+${Number(a.roi).toLocaleString()}%</strong></span>
+                        <span>단독 ROI: <strong style="color: ${a.roi >= 100 ? '#34d399' : '#fbbf24'};">${a.roi >= 100 ? '+' : ''}${Number(a.roi).toLocaleString()}%</strong></span>
                     </div>
                     <div class="sim-algo-total-hits-tag">
                         총 ${a.totalHits.toLocaleString()}회 적중
