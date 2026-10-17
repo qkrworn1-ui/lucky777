@@ -4306,6 +4306,25 @@ Lotto 6/45
             res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, encoding='utf-8', errors='replace', cwd=self.root_dir)
             self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
 
+    # [Test 119] Confirmed Tab: Auto-Fold Previous Rounds When Latest Round Purchase Registered
+    def test_119_confirmed_tab_previous_rounds_auto_folded_when_latest_registered(self):
+        """Verify that when latest round receipts are registered, previous rounds default to collapsed (auto-folded)."""
+        confirmed_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        modal_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'manual-modal.js')
+
+        with open(confirmed_path, 'r', encoding='utf-8') as f:
+            confirmed_code = f.read()
+        with open(modal_path, 'r', encoding='utf-8') as f:
+            modal_code = f.read()
+
+        # 1. confirmed-tab.js must only expand roundIndex === 0 by default, and fold all roundIndex > 0
+        self.assertIn("isDefaultExpanded = (roundIndex === 0);", confirmed_code,
+                      "confirmed-tab.js must auto-fold all previous rounds (roundIndex > 0) and expand only latest round (roundIndex === 0)")
+
+        # 2. manual-modal.js must reset confirmedActiveRoundFilter to 'all' on post-save
+        self.assertIn("state.confirmedActiveRoundFilter = 'all';", modal_code,
+                      "manual-modal.js must reset confirmedActiveRoundFilter to 'all' so latest round is expanded and past rounds folded")
+
 if __name__ == '__main__':
     unittest.main()
 

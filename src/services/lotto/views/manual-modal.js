@@ -2748,6 +2748,11 @@ export async function handleSaveManualLedger(keepScanning = false) {
         // Release camera hardware completely so reopening [실구매 등록] for the next sheet starts with a clean idle camera
         try { stopScanning(); } catch(e) {}
 
+        // 최신회차 등록 후 구매확정 탭 이동 시: 필터를 전체로 리셋하여 최신회차는 펼쳐지고 지난회차는 자동 접히도록 보장
+        if (typeof state !== 'undefined') {
+            state.confirmedActiveRoundFilter = 'all';
+        }
+
         // Switch to confirmed list tab and render once immediately
         if (typeof window.switchLottoTab === 'function') {
             window.switchLottoTab('tab-confirmed-list');

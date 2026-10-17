@@ -736,21 +736,14 @@ export async function renderConfirmedPurchasesList() {
         const activeFilter = state.confirmedActiveRoundFilter || 'all';
         const isFilterMatched = (activeFilter === 'all' || String(activeFilter) === String(round));
 
-        // Smart auto-fold rule:
-        // Top 1~2 latest rounds stay expanded by default.
-        // Older past rounds (index >= 2, or index >= 1 if latest round already completed) start collapsed!
+        // 🔒 최신회차 구매영수증 등록 시 지난회차 영수증 자동 접기 규칙:
+        // 최신 등록 회차(roundIndex === 0)만 기본 펼침(expanded)으로 표시하고,
+        // 지난 모든 회차(roundIndex > 0)의 구매영수증 내역은 자동 접기(collapsed)로 표시
         let isDefaultExpanded = false;
         if (activeFilter !== 'all') {
             isDefaultExpanded = (String(activeFilter) === String(round));
         } else {
-            if (roundIndex === 0) {
-                isDefaultExpanded = true;
-            } else if (roundIndex === 1) {
-                const round0HasDraw = !!getSafeActualDraw(rounds[0]);
-                isDefaultExpanded = !round0HasDraw;
-            } else {
-                isDefaultExpanded = false;
-            }
+            isDefaultExpanded = (roundIndex === 0);
         }
 
         // Summarize outcomes for past draws

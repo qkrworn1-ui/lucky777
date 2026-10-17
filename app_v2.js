@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.1209 - BUILD_DATE: 2026-10-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.1216.54 - BUILD_DATE: 2026-10-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.17.1209)
+ * Lucky777 Smart Bundle (v2026.10.17.1216.54)
  */
 
 
@@ -32030,21 +32030,14 @@ async function renderConfirmedPurchasesList() {
         const activeFilter = state.confirmedActiveRoundFilter || 'all';
         const isFilterMatched = (activeFilter === 'all' || String(activeFilter) === String(round));
 
-        // Smart auto-fold rule:
-        // Top 1~2 latest rounds stay expanded by default.
-        // Older past rounds (index >= 2, or index >= 1 if latest round already completed) start collapsed!
+        // 🔒 최신회차 구매영수증 등록 시 지난회차 영수증 자동 접기 규칙:
+        // 최신 등록 회차(roundIndex === 0)만 기본 펼침(expanded)으로 표시하고,
+        // 지난 모든 회차(roundIndex > 0)의 구매영수증 내역은 자동 접기(collapsed)로 표시
         let isDefaultExpanded = false;
         if (activeFilter !== 'all') {
             isDefaultExpanded = (String(activeFilter) === String(round));
         } else {
-            if (roundIndex === 0) {
-                isDefaultExpanded = true;
-            } else if (roundIndex === 1) {
-                const round0HasDraw = !!getSafeActualDraw(rounds[0]);
-                isDefaultExpanded = !round0HasDraw;
-            } else {
-                isDefaultExpanded = false;
-            }
+            isDefaultExpanded = (roundIndex === 0);
         }
 
         // Summarize outcomes for past draws
@@ -40381,6 +40374,11 @@ async function handleSaveManualLedger(keepScanning = false) {
 
         // Release camera hardware completely so reopening [실구매 등록] for the next sheet starts with a clean idle camera
         try { stopScanning(); } catch(e) {}
+
+        // 최신회차 등록 후 구매확정 탭 이동 시: 필터를 전체로 리셋하여 최신회차는 펼쳐지고 지난회차는 자동 접히도록 보장
+        if (typeof state !== 'undefined') {
+            state.confirmedActiveRoundFilter = 'all';
+        }
 
         // Switch to confirmed list tab and render once immediately
         if (typeof window.switchLottoTab === 'function') {

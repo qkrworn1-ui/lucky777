@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.17.1209",
+  "version": "v2026.10.17.1216.54",
   "buildDate": "2026-10-17",
-  "description": "QR 단건/연속 구매등록 초고속 안정화 및 카메라/캐시 병목 해결",
-  "buildTimestamp": "2026-10-17T12:09:39.440232",
+  "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용",
+  "buildTimestamp": "2026-10-17T12:16:54.885205",
   "buildHistory": [
-    {
-      "version": "v2026.10.15.2142",
-      "buildDate": "2026-10-15",
-      "buildTime": "21:42",
-      "buildDateTime": "2026-10-15 21:42",
-      "buildTimestamp": "2026-10-15T21:42:00.685344",
-      "description": "Fix: Optimize dashboard height to fit within single screen"
-    },
-    {
-      "version": "v2026.10.15.2150",
-      "buildDate": "2026-10-15",
-      "buildTime": "21:50",
-      "buildDateTime": "2026-10-15 21:50",
-      "buildTimestamp": "2026-10-15T21:50:25.950824",
-      "description": "Fix: Optimize dashboard height to fit within single screen"
-    },
     {
       "version": "v2026.10.15.2150.40",
       "buildDate": "2026-10-15",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-17 12:09",
       "buildTimestamp": "2026-10-17T12:09:39.440232",
       "description": "QR 단건/연속 구매등록 초고속 안정화 및 카메라/캐시 병목 해결"
+    },
+    {
+      "version": "v2026.10.17.1216",
+      "buildDate": "2026-10-17",
+      "buildTime": "12:16",
+      "buildDateTime": "2026-10-17 12:16",
+      "buildTimestamp": "2026-10-17T12:16:36.002700",
+      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
+    },
+    {
+      "version": "v2026.10.17.1216.54",
+      "buildDate": "2026-10-17",
+      "buildTime": "12:16",
+      "buildDateTime": "2026-10-17 12:16",
+      "buildTimestamp": "2026-10-17T12:16:54.885205",
+      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
     }
   ],
-  "buildTime": "12:09",
-  "buildDateTime": "2026-10-17 12:09"
+  "buildTime": "12:16",
+  "buildDateTime": "2026-10-17 12:16"
 }
