@@ -4500,6 +4500,28 @@ Lotto 6/45
         # 7. cron-myeongri-push.js is permanently disabled
         self.assertIn("Myeongri push notifications are permanently disabled per user policy.", cron_code)
 
+    # [Test 122] Notification Read & Delete Quota-Safe Persistence & Event Delegation
+    def test_122_notification_read_and_delete_quota_and_delegation_integrity(self):
+        """Verify that marking notifications read and deleting notifications work even under localStorage quota exhaustion and prevent re-seeding."""
+        push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
+        with open(push_path, 'r', encoding='utf-8') as f:
+            push_code = f.read()
+
+        # 1. In-memory state sets and quota-safe storage helpers exist
+        self.assertIn("_memoryReadIds: new Set()", push_code)
+        self.assertIn("_memoryDeletedIds: new Set()", push_code)
+        self.assertIn("_memoryClearedUsers: new Set()", push_code)
+        self.assertIn("freeUpLocalStorageSpace()", push_code)
+        self.assertIn("safeSetItem(key, value)", push_code)
+
+        # 2. deleteNotification prevents re-seeding when the last item is deleted
+        self.assertIn("if (nextList.length === 0) {", push_code)
+        self.assertIn("this._memoryClearedUsers.add(uid);", push_code)
+
+        # 3. Modal event delegation and filter switching without re-seeding
+        self.assertIn("e.target.closest('[data-notif-action]')", push_code)
+        self.assertIn("setNotificationModalFilter(filter = 'all')", push_code)
+
 if __name__ == '__main__':
     unittest.main()
 

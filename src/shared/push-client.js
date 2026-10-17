@@ -402,6 +402,99 @@ export const PushClient = {
     // 📬 미확인 알림 센터 (Unread Notification Inbox & Hybrid Schedule Engine)
     // =========================================================================
 
+    _memoryReadIds: new Set(),
+    _memoryDeletedIds: new Set(),
+    _memoryClearedUsers: new Set(),
+    _memoryInboxMap: {},
+    _lastActionGuardTs: 0,
+    _lastActionGuardKey: '',
+
+    /**
+     * localStorage 용량 초과(QuotaExceededError) 발생 시 대용량 비핵심 캐시를 자동 정리하여 알림/읽음/삭제 저장 공간 확보
+     */
+    freeUpLocalStorageSpace() {
+        try {
+            if (typeof localStorage === 'undefined') return;
+            const heavyExactKeys = [
+                'lotto_all_users_purchases_map_cache',
+                'lotto_home_review_dashboard_cache',
+                'lotto_all_fin_kpi_cache',
+                'lotto_users_with_status_cache',
+                'lotto_all_users_list_cache'
+            ];
+            heavyExactKeys.forEach(k => {
+                try { localStorage.removeItem(k); } catch (e) {}
+            });
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (!k) continue;
+                if (
+                    k.startsWith('lotto_review_v2_') ||
+                    k.startsWith('lotto_rec_snapshot_') ||
+                    k.startsWith('lotto_my_fin_kpi_cache_') ||
+                    k.startsWith('lucky777_alert_fired_myeongri-') ||
+                    k.startsWith('lucky777_pushed_myeongri-')
+                ) {
+                    keysToRemove.push(k);
+                }
+            }
+            keysToRemove.forEach(k => {
+                try { localStorage.removeItem(k); } catch (e) {}
+            });
+        } catch (e) {}
+    },
+
+    safeSetItem(key, value) {
+        if (!key) return false;
+        const strVal = String(value);
+        try {
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.setItem(key, strVal);
+            }
+        } catch (e) {}
+        try {
+            if (typeof localStorage !== 'undefined') {
+                localStorage.setItem(key, strVal);
+                return true;
+            }
+        } catch (err) {
+            this.freeUpLocalStorageSpace();
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    localStorage.setItem(key, strVal);
+                    return true;
+                }
+            } catch (err2) {
+                console.warn('[PushClient] safeSetItem fallback to memory/sessionStorage for:', key);
+            }
+        }
+        return false;
+    },
+
+    safeGetItem(key) {
+        if (!key) return null;
+        try {
+            if (typeof localStorage !== 'undefined') {
+                const v = localStorage.getItem(key);
+                if (v !== null && v !== undefined) return v;
+            }
+        } catch (e) {}
+        try {
+            if (typeof sessionStorage !== 'undefined') {
+                const sv = sessionStorage.getItem(key);
+                if (sv !== null && sv !== undefined) return sv;
+            }
+        } catch (e) {}
+        return null;
+    },
+
+    safeRemoveItem(key) {
+        if (!key) return;
+        try { if (typeof localStorage !== 'undefined') localStorage.removeItem(key); } catch (e) {}
+        try { if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(key); } catch (e) {}
+    },
+
     getActiveUserId() {
         let uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest');
         if (typeof uid === 'string' && uid.startsWith('{')) {
@@ -420,18 +513,50 @@ export const PushClient = {
         return `lucky777_deleted_notifs_${uid}`;
     },
 
+    isInboxCleared(uid) {
+        const targetUid = String(uid || this.getActiveUserId()).trim().toLowerCase();
+        if (this._memoryClearedUsers.has(targetUid)) return true;
+        return this.safeGetItem(`lucky777_inbox_cleared_${targetUid}`) === 'true';
+    },
+
     isNotificationDeleted(notifId) {
         if (!notifId) return false;
         try {
-            const delKey = this.getDeletedNotifsKey();
-            const raw = localStorage.getItem(delKey);
-            if (!raw) return false;
-            const delArr = JSON.parse(raw);
-            if (!Array.isArray(delArr)) return false;
             const normId = String(notifId).trim();
             const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
             const canonKey = this.getCanonicalPushKey(notifId);
-            return delArr.includes(normId) || delArr.includes(cleanId) || (canonKey && delArr.includes(canonKey));
+
+            if (
+                this._memoryDeletedIds.has(normId) ||
+                this._memoryDeletedIds.has(cleanId) ||
+                (canonKey && this._memoryDeletedIds.has(canonKey))
+            ) {
+                return true;
+            }
+
+            if (
+                this.safeGetItem(`lucky777_deleted_${normId}`) === 'true' ||
+                this.safeGetItem(`lucky777_deleted_${cleanId}`) === 'true' ||
+                (canonKey && this.safeGetItem(`lucky777_deleted_${canonKey}`) === 'true')
+            ) {
+                this._memoryDeletedIds.add(normId);
+                this._memoryDeletedIds.add(cleanId);
+                if (canonKey) this._memoryDeletedIds.add(canonKey);
+                return true;
+            }
+
+            const delKey = this.getDeletedNotifsKey();
+            const raw = this.safeGetItem(delKey);
+            if (!raw) return false;
+            const delArr = JSON.parse(raw);
+            if (!Array.isArray(delArr)) return false;
+            const isDel = delArr.includes(normId) || delArr.includes(cleanId) || (canonKey && delArr.includes(canonKey));
+            if (isDel) {
+                this._memoryDeletedIds.add(normId);
+                this._memoryDeletedIds.add(cleanId);
+                if (canonKey) this._memoryDeletedIds.add(canonKey);
+            }
+            return isDel;
         } catch (e) {
             return false;
         }
@@ -446,9 +571,30 @@ export const PushClient = {
             const normId = String(notifId).trim();
             const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
             const canonKey = this.getCanonicalPushKey(notifId);
-            return (localStorage.getItem(`lucky777_read_${normId}`) === 'true') ||
-                   (localStorage.getItem(`lucky777_read_${cleanId}`) === 'true') ||
-                   (canonKey && localStorage.getItem(`lucky777_read_${canonKey}`) === 'true');
+
+            if (
+                this._memoryReadIds.has(normId) ||
+                this._memoryReadIds.has(cleanId) ||
+                (canonKey && this._memoryReadIds.has(canonKey))
+            ) {
+                return true;
+            }
+
+            const isReadInStorage =
+                (this.safeGetItem(`lucky777_read_${normId}`) === 'true') ||
+                (this.safeGetItem(`lucky777_read_${cleanId}`) === 'true') ||
+                (canonKey && this.safeGetItem(`lucky777_read_${canonKey}`) === 'true') ||
+                (localStorage.getItem(`lucky777_read_${normId}`) === 'true') ||
+                (localStorage.getItem(`lucky777_read_${cleanId}`) === 'true') ||
+                (canonKey && localStorage.getItem(`lucky777_read_${canonKey}`) === 'true');
+
+            if (isReadInStorage) {
+                this._memoryReadIds.add(normId);
+                this._memoryReadIds.add(cleanId);
+                if (canonKey) this._memoryReadIds.add(canonKey);
+                return true;
+            }
+            return false;
         } catch (e) {
             return false;
         }
@@ -457,22 +603,48 @@ export const PushClient = {
     getNotifications() {
         try {
             const key = this.getInboxStorageKey();
-            const raw = localStorage.getItem(key);
-            let list = raw ? JSON.parse(raw) : [];
+            const raw = this.safeGetItem(key);
+            let list = [];
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) list = parsed;
+                } catch (e) {}
+            } else if (Array.isArray(this._memoryInboxMap[key])) {
+                list = [...this._memoryInboxMap[key]];
+            }
             if (!Array.isArray(list)) list = [];
 
-            // 🔮 사주 길일·길시 알림 원천 영구 삭제 및 알림함 정화, 사용자 삭제 알림 필터링
+            // 🔮 사주 길일·길시 알림 원천 영구 삭제, ID 보정, 중복 제거 및 사용자 삭제 알림 필터링
             const origLen = list.length;
-            list = list.filter(item => {
-                if (!item) return false;
+            let mutated = false;
+            const seenKeys = new Set();
+
+            list = list.filter((item, idx) => {
+                if (!item || typeof item !== 'object') {
+                    mutated = true;
+                    return false;
+                }
+                if (!item.id || String(item.id).trim() === '' || String(item.id).trim() === 'undefined') {
+                    item.id = `notif-${idx}-${String(item.category || 'sys')}`;
+                    mutated = true;
+                }
                 const itemId = String(item.id || '').trim();
                 const cat = String(item.category || '').trim();
                 if (itemId.startsWith('myeongri-') || cat === 'myeongri') {
+                    mutated = true;
                     return false;
                 }
-                if (this.isNotificationDeleted(item.id)) {
+                if (this.isNotificationDeleted(itemId)) {
+                    mutated = true;
                     return false;
                 }
+                const dedupKey = this.getCanonicalPushKey(itemId) || itemId;
+                if (seenKeys.has(dedupKey)) {
+                    mutated = true;
+                    return false;
+                }
+                seenKeys.add(dedupKey);
                 return true;
             });
 
@@ -480,13 +652,22 @@ export const PushClient = {
             list.forEach(item => {
                 if (!item || !item.id) return;
                 if (this.isNotificationRead(item.id)) {
-                    item.unread = false;
+                    if (item.unread !== false) {
+                        item.unread = false;
+                        mutated = true;
+                    }
                 } else {
-                    item.unread = (item.unread === true || item.unread === 'true');
+                    const normUnread = (item.unread === true || item.unread === 'true');
+                    if (item.unread !== normUnread) {
+                        item.unread = normUnread;
+                        mutated = true;
+                    }
                 }
             });
 
-            if (list.length !== origLen) {
+            if (list.length !== origLen || mutated) {
+                this._memoryInboxMap[key] = list.slice(0, 40);
+                this.safeSetItem(key, JSON.stringify(list.slice(0, 40)));
                 try {
                     localStorage.setItem(key, JSON.stringify(list.slice(0, 40)));
                 } catch(e) {}
@@ -495,7 +676,7 @@ export const PushClient = {
             // 로그인 상태인 경우, guest 알림함에 남아있는 미확인 알림 자동 병합 및 중복 푸시 각인
             if (!key.endsWith('_guest')) {
                 try {
-                    const guestRaw = localStorage.getItem('lucky777_notification_inbox_guest');
+                    const guestRaw = this.safeGetItem('lucky777_notification_inbox_guest');
                     const guestList = guestRaw ? JSON.parse(guestRaw) : [];
                     if (Array.isArray(guestList) && guestList.length > 0) {
                         let mergedAny = false;
@@ -504,6 +685,7 @@ export const PushClient = {
                             const gId = String(gItem.id || '').trim();
                             if (gId.startsWith('myeongri-') || gItem.category === 'myeongri') return;
                             if (this.isNotificationDeleted(gItem.id)) return;
+                            if (this.isNotificationRead(gItem.id)) gItem.unread = false;
                             const exists = list.some(it => it && (it.id === gItem.id || this.getCanonicalPushKey(it.id) === this.getCanonicalPushKey(gItem.id)));
                             if (!exists) {
                                 list.push(gItem);
@@ -512,20 +694,22 @@ export const PushClient = {
                             this.recordPushFired(gItem.id);
                         });
                         if (mergedAny) {
-                            localStorage.setItem(key, JSON.stringify(list.slice(0, 40)));
+                            this._memoryInboxMap[key] = list.slice(0, 40);
+                            this.safeSetItem(key, JSON.stringify(list.slice(0, 40)));
                         }
-                        localStorage.removeItem('lucky777_notification_inbox_guest');
+                        this.safeRemoveItem('lucky777_notification_inbox_guest');
                     }
                 } catch(e) {}
             }
 
-            // 알림 목록이 비어있고 사용자가 명시적으로 '전체 삭제'를 하지 않은 경우에만 기본 알림 시드 생성
+            // 알림 목록이 비어있고 사용자가 삭제/전체삭제를 하지 않은 경우에만 기본 알림 시드 생성
             const uid = this.getActiveUserId();
-            const isCleared = localStorage.getItem(`lucky777_inbox_cleared_${uid}`) === 'true';
+            const isCleared = this.isInboxCleared(uid);
             if (list.length === 0 && !isCleared && !this._isCheckingScheduledAlerts) {
                 list = this.seedRecentNotifications(uid, list);
             }
 
+            this._memoryInboxMap[key] = list;
             return list;
         } catch (e) {
             return [];
@@ -540,6 +724,9 @@ export const PushClient = {
         try {
             const list = Array.isArray(existingList) ? [...existingList] : [];
             const uid = String(userId || 'guest').trim().toLowerCase();
+            if (this.isInboxCleared(uid)) {
+                return list;
+            }
             const targetRound = this.getUpcomingRoundNumber();
             const dispName = this.getUserDisplayName();
 
@@ -634,13 +821,14 @@ export const PushClient = {
 
                 if (existingIdx !== -1) {
                     const item = list[existingIdx];
+                    item.id = combinedNotifId;
                     item.badge = notifBadge;
                     item.title = notifTitle;
                     item.body = notifBody;
                     item.category = 'result';
                     item.actionType = 'confirmed';
                     item.actionLabel = '📊 구매확정 당첨내역 확인하기';
-                    if (isAlreadyRead || !unreadFlag) {
+                    if (isAlreadyRead || !unreadFlag || this.isNotificationRead(item.id)) {
                         item.unread = false;
                     }
                 } else {
@@ -690,11 +878,11 @@ export const PushClient = {
             });
 
             const key = this.getInboxStorageKey();
-            try {
-                localStorage.setItem(key, JSON.stringify(list.slice(0, 40)));
-            } catch (e) {}
+            const trimmed = list.slice(0, 40);
+            this._memoryInboxMap[key] = trimmed;
+            this.safeSetItem(key, JSON.stringify(trimmed));
 
-            return list;
+            return trimmed;
         } catch (err) {
             console.warn('[PushClient] seedRecentNotifications error:', err);
             return existingList;
@@ -702,10 +890,16 @@ export const PushClient = {
     },
 
     saveNotifications(list) {
+        const key = this.getInboxStorageKey();
+        const trimmed = (Array.isArray(list) ? list : []).slice(0, 40);
+        this._memoryInboxMap[key] = trimmed;
+        this.safeSetItem(key, JSON.stringify(trimmed));
         try {
-            const trimmed = (Array.isArray(list) ? list : []).slice(0, 40);
             localStorage.setItem(this.getInboxStorageKey(), JSON.stringify(trimmed));
-            const unreadCount = trimmed.filter(n => n && n.unread).length;
+        } catch (e) {}
+
+        try {
+            const unreadCount = trimmed.filter(n => n && (n.unread === true || n.unread === 'true') && !this.isNotificationRead(n.id)).length;
             this.setBadge(unreadCount);
             this.renderUnreadNotificationUI();
             const modal = document.getElementById('lucky777NotificationCenterModal');
@@ -1011,6 +1205,17 @@ export const PushClient = {
         const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
         const canonKey = this.getCanonicalPushKey(id);
 
+        this._memoryReadIds.add(normId);
+        this._memoryReadIds.add(cleanId);
+        if (canonKey) this._memoryReadIds.add(canonKey);
+
+        this.safeSetItem(`lucky777_read_${normId}`, 'true');
+        this.safeSetItem(`lucky777_read_${cleanId}`, 'true');
+        if (canonKey) this.safeSetItem(`lucky777_read_${canonKey}`, 'true');
+        this.safeSetItem(`lucky777_alert_fired_${normId}`, 'true');
+        this.safeSetItem(`lucky777_alert_fired_${cleanId}`, 'true');
+        if (canonKey) this.safeSetItem(`lucky777_alert_fired_${canonKey}`, 'true');
+
         try {
             localStorage.setItem(`lucky777_read_${normId}`, 'true');
             localStorage.setItem(`lucky777_read_${cleanId}`, 'true');
@@ -1021,7 +1226,6 @@ export const PushClient = {
         } catch(e) {}
 
         const list = this.getNotifications();
-        let changed = false;
         list.forEach(item => {
             if (!item) return;
             const itemId = String(item.id || '').trim();
@@ -1032,10 +1236,7 @@ export const PushClient = {
                 (canonKey && this.getCanonicalPushKey(item.id) === canonKey) ||
                 (normId.includes('admin-msg-') && itemId.includes(normId.replace(/^push-/, '').replace(/^admin-msg-/, '')));
             if (matchesId || this.isNotificationRead(item.id)) {
-                if (item.unread) {
-                    item.unread = false;
-                    changed = true;
-                }
+                item.unread = false;
             }
         });
 
@@ -1044,6 +1245,7 @@ export const PushClient = {
             this.syncAdminMessageReadToFirestore(rawMsgId);
             const uid = this.getActiveUserId();
             if (uid && rawMsgId) {
+                this.safeSetItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
                 try {
                     localStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
                     sessionStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
@@ -1060,8 +1262,13 @@ export const PushClient = {
             this.renderNotificationCenterModalContent();
         }
 
+        const nowTs = Date.now();
         if (showToastMsg && typeof window.showToast === 'function') {
-            window.showToast('✓ 알림을 확인 처리했습니다.');
+            if (this._lastReadToastId !== normId || (nowTs - (this._lastReadToastTs || 0)) > 250) {
+                this._lastReadToastId = normId;
+                this._lastReadToastTs = nowTs;
+                window.showToast('✓ 알림을 확인 처리했습니다.');
+            }
         }
 
         // 스마트폰 OS 알림바(Tray)에서도 해당 알림 팝업 즉시 닫기
@@ -1096,6 +1303,17 @@ export const PushClient = {
                     const normId = String(item.id).trim();
                     const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
                     const canon = this.getCanonicalPushKey(item.id);
+                    this._memoryReadIds.add(normId);
+                    this._memoryReadIds.add(cleanId);
+                    if (canon) this._memoryReadIds.add(canon);
+
+                    this.safeSetItem(`lucky777_read_${normId}`, 'true');
+                    this.safeSetItem(`lucky777_read_${cleanId}`, 'true');
+                    if (canon) this.safeSetItem(`lucky777_read_${canon}`, 'true');
+                    this.safeSetItem(`lucky777_alert_fired_${normId}`, 'true');
+                    this.safeSetItem(`lucky777_alert_fired_${cleanId}`, 'true');
+                    if (canon) this.safeSetItem(`lucky777_alert_fired_${canon}`, 'true');
+
                     try {
                         localStorage.setItem(`lucky777_read_${normId}`, 'true');
                         localStorage.setItem(`lucky777_read_${cleanId}`, 'true');
@@ -1105,10 +1323,11 @@ export const PushClient = {
                         if (canon) localStorage.setItem(`lucky777_alert_fired_${canon}`, 'true');
                     } catch(e) {}
                 }
-                if (item.unread && item.id && String(item.id).includes('admin-msg-')) {
+                if (item.id && String(item.id).includes('admin-msg-')) {
                     const rawMsgId = String(item.id).replace(/^push-/, '').replace(/^admin-msg-/, '');
                     this.syncAdminMessageReadToFirestore(rawMsgId);
                     if (uid && rawMsgId) {
+                        this.safeSetItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
                         try {
                             localStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
                             sessionStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
@@ -1119,6 +1338,11 @@ export const PushClient = {
             }
         });
         this.saveNotifications(list);
+        this.renderUnreadNotificationUI();
+        const modal = document.getElementById('lucky777NotificationCenterModal');
+        if (modal && modal.style.display !== 'none') {
+            this.renderNotificationCenterModalContent();
+        }
 
         // 스마트폰 OS 알림바(Tray)의 모든 알림 즉시 닫기
         if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
@@ -1142,15 +1366,35 @@ export const PushClient = {
         const normId = String(id).trim();
         const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
         const canonKey = this.getCanonicalPushKey(id);
+        const uid = this.getActiveUserId();
+
+        this._memoryDeletedIds.add(normId);
+        this._memoryDeletedIds.add(cleanId);
+        if (canonKey) this._memoryDeletedIds.add(canonKey);
+        this._memoryReadIds.add(normId);
+        this._memoryReadIds.add(cleanId);
+        if (canonKey) this._memoryReadIds.add(canonKey);
+
+        this.safeSetItem(`lucky777_deleted_${normId}`, 'true');
+        this.safeSetItem(`lucky777_deleted_${cleanId}`, 'true');
+        if (canonKey) this.safeSetItem(`lucky777_deleted_${canonKey}`, 'true');
+        this.safeSetItem(`lucky777_read_${cleanId}`, 'true');
+        this.safeSetItem(`lucky777_alert_fired_${cleanId}`, 'true');
+        if (canonKey) {
+            this.safeSetItem(`lucky777_read_${canonKey}`, 'true');
+            this.safeSetItem(`lucky777_alert_fired_${canonKey}`, 'true');
+        }
 
         try {
             const delKey = this.getDeletedNotifsKey();
-            const raw = localStorage.getItem(delKey);
+            const raw = this.safeGetItem(delKey) || localStorage.getItem(delKey);
             const delArr = raw ? JSON.parse(raw) : [];
             if (!delArr.includes(normId)) delArr.push(normId);
             if (!delArr.includes(cleanId)) delArr.push(cleanId);
             if (canonKey && !delArr.includes(canonKey)) delArr.push(canonKey);
-            localStorage.setItem(delKey, JSON.stringify(delArr.slice(-150)));
+            const serializedDel = JSON.stringify(delArr.slice(-150));
+            this.safeSetItem(delKey, serializedDel);
+            localStorage.setItem(delKey, serializedDel);
 
             localStorage.setItem(`lucky777_read_${cleanId}`, 'true');
             localStorage.setItem(`lucky777_alert_fired_${cleanId}`, 'true');
@@ -1160,6 +1404,15 @@ export const PushClient = {
             }
         } catch (e) {}
 
+        if (normId.includes('admin-msg-')) {
+            const rawMsgId = normId.replace(/^push-/, '').replace(/^admin-msg-/, '');
+            this.syncAdminMessageReadToFirestore(rawMsgId);
+            if (uid && rawMsgId) {
+                this.safeSetItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
+                this.safeSetItem(`lucky777_admin_notified_${uid}_${rawMsgId}`, 'true');
+            }
+        }
+
         const list = this.getNotifications();
         const nextList = list.filter(item => {
             if (!item || !item.id) return false;
@@ -1167,54 +1420,126 @@ export const PushClient = {
             const itemClean = itemId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
             if (itemId === normId || itemClean === cleanId || itemId === cleanId) return false;
             if (canonKey && this.getCanonicalPushKey(item.id) === canonKey) return false;
+            if (this.isNotificationDeleted(item.id)) return false;
             return true;
         });
 
-        this.saveNotifications(nextList);
+        // 마지막 알림까지 모두 삭제된 경우 자동 재시딩(부활) 방지 플래그 설정
+        if (nextList.length === 0) {
+            this._memoryClearedUsers.add(uid);
+            this.safeSetItem(`lucky777_inbox_cleared_${uid}`, 'true');
+            try { localStorage.setItem(`lucky777_inbox_cleared_${uid}`, 'true'); } catch (e) {}
+        }
 
+        this.saveNotifications(nextList);
+        this.renderUnreadNotificationUI();
+        const modal = document.getElementById('lucky777NotificationCenterModal');
+        if (modal && modal.style.display !== 'none') {
+            this.renderNotificationCenterModalContent();
+        }
+
+        const nowTs = Date.now();
         if (typeof window.showToast === 'function') {
-            window.showToast('🗑️ 알림이 삭제되었습니다.');
+            if (this._lastDeleteToastId !== normId || (nowTs - (this._lastDeleteToastTs || 0)) > 250) {
+                this._lastDeleteToastId = normId;
+                this._lastDeleteToastTs = nowTs;
+                window.showToast('🗑️ 알림이 삭제되었습니다.');
+            }
         }
     },
 
     /**
-     * 전체 알림 일괄 삭제
+     * 전체 알림 일괄 삭제 (confirm 차단 없이 즉시 삭제 및 자동 재시드 완전 차단)
      */
     clearAllNotifications() {
+        const nowTs = Date.now();
+        if (nowTs - (this._lastClearAllTs || 0) < 400) return;
+        this._lastClearAllTs = nowTs;
+
         const list = this.getNotifications();
+        const uid = this.getActiveUserId();
         if (!list || list.length === 0) {
+            this._memoryClearedUsers.add(uid);
+            this.safeSetItem(`lucky777_inbox_cleared_${uid}`, 'true');
             if (typeof window.showToast === 'function') {
                 window.showToast('삭제할 알림 내역이 없습니다.');
             }
             return;
         }
 
-        const ok = confirm(`현재 알림함의 총 ${list.length}건 알림을 모두 삭제하시겠습니까?`);
-        if (!ok) return;
+        const delKey = this.getDeletedNotifsKey();
+        let delArr = [];
+        try {
+            const raw = this.safeGetItem(delKey) || localStorage.getItem(delKey);
+            delArr = raw ? JSON.parse(raw) : [];
+            if (!Array.isArray(delArr)) delArr = [];
+        } catch (e) {
+            delArr = [];
+        }
+
+        const markIdDeleted = (rawId) => {
+            if (!rawId) return;
+            const normId = String(rawId).trim();
+            const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+            const canon = this.getCanonicalPushKey(rawId);
+            this._memoryDeletedIds.add(normId);
+            this._memoryDeletedIds.add(cleanId);
+            if (canon) this._memoryDeletedIds.add(canon);
+            this._memoryReadIds.add(normId);
+            this._memoryReadIds.add(cleanId);
+            if (canon) this._memoryReadIds.add(canon);
+
+            if (!delArr.includes(normId)) delArr.push(normId);
+            if (!delArr.includes(cleanId)) delArr.push(cleanId);
+            if (canon && !delArr.includes(canon)) delArr.push(canon);
+
+            this.safeSetItem(`lucky777_deleted_${cleanId}`, 'true');
+            this.safeSetItem(`lucky777_read_${cleanId}`, 'true');
+            this.safeSetItem(`lucky777_alert_fired_${cleanId}`, 'true');
+            try {
+                localStorage.setItem(`lucky777_read_${cleanId}`, 'true');
+                localStorage.setItem(`lucky777_alert_fired_${cleanId}`, 'true');
+            } catch (e) {}
+        };
+
+        list.forEach(item => {
+            if (item && item.id) {
+                markIdDeleted(item.id);
+                if (String(item.id).includes('admin-msg-')) {
+                    const rawMsgId = String(item.id).replace(/^push-/, '').replace(/^admin-msg-/, '');
+                    this.syncAdminMessageReadToFirestore(rawMsgId);
+                    if (uid && rawMsgId) {
+                        this.safeSetItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
+                    }
+                }
+            }
+        });
+
+        // 기본 시딩 대상 ID들도 함께 삭제 처리하여 포커스 복귀 시 재시딩 원천 차단
+        const targetRound = this.getUpcomingRoundNumber();
+        markIdDeleted(`rec-ready-${targetRound}`);
+        markIdDeleted(`lock-reminder-${targetRound}`);
+        markIdDeleted('admin-msg-welcome');
+        for (let r = targetRound; r >= 1235; r--) {
+            markIdDeleted(`draw-result-${r}`);
+        }
+
+        const serializedDel = JSON.stringify(delArr.slice(-200));
+        this.safeSetItem(delKey, serializedDel);
+        this._memoryClearedUsers.add(uid);
+        this.safeSetItem(`lucky777_inbox_cleared_${uid}`, 'true');
 
         try {
-            const delKey = this.getDeletedNotifsKey();
-            const raw = localStorage.getItem(delKey);
-            const delArr = raw ? JSON.parse(raw) : [];
-            list.forEach(item => {
-                if (item && item.id) {
-                    const normId = String(item.id).trim();
-                    const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
-                    const canon = this.getCanonicalPushKey(item.id);
-                    if (!delArr.includes(normId)) delArr.push(normId);
-                    if (!delArr.includes(cleanId)) delArr.push(cleanId);
-                    if (canon && !delArr.includes(canon)) delArr.push(canon);
-                    localStorage.setItem(`lucky777_read_${cleanId}`, 'true');
-                    localStorage.setItem(`lucky777_alert_fired_${cleanId}`, 'true');
-                }
-            });
-            localStorage.setItem(delKey, JSON.stringify(delArr.slice(-200)));
-
-            const uid = this.getActiveUserId();
+            localStorage.setItem(delKey, serializedDel);
             localStorage.setItem(`lucky777_inbox_cleared_${uid}`, 'true');
         } catch (e) {}
 
         this.saveNotifications([]);
+        this.renderUnreadNotificationUI();
+        const modal = document.getElementById('lucky777NotificationCenterModal');
+        if (modal && modal.style.display !== 'none') {
+            this.renderNotificationCenterModalContent();
+        }
 
         if (typeof window.showToast === 'function') {
             window.showToast('🗑️ 모든 알림이 삭제되었습니다.');
@@ -1226,13 +1551,32 @@ export const PushClient = {
      */
     resetAndSeedNotifications() {
         const uid = this.getActiveUserId();
+        this._memoryDeletedIds.clear();
+        this._memoryClearedUsers.delete(uid);
+
+        this.safeRemoveItem(`lucky777_deleted_notifs_${uid}`);
+        this.safeRemoveItem(`lucky777_inbox_cleared_${uid}`);
         try {
             localStorage.removeItem(`lucky777_deleted_notifs_${uid}`);
             localStorage.removeItem(`lucky777_inbox_cleared_${uid}`);
+            for (const store of [localStorage, sessionStorage]) {
+                if (!store) continue;
+                const keysToRemove = [];
+                for (let i = 0; i < store.length; i++) {
+                    const k = store.key(i);
+                    if (k && k.startsWith('lucky777_deleted_')) keysToRemove.push(k);
+                }
+                keysToRemove.forEach(k => { try { store.removeItem(k); } catch (e) {} });
+            }
         } catch (e) {}
 
         const seeded = this.seedRecentNotifications(uid, []);
         this.saveNotifications(seeded);
+        this.renderUnreadNotificationUI();
+        const modal = document.getElementById('lucky777NotificationCenterModal');
+        if (modal && modal.style.display !== 'none') {
+            this.renderNotificationCenterModalContent();
+        }
 
         if (typeof window.showToast === 'function') {
             window.showToast('🔄 최신 알림 내역이 동기화되었습니다.');
@@ -1716,8 +2060,10 @@ export const PushClient = {
                 }
             }
 
+            const inboxCleared = this.isInboxCleared(uid);
+
             // 1. 토요일 판매 마감 임박 리마인더 (토요일 18:00 ~ 20:00 사이, 미구매 회원 - 스마트폰 푸시 제외, 알림함에서만 확인)
-            if (todayName === '토요일' && curMinutes >= 18 * 60 && curMinutes < 20 * 60 && !alreadyPurchased) {
+            if (!inboxCleared && todayName === '토요일' && curMinutes >= 18 * 60 && curMinutes < 20 * 60 && !alreadyPurchased) {
                 const lockNotifId = `lock-reminder-${targetRound}`;
                 const isLockRead = this.isNotificationRead(lockNotifId);
                 this.addNotification({
@@ -1745,11 +2091,13 @@ export const PushClient = {
                 latestDrawnRound = 1246;
             }
 
-            // 최근 5개 회차별 공식 결과 및 추천번호 알림함 내역 전체 보장 동기화
+            // 최근 5개 회차별 공식 결과 및 추천번호 알림함 내역 전체 보장 동기화 (전체 삭제 상태가 아닌 경우에만)
             let currentList = this.getNotifications();
-            currentList = this.seedRecentNotifications(uid, currentList);
+            if (!inboxCleared) {
+                currentList = this.seedRecentNotifications(uid, currentList);
+            }
 
-            if (latestDrawnRound >= 1235) {
+            if (!inboxCleared && latestDrawnRound >= 1235) {
                 const drawData = this.getDrawData(latestDrawnRound);
                 if (drawData && Array.isArray(drawData.numbers) && drawData.numbers.length === 6) {
                     const userPurchases = this.getUserPurchases(uid, latestDrawnRound);
@@ -1818,7 +2166,7 @@ export const PushClient = {
             }
 
             // 4. 차기 회차 AI 퀀트 맞춤 추천번호 오픈 알림 (신규 회차 1회 알림함 등록, 스마트폰 푸시는 제외)
-            if (targetRound >= 1246) {
+            if (!inboxCleared && targetRound >= 1246) {
                 // 토요일 20:00 이후 또는 일~금요일 등 신규 회차가 활성화된 시점에 안내
                 const isRecOpenTime = isSaturdayPostDraw || todayName !== '토요일' || curMinutes < 18 * 60;
                 if (isRecOpenTime) {
@@ -2018,13 +2366,53 @@ export const PushClient = {
             modal = document.createElement('div');
             modal.id = 'lucky777NotificationCenterModal';
             modal.style.cssText = 'position:fixed; inset:0; background:rgba(7,10,20,0.85); backdrop-filter:blur(8px); z-index:100000; display:none; align-items:center; justify-content:center; padding:14px; box-sizing:border-box;';
-            modal.onclick = (e) => {
-                if (e.target === modal) this.closeNotificationCenterModal();
-            };
             document.body.appendChild(modal);
         }
+        // 이벤트 위임(Event Delegation) 바인딩: 인라인 onclick 실패 환경(모바일 인앱/WebView 등)에서도 100% 작동 보장
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                this.closeNotificationCenterModal();
+                return;
+            }
+            if (!e.target || typeof e.target.closest !== 'function') return;
+            const actionEl = e.target.closest('[data-notif-action]');
+            if (!actionEl) return;
+            const action = actionEl.getAttribute('data-notif-action');
+            const notifId = actionEl.getAttribute('data-notif-id') || '';
+            if (action === 'delete' && notifId) {
+                e.stopPropagation();
+                this.deleteNotification(notifId);
+            } else if (action === 'read' && notifId) {
+                e.stopPropagation();
+                this.markNotificationRead(notifId);
+            } else if (action === 'action' && notifId) {
+                e.stopPropagation();
+                this.handleNotificationAction(notifId);
+            } else if (action === 'filter') {
+                e.stopPropagation();
+                const targetFilter = actionEl.getAttribute('data-notif-filter') || 'all';
+                this.setNotificationModalFilter(targetFilter);
+            } else if (action === 'mark-all-read') {
+                e.stopPropagation();
+                this.markAllNotificationsRead();
+            } else if (action === 'clear-all') {
+                e.stopPropagation();
+                this.clearAllNotifications();
+            } else if (action === 'reset-seed') {
+                e.stopPropagation();
+                this.resetAndSeedNotifications();
+            } else if (action === 'close') {
+                e.stopPropagation();
+                this.closeNotificationCenterModal();
+            }
+        };
         this.renderNotificationCenterModalContent();
         modal.style.display = 'flex';
+    },
+
+    setNotificationModalFilter(filter = 'all') {
+        this._currentModalFilter = filter || 'all';
+        this.renderNotificationCenterModalContent();
     },
 
     closeNotificationCenterModal() {
@@ -2052,16 +2440,16 @@ export const PushClient = {
         const emptyMsg = filter === 'unread'
             ? `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">확인하지 않은 새로운 알림이 없습니다.</div>
                <div style="font-size:0.75rem; color:#64748b; margin-bottom:12px;">지난 회차별 당첨결과 및 공지 내역은 [전체] 탭에서 확인하실 수 있습니다.</div>
-               <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림내역 보기 (${list.length})</button>`
+               <button type="button" data-notif-action="filter" data-notif-filter="all" onclick="window.PushClient && window.PushClient.setNotificationModalFilter('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림내역 보기 (${list.length})</button>`
             : (filter === 'result'
                 ? `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">표시할 당첨 결과가 없습니다.</div>
-                   <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림 보기 (${list.length})</button>`
+                   <button type="button" data-notif-action="filter" data-notif-filter="all" onclick="window.PushClient && window.PushClient.setNotificationModalFilter('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림 보기 (${list.length})</button>`
                 : (filter === 'admin'
                     ? `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">도착한 관리자 메시지가 없습니다.</div>
-                       <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림 보기 (${list.length})</button>`
+                       <button type="button" data-notif-action="filter" data-notif-filter="all" onclick="window.PushClient && window.PushClient.setNotificationModalFilter('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림 보기 (${list.length})</button>`
                     : `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">알림함에 보관된 알림이 없습니다.</div>
                        <div style="font-size:0.75rem; color:#64748b; margin-bottom:12px;">최근 5개 회차 당첨결과 및 추천 알림을 다시 불러오시겠습니까?</div>
-                       <button type="button" onclick="window.PushClient && window.PushClient.resetAndSeedNotifications()" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">🔄 알림 내역 다시 동기화</button>`));
+                       <button type="button" data-notif-action="reset-seed" onclick="window.PushClient && window.PushClient.resetAndSeedNotifications()" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">🔄 알림 내역 다시 동기화</button>`));
 
         const itemsHtml = filtered.length === 0
             ? `<div style="padding:36px 16px; text-align:center; color:#94a3b8; font-size:0.82rem;">
@@ -2070,8 +2458,10 @@ export const PushClient = {
                </div>`
             : filtered.map(item => {
                 const isUnread = (item.unread === true || item.unread === 'true') && !this.isNotificationRead(item.id);
+                const safeId = String(item.id || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                const attrId = String(item.id || '').replace(/"/g, '&quot;');
                 return `
-                <div onclick="window.markNotificationRead ? window.markNotificationRead('${item.id}') : (window.PushClient && window.PushClient.markNotificationRead('${item.id}'))" style="background:${isUnread ? 'rgba(30,41,59,0.95)' : 'rgba(15,23,42,0.55)'}; border:1.5px solid ${isUnread ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.07)'}; border-radius:12px; padding:12px 14px; cursor:pointer; transition:all 0.2s; opacity:${isUnread ? '1' : '0.8'}; position:relative;">
+                <div data-notif-action="read" data-notif-id="${attrId}" onclick="window.markNotificationRead ? window.markNotificationRead('${safeId}') : (window.PushClient && window.PushClient.markNotificationRead('${safeId}'))" style="background:${isUnread ? 'rgba(30,41,59,0.95)' : 'rgba(15,23,42,0.55)'}; border:1.5px solid ${isUnread ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.07)'}; border-radius:12px; padding:12px 14px; cursor:pointer; transition:all 0.2s; opacity:${isUnread ? '1' : '0.8'}; position:relative;">
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;">
                         <div style="display:flex; align-items:center; gap:6px;">
                             ${isUnread
@@ -2081,24 +2471,24 @@ export const PushClient = {
                         </div>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="font-size:0.68rem; color:#94a3b8;">${item.timeLabel || ''}</span>
-                            <button type="button" onclick="event.stopPropagation(); window.deleteNotification ? window.deleteNotification('${item.id}') : (window.PushClient && window.PushClient.deleteNotification('${item.id}'))" title="이 알림 삭제" style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); color:#fca5a5; font-size:0.68rem; padding:2px 7px; border-radius:6px; cursor:pointer;" onmouseover="this.style.background='rgba(239,68,68,0.25)';" onmouseout="this.style.background='rgba(239,68,68,0.12)';">
-                                <i class="fa-solid fa-trash-can"></i> 삭제
+                            <button type="button" data-notif-action="delete" data-notif-id="${attrId}" onclick="event.stopPropagation(); window.deleteNotification ? window.deleteNotification('${safeId}') : (window.PushClient && window.PushClient.deleteNotification('${safeId}'))" title="이 알림 삭제" style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); color:#fca5a5; font-size:0.68rem; padding:3px 8px; border-radius:6px; cursor:pointer;" onmouseover="this.style.background='rgba(239,68,68,0.25)';" onmouseout="this.style.background='rgba(239,68,68,0.12)';">
+                                <i class="fa-solid fa-trash-can" style="pointer-events:none;"></i> 삭제
                             </button>
                         </div>
                     </div>
                     <div style="font-size:0.84rem; font-weight:800; color:${isUnread ? '#ffffff' : '#cbd5e1'}; line-height:1.35;">${item.title}</div>
                     <div style="font-size:0.76rem; color:#94a3b8; margin-top:4px; line-height:1.5; white-space:pre-line;">${item.body}</div>
                     <div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
-                        <button type="button" onclick="event.stopPropagation(); window.PushClient && window.PushClient.handleNotificationAction('${item.id}')" style="background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; font-size:0.73rem; font-weight:800; padding:4px 10px; border-radius:7px; cursor:pointer;">
+                        <button type="button" data-notif-action="action" data-notif-id="${attrId}" onclick="event.stopPropagation(); window.PushClient && window.PushClient.handleNotificationAction('${safeId}')" style="background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; font-size:0.73rem; font-weight:800; padding:4px 10px; border-radius:7px; cursor:pointer;">
                             ${item.actionLabel || '🎱 바로가기'} →
                         </button>
                         <div style="display:flex; align-items:center; gap:6px;">
                             ${isUnread ? `
-                                <button type="button" onclick="event.stopPropagation(); window.markNotificationRead ? window.markNotificationRead('${item.id}') : (window.PushClient && window.PushClient.markNotificationRead('${item.id}'))" style="background:linear-gradient(135deg, rgba(245,158,11,0.25) 0%, rgba(217,119,6,0.35) 100%); border:1px solid #fbbf24; color:#fff; font-size:0.72rem; font-weight:900; padding:4px 10px; border-radius:7px; cursor:pointer; box-shadow:0 2px 6px rgba(245,158,11,0.2);">
+                                <button type="button" data-notif-action="read" data-notif-id="${attrId}" onclick="event.stopPropagation(); window.markNotificationRead ? window.markNotificationRead('${safeId}') : (window.PushClient && window.PushClient.markNotificationRead('${safeId}'))" style="background:linear-gradient(135deg, rgba(245,158,11,0.25) 0%, rgba(217,119,6,0.35) 100%); border:1px solid #fbbf24; color:#fff; font-size:0.72rem; font-weight:900; padding:4px 10px; border-radius:7px; cursor:pointer; box-shadow:0 2px 6px rgba(245,158,11,0.2);">
                                     탭하여 읽음 처리 ✓
                                 </button>
                             ` : `
-                                <span style="font-size:0.7rem; color:#64748b; font-weight:700; padding:3px 6px;">
+                                <span style="font-size:0.7rem; color:#10b981; font-weight:800; padding:3px 6px;">
                                     ✓ 확인 완료됨
                                 </span>
                             `}
@@ -2124,31 +2514,31 @@ export const PushClient = {
                             <div style="font-size:0.7rem; color:#94a3b8;">관리자 메시지 · 당첨 결과 발표 · 차기 추천번호 안내</div>
                         </div>
                     </div>
-                    <button type="button" onclick="window.PushClient && window.PushClient.closeNotificationCenterModal()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:1.1rem; cursor:pointer;">&times;</button>
+                    <button type="button" data-notif-action="close" onclick="window.PushClient && window.PushClient.closeNotificationCenterModal()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:1.1rem; cursor:pointer;">&times;</button>
                 </div>
 
                 <!-- Sub Toolbar -->
                 <div style="padding:10px 14px; background:#090d16; border-bottom:1px solid rgba(255,255,255,0.06);">
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
                         <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
-                            <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('all') : (window.PushClient && window.PushClient.openNotificationCenterModal('all'))" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'all' ? '#f59e0b' : '#1e293b'}; color:${filter === 'all' ? '#0f172a' : '#cbd5e1'};">
+                            <button type="button" data-notif-action="filter" data-notif-filter="all" onclick="window.PushClient && window.PushClient.setNotificationModalFilter('all')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'all' ? '#f59e0b' : '#1e293b'}; color:${filter === 'all' ? '#0f172a' : '#cbd5e1'};">
                                 전체 (${list.length})
                             </button>
-                            <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('unread') : (window.PushClient && window.PushClient.openNotificationCenterModal('unread'))" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'unread' ? '#f59e0b' : '#1e293b'}; color:${filter === 'unread' ? '#0f172a' : '#cbd5e1'};">
+                            <button type="button" data-notif-action="filter" data-notif-filter="unread" onclick="window.PushClient && window.PushClient.setNotificationModalFilter('unread')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'unread' ? '#f59e0b' : '#1e293b'}; color:${filter === 'unread' ? '#0f172a' : '#cbd5e1'};">
                                 미확인 (${unreadCount})
                             </button>
-                            <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('result') : (window.PushClient && window.PushClient.openNotificationCenterModal('result'))" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'result' ? '#f59e0b' : '#1e293b'}; color:${filter === 'result' ? '#0f172a' : '#cbd5e1'};">
+                            <button type="button" data-notif-action="filter" data-notif-filter="result" onclick="window.PushClient && window.PushClient.setNotificationModalFilter('result')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'result' ? '#f59e0b' : '#1e293b'}; color:${filter === 'result' ? '#0f172a' : '#cbd5e1'};">
                                 🏆 당첨·채점 (${resultCount})
                             </button>
-                            <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('admin') : (window.PushClient && window.PushClient.openNotificationCenterModal('admin'))" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'admin' ? '#f59e0b' : '#1e293b'}; color:${filter === 'admin' ? '#0f172a' : '#cbd5e1'};">
+                            <button type="button" data-notif-action="filter" data-notif-filter="admin" onclick="window.PushClient && window.PushClient.setNotificationModalFilter('admin')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'admin' ? '#f59e0b' : '#1e293b'}; color:${filter === 'admin' ? '#0f172a' : '#cbd5e1'};">
                                 👑 관리자 메시지 (${adminCount})
                             </button>
                         </div>
                         <div style="display:flex; align-items:center; gap:6px;">
-                            <button type="button" onclick="window.markAllNotificationsRead ? window.markAllNotificationsRead() : (window.PushClient && window.PushClient.markAllNotificationsRead())" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(255,255,255,0.07); color:#e2e8f0; border:1px solid rgba(255,255,255,0.12); cursor:pointer;">
+                            <button type="button" data-notif-action="mark-all-read" onclick="window.markAllNotificationsRead ? window.markAllNotificationsRead() : (window.PushClient && window.PushClient.markAllNotificationsRead())" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(255,255,255,0.07); color:#e2e8f0; border:1px solid rgba(255,255,255,0.12); cursor:pointer;">
                                 ✓ 모두 읽음
                             </button>
-                            <button type="button" onclick="window.clearAllNotifications ? window.clearAllNotifications() : (window.PushClient && window.PushClient.clearAllNotifications())" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); cursor:pointer;">
+                            <button type="button" data-notif-action="clear-all" onclick="window.clearAllNotifications ? window.clearAllNotifications() : (window.PushClient && window.PushClient.clearAllNotifications())" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); cursor:pointer;">
                                 🗑️ 전체 삭제
                             </button>
                             <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle()" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.4); cursor:pointer;">
@@ -2375,24 +2765,29 @@ export const PushClient = {
         const unreadMsgs = [];
         allMsgs.forEach(msg => {
             const inboxId = `admin-msg-${msg.id}`;
+            if (this.isNotificationDeleted(inboxId)) return;
+
             const existingList = this.getNotifications();
             const existingItem = existingList.find(it => it && (
                 it.id === inboxId ||
                 it.id === `push-${inboxId}` ||
                 (it.title === msg.title && it.body === (msg.body || ''))
             ));
-            const isReadLocally = !!(existingItem && !existingItem.unread);
+            const isReadLocally = !!(existingItem && !existingItem.unread) || this.isNotificationRead(inboxId);
             const isUnread = (msg.status !== 'read') && !isReadLocally;
             const notifiedKey = `lucky777_admin_notified_${userId}_${msg.id}`;
-            const alreadyAlerted = (localStorage.getItem(notifiedKey) === 'true') ||
+            const alreadyAlerted = (this.safeGetItem(notifiedKey) === 'true') ||
+                (localStorage.getItem(notifiedKey) === 'true') ||
                 this.isPushAlreadyFired(inboxId) ||
                 (localStorage.getItem(`lucky777_fired_admin_${msg.id}`) === 'true') ||
+                (this.safeGetItem(`admin_popup_dismissed_${userId}_${msg.id}`) === 'true') ||
                 (localStorage.getItem(`admin_popup_dismissed_${userId}_${msg.id}`) === 'true');
 
             if (msg.saveToInbox !== false) {
                 if (!existingItem) {
                     if (isUnread && !alreadyAlerted) {
-                        localStorage.setItem(notifiedKey, 'true');
+                        this.safeSetItem(notifiedKey, 'true');
+                        try { localStorage.setItem(notifiedKey, 'true'); } catch (e) {}
                         this.recordPushFired(inboxId);
                     }
                     this.addNotification({
@@ -2412,13 +2807,14 @@ export const PushClient = {
                     this.saveNotifications(existingList);
                 }
             } else if (isUnread && !alreadyAlerted && !this.isPushAlreadyFired(inboxId)) {
-                localStorage.setItem(notifiedKey, 'true');
+                this.safeSetItem(notifiedKey, 'true');
+                try { localStorage.setItem(notifiedKey, 'true'); } catch (e) {}
                 this.recordPushFired(inboxId);
             }
 
             if (isUnread && msg.popupOnLogin !== false) {
                 const dismissKey = `admin_popup_dismissed_${userId}_${msg.id}`;
-                if (localStorage.getItem(dismissKey) !== 'true' && sessionStorage.getItem(dismissKey) !== 'true') {
+                if (this.safeGetItem(dismissKey) !== 'true' && localStorage.getItem(dismissKey) !== 'true' && sessionStorage.getItem(dismissKey) !== 'true') {
                     unreadMsgs.push(msg);
                 }
             }
@@ -3094,6 +3490,7 @@ export const PushClient = {
 if (typeof window !== 'undefined') {
     window.PushClient = PushClient;
     window.openNotificationCenterModal = (filter) => PushClient.openNotificationCenterModal(filter);
+    window.setNotificationModalFilter = (filter) => PushClient.setNotificationModalFilter(filter);
     window.openAdminMessageConsoleModal = (userId) => PushClient.openAdminMessageConsoleModal(userId);
     window.markNotificationRead = (id, showToast) => PushClient.markNotificationRead(id, showToast);
     window.markAllNotificationsRead = () => PushClient.markAllNotificationsRead();
