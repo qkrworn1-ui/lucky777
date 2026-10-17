@@ -4563,7 +4563,8 @@ Lotto 6/45
 
         # 1. Firestore helper and collection references
         self.assertIn("getFirestore()", push_code)
-        self.assertIn("lotto_notifications", push_code)
+        self.assertIn("collection('notifications')", push_code)
+        self.assertIn("lotto_purchases", push_code)
         self.assertIn("getNotificationDocId(userId", push_code)
 
         # 2. Server save, load, and listen methods exist

@@ -612,7 +612,7 @@ export const PushClient = {
     },
 
     /**
-     * 알림함 목록, 읽음 목록, 삭제 목록, 전체삭제 상태를 Firestore lotto_notifications 컬렉션에 영구 저장
+     * 알림함 목록, 읽음 목록, 삭제 목록, 전체삭제 상태를 Firestore(lotto_users 서브컬렉션 및 lotto_purchases)에 영구 저장
      */
     async saveNotificationsToServer(userId = null, customPayload = null) {
         const fs = this.getFirestore();
@@ -658,7 +658,24 @@ export const PushClient = {
                 inbox: listToSave.slice(0, 40)
             };
 
-            await fs.collection('lotto_notifications').doc(docId).set(payload, { merge: true });
+            // 1. lotto_users/{docId}/notifications/inbox 저장 (서브컬렉션 권한 허용)
+            const p1 = fs.collection('lotto_users').doc(docId).collection('notifications').doc('inbox').set(payload, { merge: true }).catch(() => {});
+            
+            // 2. lotto_purchases/notifs_{docId} 저장 (메인 컬렉션 권한 허용)
+            const p2 = fs.collection('lotto_purchases').doc(`notifs_${docId}`).set(payload, { merge: true }).catch(() => {});
+
+            // 3. lotto_users/{docId} notificationMeta 요약 저장 (실시간 onSnapshot 에코 지원)
+            const p3 = fs.collection('lotto_users').doc(docId).set({
+                notificationMeta: {
+                    isCleared: !!isCleared,
+                    clearedAt: clearedAt,
+                    readIds: readArr,
+                    deletedIds: delArr,
+                    updatedAt: new Date().toISOString()
+                }
+            }, { merge: true }).catch(() => {});
+
+            await Promise.allSettled([p1, p2, p3]);
             return true;
         } catch (err) {
             console.warn('[PushClient] saveNotificationsToServer note:', err);
@@ -677,7 +694,7 @@ export const PushClient = {
     },
 
     /**
-     * Firestore lotto_notifications 컬렉션에서 서버 알림 내역을 로드하여 로컬에 완전 복원
+     * Firestore에서 서버 알림 내역을 로드하여 로컬에 완전 복원
      */
     async loadNotificationsFromServer(userId = null) {
         const fs = this.getFirestore();
@@ -687,26 +704,60 @@ export const PushClient = {
             const docId = this.getNotificationDocId(uid);
             if (!docId) return false;
 
-            let docSnap = null;
-            // 1. 캐시 우선 조회 시도 (150ms 타임아웃)
+            let data = null;
+
+            // 1. lotto_users/{docId}/notifications/inbox 우선 조회 (캐시 우선 150ms)
             try {
-                const cachePromise = fs.collection('lotto_notifications').doc(docId).get({ source: 'cache' });
-                const timeoutPromise = new Promise(resolve => setTimeout(() => resolve(null), 150));
-                docSnap = await Promise.race([cachePromise, timeoutPromise]);
+                const subRef = fs.collection('lotto_users').doc(docId).collection('notifications').doc('inbox');
+                const cacheSnap = await Promise.race([
+                    subRef.get({ source: 'cache' }),
+                    new Promise(resolve => setTimeout(() => resolve(null), 150))
+                ]);
+                if (cacheSnap && cacheSnap.exists) {
+                    data = cacheSnap.data();
+                } else {
+                    const netSnap = await Promise.race([
+                        subRef.get(),
+                        new Promise(resolve => setTimeout(() => resolve(null), 1800))
+                    ]);
+                    if (netSnap && netSnap.exists) {
+                        data = netSnap.data();
+                    }
+                }
             } catch(e) {}
 
-            // 2. 캐시 미발견 시 네트워크 조회
-            if (!docSnap || !docSnap.exists) {
-                const netPromise = fs.collection('lotto_notifications').doc(docId).get();
-                const netTimeout = new Promise(resolve => setTimeout(() => resolve(null), 2500));
-                docSnap = await Promise.race([netPromise, netTimeout]);
+            // 2. 서브컬렉션 미발견 시 lotto_purchases/notifs_{docId} 보조 조회
+            if (!data) {
+                try {
+                    const pRef = fs.collection('lotto_purchases').doc(`notifs_${docId}`);
+                    const pSnap = await Promise.race([
+                        pRef.get(),
+                        new Promise(resolve => setTimeout(() => resolve(null), 1800))
+                    ]);
+                    if (pSnap && pSnap.exists) {
+                        data = pSnap.data();
+                    }
+                } catch(e) {}
             }
 
-            if (!docSnap || !docSnap.exists) {
+            // 3. 만약 위 둘 모두 없으면 lotto_users/{docId}.notificationMeta 조회
+            if (!data) {
+                try {
+                    const uRef = fs.collection('lotto_users').doc(docId);
+                    const uSnap = await Promise.race([
+                        uRef.get(),
+                        new Promise(resolve => setTimeout(() => resolve(null), 1800))
+                    ]);
+                    if (uSnap && uSnap.exists && uSnap.data().notificationMeta) {
+                        data = uSnap.data().notificationMeta;
+                    }
+                } catch(e) {}
+            }
+
+            if (!data) {
                 return false;
             }
 
-            const data = docSnap.data() || {};
             this.applyServerNotificationData(uid, data);
             return true;
         } catch (err) {
@@ -856,7 +907,7 @@ export const PushClient = {
         this._notificationsFsDocId = docId;
 
         try {
-            this._notificationsFsUnsubscribe = fs.collection('lotto_notifications').doc(docId).onSnapshot((doc) => {
+            this._notificationsFsUnsubscribe = fs.collection('lotto_users').doc(docId).collection('notifications').doc('inbox').onSnapshot((doc) => {
                 if (!doc || !doc.exists) return;
                 if (doc.metadata && doc.metadata.hasPendingWrites) {
                     return;
@@ -864,7 +915,7 @@ export const PushClient = {
                 const serverData = doc.data() || {};
                 this.applyServerNotificationData(uid, serverData);
             }, (err) => {
-                console.warn('[PushClient] lotto_notifications onSnapshot note:', err);
+                console.warn('[PushClient] notifications inbox onSnapshot note:', err);
             });
         } catch (err) {
             console.warn('[PushClient] listenNotificationsFromServer error:', err);
