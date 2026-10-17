@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2328 - BUILD_DATE: 2026-10-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2344.29 - BUILD_DATE: 2026-10-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.17.2328)
+ * Lucky777 Smart Bundle (v2026.10.17.2344.29)
  */
 
 
@@ -10735,6 +10735,23 @@ const PushClient = {
         }
     },
 
+    /**
+     * 알림 ID 또는 정규화 키를 기반으로 해당 알림이 이미 읽음 처리되었는지 확인
+     */
+    isNotificationRead(notifId) {
+        if (!notifId) return false;
+        try {
+            const normId = String(notifId).trim();
+            const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+            const canonKey = this.getCanonicalPushKey(notifId);
+            return (SafeLocalStorage.getItem(`lucky777_read_${normId}`) === 'true') ||
+                   (SafeLocalStorage.getItem(`lucky777_read_${cleanId}`) === 'true') ||
+                   (canonKey && SafeLocalStorage.getItem(`lucky777_read_${canonKey}`) === 'true');
+        } catch (e) {
+            return false;
+        }
+    },
+
     getNotifications() {
         try {
             const key = this.getInboxStorageKey();
@@ -10756,6 +10773,17 @@ const PushClient = {
                 }
                 return true;
             });
+
+            // 사용자가 이미 확인한 알림은 unread = false 강제 보장 및 boolean 타입 정규화
+            list.forEach(item => {
+                if (!item || !item.id) return;
+                if (this.isNotificationRead(item.id)) {
+                    item.unread = false;
+                } else {
+                    item.unread = (item.unread === true || item.unread === 'true');
+                }
+            });
+
             if (list.length !== origLen) {
                 try {
                     SafeLocalStorage.setItem(key, JSON.stringify(list.slice(0, 40)));
@@ -10828,8 +10856,8 @@ const PushClient = {
             if (targetRound >= 1246) {
                 const recNotifId = `rec-ready-${targetRound}`;
                 const hasRec = list.some(it => it && (it.id === recNotifId || this.getCanonicalPushKey(it.id) === `round_${targetRound}_rec`));
+                const isRecRead = this.isNotificationRead(recNotifId);
                 if (!hasRec && !this.isNotificationDeleted(recNotifId)) {
-                    const isRead = SafeLocalStorage.getItem(`lucky777_read_${recNotifId}`) === 'true';
                     list.push({
                         id: recNotifId,
                         category: 'generator',
@@ -10838,10 +10866,15 @@ const PushClient = {
                         body: `${dispName}을 위한 제 ${targetRound}회차 AI 퀀트 알고리즘(올라운더 1·2·3 최신 엔진) 맞춤 추천번호 조합이 생성되었습니다. 지금 이번 주 최적 팩을 확인해 보세요.`,
                         createdAt: new Date().toISOString(),
                         timeLabel: `제 ${targetRound}회 추천 오픈`,
-                        unread: !isRead,
+                        unread: !isRecRead,
                         actionType: 'generator',
                         actionLabel: '🎱 이번주 추천번호 확인하기'
                     });
+                } else if (hasRec) {
+                    const recItem = list.find(it => it && (it.id === recNotifId || this.getCanonicalPushKey(it.id) === `round_${targetRound}_rec`));
+                    if (recItem && isRecRead) {
+                        recItem.unread = false;
+                    }
                 }
             }
 
@@ -10891,9 +10924,9 @@ const PushClient = {
                     notifBody = `제 ${r}회 당첨번호: ${drawNumsHeader}\n확인된 구매등록 내역이 없습니다. AI 추천번호 복기 결과 및 차기 제 ${targetRound}회차 맞춤 번호를 확인해 보세요.`;
                 }
 
-                const isAlreadyRead = (SafeLocalStorage.getItem(`lucky777_read_${combinedNotifId}`) === 'true') ||
-                    (SafeLocalStorage.getItem(`lucky777_read_${legacyWinId}`) === 'true') ||
-                    (SafeLocalStorage.getItem(`lucky777_read_${canonKey}`) === 'true');
+                const isAlreadyRead = this.isNotificationRead(combinedNotifId) ||
+                    this.isNotificationRead(legacyWinId) ||
+                    this.isNotificationRead(canonKey);
 
                 const unreadFlag = (r === latestDrawnRound) ? !isAlreadyRead : false;
 
@@ -10905,6 +10938,9 @@ const PushClient = {
                     item.category = 'result';
                     item.actionType = 'confirmed';
                     item.actionLabel = '📊 구매확정 당첨내역 확인하기';
+                    if (isAlreadyRead || !unreadFlag) {
+                        item.unread = false;
+                    }
                 } else {
                     list.push({
                         id: combinedNotifId,
@@ -11101,7 +11137,7 @@ const PushClient = {
 
         const deviceAlertKey = `lucky777_alert_fired_${cleanAlertId}`;
         // 동일 알림 푸시는 최초 1회만 발송: 이미 기기에서 푸시가 나갔다면 재푸시 원천 차단 (알림함에서만 확인)
-        if (this.isPushAlreadyFired(cleanAlertId) || this.isPushAlreadyFired(normId) || (canonKey && this.isPushAlreadyFired(canonKey)) || SafeLocalStorage.getItem(deviceAlertKey) === 'true') {
+        if (SafeLocalStorage.getItem(`lucky777_read_${cleanAlertId}`) === 'true' || this.isPushAlreadyFired(cleanAlertId) || this.isPushAlreadyFired(normId) || (canonKey && this.isPushAlreadyFired(canonKey)) || SafeLocalStorage.getItem(deviceAlertKey) === 'true') {
             showBrowserAlert = false;
         }
 
@@ -11133,6 +11169,17 @@ const PushClient = {
             // 이미 알림함에 존재하는 경우: 본문이나 배지만 최신화하고 푸시 팝업은 재발송하지 않음 (알림함 유지)
             const existing = list[existingIdx];
             let updated = false;
+
+            const isAlreadyRead = this.isNotificationRead(existing.id) ||
+                this.isNotificationRead(cleanAlertId) ||
+                this.isNotificationRead(normId) ||
+                (canonKey && this.isNotificationRead(canonKey));
+
+            if (isAlreadyRead && existing.unread) {
+                existing.unread = false;
+                updated = true;
+            }
+
             if (notif.badge && existing.badge !== notif.badge) {
                 existing.badge = notif.badge;
                 updated = true;
@@ -11177,9 +11224,10 @@ const PushClient = {
         }
 
         // 사용자가 이미 확인한 알림인 경우 unread = false로 보존
-        const isAlreadyRead = (SafeLocalStorage.getItem(`lucky777_read_${cleanAlertId}`) === 'true') ||
-            (SafeLocalStorage.getItem(`lucky777_read_${normId}`) === 'true') ||
-            (canonKey && SafeLocalStorage.getItem(`lucky777_read_${canonKey}`) === 'true');
+        const isAlreadyRead = this.isNotificationRead(notif.id) ||
+            this.isNotificationRead(cleanAlertId) ||
+            this.isNotificationRead(normId) ||
+            (canonKey && this.isNotificationRead(canonKey));
 
         const newItem = {
             id: notif.id,
@@ -11281,9 +11329,11 @@ const PushClient = {
                 itemId.replace('lotto-result-', 'draw-result-') === normId.replace('lotto-result-', 'draw-result-') ||
                 (canonKey && this.getCanonicalPushKey(item.id) === canonKey) ||
                 (normId.includes('admin-msg-') && itemId.includes(normId.replace(/^push-/, '').replace(/^admin-msg-/, '')));
-            if (matchesId && item.unread) {
-                item.unread = false;
-                changed = true;
+            if (matchesId || this.isNotificationRead(item.id)) {
+                if (item.unread) {
+                    item.unread = false;
+                    changed = true;
+                }
             }
         });
 
@@ -11301,7 +11351,14 @@ const PushClient = {
 
         this.saveNotifications(list);
 
-        if (changed && showToastMsg && typeof window.showToast === 'function') {
+        // 모달 및 대시보드 미확인 알림 UI 즉시 갱신
+        this.renderUnreadNotificationUI();
+        const modal = document.getElementById('lucky777NotificationCenterModal');
+        if (modal && modal.style.display !== 'none') {
+            this.renderNotificationCenterModalContent();
+        }
+
+        if (showToastMsg && typeof window.showToast === 'function') {
             window.showToast('✓ 알림을 확인 처리했습니다.');
         }
 
@@ -11960,6 +12017,7 @@ const PushClient = {
             // 1. 토요일 판매 마감 임박 리마인더 (토요일 18:00 ~ 20:00 사이, 미구매 회원 - 스마트폰 푸시 제외, 알림함에서만 확인)
             if (todayName === '토요일' && curMinutes >= 18 * 60 && curMinutes < 20 * 60 && !alreadyPurchased) {
                 const lockNotifId = `lock-reminder-${targetRound}`;
+                const isLockRead = this.isNotificationRead(lockNotifId);
                 this.addNotification({
                     id: lockNotifId,
                     category: 'reminder',
@@ -11967,7 +12025,7 @@ const PushClient = {
                     title: `제 ${targetRound}회차 로또 판매 마감(20:00) 임박 안내`,
                     body: `오늘 20:00에 제 ${targetRound}회차 복권 판매 및 실구매 인증이 마감됩니다. 실물 복권을 구매하셨다면 지금 QR 스캔으로 간편 등록하세요.`,
                     timeLabel: '오늘 토요일 마감 안내',
-                    unread: true,
+                    unread: !isLockRead,
                     actionType: 'qr',
                     actionLabel: '📷 실구매 QR 영수증 등록하기'
                 }, false); // 스마트폰 푸시 제외 (알림함에서만 확인)
@@ -12041,6 +12099,7 @@ const PushClient = {
 
                     // 최신회차 당첨번호 + 구매확정 당첨내역 통합 알림만 스마트폰 푸시 1회 발송
                     const shouldPushCombined = !this.isPushAlreadyFired(combinedNotifId) && !this.isPushAlreadyFired(legacyWinId);
+                    const isDrawRead = this.isNotificationRead(combinedNotifId) || this.isNotificationRead(legacyWinId);
 
                     this.addNotification({
                         id: combinedNotifId,
@@ -12049,7 +12108,7 @@ const PushClient = {
                         title: notifTitle,
                         body: notifBody,
                         timeLabel: `제 ${latestDrawnRound}회 당첨·채점 발표`,
-                        unread: true,
+                        unread: !isDrawRead,
                         actionType: 'confirmed',
                         actionLabel: '📊 구매확정 당첨내역 확인하기'
                     }, shouldPushCombined);
@@ -12062,6 +12121,7 @@ const PushClient = {
                 const isRecOpenTime = isSaturdayPostDraw || todayName !== '토요일' || curMinutes < 18 * 60;
                 if (isRecOpenTime) {
                     const recNotifId = `rec-ready-${targetRound}`;
+                    const isRecRead = this.isNotificationRead(recNotifId);
                     this.addNotification({
                         id: recNotifId,
                         category: 'generator',
@@ -12069,7 +12129,7 @@ const PushClient = {
                         title: `🎱 [AI 퀀트 맞춤] 제 ${targetRound}회차 AI 추천번호 및 10대 알고리즘 조합 오픈!`,
                         body: `${dispName}을 위한 제 ${targetRound}회차 AI 퀀트 알고리즘(올라운더 1·2·3 최신 엔진) 맞춤 추천번호 조합이 생성되었습니다. 지금 이번 주 최적 팩을 확인해 보세요.`,
                         timeLabel: `제 ${targetRound}회 추천 오픈`,
-                        unread: true,
+                        unread: !isRecRead,
                         actionType: 'generator',
                         actionLabel: '🎱 이번주 추천번호 확인하기'
                     }, false); // 스마트폰 푸시 제외 (알림함에서만 확인)
@@ -12275,12 +12335,12 @@ const PushClient = {
         if (!modal) return;
 
         const list = this.getNotifications();
-        const unreadCount = list.filter(n => n && n.unread).length;
+        const unreadCount = list.filter(n => n && (n.unread === true || n.unread === 'true') && !this.isNotificationRead(n.id)).length;
         const resultCount = list.filter(n => n && (n.category === 'result' || String(n.id || '').startsWith('draw-result-') || String(n.id || '').startsWith('win-celebrate-'))).length;
         const adminCount = list.filter(n => n && (n.category === 'admin' || String(n.id || '').startsWith('admin-msg-'))).length;
         const filter = this._currentModalFilter || 'all';
         const filtered = filter === 'unread'
-            ? list.filter(n => n && n.unread)
+            ? list.filter(n => n && (n.unread === true || n.unread === 'true') && !this.isNotificationRead(n.id))
             : (filter === 'result'
                 ? list.filter(n => n && (n.category === 'result' || String(n.id || '').startsWith('draw-result-') || String(n.id || '').startsWith('win-celebrate-')))
                 : (filter === 'admin'
@@ -12306,31 +12366,33 @@ const PushClient = {
                 <div style="font-size:1.8rem; margin-bottom:8px;">✨</div>
                 ${emptyMsg}
                </div>`
-            : filtered.map(item => `
-                <div onclick="window.PushClient && window.PushClient.markNotificationRead('${item.id}')" style="background:${item.unread ? 'rgba(30,41,59,0.95)' : 'rgba(15,23,42,0.55)'}; border:1.5px solid ${item.unread ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.07)'}; border-radius:12px; padding:12px 14px; cursor:pointer; transition:all 0.2s; opacity:${item.unread ? '1' : '0.8'}; position:relative;">
+            : filtered.map(item => {
+                const isUnread = (item.unread === true || item.unread === 'true') && !this.isNotificationRead(item.id);
+                return `
+                <div onclick="window.markNotificationRead ? window.markNotificationRead('${item.id}') : (window.PushClient && window.PushClient.markNotificationRead('${item.id}'))" style="background:${isUnread ? 'rgba(30,41,59,0.95)' : 'rgba(15,23,42,0.55)'}; border:1.5px solid ${isUnread ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.07)'}; border-radius:12px; padding:12px 14px; cursor:pointer; transition:all 0.2s; opacity:${isUnread ? '1' : '0.8'}; position:relative;">
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;">
                         <div style="display:flex; align-items:center; gap:6px;">
-                            ${item.unread
+                            ${isUnread
                                 ? '<span style="width:8px; height:8px; border-radius:50%; background:#fbbf24; display:inline-block; box-shadow:0 0 6px #fbbf24;"></span><span style="font-size:0.68rem; font-weight:900; color:#fbbf24;">미확인</span>'
                                 : '<span style="font-size:0.68rem; font-weight:800; color:#10b981;">✓ 확인완료</span>'}
                             <span style="font-size:0.68rem; padding:1px 7px; border-radius:6px; background:rgba(245,158,11,0.18); color:#fde68a; border:1px solid rgba(245,158,11,0.3); font-weight:800;">${item.badge || '🔔 알림'}</span>
                         </div>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="font-size:0.68rem; color:#94a3b8;">${item.timeLabel || ''}</span>
-                            <button type="button" onclick="event.stopPropagation(); window.PushClient && window.PushClient.deleteNotification('${item.id}')" title="이 알림 삭제" style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); color:#fca5a5; font-size:0.68rem; padding:2px 7px; border-radius:6px; cursor:pointer;" onmouseover="this.style.background='rgba(239,68,68,0.25)';" onmouseout="this.style.background='rgba(239,68,68,0.12)';">
+                            <button type="button" onclick="event.stopPropagation(); window.deleteNotification ? window.deleteNotification('${item.id}') : (window.PushClient && window.PushClient.deleteNotification('${item.id}'))" title="이 알림 삭제" style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); color:#fca5a5; font-size:0.68rem; padding:2px 7px; border-radius:6px; cursor:pointer;" onmouseover="this.style.background='rgba(239,68,68,0.25)';" onmouseout="this.style.background='rgba(239,68,68,0.12)';">
                                 <i class="fa-solid fa-trash-can"></i> 삭제
                             </button>
                         </div>
                     </div>
-                    <div style="font-size:0.84rem; font-weight:800; color:${item.unread ? '#ffffff' : '#cbd5e1'}; line-height:1.35;">${item.title}</div>
+                    <div style="font-size:0.84rem; font-weight:800; color:${isUnread ? '#ffffff' : '#cbd5e1'}; line-height:1.35;">${item.title}</div>
                     <div style="font-size:0.76rem; color:#94a3b8; margin-top:4px; line-height:1.5; white-space:pre-line;">${item.body}</div>
                     <div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                         <button type="button" onclick="event.stopPropagation(); window.PushClient && window.PushClient.handleNotificationAction('${item.id}')" style="background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; font-size:0.73rem; font-weight:800; padding:4px 10px; border-radius:7px; cursor:pointer;">
                             ${item.actionLabel || '🎱 바로가기'} →
                         </button>
                         <div style="display:flex; align-items:center; gap:6px;">
-                            ${item.unread ? `
-                                <button type="button" onclick="event.stopPropagation(); window.PushClient && window.PushClient.markNotificationRead('${item.id}')" style="background:linear-gradient(135deg, rgba(245,158,11,0.25) 0%, rgba(217,119,6,0.35) 100%); border:1px solid #fbbf24; color:#fff; font-size:0.72rem; font-weight:900; padding:4px 10px; border-radius:7px; cursor:pointer; box-shadow:0 2px 6px rgba(245,158,11,0.2);">
+                            ${isUnread ? `
+                                <button type="button" onclick="event.stopPropagation(); window.markNotificationRead ? window.markNotificationRead('${item.id}') : (window.PushClient && window.PushClient.markNotificationRead('${item.id}'))" style="background:linear-gradient(135deg, rgba(245,158,11,0.25) 0%, rgba(217,119,6,0.35) 100%); border:1px solid #fbbf24; color:#fff; font-size:0.72rem; font-weight:900; padding:4px 10px; border-radius:7px; cursor:pointer; box-shadow:0 2px 6px rgba(245,158,11,0.2);">
                                     탭하여 읽음 처리 ✓
                                 </button>
                             ` : `
@@ -12341,7 +12403,8 @@ const PushClient = {
                         </div>
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
 
         modal.innerHTML = `
             <div style="width:100%; max-width:520px; max-height:88vh; background:#0f172a; border:1.5px solid rgba(245,158,11,0.4); border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.85); display:flex; flex-direction:column; overflow:hidden;">
@@ -12366,24 +12429,24 @@ const PushClient = {
                 <div style="padding:10px 14px; background:#090d16; border-bottom:1px solid rgba(255,255,255,0.06);">
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
                         <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
-                            <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'all' ? '#f59e0b' : '#1e293b'}; color:${filter === 'all' ? '#0f172a' : '#cbd5e1'};">
+                            <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('all') : (window.PushClient && window.PushClient.openNotificationCenterModal('all'))" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'all' ? '#f59e0b' : '#1e293b'}; color:${filter === 'all' ? '#0f172a' : '#cbd5e1'};">
                                 전체 (${list.length})
                             </button>
-                            <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('unread')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'unread' ? '#f59e0b' : '#1e293b'}; color:${filter === 'unread' ? '#0f172a' : '#cbd5e1'};">
+                            <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('unread') : (window.PushClient && window.PushClient.openNotificationCenterModal('unread'))" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'unread' ? '#f59e0b' : '#1e293b'}; color:${filter === 'unread' ? '#0f172a' : '#cbd5e1'};">
                                 미확인 (${unreadCount})
                             </button>
-                            <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('result')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'result' ? '#f59e0b' : '#1e293b'}; color:${filter === 'result' ? '#0f172a' : '#cbd5e1'};">
+                            <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('result') : (window.PushClient && window.PushClient.openNotificationCenterModal('result'))" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'result' ? '#f59e0b' : '#1e293b'}; color:${filter === 'result' ? '#0f172a' : '#cbd5e1'};">
                                 🏆 당첨·채점 (${resultCount})
                             </button>
-                            <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('admin')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'admin' ? '#f59e0b' : '#1e293b'}; color:${filter === 'admin' ? '#0f172a' : '#cbd5e1'};">
+                            <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('admin') : (window.PushClient && window.PushClient.openNotificationCenterModal('admin'))" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'admin' ? '#f59e0b' : '#1e293b'}; color:${filter === 'admin' ? '#0f172a' : '#cbd5e1'};">
                                 👑 관리자 메시지 (${adminCount})
                             </button>
                         </div>
                         <div style="display:flex; align-items:center; gap:6px;">
-                            <button type="button" onclick="window.PushClient && window.PushClient.markAllNotificationsRead()" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(255,255,255,0.07); color:#e2e8f0; border:1px solid rgba(255,255,255,0.12); cursor:pointer;">
+                            <button type="button" onclick="window.markAllNotificationsRead ? window.markAllNotificationsRead() : (window.PushClient && window.PushClient.markAllNotificationsRead())" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(255,255,255,0.07); color:#e2e8f0; border:1px solid rgba(255,255,255,0.12); cursor:pointer;">
                                 ✓ 모두 읽음
                             </button>
-                            <button type="button" onclick="window.PushClient && window.PushClient.clearAllNotifications()" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); cursor:pointer;">
+                            <button type="button" onclick="window.clearAllNotifications ? window.clearAllNotifications() : (window.PushClient && window.PushClient.clearAllNotifications())" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); cursor:pointer;">
                                 🗑️ 전체 삭제
                             </button>
                             <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle()" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.4); cursor:pointer;">
