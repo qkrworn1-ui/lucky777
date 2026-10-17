@@ -4554,6 +4554,38 @@ Lotto 6/45
         self.assertIn("if (!this.isNotificationDeleted(combinedNotifId) && !this.isNotificationDeleted(legacyWinId) && !this.isNotificationDeleted(canonKey)) {", push_code)
         self.assertIn("if (!this.isNotificationDeleted(recNotifId) && !this.isNotificationDeleted(`round_${targetRound}_rec`)) {", push_code)
 
+    # [Test 124] Firestore Notification Server Sync and Cross-Device Persistence
+    def test_124_firestore_notification_sync_and_persistence(self):
+        """Verify that notification inbox, read states, and deleted states sync to Firestore lotto_notifications collection."""
+        push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
+        with open(push_path, 'r', encoding='utf-8') as f:
+            push_code = f.read()
+
+        # 1. Firestore helper and collection references
+        self.assertIn("getFirestore()", push_code)
+        self.assertIn("lotto_notifications", push_code)
+        self.assertIn("getNotificationDocId(userId", push_code)
+
+        # 2. Server save, load, and listen methods exist
+        self.assertIn("saveNotificationsToServer(", push_code)
+        self.assertIn("debouncedSaveNotificationsToServer(", push_code)
+        self.assertIn("loadNotificationsFromServer(", push_code)
+        self.assertIn("applyServerNotificationData(", push_code)
+        self.assertIn("listenNotificationsFromServer(", push_code)
+
+        # 3. Synchronous memory hydration on boot
+        self.assertIn("initLocalMemorySync()", push_code)
+
+        # 4. Service Worker IndexedDB sync verifies read and deleted status before re-injection
+        self.assertIn("if (this.isNotificationDeleted(it.id)) return;", push_code)
+        self.assertIn("const isRead = this.isNotificationRead(it.id);", push_code)
+        self.assertIn("unread: !isRead", push_code)
+
+        # 5. initPushUI prioritizes server data hydration before scheduler evaluation
+        self.assertIn("PushClient.initLocalMemorySync();", push_code)
+        self.assertIn("PushClient.loadNotificationsFromServer().finally(", push_code)
+        self.assertIn("PushClient.listenNotificationsFromServer();", push_code)
+
 if __name__ == '__main__':
     unittest.main()
 
