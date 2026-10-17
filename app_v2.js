@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.1216.54 - BUILD_DATE: 2026-10-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.1245.54 - BUILD_DATE: 2026-10-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.17.1216.54)
+ * Lucky777 Smart Bundle (v2026.10.17.1245.54)
  */
 
 
@@ -713,17 +713,21 @@ function createBallHtml(num, options = {}) {
 
     let hitClass = '';
     let extraStyle = '';
+    let titleAttr = '';
     if (options.isHit) {
-        hitClass = 'ball-hit';
-        extraStyle = 'background: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border: 1.5px solid #10b981 !important; font-weight: 800 !important;';
+        hitClass = options.isDrawHeader ? 'ball-hit draw-header-ball' : 'ball-hit';
+        extraStyle = 'position: relative; overflow: visible !important; background: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border: 1.5px solid #10b981 !important; font-weight: 800 !important;';
+        if (!options.isDrawHeader) titleAttr = ' title="정규 당첨번호 적중 (✓)"';
     } else if (options.isBonusHit) {
-        hitClass = 'ball-bonus-hit';
-        extraStyle = 'background: rgba(56, 189, 248, 0.22) !important; color: #38bdf8 !important; border: 1.5px solid #38bdf8 !important; font-weight: 800 !important;';
+        hitClass = options.isDrawHeader ? 'ball-bonus-hit draw-header-ball' : 'ball-bonus-hit';
+        const bdrType = options.isDrawHeader ? 'solid' : 'dashed';
+        extraStyle = `position: relative; overflow: visible !important; background: rgba(56, 189, 248, 0.22) !important; color: #38bdf8 !important; border: 1.5px ${bdrType} #38bdf8 !important; font-weight: 800 !important;`;
+        if (!options.isDrawHeader) titleAttr = ' title="보너스 번호 적중 (+)"';
     } else if (options.dim) {
         extraStyle = 'opacity: 0.35 !important;';
     }
 
-    return `<span class="ball-mono ${hitClass} lotto-ball ${colorClass} ${options.extraClass || ''}" style="${sizeStyle} color: ${textColor}; ${extraStyle} text-align: center; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
+    return `<span class="ball-mono ${hitClass} lotto-ball ${colorClass} ${options.extraClass || ''}"${titleAttr} style="${sizeStyle} color: ${textColor}; ${extraStyle} text-align: center; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
 }
 
 /**
@@ -737,8 +741,9 @@ function renderBallRow(numbers, bonus = null, options = {}) {
 
     const balls = numbers.map(n => {
         const isHit = winningSet ? winningSet.has(n) : false;
-        const dim = winningSet && !isHit;
-        return createBallHtml(n, { ...options, isHit, dim });
+        const isBonusHit = !isHit && actualBonus !== null && actualBonus !== undefined ? (n === actualBonus) : false;
+        const dim = winningSet && !isHit && !isBonusHit;
+        return createBallHtml(n, { ...options, isHit, isBonusHit, dim });
     }).join('');
 
     let bonusHtml = '';
@@ -751,7 +756,7 @@ function renderBallRow(numbers, bonus = null, options = {}) {
         `;
     }
 
-    return `<div class="balls-row" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">${balls}${bonusHtml}</div>`;
+    return `<div class="balls-row" style="display: flex; align-items: center; gap: 4px; padding: 3px 2px; flex-wrap: wrap;">${balls}${bonusHtml}</div>`;
 }
 
 /**
@@ -22115,10 +22120,10 @@ async function renderReviewDetail(r) {
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
                     <span style="font-size: 0.85rem; font-weight: 700; color: #94a3b8; white-space: nowrap;">당첨번호:</span>
                     <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: nowrap; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 2px 0;">
-                        ${actualDraw.numbers.map(n => createBallHtml(n, { size: 'small', isHit: true })).join('')}
+                        ${actualDraw.numbers.map(n => createBallHtml(n, { size: 'small', isHit: true, isDrawHeader: true })).join('')}
                         <span style="font-size: 1.05rem; font-weight: 800; color: #94a3b8; margin: 0 2px;">+</span>
                         <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(244, 114, 182, 0.12); border: 1px solid rgba(244, 114, 182, 0.35); border-radius: 14px; padding: 2px 6px 2px 2px;">
-                            ${bonus ? createBallHtml(bonus, { size: 'small', isBonusHit: true }) : ''}
+                            ${bonus ? createBallHtml(bonus, { size: 'small', isBonusHit: true, isDrawHeader: true }) : ''}
                             <span style="font-size: 0.72rem; color: #f472b6; font-weight: 800; white-space: nowrap;">보너스</span>
                         </div>
                     </div>
@@ -22399,7 +22404,7 @@ async function renderReviewDetail(r) {
                         <div style="display: flex; justify-content: space-between; align-items: center; background: ${item.resultBg || 'rgba(0,0,0,0.3)'}; border: ${item.cardBorder || '1px solid rgba(255,255,255,0.06)'}; border-radius: 6px; padding: 4px 8px; gap: 4px; flex-wrap: wrap;">
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <span style="font-size: 0.72rem; color: #cbd5e1; font-weight: 800; min-width: 24px;">#${String(item.idx).padStart(2, '0')}</span>
-                                <div style="display: flex; gap: 4px; align-items: center;">
+                                <div style="display: flex; gap: 5px; align-items: center; padding: 3px 2px;">
                                     ${ballsHtml}
                                 </div>
                             </div>
@@ -23456,16 +23461,12 @@ async function renderAdmin1235ReviewModalContent() {
                     const ballBadges = comboBalls.map(num => {
                         const isHit = winningSet.has(num);
                         const isBonusHit = (num === bonusBall);
-                        const hex = getBallHexColor(num);
-                        const textColor = num <= 10 ? '#0f172a' : '#fff';
-
-                        if (isHit) {
-                            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${hex}; color:${textColor}; font-weight:900; font-size:0.72rem; box-shadow:0 0 6px ${hex}; border:1.5px solid #fff;">${num}</span>`;
-                        } else if (isBonusHit) {
-                            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${hex}; color:${textColor}; font-weight:900; font-size:0.72rem; border:1.5px solid #fbbf24;">${num}</span>`;
-                        } else {
-                            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.06); color:#64748b; font-weight:700; font-size:0.72rem; border:1px solid rgba(255,255,255,0.08);">${num}</span>`;
-                        }
+                        return createBallHtml(num, {
+                            isHit: isHit,
+                            isBonusHit: isBonusHit,
+                            dim: !isHit && !isBonusHit,
+                            size: 'mini'
+                        });
                     }).join('');
 
                     let rankBadge = `<span style="font-size:0.7rem; color:#64748b;">${matchCount}개 일치 (낙첨)</span>`;
@@ -23479,7 +23480,7 @@ async function renderAdmin1235ReviewModalContent() {
                         <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.04); border-radius: 6px; padding: 6px 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <span style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; width: 22px;">[${String.fromCharCode(65 + cIdx)}]</span>
-                                <div style="display: flex; gap: 3px;">
+                                <div style="display: flex; gap: 4px; padding: 3px 2px;">
                                     ${ballBadges}
                                 </div>
                             </div>
@@ -25912,7 +25913,7 @@ async function render7AlgorithmsRealReviewSection() {
                                 </span>
                                 <strong style="color: ${rankColor}; font-size: 0.78rem;">${h.rankLabel || `${h.rank}등`} (+${(h.prize || 0).toLocaleString()}원)</strong>
                             </div>
-                            <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 5px; padding: 3px 2px; align-items: center; flex-wrap: wrap;">
                                 ${ballsHtml}
                             </div>
                         </div>
@@ -25923,7 +25924,7 @@ async function render7AlgorithmsRealReviewSection() {
             }
 
             const drawBallsHtml = (rd.drawNumbers || []).map(n => createBallHtml(n, { size: 'mini' })).join('');
-            const bonusBallHtml = rd.bonus ? createBallHtml(rd.bonus, { isBonusHit: true, size: 'mini' }) : '';
+            const bonusBallHtml = rd.bonus ? createBallHtml(rd.bonus, { isBonusHit: true, isDrawHeader: true, size: 'mini' }) : '';
 
             roundRowsHtml += `
                 <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 8px 10px; margin-top: 6px;">
@@ -30082,25 +30083,28 @@ function renderAccumulatedWins(rankFilter) {
                         <span class="sim-win-prize-tag" style="font-size:0.85rem; font-weight:900; color:#fde047; white-space:nowrap; background:rgba(254,224,71,0.1); border:1px solid rgba(254,224,71,0.3); padding:2px 8px; border-radius:6px;">${prizeTxt}</span>
                     </div>
                 </div>
-                <div class="sim-win-balls-row" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:2px 0;">
+                <div class="sim-win-balls-row" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:4px 2px;">
                     ${nums.map(n => {
                         const isHit = winningSet ? winningSet.has(n) : false;
                         const isBonus = (n === bonusNum);
                         const ballBg = getBallHexColor(n);
                         let hitStyle = 'border:1px solid rgba(255,255,255,0.2);';
                         let hitClass = '';
+                        let titleAttr = '';
                         if (isHit) {
-                            hitClass = 'hit-ball';
-                            hitStyle = 'border:2px solid #fbbf24; box-shadow:0 0 10px rgba(251,191,36,0.9); transform:scale(1.08); z-index:2;';
+                            hitClass = 'hit-ball ball-hit';
+                            hitStyle = 'position:relative; overflow:visible !important; border:1.5px solid #10b981; box-shadow:0 0 10px rgba(16,185,129,0.4); z-index:2;';
+                            titleAttr = ' title="정규 당첨번호 적중 (✓)"';
                         } else if (isBonus) {
-                            hitClass = 'bonus-ball';
-                            hitStyle = 'border:2px solid #f87171; box-shadow:0 0 10px rgba(248,113,113,0.9); transform:scale(1.08); z-index:2;';
+                            hitClass = 'bonus-ball ball-bonus-hit';
+                            hitStyle = 'position:relative; overflow:visible !important; border:1.5px dashed #38bdf8; box-shadow:0 0 10px rgba(56,189,248,0.4); z-index:2;';
+                            titleAttr = ' title="보너스 번호 적중 (+)"';
                         } else if (winningSet) {
                             hitClass = 'dim-ball';
-                            hitStyle = 'opacity:0.4; filter:grayscale(25%); border:1px solid rgba(255,255,255,0.1);';
+                            hitStyle = 'opacity:0.38; filter:grayscale(25%); border:1px solid rgba(255,255,255,0.1);';
                         }
                         const textColor = n <= 10 ? '#0f172a' : '#ffffff';
-                        return `<span class="sim-win-ball ${hitClass} ${getBallColorClass(n)}" style="width:28px; height:28px; line-height:28px; font-size:0.78rem; font-weight:900; color:${textColor}; text-align:center; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:${ballBg}; ${hitStyle} flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.4);">${n}</span>`;
+                        return `<span class="sim-win-ball ${hitClass} ${getBallColorClass(n)}"${titleAttr} style="width:28px; height:28px; line-height:28px; font-size:0.78rem; font-weight:900; color:${textColor}; text-align:center; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:${ballBg}; ${hitStyle} flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.4);">${n.toString().padStart(2, '0')}</span>`;
                     }).join('')}
                 </div>
             </div>
@@ -32561,25 +32565,28 @@ async function renderConfirmedPurchasesList() {
                     <div class="confirmed-game-row" style="display: flex; justify-content: space-between; align-items: center; background: ${rowBg}; border: ${border}; padding: 6px 10px; border-radius: 8px; gap: 8px; width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; ${hasWonReceipt && !isRowWon ? 'opacity: 0.75;' : ''}">
                         <div class="confirmed-game-main" style="display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;">
                             <span class="confirmed-game-letter" style="font-size: 0.72rem; ${letterStyle} min-width: 18px; text-align: center; padding: 2px 4px; border-radius: 4px; font-family: monospace; flex-shrink: 0;">${gameLetter}</span>
-                            <div class="balls-row confirmed-balls-row" style="display: inline-flex; gap: 3px; flex-shrink: 0; flex-wrap: nowrap;">
+                            <div class="balls-row confirmed-balls-row" style="display: inline-flex; gap: 4px; padding: 3px 2px; flex-shrink: 0; flex-wrap: nowrap;">
                                 ${nums.map(n => {
                                     const isHit = actualDraw ? new Set(actualDraw.numbers).has(n) : false;
                                     const isBonusHit = actualDraw ? (n === actualDraw.bonus) : false;
                                     let hitClass = '';
                                     let extraStyle = '';
+                                    let titleAttr = '';
                                     if (actualDraw) {
                                         if (isHit) {
                                             hitClass = 'ball-hit';
-                                            extraStyle = 'background: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border: 1.5px solid #10b981 !important; font-weight: 800 !important;';
+                                            extraStyle = 'position: relative; overflow: visible !important; background: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border: 1.5px solid #10b981 !important; font-weight: 800 !important;';
+                                            titleAttr = ' title="정규 당첨번호 적중 (✓)"';
                                         } else if (isBonusHit) {
                                             hitClass = 'ball-bonus-hit';
-                                            extraStyle = 'background: rgba(56, 189, 248, 0.22) !important; color: #38bdf8 !important; border: 1.5px solid #38bdf8 !important; font-weight: 800 !important;';
-                                        } else if (hasWonReceipt && !isRowWon) {
-                                            extraStyle = 'opacity: 0.35 !important;';
+                                            extraStyle = 'position: relative; overflow: visible !important; background: rgba(56, 189, 248, 0.22) !important; color: #38bdf8 !important; border: 1.5px dashed #38bdf8 !important; font-weight: 800 !important;';
+                                            titleAttr = ' title="보너스 번호 적중 (+)"';
+                                        } else {
+                                            extraStyle = 'opacity: 0.38 !important;';
                                         }
                                     }
                                     const ballTextColor = (n <= 10) ? '#0f172a' : '#ffffff';
-                                    return `<span class="ball-mono ${hitClass} lotto-ball-mini" style="width: 25px; height: 25px; line-height: 25px; text-align: center; border-radius: 50%; font-size: 0.70rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace; ${extraStyle}">${n.toString().padStart(2, '0')}</span>`;
+                                    return `<span class="ball-mono ${hitClass} lotto-ball-mini"${titleAttr} style="width: 25px; height: 25px; line-height: 25px; text-align: center; border-radius: 50%; font-size: 0.70rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace; ${extraStyle}">${n.toString().padStart(2, '0')}</span>`;
                                 }).join('')}
                             </div>
                             ${aiMatchTag ? `<div class="confirmed-ai-tag" style="flex-shrink: 0; white-space: nowrap;">${aiMatchTag}</div>` : ''}
@@ -33331,16 +33338,22 @@ function renderWinningHistoryModal() {
                                     <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 5px 8px; border-radius: 6px; flex-wrap: wrap; gap: 6px;">
                                         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                             <span style="font-size: 0.72rem; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 1px 5px; border-radius: 3px;">#${wc.cIdx}</span>
-                                            <div style="display: flex; gap: 3px;">
+                                            <div style="display: flex; gap: 4px; padding: 3px 2px;">
                                                 ${wc.nums.map(n => {
                                                     const isHit = actual ? new Set(actual.numbers).has(n) : false;
                                                     const isBonusHit = actual ? (n === actual.bonus) : false;
                                                     const ballBg = getBallHexColor(n);
-                                                    let borderStyle = 'opacity: 0.45;';
-                                                    if (isHit) borderStyle = 'border: 2px solid #fbbf24; font-weight: 800; transform: scale(1.05); box-shadow: 0 0 6px rgba(251,191,36,0.6);';
-                                                    else if (isBonusHit) borderStyle = 'border: 2px solid #69c8f2; font-weight: 800; transform: scale(1.05); box-shadow: 0 0 6px rgba(105,200,242,0.6);';
+                                                    let hitClass = '';
+                                                    let borderStyle = 'opacity: 0.38;';
+                                                    if (isHit) {
+                                                        hitClass = 'ball-hit';
+                                                        borderStyle = 'position: relative; overflow: visible !important; border: 1.5px solid #10b981; font-weight: 800;';
+                                                    } else if (isBonusHit) {
+                                                        hitClass = 'ball-bonus-hit';
+                                                        borderStyle = 'position: relative; overflow: visible !important; border: 1.5px dashed #38bdf8; font-weight: 800;';
+                                                    }
                                                     const textColor = n <= 10 ? '#0f172a' : '#fff';
-                                                    return `<span style="background: ${ballBg}; ${borderStyle} width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; font-size: 0.7rem; color: ${textColor}; font-weight: 900; display: inline-block;">${n}</span>`;
+                                                    return `<span class="ball-mono ${hitClass} lotto-ball-mini" style="background: ${ballBg}; ${borderStyle} width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; font-size: 0.7rem; color: ${textColor}; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;">${n.toString().padStart(2, '0')}</span>`;
                                                 }).join('')}
                                             </div>
                                         </div>
@@ -36272,10 +36285,11 @@ function renderVerificationTab() {
                     <span class="verify-match-badge ${prizeClass}">${prizeText}</span>
                 </div>
                 <div class="combo-body">
-                    <div class="balls-row">
+                    <div class="balls-row" style="padding: 3px 2px;">
                         ${numbers.map(n => {
                             const isMatch = winningSet.has(n);
-                            return `<div class="lotto-ball ${getBallColorClass(n)} ${isMatch ? 'matched-ball' : ''}">${n}</div>`;
+                            const isBonus = (n === bonusNum);
+                            return `<div class="lotto-ball ${getBallColorClass(n)} ${isMatch ? 'matched-ball ball-hit' : (isBonus ? 'ball-bonus-hit' : '')}">${n}</div>`;
                         }).join('')}
                     </div>
                     <div class="combo-stats">
@@ -41108,20 +41122,23 @@ function showCelebrationOverlay(celebrationData) {
             const isBonus = num === bonusNum;
             const bg = getBallHexColor(num);
             
+            let hitClass = '';
             let extraStyle = '';
             let label = '';
             if (isMatch) {
-                extraStyle = 'box-shadow: 0 0 10px #fbbf24, 0 0 18px rgba(251,191,36,0.6); border: 2px solid #fff; transform: scale(1.08);';
+                hitClass = 'ball-hit';
+                extraStyle = 'position: relative; overflow: visible !important; box-shadow: 0 0 10px #10b981; border: 2px solid #10b981; transform: scale(1.06);';
             } else if (isBonus) {
-                extraStyle = 'box-shadow: 0 0 10px #60a5fa; border: 2px dashed #93c5fd;';
-                label = '<span style="position:absolute;bottom:-12px;font-size:9px;color:#93c5fd;font-weight:700;">보너스</span>';
+                hitClass = 'ball-bonus-hit';
+                extraStyle = 'position: relative; overflow: visible !important; box-shadow: 0 0 10px #38bdf8; border: 2px dashed #38bdf8;';
+                label = '<span style="position:absolute;bottom:-12px;font-size:9px;color:#38bdf8;font-weight:700;">보너스</span>';
             } else {
-                extraStyle = 'opacity: 0.45; filter: grayscale(40%);';
+                extraStyle = 'opacity: 0.42; filter: grayscale(40%);';
             }
 
             const textColor = num <= 10 ? '#0f172a' : '#fff';
             return `<div style="position:relative;display:flex;flex-direction:column;align-items:center;">` +
-                `<div style="width:34px;height:34px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;color:${textColor};${extraStyle}">` +
+                `<div class="ball-mono ${hitClass}" style="width:34px;height:34px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;color:${textColor};${extraStyle}">` +
                     `${num}` +
                 `</div>` +
                 `${label}` +
@@ -42425,12 +42442,13 @@ function openSnapshotDetail(safeUserId, round) {
             recCombosHtml += `
                 <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between;">
                     <span style="font-size: 0.72rem; color: #94a3b8; min-width: 60px;">${label}</span>
-                    <div style="display: flex; gap: 4px; align-items: center;">
+                    <div style="display: flex; gap: 4px; padding: 3px 2px; align-items: center;">
                         ${nums.map(n => {
                             const isHit = winSet.has(Number(n));
                             const isBHit = Number(n) === Number(bonus);
-                            const glow = isHit ? 'box-shadow: 0 0 6px #fbbf24; border: 1px solid #fbbf24;' : (isBHit ? 'border: 1px dashed #fbbf24;' : '');
-                            return `<span style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: 800; align-items: center; justify-content: center; ${getBallColorStyle(n)} ${glow}">${n}</span>`;
+                            const hitCls = isHit ? 'ball-hit' : (isBHit ? 'ball-bonus-hit' : '');
+                            const glow = isHit ? 'position: relative; overflow: visible !important; border: 1.5px solid #10b981;' : (isBHit ? 'position: relative; overflow: visible !important; border: 1.5px dashed #38bdf8;' : 'opacity: 0.4;');
+                            return `<span class="ball-mono ${hitCls} lotto-ball-mini" style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: 800; align-items: center; justify-content: center; ${getBallColorStyle(n)} ${glow}">${n}</span>`;
                         }).join('')}
                     </div>
                     <div style="min-width: 45px; text-align: right;">${hitBadge}</div>
@@ -42491,11 +42509,13 @@ function openSnapshotDetail(safeUserId, round) {
                 receiptsHtml += `
                     <div style="background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between;">
                         <span style="font-weight: 800; font-size: 0.75rem; color: #cbd5e1; min-width: 25px;">${letter}</span>
-                        <div style="display: flex; gap: 4px;">
+                        <div style="display: flex; gap: 4px; padding: 3px 2px;">
                             ${nums.map(n => {
                                 const isHit = winSet.has(Number(n));
-                                const glow = isHit ? 'box-shadow: 0 0 6px #34d399; border: 1.5px solid #34d399;' : '';
-                                return `<span style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: 800; align-items: center; justify-content: center; ${getBallColorStyle(n)} ${glow}">${n}</span>`;
+                                const isBHit = Number(n) === Number(bonus);
+                                const hitCls = isHit ? 'ball-hit' : (isBHit ? 'ball-bonus-hit' : '');
+                                const glow = isHit ? 'position: relative; overflow: visible !important; border: 1.5px solid #10b981;' : (isBHit ? 'position: relative; overflow: visible !important; border: 1.5px dashed #38bdf8;' : 'opacity: 0.4;');
+                                return `<span class="ball-mono ${hitCls} lotto-ball-mini" style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: 800; align-items: center; justify-content: center; ${getBallColorStyle(n)} ${glow}">${n}</span>`;
                             }).join('')}
                         </div>
                         <div style="font-size: 0.74rem; min-width: 80px; text-align: right;">${winRank}</div>

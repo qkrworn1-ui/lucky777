@@ -828,12 +828,13 @@ export function openSnapshotDetail(safeUserId, round) {
             recCombosHtml += `
                 <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 6px 10px; display: flex; align-items: center; justify-content: space-between;">
                     <span style="font-size: 0.72rem; color: #94a3b8; min-width: 60px;">${label}</span>
-                    <div style="display: flex; gap: 4px; align-items: center;">
+                    <div style="display: flex; gap: 4px; padding: 3px 2px; align-items: center;">
                         ${nums.map(n => {
                             const isHit = winSet.has(Number(n));
                             const isBHit = Number(n) === Number(bonus);
-                            const glow = isHit ? 'box-shadow: 0 0 6px #fbbf24; border: 1px solid #fbbf24;' : (isBHit ? 'border: 1px dashed #fbbf24;' : '');
-                            return `<span style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: 800; align-items: center; justify-content: center; ${getBallColorStyle(n)} ${glow}">${n}</span>`;
+                            const hitCls = isHit ? 'ball-hit' : (isBHit ? 'ball-bonus-hit' : '');
+                            const glow = isHit ? 'position: relative; overflow: visible !important; border: 1.5px solid #10b981;' : (isBHit ? 'position: relative; overflow: visible !important; border: 1.5px dashed #38bdf8;' : 'opacity: 0.4;');
+                            return `<span class="ball-mono ${hitCls} lotto-ball-mini" style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: 800; align-items: center; justify-content: center; ${getBallColorStyle(n)} ${glow}">${n}</span>`;
                         }).join('')}
                     </div>
                     <div style="min-width: 45px; text-align: right;">${hitBadge}</div>
@@ -894,11 +895,13 @@ export function openSnapshotDetail(safeUserId, round) {
                 receiptsHtml += `
                     <div style="background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 5px; display: flex; align-items: center; justify-content: space-between;">
                         <span style="font-weight: 800; font-size: 0.75rem; color: #cbd5e1; min-width: 25px;">${letter}</span>
-                        <div style="display: flex; gap: 4px;">
+                        <div style="display: flex; gap: 4px; padding: 3px 2px;">
                             ${nums.map(n => {
                                 const isHit = winSet.has(Number(n));
-                                const glow = isHit ? 'box-shadow: 0 0 6px #34d399; border: 1.5px solid #34d399;' : '';
-                                return `<span style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: 800; align-items: center; justify-content: center; ${getBallColorStyle(n)} ${glow}">${n}</span>`;
+                                const isBHit = Number(n) === Number(bonus);
+                                const hitCls = isHit ? 'ball-hit' : (isBHit ? 'ball-bonus-hit' : '');
+                                const glow = isHit ? 'position: relative; overflow: visible !important; border: 1.5px solid #10b981;' : (isBHit ? 'position: relative; overflow: visible !important; border: 1.5px dashed #38bdf8;' : 'opacity: 0.4;');
+                                return `<span class="ball-mono ${hitCls} lotto-ball-mini" style="display: inline-flex; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: 800; align-items: center; justify-content: center; ${getBallColorStyle(n)} ${glow}">${n}</span>`;
                             }).join('')}
                         </div>
                         <div style="font-size: 0.74rem; min-width: 80px; text-align: right;">${winRank}</div>

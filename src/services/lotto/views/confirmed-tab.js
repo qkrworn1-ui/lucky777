@@ -1267,25 +1267,28 @@ export async function renderConfirmedPurchasesList() {
                     <div class="confirmed-game-row" style="display: flex; justify-content: space-between; align-items: center; background: ${rowBg}; border: ${border}; padding: 6px 10px; border-radius: 8px; gap: 8px; width: 100%; box-sizing: border-box; overflow-x: auto; -webkit-overflow-scrolling: touch; ${hasWonReceipt && !isRowWon ? 'opacity: 0.75;' : ''}">
                         <div class="confirmed-game-main" style="display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;">
                             <span class="confirmed-game-letter" style="font-size: 0.72rem; ${letterStyle} min-width: 18px; text-align: center; padding: 2px 4px; border-radius: 4px; font-family: monospace; flex-shrink: 0;">${gameLetter}</span>
-                            <div class="balls-row confirmed-balls-row" style="display: inline-flex; gap: 3px; flex-shrink: 0; flex-wrap: nowrap;">
+                            <div class="balls-row confirmed-balls-row" style="display: inline-flex; gap: 4px; padding: 3px 2px; flex-shrink: 0; flex-wrap: nowrap;">
                                 ${nums.map(n => {
                                     const isHit = actualDraw ? new Set(actualDraw.numbers).has(n) : false;
                                     const isBonusHit = actualDraw ? (n === actualDraw.bonus) : false;
                                     let hitClass = '';
                                     let extraStyle = '';
+                                    let titleAttr = '';
                                     if (actualDraw) {
                                         if (isHit) {
                                             hitClass = 'ball-hit';
-                                            extraStyle = 'background: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border: 1.5px solid #10b981 !important; font-weight: 800 !important;';
+                                            extraStyle = 'position: relative; overflow: visible !important; background: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border: 1.5px solid #10b981 !important; font-weight: 800 !important;';
+                                            titleAttr = ' title="정규 당첨번호 적중 (✓)"';
                                         } else if (isBonusHit) {
                                             hitClass = 'ball-bonus-hit';
-                                            extraStyle = 'background: rgba(56, 189, 248, 0.22) !important; color: #38bdf8 !important; border: 1.5px solid #38bdf8 !important; font-weight: 800 !important;';
-                                        } else if (hasWonReceipt && !isRowWon) {
-                                            extraStyle = 'opacity: 0.35 !important;';
+                                            extraStyle = 'position: relative; overflow: visible !important; background: rgba(56, 189, 248, 0.22) !important; color: #38bdf8 !important; border: 1.5px dashed #38bdf8 !important; font-weight: 800 !important;';
+                                            titleAttr = ' title="보너스 번호 적중 (+)"';
+                                        } else {
+                                            extraStyle = 'opacity: 0.38 !important;';
                                         }
                                     }
                                     const ballTextColor = (n <= 10) ? '#0f172a' : '#ffffff';
-                                    return `<span class="ball-mono ${hitClass} lotto-ball-mini" style="width: 25px; height: 25px; line-height: 25px; text-align: center; border-radius: 50%; font-size: 0.70rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace; ${extraStyle}">${n.toString().padStart(2, '0')}</span>`;
+                                    return `<span class="ball-mono ${hitClass} lotto-ball-mini"${titleAttr} style="width: 25px; height: 25px; line-height: 25px; text-align: center; border-radius: 50%; font-size: 0.70rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: monospace; ${extraStyle}">${n.toString().padStart(2, '0')}</span>`;
                                 }).join('')}
                             </div>
                             ${aiMatchTag ? `<div class="confirmed-ai-tag" style="flex-shrink: 0; white-space: nowrap;">${aiMatchTag}</div>` : ''}
@@ -2037,16 +2040,22 @@ export function renderWinningHistoryModal() {
                                     <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 5px 8px; border-radius: 6px; flex-wrap: wrap; gap: 6px;">
                                         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                                             <span style="font-size: 0.72rem; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 1px 5px; border-radius: 3px;">#${wc.cIdx}</span>
-                                            <div style="display: flex; gap: 3px;">
+                                            <div style="display: flex; gap: 4px; padding: 3px 2px;">
                                                 ${wc.nums.map(n => {
                                                     const isHit = actual ? new Set(actual.numbers).has(n) : false;
                                                     const isBonusHit = actual ? (n === actual.bonus) : false;
                                                     const ballBg = getBallHexColor(n);
-                                                    let borderStyle = 'opacity: 0.45;';
-                                                    if (isHit) borderStyle = 'border: 2px solid #fbbf24; font-weight: 800; transform: scale(1.05); box-shadow: 0 0 6px rgba(251,191,36,0.6);';
-                                                    else if (isBonusHit) borderStyle = 'border: 2px solid #69c8f2; font-weight: 800; transform: scale(1.05); box-shadow: 0 0 6px rgba(105,200,242,0.6);';
+                                                    let hitClass = '';
+                                                    let borderStyle = 'opacity: 0.38;';
+                                                    if (isHit) {
+                                                        hitClass = 'ball-hit';
+                                                        borderStyle = 'position: relative; overflow: visible !important; border: 1.5px solid #10b981; font-weight: 800;';
+                                                    } else if (isBonusHit) {
+                                                        hitClass = 'ball-bonus-hit';
+                                                        borderStyle = 'position: relative; overflow: visible !important; border: 1.5px dashed #38bdf8; font-weight: 800;';
+                                                    }
                                                     const textColor = n <= 10 ? '#0f172a' : '#fff';
-                                                    return `<span style="background: ${ballBg}; ${borderStyle} width: 22px; height: 22px; line-height: 22px; text-align: center; border-radius: 50%; font-size: 0.7rem; color: ${textColor}; font-weight: 900; display: inline-block;">${n}</span>`;
+                                                    return `<span class="ball-mono ${hitClass} lotto-ball-mini" style="background: ${ballBg}; ${borderStyle} width: 24px; height: 24px; line-height: 24px; text-align: center; border-radius: 50%; font-size: 0.7rem; color: ${textColor}; font-weight: 800; display: inline-flex; align-items: center; justify-content: center;">${n.toString().padStart(2, '0')}</span>`;
                                                 }).join('')}
                                             </div>
                                         </div>

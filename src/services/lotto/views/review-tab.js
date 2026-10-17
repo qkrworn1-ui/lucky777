@@ -2411,10 +2411,10 @@ export async function renderReviewDetail(r) {
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
                     <span style="font-size: 0.85rem; font-weight: 700; color: #94a3b8; white-space: nowrap;">당첨번호:</span>
                     <div style="display: inline-flex; align-items: center; gap: 5px; flex-wrap: nowrap; max-width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; padding: 2px 0;">
-                        ${actualDraw.numbers.map(n => createBallHtml(n, { size: 'small', isHit: true })).join('')}
+                        ${actualDraw.numbers.map(n => createBallHtml(n, { size: 'small', isHit: true, isDrawHeader: true })).join('')}
                         <span style="font-size: 1.05rem; font-weight: 800; color: #94a3b8; margin: 0 2px;">+</span>
                         <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(244, 114, 182, 0.12); border: 1px solid rgba(244, 114, 182, 0.35); border-radius: 14px; padding: 2px 6px 2px 2px;">
-                            ${bonus ? createBallHtml(bonus, { size: 'small', isBonusHit: true }) : ''}
+                            ${bonus ? createBallHtml(bonus, { size: 'small', isBonusHit: true, isDrawHeader: true }) : ''}
                             <span style="font-size: 0.72rem; color: #f472b6; font-weight: 800; white-space: nowrap;">보너스</span>
                         </div>
                     </div>
@@ -2695,7 +2695,7 @@ export async function renderReviewDetail(r) {
                         <div style="display: flex; justify-content: space-between; align-items: center; background: ${item.resultBg || 'rgba(0,0,0,0.3)'}; border: ${item.cardBorder || '1px solid rgba(255,255,255,0.06)'}; border-radius: 6px; padding: 4px 8px; gap: 4px; flex-wrap: wrap;">
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <span style="font-size: 0.72rem; color: #cbd5e1; font-weight: 800; min-width: 24px;">#${String(item.idx).padStart(2, '0')}</span>
-                                <div style="display: flex; gap: 4px; align-items: center;">
+                                <div style="display: flex; gap: 5px; align-items: center; padding: 3px 2px;">
                                     ${ballsHtml}
                                 </div>
                             </div>
@@ -3752,16 +3752,12 @@ export async function renderAdmin1235ReviewModalContent() {
                     const ballBadges = comboBalls.map(num => {
                         const isHit = winningSet.has(num);
                         const isBonusHit = (num === bonusBall);
-                        const hex = getBallHexColor(num);
-                        const textColor = num <= 10 ? '#0f172a' : '#fff';
-
-                        if (isHit) {
-                            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${hex}; color:${textColor}; font-weight:900; font-size:0.72rem; box-shadow:0 0 6px ${hex}; border:1.5px solid #fff;">${num}</span>`;
-                        } else if (isBonusHit) {
-                            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${hex}; color:${textColor}; font-weight:900; font-size:0.72rem; border:1.5px solid #fbbf24;">${num}</span>`;
-                        } else {
-                            return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.06); color:#64748b; font-weight:700; font-size:0.72rem; border:1px solid rgba(255,255,255,0.08);">${num}</span>`;
-                        }
+                        return createBallHtml(num, {
+                            isHit: isHit,
+                            isBonusHit: isBonusHit,
+                            dim: !isHit && !isBonusHit,
+                            size: 'mini'
+                        });
                     }).join('');
 
                     let rankBadge = `<span style="font-size:0.7rem; color:#64748b;">${matchCount}개 일치 (낙첨)</span>`;
@@ -3775,7 +3771,7 @@ export async function renderAdmin1235ReviewModalContent() {
                         <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.04); border-radius: 6px; padding: 6px 8px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
                             <div style="display: flex; align-items: center; gap: 6px;">
                                 <span style="font-size: 0.7rem; font-weight: 800; color: #94a3b8; width: 22px;">[${String.fromCharCode(65 + cIdx)}]</span>
-                                <div style="display: flex; gap: 3px;">
+                                <div style="display: flex; gap: 4px; padding: 3px 2px;">
                                     ${ballBadges}
                                 </div>
                             </div>

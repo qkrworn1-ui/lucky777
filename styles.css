@@ -21285,7 +21285,7 @@ body.is-admin .btn-snapshot-audit-compact {
     display: none !important;
 }
 
-/* Clean Minimalist Hit Ball - Emerald Glow */
+/* Clean Minimalist Hit Ball - Emerald Glow + Corner Check (✓) Badge */
 .ball-hit,
 .ball-mono.ball-hit,
 .ball.is-hit,
@@ -21298,7 +21298,10 @@ body.is-admin .btn-snapshot-audit-compact {
 .ball-mini.is-hit,
 .ball-mini.hit,
 .verify-ball-hit,
+.sim-win-ball.hit-ball,
 .sim-win-ball.is-hit {
+    position: relative !important;
+    overflow: visible !important;
     background: rgba(16, 185, 129, 0.22) !important;
     color: #34d399 !important;
     border: 1.5px solid #10b981 !important;
@@ -21307,18 +21310,97 @@ body.is-admin .btn-snapshot-audit-compact {
     text-shadow: none !important;
 }
 
-/* Bonus Hit Ball - Sky Blue Glow */
+.ball-hit:not(.draw-header-ball)::after,
+.ball-mono.ball-hit:not(.draw-header-ball)::after,
+.ball.is-hit:not(.draw-header-ball)::after,
+.ball.hit:not(.draw-header-ball)::after,
+.matched-ball:not(.draw-header-ball)::after,
+.lotto-ball.is-hit:not(.draw-header-ball)::after,
+.lotto-ball.hit:not(.draw-header-ball)::after,
+.lotto-ball-mini.is-hit:not(.draw-header-ball)::after,
+.lotto-ball-mini.hit:not(.draw-header-ball)::after,
+.ball-mini.is-hit:not(.draw-header-ball)::after,
+.ball-mini.hit:not(.draw-header-ball)::after,
+.verify-ball-hit:not(.draw-header-ball)::after,
+.sim-win-ball.hit-ball:not(.draw-header-ball)::after,
+.sim-win-ball.is-hit:not(.draw-header-ball)::after {
+    content: '✓' !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: absolute !important;
+    top: -4px !important;
+    right: -4px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: 13px !important;
+    height: 13px !important;
+    border-radius: 50% !important;
+    background: #10b981 !important;
+    color: #052e16 !important;
+    border: 1.5px solid #0f172a !important;
+    font-family: system-ui, -apple-system, sans-serif !important;
+    font-size: 8.5px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.65) !important;
+    pointer-events: none !important;
+    transform: none !important;
+    z-index: 4 !important;
+}
+
+/* Bonus Hit Ball - Sky Blue Dashed Glow + Corner Bonus (+) Badge */
 .ball-bonus-hit,
 .ball-mono.ball-bonus-hit,
 .lotto-ball.bonus-hit,
 .lotto-ball-mini.bonus-hit,
+.verify-ball-bonus,
+.sim-win-ball.bonus-ball,
 .sim-win-ball.bonus-hit {
+    position: relative !important;
+    overflow: visible !important;
     background: rgba(56, 189, 248, 0.22) !important;
     color: #38bdf8 !important;
-    border: 1.5px solid #38bdf8 !important;
+    border: 1.5px dashed #38bdf8 !important;
     box-shadow: 0 0 10px rgba(56, 189, 248, 0.35) !important;
     font-weight: 800 !important;
     text-shadow: none !important;
+}
+
+.draw-header-ball.ball-bonus-hit {
+    border-style: solid !important;
+}
+
+.ball-bonus-hit:not(.draw-header-ball)::after,
+.ball-mono.ball-bonus-hit:not(.draw-header-ball)::after,
+.lotto-ball.bonus-hit:not(.draw-header-ball)::after,
+.lotto-ball-mini.bonus-hit:not(.draw-header-ball)::after,
+.verify-ball-bonus:not(.draw-header-ball)::after,
+.sim-win-ball.bonus-ball:not(.draw-header-ball)::after,
+.sim-win-ball.bonus-hit:not(.draw-header-ball)::after {
+    content: '+' !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: absolute !important;
+    top: -4px !important;
+    right: -4px !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: 13px !important;
+    height: 13px !important;
+    border-radius: 50% !important;
+    background: #38bdf8 !important;
+    color: #082f49 !important;
+    border: 1.5px solid #0f172a !important;
+    font-family: system-ui, -apple-system, sans-serif !important;
+    font-size: 9.5px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.65) !important;
+    pointer-events: none !important;
+    transform: none !important;
+    z-index: 4 !important;
 }
 
 /* Combo Row Anti-Overlap Safeguards */

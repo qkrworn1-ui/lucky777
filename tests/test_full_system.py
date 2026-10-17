@@ -4325,6 +4325,41 @@ Lotto 6/45
         self.assertIn("state.confirmedActiveRoundFilter = 'all';", modal_code,
                       "manual-modal.js must reset confirmedActiveRoundFilter to 'all' so latest round is expanded and past rounds folded")
 
+    # [Test 120] Hit Ball Check (✓) vs Bonus Ball (+) Differentiation Across All Menus
+    def test_120_hit_ball_check_vs_bonus_ball_differentiation_all_menus(self):
+        """Verify that main winning number hits (✓ check badge) and bonus number hits (+ badge & dashed ring) are differentiated across components, styles, simulation, review, and confirmed menus."""
+        styles_path = os.path.join(self.root_dir, 'styles.css')
+        comp_path = os.path.join(self.root_dir, 'src', 'shared', 'components.js')
+        sim_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'simulation-tab.js')
+        rev_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        conf_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+
+        with open(styles_path, 'r', encoding='utf-8') as f:
+            styles_code = f.read()
+        with open(comp_path, 'r', encoding='utf-8') as f:
+            comp_code = f.read()
+        with open(sim_path, 'r', encoding='utf-8') as f:
+            sim_code = f.read()
+        with open(rev_path, 'r', encoding='utf-8') as f:
+            rev_code = f.read()
+        with open(conf_path, 'r', encoding='utf-8') as f:
+            conf_code = f.read()
+
+        # 1. styles.css must define '✓' check badge for .ball-hit and '+' badge + dashed border for .ball-bonus-hit
+        self.assertIn("content: '✓' !important;", styles_code)
+        self.assertIn("content: '+' !important;", styles_code)
+        self.assertIn("border: 1.5px dashed #38bdf8 !important;", styles_code)
+
+        # 2. components.js must support draw-header-ball separation and dashed border on bonus hits
+        self.assertIn("options.isDrawHeader ? 'ball-hit draw-header-ball' : 'ball-hit'", comp_code)
+        self.assertIn("options.isDrawHeader ? 'ball-bonus-hit draw-header-ball' : 'ball-bonus-hit'", comp_code)
+
+        # 3. simulation-tab.js, review-tab.js, and confirmed-tab.js must apply ball-hit and ball-bonus-hit
+        self.assertIn("hitClass = 'hit-ball ball-hit';", sim_code)
+        self.assertIn("hitClass = 'bonus-ball ball-bonus-hit';", sim_code)
+        self.assertIn("isDrawHeader: true", rev_code)
+        self.assertIn("border: 1.5px dashed #38bdf8 !important;", conf_code)
+
 if __name__ == '__main__':
     unittest.main()
 

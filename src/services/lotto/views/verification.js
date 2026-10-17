@@ -63,10 +63,11 @@ export function renderVerificationTab() {
                     <span class="verify-match-badge ${prizeClass}">${prizeText}</span>
                 </div>
                 <div class="combo-body">
-                    <div class="balls-row">
+                    <div class="balls-row" style="padding: 3px 2px;">
                         ${numbers.map(n => {
                             const isMatch = winningSet.has(n);
-                            return `<div class="lotto-ball ${getBallColorClass(n)} ${isMatch ? 'matched-ball' : ''}">${n}</div>`;
+                            const isBonus = (n === bonusNum);
+                            return `<div class="lotto-ball ${getBallColorClass(n)} ${isMatch ? 'matched-ball ball-hit' : (isBonus ? 'ball-bonus-hit' : '')}">${n}</div>`;
                         }).join('')}
                     </div>
                     <div class="combo-stats">

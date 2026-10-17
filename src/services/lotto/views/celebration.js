@@ -298,20 +298,23 @@ export function showCelebrationOverlay(celebrationData) {
             const isBonus = num === bonusNum;
             const bg = getBallHexColor(num);
             
+            let hitClass = '';
             let extraStyle = '';
             let label = '';
             if (isMatch) {
-                extraStyle = 'box-shadow: 0 0 10px #fbbf24, 0 0 18px rgba(251,191,36,0.6); border: 2px solid #fff; transform: scale(1.08);';
+                hitClass = 'ball-hit';
+                extraStyle = 'position: relative; overflow: visible !important; box-shadow: 0 0 10px #10b981; border: 2px solid #10b981; transform: scale(1.06);';
             } else if (isBonus) {
-                extraStyle = 'box-shadow: 0 0 10px #60a5fa; border: 2px dashed #93c5fd;';
-                label = '<span style="position:absolute;bottom:-12px;font-size:9px;color:#93c5fd;font-weight:700;">보너스</span>';
+                hitClass = 'ball-bonus-hit';
+                extraStyle = 'position: relative; overflow: visible !important; box-shadow: 0 0 10px #38bdf8; border: 2px dashed #38bdf8;';
+                label = '<span style="position:absolute;bottom:-12px;font-size:9px;color:#38bdf8;font-weight:700;">보너스</span>';
             } else {
-                extraStyle = 'opacity: 0.45; filter: grayscale(40%);';
+                extraStyle = 'opacity: 0.42; filter: grayscale(40%);';
             }
 
             const textColor = num <= 10 ? '#0f172a' : '#fff';
             return `<div style="position:relative;display:flex;flex-direction:column;align-items:center;">` +
-                `<div style="width:34px;height:34px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;color:${textColor};${extraStyle}">` +
+                `<div class="ball-mono ${hitClass}" style="width:34px;height:34px;border-radius:50%;background:${bg};display:flex;align-items:center;justify-content:center;font-weight:900;font-size:0.95rem;color:${textColor};${extraStyle}">` +
                     `${num}` +
                 `</div>` +
                 `${label}` +

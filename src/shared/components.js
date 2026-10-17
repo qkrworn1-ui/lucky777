@@ -22,17 +22,21 @@ export function createBallHtml(num, options = {}) {
 
     let hitClass = '';
     let extraStyle = '';
+    let titleAttr = '';
     if (options.isHit) {
-        hitClass = 'ball-hit';
-        extraStyle = 'background: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border: 1.5px solid #10b981 !important; font-weight: 800 !important;';
+        hitClass = options.isDrawHeader ? 'ball-hit draw-header-ball' : 'ball-hit';
+        extraStyle = 'position: relative; overflow: visible !important; background: rgba(16, 185, 129, 0.22) !important; color: #34d399 !important; border: 1.5px solid #10b981 !important; font-weight: 800 !important;';
+        if (!options.isDrawHeader) titleAttr = ' title="정규 당첨번호 적중 (✓)"';
     } else if (options.isBonusHit) {
-        hitClass = 'ball-bonus-hit';
-        extraStyle = 'background: rgba(56, 189, 248, 0.22) !important; color: #38bdf8 !important; border: 1.5px solid #38bdf8 !important; font-weight: 800 !important;';
+        hitClass = options.isDrawHeader ? 'ball-bonus-hit draw-header-ball' : 'ball-bonus-hit';
+        const bdrType = options.isDrawHeader ? 'solid' : 'dashed';
+        extraStyle = `position: relative; overflow: visible !important; background: rgba(56, 189, 248, 0.22) !important; color: #38bdf8 !important; border: 1.5px ${bdrType} #38bdf8 !important; font-weight: 800 !important;`;
+        if (!options.isDrawHeader) titleAttr = ' title="보너스 번호 적중 (+)"';
     } else if (options.dim) {
         extraStyle = 'opacity: 0.35 !important;';
     }
 
-    return `<span class="ball-mono ${hitClass} lotto-ball ${colorClass} ${options.extraClass || ''}" style="${sizeStyle} color: ${textColor}; ${extraStyle} text-align: center; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
+    return `<span class="ball-mono ${hitClass} lotto-ball ${colorClass} ${options.extraClass || ''}"${titleAttr} style="${sizeStyle} color: ${textColor}; ${extraStyle} text-align: center; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-family: monospace;">${n.toString().padStart(2, '0')}</span>`;
 }
 
 /**
@@ -46,8 +50,9 @@ export function renderBallRow(numbers, bonus = null, options = {}) {
 
     const balls = numbers.map(n => {
         const isHit = winningSet ? winningSet.has(n) : false;
-        const dim = winningSet && !isHit;
-        return createBallHtml(n, { ...options, isHit, dim });
+        const isBonusHit = !isHit && actualBonus !== null && actualBonus !== undefined ? (n === actualBonus) : false;
+        const dim = winningSet && !isHit && !isBonusHit;
+        return createBallHtml(n, { ...options, isHit, isBonusHit, dim });
     }).join('');
 
     let bonusHtml = '';
@@ -60,7 +65,7 @@ export function renderBallRow(numbers, bonus = null, options = {}) {
         `;
     }
 
-    return `<div class="balls-row" style="display: flex; align-items: center; gap: 4px; flex-wrap: wrap;">${balls}${bonusHtml}</div>`;
+    return `<div class="balls-row" style="display: flex; align-items: center; gap: 4px; padding: 3px 2px; flex-wrap: wrap;">${balls}${bonusHtml}</div>`;
 }
 
 /**

@@ -176,7 +176,7 @@ export async function render7AlgorithmsRealReviewSection() {
                                 </span>
                                 <strong style="color: ${rankColor}; font-size: 0.78rem;">${h.rankLabel || `${h.rank}등`} (+${(h.prize || 0).toLocaleString()}원)</strong>
                             </div>
-                            <div style="display: flex; gap: 4px; align-items: center; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 5px; padding: 3px 2px; align-items: center; flex-wrap: wrap;">
                                 ${ballsHtml}
                             </div>
                         </div>
@@ -187,7 +187,7 @@ export async function render7AlgorithmsRealReviewSection() {
             }
 
             const drawBallsHtml = (rd.drawNumbers || []).map(n => createBallHtml(n, { size: 'mini' })).join('');
-            const bonusBallHtml = rd.bonus ? createBallHtml(rd.bonus, { isBonusHit: true, size: 'mini' }) : '';
+            const bonusBallHtml = rd.bonus ? createBallHtml(rd.bonus, { isBonusHit: true, isDrawHeader: true, size: 'mini' }) : '';
 
             roundRowsHtml += `
                 <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 8px 10px; margin-top: 6px;">

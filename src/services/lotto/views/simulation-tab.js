@@ -606,25 +606,28 @@ export function renderAccumulatedWins(rankFilter) {
                         <span class="sim-win-prize-tag" style="font-size:0.85rem; font-weight:900; color:#fde047; white-space:nowrap; background:rgba(254,224,71,0.1); border:1px solid rgba(254,224,71,0.3); padding:2px 8px; border-radius:6px;">${prizeTxt}</span>
                     </div>
                 </div>
-                <div class="sim-win-balls-row" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:2px 0;">
+                <div class="sim-win-balls-row" style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:4px 2px;">
                     ${nums.map(n => {
                         const isHit = winningSet ? winningSet.has(n) : false;
                         const isBonus = (n === bonusNum);
                         const ballBg = getBallHexColor(n);
                         let hitStyle = 'border:1px solid rgba(255,255,255,0.2);';
                         let hitClass = '';
+                        let titleAttr = '';
                         if (isHit) {
-                            hitClass = 'hit-ball';
-                            hitStyle = 'border:2px solid #fbbf24; box-shadow:0 0 10px rgba(251,191,36,0.9); transform:scale(1.08); z-index:2;';
+                            hitClass = 'hit-ball ball-hit';
+                            hitStyle = 'position:relative; overflow:visible !important; border:1.5px solid #10b981; box-shadow:0 0 10px rgba(16,185,129,0.4); z-index:2;';
+                            titleAttr = ' title="정규 당첨번호 적중 (✓)"';
                         } else if (isBonus) {
-                            hitClass = 'bonus-ball';
-                            hitStyle = 'border:2px solid #f87171; box-shadow:0 0 10px rgba(248,113,113,0.9); transform:scale(1.08); z-index:2;';
+                            hitClass = 'bonus-ball ball-bonus-hit';
+                            hitStyle = 'position:relative; overflow:visible !important; border:1.5px dashed #38bdf8; box-shadow:0 0 10px rgba(56,189,248,0.4); z-index:2;';
+                            titleAttr = ' title="보너스 번호 적중 (+)"';
                         } else if (winningSet) {
                             hitClass = 'dim-ball';
-                            hitStyle = 'opacity:0.4; filter:grayscale(25%); border:1px solid rgba(255,255,255,0.1);';
+                            hitStyle = 'opacity:0.38; filter:grayscale(25%); border:1px solid rgba(255,255,255,0.1);';
                         }
                         const textColor = n <= 10 ? '#0f172a' : '#ffffff';
-                        return `<span class="sim-win-ball ${hitClass} ${getBallColorClass(n)}" style="width:28px; height:28px; line-height:28px; font-size:0.78rem; font-weight:900; color:${textColor}; text-align:center; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:${ballBg}; ${hitStyle} flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.4);">${n}</span>`;
+                        return `<span class="sim-win-ball ${hitClass} ${getBallColorClass(n)}"${titleAttr} style="width:28px; height:28px; line-height:28px; font-size:0.78rem; font-weight:900; color:${textColor}; text-align:center; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; background:${ballBg}; ${hitStyle} flex-shrink:0; box-shadow:0 2px 6px rgba(0,0,0,0.4);">${n.toString().padStart(2, '0')}</span>`;
                     }).join('')}
                 </div>
             </div>
