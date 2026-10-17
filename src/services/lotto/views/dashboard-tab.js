@@ -452,16 +452,16 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
                     </div>
                 </div>
 
-                <!-- 🔮 미입력 상태에서도 알림 신청 안내 -->
+                <!-- 🔔 알림함 안내 -->
                 <div style="margin-top:10px; padding:8px 12px; background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.35); border-radius:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:1rem;">🔮</span>
+                        <span style="font-size:1rem;">🔔</span>
                         <span style="font-size:0.74rem; color:#fde68a;">
-                            생년월일 입력 후 [알림 신청]을 켜두시면 매주 길시 1시간 전 스마트폰 알림이 자동 발송됩니다!
+                            매주 토요일 공식 추첨 결과 & 구매확정 채점 내역을 알림함에서 편리하게 확인하세요!
                         </span>
                     </div>
-                    <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" style="padding:5px 12px; border-radius:6px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#111827; font-weight:800; font-size:0.74rem; border:none; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                        <i class="fa-solid fa-bell"></i> <span>알림 신청하기</span>
+                    <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('all') : (window.PushClient && window.PushClient.openNotificationCenterModal('all'));" style="padding:5px 12px; border-radius:6px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#111827; font-weight:800; font-size:0.74rem; border:none; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                        <i class="fa-solid fa-bell"></i> <span>알림함 열기</span>
                     </button>
                 </div>
 
@@ -652,21 +652,21 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
                     </div>
                 </div>
 
-                <!-- 🔮 사주 길일·길시 1시간 전 알림 푸시 원클릭 등록 버튼 -->
+                <!-- 🏆 토요일 추첨 결과 & 구매확정 채점 알림 -->
                 <div style="margin-top:12px; padding:10px 14px; background:linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%); border:1.5px solid rgba(245, 158, 11, 0.4); border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-size:1.15rem;">🔮</span>
+                        <span style="font-size:1.15rem;">🏆</span>
                         <div>
                             <div style="font-size:0.78rem; font-weight:800; color:#fde68a;">
-                                길시 1시간 전 스마트폰 알림 받기
+                                토요일 당첨결과 & 구매확정 채점 알림
                             </div>
                             <div style="font-size:0.68rem; color:#cbd5e1;">
-                                해당 주차 구매등록 완료 시 알림 자동 생략 (스마트 안심 케어)
+                                매주 토요일 20:45 공식 추첨 완료 시 1회 발송 및 앱 내 알림함에 자동 보관
                             </div>
                         </div>
                     </div>
-                    <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" style="padding:6px 14px; border-radius:8px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#111827; font-weight:800; font-size:0.75rem; border:none; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 2px 8px rgba(245, 158, 11, 0.3);">
-                        <i class="fa-solid fa-bell"></i> <span>알림 신청하기</span>
+                    <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('all') : (window.PushClient && window.PushClient.openNotificationCenterModal('all'));" style="padding:6px 14px; border-radius:8px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#111827; font-weight:800; font-size:0.75rem; border:none; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 2px 8px rgba(245, 158, 11, 0.3);">
+                        <i class="fa-solid fa-bell"></i> <span>알림함 확인하기</span>
                     </button>
                 </div>
 
@@ -839,7 +839,7 @@ export async function saveAndApplyDashboardBirthDate(triggerBtn) {
         }
 
         if (typeof showToast === 'function') {
-            showToast('✨ 생년월일이 등록되었습니다. 황금 구매 요일 및 길시 알림이 동기화되었습니다.');
+            showToast('✨ 생년월일이 등록되었습니다. 사주 황금 구매 요일 및 시간대 분석이 완료되었습니다.');
         }
     } catch(err) {
         console.error('[saveAndApplyDashboardBirthDate Error]', err);
@@ -896,10 +896,10 @@ export async function renderPushNotificationMiniWidget() {
         <div class="fortune-push-mini-banner">
             <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
                 <span class="mini-bell-icon">🔔</span>
-                <span class="mini-banner-text">길시 1시간 전 스마트폰 알림 받기</span>
+                <span class="mini-banner-text">토요일 당첨결과 & 채점 알림함 확인</span>
             </div>
             <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                <button type="button" class="btn-mini-push-enable" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" title="길시 1시간 전 알림 받기">알림 켜기</button>
+                <button type="button" class="btn-mini-push-enable" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('all') : (window.PushClient && window.PushClient.openNotificationCenterModal('all'));" title="알림함 열기">알림함</button>
                 <button type="button" class="btn-mini-push-close" onclick="window.dismissPushMiniWidget && window.dismissPushMiniWidget();" title="닫기">✕</button>
             </div>
         </div>

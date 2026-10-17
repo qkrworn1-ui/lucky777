@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2255.43 - BUILD_DATE: 2026-10-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2319.43 - BUILD_DATE: 2026-10-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.17.2255.43)
+ * Lucky777 Smart Bundle (v2026.10.17.2319.43)
  */
 
 
@@ -10759,9 +10759,178 @@ const PushClient = {
                 } catch(e) {}
             }
 
+            // 알림 목록이 비어있다면 최근 5개 회차 당첨결과 및 추천번호 알림 자동 즉시 생성
+            if (list.length === 0 && !this._isCheckingScheduledAlerts) {
+                let uid = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest';
+                if (typeof uid === 'string' && uid.startsWith('{')) {
+                    try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
+                }
+                uid = String(uid || 'guest').trim().toLowerCase();
+                list = this.seedRecentNotifications(uid, list);
+            }
+
             return list;
         } catch (e) {
             return [];
+        }
+    },
+
+    /**
+     * 알림함에 최근 5개 회차(1246, 1245, 1244, 1243, 1242) 공식 당첨결과 및 실구매 채점결과,
+     * 차기 회차(1247) AI 추천 오픈, 공식 환영 공지를 알림함 히스토리로 보장 (스마트폰 푸시 팝업 제외)
+     */
+    seedRecentNotifications(userId, existingList = []) {
+        try {
+            const list = Array.isArray(existingList) ? [...existingList] : [];
+            const uid = String(userId || 'guest').trim().toLowerCase();
+            const targetRound = this.getUpcomingRoundNumber();
+            const dispName = this.getUserDisplayName();
+
+            let latestDrawnRound = targetRound - 1;
+            if (typeof window.getLatestDrawnRound === 'function') {
+                try {
+                    const ldr = window.getLatestDrawnRound();
+                    if (ldr && ldr > 1000) latestDrawnRound = ldr;
+                } catch(e) {}
+            }
+            if (this.getDrawData(1246) && latestDrawnRound < 1246) {
+                latestDrawnRound = 1246;
+            }
+
+            // 1. 차기 회차 AI 퀀트 추천번호 오픈 알림 보장
+            if (targetRound >= 1246) {
+                const recNotifId = `rec-ready-${targetRound}`;
+                const hasRec = list.some(it => it && (it.id === recNotifId || this.getCanonicalPushKey(it.id) === `round_${targetRound}_rec`));
+                if (!hasRec) {
+                    const isRead = SafeLocalStorage.getItem(`lucky777_read_${recNotifId}`) === 'true';
+                    list.push({
+                        id: recNotifId,
+                        category: 'generator',
+                        badge: '🎱 차기 추천번호 오픈',
+                        title: `🎱 [AI 퀀트 맞춤] 제 ${targetRound}회차 AI 추천번호 및 10대 알고리즘 조합 오픈!`,
+                        body: `${dispName}을 위한 제 ${targetRound}회차 AI 퀀트 알고리즘(올라운더 1·2·3 최신 엔진) 맞춤 추천번호 조합이 생성되었습니다. 지금 이번 주 최적 팩을 확인해 보세요.`,
+                        createdAt: new Date().toISOString(),
+                        timeLabel: `제 ${targetRound}회 추천 오픈`,
+                        unread: !isRead,
+                        actionType: 'generator',
+                        actionLabel: '🎱 이번주 추천번호 확인하기'
+                    });
+                }
+            }
+
+            // 2. 최근 5개 회차별 공식 당첨결과 & 실구매 채점 알림 내역 보장
+            const roundsToCheck = [latestDrawnRound, latestDrawnRound - 1, latestDrawnRound - 2, latestDrawnRound - 3, latestDrawnRound - 4].filter(r => r >= 1235);
+            roundsToCheck.forEach(r => {
+                const drawData = this.getDrawData(r);
+                if (!drawData || !Array.isArray(drawData.numbers) || drawData.numbers.length !== 6) return;
+
+                const combinedNotifId = `draw-result-${r}`;
+                const legacyWinId = `win-celebrate-${r}`;
+                const canonKey = `round_${r}_result`;
+                const existingIdx = list.findIndex(it => it && (it.id === combinedNotifId || it.id === legacyWinId || this.getCanonicalPushKey(it.id) === canonKey));
+
+                const userPurchases = this.getUserPurchases(uid, r);
+                const grade = this.gradePurchases(userPurchases, drawData);
+                const numbersStr = drawData.numbers.join(', ');
+                const bonusStr = String(drawData.bonus);
+                const drawNumsHeader = `[${numbersStr}] + 보너스 [${bonusStr}]`;
+
+                let notifBadge = '';
+                let notifTitle = '';
+                let notifBody = '';
+
+                if (grade && grade.totalGames > 0 && grade.totalWins > 0) {
+                    const hitsArray = [];
+                    if (grade.hits[1]) hitsArray.push(`1등 ${grade.hits[1]}건`);
+                    if (grade.hits[2]) hitsArray.push(`2등 ${grade.hits[2]}건`);
+                    if (grade.hits[3]) hitsArray.push(`3등 ${grade.hits[3]}건`);
+                    if (grade.hits[4]) hitsArray.push(`4등 ${grade.hits[4]}건`);
+                    if (grade.hits[5]) hitsArray.push(`5등 ${grade.hits[5]}건`);
+                    const hitsDesc = hitsArray.join(', ');
+
+                    notifBadge = '🎉 당첨결과 & 구매확정 당첨';
+                    notifTitle = `🎉 [제 ${r}회 당첨결과] 1등 ${drawNumsHeader} (구매확정 ${grade.totalWins}건 당첨!)`;
+                    notifBody = `제 ${r}회 당첨번호: ${drawNumsHeader}\n🎊 ${dispName}님의 구매확정 ${grade.totalGames}게임 채점 결과, ${hitsDesc} 총 ${grade.totalWins}건 당첨(총 당첨금 ${grade.totalPrize.toLocaleString()}원)을 축하드립니다! 확정 장부에서 상세 결과를 확인하세요.`;
+                } else if (grade && grade.totalGames > 0 && grade.totalWins === 0) {
+                    notifBadge = '📊 당첨결과 & 구매확정 채점';
+                    notifTitle = `📊 [제 ${r}회 당첨결과] 1등 ${drawNumsHeader} (구매확정 채점완료)`;
+                    notifBody = `제 ${r}회 당첨번호: ${drawNumsHeader}\n📊 ${dispName}님의 구매확정 ${grade.totalGames}게임 채점 결과: 이번 회차는 아쉽게도 낙첨되었습니다. 차기 제 ${targetRound}회차 맞춤 조합을 확인해 보세요.`;
+                } else {
+                    const firstPrizeText = drawData.rank1Prize ? ` (1등 ${(drawData.rank1Prize / 100000000).toFixed(1)}억 원)` : '';
+                    notifBadge = (r === latestDrawnRound) ? '🏆 최신회차 추첨결과 발표' : '🏆 공식 추첨결과 발표';
+                    notifTitle = `🏆 [제 ${r}회 공식 결과] 1등 ${drawNumsHeader}${firstPrizeText}`;
+                    notifBody = `제 ${r}회 당첨번호: ${drawNumsHeader}\n확인된 구매등록 내역이 없습니다. AI 추천번호 복기 결과 및 차기 제 ${targetRound}회차 맞춤 번호를 확인해 보세요.`;
+                }
+
+                const isAlreadyRead = (SafeLocalStorage.getItem(`lucky777_read_${combinedNotifId}`) === 'true') ||
+                    (SafeLocalStorage.getItem(`lucky777_read_${legacyWinId}`) === 'true') ||
+                    (SafeLocalStorage.getItem(`lucky777_read_${canonKey}`) === 'true');
+
+                const unreadFlag = (r === latestDrawnRound) ? !isAlreadyRead : false;
+
+                if (existingIdx !== -1) {
+                    const item = list[existingIdx];
+                    item.badge = notifBadge;
+                    item.title = notifTitle;
+                    item.body = notifBody;
+                    item.category = 'result';
+                    item.actionType = 'confirmed';
+                    item.actionLabel = '📊 구매확정 당첨내역 확인하기';
+                } else {
+                    list.push({
+                        id: combinedNotifId,
+                        category: 'result',
+                        badge: notifBadge,
+                        title: notifTitle,
+                        body: notifBody,
+                        createdAt: drawData.date ? new Date(drawData.date + 'T21:00:00+09:00').toISOString() : new Date().toISOString(),
+                        timeLabel: `제 ${r}회 당첨·채점 발표`,
+                        unread: unreadFlag,
+                        actionType: 'confirmed',
+                        actionLabel: '📊 구매확정 당첨내역 확인하기'
+                    });
+                }
+            });
+
+            // 3. 운도실력 공식 서비스 안내 알림 보장
+            const welcomeNotifId = 'admin-msg-welcome';
+            const hasWelcome = list.some(it => it && (it.id === welcomeNotifId || it.id === `push-${welcomeNotifId}`));
+            if (!hasWelcome) {
+                list.push({
+                    id: welcomeNotifId,
+                    category: 'admin',
+                    badge: '👑 운도실력 공지',
+                    title: '📢 [운도실력] 스마트 복권 라이프 통합 알림 센터 안내',
+                    body: '운도실력 통합 알림 센터에 오신 것을 환영합니다!\n매주 토요일 추첨 완료 시 최신 당첨번호와 회원님의 실구매 채점 결과가 이 곳 알림함에 자동으로 기록·보관됩니다.\n상단 탭을 통해 미확인 알림, 당첨·채점 내역, 관리자 메시지를 언제든지 편리하게 조회하실 수 있습니다.',
+                    createdAt: '2026-10-01T00:00:00.000Z',
+                    timeLabel: '서비스 공식 안내',
+                    unread: false,
+                    actionType: 'generator',
+                    actionLabel: '🎱 추천번호 바로가기'
+                });
+            }
+
+            // 알림 목록 정렬: 최신 회차 당첨결과 및 최신 추천번호가 최상단에 오도록 정렬
+            list.sort((a, b) => {
+                if (a.id.startsWith('draw-result-' + latestDrawnRound)) return -1;
+                if (b.id.startsWith('draw-result-' + latestDrawnRound)) return 1;
+                if (a.id.startsWith('rec-ready-')) return -1;
+                if (b.id.startsWith('rec-ready-')) return 1;
+                const rA = Number((a.id.match(/\d+/) || [0])[0]);
+                const rB = Number((b.id.match(/\d+/) || [0])[0]);
+                if (rA !== rB) return rB - rA;
+                return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+            });
+
+            const key = this.getInboxStorageKey();
+            try {
+                SafeLocalStorage.setItem(key, JSON.stringify(list.slice(0, 40)));
+            } catch (e) {}
+
+            return list;
+        } catch (err) {
+            console.warn('[PushClient] seedRecentNotifications error:', err);
+            return existingList;
         }
     },
 
@@ -11187,16 +11356,18 @@ const PushClient = {
                             const items = getAllReq.result || [];
                             if (items.length > 0) {
                                 items.forEach(it => {
+                                    if (!it) return;
+                                    if (it.category === 'myeongri' || (it.id && String(it.id).startsWith('myeongri-'))) return;
                                     this.addNotification({
                                         id: it.id,
-                                        category: it.category || 'myeongri',
-                                        badge: it.badge || '🔮 사주 길일·길시',
+                                        category: it.category || 'result',
+                                        badge: it.badge || '🔔 운도실력 알림',
                                         title: it.title,
                                         body: it.body,
                                         createdAt: it.createdAt,
                                         unread: true,
-                                        actionType: 'generator',
-                                        actionLabel: '🎱 바로 확인하기'
+                                        actionType: it.actionType || 'confirmed',
+                                        actionLabel: it.actionLabel || '📊 바로 확인하기'
                                     }, false);
                                 });
                                 store.clear();
@@ -11665,6 +11836,10 @@ const PushClient = {
                 latestDrawnRound = 1246;
             }
 
+            // 최근 5개 회차별 공식 결과 및 추천번호 알림함 내역 전체 보장 동기화
+            let currentList = this.getNotifications();
+            currentList = this.seedRecentNotifications(uid, currentList);
+
             if (latestDrawnRound >= 1235) {
                 const drawData = this.getDrawData(latestDrawnRound);
                 if (drawData && Array.isArray(drawData.numbers) && drawData.numbers.length === 6) {
@@ -11952,19 +12127,34 @@ const PushClient = {
 
         const list = this.getNotifications();
         const unreadCount = list.filter(n => n && n.unread).length;
+        const resultCount = list.filter(n => n && (n.category === 'result' || String(n.id || '').startsWith('draw-result-') || String(n.id || '').startsWith('win-celebrate-'))).length;
+        const adminCount = list.filter(n => n && (n.category === 'admin' || String(n.id || '').startsWith('admin-msg-'))).length;
         const filter = this._currentModalFilter || 'all';
         const filtered = filter === 'unread'
             ? list.filter(n => n && n.unread)
             : (filter === 'result'
-                ? list.filter(n => n && n.category === 'result')
+                ? list.filter(n => n && (n.category === 'result' || String(n.id || '').startsWith('draw-result-') || String(n.id || '').startsWith('win-celebrate-')))
                 : (filter === 'admin'
                     ? list.filter(n => n && (n.category === 'admin' || String(n.id || '').startsWith('admin-msg-')))
                     : list));
 
+        const emptyMsg = filter === 'unread'
+            ? `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">확인하지 않은 새로운 알림이 없습니다.</div>
+               <div style="font-size:0.75rem; color:#64748b; margin-bottom:12px;">지난 회차별 당첨결과 및 추천번호 내역은 [전체] 탭에서 확인하실 수 있습니다.</div>
+               <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림내역 보기 (${list.length})</button>`
+            : (filter === 'result'
+                ? `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">표시할 당첨 결과가 없습니다.</div>
+                   <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림 보기 (${list.length})</button>`
+                : (filter === 'admin'
+                    ? `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">도착한 관리자 메시지가 없습니다.</div>
+                       <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림 보기 (${list.length})</button>`
+                    : `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">표시할 알림이 없습니다.</div>
+                       <button type="button" onclick="window.PushClient && window.PushClient.checkAndGenerateScheduledAlerts(true)" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">최신 알림 동기화</button>`));
+
         const itemsHtml = filtered.length === 0
             ? `<div style="padding:36px 16px; text-align:center; color:#94a3b8; font-size:0.82rem;">
                 <div style="font-size:1.8rem; margin-bottom:8px;">✨</div>
-                <div>표시할 알림이 없습니다.</div>
+                ${emptyMsg}
                </div>`
             : filtered.map(item => `
                 <div onclick="window.PushClient && window.PushClient.markNotificationRead('${item.id}')" style="background:${item.unread ? 'rgba(30,41,59,0.95)' : 'rgba(15,23,42,0.55)'}; border:1.5px solid ${item.unread ? 'rgba(245,158,11,0.45)' : 'rgba(255,255,255,0.07)'}; border-radius:12px; padding:12px 14px; cursor:pointer; transition:all 0.2s; opacity:${item.unread ? '1' : '0.72'};">
@@ -12020,10 +12210,10 @@ const PushClient = {
                                 미확인 (${unreadCount})
                             </button>
                             <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('result')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'result' ? '#f59e0b' : '#1e293b'}; color:${filter === 'result' ? '#0f172a' : '#cbd5e1'};">
-                                🏆 당첨·채점
+                                🏆 당첨·채점 (${resultCount})
                             </button>
                             <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('admin')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'admin' ? '#f59e0b' : '#1e293b'}; color:${filter === 'admin' ? '#0f172a' : '#cbd5e1'};">
-                                👑 관리자 메시지
+                                👑 관리자 메시지 (${adminCount})
                             </button>
                         </div>
                         <div style="display:flex; align-items:center; gap:6px;">
@@ -12077,17 +12267,16 @@ const PushClient = {
                 banner.style.display = 'flex';
                 const bannerDesc = banner.querySelector('div[style*="font-size: 0.77rem"]') || banner.querySelector('.lp-push-banner-desc');
                 if (bannerDesc) {
-                    const disp = this.getUserDisplayName();
-                    bannerDesc.textContent = `${disp}의 일간(日干)과 조화를 이루는 길시 1시간 전 스마트 알림 (해당 주차 구매등록 완료 시 알림 자동 생략)`;
+                    bannerDesc.textContent = '매주 토요일 공식 추첨 결과 및 실구매 채점 통합 알림 (스마트폰 1회 푸시 & 알림함 보관)';
                 }
             }
         }
 
         if (popoverPushBtnText) {
-            popoverPushBtnText.textContent = isSubscribed ? '맞춤 알림 관리 (수신 중 🟢)' : '맞춤 알림 설정 (길시 1시간 전)';
+            popoverPushBtnText.textContent = isSubscribed ? '당첨결과 알림 (수신 중 🟢)' : '당첨결과 알림 설정';
         }
         if (lpMobilePushBtn) {
-            lpMobilePushBtn.title = '미확인 알림함 및 길일·길시 알림 설정';
+            lpMobilePushBtn.title = '운도실력 통합 알림 센터 (알림함)';
         }
 
         if (typeof window !== 'undefined' && typeof window.renderPushNotificationMiniWidget === 'function') {
@@ -12114,40 +12303,38 @@ const PushClient = {
 
         const reg = await navigator.serviceWorker.ready;
         const displayName = this.getUserDisplayName();
-        const schedule = this.getMyeongriSchedule();
-        const slotInfo = schedule ? `${schedule.primaryDayShort || '토요일'} ${schedule.timeSlot1}` : '맞춤 길시';
-        const msg = `🧪 ${delaySec}초 뒤 [${displayName}]을 위한 길일·길시 테스트 알림이 발송됩니다!\n\n지금 스마트폰의 [전원 버튼]을 눌러 화면을 끄거나 대시보드 상단 [미확인 알림 배너]에 도착하는지 확인해 보세요.`;
+        const msg = `🧪 ${delaySec}초 뒤 [${displayName}]님을 위한 [토요일 공식 당첨결과 & 실구매 채점] 테스트 푸시 알림이 발송됩니다!\n\n화면을 끄거나 상단 [알림함] 버튼에서 도착 내역을 확인해 보세요.`;
         
         if (typeof window.showToast === 'function') {
-            window.showToast(`🧪 ${delaySec}초 뒤 [${displayName}] 테스트 알림 발송!`);
+            window.showToast(`🧪 ${delaySec}초 뒤 [${displayName}] 당첨결과 테스트 알림 발송!`);
         }
         alert(msg);
 
         setTimeout(() => {
             const origin = window.location.origin;
             const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
-            const title = `🌿 [운도실력] ${displayName}의 길일·길시 알림 연결 완료`;
-            const body = `${displayName}의 사주 맞춤 스케줄(${slotInfo}) 및 대시보드 미확인 알림함이 정상 연결되었습니다.`;
+            const title = `🏆 [운도실력] 제1246회 로또 당첨결과 & 채점 테스트`;
+            const body = `당첨번호: [16, 22, 23, 24, 27, 28] + 보너스 [6] | 구매확정 당첨내역 및 공식 결과가 알림함에 안전하게 등록되었습니다.`;
 
             reg.showNotification(title, {
                 body,
                 icon: `${origin}${basePath}icons/icon-192.png`,
                 badge: `${origin}${basePath}icons/favicon.png`,
                 vibrate: [200, 100, 200, 100, 400],
-                tag: 'lucky777-test-alert',
+                tag: 'lucky777-test-result-alert',
                 data: { url: `${origin}${basePath}?tab=tab-confirmed` }
             });
 
             this.addNotification({
                 id: `test-alert-${Date.now()}`,
-                category: 'myeongri',
-                badge: '🧪 길일·길시 테스트',
+                category: 'result',
+                badge: '🧪 당첨·채점 테스트',
                 title,
                 body,
                 timeLabel: '방금 도착',
                 unread: true,
-                actionType: 'generator',
-                actionLabel: '🎱 추천번호 확인하기'
+                actionType: 'confirmed',
+                actionLabel: '📊 실구매 장부 확인하기'
             }, false);
         }, delaySec * 1000);
     },
@@ -12170,12 +12357,12 @@ const PushClient = {
             title: '축하합니다! {회원명}님 실구매 당첨 결과 안내',
             body: '{회원명}님, 등록하신 실구매 복권에서 당첨이 확인되었습니다!\n구매확정 장부에서 상세 적중 번호(본번호 ✓ · 보너스 +)와 당첨금을 지금 확인해 보세요.'
         },
-        myeongri_pick: {
-            badge: '🔮 사주 길일·길시 특별 안내',
+        ai_pick: {
+            badge: '🎱 AI 추천번호 안내',
             actionType: 'generator',
             actionLabel: '🎱 이번주 추천번호 확인하기',
-            title: '{회원명}님의 오늘 사주 재물운 길일·길시 안내',
-            body: '{회원명}님의 사주 일간과 조화를 이루는 길일·길시 에너지가 활성화되었습니다.\n오늘 길시가 지나기 전에 AI 맞춤 추천번호를 생성해 보세요.'
+            title: '{회원명}님을 위한 제 {회차}회차 맞춤 AI 추천번호 안내',
+            body: '{회원명}님, 제 {회차}회차 10대 핵심 퀀트 알고리즘 기반 맞춤 번호 조합이 준비되었습니다.\n지금 추천번호 연구소에서 이번 주 번호 팩을 확인해 보세요.'
         },
         account_notice: {
             badge: '🔓 계정 권한 안내',
@@ -12328,7 +12515,7 @@ const PushClient = {
         const actionLabelMap = {
             qr: '📷 지금 실구매 QR 영수증 등록하기',
             confirmed: '📊 내 실구매 당첨장부 확인하기',
-            fortune: '🧭 내 사주 길일·길시 확인하기',
+            fortune: '🧭 대시보드 바로가기',
             generator: '🎱 이번주 AI 추천번호 확인하기'
         };
         const btnLabel = msg.actionLabel || actionLabelMap[msg.actionType] || '🎱 바로 확인하기';
@@ -12674,7 +12861,7 @@ const PushClient = {
                         <div style="display:flex; flex-wrap:wrap; gap:6px;">
                             <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('qr_remind')" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#fde68a; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">📷 실구매 QR 독려</button>
                             <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('win_congrats')" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); color:#6ee7b7; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">🎉 실구매 당첨 축하</button>
-                            <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('myeongri_pick')" style="background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.45); color:#ddd6fe; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">🔮 사주 길일·길시 안내</button>
+                            <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('ai_pick')" style="background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.45); color:#ddd6fe; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">🎱 AI 추천번호 안내</button>
                             <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('account_notice')" style="background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.45); color:#bfdbfe; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">🔓 계정 권한 안내</button>
                             <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('general_notice')" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#e2e8f0; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">📢 전체 공지·업데이트</button>
                         </div>
@@ -12688,7 +12875,7 @@ const PushClient = {
                                 <select id="adminMsgBadgeSelect" style="width:100%; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:7px; padding:6px 8px; font-size:0.75rem; font-weight:700;">
                                     <option value="📷 실구매 인증 안내">📷 실구매 인증 안내</option>
                                     <option value="🎉 당첨 축하 메시지">🎉 당첨 축하 메시지</option>
-                                    <option value="🔮 사주 길일·길시 특별 안내">🔮 사주 길일·길시 특별 안내</option>
+                                    <option value="🎱 AI 추천번호 안내">🎱 AI 추천번호 안내</option>
                                     <option value="🔓 계정 권한 안내">🔓 계정 권한 안내</option>
                                     <option value="📢 관리자 공지사항">📢 관리자 공지사항</option>
                                 </select>
@@ -12699,7 +12886,7 @@ const PushClient = {
                                     <option value="qr">📷 실구매 QR 영수증 등록창 열기</option>
                                     <option value="confirmed">📊 구매확정·당첨내역 탭 이동</option>
                                     <option value="generator">🎱 AI 추천번호 생성 탭 이동</option>
-                                    <option value="fortune">🧭 대시보드 사주 길일·길시 보기</option>
+                                    <option value="fortune">🧭 대시보드 홈 이동</option>
                                 </select>
                             </div>
                         </div>
@@ -12849,7 +13036,7 @@ const PushClient = {
         const actionLabelMap = {
             qr: '📷 지금 실구매 QR 영수증 등록하기',
             confirmed: '📊 내 실구매 당첨장부 확인하기',
-            fortune: '🧭 내 사주 길일·길시 확인하기',
+            fortune: '🧭 대시보드 바로가기',
             generator: '🎱 이번주 AI 추천번호 확인하기'
         };
         const actionLabel = actionLabelMap[actionType] || '🎱 바로 확인하기';
@@ -12988,9 +13175,7 @@ if (typeof window !== 'undefined') {
             const displayName = PushClient.getUserDisplayName();
             const existingSub = await PushClient.getSubscription();
             if (existingSub) {
-                // 구독 정보가 이미 있으면 최신 사주 스케줄을 자동 재동기화
-                await PushClient.syncMyeongriScheduleIfNeeded();
-                const choice = confirm(`🟢 현재 [${displayName}]을 위한 [사주 길일·길시 & 공식 통계 리포트] 알림이 정상 등록되어 있습니다.\n\n[확인] : 3초 뒤 테스트 알림 발송 (알림함 기록 포함)\n[취소] : 알림 수신 해제 창으로 이동`);
+                const choice = confirm(`🟢 현재 [${displayName}]님을 위한 [매주 토요일 공식 추첨결과 & 구매확정 채점] 알림이 정상 등록되어 있습니다.\n\n[확인] : 3초 뒤 테스트 알림 발송 (알림함 기록 포함)\n[취소] : 알림 수신 해제 창으로 이동`);
                 if (choice) {
                     await PushClient.sendTestNotification(3);
                 } else {
@@ -13008,13 +13193,13 @@ if (typeof window !== 'undefined') {
                 return;
             }
 
-            const ok = confirm(`🌿 [운도실력 맞춤 알림 서비스]\n\n1. [${displayName}]의 사주 길일·길시 1시간 전 정갈한 리마인더 안내\n2. 해당 주차 구매등록 완료 시 알림 자동 생략 (안심 스마트 케어)\n3. 대시보드 미확인 알림함에 자동 보관되어 놓친 알림도 100% 확인 가능\n\n알림을 허용하시겠습니까?`);
+            const ok = confirm(`🔔 [운도실력 공식 당첨결과 & 채점 알림 서비스]\n\n1. 매주 토요일 공식 추첨 완료 시 당첨번호 및 실구매 채점 통합 알림 (스마트폰 푸시 1회)\n2. 동일 알림은 중복 발송되지 않으며 앱 내 [알림함]에서 언제든 확인 가능\n3. 불필요한 사주 및 광고성 푸시 알림 없음\n\n알림을 허용하시겠습니까?`);
             if (!ok) return;
 
             const sub = await PushClient.subscribe();
             if (sub) {
                 await PushClient.updateBannerVisibility();
-                const testNow = confirm(`✨ [${displayName}]을 위한 맞춤 알림이 성공적으로 등록되었습니다!\n\n지금 3초 뒤 테스트 알림이 오는지 시험해 보시겠습니까?`);
+                const testNow = confirm(`✨ [${displayName}]님을 위한 당첨결과 알림이 성공적으로 등록되었습니다!\n\n지금 3초 뒤 테스트 알림이 오는지 시험해 보시겠습니까?`);
                 if (testNow) {
                     await PushClient.sendTestNotification(3);
                 }
@@ -13025,12 +13210,11 @@ if (typeof window !== 'undefined') {
         }
     };
 
-    // 앱 실행 및 화면 복귀 시 백그라운드 푸시 병합 + 길일·길시 스케줄 자동 감지 + 미확인 알림 배너 렌더링
+    // 앱 실행 및 화면 복귀 시 백그라운드 푸시 동기화 + 당첨결과 알림함 갱신 + 미확인 알림 배너 렌더링
     function initPushUI() {
         PushClient.syncFromServiceWorkerDB().then(() => {
             PushClient.checkAndGenerateScheduledAlerts();
             PushClient.updateBannerVisibility();
-            PushClient.syncMyeongriScheduleIfNeeded();
             if (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get && window.SafeAuth.get()) {
                 PushClient.startAdminMessageListener(window.SafeAuth.get());
             }
@@ -38032,16 +38216,16 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
                     </div>
                 </div>
 
-                <!-- 🔮 미입력 상태에서도 알림 신청 안내 -->
+                <!-- 🔔 알림함 안내 -->
                 <div style="margin-top:10px; padding:8px 12px; background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.35); border-radius:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
                     <div style="display:flex; align-items:center; gap:6px;">
-                        <span style="font-size:1rem;">🔮</span>
+                        <span style="font-size:1rem;">🔔</span>
                         <span style="font-size:0.74rem; color:#fde68a;">
-                            생년월일 입력 후 [알림 신청]을 켜두시면 매주 길시 1시간 전 스마트폰 알림이 자동 발송됩니다!
+                            매주 토요일 공식 추첨 결과 & 구매확정 채점 내역을 알림함에서 편리하게 확인하세요!
                         </span>
                     </div>
-                    <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" style="padding:5px 12px; border-radius:6px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#111827; font-weight:800; font-size:0.74rem; border:none; cursor:pointer; display:flex; align-items:center; gap:4px;">
-                        <i class="fa-solid fa-bell"></i> <span>알림 신청하기</span>
+                    <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('all') : (window.PushClient && window.PushClient.openNotificationCenterModal('all'));" style="padding:5px 12px; border-radius:6px; background:linear-gradient(135deg, #f59e0b, #d97706); color:#111827; font-weight:800; font-size:0.74rem; border:none; cursor:pointer; display:flex; align-items:center; gap:4px;">
+                        <i class="fa-solid fa-bell"></i> <span>알림함 열기</span>
                     </button>
                 </div>
 
@@ -38232,21 +38416,21 @@ function renderFortuneAdvisorCard(forceShowInput = false) {
                     </div>
                 </div>
 
-                <!-- 🔮 사주 길일·길시 1시간 전 알림 푸시 원클릭 등록 버튼 -->
+                <!-- 🏆 토요일 추첨 결과 & 구매확정 채점 알림 -->
                 <div style="margin-top:12px; padding:10px 14px; background:linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(99, 102, 241, 0.15) 100%); border:1.5px solid rgba(245, 158, 11, 0.4); border-radius:12px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="font-size:1.15rem;">🔮</span>
+                        <span style="font-size:1.15rem;">🏆</span>
                         <div>
                             <div style="font-size:0.78rem; font-weight:800; color:#fde68a;">
-                                길시 1시간 전 스마트폰 알림 받기
+                                토요일 당첨결과 & 구매확정 채점 알림
                             </div>
                             <div style="font-size:0.68rem; color:#cbd5e1;">
-                                해당 주차 구매등록 완료 시 알림 자동 생략 (스마트 안심 케어)
+                                매주 토요일 20:45 공식 추첨 완료 시 1회 발송 및 앱 내 알림함에 자동 보관
                             </div>
                         </div>
                     </div>
-                    <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" style="padding:6px 14px; border-radius:8px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#111827; font-weight:800; font-size:0.75rem; border:none; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 2px 8px rgba(245, 158, 11, 0.3);">
-                        <i class="fa-solid fa-bell"></i> <span>알림 신청하기</span>
+                    <button type="button" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('all') : (window.PushClient && window.PushClient.openNotificationCenterModal('all'));" style="padding:6px 14px; border-radius:8px; background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#111827; font-weight:800; font-size:0.75rem; border:none; cursor:pointer; display:flex; align-items:center; gap:5px; box-shadow:0 2px 8px rgba(245, 158, 11, 0.3);">
+                        <i class="fa-solid fa-bell"></i> <span>알림함 확인하기</span>
                     </button>
                 </div>
 
@@ -38419,7 +38603,7 @@ async function saveAndApplyDashboardBirthDate(triggerBtn) {
         }
 
         if (typeof showToast === 'function') {
-            showToast('✨ 생년월일이 등록되었습니다. 황금 구매 요일 및 길시 알림이 동기화되었습니다.');
+            showToast('✨ 생년월일이 등록되었습니다. 사주 황금 구매 요일 및 시간대 분석이 완료되었습니다.');
         }
     } catch(err) {
         console.error('[saveAndApplyDashboardBirthDate Error]', err);
@@ -38476,10 +38660,10 @@ async function renderPushNotificationMiniWidget() {
         <div class="fortune-push-mini-banner">
             <div style="display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;">
                 <span class="mini-bell-icon">🔔</span>
-                <span class="mini-banner-text">길시 1시간 전 스마트폰 알림 받기</span>
+                <span class="mini-banner-text">토요일 당첨결과 & 채점 알림함 확인</span>
             </div>
             <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
-                <button type="button" class="btn-mini-push-enable" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle();" title="길시 1시간 전 알림 받기">알림 켜기</button>
+                <button type="button" class="btn-mini-push-enable" onclick="window.openNotificationCenterModal ? window.openNotificationCenterModal('all') : (window.PushClient && window.PushClient.openNotificationCenterModal('all'));" title="알림함 열기">알림함</button>
                 <button type="button" class="btn-mini-push-close" onclick="window.dismissPushMiniWidget && window.dismissPushMiniWidget();" title="닫기">✕</button>
             </div>
         </div>
