@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.15.2216 - BUILD_DATE: 2026-10-15] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.1209 - BUILD_DATE: 2026-10-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.15.2216)
+ * Lucky777 Smart Bundle (v2026.10.17.1209)
  */
 
 
@@ -11336,94 +11336,59 @@ function getReceiptCombosFingerprint(receipt) {
 
 
 
+function isPlaceholderQrSerial(serial) {
+    if (!serial) return true;
+    const s = String(serial).trim();
+    if (!s || s === 'TR-미발급' || s === 'TR-확인불가' || s === 'TR-스마트폰 자동생성' || s.startsWith('TR-임시') || s.startsWith('TR-정상') || s.startsWith('TR-')) return true;
+    if (s.includes('00000014142041') || s.includes('00000114142041')) return true;
+    return false;
+}
+
 /**
-
  * ??? Deduplicate receipts by unique receiptId, valid QR serial, or full combo fingerprint
-
  * Ensures different receipts are NEVER falsely deleted or dropped.
-
  * @param {Array} receiptList 
-
  * @returns {Array}
-
  */
-
 function deduplicateReceipts(receiptList) {
-
     if (!Array.isArray(receiptList)) return [];
-
     const seen = new Set();
-
     const result = [];
 
-
-
     receiptList.forEach(item => {
-
         if (!item) return;
-
         const receiptId = item.receiptId || item.id || null;
-
         const serial = (item.qrMeta && item.qrMeta.qrSerial) ? String(item.qrMeta.qrSerial).trim() : (item.qrSerial ? String(item.qrSerial).trim() : null);
-
         
-
-        // Detect generic/placeholder serials (e.g. 'TR-??????', 'TR-????', 'TR-?????? ??????)
-
-        const isGenericSerial = !serial || serial === 'TR-미발급' || serial === 'TR-확인불가' || serial === 'TR-스마트폰 자동생성' || serial.startsWith('TR-임시');
-
-
+        // Detect generic/placeholder serials (e.g. 'TR-미발급', '00000114142041', etc.)
+        const isGenericSerial = isPlaceholderQrSerial(serial);
+        const isGenericReceiptId = isPlaceholderQrSerial(receiptId);
 
         const combosFp = getReceiptCombosFingerprint(item);
-
         const uUser = (item.user || item.userId || '').toLowerCase().trim();
-
         const uRound = item.round || item.originalRound || '';
 
-
-
         // ??? Generate rigorous unique deduplication key that ALWAYS scopes by user & combos to prevent cross-user collision
-
         let key = '';
-
-        if (receiptId && combosFp) {
-
+        if (receiptId && !isGenericReceiptId && combosFp) {
             key = `id_${receiptId}_${uUser}_${uRound}_${combosFp}`;
-
-        } else if (receiptId) {
-
+        } else if (receiptId && !isGenericReceiptId) {
             key = `id_${receiptId}_${uUser}_${uRound}`;
-
         } else if (!isGenericSerial && serial && serial.length >= 6) {
-
             key = `serial_${serial}_${uUser}_${uRound}_${combosFp || ''}`;
-
         } else if (combosFp) {
-
             key = `combos_${uRound}_${uUser}_${combosFp}`;
-
         } else {
-
             key = `item_${uRound}_${uUser}_${item.timestamp || Math.random().toString(36)}`;
-
         }
-
-
 
         if (!seen.has(key)) {
-
             seen.add(key);
-
             result.push(item);
-
         }
-
     });
 
-
-
     return result;
-
 }
 
 
@@ -11645,57 +11610,37 @@ function normalizeMaster1239Order(receipts) {
  */
 
 function parseDonghangLotteryQrUrl(url) {
-
     if (!url || typeof url !== 'string') return null;
-
     let clean = url.trim();
-
     try {
-
         clean = decodeURIComponent(clean);
-
     } catch(e) {}
 
-    
-
     const match = clean.match(/(?:[?&]v=|^v=|^)(\d{1,4})((?:[a-zA-Z]\d{12})+)(\d{4,24})?/i);
-
     if (!match) return null;
-
     const round = parseInt(match[1], 10);
-
     const gamesPart = match[2];
-
     const serial = (match[3] || '').trim();
-
     const gamesRaw = gamesPart.split(/[a-zA-Z]/i).filter(Boolean);
-
-    const combos = gamesRaw.map((g, idx) => {
-
+    const combos = [];
+    gamesRaw.forEach((g) => {
         const nums = [];
-
         for (let i = 0; i < 12 && i + 2 <= g.length; i += 2) {
-
             nums.push(parseInt(g.substr(i, 2), 10));
-
         }
-
-        nums.sort((a, b) => a - b);
-
-        const letter = ['A', 'B', 'C', 'D', 'E'][idx] || `${idx + 1}`;
-
-        return {
-
-            numbers: nums,
-
-            meta: { name: `${letter} ????` },
-
-            stats: {}
-
-        };
-
+        // Filter out zero-padded empty slots (e.g. n000000000000 on 1~4 game paper tickets)
+        if (nums.length === 6 && nums.every(n => !isNaN(n) && n >= 1 && n <= 45) && new Set(nums).size === 6) {
+            nums.sort((a, b) => a - b);
+            const idx = combos.length;
+            const letter = ['A', 'B', 'C', 'D', 'E'][idx] || `${idx + 1}`;
+            combos.push({
+                numbers: nums,
+                meta: { name: `${letter} 게임` },
+                stats: {}
+            });
+        }
     });
-
+    if (combos.length === 0) return null;
     return { round, combos, serial };
 }
 
@@ -12229,15 +12174,40 @@ if (typeof window !== 'undefined') {
 
 
 let _inFlightFetchAllUsersPurchasesPromise = null;
-
 let _lastFetchAllUsersPurchasesTime = 0;
-
 const FETCH_ALL_CACHE_TTL_MS = 30000;
+const _lastLocalLedgerSaveByUser = new Map();
 
-
+function rebuildMergedLedgerFromPurchasesMap(allUsersMap) {
+    const mergedLedger = {};
+    if (!allUsersMap || typeof allUsersMap !== 'object') return mergedLedger;
+    for (const uId in allUsersMap) {
+        const uLedger = allUsersMap[uId] && allUsersMap[uId].ledger;
+        if (!uLedger || typeof uLedger !== 'object') continue;
+        for (const r in uLedger) {
+            const roundNum = parseInt(r, 10);
+            if (isNaN(roundNum) || !Array.isArray(uLedger[r])) continue;
+            if (!mergedLedger[roundNum]) mergedLedger[roundNum] = [];
+            uLedger[r].forEach(receipt => {
+                mergedLedger[roundNum].push(receipt);
+            });
+        }
+    }
+    for (const r in mergedLedger) {
+        const roundNum = parseInt(r, 10);
+        mergedLedger[roundNum] = deduplicateReceipts(mergedLedger[roundNum]);
+        if (roundNum === 1239) {
+            mergedLedger[1239] = normalizeMaster1239Order(mergedLedger[1239]);
+        }
+    }
+    return mergedLedger;
+}
 
 async function fetchAllUsersPurchases(forceRefresh = false) {
     if (!forceRefresh && state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0 && (Date.now() - _lastFetchAllUsersPurchasesTime < FETCH_ALL_CACHE_TTL_MS)) {
+        if (!state.allUsersMergedLedger) {
+            state.allUsersMergedLedger = rebuildMergedLedgerFromPurchasesMap(state.allUsersPurchasesMap);
+        }
         return { allUsersMap: state.allUsersPurchasesMap, mergedLedger: state.allUsersMergedLedger || {} };
     }
 
@@ -12248,6 +12218,9 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
             const rawMerged = SafeLocalStorage.getItem('lotto_all_users_merged_ledger_cache');
             if (rawMap) state.allUsersPurchasesMap = JSON.parse(rawMap);
             if (rawMerged) state.allUsersMergedLedger = JSON.parse(rawMerged);
+            if (state.allUsersPurchasesMap && !state.allUsersMergedLedger) {
+                state.allUsersMergedLedger = rebuildMergedLedgerFromPurchasesMap(state.allUsersPurchasesMap);
+            }
         } catch(e) {}
     }
 
@@ -12469,6 +12442,17 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                 }
             }
 
+            // 🛡️ Protect recently saved local ledger (within 60s) from stale Firestore cache/server snapshots during rapid sequential QR registrations
+            const recentLocalSave = _lastLocalLedgerSaveByUser.get(userId);
+            if (recentLocalSave && recentLocalSave.ledger && (Date.now() - recentLocalSave.timestamp < 60000)) {
+                for (const localR in recentLocalSave.ledger) {
+                    const rNum = parseInt(localR, 10);
+                    if (!isNaN(rNum) && Array.isArray(recentLocalSave.ledger[localR])) {
+                        cleanUserLedger[rNum] = deduplicateReceipts(recentLocalSave.ledger[localR]);
+                    }
+                }
+            }
+
             allUsersMap[userId] = {
                 userId: rawUserId,
                 realName: userNames[rawUserId] || rawUserId,
@@ -12554,6 +12538,14 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
             let curClean = String(curAuth).toLowerCase().trim();
             if (curClean.startsWith('{')) {
                 try { const p = JSON.parse(curClean); curClean = (p.userid || p.userId || curClean).toLowerCase().trim(); } catch(e){}
+            }
+            const recentCurSave = _lastLocalLedgerSaveByUser.get(curClean);
+            if (recentCurSave && recentCurSave.ledger && (Date.now() - recentCurSave.timestamp < 60000)) {
+                if (!allUsersMap[curClean]) {
+                    allUsersMap[curClean] = { userId: curClean, realName: userNames[curClean] || curClean, ledger: recentCurSave.ledger };
+                } else {
+                    allUsersMap[curClean].ledger = recentCurSave.ledger;
+                }
             }
             if (allUsersMap[curClean] && allUsersMap[curClean].ledger) {
                 try {
@@ -12957,8 +12949,9 @@ async function saveLedgerDirectly(ledger, user = null, successMsg = null, target
         state.globalLedger = protectedLedger;
     }
 
+    _lastLocalLedgerSaveByUser.set(authId, { timestamp: Date.now(), ledger: protectedLedger });
+
     state.ledgerFinancialsCache = null; // Invalidate memoized cache
-    state.allUsersMergedLedger = null; // Invalidate admin merged cache so updates immediately reflect
     _allUsersFinancialsCache = null;
 
     if (state.allUsersPurchasesMap) {
@@ -12967,6 +12960,13 @@ async function saveLedgerDirectly(ledger, user = null, successMsg = null, target
         } else {
             state.allUsersPurchasesMap[authId].ledger = protectedLedger;
         }
+        state.allUsersMergedLedger = rebuildMergedLedgerFromPurchasesMap(state.allUsersPurchasesMap);
+        try {
+            storage.setItem('lotto_all_users_purchases_map_cache', JSON.stringify(state.allUsersPurchasesMap));
+            storage.setItem('lotto_all_users_merged_ledger_cache', JSON.stringify(state.allUsersMergedLedger));
+        } catch(e) {}
+    } else {
+        state.allUsersMergedLedger = null;
     }
 
     if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
@@ -13021,13 +13021,16 @@ async function saveLedgerDirectly(ledger, user = null, successMsg = null, target
                     } catch(e) {}
 
                     try {
-                        await firestore.collection('lotto_receipt_archives').doc(archiveDocId).set({
-                            userId: authId,
-                            round: parseInt(roundKey, 10),
-                            receipts: mergedArchiveReceipts,
-                            savedAt: new Date().toISOString(),
-                            isImmutable: true
-                        }, { merge: true });
+                        await Promise.race([
+                            firestore.collection('lotto_receipt_archives').doc(archiveDocId).set({
+                                userId: authId,
+                                round: parseInt(roundKey, 10),
+                                receipts: mergedArchiveReceipts,
+                                savedAt: new Date().toISOString(),
+                                isImmutable: true
+                            }, { merge: true }),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('Archive sync timeout')), 3000))
+                        ]);
                     } catch(archErr) {
                         console.warn('[Archive Note]', archErr);
                     }
@@ -13303,39 +13306,25 @@ async function saveToLedger(round, combos, versionStr, user = null, qrMeta = nul
 
 
         // ??? Discrete Authentic Serial & QR URL Assignment per 5-game chunk
-
         let chunkSerial = (qrMeta && qrMeta.qrSerial && i === 0) ? qrMeta.qrSerial : null;
-
-        if (!chunkSerial || chunkSerial.startsWith('TR-') || chunkSerial.includes('00000014142041')) {
-
+        if (isPlaceholderQrSerial(chunkSerial)) {
             const serialSuffix = String(Math.floor(10000000000000 + Math.random() * 90000000000000));
-
             chunkSerial = `${String(r).padStart(4, '0')}${serialSuffix.substring(0, 14)}`;
-
         }
 
-
-
         let chunkQrUrl = '';
-
         if (qrMeta && qrMeta.qrRawUrl && i === 0) {
-
             const parsed = parseDonghangLotteryQrUrl(qrMeta.qrRawUrl);
-
             if (parsed && Array.isArray(parsed.combos) && parsed.combos.length === chunkCombos.length) {
-
                 chunkQrUrl = qrMeta.qrRawUrl;
-
-                if (parsed.serial) chunkSerial = parsed.serial;
-
+                if (parsed.serial && !isPlaceholderQrSerial(parsed.serial)) {
+                    chunkSerial = parsed.serial;
+                }
             }
-
         }
 
         if (!chunkQrUrl) {
-
             chunkQrUrl = buildDonghangLotteryQrUrl(r, chunkCombos, chunkSerial);
-
         }
 
 
@@ -16417,6 +16406,10 @@ async function calculateAllUsersTotalFinancials() {
             __exports.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
             if (typeof window !== 'undefined') window.getReceiptCombosFingerprint = getReceiptCombosFingerprint;
         }
+        if (typeof isPlaceholderQrSerial !== 'undefined') {
+            __exports.isPlaceholderQrSerial = isPlaceholderQrSerial;
+            if (typeof window !== 'undefined') window.isPlaceholderQrSerial = isPlaceholderQrSerial;
+        }
         if (typeof deduplicateReceipts !== 'undefined') {
             __exports.deduplicateReceipts = deduplicateReceipts;
             if (typeof window !== 'undefined') window.deduplicateReceipts = deduplicateReceipts;
@@ -16440,6 +16433,10 @@ async function calculateAllUsersTotalFinancials() {
         if (typeof buildDonghangLotteryQrUrl !== 'undefined') {
             __exports.buildDonghangLotteryQrUrl = buildDonghangLotteryQrUrl;
             if (typeof window !== 'undefined') window.buildDonghangLotteryQrUrl = buildDonghangLotteryQrUrl;
+        }
+        if (typeof rebuildMergedLedgerFromPurchasesMap !== 'undefined') {
+            __exports.rebuildMergedLedgerFromPurchasesMap = rebuildMergedLedgerFromPurchasesMap;
+            if (typeof window !== 'undefined') window.rebuildMergedLedgerFromPurchasesMap = rebuildMergedLedgerFromPurchasesMap;
         }
         if (typeof fetchAllUsersPurchases !== 'undefined') {
             __exports.fetchAllUsersPurchases = fetchAllUsersPurchases;
@@ -19972,23 +19969,34 @@ const _user70ReviewCache = {};
 
 /**
  * In-memory cache reset for user recommendations review
+ * Preserves immutable lotto_rec_snapshot_* caches by default to prevent synchronous 70-game recomputation spikes during sequential QR registration.
  */
-function clearUser70ReviewCache() {
+function clearUser70ReviewCache(options = {}) {
+    const purgeSnapshots = !!(options && options.purgeSnapshots === true);
+    const targetUser = (options && options.userOnly) ? String(options.userOnly).toLowerCase().trim() : '';
+
     for (const k in _user70ReviewCache) {
-        delete _user70ReviewCache[k];
+        if (!targetUser || k.toLowerCase().startsWith(targetUser + '_')) {
+            delete _user70ReviewCache[k];
+        }
     }
     try {
         const keysToRemove = [];
         for (let i = 0; i < SafeLocalStorage.length; i++) {
             const key = SafeLocalStorage.key(i);
-            if (key && (key.startsWith('lotto_review_v2_') || key.startsWith('lotto_rec_snapshot_'))) {
+            if (!key) continue;
+            if (key.startsWith('lotto_review_v2_')) {
+                if (!targetUser || key.toLowerCase().startsWith(`lotto_review_v2_${targetUser}_`)) {
+                    keysToRemove.push(key);
+                }
+            } else if (purgeSnapshots && key.startsWith('lotto_rec_snapshot_')) {
                 keysToRemove.push(key);
             }
         }
         keysToRemove.forEach(k => SafeLocalStorage.removeItem(k));
     } catch(e) {}
     if (typeof window !== 'undefined') {
-        if (typeof window.clearAlgoPerfCache === 'function') {
+        if (purgeSnapshots && typeof window.clearAlgoPerfCache === 'function') {
             try { window.clearAlgoPerfCache(); } catch(e) {}
         }
         if (typeof window.clearHomeReviewDashboardCache === 'function') {
@@ -31352,12 +31360,19 @@ async function renderConfirmedPurchasesList() {
 
     // If Admin, prefetch all users' purchases in background if not yet loaded OR if merged cache was invalidated
     if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger)) {
-        fetchAllUsersPurchases().then(() => {
-            const currentTab = document.getElementById('tab-confirmed-list');
-            if (currentTab && currentTab.classList.contains('active')) {
-                renderConfirmedPurchasesList();
-            }
-        }).catch(e => console.warn('[ConfirmedTab background fetch error]', e));
+        if (!window.__isConfirmedTabFetchingAllUsers) {
+            window.__isConfirmedTabFetchingAllUsers = true;
+            fetchAllUsersPurchases().then(() => {
+                window.__isConfirmedTabFetchingAllUsers = false;
+                const currentTab = document.getElementById('tab-confirmed-list');
+                if (currentTab && currentTab.classList.contains('active')) {
+                    renderConfirmedPurchasesList();
+                }
+            }).catch(e => {
+                window.__isConfirmedTabFetchingAllUsers = false;
+                console.warn('[ConfirmedTab background fetch error]', e);
+            });
+        }
     }
 
     const currentTarget = isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId;
@@ -37663,10 +37678,28 @@ if (typeof window !== 'undefined') {
     }
 }
 
-// 🔒 연속 등록 안정화: 저장 중복 실행 방지 락 & 잘못된 QR 경고 반복 방지
+// 🔒 연속 및 단건 등록 안정화: 저장/인식 중복 실행 방지 락 & 잘못된/중복 QR 경고 스로틀링
 let isSavingManualLedger = false;
+let isProcessingQrPayload = false;
+let lastAcceptedQrPayload = '';
+let lastAcceptedQrAt = 0;
+let lastDuplicateQrKey = '';
+let lastDuplicateQrAt = 0;
 let lastInvalidQrText = '';
 let lastInvalidQrAt = 0;
+let qrModeStartTimer = null;
+let sessionRegisteredReceiptsCount = 0;
+let sessionRegisteredGamesCount = 0;
+let isAutoContinuousSaveEnabled = false;
+
+function isGenericOrPlaceholderSerial(s) {
+    if (!s) return true;
+    const clean = String(s).replace(/[^0-9a-zA-Z]/g, '').trim();
+    if (clean.length < 10) return true;
+    if (clean.includes('00000014142041') || clean.includes('00000114142041')) return true;
+    if (String(s).trim().startsWith('TR-')) return true;
+    return false;
+}
 
 /**
  * 🔍 동일 영수증(QR 일련번호 또는 번호 세트)이 대상 회원 장부의 같은 회차에 이미 등록되어 있는지 확인
@@ -37685,19 +37718,61 @@ function findAlreadyRegisteredQrReceipt(round, serial, combos, targetUserId) {
             .join('|');
 
         const cleanSerial = String(serial || '').replace(/[^0-9a-zA-Z]/g, '').trim();
-        const hasRealSerial = cleanSerial.length >= 10;
+        const hasRealSerial = !isGenericOrPlaceholderSerial(serial) && cleanSerial.length >= 10;
         const incomingKey = toKey(combos);
 
         return receipts.find(p => {
             if (!p) return false;
-            const pSerial = String((p.qrMeta && p.qrMeta.qrSerial) || p.qrSerial || p.receiptId || '').replace(/[^0-9a-zA-Z]/g, '').trim();
-            // 실물 QR 일련번호가 있으면 일련번호로만 판정 (같은 번호를 다른 용지로 2장 구매한 정상 케이스 허용)
-            if (hasRealSerial && pSerial.length >= 10) return pSerial === cleanSerial;
+            const rawPSerial = (p.qrMeta && p.qrMeta.qrSerial) || p.qrSerial || p.receiptId || '';
+            const pSerial = String(rawPSerial).replace(/[^0-9a-zA-Z]/g, '').trim();
+            const pHasRealSerial = !isGenericOrPlaceholderSerial(rawPSerial) && pSerial.length >= 10;
+            // 실물 QR 고유 일련번호가 있으면 일련번호로만 판정 (같은 번호를 다른 용지로 2장 구매한 정상 케이스 허용)
+            if (hasRealSerial && pHasRealSerial) return pSerial === cleanSerial;
             return !!incomingKey && Array.isArray(p.combos) && toKey(p.combos) === incomingKey;
         }) || null;
     } catch (e) {
         console.warn('[QR Duplicate Check note]', e);
         return null;
+    }
+}
+
+function updateQrSessionStatusBanner() {
+    const banner = document.getElementById('qrSessionStatusBanner');
+    const countText = document.getElementById('qrSessionStatusText');
+    const autoBtn = document.getElementById('btnToggleAutoContinuousSave');
+    if (autoBtn) {
+        autoBtn.style.background = isAutoContinuousSaveEnabled
+            ? 'linear-gradient(135deg, #10b981, #059669)'
+            : 'rgba(30, 41, 59, 0.85)';
+        autoBtn.style.borderColor = isAutoContinuousSaveEnabled ? '#34d399' : '#475569';
+        autoBtn.style.color = isAutoContinuousSaveEnabled ? '#ffffff' : '#cbd5e1';
+        autoBtn.innerHTML = isAutoContinuousSaveEnabled
+            ? '<i class="fa-solid fa-bolt"></i> 자동 연속저장 ON'
+            : '<i class="fa-solid fa-bolt" style="color:#fbbf24;"></i> 자동 연속저장 OFF';
+    }
+    if (!banner || !countText) return;
+    if (sessionRegisteredReceiptsCount > 0) {
+        banner.style.display = 'flex';
+        countText.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#34d399;"></i> 이번 등록 완료: <strong>${sessionRegisteredReceiptsCount}장</strong> (${sessionRegisteredGamesCount}게임 · ${(sessionRegisteredGamesCount * 1000).toLocaleString()}원)`;
+    } else {
+        banner.style.display = 'flex';
+        countText.innerHTML = `<i class="fa-solid fa-camera" style="color:#38bdf8;"></i> 1장씩 바로 등록 및 여러 장 연속 스캔 모두 지원`;
+    }
+}
+
+function toggleAutoContinuousQrSave() {
+    isAutoContinuousSaveEnabled = !isAutoContinuousSaveEnabled;
+    updateQrSessionStatusBanner();
+    if (isAutoContinuousSaveEnabled) {
+        showToast('⚡ [자동 연속저장 ON] 영수증 QR 인식 즉시 자동으로 장부에 저장되고 다음 장을 연속 스캔합니다.');
+        const combosEl = document.getElementById('manualLedgerCombos');
+        if (combosEl && combosEl.dataset.qrScanned === 'true' && combosEl.value.trim()) {
+            handleSaveManualLedger(true);
+        } else {
+            resumeOrStartScanner();
+        }
+    } else {
+        showToast('👌 [자동 연속저장 OFF] 영수증 인식 후 번호 확인 카드를 거쳐 저장합니다.');
     }
 }
 
@@ -37838,7 +37913,68 @@ function resetQrReaderDOM() {
     }
 }
 
+/**
+ * ⚡ Warm-pause camera decoding while keeping the hardware MediaStream alive for 0ms next-sheet resume
+ */
+function pauseScanningForPreview() {
+    stopLiveBarcodeDetectorLoop();
+    if (html5QrScanner) {
+        try {
+            const st = (typeof html5QrScanner.getState === 'function') ? html5QrScanner.getState() : null;
+            if (st === 2 && typeof html5QrScanner.pause === 'function') {
+                html5QrScanner.pause(true);
+            }
+        } catch(e) {}
+    }
+    const qrScannerContainer = document.getElementById('qrScannerContainer');
+    if (qrScannerContainer) {
+        qrScannerContainer.style.display = 'none';
+    }
+}
+
+/**
+ * ⚡ Resume warm camera stream in 0ms if still live, otherwise cold-start scanner
+ */
+async function resumeOrStartScanner() {
+    if (qrModeStartTimer) {
+        clearTimeout(qrModeStartTimer);
+        qrModeStartTimer = null;
+    }
+    lastAcceptedQrPayload = '';
+    lastAcceptedQrAt = 0;
+
+    const liveTrack = getActiveCameraTrack();
+    const videoEl = document.querySelector('#qrReader video');
+    if (html5QrScanner && liveTrack && liveTrack.readyState === 'live' && videoEl) {
+        try {
+            const previewContainer = document.getElementById('qrScannedReceiptPreview');
+            if (previewContainer) previewContainer.style.display = 'none';
+            const resultBox = document.getElementById('manualLedgerAiCheckResult');
+            if (resultBox) resultBox.style.display = 'none';
+            const qrScannerContainer = document.getElementById('qrScannerContainer');
+            if (qrScannerContainer) qrScannerContainer.style.display = 'block';
+
+            const st = (typeof html5QrScanner.getState === 'function') ? html5QrScanner.getState() : null;
+            if (st === 3 && typeof html5QrScanner.resume === 'function') {
+                html5QrScanner.resume();
+            }
+            if (videoEl.paused) {
+                try { await videoEl.play(); } catch(e) {}
+            }
+            startLiveBarcodeDetectorLoop();
+            return true;
+        } catch(err) {
+            console.warn('[Warm camera resume fallback to cold start]:', err);
+        }
+    }
+    return startLottoQrScanner();
+}
+
 async function stopScanning() {
+    if (qrModeStartTimer) {
+        clearTimeout(qrModeStartTimer);
+        qrModeStartTimer = null;
+    }
     currentScannerSessionId++;
 
     if (stopScanningPromise) {
@@ -38449,6 +38585,11 @@ function switchManualLedgerMode(mode = 'qr') {
 
     if (!tabOnline || !tabQr || !tabBall) return;
 
+    if (qrModeStartTimer) {
+        clearTimeout(qrModeStartTimer);
+        qrModeStartTimer = null;
+    }
+
     [tabOnline, tabQr, tabBall].forEach(t => t.classList.remove('active'));
 
     if (secOnline) secOnline.style.display = 'none';
@@ -38479,9 +38620,11 @@ function switchManualLedgerMode(mode = 'qr') {
         tabQr.classList.add('active');
         if (secQr) secQr.style.display = 'flex';
         try { SafeLocalStorage.setItem('lucky777_manual_reg_mode', 'qr'); } catch(e) {}
-        setTimeout(() => {
+        updateQrSessionStatusBanner();
+        qrModeStartTimer = setTimeout(() => {
+            qrModeStartTimer = null;
             startLottoQrScanner();
-        }, 200);
+        }, 40);
     }
 }
 
@@ -39027,12 +39170,21 @@ let currentZoomLevel = 1.0;
 /**
  * 🔒 Parse and apply Donghang Lottery QR Payload (Universal across all smartphone browsers)
  */
-function processLottoQrPayload(rawText) {
+function processLottoQrPayload(rawText, options = {}) {
     if (!rawText) return false;
+    if (isProcessingQrPayload || isSavingManualLedger) return false;
+
     let decodedText = String(rawText).trim();
     try {
         decodedText = decodeURIComponent(decodedText);
     } catch(e) {}
+
+    const now = Date.now();
+    if (decodedText === lastAcceptedQrPayload && (now - lastAcceptedQrAt) < 900) {
+        return false;
+    }
+
+    isProcessingQrPayload = true;
     console.log(`[QR Scanner] Processing payload: ${decodedText}`);
 
     try {
@@ -39040,8 +39192,33 @@ function processLottoQrPayload(rawText) {
         if (parsed && parsed.round && Array.isArray(parsed.combos) && parsed.combos.length > 0) {
             const round = parsed.round;
             const combosText = parsed.combos.map(c => c.numbers.join(', ')).join('\n');
-            const serial = parsed.serial || `${String(round).padStart(4, '0')}${Date.now()}${Math.floor(1000 + Math.random() * 9000)}`;
+            const rawParsedSerial = parsed.serial || '';
+            const serial = (!isGenericOrPlaceholderSerial(rawParsedSerial))
+                ? rawParsedSerial
+                : `${String(round).padStart(4, '0')}${Date.now()}${Math.floor(1000 + Math.random() * 9000)}`;
             const canonicalUrl = buildDonghangLotteryQrUrl(round, parsed.combos, serial, decodedText);
+
+            // 🔍 1. 카메라 정지/프리뷰 전환 전 선제적 중복 영수증 검사
+            // 실시간 카메라 스캔 중 이미 등록된 영수증이 잠시 스치더라도 카메라가 꺼지지 않고 즉시 다음 영수증을 인식하도록 보호
+            const targetUserId = getManualLedgerTargetUserId();
+            const dupReceipt = findAlreadyRegisteredQrReceipt(round, rawParsedSerial || serial, parsed.combos, targetUserId);
+            const isLiveCam = !!(options.fromLiveCamera || getActiveCameraTrack());
+
+            if (dupReceipt && isLiveCam) {
+                const dupKey = `${round}_${parsed.combos.map(c => c.numbers.join(',')).join('|')}`;
+                if (dupKey !== lastDuplicateQrKey || (now - lastDuplicateQrAt) > 2500) {
+                    lastDuplicateQrKey = dupKey;
+                    lastDuplicateQrAt = now;
+                    if (navigator.vibrate) {
+                        try { navigator.vibrate(40); } catch(e) {}
+                    }
+                    showToast(`⚠️ 이미 등록된 영수증입니다 (제 ${round}회차). 다음 영수증을 비춰주세요!`, 2800);
+                }
+                return false;
+            }
+
+            lastAcceptedQrPayload = decodedText;
+            lastAcceptedQrAt = now;
 
             // Automatically fill and sync round info
             const roundEl = document.getElementById('manualLedgerRound');
@@ -39077,7 +39254,9 @@ function processLottoQrPayload(rawText) {
                 // 지류 QR 스캔은 항상 오프라인 채널 (직전 온라인 영수증 탭 사용 흔적 제거)
                 combosEl.dataset.isOnlineReceipt = 'false';
                 combosEl._cachedCrossCheck = null;
-                stopScanning();
+
+                // Warm-pause camera stream for instant resume on next sheet (or full stop when modal closes)
+                pauseScanningForPreview();
 
                 // Trigger real-time cross check immediately
                 updateManualModalCrossCheck();
@@ -39087,14 +39266,20 @@ function processLottoQrPayload(rawText) {
                     try { navigator.vibrate([50, 70, 50]); } catch(e) {}
                 }
 
-                // 🔍 연속 등록 중 동일 영수증 재스캔 감지
-                const dupReceipt = findAlreadyRegisteredQrReceipt(round, serial, parsed.combos, getManualLedgerTargetUserId());
                 if (dupReceipt) {
                     combosEl.dataset.qrDuplicate = 'true';
                     showToast(`⚠️ 이미 등록된 영수증입니다 (제 ${round}회차). 다음 영수증을 스캔해주세요.`, 4000);
                     return true;
                 }
                 delete combosEl.dataset.qrDuplicate;
+
+                // ⚡ 자동 연속저장 모드가 켜져 있고 실시간 카메라 스캔인 경우 즉시 저장 후 다음 장 스캔 이어가기
+                if (isAutoContinuousSaveEnabled && isLiveCam) {
+                    setTimeout(() => {
+                        handleSaveManualLedger(true);
+                    }, 50);
+                    return true;
+                }
 
                 const currentRound = (typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1240);
                 const isPastRound = round < currentRound;
@@ -39106,7 +39291,6 @@ function processLottoQrPayload(rawText) {
             }
         } else {
             // 실시간 카메라는 초당 15회 디코딩 → 같은 비로또 QR에 대해 alert가 무한 반복되지 않도록 5초 스로틀
-            const now = Date.now();
             if (decodedText === lastInvalidQrText && (now - lastInvalidQrAt) < 5000) {
                 return false;
             }
@@ -39120,6 +39304,8 @@ function processLottoQrPayload(rawText) {
         console.error('[QR Parser Error]', e);
         alert('QR 코드 분석 실패: ' + e.message);
         return false;
+    } finally {
+        isProcessingQrPayload = false;
     }
 }
 
@@ -39134,6 +39320,9 @@ async function startLottoQrScanner() {
     }
 
     startScannerPromise = (async () => {
+        const hadActiveHardware = !!(html5QrScanner || getActiveCameraTrack() || stopScanningPromise);
+        scannerPausedWithLiveTrack = false;
+
         // 1. If a stop operation is currently underway, wait for hardware release to complete (with safety timeout)
         if (stopScanningPromise) {
             try {
@@ -39176,7 +39365,7 @@ async function startLottoQrScanner() {
 
             const qrCodeSuccessCallback = (decodedText) => {
                 if (thisSessionId !== currentScannerSessionId) return;
-                processLottoQrPayload(decodedText);
+                processLottoQrPayload(decodedText, { fromLiveCamera: true });
             };
 
             const config = {
@@ -39228,8 +39417,9 @@ async function startLottoQrScanner() {
                 }
             }
 
-            // Hardware driver cooldown: 250ms pause to ensure mobile camera HAL release
-            await new Promise(r => setTimeout(r, 250));
+            // Hardware driver cooldown: fast 40ms cold-start when camera was already idle, 180ms when releasing previous stream
+            const driverCooldownMs = hadActiveHardware ? 180 : 40;
+            await new Promise(r => setTimeout(r, driverCooldownMs));
             if (thisSessionId !== currentScannerSessionId) return false;
 
             let started = false;
@@ -39372,8 +39562,10 @@ function startLiveBarcodeDetectorLoop() {
                 const rawVal = barcodes[0].rawValue;
                 if (rawVal) {
                     console.log('[Native BarcodeDetector Live Match]:', rawVal);
-                    stopLiveBarcodeDetectorLoop();
-                    processLottoQrPayload(rawVal);
+                    const accepted = processLottoQrPayload(rawVal, { fromLiveCamera: true });
+                    if (accepted) {
+                        stopLiveBarcodeDetectorLoop();
+                    }
                 }
             }
         } catch(err) {
@@ -39671,16 +39863,10 @@ async function toggleLottoZoom() {
 }
 
 /**
- * 📸 Handle Photo / Gallery Image file selection with Multi-engine OCR decoding
+ * Helper to decode a single image file into a QR raw payload string using 3-tier engine
  */
-async function handleLottoQrFile(event) {
-    const file = event.target.files && event.target.files[0];
-    if (!file) return;
-
-    // Stop active camera stream cleanly before file scanning to prevent canvas/DOM collision
-    await stopScanning();
-
-    showToast('🔍 영수증 사진을 정밀 분석 중입니다...');
+async function decodeSingleQrImageFile(file) {
+    if (!file) return null;
 
     // 1. Try Native BarcodeDetector (Hardware Accelerated)
     if ('BarcodeDetector' in window) {
@@ -39688,12 +39874,8 @@ async function handleLottoQrFile(event) {
             const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
             const imageBitmap = await createImageBitmap(file);
             const barcodes = await detector.detect(imageBitmap);
-            if (barcodes && barcodes.length > 0) {
-                const detected = barcodes[0].rawValue;
-                if (processLottoQrPayload(detected)) {
-                    event.target.value = '';
-                    return;
-                }
+            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                return barcodes[0].rawValue;
             }
         } catch(e) {
             console.warn('[Native BarcodeDetector file attempt failed, trying Html5Qrcode]', e);
@@ -39709,10 +39891,7 @@ async function handleLottoQrFile(event) {
             });
             const decodedText = await fileScanner.scanFile(file, true);
             if (decodedText) {
-                if (processLottoQrPayload(decodedText)) {
-                    event.target.value = '';
-                    return;
-                }
+                return decodedText;
             }
         } catch(err) {
             console.warn('[Html5Qrcode file scan failed, trying downscaled canvas enhanced scan]', err);
@@ -39722,12 +39901,81 @@ async function handleLottoQrFile(event) {
     // 3. Fallback: Downscaled Multi-contrast Canvas Preprocessor
     try {
         const enhancedResult = await scanWithContrastEnhancement(file);
-        if (enhancedResult && processLottoQrPayload(enhancedResult)) {
-            event.target.value = '';
-            return;
+        if (enhancedResult) {
+            return enhancedResult;
         }
     } catch(e) {
         console.error('[Enhanced scan error]', e);
+    }
+
+    return null;
+}
+
+/**
+ * 📸 Handle Photo / Gallery Image file selection with Multi-engine OCR decoding
+ * Supports both single-photo preview and multi-photo batch registration
+ */
+async function handleLottoQrFile(event) {
+    const files = Array.from((event && event.target && event.target.files) ? event.target.files : []);
+    if (files.length === 0) return;
+
+    // Stop active camera stream cleanly before file scanning to prevent canvas/DOM collision
+    await stopScanning();
+
+    // Multi-photo batch mode (2+ photos selected at once from gallery)
+    if (files.length > 1) {
+        showToast(`🔍 총 ${files.length}장의 영수증 사진을 연속 분석 중입니다...`, 3500);
+        let savedSheets = 0;
+        let savedGames = 0;
+        let dupCount = 0;
+        let failCount = 0;
+        const targetUserId = getManualLedgerTargetUserId();
+
+        for (let idx = 0; idx < files.length; idx++) {
+            const f = files[idx];
+            const decoded = await decodeSingleQrImageFile(f);
+            if (!decoded) {
+                failCount++;
+                continue;
+            }
+            const parsed = parseDonghangLotteryQrUrl(decoded);
+            if (!parsed || !parsed.round || !Array.isArray(parsed.combos) || parsed.combos.length === 0) {
+                failCount++;
+                continue;
+            }
+            const dup = findAlreadyRegisteredQrReceipt(parsed.round, parsed.serial, parsed.combos, targetUserId);
+            if (dup) {
+                dupCount++;
+                continue;
+            }
+            const accepted = processLottoQrPayload(decoded, { fromLiveCamera: false });
+            if (accepted) {
+                await handleSaveManualLedger(true);
+                savedSheets++;
+                savedGames += parsed.combos.length;
+            } else {
+                failCount++;
+            }
+        }
+
+        try { event.target.value = ''; } catch(e) {}
+        if (savedSheets > 0) {
+            showToast(`🎉 사진 ${savedSheets}장 (${savedGames}게임) 일괄 등록 완료!${dupCount > 0 ? ` (중복 ${dupCount}장 제외)` : ''}`, 4500);
+        } else if (dupCount > 0 && failCount === 0) {
+            showToast(`⚠️ 선택한 사진 ${dupCount}장 모두 이미 등록된 영수증입니다.`, 4000);
+        } else {
+            alert(`⚠️ 선택한 사진 중 ${failCount}장에서 QR 코드를 인식하지 못했습니다. (등록 성공: ${savedSheets}장, 중복 제외: ${dupCount}장)`);
+        }
+        return;
+    }
+
+    const file = files[0];
+    showToast('🔍 영수증 사진을 정밀 분석 중입니다...');
+
+    const decodedQr = await decodeSingleQrImageFile(file);
+    if (decodedQr && processLottoQrPayload(decodedQr, { fromLiveCamera: false })) {
+        try { event.target.value = ''; } catch(e) {}
+        return;
     }
 
     // 4. Fallback: If no paper QR code was found, check if this is an online lottery receipt screenshot
@@ -39735,14 +39983,14 @@ async function handleLottoQrFile(event) {
         showToast('💡 QR코드가 없어 온라인 영수증(OCR) 자동 인식을 진행합니다...');
         const ocrSuccess = await processOnlineScreenshotFileDirect(file);
         if (ocrSuccess) {
-            event.target.value = '';
+            try { event.target.value = ''; } catch(e) {}
             return;
         }
     } catch(ocrErr) {
         console.warn('[Online OCR fallback in handleLottoQrFile failed]', ocrErr);
     }
 
-    event.target.value = '';
+    try { event.target.value = ''; } catch(e) {}
     alert('⚠️ 사진에서 로또 QR 코드 또는 온라인 영수증을 인식하지 못했습니다.\n\n• 실물 복권인 경우 영수증 상단의 QR 코드가 잘 보이도록 다시 촬영해주세요.\n• 온라인 복권인 경우 [마이페이지 > 구매상세 (티켓 보기)] 화면을 캡처한 스크린샷인지 확인해주세요.');
 }
 
@@ -39844,6 +40092,10 @@ async function scanWithContrastEnhancement(file) {
 
 if (typeof window !== 'undefined') {
     window.startLottoQrScanner = startLottoQrScanner;
+    window.resumeOrStartScanner = resumeOrStartScanner;
+    window.pauseScanningForPreview = pauseScanningForPreview;
+    window.toggleAutoContinuousQrSave = toggleAutoContinuousQrSave;
+    window.updateQrSessionStatusBanner = updateQrSessionStatusBanner;
     window.handleLottoQrFile = handleLottoQrFile;
     window.toggleLottoTorch = toggleLottoTorch;
     window.toggleLottoZoom = toggleLottoZoom;
@@ -39861,7 +40113,8 @@ async function handleSaveManualLedger(keepScanning = false) {
     isSavingManualLedger = true;
 
     const btnSave = document.getElementById('btnSaveManualLedger');
-    const origBtnHtml = btnSave ? btnSave.innerHTML : '<i class="fa-solid fa-save"></i> 실구매 등록하기';
+    const defaultBtnHtml = '<i class="fa-solid fa-circle-check"></i> <span id="btnSaveManualLedgerText">실구매 등록하기</span>';
+    let restoreBtnHtml = btnSave ? btnSave.innerHTML : defaultBtnHtml;
     const manualLedgerModal = document.getElementById('manualLedgerModal');
     const isEditingExisting = !!state.editingLedgerInfo;
 
@@ -39872,9 +40125,6 @@ async function handleSaveManualLedger(keepScanning = false) {
     }
 
     try {
-        // 2. Stop camera and ensure hardware lock is released
-        try { await stopScanning(); } catch(e) {}
-
         const roundInputEl = document.getElementById('manualLedgerRound');
         const roundInput = roundInputEl ? parseInt(roundInputEl.value.trim(), 10) : 0;
         const versionEl = document.getElementById('manualLedgerVersion');
@@ -39888,14 +40138,14 @@ async function handleSaveManualLedger(keepScanning = false) {
         }
         if (!combosText) {
             alert('⚠️ 스캔된 번호 조합이 없습니다.\n\n[📷 QR 코드 다시 스캔하기] 버튼을 눌러 복권 영수증을 카메라로 비춰주세요.');
-            setTimeout(() => { startLottoQrScanner(); }, 100);
+            setTimeout(() => { resumeOrStartScanner(); }, 80);
             return;
         }
 
         // 🔒 Enforce QR Code Verification Only
         if (combosEl && combosEl.dataset.qrScanned !== 'true' && !combosEl.dataset.qrRawUrl) {
             alert('⚠️ [실구매 QR 인증 필수]\n\n로또 6/45 실구매 등록은 실물 복권 영수증의 QR코드 인식을 통해서만 등록이 가능합니다.\n\n[📷 QR 코드 다시 스캔하기] 또는 [영수증 사진 선택]을 통해 영수증을 인증해주세요.');
-            await startLottoQrScanner();
+            await resumeOrStartScanner();
             return;
         }
 
@@ -39977,7 +40227,7 @@ async function handleSaveManualLedger(keepScanning = false) {
             return;
         }
 
-        // 🔍 연속 등록 중 이미 등록된 영수증 재저장 차단 (기존엔 조용히 중복제거되며 '정상 등록' 토스트만 노출되어 혼란 유발)
+        // 🔍 연속 등록 중 이미 등록된 영수증 재저장 차단
         if (!isEditingExisting) {
             const dupSerial = combosEl ? (combosEl.dataset.qrSerial || '') : '';
             const dupReceipt = findAlreadyRegisteredQrReceipt(roundInput, dupSerial, parsedNumberArrays, effectiveAuthId);
@@ -39995,7 +40245,8 @@ async function handleSaveManualLedger(keepScanning = false) {
                 }
                 const resultBoxDup = document.getElementById('manualLedgerAiCheckResult');
                 if (resultBoxDup) resultBoxDup.style.display = 'none';
-                setTimeout(() => { startLottoQrScanner(); }, 100);
+                restoreBtnHtml = defaultBtnHtml;
+                setTimeout(() => { resumeOrStartScanner(); }, 80);
                 return;
             }
         }
@@ -40047,7 +40298,7 @@ async function handleSaveManualLedger(keepScanning = false) {
         const qrRawUrl = combosEl ? (combosEl.dataset.qrRawUrl || null) : null;
         const qrSerial = combosEl ? (combosEl.dataset.qrSerial || null) : null;
         const fallbackSerial = `${String(roundInput).padStart(4, '0')}${Date.now()}${Math.floor(1000 + Math.random() * 9000)}`;
-        const finalSerial = qrSerial || fallbackSerial;
+        const finalSerial = (!isGenericOrPlaceholderSerial(qrSerial)) ? qrSerial : fallbackSerial;
         const finalQrUrl = qrRawUrl || buildDonghangLotteryQrUrl(roundInput, newCombos, finalSerial);
         const qrMeta = (combosEl && (combosEl.dataset.qrScanned === 'true' || qrRawUrl || qrSerial || isOnline)) ? {
             qrSerial: finalSerial,
@@ -40064,6 +40315,18 @@ async function handleSaveManualLedger(keepScanning = false) {
             return;
         }
 
+        // Update session registration counters
+        sessionRegisteredReceiptsCount += 1;
+        sessionRegisteredGamesCount += newCombos.length;
+        updateQrSessionStatusBanner();
+
+        // Reset button HTML and styles to clean default for the next receipt
+        restoreBtnHtml = defaultBtnHtml;
+        if (btnSave) {
+            btnSave.style.background = '';
+            btnSave.style.boxShadow = '';
+        }
+
         // Reset combos element dataset & content to prevent stale state in sequential registrations
         if (combosEl) {
             combosEl.value = '';
@@ -40075,6 +40338,9 @@ async function handleSaveManualLedger(keepScanning = false) {
             delete combosEl.dataset.qrDuplicate;
             combosEl._cachedCrossCheck = null;
         }
+        lastAcceptedQrPayload = '';
+        lastAcceptedQrAt = 0;
+
         const onlineTxt = document.getElementById('onlineReceiptTextInput');
         if (onlineTxt) onlineTxt.value = '';
         clearAllGames();
@@ -40090,40 +40356,48 @@ async function handleSaveManualLedger(keepScanning = false) {
             ? `🎉 [${targetUserName}] 회원님의 제 ${roundInput}회차 [${finalVersionStr.split(' ')[0]}] 실구매 영수증이 대리 등록되었습니다.`
             : `🎉 제 ${roundInput}회차 [${finalVersionStr.split(' ')[0]}] 실구매 내역이 정상 등록되었습니다.`;
 
-        // Defer background tab renders so current screen repaints at 60fps without hitching
-        setTimeout(() => {
-            if (typeof renderConfirmedPurchasesList === 'function') renderConfirmedPurchasesList();
-            if (typeof renderReviewTab === 'function') renderReviewTab();
-            if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
-        }, 100);
-
         if (keepScanning) {
-            // 🔄 연속 등록 모드: 모달을 닫지 않고 바로 다음 영수증 카메라 스캔 시작
-            showToast(`${successNotice}\n📷 다음 영수증을 카메라에 비춰주세요.`, 3500);
-            setTimeout(async () => {
+            // 🔄 연속 등록 모드: 백그라운드 탭만 가볍게 갱신하고, 카메라 스트림을 0ms 웜 재개
+            setTimeout(() => {
+                if (typeof renderConfirmedPurchasesList === 'function') renderConfirmedPurchasesList();
+                if (typeof renderReviewTab === 'function') renderReviewTab();
+                if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
+            }, 120);
+
+            showToast(`${successNotice}\n📷 다음 영수증을 카메라에 비춰주세요. (누적 ${sessionRegisteredReceiptsCount}장 · ${sessionRegisteredGamesCount}게임)`, 3200);
+            const resumed = await resumeOrStartScanner();
+            if (!resumed) {
                 await startLottoQrScanner();
-            }, 300);
+            }
             return;
         }
 
-        // Close modal immediately (< 5ms response time)
+        // 단건 등록 완료 모드 (한 장씩 바로바로 등록 시): 모달 즉시 닫기 (< 5ms) + 카메라 하드웨어 트랙 완전 해제
         if (manualLedgerModal) {
             manualLedgerModal.style.display = 'none';
         }
         const overlay = document.getElementById('manualLedgerModalOverlay');
         if (overlay) overlay.style.display = 'none';
 
-        // Switch to confirmed list tab
+        // Release camera hardware completely so reopening [실구매 등록] for the next sheet starts with a clean idle camera
+        try { stopScanning(); } catch(e) {}
+
+        // Switch to confirmed list tab and render once immediately
         if (typeof window.switchLottoTab === 'function') {
             window.switchLottoTab('tab-confirmed-list');
         } else if (typeof switchLottoTab === 'function') {
             switchLottoTab('tab-confirmed-list');
         }
 
-        // Render active tab immediately
         if (typeof renderConfirmedPurchasesList === 'function') {
             renderConfirmedPurchasesList();
         }
+
+        // Defer secondary background tabs only (avoid duplicate renderConfirmedPurchasesList call)
+        setTimeout(() => {
+            if (typeof renderReviewTab === 'function') renderReviewTab();
+            if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
+        }, 120);
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
         showToast(successNotice);
@@ -40132,7 +40406,7 @@ async function handleSaveManualLedger(keepScanning = false) {
         if (typeof alert === 'function') alert('실구매 내역 저장 중 오류가 발생했습니다: ' + err.message);
     } finally {
         if (btnSave) {
-            btnSave.innerHTML = origBtnHtml;
+            btnSave.innerHTML = restoreBtnHtml;
         }
         setManualLedgerSaveButtonsDisabled(false);
         isSavingManualLedger = false;
@@ -40169,15 +40443,23 @@ function openManualLedgerModal() {
         }
         lastInvalidQrText = '';
         lastInvalidQrAt = 0;
+        lastAcceptedQrPayload = '';
+        lastAcceptedQrAt = 0;
+        lastDuplicateQrKey = '';
+        lastDuplicateQrAt = 0;
+        isProcessingQrPayload = false;
         isStartingScanner = false;
         const previewContainer = document.getElementById('qrScannedReceiptPreview');
         if (previewContainer) {
             previewContainer.style.display = 'none';
         }
-        const saveBtnText = document.getElementById('btnSaveManualLedgerText');
-        if (saveBtnText) {
-            saveBtnText.textContent = '실구매 등록하기';
+        const btnSave = document.getElementById('btnSaveManualLedger');
+        if (btnSave) {
+            btnSave.style.background = '';
+            btnSave.style.boxShadow = '';
+            btnSave.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span id="btnSaveManualLedgerText">실구매 등록하기</span>';
         }
+        updateQrSessionStatusBanner();
         // 👑 [Master / 관리자 전용] 대리 QR구매등록 회원 선택기 동적 렌더링
         let currentAuthId = ((typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window.SafeAuth !== 'undefined' ? window.SafeAuth.get() : null)) || '').toLowerCase().trim();
         if (!currentAuthId && typeof window !== 'undefined') {
@@ -40321,6 +40603,10 @@ if (typeof window !== 'undefined') {
     window.updateManualModalCrossCheck = updateManualModalCrossCheck;
     window.renderDigitalReceiptCard = renderDigitalReceiptCard;
     window.startLottoQrScanner = startLottoQrScanner;
+    window.resumeOrStartScanner = resumeOrStartScanner;
+    window.pauseScanningForPreview = pauseScanningForPreview;
+    window.toggleAutoContinuousQrSave = toggleAutoContinuousQrSave;
+    window.updateQrSessionStatusBanner = updateQrSessionStatusBanner;
     window.triggerCameraAutoFocus = triggerCameraAutoFocus;
     window.applyCameraFocusOptimization = applyCameraFocusOptimization;
     window.stopScanning = stopScanning;
@@ -40342,9 +40628,18 @@ if (typeof window !== 'undefined') {
     window.clearAllGames = clearAllGames;
 }
 
+
         if (typeof findAlreadyRegisteredQrReceipt !== 'undefined') {
             __exports.findAlreadyRegisteredQrReceipt = findAlreadyRegisteredQrReceipt;
             if (typeof window !== 'undefined') window.findAlreadyRegisteredQrReceipt = findAlreadyRegisteredQrReceipt;
+        }
+        if (typeof updateQrSessionStatusBanner !== 'undefined') {
+            __exports.updateQrSessionStatusBanner = updateQrSessionStatusBanner;
+            if (typeof window !== 'undefined') window.updateQrSessionStatusBanner = updateQrSessionStatusBanner;
+        }
+        if (typeof toggleAutoContinuousQrSave !== 'undefined') {
+            __exports.toggleAutoContinuousQrSave = toggleAutoContinuousQrSave;
+            if (typeof window !== 'undefined') window.toggleAutoContinuousQrSave = toggleAutoContinuousQrSave;
         }
         if (typeof forceKillAllCameraTracks !== 'undefined') {
             __exports.forceKillAllCameraTracks = forceKillAllCameraTracks;
@@ -40357,6 +40652,14 @@ if (typeof window !== 'undefined') {
         if (typeof resetQrReaderDOM !== 'undefined') {
             __exports.resetQrReaderDOM = resetQrReaderDOM;
             if (typeof window !== 'undefined') window.resetQrReaderDOM = resetQrReaderDOM;
+        }
+        if (typeof pauseScanningForPreview !== 'undefined') {
+            __exports.pauseScanningForPreview = pauseScanningForPreview;
+            if (typeof window !== 'undefined') window.pauseScanningForPreview = pauseScanningForPreview;
+        }
+        if (typeof resumeOrStartScanner !== 'undefined') {
+            __exports.resumeOrStartScanner = resumeOrStartScanner;
+            if (typeof window !== 'undefined') window.resumeOrStartScanner = resumeOrStartScanner;
         }
         if (typeof stopScanning !== 'undefined') {
             __exports.stopScanning = stopScanning;

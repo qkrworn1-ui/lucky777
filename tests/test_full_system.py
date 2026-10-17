@@ -4187,6 +4187,125 @@ Lotto 6/45
         self.assertIn('.kpi-compare-box .box-lbl', css, "styles.css must format .box-lbl for Fold 7")
         self.assertIn('white-space: nowrap !important', css, "styles.css must prevent awkward word fragment wrapping in compare boxes")
 
+    # [Test 118] High-Speed Single & Multi-Sheet QR Registration Safeguards (Camera Warm Pause, Zero-Pad Slot Filter, Cache Preservation)
+    def test_118_qr_sequential_and_single_sheet_high_speed_registration(self):
+        """Verify 1st, 2nd, 3rd+ QR receipts work instantaneously in both one-by-one and continuous modes."""
+        ledger_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        modal_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'manual-modal.js')
+        review_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        confirmed_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'confirmed-tab.js')
+        html_path = os.path.join(self.root_dir, 'index.html')
+
+        with open(ledger_path, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        with open(modal_path, 'r', encoding='utf-8') as f:
+            modal_code = f.read()
+        with open(review_path, 'r', encoding='utf-8') as f:
+            review_code = f.read()
+        with open(confirmed_path, 'r', encoding='utf-8') as f:
+            confirmed_code = f.read()
+        with open(html_path, 'r', encoding='utf-8') as f:
+            html_code = f.read()
+
+        # 1. Review cache preservation of immutable recommendation snapshots
+        self.assertIn('const purgeSnapshots = !!(options && options.purgeSnapshots === true);', review_code,
+                      "clearUser70ReviewCache must preserve lotto_rec_snapshot_* by default to avoid 2-5s freeze on 2nd receipt")
+
+        # 2. Confirmed tab infinite re-render loop guard
+        self.assertIn('window.__isConfirmedTabFetchingAllUsers', confirmed_code,
+                      "renderConfirmedPurchasesList must guard against re-entrant fetchAllUsersPurchases loop")
+
+        # 3. Placeholder QR serial protection & zero-padded 1~4 game slot filtering in ledger.js
+        self.assertIn('export function isPlaceholderQrSerial(serial)', ledger_code,
+                      "ledger.js must define isPlaceholderQrSerial to prevent synthetic serial collisions")
+        self.assertIn('nums.every(n => !isNaN(n) && n >= 1 && n <= 45)', ledger_code,
+                      "parseDonghangLotteryQrUrl must skip 000000000000 empty game slots on 1~4 game paper receipts")
+        self.assertIn('rebuildMergedLedgerFromPurchasesMap', ledger_code,
+                      "ledger.js must rebuild allUsersMergedLedger synchronously and on cache hits")
+        self.assertIn('_lastLocalLedgerSaveByUser', ledger_code,
+                      "fetchAllUsersPurchases must protect recent local ledger saves from stale server overwrites")
+
+        # 4. Warm camera pause/resume & pre-stop duplicate check in manual-modal.js
+        self.assertIn('export function pauseScanningForPreview()', modal_code,
+                      "manual-modal.js must provide pauseScanningForPreview to keep camera stream warm")
+        self.assertIn('export async function resumeOrStartScanner()', modal_code,
+                      "manual-modal.js must provide resumeOrStartScanner for 0ms next-sheet scanning")
+        self.assertIn('export function toggleAutoContinuousQrSave', modal_code,
+                      "manual-modal.js must support auto-continuous QR save toggle")
+        self.assertIn('id="qrSessionStatusBanner"', html_code,
+                      "index.html must include #qrSessionStatusBanner in QR scanner modal")
+        self.assertIn('id="btnToggleAutoContinuousSave"', html_code,
+                      "index.html must include #btnToggleAutoContinuousSave button")
+
+        # 5. Functional Node.js test for 1~4 game zero-padded QR parsing & placeholder serial non-collision
+        import subprocess, shutil
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_script = """
+            global.window = {
+                onerror: () => {},
+                addEventListener: () => {},
+                removeEventListener: () => {},
+                state: {},
+                location: { search: '' }
+            };
+            global.document = {
+                addEventListener: () => {},
+                getElementById: () => null,
+                querySelector: () => null,
+                querySelectorAll: () => [],
+                createElement: () => ({ setAttribute: () => {}, style: {} }),
+                head: { appendChild: () => {} },
+                body: { appendChild: () => {} }
+            };
+            global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+            global.sessionStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+
+            const ledgerMod = await import('./src/services/lotto/ledger.js');
+            const { parseDonghangLotteryQrUrl, deduplicateReceipts, isPlaceholderQrSerial } = ledgerMod;
+
+            // Test A: 2-game receipt with 3 zero-padded empty slots (n000000000000)
+            const qr2Games = 'http://m.dhlottery.co.kr/?v=1220q010203040506q070809101112n000000000000n000000000000n00000000000012345678901234';
+            const parsed = parseDonghangLotteryQrUrl(qr2Games);
+            if (!parsed || parsed.round !== 1220 || parsed.combos.length !== 2) {
+                console.error('Failed to parse 2-game zero-padded QR:', parsed);
+                process.exit(1);
+            }
+            if (parsed.combos[0].numbers.join(',') !== '1,2,3,4,5,6' || parsed.combos[1].numbers.join(',') !== '7,8,9,10,11,12') {
+                console.error('Parsed numbers mismatch:', parsed.combos);
+                process.exit(2);
+            }
+
+            // Test B: Placeholder serials must be detected and must NOT collide two distinct receipts in deduplicateReceipts
+            if (!isPlaceholderQrSerial('122000000014142041') || !isPlaceholderQrSerial('122000000114142041')) {
+                console.error('Placeholder serial detection failed');
+                process.exit(3);
+            }
+            if (isPlaceholderQrSerial('122098765432109876')) {
+                console.error('Real serial falsely marked as placeholder');
+                process.exit(4);
+            }
+
+            const r1 = {
+                id: 'rec_1',
+                qrSerial: '122000000114142041',
+                combinations: [{ numbers: [1, 2, 3, 4, 5, 6] }]
+            };
+            const r2 = {
+                id: 'rec_2',
+                qrSerial: '122000000114142041',
+                combinations: [{ numbers: [10, 11, 12, 13, 14, 15] }]
+            };
+            const deduped = deduplicateReceipts([r1, r2]);
+            if (deduped.length !== 2) {
+                console.error('Distinct receipts with placeholder serials collided!', deduped);
+                process.exit(5);
+            }
+            process.exit(0);
+            """
+            res = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, encoding='utf-8', errors='replace', cwd=self.root_dir)
+            self.assertEqual(res.returncode, 0, f"Node verification failed: {res.stderr or res.stdout}")
+
 if __name__ == '__main__':
     unittest.main()
 

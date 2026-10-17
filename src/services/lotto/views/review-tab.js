@@ -265,23 +265,34 @@ const _user70ReviewCache = {};
 
 /**
  * In-memory cache reset for user recommendations review
+ * Preserves immutable lotto_rec_snapshot_* caches by default to prevent synchronous 70-game recomputation spikes during sequential QR registration.
  */
-export function clearUser70ReviewCache() {
+export function clearUser70ReviewCache(options = {}) {
+    const purgeSnapshots = !!(options && options.purgeSnapshots === true);
+    const targetUser = (options && options.userOnly) ? String(options.userOnly).toLowerCase().trim() : '';
+
     for (const k in _user70ReviewCache) {
-        delete _user70ReviewCache[k];
+        if (!targetUser || k.toLowerCase().startsWith(targetUser + '_')) {
+            delete _user70ReviewCache[k];
+        }
     }
     try {
         const keysToRemove = [];
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key && (key.startsWith('lotto_review_v2_') || key.startsWith('lotto_rec_snapshot_'))) {
+            if (!key) continue;
+            if (key.startsWith('lotto_review_v2_')) {
+                if (!targetUser || key.toLowerCase().startsWith(`lotto_review_v2_${targetUser}_`)) {
+                    keysToRemove.push(key);
+                }
+            } else if (purgeSnapshots && key.startsWith('lotto_rec_snapshot_')) {
                 keysToRemove.push(key);
             }
         }
         keysToRemove.forEach(k => localStorage.removeItem(k));
     } catch(e) {}
     if (typeof window !== 'undefined') {
-        if (typeof window.clearAlgoPerfCache === 'function') {
+        if (purgeSnapshots && typeof window.clearAlgoPerfCache === 'function') {
             try { window.clearAlgoPerfCache(); } catch(e) {}
         }
         if (typeof window.clearHomeReviewDashboardCache === 'function') {

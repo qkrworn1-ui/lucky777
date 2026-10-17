@@ -66,12 +66,19 @@ export async function renderConfirmedPurchasesList() {
 
     // If Admin, prefetch all users' purchases in background if not yet loaded OR if merged cache was invalidated
     if (isAdmin && window.db && (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0 || !state.allUsersMergedLedger)) {
-        fetchAllUsersPurchases().then(() => {
-            const currentTab = document.getElementById('tab-confirmed-list');
-            if (currentTab && currentTab.classList.contains('active')) {
-                renderConfirmedPurchasesList();
-            }
-        }).catch(e => console.warn('[ConfirmedTab background fetch error]', e));
+        if (!window.__isConfirmedTabFetchingAllUsers) {
+            window.__isConfirmedTabFetchingAllUsers = true;
+            fetchAllUsersPurchases().then(() => {
+                window.__isConfirmedTabFetchingAllUsers = false;
+                const currentTab = document.getElementById('tab-confirmed-list');
+                if (currentTab && currentTab.classList.contains('active')) {
+                    renderConfirmedPurchasesList();
+                }
+            }).catch(e => {
+                window.__isConfirmedTabFetchingAllUsers = false;
+                console.warn('[ConfirmedTab background fetch error]', e);
+            });
+        }
     }
 
     const currentTarget = isAdmin ? (state.adminViewingTarget || 'my') : cleanAuthId;

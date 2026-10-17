@@ -390,94 +390,59 @@ export function getReceiptCombosFingerprint(receipt) {
 
 
 
+export function isPlaceholderQrSerial(serial) {
+    if (!serial) return true;
+    const s = String(serial).trim();
+    if (!s || s === 'TR-미발급' || s === 'TR-확인불가' || s === 'TR-스마트폰 자동생성' || s.startsWith('TR-임시') || s.startsWith('TR-정상') || s.startsWith('TR-')) return true;
+    if (s.includes('00000014142041') || s.includes('00000114142041')) return true;
+    return false;
+}
+
 /**
-
  * ??? Deduplicate receipts by unique receiptId, valid QR serial, or full combo fingerprint
-
  * Ensures different receipts are NEVER falsely deleted or dropped.
-
  * @param {Array} receiptList 
-
  * @returns {Array}
-
  */
-
 export function deduplicateReceipts(receiptList) {
-
     if (!Array.isArray(receiptList)) return [];
-
     const seen = new Set();
-
     const result = [];
 
-
-
     receiptList.forEach(item => {
-
         if (!item) return;
-
         const receiptId = item.receiptId || item.id || null;
-
         const serial = (item.qrMeta && item.qrMeta.qrSerial) ? String(item.qrMeta.qrSerial).trim() : (item.qrSerial ? String(item.qrSerial).trim() : null);
-
         
-
-        // Detect generic/placeholder serials (e.g. 'TR-??????', 'TR-????', 'TR-?????? ??????)
-
-        const isGenericSerial = !serial || serial === 'TR-미발급' || serial === 'TR-확인불가' || serial === 'TR-스마트폰 자동생성' || serial.startsWith('TR-임시');
-
-
+        // Detect generic/placeholder serials (e.g. 'TR-미발급', '00000114142041', etc.)
+        const isGenericSerial = isPlaceholderQrSerial(serial);
+        const isGenericReceiptId = isPlaceholderQrSerial(receiptId);
 
         const combosFp = getReceiptCombosFingerprint(item);
-
         const uUser = (item.user || item.userId || '').toLowerCase().trim();
-
         const uRound = item.round || item.originalRound || '';
 
-
-
         // ??? Generate rigorous unique deduplication key that ALWAYS scopes by user & combos to prevent cross-user collision
-
         let key = '';
-
-        if (receiptId && combosFp) {
-
+        if (receiptId && !isGenericReceiptId && combosFp) {
             key = `id_${receiptId}_${uUser}_${uRound}_${combosFp}`;
-
-        } else if (receiptId) {
-
+        } else if (receiptId && !isGenericReceiptId) {
             key = `id_${receiptId}_${uUser}_${uRound}`;
-
         } else if (!isGenericSerial && serial && serial.length >= 6) {
-
             key = `serial_${serial}_${uUser}_${uRound}_${combosFp || ''}`;
-
         } else if (combosFp) {
-
             key = `combos_${uRound}_${uUser}_${combosFp}`;
-
         } else {
-
             key = `item_${uRound}_${uUser}_${item.timestamp || Math.random().toString(36)}`;
-
         }
-
-
 
         if (!seen.has(key)) {
-
             seen.add(key);
-
             result.push(item);
-
         }
-
     });
 
-
-
     return result;
-
 }
 
 
@@ -699,57 +664,37 @@ export function normalizeMaster1239Order(receipts) {
  */
 
 export function parseDonghangLotteryQrUrl(url) {
-
     if (!url || typeof url !== 'string') return null;
-
     let clean = url.trim();
-
     try {
-
         clean = decodeURIComponent(clean);
-
     } catch(e) {}
 
-    
-
     const match = clean.match(/(?:[?&]v=|^v=|^)(\d{1,4})((?:[a-zA-Z]\d{12})+)(\d{4,24})?/i);
-
     if (!match) return null;
-
     const round = parseInt(match[1], 10);
-
     const gamesPart = match[2];
-
     const serial = (match[3] || '').trim();
-
     const gamesRaw = gamesPart.split(/[a-zA-Z]/i).filter(Boolean);
-
-    const combos = gamesRaw.map((g, idx) => {
-
+    const combos = [];
+    gamesRaw.forEach((g) => {
         const nums = [];
-
         for (let i = 0; i < 12 && i + 2 <= g.length; i += 2) {
-
             nums.push(parseInt(g.substr(i, 2), 10));
-
         }
-
-        nums.sort((a, b) => a - b);
-
-        const letter = ['A', 'B', 'C', 'D', 'E'][idx] || `${idx + 1}`;
-
-        return {
-
-            numbers: nums,
-
-            meta: { name: `${letter} ????` },
-
-            stats: {}
-
-        };
-
+        // Filter out zero-padded empty slots (e.g. n000000000000 on 1~4 game paper tickets)
+        if (nums.length === 6 && nums.every(n => !isNaN(n) && n >= 1 && n <= 45) && new Set(nums).size === 6) {
+            nums.sort((a, b) => a - b);
+            const idx = combos.length;
+            const letter = ['A', 'B', 'C', 'D', 'E'][idx] || `${idx + 1}`;
+            combos.push({
+                numbers: nums,
+                meta: { name: `${letter} 게임` },
+                stats: {}
+            });
+        }
     });
-
+    if (combos.length === 0) return null;
     return { round, combos, serial };
 }
 
@@ -1283,15 +1228,40 @@ if (typeof window !== 'undefined') {
 
 
 let _inFlightFetchAllUsersPurchasesPromise = null;
-
 let _lastFetchAllUsersPurchasesTime = 0;
-
 const FETCH_ALL_CACHE_TTL_MS = 30000;
+const _lastLocalLedgerSaveByUser = new Map();
 
-
+export function rebuildMergedLedgerFromPurchasesMap(allUsersMap) {
+    const mergedLedger = {};
+    if (!allUsersMap || typeof allUsersMap !== 'object') return mergedLedger;
+    for (const uId in allUsersMap) {
+        const uLedger = allUsersMap[uId] && allUsersMap[uId].ledger;
+        if (!uLedger || typeof uLedger !== 'object') continue;
+        for (const r in uLedger) {
+            const roundNum = parseInt(r, 10);
+            if (isNaN(roundNum) || !Array.isArray(uLedger[r])) continue;
+            if (!mergedLedger[roundNum]) mergedLedger[roundNum] = [];
+            uLedger[r].forEach(receipt => {
+                mergedLedger[roundNum].push(receipt);
+            });
+        }
+    }
+    for (const r in mergedLedger) {
+        const roundNum = parseInt(r, 10);
+        mergedLedger[roundNum] = deduplicateReceipts(mergedLedger[roundNum]);
+        if (roundNum === 1239) {
+            mergedLedger[1239] = normalizeMaster1239Order(mergedLedger[1239]);
+        }
+    }
+    return mergedLedger;
+}
 
 export async function fetchAllUsersPurchases(forceRefresh = false) {
     if (!forceRefresh && state.allUsersPurchasesMap && Object.keys(state.allUsersPurchasesMap).length > 0 && (Date.now() - _lastFetchAllUsersPurchasesTime < FETCH_ALL_CACHE_TTL_MS)) {
+        if (!state.allUsersMergedLedger) {
+            state.allUsersMergedLedger = rebuildMergedLedgerFromPurchasesMap(state.allUsersPurchasesMap);
+        }
         return { allUsersMap: state.allUsersPurchasesMap, mergedLedger: state.allUsersMergedLedger || {} };
     }
 
@@ -1302,6 +1272,9 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
             const rawMerged = localStorage.getItem('lotto_all_users_merged_ledger_cache');
             if (rawMap) state.allUsersPurchasesMap = JSON.parse(rawMap);
             if (rawMerged) state.allUsersMergedLedger = JSON.parse(rawMerged);
+            if (state.allUsersPurchasesMap && !state.allUsersMergedLedger) {
+                state.allUsersMergedLedger = rebuildMergedLedgerFromPurchasesMap(state.allUsersPurchasesMap);
+            }
         } catch(e) {}
     }
 
@@ -1523,6 +1496,17 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                 }
             }
 
+            // 🛡️ Protect recently saved local ledger (within 60s) from stale Firestore cache/server snapshots during rapid sequential QR registrations
+            const recentLocalSave = _lastLocalLedgerSaveByUser.get(userId);
+            if (recentLocalSave && recentLocalSave.ledger && (Date.now() - recentLocalSave.timestamp < 60000)) {
+                for (const localR in recentLocalSave.ledger) {
+                    const rNum = parseInt(localR, 10);
+                    if (!isNaN(rNum) && Array.isArray(recentLocalSave.ledger[localR])) {
+                        cleanUserLedger[rNum] = deduplicateReceipts(recentLocalSave.ledger[localR]);
+                    }
+                }
+            }
+
             allUsersMap[userId] = {
                 userId: rawUserId,
                 realName: userNames[rawUserId] || rawUserId,
@@ -1608,6 +1592,14 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
             let curClean = String(curAuth).toLowerCase().trim();
             if (curClean.startsWith('{')) {
                 try { const p = JSON.parse(curClean); curClean = (p.userid || p.userId || curClean).toLowerCase().trim(); } catch(e){}
+            }
+            const recentCurSave = _lastLocalLedgerSaveByUser.get(curClean);
+            if (recentCurSave && recentCurSave.ledger && (Date.now() - recentCurSave.timestamp < 60000)) {
+                if (!allUsersMap[curClean]) {
+                    allUsersMap[curClean] = { userId: curClean, realName: userNames[curClean] || curClean, ledger: recentCurSave.ledger };
+                } else {
+                    allUsersMap[curClean].ledger = recentCurSave.ledger;
+                }
             }
             if (allUsersMap[curClean] && allUsersMap[curClean].ledger) {
                 try {
@@ -2011,8 +2003,9 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
         state.globalLedger = protectedLedger;
     }
 
+    _lastLocalLedgerSaveByUser.set(authId, { timestamp: Date.now(), ledger: protectedLedger });
+
     state.ledgerFinancialsCache = null; // Invalidate memoized cache
-    state.allUsersMergedLedger = null; // Invalidate admin merged cache so updates immediately reflect
     _allUsersFinancialsCache = null;
 
     if (state.allUsersPurchasesMap) {
@@ -2021,6 +2014,13 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
         } else {
             state.allUsersPurchasesMap[authId].ledger = protectedLedger;
         }
+        state.allUsersMergedLedger = rebuildMergedLedgerFromPurchasesMap(state.allUsersPurchasesMap);
+        try {
+            storage.setItem('lotto_all_users_purchases_map_cache', JSON.stringify(state.allUsersPurchasesMap));
+            storage.setItem('lotto_all_users_merged_ledger_cache', JSON.stringify(state.allUsersMergedLedger));
+        } catch(e) {}
+    } else {
+        state.allUsersMergedLedger = null;
     }
 
     if (typeof window !== 'undefined' && typeof window.clearUser70ReviewCache === 'function') {
@@ -2075,13 +2075,16 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
                     } catch(e) {}
 
                     try {
-                        await firestore.collection('lotto_receipt_archives').doc(archiveDocId).set({
-                            userId: authId,
-                            round: parseInt(roundKey, 10),
-                            receipts: mergedArchiveReceipts,
-                            savedAt: new Date().toISOString(),
-                            isImmutable: true
-                        }, { merge: true });
+                        await Promise.race([
+                            firestore.collection('lotto_receipt_archives').doc(archiveDocId).set({
+                                userId: authId,
+                                round: parseInt(roundKey, 10),
+                                receipts: mergedArchiveReceipts,
+                                savedAt: new Date().toISOString(),
+                                isImmutable: true
+                            }, { merge: true }),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('Archive sync timeout')), 3000))
+                        ]);
                     } catch(archErr) {
                         console.warn('[Archive Note]', archErr);
                     }
@@ -2357,39 +2360,25 @@ export async function saveToLedger(round, combos, versionStr, user = null, qrMet
 
 
         // ??? Discrete Authentic Serial & QR URL Assignment per 5-game chunk
-
         let chunkSerial = (qrMeta && qrMeta.qrSerial && i === 0) ? qrMeta.qrSerial : null;
-
-        if (!chunkSerial || chunkSerial.startsWith('TR-') || chunkSerial.includes('00000014142041')) {
-
+        if (isPlaceholderQrSerial(chunkSerial)) {
             const serialSuffix = String(Math.floor(10000000000000 + Math.random() * 90000000000000));
-
             chunkSerial = `${String(r).padStart(4, '0')}${serialSuffix.substring(0, 14)}`;
-
         }
 
-
-
         let chunkQrUrl = '';
-
         if (qrMeta && qrMeta.qrRawUrl && i === 0) {
-
             const parsed = parseDonghangLotteryQrUrl(qrMeta.qrRawUrl);
-
             if (parsed && Array.isArray(parsed.combos) && parsed.combos.length === chunkCombos.length) {
-
                 chunkQrUrl = qrMeta.qrRawUrl;
-
-                if (parsed.serial) chunkSerial = parsed.serial;
-
+                if (parsed.serial && !isPlaceholderQrSerial(parsed.serial)) {
+                    chunkSerial = parsed.serial;
+                }
             }
-
         }
 
         if (!chunkQrUrl) {
-
             chunkQrUrl = buildDonghangLotteryQrUrl(r, chunkCombos, chunkSerial);
-
         }
 
 

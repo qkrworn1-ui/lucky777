@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=700">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=700">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.15.2216">
+    <link rel="stylesheet" href="styles.css?v=2026.10.17.1209">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.15.2216
+                        v2026.10.17.1209
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -177,7 +177,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.15.2216 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.17.1209 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -615,7 +615,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.15.2216
+                                v2026.10.17.1209
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -2207,7 +2207,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.15.2216
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.17.1209
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3492,6 +3492,16 @@
 
                 <!-- 1. SCANNER CAMERA SECTION (지류 복권 QR 스캔 - 기본 가동) -->
                 <div id="qrScannerSection" style="display: flex; flex-direction: column; gap: 8px;">
+                    <!-- Session Continuous Registration Status & Auto-Save Toggle Banner -->
+                    <div id="qrSessionStatusBanner" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 9px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(51, 65, 85, 0.85);">
+                        <span id="qrSessionStatusText" style="font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                            <span style="color:#94a3b8;"><i class="fa-solid fa-layer-group"></i> 1장씩 즉시등록 · 다회차 연속스캔 지원</span>
+                        </span>
+                        <button type="button" id="btnToggleAutoContinuousSave" onclick="window.toggleAutoContinuousQrSave && window.toggleAutoContinuousQrSave()" style="padding: 4px 9px; border-radius: 14px; font-size: 0.72rem; font-weight: 800; cursor: pointer; background: rgba(30, 41, 59, 0.9); color: #94a3b8; border: 1px solid #475569; white-space: nowrap; transition: all 0.2s ease;">
+                            ⚡ 자동 연속저장 OFF
+                        </button>
+                    </div>
+
                     <!-- High-tech Viewfinder Box (Top Lens-Aligned 1:1 Square + Floating HUD) -->
                     <div id="qrScannerContainer" style="display: none; border: 1.5px solid rgba(16, 185, 129, 0.45); border-radius: 14px; padding: 6px; background: #020617; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.7); position: relative;">
                         <!-- Live Viewfinder Frame with Laser, Target Brackets, Tap-to-Focus and Floating HUD -->
@@ -3554,7 +3564,7 @@
                         </button>
                         <label class="btn-secondary" style="flex: 1; padding: 9px 12px; font-size: 0.84rem; font-weight: 700; border-radius: 8px; height: 42px; background: #1e293b; border: 1px solid #334155; color: #f8fafc; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; text-align: center; box-sizing: border-box; margin: 0;">
                             <i class="fa-solid fa-image"></i> 📸 사진/갤러리
-                            <input type="file" id="lottoQrFileInput" accept="image/*" capture="environment" style="display: none;" onchange="window.handleLottoQrFile && window.handleLottoQrFile(event)">
+                            <input type="file" id="lottoQrFileInput" accept="image/*" multiple style="display: none;" onchange="window.handleLottoQrFile && window.handleLottoQrFile(event)">
                         </label>
                     </div>
                 </div>
@@ -3645,7 +3655,7 @@
                                 <div id="receiptSummarySubtitle" style="font-size: 0.72rem; color: #cbd5e1;">5개 게임 (5,000원) · AI 추천 일치 확인</div>
                             </div>
                         </div>
-                        <button type="button" onclick="window.startLottoQrScanner && window.startLottoQrScanner()" style="padding: 4px 8px; background: rgba(30, 41, 59, 0.85); border: 1px solid #475569; border-radius: 6px; color: #cbd5e1; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        <button type="button" onclick="window.resumeOrStartScanner ? window.resumeOrStartScanner() : (window.startLottoQrScanner && window.startLottoQrScanner())" style="padding: 4px 8px; background: rgba(30, 41, 59, 0.85); border: 1px solid #475569; border-radius: 6px; color: #cbd5e1; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px;">
                             <i class="fa-solid fa-rotate-left"></i> 재스캔
                         </button>
                     </div>
@@ -4508,7 +4518,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.15.2216';
+        window.APP_VERSION = 'v2026.10.17.1209';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4579,7 +4589,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.15.2216';
+            var v = ver || window.APP_VERSION || 'v2026.10.17.1209';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4836,7 +4846,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.15.2216';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.17.1209';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4983,7 +4993,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.15.2216')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.17.1209')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -5236,8 +5246,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.15.2216"></script>
-    <script src="app_v2.js?v=2026.10.15.2216"></script>
+    <script src="data.js?v=2026.10.17.1209"></script>
+    <script src="app_v2.js?v=2026.10.17.1209"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->
