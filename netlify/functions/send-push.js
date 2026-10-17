@@ -54,12 +54,37 @@ exports.handler = async (event, context) => {
             };
         }
 
-        const targetList = subscriptions || (subscription ? [subscription] : []);
+        let targetList = subscriptions || (subscription ? [subscription] : []);
+        if (targetList.length === 0 && (body.broadcast || !subscriptions)) {
+            const FIREBASE_PROJECT_ID = 'sonamu-jokgu-club';
+            const FIREBASE_API_KEY = 'AIzaSyAnkGVAlO39p6rnTEibygeQTBYDbp505dA';
+            try {
+                const fsRes = await fetch(`https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/push_subscriptions?key=${FIREBASE_API_KEY}`);
+                if (fsRes.ok) {
+                    const fsData = await fsRes.json();
+                    const docs = fsData.documents || [];
+                    targetList = docs.map(d => {
+                        const f = d.fields || {};
+                        return {
+                            endpoint: f.endpoint?.stringValue,
+                            keys: {
+                                p256dh: f.p256dh?.stringValue,
+                                auth: f.auth?.stringValue
+                            },
+                            userName: f.userName?.stringValue || ''
+                        };
+                    }).filter(s => s.endpoint && s.keys.p256dh && s.keys.auth);
+                }
+            } catch (fsErr) {
+                console.warn('[send-push] Firestore broadcast fetch warning:', fsErr.message);
+            }
+        }
+
         if (targetList.length === 0) {
             return {
                 statusCode: 400,
                 headers,
-                body: JSON.stringify({ error: 'No recipient subscription provided' })
+                body: JSON.stringify({ error: 'No recipient subscription provided or found' })
             };
         }
 

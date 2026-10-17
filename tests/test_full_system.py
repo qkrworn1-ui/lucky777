@@ -4360,6 +4360,33 @@ Lotto 6/45
         self.assertIn("isDrawHeader: true", rev_code)
         self.assertIn("border: 1.5px dashed #38bdf8 !important;", conf_code)
 
+    def test_106_push_notification_dedup_and_win_celebration(self):
+        """Test 106: Verify PushClient duplicate alert suppression, win celebration push, recommendation push, and Saturday cutoff."""
+        push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
+        with open(push_path, 'r', encoding='utf-8') as f:
+            push_code = f.read()
+
+        # 1. Device-wide read state and fired state prevents duplicate push popups
+        self.assertIn("localStorage.getItem(`lucky777_read_${cleanAlertId}`)", push_code)
+        self.assertIn("deviceAlertKey = `lucky777_alert_fired_${cleanAlertId}`", push_code)
+        self.assertIn("localStorage.setItem(`lucky777_alert_fired_${cleanId}`, 'true')", push_code)
+
+        # 2. Helper functions exist for user purchases, draw data lookup, and ticket grading
+        self.assertIn("getUserPurchases(userId, round)", push_code)
+        self.assertIn("getDrawData(round)", push_code)
+        self.assertIn("gradePurchases(receipts, drawData)", push_code)
+
+        # 3. Real-purchase win celebration push with browser alert
+        self.assertIn("id: `win-celebrate-${latestDrawnRound}`", push_code)
+        self.assertIn("badge: '🎉 실구매 당첨 축하'", push_code)
+
+        # 4. Next round AI recommendation open push with browser alert
+        self.assertIn("id: `rec-ready-${targetRound}`", push_code)
+        self.assertIn("badge: '🎱 차기 추천번호 오픈'", push_code)
+
+        # 5. Saturday post-draw cutoff suppresses purchase prompts
+        self.assertIn("const isSaturdayPostDraw = (todayName === '토요일' && curMinutes >= 20 * 60);", push_code)
+
 if __name__ == '__main__':
     unittest.main()
 

@@ -239,24 +239,26 @@ def main():
         try:
             print(f"\n[*] [PUSH] {latest_updated_round}회 당첨 결과 백그라운드 푸시 알림 트리거 중...")
             push_payload = {
+                "broadcast": True,
                 "notification": {
                     "title": f"📊 [동행복권] {latest_updated_round}회차 공식 통계 리포트 도착",
                     "body": "{userName}의 실구매 영수증 정산 및 이번 회차 공식 데이터 리포트가 업데이트되었습니다.",
                     "icon": "/lucky777/icons/icon-192.png",
                     "badge": "/lucky777/icons/favicon.png",
                     "tag": f"lotto-result-{latest_updated_round}",
-                    "data": { "url": "/lucky777/?tab=tab-confirmed" }
+                    "data": { "url": "/lucky777/?tab=tab-confirmed", "id": f"draw-result-{latest_updated_round}" }
                 }
             }
-            push_req = urllib.request.Request(
+            p_res = requests.post(
                 "https://lucky777.netlify.app/.netlify/functions/send-push",
-                data=json.dumps(push_payload).encode('utf-8'),
+                json=push_payload,
                 headers={'Content-Type': 'application/json', 'User-Agent': 'Lucky777-Crawler'},
-                method='POST'
+                timeout=8
             )
-            with urllib.request.urlopen(push_req, timeout=5) as p_res:
-                if p_res.status in (200, 204):
-                    print(f"[+] [PUSH-SUCCESS] {latest_updated_round}회 당첨 결과 알림 발송 성공!")
+            if p_res.status_code in (200, 204):
+                print(f"[+] [PUSH-SUCCESS] {latest_updated_round}회 당첨 결과 알림 발송 성공!")
+            else:
+                print(f"[*] [PUSH-NOTICE] 발송 응답 상태: {p_res.status_code}")
         except Exception as push_ex:
             print(f"[*] [PUSH-INFO] 당첨 결과 푸시 알림 트리거 신호 전달 완료 ({push_ex})")
 
