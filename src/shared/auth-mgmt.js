@@ -1740,6 +1740,13 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             } catch(e) {}
         }
 
+        // 📨 [Admin Message Auto-Receive & Push] Immediately listen for and pop up unread admin messages upon login
+        setTimeout(() => {
+            if (window.PushClient && typeof window.PushClient.startAdminMessageListener === 'function') {
+                window.PushClient.startAdminMessageListener(authId);
+            }
+        }, 450);
+
         // 💬 [Kakao Auto-Dispatch] Check pending queue & auto-dispatch unsent real winning reports upon login
         setTimeout(async () => {
             if (typeof window.processPendingUserKakaoMessages === 'function') {
@@ -3955,6 +3962,15 @@ export function setupAuthEvents(initFirebaseAndData) {
                 ? `<span style="font-size:0.63rem; color:#38bdf8; font-weight:700; background:rgba(56,189,248,0.12); padding:0px 4px; border-radius:3px; font-family:sans-serif;" title="최근 접속: ${lastAccessRaw}">🕒 ${formatLastAccessTime(lastAccessRaw)}</span>`
                 : '';
 
+            const adminMsgMap = data.adminMessages && typeof data.adminMessages === 'object' ? data.adminMessages : {};
+            const adminMsgList = Object.values(adminMsgMap).filter(m => m && m.id);
+            const unreadAdminCount = adminMsgList.filter(m => m.status !== 'read').length;
+            const adminMsgStatusBadge = unreadAdminCount > 0
+                ? `<span style="font-size:0.62rem; color:#fde047; font-weight:800; background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.4); padding:0px 4px; border-radius:4px;" title="미확인 관리자 메시지 ${unreadAdminCount}건 대기 중">📨대기${unreadAdminCount}</span>`
+                : (adminMsgList.length > 0
+                    ? `<span style="font-size:0.62rem; color:#34d399; font-weight:800; background:rgba(16,185,129,0.14); padding:0px 4px; border-radius:4px;" title="최근 관리자 메시지 읽음 완료">✓읽음</span>`
+                    : '');
+
             html += `
             <div onclick="window.openUserDetailDrawer(decodeURIComponent('${safeUserId}'))" class="user-row-item" style="display:flex; align-items:center; justify-content:space-between; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.06); cursor:pointer; transition:background 0.15s; word-break:keep-all; min-height:42px; box-sizing:border-box;">
                 
@@ -3970,15 +3986,19 @@ export function setupAuthEvents(initFirebaseAndData) {
                         <div style="font-size:0.68rem; color:#64748b; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px; display:flex; align-items:center; gap:5px;">
                             <span>${phoneDisplay}</span>
                             ${lastAccessBadge}
+                            ${adminMsgStatusBadge}
                         </div>
                     </div>
                 </div>
 
-                <!-- Right: Purchase Badge + Pledge Badge + Arrow (Strictly No Break) -->
+                <!-- Right: Purchase Badge + Pledge Badge + Quick Message + Arrow (Strictly No Break) -->
                 <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                     <div style="display:flex; align-items:center; gap:4px;">
                         ${purchaseBadge}
                         ${pledgeBadge}
+                        <button type="button" onclick="event.stopPropagation(); window.openAdminMessageConsoleModal && window.openAdminMessageConsoleModal(decodeURIComponent('${safeUserId}'))" title="이 회원에게 1:1 메시지 보내기 (로그인 팝업·푸시)" style="background:rgba(245,158,11,0.16); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; width:24px; height:24px; border-radius:6px; font-size:0.72rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0;">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
                     </div>
                     <i class="fa-solid fa-chevron-right" style="font-size:0.68rem; color:#475569; margin-left:1px;"></i>
                 </div>
@@ -4128,12 +4148,21 @@ export function setupAuthEvents(initFirebaseAndData) {
         if (toggleAdmin) toggleAdmin.checked = !!isUserAdmin;
 
         // 4. Attach Action Tool Buttons
+        const btnSendAdminMsg = document.getElementById('btnDrawerSendAdminMsg');
         const btnAgreement = document.getElementById('btnDrawerAgreementDoc');
         const btnSnapshot = document.getElementById('btnDrawerSnapshotAudit');
         const btnResetPw = document.getElementById('btnDrawerResetPw');
         const btnResetSig = document.getElementById('btnDrawerResetSignature');
         const btnDelete = document.getElementById('btnDrawerDeleteUser');
 
+        if (btnSendAdminMsg) {
+            btnSendAdminMsg.onclick = () => {
+                window.closeUserDetailDrawer();
+                if (typeof window.openAdminMessageConsoleModal === 'function') {
+                    window.openAdminMessageConsoleModal(userId);
+                }
+            };
+        }
         if (btnAgreement) {
             btnAgreement.onclick = () => window.viewUserAgreementDoc && window.viewUserAgreementDoc(userId);
         }

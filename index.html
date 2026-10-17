@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=700">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=700">
 
-    <link rel="stylesheet" href="styles.css?v=2026.10.17.1457">
+    <link rel="stylesheet" href="styles.css?v=2026.10.17.1524.48">
 </head>
 
 <body>
@@ -125,7 +125,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.10.17.1457
+                        v2026.10.17.1524.48
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -177,7 +177,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.10.17.1457 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.10.17.1524.48 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -615,7 +615,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.10.17.1457
+                                v2026.10.17.1524.48
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -2207,7 +2207,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.10.17.1457
+                        <i class="fa-solid fa-code-branch"></i> v2026.10.17.1524.48
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -2502,6 +2502,9 @@
                     <button type="button" id="btnOpenSnapshotAuditFromMgmt" onclick="window.openSnapshotAuditModal && window.openSnapshotAuditModal()" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:#fff; border:none; padding:6px 12px; border-radius:7px; font-size:0.8rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(16,185,129,0.35);">
                         <i class="fa-solid fa-server"></i> <span>스냅샷 모니터링</span>
                     </button>
+                    <button type="button" id="btnOpenAdminMsgConsole" onclick="window.openAdminMessageConsoleModal && window.openAdminMessageConsoleModal()" style="background:linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color:#0f172a; border:none; padding:6px 12px; border-radius:7px; font-size:0.8rem; font-weight:900; cursor:pointer; display:inline-flex; align-items:center; gap:6px; box-shadow:0 2px 10px rgba(245,158,11,0.4);">
+                        <i class="fa-solid fa-paper-plane"></i> <span>회원 메시지 발송</span>
+                    </button>
                 </div>
                 <div style="display:flex; gap:6px; flex-wrap:wrap;">
                     <button type="button" onclick="window.autoSuspendAllNonPurchasers && window.autoSuspendAllNonPurchasers()" style="background:linear-gradient(135deg, #f59e0b, #d97706); color:#0f172a; border:none; padding:6px 10px; border-radius:7px; font-size:0.76rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 6px rgba(245,158,11,0.3);">
@@ -2749,11 +2752,14 @@
                         </label>
                     </div>
 
-                    <!-- 3. 빠른 도구 (서약서 열람, 스냅샷, 비밀번호 초기화) -->
+                    <!-- 3. 빠른 도구 (서약서 열람, 스냅샷, 1:1 메시지, 비밀번호 초기화) -->
                     <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:12px; display:flex; flex-direction:column; gap:8px;">
                         <div style="font-weight:800; color:#fbbf24; font-size:0.85rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:6px;">
                             <i class="fa-solid fa-bolt"></i> 빠른 도구 및 서약서
                         </div>
+                        <button type="button" id="btnDrawerSendAdminMsg" style="width:100%; padding:9px 10px; background:linear-gradient(135deg, rgba(245,158,11,0.22), rgba(217,119,6,0.28)); border:1.5px solid rgba(245,158,11,0.55); color:#fde047; border-radius:8px; font-size:0.8rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 3px 10px rgba(245,158,11,0.18);">
+                            <i class="fa-solid fa-paper-plane"></i> 1:1 맞춤 메시지 발송 (로그인 팝업·푸시)
+                        </button>
                         <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
                             <button type="button" id="btnDrawerAgreementDoc" style="padding:8px; background:rgba(251,191,36,0.12); border:1px solid rgba(251,191,36,0.4); color:#fbbf24; border-radius:6px; font-size:0.76rem; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:4px;">
                                 <i class="fa-solid fa-file-signature"></i> 전자 서약서 열람
@@ -4518,7 +4524,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.10.17.1457';
+        window.APP_VERSION = 'v2026.10.17.1524.48';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4589,7 +4595,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.10.17.1457';
+            var v = ver || window.APP_VERSION || 'v2026.10.17.1524.48';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4846,7 +4852,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.17.1457';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.10.17.1524.48';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4993,7 +4999,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.10.17.1457')
+                navigator.serviceWorker.register('./sw.js?v=2026.10.17.1524.48')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -5246,8 +5252,8 @@
         };
     </script>
 
-    <script src="data.js?v=2026.10.17.1457"></script>
-    <script src="app_v2.js?v=2026.10.17.1457"></script>
+    <script src="data.js?v=2026.10.17.1524.48"></script>
+    <script src="app_v2.js?v=2026.10.17.1524.48"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->

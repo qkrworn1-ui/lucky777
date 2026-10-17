@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.1457 - BUILD_DATE: 2026-10-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.1524.48 - BUILD_DATE: 2026-10-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.17.1457)
+ * Lucky777 Smart Bundle (v2026.10.17.1524.48)
  */
 
 
@@ -3691,6 +3691,13 @@ async function checkAuthOnLoad(initFirebaseAndData) {
             } catch(e) {}
         }
 
+        // 📨 [Admin Message Auto-Receive & Push] Immediately listen for and pop up unread admin messages upon login
+        setTimeout(() => {
+            if (window.PushClient && typeof window.PushClient.startAdminMessageListener === 'function') {
+                window.PushClient.startAdminMessageListener(authId);
+            }
+        }, 450);
+
         // 💬 [Kakao Auto-Dispatch] Check pending queue & auto-dispatch unsent real winning reports upon login
         setTimeout(async () => {
             if (typeof window.processPendingUserKakaoMessages === 'function') {
@@ -5906,6 +5913,15 @@ function setupAuthEvents(initFirebaseAndData) {
                 ? `<span style="font-size:0.63rem; color:#38bdf8; font-weight:700; background:rgba(56,189,248,0.12); padding:0px 4px; border-radius:3px; font-family:sans-serif;" title="최근 접속: ${lastAccessRaw}">🕒 ${formatLastAccessTime(lastAccessRaw)}</span>`
                 : '';
 
+            const adminMsgMap = data.adminMessages && typeof data.adminMessages === 'object' ? data.adminMessages : {};
+            const adminMsgList = Object.values(adminMsgMap).filter(m => m && m.id);
+            const unreadAdminCount = adminMsgList.filter(m => m.status !== 'read').length;
+            const adminMsgStatusBadge = unreadAdminCount > 0
+                ? `<span style="font-size:0.62rem; color:#fde047; font-weight:800; background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.4); padding:0px 4px; border-radius:4px;" title="미확인 관리자 메시지 ${unreadAdminCount}건 대기 중">📨대기${unreadAdminCount}</span>`
+                : (adminMsgList.length > 0
+                    ? `<span style="font-size:0.62rem; color:#34d399; font-weight:800; background:rgba(16,185,129,0.14); padding:0px 4px; border-radius:4px;" title="최근 관리자 메시지 읽음 완료">✓읽음</span>`
+                    : '');
+
             html += `
             <div onclick="window.openUserDetailDrawer(decodeURIComponent('${safeUserId}'))" class="user-row-item" style="display:flex; align-items:center; justify-content:space-between; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.06); cursor:pointer; transition:background 0.15s; word-break:keep-all; min-height:42px; box-sizing:border-box;">
                 
@@ -5921,15 +5937,19 @@ function setupAuthEvents(initFirebaseAndData) {
                         <div style="font-size:0.68rem; color:#64748b; font-family:monospace; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px; display:flex; align-items:center; gap:5px;">
                             <span>${phoneDisplay}</span>
                             ${lastAccessBadge}
+                            ${adminMsgStatusBadge}
                         </div>
                     </div>
                 </div>
 
-                <!-- Right: Purchase Badge + Pledge Badge + Arrow (Strictly No Break) -->
+                <!-- Right: Purchase Badge + Pledge Badge + Quick Message + Arrow (Strictly No Break) -->
                 <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
                     <div style="display:flex; align-items:center; gap:4px;">
                         ${purchaseBadge}
                         ${pledgeBadge}
+                        <button type="button" onclick="event.stopPropagation(); window.openAdminMessageConsoleModal && window.openAdminMessageConsoleModal(decodeURIComponent('${safeUserId}'))" title="이 회원에게 1:1 메시지 보내기 (로그인 팝업·푸시)" style="background:rgba(245,158,11,0.16); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; width:24px; height:24px; border-radius:6px; font-size:0.72rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0;">
+                            <i class="fa-solid fa-paper-plane"></i>
+                        </button>
                     </div>
                     <i class="fa-solid fa-chevron-right" style="font-size:0.68rem; color:#475569; margin-left:1px;"></i>
                 </div>
@@ -6079,12 +6099,21 @@ function setupAuthEvents(initFirebaseAndData) {
         if (toggleAdmin) toggleAdmin.checked = !!isUserAdmin;
 
         // 4. Attach Action Tool Buttons
+        const btnSendAdminMsg = document.getElementById('btnDrawerSendAdminMsg');
         const btnAgreement = document.getElementById('btnDrawerAgreementDoc');
         const btnSnapshot = document.getElementById('btnDrawerSnapshotAudit');
         const btnResetPw = document.getElementById('btnDrawerResetPw');
         const btnResetSig = document.getElementById('btnDrawerResetSignature');
         const btnDelete = document.getElementById('btnDrawerDeleteUser');
 
+        if (btnSendAdminMsg) {
+            btnSendAdminMsg.onclick = () => {
+                window.closeUserDetailDrawer();
+                if (typeof window.openAdminMessageConsoleModal === 'function') {
+                    window.openAdminMessageConsoleModal(userId);
+                }
+            };
+        }
         if (btnAgreement) {
             btnAgreement.onclick = () => window.viewUserAgreementDoc && window.viewUserAgreementDoc(userId);
         }
@@ -10584,7 +10613,26 @@ const PushClient = {
             SafeLocalStorage.setItem('lucky777_push_settings', JSON.stringify(subData.settings));
         } catch(e) {}
 
-        // 1) Netlify Serverless Function 저장 시도
+        // 1) Firestore에 직접 구독 정보 상시 동기화 (관리자 1:1/일괄 웹푸시 즉시 발송 및 스케줄러 호환 보장)
+        if (window.db && subData.userId && subData.userId !== 'guest') {
+            try {
+                const hash = btoa(subData.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(-20);
+                await window.db.collection('push_subscriptions').doc(`${subData.userId}_${hash}`).set(subData, { merge: true });
+                await window.db.collection('lotto_users').doc(subData.userId).set({
+                    pushSubscription: {
+                        endpoint: subData.endpoint,
+                        keys: subData.keys,
+                        updatedAt: subData.updatedAt || new Date().toISOString()
+                    },
+                    hasPushSubscription: true
+                }, { merge: true });
+                console.log('[PushClient] Push subscription synced to Firestore (push_subscriptions & lotto_users).');
+            } catch (fsErr) {
+                console.warn('[PushClient] Firestore push subscription sync warning:', fsErr);
+            }
+        }
+
+        // 2) Netlify Serverless Function 저장 병행 시도
         try {
             const resp = await fetch('/.netlify/functions/push-subscription', {
                 method: 'POST',
@@ -10593,21 +10641,9 @@ const PushClient = {
             });
             if (resp.ok) {
                 console.log('[PushClient] Push subscription registered on Netlify Function successfully.');
-                return;
             }
         } catch (netErr) {
-            console.warn('[PushClient] Netlify Function fallback to direct Firestore:', netErr);
-        }
-
-        // 2) Firestore 직접 연동 Fallback
-        if (window.db && subData.userId && subData.userId !== 'guest') {
-            try {
-                const hash = btoa(subData.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(-20);
-                await window.db.collection('push_subscriptions').doc(`${subData.userId}_${hash}`).set(subData, { merge: true });
-                console.log('[PushClient] Push subscription registered directly to Firestore.');
-            } catch (fsErr) {
-                console.error('[PushClient] Firestore push subscription save failed:', fsErr);
-            }
+            console.warn('[PushClient] Netlify Function push-subscription non-blocking notice:', netErr);
         }
     },
 
@@ -10752,6 +10788,10 @@ const PushClient = {
                 changed = true;
             }
         });
+        if (id && String(id).startsWith('admin-msg-')) {
+            const rawMsgId = String(id).replace(/^admin-msg-/, '');
+            this.syncAdminMessageReadToFirestore(rawMsgId);
+        }
         if (changed) {
             this.saveNotifications(list);
         } else {
@@ -10762,7 +10802,13 @@ const PushClient = {
     markAllNotificationsRead() {
         const list = this.getNotifications();
         list.forEach(item => {
-            if (item) item.unread = false;
+            if (item) {
+                if (item.unread && item.id && String(item.id).startsWith('admin-msg-')) {
+                    const rawMsgId = String(item.id).replace(/^admin-msg-/, '');
+                    this.syncAdminMessageReadToFirestore(rawMsgId);
+                }
+                item.unread = false;
+            }
         });
         this.saveNotifications(list);
         if (typeof window.showToast === 'function') {
@@ -11179,7 +11225,11 @@ const PushClient = {
         const filter = this._currentModalFilter || 'all';
         const filtered = filter === 'unread'
             ? list.filter(n => n && n.unread)
-            : (filter === 'myeongri' ? list.filter(n => n && n.category === 'myeongri') : list);
+            : (filter === 'myeongri'
+                ? list.filter(n => n && n.category === 'myeongri')
+                : (filter === 'admin'
+                    ? list.filter(n => n && (n.category === 'admin' || String(n.id || '').startsWith('admin-msg-')))
+                    : list));
 
         const schedule = this.getMyeongriSchedule();
         const isPermGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
@@ -11217,7 +11267,7 @@ const PushClient = {
                         <span style="font-size:0.68rem; color:#94a3b8;">${item.timeLabel || ''}</span>
                     </div>
                     <div style="font-size:0.84rem; font-weight:800; color:${item.unread ? '#ffffff' : '#cbd5e1'}; line-height:1.35;">${item.title}</div>
-                    <div style="font-size:0.76rem; color:#94a3b8; margin-top:4px; line-height:1.5;">${item.body}</div>
+                    <div style="font-size:0.76rem; color:#94a3b8; margin-top:4px; line-height:1.5; white-space:pre-line;">${item.body}</div>
                     <div style="margin-top:9px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; gap:8px;">
                         <button type="button" onclick="event.stopPropagation(); window.PushClient && window.PushClient.handleNotificationAction('${item.id}')" style="background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; font-size:0.73rem; font-weight:800; padding:4px 10px; border-radius:7px; cursor:pointer;">
                             ${item.actionLabel || '🎱 바로가기'} →
@@ -11242,7 +11292,7 @@ const PushClient = {
                                     ${unreadCount > 0 ? `미확인 ${unreadCount}건` : '모두 확인'}
                                 </span>
                             </div>
-                            <div style="font-size:0.7rem; color:#94a3b8;">사주 길일·길시 · 마감 임박 · 추첨 결과 알림 내역</div>
+                            <div style="font-size:0.7rem; color:#94a3b8;">관리자 메시지 · 사주 길일·길시 · 마감 임박 · 추첨 결과</div>
                         </div>
                     </div>
                     <button type="button" onclick="window.PushClient && window.PushClient.closeNotificationCenterModal()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:1.1rem; cursor:pointer;">&times;</button>
@@ -11252,12 +11302,15 @@ const PushClient = {
                 <div style="padding:10px 14px; background:#090d16; border-bottom:1px solid rgba(255,255,255,0.06);">
                     ${scheduleSummaryHtml}
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
-                        <div style="display:flex; align-items:center; gap:5px;">
+                        <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
                             <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'all' ? '#f59e0b' : '#1e293b'}; color:${filter === 'all' ? '#0f172a' : '#cbd5e1'};">
                                 전체 (${list.length})
                             </button>
                             <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('unread')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'unread' ? '#f59e0b' : '#1e293b'}; color:${filter === 'unread' ? '#0f172a' : '#cbd5e1'};">
                                 미확인 (${unreadCount})
+                            </button>
+                            <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('admin')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'admin' ? '#f59e0b' : '#1e293b'}; color:${filter === 'admin' ? '#0f172a' : '#cbd5e1'};">
+                                👑 관리자 메시지
                             </button>
                             <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('myeongri')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'myeongri' ? '#f59e0b' : '#1e293b'}; color:${filter === 'myeongri' ? '#0f172a' : '#cbd5e1'};">
                                 🔮 길일·길시
@@ -11387,6 +11440,819 @@ const PushClient = {
                 actionLabel: '🎱 추천번호 확인하기'
             }, false);
         }, delaySec * 1000);
+    },
+
+    // =========================================================================
+    // 📨 [관리자 → 회원 맞춤 메시지 발송 & 로그인 즉시 팝업 / 멀티채널 푸시 엔진]
+    // =========================================================================
+    ADMIN_MSG_TEMPLATES: {
+        qr_remind: {
+            badge: '📷 실구매 인증 안내',
+            actionType: 'qr',
+            actionLabel: '📷 지금 QR 영수증 등록하기',
+            title: '제 {회차}회차 실구매 영수증(QR) 등록 안내',
+            body: '안녕하세요, {회원명}님! 이번 주 제 {회차}회차 실구매 영수증 등록 마감이 다가오고 있습니다.\n복권을 구매하셨다면 QR 스캔으로 간편하게 실구매 인증을 완료해 주세요.'
+        },
+        win_congrats: {
+            badge: '🎉 당첨 축하 메시지',
+            actionType: 'confirmed',
+            actionLabel: '📊 내 실구매 당첨장부 보기',
+            title: '축하합니다! {회원명}님 실구매 당첨 결과 안내',
+            body: '{회원명}님, 등록하신 실구매 복권에서 당첨이 확인되었습니다!\n구매확정 장부에서 상세 적중 번호(본번호 ✓ · 보너스 +)와 당첨금을 지금 확인해 보세요.'
+        },
+        myeongri_pick: {
+            badge: '🔮 사주 길일·길시 특별 안내',
+            actionType: 'generator',
+            actionLabel: '🎱 이번주 추천번호 확인하기',
+            title: '{회원명}님의 오늘 사주 재물운 길일·길시 안내',
+            body: '{회원명}님의 사주 일간과 조화를 이루는 길일·길시 에너지가 활성화되었습니다.\n오늘 길시가 지나기 전에 AI 맞춤 추천번호를 생성해 보세요.'
+        },
+        account_notice: {
+            badge: '🔓 계정 권한 안내',
+            actionType: 'fortune',
+            actionLabel: '🧭 대시보드 바로가기',
+            title: '{회원명}님 계정 상태 및 이용 권한 업데이트 안내',
+            body: '{회원명}님의 계정 권한이 정상 활성화되었습니다.\n지금 바로 로또 퀀트 추천 및 대시보드 모든 기능을 자유롭게 이용하실 수 있습니다.'
+        },
+        general_notice: {
+            badge: '📢 관리자 공지사항',
+            actionType: 'generator',
+            actionLabel: '🎱 추천번호 연구소 이동',
+            title: '[운도실력] {회원명}님을 위한 주요 업데이트 안내',
+            body: '{회원명}님, 당첨번호 적중 체크(✓/+) 고도화 및 대시보드 미확인 알림함이 새롭게 업데이트되었습니다.\n더욱 편리해진 운도실력을 경험해 보세요!'
+        }
+    },
+
+    _adminMsgUnsubscribe: null,
+    _adminMsgActiveUserId: null,
+    _adminPopupQueue: [],
+
+    /**
+     * 회원 로그인 시(또는 앱 실행 시) 해당 회원의 Firestore 문서를 실시간 감시하여
+     * 관리자가 보낸 미확인 메시지가 있으면:
+     * 1) 푸시 동의 회원에게 스마트폰 상단 배너+진동 알림 즉시 발생
+     * 2) 대시보드 미확인 알림함에 자동 적재
+     * 3) 화면 중앙에 [관리자 메시지 도착 팝업 모달] 즉시 표시
+     */
+    startAdminMessageListener(userId) {
+        let uid = userId;
+        if (!uid && typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) {
+            uid = window.SafeAuth.get();
+        }
+        if (typeof uid === 'string' && uid.startsWith('{')) {
+            try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
+        }
+        uid = String(uid || '').trim();
+        if (!uid || !window.db) return;
+
+        if (this._adminMsgActiveUserId === uid && this._adminMsgUnsubscribe) {
+            // 이미 동일 회원으로 실시간 리스너가 연결되어 있으면 1회 수동 점검만 수행
+            window.db.collection('lotto_users').doc(uid).get().then(doc => {
+                if (doc && doc.exists) {
+                    this.processIncomingAdminMessages(uid, doc.data() || {});
+                }
+            }).catch(() => {});
+            return;
+        }
+
+        if (this._adminMsgUnsubscribe) {
+            try { this._adminMsgUnsubscribe(); } catch (e) {}
+            this._adminMsgUnsubscribe = null;
+        }
+        this._adminMsgActiveUserId = uid;
+
+        try {
+            this._adminMsgUnsubscribe = window.db.collection('lotto_users').doc(uid).onSnapshot((doc) => {
+                if (!doc || !doc.exists) return;
+                const uData = doc.data() || {};
+                this.processIncomingAdminMessages(uid, uData);
+            }, (err) => {
+                console.warn('[PushClient] Admin message listener warning:', err);
+            });
+        } catch (err) {
+            console.warn('[PushClient] Failed to attach admin message listener:', err);
+        }
+    },
+
+    processIncomingAdminMessages(userId, uData) {
+        if (!uData || !uData.adminMessages || typeof uData.adminMessages !== 'object') return;
+        const msgMap = uData.adminMessages;
+        const allMsgs = Object.values(msgMap)
+            .filter(m => m && m.id && m.title)
+            .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+        if (allMsgs.length === 0) return;
+
+        const unreadMsgs = [];
+        allMsgs.forEach(msg => {
+            const inboxId = `admin-msg-${msg.id}`;
+            const isUnread = msg.status !== 'read';
+            const notifiedKey = `lucky777_admin_notified_${userId}_${msg.id}`;
+            const alreadyAlerted = SafeLocalStorage.getItem(notifiedKey) === 'true';
+
+            if (msg.saveToInbox !== false) {
+                const existingList = this.getNotifications();
+                const existingItem = existingList.find(it => it && it.id === inboxId);
+                if (!existingItem) {
+                    if (isUnread && !alreadyAlerted) {
+                        SafeLocalStorage.setItem(notifiedKey, 'true');
+                    }
+                    this.addNotification({
+                        id: inboxId,
+                        category: 'admin',
+                        badge: msg.badge || '👑 관리자 안내',
+                        title: msg.title,
+                        body: msg.body || '',
+                        createdAt: msg.createdAt || new Date().toISOString(),
+                        timeLabel: this.formatTimeLabel(msg.createdAt),
+                        unread: isUnread,
+                        actionType: msg.actionType || 'generator',
+                        actionLabel: msg.actionLabel || '🎱 바로 확인하기'
+                    }, isUnread && !alreadyAlerted);
+                } else if (!isUnread && existingItem.unread) {
+                    existingItem.unread = false;
+                    this.saveNotifications(existingList);
+                }
+            } else if (isUnread && !alreadyAlerted) {
+                // 알림함 저장 없이 푸시만 보낸 경우에도 푸시 동의 사용자에게 브라우저 알림 발송
+                SafeLocalStorage.setItem(notifiedKey, 'true');
+                if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+                    navigator.serviceWorker.ready.then(reg => {
+                        const origin = window.location.origin;
+                        const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
+                        reg.showNotification(msg.title, {
+                            body: msg.body || '',
+                            icon: `${origin}${basePath}icons/icon-192.png`,
+                            badge: `${origin}${basePath}icons/favicon.png`,
+                            tag: inboxId,
+                            vibrate: [200, 100, 200, 100, 350],
+                            data: { url: `${origin}${basePath}?tab=tab-dashboard` }
+                        }).catch(() => {});
+                    }).catch(() => {});
+                }
+            }
+
+            if (isUnread && msg.popupOnLogin !== false) {
+                const dismissKey = `admin_popup_dismissed_${userId}_${msg.id}`;
+                if (SafeStorage.getItem(dismissKey) !== 'true') {
+                    unreadMsgs.push(msg);
+                }
+            }
+        });
+
+        if (unreadMsgs.length > 0) {
+            this._adminPopupQueue = unreadMsgs;
+            this.showAdminMessageLoginPopup(unreadMsgs[0], unreadMsgs.length);
+        }
+    },
+
+    /**
+     * 회원 화면 중앙에 표시되는 [관리자 맞춤 메시지 도착 팝업 모달]
+     */
+    showAdminMessageLoginPopup(msg, totalUnread = 1) {
+        if (!msg) return;
+        let modal = document.getElementById('lucky777AdminMessagePopupModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'lucky777AdminMessagePopupModal';
+            modal.style.cssText = 'position:fixed; inset:0; background:rgba(7,10,20,0.88); backdrop-filter:blur(8px); z-index:100020; display:none; align-items:center; justify-content:center; padding:16px; box-sizing:border-box;';
+            document.body.appendChild(modal);
+        }
+
+        const actionLabelMap = {
+            qr: '📷 지금 실구매 QR 영수증 등록하기',
+            confirmed: '📊 내 실구매 당첨장부 확인하기',
+            fortune: '🧭 내 사주 길일·길시 확인하기',
+            generator: '🎱 이번주 AI 추천번호 확인하기'
+        };
+        const btnLabel = msg.actionLabel || actionLabelMap[msg.actionType] || '🎱 바로 확인하기';
+        const timeStr = this.formatTimeLabel(msg.createdAt);
+        const safeMsgId = String(msg.id || '').replace(/'/g, "\\'");
+
+        modal.innerHTML = `
+            <div style="width:100%; max-width:410px; background:linear-gradient(160deg, #1e293b 0%, #0f172a 100%); border:2px solid rgba(245,158,11,0.65); border-radius:22px; padding:22px 20px; box-shadow:0 25px 60px rgba(0,0,0,0.85), 0 0 35px rgba(245,158,11,0.18); position:relative; overflow:hidden; font-family:'Pretendard','Noto Sans KR',sans-serif; color:#f8fafc;">
+                <div style="position:absolute; top:0; left:0; right:0; height:4px; background:linear-gradient(90deg, #f59e0b, #fbbf24, #10b981);"></div>
+
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                    <span style="display:inline-flex; align-items:center; gap:5px; font-size:0.72rem; font-weight:900; padding:4px 10px; border-radius:999px; background:rgba(245,158,11,0.2); color:#fde68a; border:1px solid rgba(245,158,11,0.45);">
+                        ${msg.badge || '👑 관리자 특별 안내'}
+                    </span>
+                    <span style="font-size:0.7rem; color:#94a3b8; font-weight:700;">
+                        ${totalUnread > 1 ? `<span style="color:#fbbf24; font-weight:900;">미확인 ${totalUnread}건 중 1번째</span> · ` : ''}${timeStr}
+                    </span>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+                    <div style="width:42px; height:42px; border-radius:12px; background:linear-gradient(135deg,#f59e0b,#d97706); display:flex; align-items:center; justify-content:center; font-size:1.25rem; flex-shrink:0; box-shadow:0 4px 14px rgba(245,158,11,0.35);">
+                        👑
+                    </div>
+                    <div style="min-width:0; flex:1;">
+                        <div style="font-size:0.72rem; color:#fbbf24; font-weight:800;">운도실력 최고관리자 메시지</div>
+                        <div style="font-size:0.98rem; font-weight:900; color:#ffffff; line-height:1.35; word-break:keep-all;">${msg.title}</div>
+                    </div>
+                </div>
+
+                <div style="background:rgba(9,13,22,0.82); border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:14px; font-size:0.84rem; color:#e2e8f0; line-height:1.65; margin-bottom:16px; white-space:pre-line; max-height:240px; overflow-y:auto; word-break:keep-all;">${msg.body || ''}</div>
+
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <button type="button" onclick="window.PushClient && window.PushClient.acknowledgeAdminMessage('${safeMsgId}', true)" style="width:100%; background:linear-gradient(135deg, #f59e0b, #d97706); color:#0f172a; border:none; padding:12px 14px; border-radius:12px; font-size:0.86rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(245,158,11,0.35);">
+                        <span>${btnLabel}</span>
+                        <span>→</span>
+                    </button>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <button type="button" onclick="window.PushClient && window.PushClient.acknowledgeAdminMessage('${safeMsgId}', false)" style="background:rgba(16,185,129,0.16); border:1px solid rgba(16,185,129,0.45); color:#34d399; padding:9px; border-radius:10px; font-size:0.78rem; font-weight:800; cursor:pointer;">
+                            ✓ 확인 완료 (읽음 표시)
+                        </button>
+                        <button type="button" onclick="window.PushClient && window.PushClient.dismissAdminMessagePopupLater('${safeMsgId}')" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#94a3b8; padding:9px; border-radius:10px; font-size:0.78rem; font-weight:700; cursor:pointer;">
+                            나중에 보기 (알림함 보관)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    },
+
+    dismissAdminMessagePopupLater(msgId) {
+        const uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
+        if (uid && msgId) {
+            try {
+                SafeStorage.setItem(`admin_popup_dismissed_${uid}_${msgId}`, 'true');
+            } catch (e) {}
+        }
+        const modal = document.getElementById('lucky777AdminMessagePopupModal');
+        if (modal) modal.style.display = 'none';
+        if (typeof window.showToast === 'function') {
+            window.showToast('🔔 대시보드 상단 [미확인 알림함]에 보관되었습니다.');
+        }
+    },
+
+    async syncAdminMessageReadToFirestore(msgId) {
+        if (!msgId || !window.db) return;
+        let uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
+        if (typeof uid === 'string' && uid.startsWith('{')) {
+            try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
+        }
+        uid = String(uid || '').trim();
+        if (!uid) return;
+
+        const nowIso = new Date().toISOString();
+        try {
+            await window.db.collection('lotto_users').doc(uid).set({
+                adminMessages: {
+                    [msgId]: {
+                        status: 'read',
+                        readAt: nowIso
+                    }
+                }
+            }, { merge: true });
+        } catch (err) {
+            console.warn('[PushClient] syncAdminMessageReadToFirestore error:', err);
+        }
+    },
+
+    async acknowledgeAdminMessage(msgId, triggerAction = false) {
+        const modal = document.getElementById('lucky777AdminMessagePopupModal');
+        if (modal) modal.style.display = 'none';
+
+        const inboxId = `admin-msg-${msgId}`;
+        const list = this.getNotifications();
+        const item = list.find(n => n && n.id === inboxId);
+        const queuedMsg = (this._adminPopupQueue || []).find(m => m && m.id === msgId);
+        const actionType = (queuedMsg && queuedMsg.actionType) || (item && item.actionType) || 'generator';
+
+        // 로컬 알림함 및 Firestore 읽음 처리
+        this.markNotificationRead(inboxId);
+        await this.syncAdminMessageReadToFirestore(msgId);
+
+        if (typeof window.showToast === 'function') {
+            window.showToast('✓ 관리자 메시지 확인이 완료되었습니다.');
+        }
+
+        if (triggerAction) {
+            this.handleNotificationAction(inboxId);
+            return;
+        }
+
+        // 남은 미확인 팝업 큐가 있으면 다음 메시지 표시
+        this._adminPopupQueue = (this._adminPopupQueue || []).filter(m => m && m.id !== msgId);
+        if (this._adminPopupQueue.length > 0) {
+            setTimeout(() => {
+                this.showAdminMessageLoginPopup(this._adminPopupQueue[0], this._adminPopupQueue.length);
+            }, 250);
+        }
+    },
+
+    /**
+     * 🛠️ 관리자용 [회원 맞춤 메시지 발송 & 수신 확인 콘솔 모달] 열기
+     */
+    async openAdminMessageConsoleModal(preselectUserId = null) {
+        this._consolePreselectUser = preselectUserId || null;
+        this._consoleTargetMode = preselectUserId ? 'single' : (this._consoleTargetMode || 'single');
+
+        let modal = document.getElementById('lucky777AdminMsgConsoleModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'lucky777AdminMsgConsoleModal';
+            modal.style.cssText = 'position:fixed; inset:0; background:rgba(7,10,20,0.88); backdrop-filter:blur(8px); z-index:100010; display:none; align-items:center; justify-content:center; padding:14px; box-sizing:border-box;';
+            modal.onclick = (e) => {
+                if (e.target === modal) modal.style.display = 'none';
+            };
+            document.body.appendChild(modal);
+        }
+
+        modal.style.display = 'flex';
+        modal.innerHTML = `<div style="background:#0f172a; border:1.5px solid rgba(245,158,11,0.45); border-radius:18px; padding:28px; color:#f8fafc; font-weight:800; text-align:center;"><i class="fa-solid fa-spinner fa-spin" style="color:#fbbf24; font-size:1.4rem; margin-bottom:8px; display:block;"></i>회원 목록 및 알림 수신 상태를 불러오는 중...</div>`;
+
+        await this.renderAdminMessageConsoleContent();
+    },
+
+    closeAdminMessageConsoleModal() {
+        const modal = document.getElementById('lucky777AdminMsgConsoleModal');
+        if (modal) modal.style.display = 'none';
+    },
+
+    async fetchAllUsersForAdminConsole() {
+        const users = [];
+        const upcomingRound = this.getUpcomingRoundNumber();
+        if (!window.db) return users;
+
+        try {
+            const [uSnap, pSnap, subSnap] = await Promise.all([
+                window.db.collection('lotto_users').get(),
+                window.db.collection('lotto_purchases').get().catch(() => ({ forEach: () => {} })),
+                window.db.collection('push_subscriptions').get().catch(() => ({ forEach: () => {} }))
+            ]);
+
+            const purchasedUserMap = {};
+            pSnap.forEach(doc => {
+                const pData = doc.data() || {};
+                const uid = String(doc.id || '').trim();
+                const ledger = pData.ledger || pData;
+                const rList = ledger[String(upcomingRound)] || ledger[upcomingRound] || [];
+                if (Array.isArray(rList) && rList.length > 0) {
+                    purchasedUserMap[uid.toLowerCase()] = true;
+                }
+            });
+
+            const pushSubByUser = {};
+            subSnap.forEach(doc => {
+                const sData = doc.data() || {};
+                const uid = String(sData.userId || '').trim().toLowerCase();
+                if (uid && sData.endpoint) {
+                    if (!pushSubByUser[uid]) pushSubByUser[uid] = [];
+                    pushSubByUser[uid].push(sData);
+                }
+            });
+
+            uSnap.forEach(doc => {
+                const data = doc.data() || {};
+                if (data.isDeleted === true || data.status === 'trash') return;
+                const userId = doc.id;
+                const lowerId = userId.toLowerCase();
+                const isPerm = !!(data.isAdmin === true || data.role === 'admin' || data.isPermanent === true || data.userType === 'permanent');
+                const hasPurchased = isPerm || !!purchasedUserMap[lowerId];
+                const subs = pushSubByUser[lowerId] || (data.pushSubscription && data.pushSubscription.endpoint ? [data.pushSubscription] : []);
+                const hasKakao = userId.startsWith('kakao_') || !!(data.kakaoAuth && data.kakaoAuth.hasTalkMessageScope);
+                const hasWins = !!(data.sentReports && Object.keys(data.sentReports).length > 0);
+
+                users.push({
+                    userId,
+                    realName: data.realName || userId,
+                    isPerm,
+                    hasPurchased,
+                    hasPush: subs.length > 0 || !!data.hasPushSubscription,
+                    pushSubs: subs,
+                    hasKakao,
+                    hasWins,
+                    adminMessages: data.adminMessages || {},
+                    lastAccessAt: data.lastAccessAt || data.lastLoginAt || ''
+                });
+            });
+        } catch (err) {
+            console.warn('[PushClient] fetchAllUsersForAdminConsole error:', err);
+        }
+        this._adminConsoleUsers = users;
+        return users;
+    },
+
+    async renderAdminMessageConsoleContent() {
+        const modal = document.getElementById('lucky777AdminMsgConsoleModal');
+        if (!modal) return;
+
+        const users = await this.fetchAllUsersForAdminConsole();
+        const upcomingRound = this.getUpcomingRoundNumber();
+        const mode = this._consoleTargetMode || 'single';
+        const preselect = this._consolePreselectUser || (users[0] ? users[0].userId : '');
+
+        const nonPurchasersCount = users.filter(u => !u.isPerm && !u.hasPurchased).length;
+        const winnersCount = users.filter(u => u.hasWins).length;
+        const pushConsentedCount = users.filter(u => u.hasPush).length;
+
+        const userOptionsHtml = users.map(u => {
+            const pTag = u.isPerm ? '♾️영구' : (u.hasPurchased ? '✓구매완료' : '❌미구매');
+            const pushTag = u.hasPush ? '🔔푸시ON' : (u.hasKakao ? '💬카톡ON' : '앱팝업');
+            const selected = (u.userId === preselect) ? 'selected' : '';
+            return `<option value="${u.userId}" ${selected}>${u.realName} (${u.userId}) — [${pTag} · ${pushTag}]</option>`;
+        }).join('');
+
+        // 최근 발송 내역 수집
+        const allSentLogs = [];
+        users.forEach(u => {
+            const msgMap = u.adminMessages || {};
+            Object.values(msgMap).forEach(m => {
+                if (m && m.id && m.title) {
+                    allSentLogs.push({
+                        ...m,
+                        targetUserId: u.userId,
+                        targetUserName: u.realName,
+                        hasPush: u.hasPush,
+                        hasKakao: u.hasKakao
+                    });
+                }
+            });
+        });
+        allSentLogs.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+        const historyHtml = allSentLogs.length === 0
+            ? `<div style="padding:18px; text-align:center; color:#64748b; font-size:0.78rem;">아직 발송된 관리자 메시지가 없습니다.</div>`
+            : allSentLogs.slice(0, 20).map(log => {
+                const isRead = log.status === 'read';
+                const sentTime = this.formatTimeLabel(log.createdAt);
+                const readTime = log.readAt ? this.formatTimeLabel(log.readAt) : '';
+                const safeUid = String(log.targetUserId || '').replace(/'/g, "\\'");
+                const safeMid = String(log.id || '').replace(/'/g, "\\'");
+                return `
+                    <div style="background:#090d16; border:1px solid ${isRead ? 'rgba(16,185,129,0.3)' : 'rgba(245,158,11,0.35)'}; border-radius:10px; padding:9px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+                        <div style="min-width:0; flex:1;">
+                            <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                                <span style="font-size:0.78rem; font-weight:900; color:#f8fafc;">${log.targetUserName} <span style="color:#94a3b8; font-weight:600;">(${log.targetUserId})</span></span>
+                                <span style="font-size:0.65rem; padding:1px 6px; border-radius:5px; background:rgba(245,158,11,0.16); color:#fde68a; font-weight:800;">${log.badge || '👑 관리자 안내'}</span>
+                                ${log.hasPush ? '<span style="font-size:0.63rem; color:#34d399; font-weight:800;">🔔푸시전달</span>' : ''}
+                                ${log.hasKakao ? '<span style="font-size:0.63rem; color:#fee500; font-weight:800;">💬카톡연동</span>' : ''}
+                            </div>
+                            <div style="font-size:0.75rem; color:#cbd5e1; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${log.title}</div>
+                            <div style="font-size:0.67rem; color:#64748b; margin-top:1px;">발송: ${sentTime}${isRead && readTime ? ` · 읽음: ${readTime}` : ''}</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                            ${isRead
+                                ? `<span style="font-size:0.68rem; font-weight:900; padding:3px 8px; border-radius:999px; background:rgba(16,185,129,0.18); color:#34d399; border:1px solid rgba(16,185,129,0.4);">✓ 읽음 완료</span>`
+                                : `<span style="font-size:0.68rem; font-weight:900; padding:3px 8px; border-radius:999px; background:rgba(245,158,11,0.18); color:#fbbf24; border:1px solid rgba(245,158,11,0.4);">⏳ 미확인 대기</span>`}
+                            <button type="button" onclick="window.PushClient && window.PushClient.deleteAdminSentMessage('${safeUid}', '${safeMid}')" title="발송 메시지 회수/삭제" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.35); color:#fca5a5; width:26px; height:26px; border-radius:6px; font-size:0.72rem; cursor:pointer;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+        const defaultTpl = this.ADMIN_MSG_TEMPLATES.qr_remind;
+
+        modal.innerHTML = `
+            <div style="width:100%; max-width:640px; max-height:90vh; background:#0f172a; border:1.5px solid rgba(245,158,11,0.5); border-radius:18px; box-shadow:0 25px 65px rgba(0,0,0,0.88); display:flex; flex-direction:column; overflow:hidden; font-family:'Pretendard','Noto Sans KR',sans-serif; color:#f8fafc;">
+                <!-- Header -->
+                <div style="padding:14px 18px; background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:9px;">
+                        <span style="font-size:1.25rem;">📨</span>
+                        <div>
+                            <div style="font-size:0.96rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:7px;">
+                                <span>관리자 회원 맞춤 메시지 발송 콘솔</span>
+                                <span style="font-size:0.68rem; padding:2px 8px; border-radius:999px; background:rgba(16,185,129,0.2); color:#34d399; border:1px solid rgba(16,185,129,0.4); font-weight:800;">
+                                    🔔 푸시동의 ${pushConsentedCount}명 · 전체 ${users.length}명
+                                </span>
+                            </div>
+                            <div style="font-size:0.71rem; color:#94a3b8;">로그인 즉시 중앙 팝업 + 스마트폰 푸시 알림 + 대시보드 미확인 알림함 + 카톡 대기열 동시 발송</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="window.PushClient && window.PushClient.closeAdminMessageConsoleModal()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:32px; height:32px; border-radius:50%; font-size:1.2rem; cursor:pointer;">&times;</button>
+                </div>
+
+                <!-- Scrollable Body -->
+                <div style="padding:14px 16px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:12px;">
+                    <!-- 1. 수신 대상 선택 -->
+                    <div style="background:#090d16; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:11px 13px;">
+                        <div style="font-size:0.75rem; font-weight:800; color:#fbbf24; margin-bottom:7px;">1️⃣ 수신 대상 선택</div>
+                        <div style="display:grid; grid-template-columns:repeat(2, 1fr); gap:6px; margin-bottom:8px;">
+                            <button type="button" onclick="window.PushClient.setAdminConsoleTargetMode('single')" style="padding:8px 10px; border-radius:8px; font-size:0.75rem; font-weight:800; cursor:pointer; border:1px solid ${mode === 'single' ? '#f59e0b' : 'rgba(255,255,255,0.1)'}; background:${mode === 'single' ? 'rgba(245,158,11,0.2)' : '#1e293b'}; color:${mode === 'single' ? '#fde047' : '#cbd5e1'}; text-align:left;">
+                                👤 1:1 개별 회원 지정
+                            </button>
+                            <button type="button" onclick="window.PushClient.setAdminConsoleTargetMode('non_purchasers')" style="padding:8px 10px; border-radius:8px; font-size:0.75rem; font-weight:800; cursor:pointer; border:1px solid ${mode === 'non_purchasers' ? '#f59e0b' : 'rgba(255,255,255,0.1)'}; background:${mode === 'non_purchasers' ? 'rgba(245,158,11,0.2)' : '#1e293b'}; color:${mode === 'non_purchasers' ? '#fde047' : '#cbd5e1'}; text-align:left;">
+                                ⏳ 이번주 미구매 일괄 (${nonPurchasersCount}명)
+                            </button>
+                            <button type="button" onclick="window.PushClient.setAdminConsoleTargetMode('winners')" style="padding:8px 10px; border-radius:8px; font-size:0.75rem; font-weight:800; cursor:pointer; border:1px solid ${mode === 'winners' ? '#f59e0b' : 'rgba(255,255,255,0.1)'}; background:${mode === 'winners' ? 'rgba(245,158,11,0.2)' : '#1e293b'}; color:${mode === 'winners' ? '#fde047' : '#cbd5e1'}; text-align:left;">
+                                🏆 당첨 이력 회원 일괄 (${winnersCount}명)
+                            </button>
+                            <button type="button" onclick="window.PushClient.setAdminConsoleTargetMode('all')" style="padding:8px 10px; border-radius:8px; font-size:0.75rem; font-weight:800; cursor:pointer; border:1px solid ${mode === 'all' ? '#f59e0b' : 'rgba(255,255,255,0.1)'}; background:${mode === 'all' ? 'rgba(245,158,11,0.2)' : '#1e293b'}; color:${mode === 'all' ? '#fde047' : '#cbd5e1'}; text-align:left;">
+                                📢 전체 회원 공지 (${users.length}명)
+                            </button>
+                        </div>
+                        <div id="adminConsoleSingleUserWrap" style="display:${mode === 'single' ? 'block' : 'none'};">
+                            <select id="adminMsgTargetUserSelect" style="width:100%; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:8px 10px; font-size:0.8rem; font-weight:700;">
+                                ${userOptionsHtml}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 2. 원클릭 빠른 템플릿 -->
+                    <div style="background:#090d16; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:11px 13px;">
+                        <div style="font-size:0.75rem; font-weight:800; color:#fbbf24; margin-bottom:7px;">2️⃣ 원클릭 빠른 메시지 템플릿 <span style="color:#94a3b8; font-weight:500;">({회원명}, {회차} 자동 치환)</span></div>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                            <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('qr_remind')" style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#fde68a; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">📷 실구매 QR 독려</button>
+                            <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('win_congrats')" style="background:rgba(16,185,129,0.15); border:1px solid rgba(16,185,129,0.4); color:#6ee7b7; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">🎉 실구매 당첨 축하</button>
+                            <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('myeongri_pick')" style="background:rgba(139,92,246,0.18); border:1px solid rgba(139,92,246,0.45); color:#ddd6fe; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">🔮 사주 길일·길시 안내</button>
+                            <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('account_notice')" style="background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.45); color:#bfdbfe; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">🔓 계정 권한 안내</button>
+                            <button type="button" onclick="window.PushClient.applyAdminMsgTemplate('general_notice')" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:#e2e8f0; padding:5px 10px; border-radius:999px; font-size:0.72rem; font-weight:800; cursor:pointer;">📢 전체 공지·업데이트</button>
+                        </div>
+                    </div>
+
+                    <!-- 3. 제목 / 본문 / 바로가기 액션 작성 -->
+                    <div style="background:#090d16; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:11px 13px; display:flex; flex-direction:column; gap:8px;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                            <div>
+                                <label style="font-size:0.7rem; color:#94a3b8; font-weight:700; display:block; margin-bottom:4px;">상단 배지 태그</label>
+                                <select id="adminMsgBadgeSelect" style="width:100%; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:7px; padding:6px 8px; font-size:0.75rem; font-weight:700;">
+                                    <option value="📷 실구매 인증 안내">📷 실구매 인증 안내</option>
+                                    <option value="🎉 당첨 축하 메시지">🎉 당첨 축하 메시지</option>
+                                    <option value="🔮 사주 길일·길시 특별 안내">🔮 사주 길일·길시 특별 안내</option>
+                                    <option value="🔓 계정 권한 안내">🔓 계정 권한 안내</option>
+                                    <option value="📢 관리자 공지사항">📢 관리자 공지사항</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.7rem; color:#94a3b8; font-weight:700; display:block; margin-bottom:4px;">팝업 클릭 시 연결 화면</label>
+                                <select id="adminMsgActionSelect" style="width:100%; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:7px; padding:6px 8px; font-size:0.75rem; font-weight:700;">
+                                    <option value="qr">📷 실구매 QR 영수증 등록창 열기</option>
+                                    <option value="confirmed">📊 구매확정·당첨내역 탭 이동</option>
+                                    <option value="generator">🎱 AI 추천번호 생성 탭 이동</option>
+                                    <option value="fortune">🧭 대시보드 사주 길일·길시 보기</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem; color:#94a3b8; font-weight:700; display:block; margin-bottom:4px;">메시지 제목 (제 ${upcomingRound}회차)</label>
+                            <input type="text" id="adminMsgTitleInput" value="${defaultTpl.title}" style="width:100%; box-sizing:border-box; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:8px 10px; font-size:0.82rem; font-weight:800;" />
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem; color:#94a3b8; font-weight:700; display:block; margin-bottom:4px;">메시지 본문 내용</label>
+                            <textarea id="adminMsgBodyInput" rows="3" style="width:100%; box-sizing:border-box; background:#1e293b; color:#fff; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:8px 10px; font-size:0.79rem; line-height:1.5; resize:vertical;">${defaultTpl.body}</textarea>
+                        </div>
+
+                        <!-- 멀티채널 전달 옵션 -->
+                        <div style="display:flex; flex-direction:column; gap:5px; padding-top:4px; border-top:1px solid rgba(255,255,255,0.06);">
+                            <label style="display:flex; align-items:center; gap:7px; font-size:0.75rem; color:#e2e8f0; cursor:pointer;">
+                                <input type="checkbox" id="cbAdminMsgPopup" checked style="accent-color:#f59e0b; width:15px; height:15px;">
+                                <span><strong>로그인 즉시 화면 중앙 팝업 모달</strong>로 최우선 표시</span>
+                            </label>
+                            <label style="display:flex; align-items:center; gap:7px; font-size:0.75rem; color:#e2e8f0; cursor:pointer;">
+                                <input type="checkbox" id="cbAdminMsgInbox" checked style="accent-color:#f59e0b; width:15px; height:15px;">
+                                <span><strong>대시보드 상단 미확인 알림함</strong>에 보관 및 읽음(✓) 실시간 추적</span>
+                            </label>
+                            <label style="display:flex; align-items:center; gap:7px; font-size:0.75rem; color:#fde047; cursor:pointer;">
+                                <input type="checkbox" id="cbAdminMsgPushKakao" checked style="accent-color:#10b981; width:15px; height:15px;">
+                                <span><strong>알림·푸시 동의 회원에게 스마트폰 푸시 알림 + 카카오톡 대기열</strong> 동시 전송</span>
+                            </label>
+                        </div>
+
+                        <div style="display:flex; gap:8px; margin-top:4px;">
+                            <button type="button" id="btnDispatchAdminMsgNow" onclick="window.PushClient.sendAdminMessageFromConsole()" style="flex:1.8; background:linear-gradient(135deg, #f59e0b, #d97706); color:#0f172a; border:none; padding:11px 14px; border-radius:10px; font-size:0.84rem; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 4px 14px rgba(245,158,11,0.35);">
+                                <i class="fa-solid fa-paper-plane"></i> <span>회원에게 메시지 발송하기</span>
+                            </button>
+                            <button type="button" onclick="window.PushClient.previewAdminMessagePopupFromConsole()" style="flex:1; background:rgba(59,130,246,0.18); border:1px solid rgba(59,130,246,0.45); color:#93c5fd; padding:11px 10px; border-radius:10px; font-size:0.76rem; font-weight:800; cursor:pointer;">
+                                👁️ 수신 팝업 미리보기
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 4. 발송 내역 및 실시간 읽음 확인 트래커 -->
+                    <div style="background:#090d16; border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:11px 13px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                            <span style="font-size:0.76rem; font-weight:800; color:#fbbf24;">📊 최근 발송 내역 & 회원 읽음 확인 현황 (${allSentLogs.length}건)</span>
+                            <button type="button" onclick="window.PushClient.renderAdminMessageConsoleContent()" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); color:#cbd5e1; font-size:0.68rem; font-weight:700; padding:3px 8px; border-radius:6px; cursor:pointer;">
+                                ↻ 상태 새로고침
+                            </button>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:6px; max-height:190px; overflow-y:auto;">
+                            ${historyHtml}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    setAdminConsoleTargetMode(mode) {
+        this._consoleTargetMode = mode;
+        const selEl = document.getElementById('adminMsgTargetUserSelect');
+        if (selEl && selEl.value) {
+            this._consolePreselectUser = selEl.value;
+        }
+        this.renderAdminMessageConsoleContent();
+    },
+
+    applyAdminMsgTemplate(tplKey) {
+        const tpl = this.ADMIN_MSG_TEMPLATES[tplKey];
+        if (!tpl) return;
+        const badgeEl = document.getElementById('adminMsgBadgeSelect');
+        const actionEl = document.getElementById('adminMsgActionSelect');
+        const titleEl = document.getElementById('adminMsgTitleInput');
+        const bodyEl = document.getElementById('adminMsgBodyInput');
+        if (badgeEl) badgeEl.value = tpl.badge;
+        if (actionEl) actionEl.value = tpl.actionType;
+        if (titleEl) titleEl.value = tpl.title;
+        if (bodyEl) bodyEl.value = tpl.body;
+    },
+
+    previewAdminMessagePopupFromConsole() {
+        const badge = document.getElementById('adminMsgBadgeSelect')?.value || '👑 관리자 특별 안내';
+        const actionType = document.getElementById('adminMsgActionSelect')?.value || 'qr';
+        const rawTitle = document.getElementById('adminMsgTitleInput')?.value || '관리자 안내 메시지';
+        const rawBody = document.getElementById('adminMsgBodyInput')?.value || '';
+        const round = this.getUpcomingRoundNumber();
+        const sampleName = this.getCurrentUserName() || '홍길동';
+
+        const title = rawTitle.replace(/\{회원명\}/g, sampleName).replace(/\{회차\}/g, String(round));
+        const body = rawBody.replace(/\{회원명\}/g, sampleName).replace(/\{회차\}/g, String(round));
+
+        this.showAdminMessageLoginPopup({
+            id: 'preview-demo',
+            badge,
+            actionType,
+            title,
+            body,
+            createdAt: new Date().toISOString()
+        }, 1);
+    },
+
+    async sendAdminMessageFromConsole() {
+        if (!window.db) {
+            alert('DB 연결이 준비되지 않았습니다.');
+            return;
+        }
+
+        const badge = document.getElementById('adminMsgBadgeSelect')?.value || '👑 관리자 안내';
+        const actionType = document.getElementById('adminMsgActionSelect')?.value || 'qr';
+        const rawTitle = (document.getElementById('adminMsgTitleInput')?.value || '').trim();
+        const rawBody = (document.getElementById('adminMsgBodyInput')?.value || '').trim();
+        const popupOnLogin = document.getElementById('cbAdminMsgPopup')?.checked !== false;
+        const saveToInbox = document.getElementById('cbAdminMsgInbox')?.checked !== false;
+        const sendPushAndKakao = document.getElementById('cbAdminMsgPushKakao')?.checked !== false;
+
+        if (!rawTitle || !rawBody) {
+            alert('메시지 제목과 본문을 모두 입력해 주세요.');
+            return;
+        }
+
+        const users = this._adminConsoleUsers || await this.fetchAllUsersForAdminConsole();
+        const mode = this._consoleTargetMode || 'single';
+        let targets = [];
+
+        if (mode === 'single') {
+            const selectedUid = document.getElementById('adminMsgTargetUserSelect')?.value;
+            const found = users.find(u => u.userId === selectedUid);
+            if (found) targets = [found];
+        } else if (mode === 'non_purchasers') {
+            targets = users.filter(u => !u.isPerm && !u.hasPurchased);
+        } else if (mode === 'winners') {
+            targets = users.filter(u => u.hasWins);
+        } else {
+            targets = users;
+        }
+
+        if (targets.length === 0) {
+            alert('선택한 조건에 해당하는 수신 대상 회원이 없습니다.');
+            return;
+        }
+
+        const btn = document.getElementById('btnDispatchAdminMsgNow');
+        const origHtml = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>${targets.length}명에게 발송 중...</span>`;
+        }
+
+        const round = this.getUpcomingRoundNumber();
+        const actionLabelMap = {
+            qr: '📷 지금 실구매 QR 영수증 등록하기',
+            confirmed: '📊 내 실구매 당첨장부 확인하기',
+            fortune: '🧭 내 사주 길일·길시 확인하기',
+            generator: '🎱 이번주 AI 추천번호 확인하기'
+        };
+        const actionLabel = actionLabelMap[actionType] || '🎱 바로 확인하기';
+        const nowIso = new Date().toISOString();
+        const baseMsgId = `adm_${Date.now()}`;
+
+        let sentCount = 0;
+        let webPushSentCount = 0;
+        let kakaoQueuedCount = 0;
+
+        for (const target of targets) {
+            const dispName = target.realName || target.userId;
+            const personalTitle = rawTitle.replace(/\{회원명\}/g, dispName).replace(/\{회차\}/g, String(round));
+            const personalBody = rawBody.replace(/\{회원명\}/g, dispName).replace(/\{회차\}/g, String(round));
+
+            const msgObj = {
+                id: baseMsgId,
+                badge,
+                title: personalTitle,
+                body: personalBody,
+                actionType,
+                actionLabel,
+                popupOnLogin,
+                saveToInbox,
+                status: 'unread',
+                createdAt: nowIso
+            };
+
+            try {
+                // 1) Firestore lotto_users/{userId}.adminMessages 저장 (로그인 시 즉시 팝업 + 실시간 onSnapshot 전달)
+                await window.db.collection('lotto_users').doc(target.userId).set({
+                    adminMessages: {
+                        [baseMsgId]: msgObj
+                    }
+                }, { merge: true });
+                sentCount++;
+
+                // 2) 알림·푸시 동의 회원에게 Web Push 즉시 전송 + 카카오톡 대기열 등록
+                if (sendPushAndKakao) {
+                    if (Array.isArray(target.pushSubs) && target.pushSubs.length > 0) {
+                        try {
+                            const pushResp = await fetch('/.netlify/functions/send-push', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    subscriptions: target.pushSubs,
+                                    notification: {
+                                        title: `${badge} ${personalTitle}`,
+                                        body: personalBody,
+                                        tag: `admin-msg-${baseMsgId}`,
+                                        url: '/?tab=tab-dashboard'
+                                    }
+                                })
+                            });
+                            if (pushResp.ok) webPushSentCount++;
+                        } catch (pushErr) {
+                            console.warn('[Admin WebPush Dispatch Notice]', pushErr);
+                        }
+                    }
+
+                    if (target.hasKakao && typeof window.queueKakaoNotificationForUser === 'function') {
+                        const appUrl = window.location.origin + window.location.pathname;
+                        await window.queueKakaoNotificationForUser(target.userId, {
+                            id: `kakao_${baseMsgId}`,
+                            type: 'admin_custom_message',
+                            round: round,
+                            template: {
+                                object_type: 'text',
+                                text: `👑 [운도실력 관리자 메시지]\n\n📌 ${personalTitle}\n\n${personalBody}`,
+                                link: {
+                                    web_url: appUrl,
+                                    mobile_web_url: appUrl
+                                },
+                                button_title: actionLabel.replace(/^[^\s]+\s/, '')
+                            }
+                        });
+                        kakaoQueuedCount++;
+                    }
+                }
+            } catch (err) {
+                console.warn(`[sendAdminMessageFromConsole] Failed for ${target.userId}:`, err);
+            }
+        }
+
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = origHtml;
+        }
+
+        if (typeof window.showToast === 'function') {
+            window.showToast(`🚀 총 ${sentCount}명에게 발송 완료! (웹푸시 ${webPushSentCount}명 · 카톡연동 ${kakaoQueuedCount}명)`);
+        }
+
+        if (typeof window.loadUserList === 'function') {
+            try { window.loadUserList(true); } catch (e) {}
+        }
+
+        await this.renderAdminMessageConsoleContent();
+    },
+
+    async deleteAdminSentMessage(userId, msgId) {
+        if (!userId || !msgId || !window.db) return;
+        try {
+            const docRef = window.db.collection('lotto_users').doc(userId);
+            const doc = await docRef.get();
+            if (doc.exists) {
+                const data = doc.data() || {};
+                const map = { ...(data.adminMessages || {}) };
+                delete map[msgId];
+                await docRef.update({ adminMessages: map });
+            }
+            if (typeof window.showToast === 'function') {
+                window.showToast('🗑️ 발송된 메시지를 삭제했습니다.');
+            }
+            await this.renderAdminMessageConsoleContent();
+        } catch (err) {
+            console.warn('[PushClient] deleteAdminSentMessage error:', err);
+        }
     }
 };
 
@@ -11394,6 +12260,7 @@ const PushClient = {
 if (typeof window !== 'undefined') {
     window.PushClient = PushClient;
     window.openNotificationCenterModal = (filter) => PushClient.openNotificationCenterModal(filter);
+    window.openAdminMessageConsoleModal = (userId) => PushClient.openAdminMessageConsoleModal(userId);
 
     window.handlePushNotificationToggle = async function() {
         if (!PushClient.isSupported()) {
@@ -11448,6 +12315,9 @@ if (typeof window !== 'undefined') {
             PushClient.checkAndGenerateScheduledAlerts();
             PushClient.updateBannerVisibility();
             PushClient.syncMyeongriScheduleIfNeeded();
+            if (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get && window.SafeAuth.get()) {
+                PushClient.startAdminMessageListener(window.SafeAuth.get());
+            }
         });
 
         // Service Worker 실시간 postMessage 수신 리스너
@@ -11496,6 +12366,7 @@ if (typeof window !== 'undefined') {
         initPushUI();
     }
 }
+
 
 
 
