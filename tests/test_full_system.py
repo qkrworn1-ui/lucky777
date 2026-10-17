@@ -4361,7 +4361,7 @@ Lotto 6/45
         self.assertIn("border: 1.5px dashed #38bdf8 !important;", conf_code)
 
     def test_106_push_notification_dedup_and_win_celebration(self):
-        """Test 106: Verify PushClient duplicate alert suppression, win celebration push, recommendation push, and Saturday cutoff."""
+        """Test 106: Verify PushClient duplicate alert suppression, consolidated draw & purchase win notification, and Saturday cutoff."""
         push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
         with open(push_path, 'r', encoding='utf-8') as f:
             push_code = f.read()
@@ -4376,19 +4376,20 @@ Lotto 6/45
         self.assertIn("getDrawData(round)", push_code)
         self.assertIn("gradePurchases(receipts, drawData)", push_code)
 
-        # 3. Real-purchase win celebration push with browser alert
-        self.assertIn("id: `win-celebrate-${latestDrawnRound}`", push_code)
-        self.assertIn("badge: '🎉 실구매 당첨 축하'", push_code)
+        # 3. Consolidated draw result and confirmed purchase win notification with winning numbers
+        self.assertIn("combinedNotifId = `draw-result-${latestDrawnRound}`", push_code)
+        self.assertIn("notifBadge = '🎉 당첨결과 & 구매확정 당첨';", push_code)
+        self.assertIn("notifBadge = '📊 당첨결과 & 구매확정 채점';", push_code)
 
-        # 4. Next round AI recommendation open push with browser alert
-        self.assertIn("id: `rec-ready-${targetRound}`", push_code)
+        # 4. Next round AI recommendation inbox registration (smartphone push suppressed)
+        self.assertIn("id: recNotifId", push_code)
         self.assertIn("badge: '🎱 차기 추천번호 오픈'", push_code)
 
         # 5. Saturday post-draw cutoff suppresses purchase prompts
         self.assertIn("const isSaturdayPostDraw = (todayName === '토요일' && curMinutes >= 20 * 60);", push_code)
 
     def test_107_push_once_inbox_driven_persistence(self):
-        """Test 107: Verify identical push notifications fire only once and persist in inbox without duplicate popups."""
+        """Test 107: Verify consolidated push fires once and other notifications are confined to inbox without smartphone popups."""
         push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
         with open(push_path, 'r', encoding='utf-8') as f:
             push_code = f.read()
@@ -4397,18 +4398,16 @@ Lotto 6/45
         self.assertIn("isPushAlreadyFired(notifId)", push_code)
         self.assertIn("recordPushFired(notifId)", push_code)
 
-        # 2. Check scheduled alerts push gating with isPushAlreadyFired
-        self.assertIn("shouldPushSlot = !isSaturdayPostDraw && (isPreAlertWindow || isCurrentlyActive) && !this.isPushAlreadyFired(slotNotifId);", push_code)
-        self.assertIn("shouldPushLock = !this.isPushAlreadyFired(lockNotifId);", push_code)
-        self.assertIn("shouldPushWin = !this.isPushAlreadyFired(winNotifId);", push_code)
-        self.assertIn("shouldPushRec = !this.isPushAlreadyFired(recNotifId);", push_code)
+        # 2. Consolidated draw & purchase notification is the sole smartphone push trigger
+        self.assertIn("shouldPushCombined = !this.isPushAlreadyFired(combinedNotifId) && !this.isPushAlreadyFired(legacyWinId);", push_code)
+        self.assertIn("if (notif.category !== 'result' && !cleanAlertId.startsWith('test-alert-')) {", push_code)
 
         # 3. Persistent admin popup dismissal via localStorage
         self.assertIn("localStorage.setItem(`admin_popup_dismissed_${uid}_${msgId}`, 'true');", push_code)
         self.assertIn("localStorage.getItem(dismissKey) !== 'true' && sessionStorage.getItem(dismissKey) !== 'true'", push_code)
 
         # 4. onPurchaseRegistered triggers immediate evaluation of win status and unread UI
-        self.assertIn("this.checkAndGenerateScheduledAlerts();", push_code)
+        self.assertIn("this.checkAndGenerateScheduledAlerts(true);", push_code)
         self.assertIn("this.renderUnreadNotificationUI();", push_code)
 
         # 5. auth-mgmt login hook checks scheduled alerts
