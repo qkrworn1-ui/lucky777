@@ -4587,6 +4587,57 @@ Lotto 6/45
         self.assertIn("PushClient.loadNotificationsFromServer().finally(", push_code)
         self.assertIn("PushClient.listenNotificationsFromServer();", push_code)
 
+    # [Test 128] Win Prob 70-Game 1:1 Matchup Dynamic Round Auto-Calculation & Fold 7 Safeguards
+    def test_128_win_prob_70games_dynamic_round_and_fold7_safeguards(self):
+        """Verify Win Probability Comparison dynamically calculates stats for new rounds and fits Galaxy Z Fold 7 344px outer screen."""
+        win_modal_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'win-prob-modal.js')
+        landing_path = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+        batch_py_path = os.path.join(self.root_dir, 'batch_evaluate_winnings.py')
+        css_path = os.path.join(self.root_dir, 'styles.css')
+
+        with open(win_modal_path, 'r', encoding='utf-8') as f:
+            modal_code = f.read()
+        with open(landing_path, 'r', encoding='utf-8') as f:
+            landing_code = f.read()
+        with open(batch_py_path, 'r', encoding='utf-8') as f:
+            batch_code = f.read()
+        with open(css_path, 'r', encoding='utf-8') as f:
+            css_code = f.read()
+
+        # 1. win-prob-modal.js defines getLiveWinProbStats and dynamic 70-game calculation
+        self.assertIn("export function getLiveWinProbStats", modal_code)
+        self.assertIn("window.getLiveWinProbStats = getLiveWinProbStats", modal_code)
+        self.assertIn("lotto_home_review_dashboard_cache", modal_code)
+        self.assertIn("expected70:", modal_code)
+        self.assertIn("autoRank4: 0.0955", modal_code)
+        self.assertIn("autoPrize: 12629", modal_code)
+
+        # 2. win-prob-modal.js renders 70-game hero banner and Fold 7 battle cards
+        self.assertIn('class="hero-70game-banner"', modal_code)
+        self.assertIn('class="matchup-grid"', modal_code)
+        self.assertIn('class="matchup-battle-section"', modal_code)
+        self.assertIn('class="battle-card highlight-gold"', modal_code)
+        self.assertIn('class="battle-card highlight-emerald"', modal_code)
+        self.assertIn('class="battle-1on1-grid"', modal_code)
+
+        # 3. landing-dashboard.js aggregates v4Summary and exports getHomeReviewDashboardCache
+        self.assertIn("v4Summary:", landing_code)
+        self.assertIn("export function getHomeReviewDashboardCache", landing_code)
+        self.assertIn("window.getHomeReviewDashboardCache = getHomeReviewDashboardCache", landing_code)
+
+        # 4. batch_evaluate_winnings.py calculates v4Summary in dashboard_payload
+        self.assertIn('"v4Summary": {', batch_code)
+        self.assertIn('"totalGames": grand_v4_games', batch_code)
+
+        # 5. styles.css defines hero banner, battle cards and Fold 7 outer screen media queries
+        self.assertIn(".hero-70game-banner", css_code)
+        self.assertIn(".matchup-battle-section", css_code)
+        self.assertIn(".battle-card", css_code)
+        self.assertIn(".battle-1on1-grid", css_code)
+        self.assertIn(".battle-gauge-track", css_code)
+        self.assertIn("@media (max-width: 380px)", css_code)
+        self.assertIn("@media (max-width: 540px)", css_code)
+
 if __name__ == '__main__':
     unittest.main()
 

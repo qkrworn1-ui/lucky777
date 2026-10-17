@@ -628,7 +628,8 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                 latestRank2: Number(sData.latestRank2 || 0),
                 latestRank3: Number(sData.latestRank3 || 0),
                 latestRank4: Number(sData.latestRank4 || 0),
-                latestRank5: Number(sData.latestRank5 || 0)
+                latestRank5: Number(sData.latestRank5 || 0),
+                v4Summary: sData.v4Summary || null
             };
         };
 
@@ -708,6 +709,14 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
             let grandTotalGames = 0;
             let grandTotalWins = 0;
 
+            let grandV4Games = 0;
+            let grandV4Prize = 0;
+            let grandV4Rank1 = 0;
+            let grandV4Rank2 = 0;
+            let grandV4Rank3 = 0;
+            let grandV4Rank4 = 0;
+            let grandV4Rank5 = 0;
+
             let latestRank1 = 0;
             let latestRank2 = 0;
             let latestRank3 = 0;
@@ -737,6 +746,18 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                             grandRank3 += (rev.grandHits[3] || 0);
                             grandRank4 += (rev.grandHits[4] || 0);
                             grandRank5 += (rev.grandHits[5] || 0);
+                        }
+                        if (rev.v4Eval) {
+                            const v4Count = (rev.v4Combos && rev.v4Combos.length) || 10;
+                            grandV4Games += v4Count;
+                            grandV4Prize += (rev.v4Eval.totalPrize || 0);
+                            if (rev.v4Eval.rankHits) {
+                                grandV4Rank1 += (rev.v4Eval.rankHits[1] || 0);
+                                grandV4Rank2 += (rev.v4Eval.rankHits[2] || 0);
+                                grandV4Rank3 += (rev.v4Eval.rankHits[3] || 0);
+                                grandV4Rank4 += (rev.v4Eval.rankHits[4] || 0);
+                                grandV4Rank5 += (rev.v4Eval.rankHits[5] || 0);
+                            }
                         }
                         if (rnd === maxRound) {
                             latestTotalGames += games;
@@ -781,7 +802,18 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                 grandRank5,
                 grandTotalPrize,
                 grandTotalGames,
-                grandTotalWins
+                grandTotalWins,
+                v4Summary: {
+                    totalGames: grandV4Games,
+                    totalPrize: grandV4Prize,
+                    rankHits: {
+                        1: grandV4Rank1,
+                        2: grandV4Rank2,
+                        3: grandV4Rank3,
+                        4: grandV4Rank4,
+                        5: grandV4Rank5
+                    }
+                }
             };
             _homeReviewDashboardCache = summaryData;
             _homeReviewDashboardCacheTime = Date.now();
@@ -1802,9 +1834,14 @@ export function renderUserWinningTrendBanner(authId, displayName) {
     }
 }
 
+export function getHomeReviewDashboardCache() {
+    return _homeReviewDashboardCache;
+}
+
 if (typeof window !== 'undefined') {
     window.renderLandingDashboard = renderLandingDashboard;
     window.updateHomeReviewDashboard = updateHomeReviewDashboard;
+    window.getHomeReviewDashboardCache = getHomeReviewDashboardCache;
     window.updateHomeWinningTicker = updateHomeWinningTicker;
     window.updateHomeServiceCardsPermissions = updateHomeServiceCardsPermissions;
     window.getNextSaturday21KST = getNextSaturday21KST;

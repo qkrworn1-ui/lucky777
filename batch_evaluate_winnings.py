@@ -482,6 +482,14 @@ def run_evaluation_batch():
     grand_rank5 = 0
     grand_total_prize = 0
     grand_total_games = 0
+
+    grand_v4_rank1 = 0
+    grand_v4_rank2 = 0
+    grand_v4_rank3 = 0
+    grand_v4_rank4 = 0
+    grand_v4_rank5 = 0
+    grand_v4_prize = 0
+    grand_v4_games = 0
     
     user_ranking_map = {}
     
@@ -501,6 +509,17 @@ def run_evaluation_batch():
             grand_rank5 += hits.get('5', 0)
             grand_total_prize += r_sum.get('totalPrize', 0)
             grand_total_games += r_sum.get('totalGames', 0)
+
+            a_sum = r_sum.get('algoSummaries', {}).get('v4')
+            if a_sum:
+                a_hits = a_sum.get('hits', {})
+                grand_v4_rank1 += a_hits.get('1', 0)
+                grand_v4_rank2 += a_hits.get('2', 0)
+                grand_v4_rank3 += a_hits.get('3', 0)
+                grand_v4_rank4 += a_hits.get('4', 0)
+                grand_v4_rank5 += a_hits.get('5', 0)
+                grand_v4_prize += a_sum.get('prize', 0)
+                grand_v4_games += a_sum.get('games', 10)
             
             u_id = rec['userId']
             if u_id not in user_ranking_map:
@@ -564,6 +583,17 @@ def run_evaluation_batch():
         "grandTotalPrize": grand_total_prize,
         "grandTotalGames": grand_total_games,
         "grandTotalWins": grand_total_wins,
+        "v4Summary": {
+            "totalGames": grand_v4_games,
+            "totalPrize": grand_v4_prize,
+            "rankHits": {
+                "1": grand_v4_rank1,
+                "2": grand_v4_rank2,
+                "3": grand_v4_rank3,
+                "4": grand_v4_rank4,
+                "5": grand_v4_rank5
+            }
+        },
         "activeMemberCount": len(user_ranking_map),
         "userRankings": list(user_ranking_map.values()),
         "updatedAt": datetime.datetime.now().isoformat(),

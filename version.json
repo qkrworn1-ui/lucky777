@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.18.0058.53",
+  "version": "v2026.10.18.0118",
   "buildDate": "2026-10-18",
   "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가",
-  "buildTimestamp": "2026-10-18T00:58:53.698090",
+  "buildTimestamp": "2026-10-18T01:18:06.660231",
   "buildHistory": [
-    {
-      "version": "v2026.10.17.2319.29",
-      "buildDate": "2026-10-17",
-      "buildTime": "23:19",
-      "buildDateTime": "2026-10-17 23:19",
-      "buildTimestamp": "2026-10-17T23:19:29.243452",
-      "description": "통합 알림함 최근 회차 당첨내역 보장, 사주 길일·길시 푸시 배제 및 당첨결과 1회 푸시 적용"
-    },
-    {
-      "version": "v2026.10.17.2319.43",
-      "buildDate": "2026-10-17",
-      "buildTime": "23:19",
-      "buildDateTime": "2026-10-17 23:19",
-      "buildTimestamp": "2026-10-17T23:19:43.860765",
-      "description": "통합 알림함 최근 회차 당첨내역 보장, 사주 길일·길시 푸시 배제 및 당첨결과 1회 푸시 적용"
-    },
     {
       "version": "v2026.10.17.2327",
       "buildDate": "2026-10-17",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-18 00:58",
       "buildTimestamp": "2026-10-18T00:58:53.698090",
       "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
+    },
+    {
+      "version": "v2026.10.18.0117",
+      "buildDate": "2026-10-18",
+      "buildTime": "01:17",
+      "buildDateTime": "2026-10-18 01:17",
+      "buildTimestamp": "2026-10-18T01:17:22.923028",
+      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
+    },
+    {
+      "version": "v2026.10.18.0118",
+      "buildDate": "2026-10-18",
+      "buildTime": "01:18",
+      "buildDateTime": "2026-10-18 01:18",
+      "buildTimestamp": "2026-10-18T01:18:06.660231",
+      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
     }
   ],
-  "buildTime": "00:58",
-  "buildDateTime": "2026-10-18 00:58"
+  "buildTime": "01:18",
+  "buildDateTime": "2026-10-18 01:18"
 }
