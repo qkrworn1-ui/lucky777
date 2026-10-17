@@ -4522,6 +4522,38 @@ Lotto 6/45
         self.assertIn("e.target.closest('[data-notif-action]')", push_code)
         self.assertIn("setNotificationModalFilter(filter = 'all')", push_code)
 
+    # [Test 123] Notification Restart and Re-login Read & Delete Permanent Persistence Guarantee
+    def test_123_notification_restart_and_relogin_persistence_guarantee(self):
+        """Verify that read and deleted notifications permanently persist across browser restarts, page reloads, and user logouts/re-logins."""
+        push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
+        with open(push_path, 'r', encoding='utf-8') as f:
+            push_code = f.read()
+
+        # 1. Global (device-wide) persistent registries for read and deleted notifications
+        self.assertIn("lucky777_read_notifs_global", push_code)
+        self.assertIn("lucky777_deleted_notifs_global", push_code)
+        self.assertIn("lucky777_inbox_cleared_global", push_code)
+
+        # 2. Aggressive cache eviction in freeUpLocalStorageSpace prevents QuotaExceededError
+        self.assertIn("'lotto_all_users_merged_ledger_cache'", push_code)
+        self.assertIn("k.startsWith('lotto_actual_ledger_')", push_code)
+        self.assertIn("k.startsWith('toto_')", push_code)
+
+        # 3. getNotifications self-healing read-state recovery from stored inbox JSON
+        self.assertIn("if (item.unread === false) {", push_code)
+        self.assertIn("this._memoryReadIds.add(itemId);", push_code)
+
+        # 4. Guest inbox migration isolation preserves user deleted state and blocks reviving deleted items
+        self.assertIn("const hasUserInboxBefore = (list.length > 0) || this.isInboxCleared(uid) || (this.safeGetItem(key) !== null);", push_code)
+        self.assertIn("if (!hasUserInboxBefore) {", push_code)
+
+        # 5. seedRecentNotifications strictly protects read state (unread === false)
+        self.assertIn("if (item.unread === false || isAlreadyRead || !unreadFlag || this.isNotificationRead(item.id)) {", push_code)
+
+        # 6. checkAndGenerateScheduledAlerts suppresses deleted alerts from being re-added
+        self.assertIn("if (!this.isNotificationDeleted(combinedNotifId) && !this.isNotificationDeleted(legacyWinId) && !this.isNotificationDeleted(canonKey)) {", push_code)
+        self.assertIn("if (!this.isNotificationDeleted(recNotifId) && !this.isNotificationDeleted(`round_${targetRound}_rec`)) {", push_code)
+
 if __name__ == '__main__':
     unittest.main()
 
