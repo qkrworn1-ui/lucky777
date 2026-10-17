@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2039 - BUILD_DATE: 2026-10-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2045.30 - BUILD_DATE: 2026-10-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.17.2039)
+ * Lucky777 Smart Bundle (v2026.10.17.2045.30)
  */
 
 
@@ -10728,9 +10728,28 @@ const PushClient = {
 
     addNotification(notif, showBrowserAlert = false) {
         if (!notif || !notif.id) return false;
+        const normId = String(notif.id).trim();
+        const normTitle = String(notif.title || '').trim();
+        const normBody = String(notif.body || '').trim();
         const list = this.getNotifications();
-        if (list.some(item => item.id === notif.id)) {
-            return false; // 중복 알림 방지
+
+        // 1. 다중 스마트 중복 필터링:
+        // - 동일 ID
+        // - push- 접두사 차이 무시 동일 ID (admin-msg-123 === push-admin-msg-123)
+        // - lotto-result- 와 draw-result- 상호 호환 ID
+        // - 제목과 본문 내용이 100% 동일한 경우
+        const isDuplicate = list.some(item => {
+            if (!item) return false;
+            const itemId = String(item.id || '').trim();
+            if (itemId === normId) return true;
+            if (itemId.replace(/^push-/, '') === normId.replace(/^push-/, '')) return true;
+            if (itemId.replace('lotto-result-', 'draw-result-') === normId.replace('lotto-result-', 'draw-result-')) return true;
+            if (normTitle && normBody && item.title === normTitle && item.body === normBody) return true;
+            return false;
+        });
+
+        if (isDuplicate) {
+            return false; // 이미 확인(읽음)된 알림이거나 존재하는 알림이면 중복 추가/재알림 절대 방지
         }
 
         const newItem = {
@@ -10759,7 +10778,7 @@ const PushClient = {
                     badge: `${origin}${basePath}icons/favicon.png`,
                     tag: newItem.id,
                     vibrate: [150, 80, 150],
-                    data: { url: `${origin}${basePath}?tab=tab-generator` }
+                    data: { url: `${origin}${basePath}?tab=tab-generator`, id: newItem.id }
                 }).catch(() => {});
             }).catch(() => {});
         }
@@ -10780,37 +10799,90 @@ const PushClient = {
     },
 
     markNotificationRead(id) {
+        if (!id) return;
+        const normId = String(id).trim();
         const list = this.getNotifications();
         let changed = false;
         list.forEach(item => {
-            if (item && item.id === id && item.unread) {
+            if (!item) return;
+            const itemId = String(item.id || '').trim();
+            const matchesId = itemId === normId ||
+                itemId.replace(/^push-/, '') === normId.replace(/^push-/, '') ||
+                itemId.replace('lotto-result-', 'draw-result-') === normId.replace('lotto-result-', 'draw-result-') ||
+                (normId.includes('admin-msg-') && itemId.includes(normId.replace(/^push-/, '').replace(/^admin-msg-/, '')));
+            if (matchesId && item.unread) {
                 item.unread = false;
                 changed = true;
             }
         });
-        if (id && String(id).startsWith('admin-msg-')) {
-            const rawMsgId = String(id).replace(/^admin-msg-/, '');
+
+        if (normId.includes('admin-msg-')) {
+            const rawMsgId = normId.replace(/^push-/, '').replace(/^admin-msg-/, '');
             this.syncAdminMessageReadToFirestore(rawMsgId);
+            let uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
+            if (typeof uid === 'string' && uid.startsWith('{')) {
+                try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
+            }
+            if (uid && rawMsgId) {
+                try { SafeStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true'); } catch (e) {}
+            }
         }
+
         if (changed) {
             this.saveNotifications(list);
         } else {
             this.renderUnreadNotificationUI();
         }
+
+        // 스마트폰 OS 알림바(Tray)에서도 해당 알림 팝업 즉시 닫기
+        if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.getNotifications().then(notifs => {
+                    notifs.forEach(n => {
+                        if (n && n.tag) {
+                            const nTag = String(n.tag).trim();
+                            if (nTag === normId ||
+                                nTag.replace(/^push-/, '') === normId.replace(/^push-/, '') ||
+                                (normId.includes('admin-msg-') && nTag.includes(normId.replace(/^push-/, '').replace(/^admin-msg-/, '')))) {
+                                n.close();
+                            }
+                        }
+                    });
+                }).catch(() => {});
+            }).catch(() => {});
+        }
     },
 
     markAllNotificationsRead() {
         const list = this.getNotifications();
+        let uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
+        if (typeof uid === 'string' && uid.startsWith('{')) {
+            try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
+        }
+
         list.forEach(item => {
             if (item) {
-                if (item.unread && item.id && String(item.id).startsWith('admin-msg-')) {
-                    const rawMsgId = String(item.id).replace(/^admin-msg-/, '');
+                if (item.unread && item.id && String(item.id).includes('admin-msg-')) {
+                    const rawMsgId = String(item.id).replace(/^push-/, '').replace(/^admin-msg-/, '');
                     this.syncAdminMessageReadToFirestore(rawMsgId);
+                    if (uid && rawMsgId) {
+                        try { SafeStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true'); } catch (e) {}
+                    }
                 }
                 item.unread = false;
             }
         });
         this.saveNotifications(list);
+
+        // 스마트폰 OS 알림바(Tray)의 모든 알림 즉시 닫기
+        if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.getNotifications().then(notifs => {
+                    notifs.forEach(n => { if (n && typeof n.close === 'function') n.close(); });
+                }).catch(() => {});
+            }).catch(() => {});
+        }
+
         if (typeof window.showToast === 'function') {
             window.showToast('✓ 모든 미확인 알림을 읽음 처리했습니다.');
         }
@@ -11656,13 +11728,18 @@ const PushClient = {
         const unreadMsgs = [];
         allMsgs.forEach(msg => {
             const inboxId = `admin-msg-${msg.id}`;
-            const isUnread = msg.status !== 'read';
+            const existingList = this.getNotifications();
+            const existingItem = existingList.find(it => it && (
+                it.id === inboxId ||
+                it.id === `push-${inboxId}` ||
+                (it.title === msg.title && it.body === (msg.body || ''))
+            ));
+            const isReadLocally = !!(existingItem && !existingItem.unread);
+            const isUnread = (msg.status !== 'read') && !isReadLocally;
             const notifiedKey = `lucky777_admin_notified_${userId}_${msg.id}`;
             const alreadyAlerted = SafeLocalStorage.getItem(notifiedKey) === 'true';
 
             if (msg.saveToInbox !== false) {
-                const existingList = this.getNotifications();
-                const existingItem = existingList.find(it => it && it.id === inboxId);
                 if (!existingItem) {
                     if (isUnread && !alreadyAlerted) {
                         SafeLocalStorage.setItem(notifiedKey, 'true');
@@ -11696,7 +11773,7 @@ const PushClient = {
                             badge: `${origin}${basePath}icons/favicon.png`,
                             tag: inboxId,
                             vibrate: [200, 100, 200, 100, 350],
-                            data: { url: `${origin}${basePath}?tab=tab-dashboard` }
+                            data: { url: `${origin}${basePath}?tab=tab-dashboard`, id: inboxId }
                         }).catch(() => {});
                     }).catch(() => {});
                 }
@@ -12292,6 +12369,7 @@ const PushClient = {
                                 body: JSON.stringify({
                                     subscriptions: target.pushSubs,
                                     notification: {
+                                        id: `admin-msg-${baseMsgId}`,
                                         title: `${badge} ${personalTitle}`,
                                         body: personalBody,
                                         tag: `admin-msg-${baseMsgId}`,
@@ -12435,9 +12513,22 @@ if (typeof window !== 'undefined') {
             navigator.serviceWorker.addEventListener('message', (event) => {
                 if (event.data && event.data.type === 'LUCKY777_PUSH_RECEIVED' && event.data.notification) {
                     PushClient.addNotification(event.data.notification, false);
+                } else if (event.data && event.data.type === 'LUCKY777_NOTIFICATION_CLICKED' && event.data.id) {
+                    PushClient.markNotificationRead(event.data.id);
                 }
             });
         }
+
+        // URL 쿼리에 notif_read 파라미터가 있으면 즉시 해당 알림 읽음 처리 (OS 알림 클릭 진입 시)
+        try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const readTargetId = urlParams.get('notif_read');
+            if (readTargetId) {
+                PushClient.markNotificationRead(readTargetId);
+                const cleanUrl = window.location.pathname + window.location.search.replace(/([?&])notif_read=[^&]+(&|$)/, '$1').replace(/[?&]$/, '') + window.location.hash;
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+        } catch(e) {}
 
         // 1분 주기로 길시 도래 여부 백그라운드 점검
         setInterval(() => {

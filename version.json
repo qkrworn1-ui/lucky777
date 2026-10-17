@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.17.2039",
+  "version": "v2026.10.17.2045.30",
   "buildDate": "2026-10-17",
   "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용",
-  "buildTimestamp": "2026-10-17T20:39:41.721699",
+  "buildTimestamp": "2026-10-17T20:45:30.161066",
   "buildHistory": [
-    {
-      "version": "v2026.10.17.1209",
-      "buildDate": "2026-10-17",
-      "buildTime": "12:09",
-      "buildDateTime": "2026-10-17 12:09",
-      "buildTimestamp": "2026-10-17T12:09:39.440232",
-      "description": "QR 단건/연속 구매등록 초고속 안정화 및 카메라/캐시 병목 해결"
-    },
-    {
-      "version": "v2026.10.17.1216",
-      "buildDate": "2026-10-17",
-      "buildTime": "12:16",
-      "buildDateTime": "2026-10-17 12:16",
-      "buildTimestamp": "2026-10-17T12:16:36.002700",
-      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
-    },
     {
       "version": "v2026.10.17.1216.54",
       "buildDate": "2026-10-17",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-17 20:39",
       "buildTimestamp": "2026-10-17T20:39:41.721699",
       "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
+    },
+    {
+      "version": "v2026.10.17.2045",
+      "buildDate": "2026-10-17",
+      "buildTime": "20:45",
+      "buildDateTime": "2026-10-17 20:45",
+      "buildTimestamp": "2026-10-17T20:45:19.032473",
+      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
+    },
+    {
+      "version": "v2026.10.17.2045.30",
+      "buildDate": "2026-10-17",
+      "buildTime": "20:45",
+      "buildDateTime": "2026-10-17 20:45",
+      "buildTimestamp": "2026-10-17T20:45:30.161066",
+      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
     }
   ],
-  "buildTime": "20:39",
-  "buildDateTime": "2026-10-17 20:39"
+  "buildTime": "20:45",
+  "buildDateTime": "2026-10-17 20:45"
 }

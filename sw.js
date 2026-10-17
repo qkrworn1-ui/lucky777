@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lucky777-pwa-v2026.10.17.2039';
+const CACHE_NAME = 'lucky777-pwa-v2026.10.17.2045.30';
 
 function getBasePath() {
   try {
@@ -157,13 +157,26 @@ self.addEventListener('push', (event) => {
     data.badge = BASE_PATH + data.badge.replace(/^\//, '');
   }
 
+  const notifTag = data.tag || 'lucky777-alert';
+  let deterministicId = data.id;
+  if (!deterministicId) {
+    if (notifTag.startsWith('admin-msg-')) deterministicId = notifTag;
+    else if (notifTag.startsWith('lotto-result-')) deterministicId = notifTag.replace('lotto-result-', 'draw-result-');
+    else if (notifTag.startsWith('myeongri-')) deterministicId = notifTag;
+    else deterministicId = `push-${notifTag}`;
+  }
+
   const options = {
     body: data.body,
     icon: data.icon,
     badge: data.badge,
-    tag: data.tag || 'lucky777-alert',
+    tag: notifTag,
     vibrate: [100, 50, 100],
-    data: data.data || { url: `${BASE_PATH}?tab=tab-confirmed` },
+    data: Object.assign({}, data.data || {}, {
+      url: (data.data && data.data.url) || `${BASE_PATH}?tab=tab-confirmed`,
+      id: deterministicId,
+      tag: notifTag
+    }),
     actions: [
       { action: 'open', title: '확인하기' },
       { action: 'close', title: '닫기' }
@@ -171,9 +184,9 @@ self.addEventListener('push', (event) => {
   };
 
   const inboxItem = {
-    id: data.id || (`push-${data.tag || 'alert'}-${Date.now()}`),
-    category: (data.tag && data.tag.includes('myeongri')) ? 'myeongri' : (data.category || 'system'),
-    badge: (data.tag && data.tag.includes('myeongri')) ? '🔮 사주 길일·길시' : (data.badgeText || '🔔 스마트 알림'),
+    id: deterministicId,
+    category: (notifTag && notifTag.includes('myeongri')) ? 'myeongri' : (data.category || 'system'),
+    badge: (notifTag && notifTag.includes('myeongri')) ? '🔮 사주 길일·길시' : (data.badgeText || '🔔 스마트 알림'),
     title: data.title,
     body: data.body,
     createdAt: new Date().toISOString(),
@@ -204,14 +217,30 @@ self.addEventListener('notificationclick', (event) => {
 
   if (event.action === 'close') return;
 
+  const notifId = (event.notification.data && event.notification.data.id) || event.notification.tag || '';
   let targetUrl = `${BASE_PATH}`;
   if (event.notification.data && event.notification.data.url) {
     targetUrl = event.notification.data.url;
   }
+  if (notifId && !targetUrl.includes('notif_read=')) {
+    const delim = targetUrl.includes('?') ? '&' : '?';
+    targetUrl = `${targetUrl}${delim}notif_read=${encodeURIComponent(notifId)}`;
+  }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If a window is already open, navigate and focus
+      // 1) 열려 있는 모든 창에 해당 알림 읽음 처리 postMessage 전파
+      clientList.forEach((client) => {
+        try {
+          client.postMessage({
+            type: 'LUCKY777_NOTIFICATION_CLICKED',
+            id: notifId,
+            tag: event.notification.tag
+          });
+        } catch (e) {}
+      });
+
+      // 2) 이미 열려 있는 창이 있으면 포커스 및 네비게이션
       for (const client of clientList) {
         if (client.url && 'focus' in client) {
           if ('navigate' in client) {
@@ -220,7 +249,7 @@ self.addEventListener('notificationclick', (event) => {
           return client.focus();
         }
       }
-      // Otherwise open a new window
+      // 3) 없으면 새 창 오픈
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }
