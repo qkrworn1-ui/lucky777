@@ -51,6 +51,14 @@ function getKSTTime() {
 
 exports.handler = async (event, context) => {
     const headers = { 'Content-Type': 'application/json; charset=utf-8' };
+    return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+            message: 'Myeongri push notifications are permanently disabled per user policy.',
+            disabled: true
+        })
+    };
     const { dayName, hours, minutes } = getKSTTime();
     const currentRound = calculateCurrentRound();
 

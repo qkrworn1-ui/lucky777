@@ -418,6 +418,23 @@ export const PushClient = {
             let list = raw ? JSON.parse(raw) : [];
             if (!Array.isArray(list)) list = [];
 
+            // 🔮 사주 길일·길시 알림 원천 영구 삭제 및 알림함 정화 (Purge all myeongri notifications from inbox)
+            const origLen = list.length;
+            list = list.filter(item => {
+                if (!item) return false;
+                const itemId = String(item.id || '').trim();
+                const cat = String(item.category || '').trim();
+                if (itemId.startsWith('myeongri-') || cat === 'myeongri') {
+                    return false;
+                }
+                return true;
+            });
+            if (list.length !== origLen) {
+                try {
+                    localStorage.setItem(key, JSON.stringify(list.slice(0, 40)));
+                } catch(e) {}
+            }
+
             // 로그인 상태인 경우, guest 알림함에 남아있는 미확인 알림 자동 병합 및 중복 푸시 각인
             if (!key.endsWith('_guest')) {
                 try {
@@ -427,6 +444,8 @@ export const PushClient = {
                         let mergedAny = false;
                         guestList.forEach(gItem => {
                             if (!gItem || !gItem.id) return;
+                            const gId = String(gItem.id || '').trim();
+                            if (gId.startsWith('myeongri-') || gItem.category === 'myeongri') return;
                             const exists = list.some(it => it && (it.id === gItem.id || this.getCanonicalPushKey(it.id) === this.getCanonicalPushKey(gItem.id)));
                             if (!exists) {
                                 list.push(gItem);
@@ -570,6 +589,11 @@ export const PushClient = {
         const normBody = String(notif.body || '').trim();
         const canonKey = this.getCanonicalPushKey(notif.id);
 
+        // [길일·길시 알림 완전 배제] 사주 길일·길시 알림 생성 원천 차단
+        if (notif.category === 'myeongri' || cleanAlertId.startsWith('myeongri-')) {
+            return false;
+        }
+
         const deviceAlertKey = `lucky777_alert_fired_${cleanAlertId}`;
         // 동일 알림 푸시는 최초 1회만 발송: 이미 기기에서 푸시가 나갔다면 재푸시 원천 차단 (알림함에서만 확인)
         if (this.isPushAlreadyFired(cleanAlertId) || this.isPushAlreadyFired(normId) || (canonKey && this.isPushAlreadyFired(canonKey)) || localStorage.getItem(deviceAlertKey) === 'true') {
@@ -616,6 +640,31 @@ export const PushClient = {
                 existing.body = notif.body;
                 updated = true;
             }
+            if (notif.timeLabel && existing.timeLabel !== notif.timeLabel) {
+                existing.timeLabel = notif.timeLabel;
+                updated = true;
+            }
+            if (notif.actionType && existing.actionType !== notif.actionType) {
+                existing.actionType = notif.actionType;
+                updated = true;
+            }
+            if (notif.actionLabel && existing.actionLabel !== notif.actionLabel) {
+                existing.actionLabel = notif.actionLabel;
+                updated = true;
+            }
+            if (notif.category && existing.category !== notif.category) {
+                existing.category = notif.category;
+                updated = true;
+            }
+
+            // 최신 당첨 결과 알림(draw-result)은 항상 최신 결과로 알림함 최상단으로 이동 (Pin to Top)
+            if (cleanAlertId.startsWith('draw-result-') || cleanAlertId.startsWith('win-celebrate-')) {
+                list.splice(existingIdx, 1);
+                list.unshift(existing);
+                this.saveNotifications(list);
+                return true;
+            }
+
             if (updated) {
                 this.saveNotifications(list);
             }
@@ -629,15 +678,15 @@ export const PushClient = {
 
         const newItem = {
             id: notif.id,
-            category: notif.category || 'myeongri',
-            badge: notif.badge || '🔮 사주 길일·길시',
+            category: notif.category || 'result',
+            badge: notif.badge || '🔔 운도실력 알림',
             title: notif.title || '운도실력 맞춤 알림',
             body: notif.body || '',
             createdAt: notif.createdAt || new Date().toISOString(),
             timeLabel: notif.timeLabel || this.formatTimeLabel(notif.createdAt),
             unread: isAlreadyRead ? false : (notif.unread !== false),
-            actionType: notif.actionType || 'generator',
-            actionLabel: notif.actionLabel || '🎱 맞춤 번호 확인하기'
+            actionType: notif.actionType || 'confirmed',
+            actionLabel: notif.actionLabel || '📊 바로 확인하기'
         };
 
         list.unshift(newItem);
@@ -1056,12 +1105,28 @@ export const PushClient = {
      * 특정 회차의 공식 당첨번호 데이터 조회 (LOTTO_HISTORY / STATIC_DRAWS / state.lottoData)
      */
     getDrawData(round) {
+        const STATIC_DRAWS = {
+            '1246': { numbers: [16, 22, 23, 24, 27, 28], bonus: 6, rank1Winners: 16, rank1Prize: 1881025430, rank2Prize: 78376060, rank3Prize: 1497334, rank4Prize: 50000, rank5Prize: 5000, date: '2026-10-17' },
+            '1245': { numbers: [1, 10, 16, 25, 36, 44], bonus: 4, rank1Winners: 13, rank1Prize: 2139045375, rank2Prize: 73934571, rank3Prize: 1530948, rank4Prize: 50000, rank5Prize: 5000, date: '2026-10-10' },
+            '1244': { numbers: [11, 13, 21, 29, 34, 41], bonus: 33, rank1Winners: 10, rank1Prize: 2680410750, rank2Prize: 65375872, rank3Prize: 1481878, rank4Prize: 50000, rank5Prize: 5000, date: '2026-10-03' },
+            '1243': { numbers: [5, 9, 13, 20, 24, 40], bonus: 35, rank1Winners: 12, rank1Prize: 2289456563, rank2Prize: 64188782, rank3Prize: 1475604, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-26' },
+            '1242': { numbers: [3, 11, 14, 18, 26, 42], bonus: 37, rank1Winners: 9, rank1Prize: 2984128500, rank2Prize: 78529698, rank3Prize: 1598463, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-19' },
+            '1241': { numbers: [7, 12, 18, 23, 31, 45], bonus: 21, rank1Winners: 14, rank1Prize: 1948924875, rank2Prize: 58856637, rank3Prize: 1421453, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-12' },
+            '1240': { numbers: [4, 15, 19, 22, 38, 43], bonus: 25, rank1Winners: 11, rank1Prize: 2471928819, rank2Prize: 66989476, rank3Prize: 1481541, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-05' },
+            '1239': { numbers: [2, 8, 16, 27, 33, 44], bonus: 19, rank1Winners: 10, rank1Prize: 2718942300, rank2Prize: 71551114, rank3Prize: 1528612, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-29' },
+            '1238': { numbers: [6, 14, 25, 32, 40, 42], bonus: 9, rank1Winners: 12, rank1Prize: 2267891250, rank2Prize: 62996980, rank3Prize: 1466827, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-22' },
+            '1237': { numbers: [9, 13, 21, 25, 32, 45], bonus: 29, rank1Winners: 15, rank1Prize: 1814313000, rank2Prize: 58526226, rank3Prize: 1404629, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-15' },
+            '1236': { numbers: [12, 17, 20, 26, 28, 44], bonus: 38, rank1Winners: 8, rank1Prize: 3392478563, rank2Prize: 79823025, rank3Prize: 1588889, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-08' },
+            '1235': { numbers: [3, 8, 19, 23, 31, 35], bonus: 10, rank1Winners: 11, rank1Prize: 2465819728, rank2Prize: 67104175, rank3Prize: 1485642, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-01' }
+        };
+        const rStr = String(round);
+        if (STATIC_DRAWS[rStr]) return STATIC_DRAWS[rStr];
         try {
-            if (typeof LOTTO_HISTORY !== 'undefined' && LOTTO_HISTORY[String(round)]) {
-                return LOTTO_HISTORY[String(round)];
+            if (typeof LOTTO_HISTORY !== 'undefined' && LOTTO_HISTORY[rStr]) {
+                return LOTTO_HISTORY[rStr];
             }
-            if (typeof window !== 'undefined' && window.LOTTO_HISTORY && window.LOTTO_HISTORY[String(round)]) {
-                return window.LOTTO_HISTORY[String(round)];
+            if (typeof window !== 'undefined' && window.LOTTO_HISTORY && window.LOTTO_HISTORY[rStr]) {
+                return window.LOTTO_HISTORY[rStr];
             }
             if (typeof window.getSafeActualDraw === 'function') {
                 const d = window.getSafeActualDraw(round);
@@ -1220,15 +1285,28 @@ export const PushClient = {
 
     _isCheckingScheduledAlerts: false,
     _lastScheduledCheckTs: 0,
+    _lastCheckedUid: null,
 
     /**
      * 🔮 스마트 하이브리드 스케줄러:
-     * 앱 접속 또는 포그라운드 복귀 시 오늘의 [사주 길일], [사주 길시(1시간 전 및 진행중)], [토요일 마감 임박], [추첨 결과 발표]를 자동 점검하여
-     * 놓친 알림을 미확인 알림함에 자동 생성하고 필요 시 브라우저 알림을 발송합니다.
+     * 앱 접속 또는 포그라운드 복귀 시 [토요일 마감 임박], [추첨 결과 발표], [차기 추천번호]를 자동 점검하여
+     * 놓친 알림을 미확인 알림함에 자동 생성하고 최신 당첨 결과에 한해 브라우저 알림을 발송합니다.
      */
     checkAndGenerateScheduledAlerts(isInitialSubscribe = false) {
         if (this._isCheckingScheduledAlerts) return;
         const nowTs = Date.now();
+        let uid = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest';
+        if (typeof uid === 'string' && uid.startsWith('{')) {
+            try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
+        }
+        uid = String(uid || 'guest').trim().toLowerCase();
+
+        // 사용자 전환(guest -> 로그인 회원) 감지 시 쿨다운 즉시 해제
+        if (this._lastCheckedUid && this._lastCheckedUid !== uid) {
+            isInitialSubscribe = true;
+        }
+        this._lastCheckedUid = uid;
+
         // 초기 구독/강제 갱신이 아닌 경우 새로고침/재로그인 2.5초 내 다중 중복 평가 방지
         if (!isInitialSubscribe && (nowTs - (this._lastScheduledCheckTs || 0)) < 2500) {
             return;
@@ -1249,13 +1327,6 @@ export const PushClient = {
             const targetRound = this.getUpcomingRoundNumber();
             const alreadyPurchased = this.hasPurchasedCurrentRound(targetRound);
             const dispName = this.getUserDisplayName();
-            const schedule = this.getMyeongriSchedule();
-
-            let uid = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest';
-            if (typeof uid === 'string' && uid.startsWith('{')) {
-                try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
-            }
-            uid = String(uid || 'guest').trim().toLowerCase();
 
             // 토요일 20:00 이후는 이번 주 복권 판매 종료 및 추첨/정산 시간대
             const isSaturdayPostDraw = (todayName === '토요일' && curMinutes >= 20 * 60);
@@ -1268,69 +1339,7 @@ export const PushClient = {
                 }
             }
 
-            // 1. 사주 길일·길시 알림 체크 (미구매 & 토요일 20:00 판매마감 이전 시에만 생성)
-            if (schedule && !alreadyPurchased && !isSaturdayPostDraw) {
-                const isPrimaryDay = Array.isArray(schedule.primaryDays) && schedule.primaryDays.includes(todayName);
-                const isSecondaryDay = Array.isArray(schedule.secondaryDays) && schedule.secondaryDays.includes(todayName);
-                const isAuspiciousDay = isPrimaryDay || isSecondaryDay || todayName === '토요일';
-
-                // 1-A) 오늘의 길일 브리핑 알림 (오전 08:00 이후)
-                if ((isPrimaryDay || isSecondaryDay) && curMinutes >= 8 * 60) {
-                    const dayRankLabel = isPrimaryDay ? '1순위 황금 재물 길일' : '2순위 재물 길일';
-                    this.addNotification({
-                        id: `myeongri-day-${dateKey}`,
-                        category: 'myeongri',
-                        badge: `☀️ 오늘의 ${isPrimaryDay ? '1순위' : '2순위'} 길일`,
-                        title: `오늘은 ${dispName}의 ${dayRankLabel}(${todayName})입니다!`,
-                        body: `${schedule.stemName}(${schedule.elementKo}) 일간 기준 오늘의 추천 집중 길시는 [${schedule.timeSlot1}] 및 [${schedule.timeSlot2}]이며, 행운 색상은 [${schedule.luckyColor}]입니다.`,
-                        timeLabel: `오늘 (${todayName}) 길일 안내`,
-                        unread: true,
-                        actionType: 'fortune',
-                        actionLabel: '🧭 사주 길일·길시 상세 보기'
-                    }, false);
-                }
-
-                // 1-B) 오늘의 길시 1시간 전 & 진행중 알림 체크
-                if (isAuspiciousDay) {
-                    const slots = [
-                        { label: schedule.timeSlot1, rank: '1순위 집중 길시' },
-                        { label: schedule.timeSlot2, rank: '2순위 보조 길시' }
-                    ].filter(s => s.label);
-
-                    slots.forEach((slotObj, idx) => {
-                        const match = slotObj.label.match(/(\d{1,2}):(\d{2})\s*~\s*(\d{1,2}):(\d{2})/);
-                        if (!match) return;
-                        const startMin = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
-                        const endMin = parseInt(match[3], 10) * 60 + parseInt(match[4], 10);
-                        const oneHourBeforeMin = startMin - 60;
-
-                        if (curMinutes >= oneHourBeforeMin) {
-                            const isCurrentlyActive = curMinutes >= startMin && curMinutes <= endMin;
-                            const isPreAlertWindow = curMinutes >= oneHourBeforeMin && curMinutes < startMin;
-                            const statusTitle = isPreAlertWindow
-                                ? `[길시 1시간 전] ${dispName}의 ${slotObj.rank}(${slotObj.label}) 도래 안내`
-                                : (isCurrentlyActive
-                                    ? `[지금은 황금 길시!] ${dispName}의 ${slotObj.rank}(${slotObj.label}) 진행 중`
-                                    : `[오늘의 길시 알림] ${dispName}의 ${slotObj.rank}(${slotObj.label}) 안내`);
-
-                            const slotNotifId = `myeongri-slot${idx + 1}-${dateKey}`;
-                            this.addNotification({
-                                id: slotNotifId,
-                                category: 'myeongri',
-                                badge: isCurrentlyActive ? '🔮 황금 길시 진행중' : '🔮 사주 길시 알림',
-                                title: statusTitle,
-                                body: `오늘(${todayName}) ${dispName}의 일간(${schedule.stemName})과 재성(${schedule.wealthElementKo}) 기운이 조화를 이루는 [${slotObj.label}] 시간대입니다. 아직 제 ${targetRound}회차 구매 등록 전이시라면 맞춤 번호를 확인해 보세요.`,
-                                timeLabel: `오늘 ${match[1]}:${match[2]} 길시`,
-                                unread: true,
-                                actionType: 'generator',
-                                actionLabel: '🎱 길시 맞춤 번호 생성하기'
-                            }, false); // 스마트폰 푸시 제외 (알림함에서만 확인)
-                        }
-                    });
-                }
-            }
-
-            // 2. 토요일 판매 마감 임박 리마인더 (토요일 18:00 ~ 20:00 사이, 미구매 회원 - 알림함에서 확인)
+            // 1. 토요일 판매 마감 임박 리마인더 (토요일 18:00 ~ 20:00 사이, 미구매 회원 - 스마트폰 푸시 제외, 알림함에서만 확인)
             if (todayName === '토요일' && curMinutes >= 18 * 60 && curMinutes < 20 * 60 && !alreadyPurchased) {
                 const lockNotifId = `lock-reminder-${targetRound}`;
                 this.addNotification({
@@ -1346,13 +1355,16 @@ export const PushClient = {
                 }, false); // 스마트폰 푸시 제외 (알림함에서만 확인)
             }
 
-            // 3. 최신 회차 추첨 결과 & 구매확정 당첨내역 통합 알림 (스마트폰 푸시 허용 유일 대상)
+            // 2. 최신 회차 추첨 결과 & 구매확정 당첨내역 통합 알림 (스마트폰 푸시 허용 유일 대상)
             let latestDrawnRound = targetRound - 1;
             if (typeof window.getLatestDrawnRound === 'function') {
                 try {
                     const ldr = window.getLatestDrawnRound();
                     if (ldr && ldr > 1000) latestDrawnRound = ldr;
                 } catch(e) {}
+            }
+            if (this.getDrawData(1246) && latestDrawnRound < 1246) {
+                latestDrawnRound = 1246;
             }
 
             if (latestDrawnRound >= 1235) {
@@ -1531,7 +1543,7 @@ export const PushClient = {
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 14px; border-radius:12px; background:rgba(15,23,42,0.72); border:1px solid rgba(255,255,255,0.08); margin-bottom:10px; font-size:0.76rem; color:#94a3b8;">
                         <div style="display:flex; align-items:center; gap:7px; min-width:0;">
                             <span style="color:#10b981; font-weight:900;">✓</span>
-                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">길일·길시 및 추첨 알림을 모두 확인하셨습니다.</span>
+                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">모든 알림을 확인하셨습니다.</span>
                         </div>
                         <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#fbbf24; font-size:0.72rem; font-weight:800; padding:4px 10px; border-radius:8px; cursor:pointer; flex-shrink:0;">
                             🔔 알림함 (${list.length})
@@ -1548,7 +1560,7 @@ export const PushClient = {
                         <div style="display:flex; align-items:center; gap:6px;">
                             <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#fbbf24; box-shadow:0 0 8px #fbbf24;"></span>
                             <span style="font-size:0.8rem; font-weight:900; color:#fbbf24;">🔔 미확인 알림 ${unreadCount}건</span>
-                            <span style="font-size:0.68rem; padding:1px 6px; border-radius:6px; background:rgba(245,158,11,0.2); color:#fde68a; font-weight:800;">${latest.badge || '길일·길시'}</span>
+                            <span style="font-size:0.68rem; padding:1px 6px; border-radius:6px; background:rgba(245,158,11,0.2); color:#fde68a; font-weight:800;">${latest.badge || '알림'}</span>
                         </div>
                         <div style="display:flex; align-items:center; gap:8px;">
                             <button type="button" onclick="window.PushClient && window.PushClient.markAllNotificationsRead()" style="background:transparent; border:none; color:#cbd5e1; font-size:0.72rem; font-weight:700; text-decoration:underline; cursor:pointer; padding:2px 4px;">
@@ -1615,6 +1627,7 @@ export const PushClient = {
      * 통합 미확인 알림 센터 모달 열기
      */
     openNotificationCenterModal(filter = 'all') {
+        this.checkAndGenerateScheduledAlerts(true);
         this._currentModalFilter = filter || this._currentModalFilter || 'all';
         let modal = document.getElementById('lucky777NotificationCenterModal');
         if (!modal) {
@@ -1646,30 +1659,9 @@ export const PushClient = {
             ? list.filter(n => n && n.unread)
             : (filter === 'result'
                 ? list.filter(n => n && n.category === 'result')
-                : (filter === 'myeongri'
-                    ? list.filter(n => n && n.category === 'myeongri')
-                    : (filter === 'admin'
-                        ? list.filter(n => n && (n.category === 'admin' || String(n.id || '').startsWith('admin-msg-')))
-                        : list)));
-
-        const schedule = this.getMyeongriSchedule();
-        const isPermGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
-        const isSubscribed = isPermGranted && localStorage.getItem('lucky777_push_subscribed') === 'true';
-
-        const scheduleSummaryHtml = schedule
-            ? `<div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:10px; padding:9px 12px; margin-bottom:10px; font-size:0.74rem; color:#e2e8f0; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
-                <div>
-                    <span style="color:#fbbf24; font-weight:800;">🧭 내 사주 길일·길시 스케줄:</span>
-                    <strong style="color:#fff; margin-left:4px;">${schedule.primaryDayShort || '토요일'}</strong> · 집중 길시 <strong style="color:#fde047;">${schedule.timeSlot1}</strong>
-                </div>
-                <span style="font-size:0.68rem; padding:2px 7px; border-radius:999px; background:${isSubscribed ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}; color:${isSubscribed ? '#34d399' : '#fbbf24'}; font-weight:800;">
-                    ${isSubscribed ? '🟢 푸시+앱내 자동감지 활성' : '⚡ 앱내 길일·길시 자동감지 활성'}
-                </span>
-               </div>`
-            : `<div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); border-radius:10px; padding:9px 12px; margin-bottom:10px; font-size:0.74rem; color:#cbd5e1; display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                <span>💡 생년월일을 등록하시면 사주 맞춤 길일·길시 알림이 자동 생성됩니다.</span>
-                <button type="button" onclick="window.PushClient.handleNotificationAction('fortune')" style="background:#3b82f6; color:#fff; border:none; padding:4px 9px; border-radius:6px; font-size:0.7rem; font-weight:800; cursor:pointer;">등록하기</button>
-               </div>`;
+                : (filter === 'admin'
+                    ? list.filter(n => n && (n.category === 'admin' || String(n.id || '').startsWith('admin-msg-')))
+                    : list));
 
         const itemsHtml = filtered.length === 0
             ? `<div style="padding:36px 16px; text-align:center; color:#94a3b8; font-size:0.82rem;">
@@ -1713,7 +1705,7 @@ export const PushClient = {
                                     ${unreadCount > 0 ? `미확인 ${unreadCount}건` : '모두 확인'}
                                 </span>
                             </div>
-                            <div style="font-size:0.7rem; color:#94a3b8;">관리자 메시지 · 사주 길일·길시 · 마감 임박 · 추첨 결과</div>
+                            <div style="font-size:0.7rem; color:#94a3b8;">관리자 메시지 · 당첨 결과 발표 · 차기 추천번호 안내</div>
                         </div>
                     </div>
                     <button type="button" onclick="window.PushClient && window.PushClient.closeNotificationCenterModal()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:1.1rem; cursor:pointer;">&times;</button>
@@ -1721,7 +1713,6 @@ export const PushClient = {
 
                 <!-- Sub Toolbar -->
                 <div style="padding:10px 14px; background:#090d16; border-bottom:1px solid rgba(255,255,255,0.06);">
-                    ${scheduleSummaryHtml}
                     <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
                         <div style="display:flex; align-items:center; gap:5px; flex-wrap:wrap;">
                             <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'all' ? '#f59e0b' : '#1e293b'}; color:${filter === 'all' ? '#0f172a' : '#cbd5e1'};">
@@ -1735,9 +1726,6 @@ export const PushClient = {
                             </button>
                             <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('admin')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'admin' ? '#f59e0b' : '#1e293b'}; color:${filter === 'admin' ? '#0f172a' : '#cbd5e1'};">
                                 👑 관리자 메시지
-                            </button>
-                            <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('myeongri')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'myeongri' ? '#f59e0b' : '#1e293b'}; color:${filter === 'myeongri' ? '#0f172a' : '#cbd5e1'};">
-                                🔮 길일·길시
                             </button>
                         </div>
                         <div style="display:flex; align-items:center; gap:6px;">

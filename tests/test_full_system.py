@@ -4461,6 +4461,45 @@ Lotto 6/45
             ledger_code = f.read()
         self.assertIn("window.PushClient.checkAndGenerateScheduledAlerts(true);", ledger_code)
 
+    # [Test 121] Myeongri Notification Purge and Draw-Result Top Inbox Guarantee
+    def test_121_myeongri_purge_and_draw_result_top_inbox_guarantee(self):
+        """Verify that auspicious date/time (myeongri) notifications are permanently purged and blocked, and draw-result 1246 is pinned to the top."""
+        push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
+        with open(push_path, 'r', encoding='utf-8') as f:
+            push_code = f.read()
+
+        index_path = os.path.join(self.root_dir, 'index.html')
+        with open(index_path, 'r', encoding='utf-8') as f:
+            index_code = f.read()
+
+        cron_path = os.path.join(self.root_dir, 'netlify', 'functions', 'cron-myeongri-push.js')
+        with open(cron_path, 'r', encoding='utf-8') as f:
+            cron_code = f.read()
+
+        # 1. getNotifications() purges any myeongri items automatically
+        self.assertIn("itemId.startsWith('myeongri-') || cat === 'myeongri'", push_code)
+        self.assertIn("localStorage.setItem(key, JSON.stringify(list.slice(0, 40)));", push_code)
+
+        # 2. addNotification() blocks myeongri notifications from being created
+        self.assertIn("notif.category === 'myeongri' || cleanAlertId.startsWith('myeongri-')", push_code)
+
+        # 3. addNotification() pins draw-result updates to the top of inbox
+        self.assertIn("cleanAlertId.startsWith('draw-result-') || cleanAlertId.startsWith('win-celebrate-')", push_code)
+        self.assertIn("list.splice(existingIdx, 1);", push_code)
+        self.assertIn("list.unshift(existing);", push_code)
+
+        # 4. STATIC_DRAWS embedded in getDrawData guarantees round 1246 result availability
+        self.assertIn("'1246': { numbers: [16, 22, 23, 24, 27, 28], bonus: 6", push_code)
+
+        # 5. openNotificationCenterModal forces re-check on open
+        self.assertIn("this.checkAndGenerateScheduledAlerts(true);", push_code)
+
+        # 6. index.html assigns LOTTO_HISTORY to window.LOTTO_HISTORY
+        self.assertIn("window.LOTTO_HISTORY = LOTTO_HISTORY", index_code)
+
+        # 7. cron-myeongri-push.js is permanently disabled
+        self.assertIn("Myeongri push notifications are permanently disabled per user policy.", cron_code)
+
 if __name__ == '__main__':
     unittest.main()
 
