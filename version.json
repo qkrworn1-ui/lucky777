@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.17.2159",
+  "version": "v2026.10.17.2220.56",
   "buildDate": "2026-10-17",
   "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용",
-  "buildTimestamp": "2026-10-17T21:59:16.536540",
+  "buildTimestamp": "2026-10-17T22:20:56.470781",
   "buildHistory": [
-    {
-      "version": "v2026.10.17.1653",
-      "buildDate": "2026-10-17",
-      "buildTime": "16:53",
-      "buildDateTime": "2026-10-17 16:53",
-      "buildTimestamp": "2026-10-17T16:53:10.798557",
-      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
-    },
-    {
-      "version": "v2026.10.17.1653.28",
-      "buildDate": "2026-10-17",
-      "buildTime": "16:53",
-      "buildDateTime": "2026-10-17 16:53",
-      "buildTimestamp": "2026-10-17T16:53:28.136029",
-      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
-    },
     {
       "version": "v2026.10.17.2038",
       "buildDate": "2026-10-17",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-17 21:59",
       "buildTimestamp": "2026-10-17T21:59:16.536540",
       "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
+    },
+    {
+      "version": "v2026.10.17.2220",
+      "buildDate": "2026-10-17",
+      "buildTime": "22:20",
+      "buildDateTime": "2026-10-17 22:20",
+      "buildTimestamp": "2026-10-17T22:20:09.418466",
+      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
+    },
+    {
+      "version": "v2026.10.17.2220.56",
+      "buildDate": "2026-10-17",
+      "buildTime": "22:20",
+      "buildDateTime": "2026-10-17 22:20",
+      "buildTimestamp": "2026-10-17T22:20:56.470781",
+      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
     }
   ],
-  "buildTime": "21:59",
-  "buildDateTime": "2026-10-17 21:59"
+  "buildTime": "22:20",
+  "buildDateTime": "2026-10-17 22:20"
 }

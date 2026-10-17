@@ -413,9 +413,36 @@ export const PushClient = {
 
     getNotifications() {
         try {
-            const raw = localStorage.getItem(this.getInboxStorageKey());
-            const list = raw ? JSON.parse(raw) : [];
-            return Array.isArray(list) ? list : [];
+            const key = this.getInboxStorageKey();
+            const raw = localStorage.getItem(key);
+            let list = raw ? JSON.parse(raw) : [];
+            if (!Array.isArray(list)) list = [];
+
+            // 로그인 상태인 경우, guest 알림함에 남아있는 미확인 알림 자동 병합 및 중복 푸시 각인
+            if (!key.endsWith('_guest')) {
+                try {
+                    const guestRaw = localStorage.getItem('lucky777_notification_inbox_guest');
+                    const guestList = guestRaw ? JSON.parse(guestRaw) : [];
+                    if (Array.isArray(guestList) && guestList.length > 0) {
+                        let mergedAny = false;
+                        guestList.forEach(gItem => {
+                            if (!gItem || !gItem.id) return;
+                            const exists = list.some(it => it && (it.id === gItem.id || this.getCanonicalPushKey(it.id) === this.getCanonicalPushKey(gItem.id)));
+                            if (!exists) {
+                                list.push(gItem);
+                                mergedAny = true;
+                            }
+                            this.recordPushFired(gItem.id);
+                        });
+                        if (mergedAny) {
+                            localStorage.setItem(key, JSON.stringify(list.slice(0, 40)));
+                        }
+                        localStorage.removeItem('lucky777_notification_inbox_guest');
+                    }
+                } catch(e) {}
+            }
+
+            return list;
         } catch (e) {
             return [];
         }
@@ -432,19 +459,64 @@ export const PushClient = {
     },
 
     /**
+     * 알림 ID로부터 회차/길시/관리자 식별 고유 카테고리 정규화 키 추출 (기기 단위 영구 발송 추적용)
+     */
+    getCanonicalPushKey(notifId) {
+        if (!notifId) return '';
+        const norm = String(notifId).trim().replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+        const slotMatch = norm.match(/myeongri-slot(\d+)-(\d{4}-\d{2}-\d{2})/);
+        if (slotMatch) return `slot_${slotMatch[1]}_${slotMatch[2]}`;
+        const dayMatch = norm.match(/myeongri-day-(\d{4}-\d{2}-\d{2})/);
+        if (dayMatch) return `day_${dayMatch[1]}`;
+        const lockMatch = norm.match(/lock-reminder-(\d+)/);
+        if (lockMatch) return `round_${lockMatch[1]}_lock`;
+        const winMatch = norm.match(/(?:win-celebrate|draw-result)-(\d+)/);
+        if (winMatch) return `round_${winMatch[1]}_result`;
+        const recMatch = norm.match(/rec-ready-(\d+)/);
+        if (recMatch) return `round_${recMatch[1]}_rec`;
+        const adminMatch = norm.match(/admin-msg-(.+)/);
+        if (adminMatch) return `admin_${adminMatch[1]}`;
+        return norm;
+    },
+
+    /**
      * 특정 알림에 대해 이미 기기에서 푸시 팝업이 발송되었는지 확인 (1회 발송 보장)
      */
     isPushAlreadyFired(notifId) {
         if (!notifId) return false;
         const normId = String(notifId).trim();
         const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+        const canonKey = this.getCanonicalPushKey(notifId);
+
         try {
+            // 1. 발송 완료 플래그 (ID 단위)
             if (localStorage.getItem(`lucky777_alert_fired_${cleanId}`) === 'true') return true;
             if (localStorage.getItem(`lucky777_alert_fired_${normId}`) === 'true') return true;
             if (localStorage.getItem(`lucky777_pushed_${cleanId}`) === 'true') return true;
             if (localStorage.getItem(`lucky777_pushed_${normId}`) === 'true') return true;
+
+            // 2. 발송 완료 플래그 (카테고리/회차/길시 정규화 단위)
+            if (canonKey) {
+                if (localStorage.getItem(`lucky777_fired_${canonKey}`) === 'true') return true;
+                if (localStorage.getItem(`lucky777_alert_fired_${canonKey}`) === 'true') return true;
+            }
+
+            // 3. 읽음 완료 플래그
             if (localStorage.getItem(`lucky777_read_${cleanId}`) === 'true') return true;
             if (localStorage.getItem(`lucky777_read_${normId}`) === 'true') return true;
+            if (canonKey && localStorage.getItem(`lucky777_read_${canonKey}`) === 'true') return true;
+
+            // 4. 관리자 메시지 전용 알림/dismiss 플래그
+            if (cleanId.startsWith('admin-msg-')) {
+                const rawMsgId = cleanId.replace('admin-msg-', '');
+                let uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
+                if (typeof uid === 'string' && uid.startsWith('{')) {
+                    try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
+                }
+                uid = String(uid || '').trim().toLowerCase();
+                if (localStorage.getItem(`lucky777_admin_notified_${uid}_${rawMsgId}`) === 'true') return true;
+                if (localStorage.getItem(`admin_popup_dismissed_${uid}_${rawMsgId}`) === 'true') return true;
+            }
         } catch(e) {}
         return false;
     },
@@ -456,11 +528,28 @@ export const PushClient = {
         if (!notifId) return;
         const normId = String(notifId).trim();
         const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+        const canonKey = this.getCanonicalPushKey(notifId);
+
         try {
             localStorage.setItem(`lucky777_alert_fired_${cleanId}`, 'true');
             localStorage.setItem(`lucky777_alert_fired_${normId}`, 'true');
             localStorage.setItem(`lucky777_pushed_${cleanId}`, 'true');
             localStorage.setItem(`lucky777_pushed_${normId}`, 'true');
+            if (canonKey) {
+                localStorage.setItem(`lucky777_fired_${canonKey}`, 'true');
+                localStorage.setItem(`lucky777_alert_fired_${canonKey}`, 'true');
+            }
+            if (cleanId.startsWith('admin-msg-')) {
+                const rawMsgId = cleanId.replace('admin-msg-', '');
+                let uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
+                if (typeof uid === 'string' && uid.startsWith('{')) {
+                    try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
+                }
+                uid = String(uid || '').trim().toLowerCase();
+                if (uid && rawMsgId) {
+                    localStorage.setItem(`lucky777_admin_notified_${uid}_${rawMsgId}`, 'true');
+                }
+            }
         } catch(e) {}
     },
 
@@ -470,10 +559,11 @@ export const PushClient = {
         const cleanAlertId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
         const normTitle = String(notif.title || '').trim();
         const normBody = String(notif.body || '').trim();
+        const canonKey = this.getCanonicalPushKey(notif.id);
 
         const deviceAlertKey = `lucky777_alert_fired_${cleanAlertId}`;
         // 동일 알림 푸시는 최초 1회만 발송: 이미 기기에서 푸시가 나갔다면 재푸시 원천 차단 (알림함에서만 확인)
-        if (this.isPushAlreadyFired(cleanAlertId) || this.isPushAlreadyFired(normId) || localStorage.getItem(deviceAlertKey) === 'true') {
+        if (this.isPushAlreadyFired(cleanAlertId) || this.isPushAlreadyFired(normId) || (canonKey && this.isPushAlreadyFired(canonKey)) || localStorage.getItem(deviceAlertKey) === 'true') {
             showBrowserAlert = false;
         }
 
@@ -483,6 +573,7 @@ export const PushClient = {
         // - 동일 ID
         // - push- 접두사 차이 무시 동일 ID (admin-msg-123 === push-admin-msg-123)
         // - lotto-result- 와 draw-result- 상호 호환 ID
+        // - canonical 키가 동일한 경우
         // - 제목과 본문 내용이 100% 동일한 경우
         const existingIdx = list.findIndex(item => {
             if (!item) return false;
@@ -490,6 +581,7 @@ export const PushClient = {
             if (itemId === normId) return true;
             if (itemId.replace(/^push-/, '') === normId.replace(/^push-/, '')) return true;
             if (itemId.replace('lotto-result-', 'draw-result-') === normId.replace('lotto-result-', 'draw-result-')) return true;
+            if (canonKey && this.getCanonicalPushKey(item.id) === canonKey) return true;
             if (normTitle && normBody && item.title === normTitle && item.body === normBody) return true;
             return false;
         });
@@ -518,7 +610,8 @@ export const PushClient = {
 
         // 사용자가 이미 확인한 알림인 경우 unread = false로 보존
         const isAlreadyRead = (localStorage.getItem(`lucky777_read_${cleanAlertId}`) === 'true') ||
-            (localStorage.getItem(`lucky777_read_${normId}`) === 'true');
+            (localStorage.getItem(`lucky777_read_${normId}`) === 'true') ||
+            (canonKey && localStorage.getItem(`lucky777_read_${canonKey}`) === 'true');
 
         const newItem = {
             id: notif.id,
@@ -545,14 +638,37 @@ export const PushClient = {
                 const origin = window.location.origin;
                 const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
                 const targetTab = (newItem.actionType === 'confirmed') ? 'tab-confirmed-list' : ((newItem.actionType === 'fortune') ? 'tab-dashboard' : 'tab-generator');
-                reg.showNotification(newItem.title, {
-                    body: newItem.body,
-                    icon: `${origin}${basePath}icons/icon-192.png`,
-                    badge: `${origin}${basePath}icons/favicon.png`,
-                    tag: newItem.id,
-                    vibrate: [150, 80, 150],
-                    data: { url: `${origin}${basePath}?tab=${targetTab}`, id: newItem.id }
-                }).catch(() => {});
+
+                // OS 알림바(Tray)에 이미 활성 표시 중인 동일 알림이 있으면 새로고침 시 중복 진동/알림 방지
+                const checkTag = newItem.id;
+                const getNotifsPromise = (typeof reg.getNotifications === 'function')
+                    ? reg.getNotifications({ tag: checkTag })
+                    : Promise.resolve([]);
+
+                getNotifsPromise.then(activeNotifs => {
+                    if (Array.isArray(activeNotifs) && activeNotifs.length > 0) {
+                        return; // 이미 화면 상단바에 표시되어 있으므로 재울림 방지
+                    }
+                    reg.showNotification(newItem.title, {
+                        body: newItem.body,
+                        icon: `${origin}${basePath}icons/icon-192.png`,
+                        badge: `${origin}${basePath}icons/favicon.png`,
+                        tag: newItem.id,
+                        renotify: false,
+                        vibrate: [150, 80, 150],
+                        data: { url: `${origin}${basePath}?tab=${targetTab}`, id: newItem.id }
+                    }).catch(() => {});
+                }).catch(() => {
+                    reg.showNotification(newItem.title, {
+                        body: newItem.body,
+                        icon: `${origin}${basePath}icons/icon-192.png`,
+                        badge: `${origin}${basePath}icons/favicon.png`,
+                        tag: newItem.id,
+                        renotify: false,
+                        vibrate: [150, 80, 150],
+                        data: { url: `${origin}${basePath}?tab=${targetTab}`, id: newItem.id }
+                    }).catch(() => {});
+                });
             }).catch(() => {});
         }
         return true;
@@ -777,7 +893,7 @@ export const PushClient = {
                 }
             }
 
-            // 5. Check localStorage by multiple keys
+            // 5. Check localStorage by multiple individual keys
             if (!ledger || Object.keys(ledger).length === 0) {
                 const keys = [`lotto_actual_ledger_${uid}`, `lotto_actual_ledger_${uid.toLowerCase()}`, 'lotto_actual_ledger_guest'];
                 for (const k of keys) {
@@ -794,6 +910,38 @@ export const PushClient = {
                         } catch(e) {}
                     }
                 }
+            }
+
+            // 6. Check cached allUsersPurchasesMap and allUsersMergedLedger in localStorage
+            if (!ledger || Object.keys(ledger).length === 0) {
+                try {
+                    const rawMap = localStorage.getItem('lotto_all_users_purchases_map_cache');
+                    if (rawMap) {
+                        const parsedMap = JSON.parse(rawMap);
+                        if (parsedMap && typeof parsedMap === 'object') {
+                            const uData = parsedMap[uid] || parsedMap[uid.toLowerCase()];
+                            if (uData && uData.ledger) {
+                                const rList = uData.ledger[String(rNum)] || uData.ledger[rNum];
+                                if (Array.isArray(rList) && rList.some(r => r && Array.isArray(r.combos) && r.combos.length > 0)) {
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                } catch(e) {}
+
+                try {
+                    const rawMerged = localStorage.getItem('lotto_all_users_merged_ledger_cache');
+                    if (rawMerged) {
+                        const parsedMerged = JSON.parse(rawMerged);
+                        if (parsedMerged && typeof parsedMerged === 'object') {
+                            const rList = parsedMerged[String(rNum)] || parsedMerged[rNum];
+                            if (Array.isArray(rList) && rList.some(r => r && (String(r.user || r.userId || '').toLowerCase() === uid) && Array.isArray(r.combos) && r.combos.length > 0)) {
+                                return true;
+                            }
+                        }
+                    }
+                } catch(e) {}
             }
 
             if (ledger) {
@@ -837,7 +985,7 @@ export const PushClient = {
             if (Array.isArray(rList) && rList.length > 0) return rList;
         }
 
-        // 4. Try localStorage keys
+        // 4. Try localStorage individual keys
         const keys = [
             `lotto_actual_ledger_${uid}`,
             `lotto_actual_ledger_${uid.toLowerCase()}`,
@@ -857,6 +1005,35 @@ export const PushClient = {
                 }
             } catch(e) {}
         }
+
+        // 5. Try cached maps in localStorage: lotto_all_users_purchases_map_cache, lotto_all_users_merged_ledger_cache
+        try {
+            const rawMap = localStorage.getItem('lotto_all_users_purchases_map_cache');
+            if (rawMap) {
+                const parsedMap = JSON.parse(rawMap);
+                if (parsedMap && typeof parsedMap === 'object') {
+                    const uData = parsedMap[uid] || parsedMap[uid.toLowerCase()];
+                    if (uData && uData.ledger) {
+                        const rList = uData.ledger[String(rNum)] || uData.ledger[rNum];
+                        if (Array.isArray(rList) && rList.length > 0) return rList;
+                    }
+                }
+            }
+        } catch(e) {}
+
+        try {
+            const rawMerged = localStorage.getItem('lotto_all_users_merged_ledger_cache');
+            if (rawMerged) {
+                const parsedMerged = JSON.parse(rawMerged);
+                if (parsedMerged && typeof parsedMerged === 'object') {
+                    const rList = parsedMerged[String(rNum)] || parsedMerged[rNum];
+                    if (Array.isArray(rList) && rList.length > 0) {
+                        const userReceipts = rList.filter(r => r && String(r.user || r.userId || '').toLowerCase() === uid);
+                        if (userReceipts.length > 0) return userReceipts;
+                    }
+                }
+            }
+        } catch(e) {}
 
         return [];
     },
@@ -949,7 +1126,7 @@ export const PushClient = {
             this.dismissPurchaseRemindersForRound(rNum);
             this.updateBannerVisibility();
             // 실구매 등록 완료 후 즉시 당첨 채점 및 미확인 알림 상태 최신화
-            this.checkAndGenerateScheduledAlerts();
+            this.checkAndGenerateScheduledAlerts(true);
             this.renderUnreadNotificationUI();
         } catch(e) {
             console.warn('[PushClient] onPurchaseRegistered error:', e);
@@ -962,6 +1139,15 @@ export const PushClient = {
     dismissPurchaseRemindersForRound(round) {
         try {
             const rNum = Number(round) || this.getUpcomingRoundNumber();
+            const lockId = `lock-reminder-${rNum}`;
+
+            // 구매 완료 회차의 마감 리마인더 푸시 영구 봉인 각인
+            this.recordPushFired(lockId);
+            try {
+                localStorage.setItem(`lucky777_fired_round_${rNum}_lock`, 'true');
+                localStorage.setItem(`lucky777_alert_fired_${lockId}`, 'true');
+            } catch(e) {}
+
             const list = this.getNotifications();
             let changed = false;
             list.forEach(item => {
@@ -1018,12 +1204,24 @@ export const PushClient = {
         return 1 + diffWeeks + 1;
     },
 
+    _isCheckingScheduledAlerts: false,
+    _lastScheduledCheckTs: 0,
+
     /**
      * 🔮 스마트 하이브리드 스케줄러:
      * 앱 접속 또는 포그라운드 복귀 시 오늘의 [사주 길일], [사주 길시(1시간 전 및 진행중)], [토요일 마감 임박], [추첨 결과 발표]를 자동 점검하여
      * 놓친 알림을 미확인 알림함에 자동 생성하고 필요 시 브라우저 알림을 발송합니다.
      */
     checkAndGenerateScheduledAlerts(isInitialSubscribe = false) {
+        if (this._isCheckingScheduledAlerts) return;
+        const nowTs = Date.now();
+        // 초기 구독/강제 갱신이 아닌 경우 새로고침/재로그인 2.5초 내 다중 중복 평가 방지
+        if (!isInitialSubscribe && (nowTs - (this._lastScheduledCheckTs || 0)) < 2500) {
+            return;
+        }
+        this._lastScheduledCheckTs = nowTs;
+        this._isCheckingScheduledAlerts = true;
+
         try {
             const now = new Date();
             const yyyy = now.getFullYear();
@@ -1247,6 +1445,8 @@ export const PushClient = {
             this.renderUnreadNotificationUI();
         } catch (err) {
             console.warn('[PushClient] checkAndGenerateScheduledAlerts error:', err);
+        } finally {
+            this._isCheckingScheduledAlerts = false;
         }
     },
 
@@ -1775,12 +1975,16 @@ export const PushClient = {
             const isReadLocally = !!(existingItem && !existingItem.unread);
             const isUnread = (msg.status !== 'read') && !isReadLocally;
             const notifiedKey = `lucky777_admin_notified_${userId}_${msg.id}`;
-            const alreadyAlerted = localStorage.getItem(notifiedKey) === 'true';
+            const alreadyAlerted = (localStorage.getItem(notifiedKey) === 'true') ||
+                this.isPushAlreadyFired(inboxId) ||
+                (localStorage.getItem(`lucky777_fired_admin_${msg.id}`) === 'true') ||
+                (localStorage.getItem(`admin_popup_dismissed_${userId}_${msg.id}`) === 'true');
 
             if (msg.saveToInbox !== false) {
                 if (!existingItem) {
                     if (isUnread && !alreadyAlerted) {
                         localStorage.setItem(notifiedKey, 'true');
+                        this.recordPushFired(inboxId);
                     }
                     this.addNotification({
                         id: inboxId,
@@ -1798,9 +2002,10 @@ export const PushClient = {
                     existingItem.unread = false;
                     this.saveNotifications(existingList);
                 }
-            } else if (isUnread && !alreadyAlerted) {
-                // 알림함 저장 없이 푸시만 보낸 경우에도 푸시 동의 사용자에게 브라우저 알림 발송
+            } else if (isUnread && !alreadyAlerted && !this.isPushAlreadyFired(inboxId)) {
+                // 알림함 저장 없이 푸시만 보낸 경우에도 푸시 동의 사용자에게 브라우저 알림 발송 (최초 1회만)
                 localStorage.setItem(notifiedKey, 'true');
+                this.recordPushFired(inboxId);
                 if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
                     navigator.serviceWorker.ready.then(reg => {
                         const origin = window.location.origin;
@@ -1810,6 +2015,7 @@ export const PushClient = {
                             icon: `${origin}${basePath}icons/icon-192.png`,
                             badge: `${origin}${basePath}icons/favicon.png`,
                             tag: inboxId,
+                            renotify: false,
                             vibrate: [200, 100, 200, 100, 350],
                             data: { url: `${origin}${basePath}?tab=tab-dashboard`, id: inboxId }
                         }).catch(() => {});

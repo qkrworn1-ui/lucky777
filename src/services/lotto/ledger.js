@@ -1635,6 +1635,10 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
 
         if (typeof window.triggerGlobalEvent === 'function') window.triggerGlobalEvent('onLedgerDataUpdated');
 
+        if (typeof window !== 'undefined' && window.PushClient && typeof window.PushClient.checkAndGenerateScheduledAlerts === 'function') {
+            try { window.PushClient.checkAndGenerateScheduledAlerts(true); } catch(e) {}
+        }
+
         if (typeof window !== 'undefined' && typeof window.renderLandingDashboard === 'function') {
             try { window.renderLandingDashboard(); } catch(e){}
         }

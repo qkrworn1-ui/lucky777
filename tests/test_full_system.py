@@ -4417,8 +4417,54 @@ Lotto 6/45
             auth_code = f.read()
         self.assertIn("window.PushClient.checkAndGenerateScheduledAlerts();", auth_code)
 
+    def test_108_device_push_once_guarantee(self):
+        """Test 108: Verify canonical push deduplication, OS tray renotify defense, throttle cooldown, and ledger push sync."""
+        push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
+        with open(push_path, 'r', encoding='utf-8') as f:
+            push_code = f.read()
+
+        # 1. Canonical push key extractor and multi-layer fired registry
+        self.assertIn("getCanonicalPushKey(notifId)", push_code)
+        self.assertIn("slotMatch = norm.match(/myeongri-slot(\\d+)-(\\d{4}-\\d{2}-\\d{2})/", push_code)
+        self.assertIn("dayMatch = norm.match(/myeongri-day-(\\d{4}-\\d{2}-\\d{2})/", push_code)
+        self.assertIn("lockMatch = norm.match(/lock-reminder-(\\d+)/)", push_code)
+        self.assertIn("winMatch = norm.match(/(?:win-celebrate|draw-result)-(\\d+)/)", push_code)
+        self.assertIn("recMatch = norm.match(/rec-ready-(\\d+)/)", push_code)
+        self.assertIn("adminMatch = norm.match(/admin-msg-(.+)/)", push_code)
+
+        # 2. Multi-tiered push suppression in isPushAlreadyFired
+        self.assertIn("lucky777_alert_fired_${cleanId}", push_code)
+        self.assertIn("lucky777_pushed_${cleanId}", push_code)
+        self.assertIn("lucky777_fired_${canonKey}", push_code)
+        self.assertIn("lucky777_read_${cleanId}", push_code)
+
+        # 3. Active OS tray query and renotify: false suppression
+        self.assertIn("reg.getNotifications({ tag: checkTag })", push_code)
+        self.assertIn("renotify: false", push_code)
+
+        # 4. Hybrid scheduler throttle guard (2.5s cooldown)
+        self.assertIn("_isCheckingScheduledAlerts: false", push_code)
+        self.assertIn("_lastScheduledCheckTs: 0", push_code)
+        self.assertIn("!isInitialSubscribe && (nowTs - (this._lastScheduledCheckTs || 0)) < 2500", push_code)
+
+        # 5. Guest inbox auto-migration with push suppression recording
+        self.assertIn("lucky777_notification_inbox_guest", push_code)
+        self.assertIn("this.recordPushFired(gItem.id);", push_code)
+
+        # 6. Synchronous purchases cache checking
+        self.assertIn("lotto_all_users_purchases_map_cache", push_code)
+        self.assertIn("lotto_all_users_merged_ledger_cache", push_code)
+        self.assertIn("lucky777_fired_round_${rNum}_lock", push_code)
+
+        # 7. Ledger update hook triggers scheduled alerts check
+        ledger_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'ledger.js')
+        with open(ledger_path, 'r', encoding='utf-8') as f:
+            ledger_code = f.read()
+        self.assertIn("window.PushClient.checkAndGenerateScheduledAlerts(true);", ledger_code)
+
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
