@@ -4387,6 +4387,36 @@ Lotto 6/45
         # 5. Saturday post-draw cutoff suppresses purchase prompts
         self.assertIn("const isSaturdayPostDraw = (todayName === '토요일' && curMinutes >= 20 * 60);", push_code)
 
+    def test_107_push_once_inbox_driven_persistence(self):
+        """Test 107: Verify identical push notifications fire only once and persist in inbox without duplicate popups."""
+        push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
+        with open(push_path, 'r', encoding='utf-8') as f:
+            push_code = f.read()
+
+        # 1. Verification of isPushAlreadyFired and recordPushFired helpers
+        self.assertIn("isPushAlreadyFired(notifId)", push_code)
+        self.assertIn("recordPushFired(notifId)", push_code)
+
+        # 2. Check scheduled alerts push gating with isPushAlreadyFired
+        self.assertIn("shouldPushSlot = !isSaturdayPostDraw && (isPreAlertWindow || isCurrentlyActive) && !this.isPushAlreadyFired(slotNotifId);", push_code)
+        self.assertIn("shouldPushLock = !this.isPushAlreadyFired(lockNotifId);", push_code)
+        self.assertIn("shouldPushWin = !this.isPushAlreadyFired(winNotifId);", push_code)
+        self.assertIn("shouldPushRec = !this.isPushAlreadyFired(recNotifId);", push_code)
+
+        # 3. Persistent admin popup dismissal via localStorage
+        self.assertIn("localStorage.setItem(`admin_popup_dismissed_${uid}_${msgId}`, 'true');", push_code)
+        self.assertIn("localStorage.getItem(dismissKey) !== 'true' && sessionStorage.getItem(dismissKey) !== 'true'", push_code)
+
+        # 4. onPurchaseRegistered triggers immediate evaluation of win status and unread UI
+        self.assertIn("this.checkAndGenerateScheduledAlerts();", push_code)
+        self.assertIn("this.renderUnreadNotificationUI();", push_code)
+
+        # 5. auth-mgmt login hook checks scheduled alerts
+        auth_path = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        with open(auth_path, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        self.assertIn("window.PushClient.checkAndGenerateScheduledAlerts();", auth_code)
+
 if __name__ == '__main__':
     unittest.main()
 

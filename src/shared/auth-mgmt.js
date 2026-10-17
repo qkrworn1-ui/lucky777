@@ -1745,6 +1745,9 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
             if (window.PushClient && typeof window.PushClient.startAdminMessageListener === 'function') {
                 window.PushClient.startAdminMessageListener(authId);
             }
+            if (window.PushClient && typeof window.PushClient.checkAndGenerateScheduledAlerts === 'function') {
+                window.PushClient.checkAndGenerateScheduledAlerts();
+            }
         }, 450);
 
         // 💬 [Kakao Auto-Dispatch] Check pending queue & auto-dispatch unsent real winning reports upon login

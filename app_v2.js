@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2129.40 - BUILD_DATE: 2026-10-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2159 - BUILD_DATE: 2026-10-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.17.2129.40)
+ * Lucky777 Smart Bundle (v2026.10.17.2159)
  */
 
 
@@ -3695,6 +3695,9 @@ async function checkAuthOnLoad(initFirebaseAndData) {
         setTimeout(() => {
             if (window.PushClient && typeof window.PushClient.startAdminMessageListener === 'function') {
                 window.PushClient.startAdminMessageListener(authId);
+            }
+            if (window.PushClient && typeof window.PushClient.checkAndGenerateScheduledAlerts === 'function') {
+                window.PushClient.checkAndGenerateScheduledAlerts();
             }
         }, 450);
 
@@ -10726,6 +10729,39 @@ const PushClient = {
         } catch (e) {}
     },
 
+    /**
+     * 특정 알림에 대해 이미 기기에서 푸시 팝업이 발송되었는지 확인 (1회 발송 보장)
+     */
+    isPushAlreadyFired(notifId) {
+        if (!notifId) return false;
+        const normId = String(notifId).trim();
+        const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+        try {
+            if (SafeLocalStorage.getItem(`lucky777_alert_fired_${cleanId}`) === 'true') return true;
+            if (SafeLocalStorage.getItem(`lucky777_alert_fired_${normId}`) === 'true') return true;
+            if (SafeLocalStorage.getItem(`lucky777_pushed_${cleanId}`) === 'true') return true;
+            if (SafeLocalStorage.getItem(`lucky777_pushed_${normId}`) === 'true') return true;
+            if (SafeLocalStorage.getItem(`lucky777_read_${cleanId}`) === 'true') return true;
+            if (SafeLocalStorage.getItem(`lucky777_read_${normId}`) === 'true') return true;
+        } catch(e) {}
+        return false;
+    },
+
+    /**
+     * 특정 알림의 푸시 팝업 발송 완료 기록
+     */
+    recordPushFired(notifId) {
+        if (!notifId) return;
+        const normId = String(notifId).trim();
+        const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+        try {
+            SafeLocalStorage.setItem(`lucky777_alert_fired_${cleanId}`, 'true');
+            SafeLocalStorage.setItem(`lucky777_alert_fired_${normId}`, 'true');
+            SafeLocalStorage.setItem(`lucky777_pushed_${cleanId}`, 'true');
+            SafeLocalStorage.setItem(`lucky777_pushed_${normId}`, 'true');
+        } catch(e) {}
+    },
+
     addNotification(notif, showBrowserAlert = false) {
         if (!notif || !notif.id) return false;
         const normId = String(notif.id).trim();
@@ -10733,12 +10769,11 @@ const PushClient = {
         const normTitle = String(notif.title || '').trim();
         const normBody = String(notif.body || '').trim();
 
-        // 0. 기기 단위로 이미 읽음 처리되었거나 확인된 알림은 중복 생성 원천 차단
-        try {
-            if (SafeLocalStorage.getItem(`lucky777_read_${cleanAlertId}`) === 'true' || SafeLocalStorage.getItem(`lucky777_read_${normId}`) === 'true') {
-                return false;
-            }
-        } catch(e) {}
+        const deviceAlertKey = `lucky777_alert_fired_${cleanAlertId}`;
+        // 동일 알림 푸시는 최초 1회만 발송: 이미 기기에서 푸시가 나갔다면 재푸시 원천 차단 (알림함에서만 확인)
+        if (this.isPushAlreadyFired(cleanAlertId) || this.isPushAlreadyFired(normId) || SafeLocalStorage.getItem(deviceAlertKey) === 'true') {
+            showBrowserAlert = false;
+        }
 
         const list = this.getNotifications();
 
@@ -10747,7 +10782,7 @@ const PushClient = {
         // - push- 접두사 차이 무시 동일 ID (admin-msg-123 === push-admin-msg-123)
         // - lotto-result- 와 draw-result- 상호 호환 ID
         // - 제목과 본문 내용이 100% 동일한 경우
-        const isDuplicate = list.some(item => {
+        const existingIdx = list.findIndex(item => {
             if (!item) return false;
             const itemId = String(item.id || '').trim();
             if (itemId === normId) return true;
@@ -10757,9 +10792,31 @@ const PushClient = {
             return false;
         });
 
-        if (isDuplicate) {
-            return false; // 이미 확인(읽음)된 알림이거나 존재하는 알림이면 중복 추가/재알림 절대 방지
+        if (existingIdx !== -1) {
+            // 이미 알림함에 존재하는 경우: 본문이나 배지만 최신화하고 푸시 팝업은 재발송하지 않음 (알림함 유지)
+            const existing = list[existingIdx];
+            let updated = false;
+            if (notif.badge && existing.badge !== notif.badge) {
+                existing.badge = notif.badge;
+                updated = true;
+            }
+            if (notif.title && existing.title !== notif.title) {
+                existing.title = notif.title;
+                updated = true;
+            }
+            if (notif.body && existing.body !== notif.body) {
+                existing.body = notif.body;
+                updated = true;
+            }
+            if (updated) {
+                this.saveNotifications(list);
+            }
+            return false;
         }
+
+        // 사용자가 이미 확인한 알림인 경우 unread = false로 보존
+        const isAlreadyRead = (SafeLocalStorage.getItem(`lucky777_read_${cleanAlertId}`) === 'true') ||
+            (SafeLocalStorage.getItem(`lucky777_read_${normId}`) === 'true');
 
         const newItem = {
             id: notif.id,
@@ -10769,7 +10826,7 @@ const PushClient = {
             body: notif.body || '',
             createdAt: notif.createdAt || new Date().toISOString(),
             timeLabel: notif.timeLabel || this.formatTimeLabel(notif.createdAt),
-            unread: notif.unread !== false,
+            unread: isAlreadyRead ? false : (notif.unread !== false),
             actionType: notif.actionType || 'generator',
             actionLabel: notif.actionLabel || '🎱 맞춤 번호 확인하기'
         };
@@ -10777,32 +10834,24 @@ const PushClient = {
         list.unshift(newItem);
         this.saveNotifications(list);
 
+        // 최초 1회에 한해서만 브라우저/OS 알림 발송 (이후는 알림함에서 확인)
         if (showBrowserAlert && typeof Notification !== 'undefined' && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
-            const deviceAlertKey = `lucky777_alert_fired_${cleanAlertId}`;
-            const alreadyFiredOnDevice = (SafeLocalStorage.getItem(deviceAlertKey) === 'true') ||
-                (SafeLocalStorage.getItem(`lucky777_alert_fired_${normId}`) === 'true') ||
-                (SafeLocalStorage.getItem(`lucky777_read_${cleanAlertId}`) === 'true');
+            this.recordPushFired(cleanAlertId);
+            this.recordPushFired(normId);
 
-            if (!alreadyFiredOnDevice) {
-                try {
-                    SafeLocalStorage.setItem(deviceAlertKey, 'true');
-                    SafeLocalStorage.setItem(`lucky777_alert_fired_${normId}`, 'true');
-                } catch(e) {}
-
-                navigator.serviceWorker.ready.then(reg => {
-                    const origin = window.location.origin;
-                    const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
-                    const targetTab = (newItem.actionType === 'confirmed') ? 'tab-confirmed-list' : ((newItem.actionType === 'fortune') ? 'tab-dashboard' : 'tab-generator');
-                    reg.showNotification(newItem.title, {
-                        body: newItem.body,
-                        icon: `${origin}${basePath}icons/icon-192.png`,
-                        badge: `${origin}${basePath}icons/favicon.png`,
-                        tag: newItem.id,
-                        vibrate: [150, 80, 150],
-                        data: { url: `${origin}${basePath}?tab=${targetTab}`, id: newItem.id }
-                    }).catch(() => {});
+            navigator.serviceWorker.ready.then(reg => {
+                const origin = window.location.origin;
+                const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
+                const targetTab = (newItem.actionType === 'confirmed') ? 'tab-confirmed-list' : ((newItem.actionType === 'fortune') ? 'tab-dashboard' : 'tab-generator');
+                reg.showNotification(newItem.title, {
+                    body: newItem.body,
+                    icon: `${origin}${basePath}icons/icon-192.png`,
+                    badge: `${origin}${basePath}icons/favicon.png`,
+                    tag: newItem.id,
+                    vibrate: [150, 80, 150],
+                    data: { url: `${origin}${basePath}?tab=${targetTab}`, id: newItem.id }
                 }).catch(() => {});
-            }
+            }).catch(() => {});
         }
         return true;
     },
@@ -10854,7 +10903,10 @@ const PushClient = {
                 try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
             }
             if (uid && rawMsgId) {
-                try { SafeStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true'); } catch (e) {}
+                try {
+                    SafeLocalStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
+                    SafeStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
+                } catch (e) {}
             }
         }
 
@@ -10906,7 +10958,10 @@ const PushClient = {
                     const rawMsgId = String(item.id).replace(/^push-/, '').replace(/^admin-msg-/, '');
                     this.syncAdminMessageReadToFirestore(rawMsgId);
                     if (uid && rawMsgId) {
-                        try { SafeStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true'); } catch (e) {}
+                        try {
+                            SafeLocalStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
+                            SafeStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
+                        } catch (e) {}
                     }
                 }
                 item.unread = false;
@@ -11191,6 +11246,9 @@ const PushClient = {
             console.log(`[PushClient] Purchase registered for round ${rNum}. Dismissing reminders...`);
             this.dismissPurchaseRemindersForRound(rNum);
             this.updateBannerVisibility();
+            // 실구매 등록 완료 후 즉시 당첨 채점 및 미확인 알림 상태 최신화
+            this.checkAndGenerateScheduledAlerts();
+            this.renderUnreadNotificationUI();
         } catch(e) {
             console.warn('[PushClient] onPurchaseRegistered error:', e);
         }
@@ -11341,8 +11399,12 @@ const PushClient = {
                                     ? `[지금은 황금 길시!] ${dispName}의 ${slotObj.rank}(${slotObj.label}) 진행 중`
                                     : `[오늘의 길시 알림] ${dispName}의 ${slotObj.rank}(${slotObj.label}) 안내`);
 
+                            const slotNotifId = `myeongri-slot${idx + 1}-${dateKey}`;
+                            // 길시 당 최초 1회만 브라우저 푸시 발송 (길시 진행 중 상태 전환 시에는 알림함 내용만 갱신)
+                            const shouldPushSlot = !isSaturdayPostDraw && (isPreAlertWindow || isCurrentlyActive) && !this.isPushAlreadyFired(slotNotifId);
+
                             this.addNotification({
-                                id: `myeongri-slot${idx + 1}-${dateKey}`,
+                                id: slotNotifId,
                                 category: 'myeongri',
                                 badge: isCurrentlyActive ? '🔮 황금 길시 진행중' : '🔮 사주 길시 알림',
                                 title: statusTitle,
@@ -11351,7 +11413,7 @@ const PushClient = {
                                 unread: true,
                                 actionType: 'generator',
                                 actionLabel: '🎱 길시 맞춤 번호 생성하기'
-                            }, !isSaturdayPostDraw && (isPreAlertWindow || isCurrentlyActive));
+                            }, shouldPushSlot);
                         }
                     });
                 }
@@ -11359,8 +11421,10 @@ const PushClient = {
 
             // 2. 토요일 판매 마감 임박 리마인더 (토요일 18:00 ~ 20:00 사이, 미구매 회원)
             if (todayName === '토요일' && curMinutes >= 18 * 60 && curMinutes < 20 * 60 && !alreadyPurchased) {
+                const lockNotifId = `lock-reminder-${targetRound}`;
+                const shouldPushLock = !this.isPushAlreadyFired(lockNotifId);
                 this.addNotification({
-                    id: `lock-reminder-${targetRound}`,
+                    id: lockNotifId,
                     category: 'reminder',
                     badge: '⏰ 마감 임박 리마인더',
                     title: `제 ${targetRound}회차 로또 판매 마감(20:00) 임박 안내`,
@@ -11369,7 +11433,7 @@ const PushClient = {
                     unread: true,
                     actionType: 'qr',
                     actionLabel: '📷 실구매 QR 영수증 등록하기'
-                }, true);
+                }, shouldPushLock);
             }
 
             // 3. 최신 회차 추첨 결과 & 실구매 채점 당첨 축하 알림 (완료된 최신 추첨 회차 기준)
@@ -11384,38 +11448,47 @@ const PushClient = {
             if (latestDrawnRound >= 1235) {
                 const drawData = this.getDrawData(latestDrawnRound);
                 if (drawData && Array.isArray(drawData.numbers) && drawData.numbers.length === 6) {
-                    const seenDrawKey = `lucky777_draw_evaluated_${latestDrawnRound}_${uid}_v2`;
-                    if (!SafeLocalStorage.getItem(seenDrawKey)) {
-                        SafeLocalStorage.setItem(seenDrawKey, 'true');
+                    const userPurchases = this.getUserPurchases(uid, latestDrawnRound);
+                    const grade = this.gradePurchases(userPurchases, drawData);
+                    const winNotifId = `win-celebrate-${latestDrawnRound}`;
+                    const drawNotifId = `draw-result-${latestDrawnRound}`;
 
-                        const userPurchases = this.getUserPurchases(uid, latestDrawnRound);
-                        const grade = this.gradePurchases(userPurchases, drawData);
+                    if (grade && grade.totalGames > 0 && grade.totalWins > 0) {
+                        // 3-A) 실구매 복권 당첨 축하 알림 (1등~5등 당첨자)
+                        const hitsArray = [];
+                        if (grade.hits[1]) hitsArray.push(`1등 ${grade.hits[1]}건`);
+                        if (grade.hits[2]) hitsArray.push(`2등 ${grade.hits[2]}건`);
+                        if (grade.hits[3]) hitsArray.push(`3등 ${grade.hits[3]}건`);
+                        if (grade.hits[4]) hitsArray.push(`4등 ${grade.hits[4]}건`);
+                        if (grade.hits[5]) hitsArray.push(`5등 ${grade.hits[5]}건`);
+                        const hitsDesc = hitsArray.join(', ');
 
-                        if (grade && grade.totalGames > 0 && grade.totalWins > 0) {
-                            // 3-A) 실구매 복권 당첨 축하 알림 (1등~5등 당첨자)
-                            const hitsArray = [];
-                            if (grade.hits[1]) hitsArray.push(`1등 ${grade.hits[1]}건`);
-                            if (grade.hits[2]) hitsArray.push(`2등 ${grade.hits[2]}건`);
-                            if (grade.hits[3]) hitsArray.push(`3등 ${grade.hits[3]}건`);
-                            if (grade.hits[4]) hitsArray.push(`4등 ${grade.hits[4]}건`);
-                            if (grade.hits[5]) hitsArray.push(`5등 ${grade.hits[5]}건`);
-                            const hitsDesc = hitsArray.join(', ');
+                        // 만약 이전에 미구매 또는 채점 전 생성된 draw-result 알림이 알림함에 있다면 당첨 축하 알림으로 스마트 교체
+                        const inboxList = this.getNotifications();
+                        const existingDrawIdx = inboxList.findIndex(it => it && (it.id === drawNotifId || it.id === `push-${drawNotifId}`));
+                        if (existingDrawIdx !== -1) {
+                            inboxList.splice(existingDrawIdx, 1);
+                            this.saveNotifications(inboxList);
+                        }
 
+                        const shouldPushWin = !this.isPushAlreadyFired(winNotifId);
+                        this.addNotification({
+                            id: `win-celebrate-${latestDrawnRound}`,
+                            category: 'result',
+                            badge: '🎉 실구매 당첨 축하',
+                            title: `🎉 [당첨 축하] 제 ${latestDrawnRound}회차 실구매 ${grade.totalWins}건 당첨! (${grade.bestRank}등 등 총 ${grade.totalPrize.toLocaleString()}원)`,
+                            body: `${dispName}의 제 ${latestDrawnRound}회차 실구매 복권 ${grade.totalGames}게임 채점 결과, ${hitsDesc} 총 ${grade.totalWins}건(${grade.totalPrize.toLocaleString()}원)에 당첨되셨습니다! 확정 장부에서 상세 결과를 확인하세요.`,
+                            timeLabel: `제 ${latestDrawnRound}회 당첨 확인`,
+                            unread: true,
+                            actionType: 'confirmed',
+                            actionLabel: '📊 당첨 복권 내역 확인하기'
+                        }, shouldPushWin);
+                    } else if (grade && grade.totalGames > 0 && grade.totalWins === 0) {
+                        // 3-B) 실구매 복권 채점 완료 (낙첨) 알림
+                        if (!this.isPushAlreadyFired(winNotifId)) {
+                            const shouldPushResult = !this.isPushAlreadyFired(drawNotifId);
                             this.addNotification({
-                                id: `win-celebrate-${latestDrawnRound}`,
-                                category: 'result',
-                                badge: '🎉 실구매 당첨 축하',
-                                title: `🎉 [당첨 축하] 제 ${latestDrawnRound}회차 실구매 ${grade.totalWins}건 당첨! (${grade.bestRank}등 등 총 ${grade.totalPrize.toLocaleString()}원)`,
-                                body: `${dispName}의 제 ${latestDrawnRound}회차 실구매 복권 ${grade.totalGames}게임 채점 결과, ${hitsDesc} 총 ${grade.totalWins}건(${grade.totalPrize.toLocaleString()}원)에 당첨되셨습니다! 확정 장부에서 상세 결과를 확인하세요.`,
-                                timeLabel: `제 ${latestDrawnRound}회 당첨 확인`,
-                                unread: true,
-                                actionType: 'confirmed',
-                                actionLabel: '📊 당첨 복권 내역 확인하기'
-                            }, true);
-                        } else if (grade && grade.totalGames > 0 && grade.totalWins === 0) {
-                            // 3-B) 실구매 복권 채점 완료 (낙첨) 알림
-                            this.addNotification({
-                                id: `draw-result-${latestDrawnRound}`,
+                                id: drawNotifId,
                                 category: 'result',
                                 badge: '📊 실구매 채점 완료',
                                 title: `📊 [제 ${latestDrawnRound}회 채점 완료] 실구매 복권 ${grade.totalGames}게임 정산 안내`,
@@ -11424,13 +11497,16 @@ const PushClient = {
                                 unread: true,
                                 actionType: 'confirmed',
                                 actionLabel: '📊 채점 장부 확인하기'
-                            }, true);
-                        } else {
-                            // 3-C) 미구매 회원 공식 추첨 결과 리포트
+                            }, shouldPushResult);
+                        }
+                    } else {
+                        // 3-C) 미구매 회원 공식 추첨 결과 리포트
+                        if (!this.isPushAlreadyFired(winNotifId)) {
+                            const shouldPushResult = !this.isPushAlreadyFired(drawNotifId);
                             const firstPrizeText = drawData.rank1Prize ? `${(drawData.rank1Prize / 100000000).toFixed(1)}억 원` : '';
                             const prizeInfo = firstPrizeText ? ` (1등 ${firstPrizeText})` : '';
                             this.addNotification({
-                                id: `draw-result-${latestDrawnRound}`,
+                                id: drawNotifId,
                                 category: 'result',
                                 badge: '🏆 추첨 결과 리포트',
                                 title: `🏆 [제 ${latestDrawnRound}회 공식 결과] 1등 [${drawData.numbers.join(', ')}] + ${drawData.bonus}`,
@@ -11439,7 +11515,7 @@ const PushClient = {
                                 unread: true,
                                 actionType: 'confirmed',
                                 actionLabel: '📊 당첨 결과 확인하기'
-                            }, true);
+                            }, shouldPushResult);
                         }
                     }
                 }
@@ -11447,24 +11523,22 @@ const PushClient = {
 
             // 4. 차기 회차 AI 퀀트 맞춤 추천번호 오픈 알림 (신규 회차 1회 발송)
             if (targetRound >= 1246) {
-                const seenRecKey = `lucky777_rec_announced_${targetRound}_${uid}_v2`;
-                if (!SafeLocalStorage.getItem(seenRecKey)) {
-                    // 토요일 20:00 이후 또는 일~금요일 등 신규 회차가 활성화된 시점에 안내
-                    const isRecOpenTime = isSaturdayPostDraw || todayName !== '토요일' || curMinutes < 18 * 60;
-                    if (isRecOpenTime) {
-                        SafeLocalStorage.setItem(seenRecKey, 'true');
-                        this.addNotification({
-                            id: `rec-ready-${targetRound}`,
-                            category: 'generator',
-                            badge: '🎱 차기 추천번호 오픈',
-                            title: `🎱 [AI 퀀트 맞춤] 제 ${targetRound}회차 AI 추천번호 및 10대 알고리즘 조합 오픈!`,
-                            body: `${dispName}을 위한 제 ${targetRound}회차 AI 퀀트 알고리즘(올라운더 1·2·3 최신 엔진) 맞춤 추천번호 조합이 생성되었습니다. 지금 이번 주 최적 팩을 확인해 보세요.`,
-                            timeLabel: `제 ${targetRound}회 추천 오픈`,
-                            unread: true,
-                            actionType: 'generator',
-                            actionLabel: '🎱 이번주 추천번호 확인하기'
-                        }, true);
-                    }
+                // 토요일 20:00 이후 또는 일~금요일 등 신규 회차가 활성화된 시점에 안내
+                const isRecOpenTime = isSaturdayPostDraw || todayName !== '토요일' || curMinutes < 18 * 60;
+                if (isRecOpenTime) {
+                    const recNotifId = `rec-ready-${targetRound}`;
+                    const shouldPushRec = !this.isPushAlreadyFired(recNotifId);
+                    this.addNotification({
+                        id: `rec-ready-${targetRound}`,
+                        category: 'generator',
+                        badge: '🎱 차기 추천번호 오픈',
+                        title: `🎱 [AI 퀀트 맞춤] 제 ${targetRound}회차 AI 추천번호 및 10대 알고리즘 조합 오픈!`,
+                        body: `${dispName}을 위한 제 ${targetRound}회차 AI 퀀트 알고리즘(올라운더 1·2·3 최신 엔진) 맞춤 추천번호 조합이 생성되었습니다. 지금 이번 주 최적 팩을 확인해 보세요.`,
+                        timeLabel: `제 ${targetRound}회 추천 오픈`,
+                        unread: true,
+                        actionType: 'generator',
+                        actionLabel: '🎱 이번주 추천번호 확인하기'
+                    }, shouldPushRec);
                 }
             }
 
@@ -11963,6 +12037,7 @@ const PushClient = {
             this._adminMsgUnsubscribe = null;
         }
         this._adminMsgActiveUserId = uid;
+        this.checkAndGenerateScheduledAlerts();
 
         try {
             this._adminMsgUnsubscribe = window.db.collection('lotto_users').doc(uid).onSnapshot((doc) => {
@@ -12042,7 +12117,7 @@ const PushClient = {
 
             if (isUnread && msg.popupOnLogin !== false) {
                 const dismissKey = `admin_popup_dismissed_${userId}_${msg.id}`;
-                if (SafeStorage.getItem(dismissKey) !== 'true') {
+                if (SafeLocalStorage.getItem(dismissKey) !== 'true' && SafeStorage.getItem(dismissKey) !== 'true') {
                     unreadMsgs.push(msg);
                 }
             }
@@ -12125,6 +12200,7 @@ const PushClient = {
         const uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
         if (uid && msgId) {
             try {
+                SafeLocalStorage.setItem(`admin_popup_dismissed_${uid}_${msgId}`, 'true');
                 SafeStorage.setItem(`admin_popup_dismissed_${uid}_${msgId}`, 'true');
             } catch (e) {}
         }
@@ -12168,6 +12244,14 @@ const PushClient = {
         const item = list.find(n => n && n.id === inboxId);
         const queuedMsg = (this._adminPopupQueue || []).find(m => m && m.id === msgId);
         const actionType = (queuedMsg && queuedMsg.actionType) || (item && item.actionType) || 'generator';
+
+        const uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
+        if (uid && msgId) {
+            try {
+                SafeLocalStorage.setItem(`admin_popup_dismissed_${uid}_${msgId}`, 'true');
+                SafeStorage.setItem(`admin_popup_dismissed_${uid}_${msgId}`, 'true');
+            } catch (e) {}
+        }
 
         // 로컬 알림함 및 Firestore 읽음 처리
         this.markNotificationRead(inboxId);
