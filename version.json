@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.17.2319.43",
+  "version": "v2026.10.17.2328",
   "buildDate": "2026-10-17",
-  "description": "통합 알림함 최근 회차 당첨내역 보장, 사주 길일·길시 푸시 배제 및 당첨결과 1회 푸시 적용",
-  "buildTimestamp": "2026-10-17T23:19:43.860765",
+  "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가",
+  "buildTimestamp": "2026-10-17T23:28:10.409367",
   "buildHistory": [
-    {
-      "version": "v2026.10.17.2129.40",
-      "buildDate": "2026-10-17",
-      "buildTime": "21:29",
-      "buildDateTime": "2026-10-17 21:29",
-      "buildTimestamp": "2026-10-17T21:29:40.175376",
-      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
-    },
-    {
-      "version": "v2026.10.17.2156",
-      "buildDate": "2026-10-17",
-      "buildTime": "21:56",
-      "buildDateTime": "2026-10-17 21:56",
-      "buildTimestamp": "2026-10-17T21:56:34.100431",
-      "description": "최신회차 영수증 등록 시 지난회차 영수증 자동 접기 기능 적용"
-    },
     {
       "version": "v2026.10.17.2157",
       "buildDate": "2026-10-17",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-17 23:19",
       "buildTimestamp": "2026-10-17T23:19:43.860765",
       "description": "통합 알림함 최근 회차 당첨내역 보장, 사주 길일·길시 푸시 배제 및 당첨결과 1회 푸시 적용"
+    },
+    {
+      "version": "v2026.10.17.2327",
+      "buildDate": "2026-10-17",
+      "buildTime": "23:27",
+      "buildDateTime": "2026-10-17 23:27",
+      "buildTimestamp": "2026-10-17T23:27:38.912112",
+      "description": "통합 알림함 최근 회차 당첨내역 보장, 사주 길일·길시 푸시 배제 및 당첨결과 1회 푸시 적용"
+    },
+    {
+      "version": "v2026.10.17.2328",
+      "buildDate": "2026-10-17",
+      "buildTime": "23:28",
+      "buildDateTime": "2026-10-17 23:28",
+      "buildTimestamp": "2026-10-17T23:28:10.409367",
+      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
     }
   ],
-  "buildTime": "23:19",
-  "buildDateTime": "2026-10-17 23:19"
+  "buildTime": "23:28",
+  "buildDateTime": "2026-10-17 23:28"
 }

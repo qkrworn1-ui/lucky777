@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2319.43 - BUILD_DATE: 2026-10-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2328 - BUILD_DATE: 2026-10-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.17.2319.43)
+ * Lucky777 Smart Bundle (v2026.10.17.2328)
  */
 
 
@@ -10700,13 +10700,39 @@ const PushClient = {
     // 📬 미확인 알림 센터 (Unread Notification Inbox & Hybrid Schedule Engine)
     // =========================================================================
 
-    getInboxStorageKey() {
-        let uid = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest';
+    getActiveUserId() {
+        let uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest');
         if (typeof uid === 'string' && uid.startsWith('{')) {
             try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
         }
-        uid = String(uid || 'guest').trim().toLowerCase();
+        return String(uid || 'guest').trim().toLowerCase();
+    },
+
+    getInboxStorageKey() {
+        const uid = this.getActiveUserId();
         return `lucky777_notification_inbox_${uid}`;
+    },
+
+    getDeletedNotifsKey() {
+        const uid = this.getActiveUserId();
+        return `lucky777_deleted_notifs_${uid}`;
+    },
+
+    isNotificationDeleted(notifId) {
+        if (!notifId) return false;
+        try {
+            const delKey = this.getDeletedNotifsKey();
+            const raw = SafeLocalStorage.getItem(delKey);
+            if (!raw) return false;
+            const delArr = JSON.parse(raw);
+            if (!Array.isArray(delArr)) return false;
+            const normId = String(notifId).trim();
+            const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+            const canonKey = this.getCanonicalPushKey(notifId);
+            return delArr.includes(normId) || delArr.includes(cleanId) || (canonKey && delArr.includes(canonKey));
+        } catch (e) {
+            return false;
+        }
     },
 
     getNotifications() {
@@ -10716,13 +10742,16 @@ const PushClient = {
             let list = raw ? JSON.parse(raw) : [];
             if (!Array.isArray(list)) list = [];
 
-            // 🔮 사주 길일·길시 알림 원천 영구 삭제 및 알림함 정화 (Purge all myeongri notifications from inbox)
+            // 🔮 사주 길일·길시 알림 원천 영구 삭제 및 알림함 정화, 사용자 삭제 알림 필터링
             const origLen = list.length;
             list = list.filter(item => {
                 if (!item) return false;
                 const itemId = String(item.id || '').trim();
                 const cat = String(item.category || '').trim();
                 if (itemId.startsWith('myeongri-') || cat === 'myeongri') {
+                    return false;
+                }
+                if (this.isNotificationDeleted(item.id)) {
                     return false;
                 }
                 return true;
@@ -10744,6 +10773,7 @@ const PushClient = {
                             if (!gItem || !gItem.id) return;
                             const gId = String(gItem.id || '').trim();
                             if (gId.startsWith('myeongri-') || gItem.category === 'myeongri') return;
+                            if (this.isNotificationDeleted(gItem.id)) return;
                             const exists = list.some(it => it && (it.id === gItem.id || this.getCanonicalPushKey(it.id) === this.getCanonicalPushKey(gItem.id)));
                             if (!exists) {
                                 list.push(gItem);
@@ -10759,13 +10789,10 @@ const PushClient = {
                 } catch(e) {}
             }
 
-            // 알림 목록이 비어있다면 최근 5개 회차 당첨결과 및 추천번호 알림 자동 즉시 생성
-            if (list.length === 0 && !this._isCheckingScheduledAlerts) {
-                let uid = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest';
-                if (typeof uid === 'string' && uid.startsWith('{')) {
-                    try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
-                }
-                uid = String(uid || 'guest').trim().toLowerCase();
+            // 알림 목록이 비어있고 사용자가 명시적으로 '전체 삭제'를 하지 않은 경우에만 기본 알림 시드 생성
+            const uid = this.getActiveUserId();
+            const isCleared = SafeLocalStorage.getItem(`lucky777_inbox_cleared_${uid}`) === 'true';
+            if (list.length === 0 && !isCleared && !this._isCheckingScheduledAlerts) {
                 list = this.seedRecentNotifications(uid, list);
             }
 
@@ -10801,7 +10828,7 @@ const PushClient = {
             if (targetRound >= 1246) {
                 const recNotifId = `rec-ready-${targetRound}`;
                 const hasRec = list.some(it => it && (it.id === recNotifId || this.getCanonicalPushKey(it.id) === `round_${targetRound}_rec`));
-                if (!hasRec) {
+                if (!hasRec && !this.isNotificationDeleted(recNotifId)) {
                     const isRead = SafeLocalStorage.getItem(`lucky777_read_${recNotifId}`) === 'true';
                     list.push({
                         id: recNotifId,
@@ -10827,6 +10854,8 @@ const PushClient = {
                 const combinedNotifId = `draw-result-${r}`;
                 const legacyWinId = `win-celebrate-${r}`;
                 const canonKey = `round_${r}_result`;
+                if (this.isNotificationDeleted(combinedNotifId) || this.isNotificationDeleted(legacyWinId) || this.isNotificationDeleted(canonKey)) return;
+
                 const existingIdx = list.findIndex(it => it && (it.id === combinedNotifId || it.id === legacyWinId || this.getCanonicalPushKey(it.id) === canonKey));
 
                 const userPurchases = this.getUserPurchases(uid, r);
@@ -10895,7 +10924,7 @@ const PushClient = {
             // 3. 운도실력 공식 서비스 안내 알림 보장
             const welcomeNotifId = 'admin-msg-welcome';
             const hasWelcome = list.some(it => it && (it.id === welcomeNotifId || it.id === `push-${welcomeNotifId}`));
-            if (!hasWelcome) {
+            if (!hasWelcome && !this.isNotificationDeleted(welcomeNotifId)) {
                 list.push({
                     id: welcomeNotifId,
                     category: 'admin',
@@ -10941,6 +10970,10 @@ const PushClient = {
             const unreadCount = trimmed.filter(n => n && n.unread).length;
             this.setBadge(unreadCount);
             this.renderUnreadNotificationUI();
+            const modal = document.getElementById('lucky777NotificationCenterModal');
+            if (modal && modal.style.display !== 'none') {
+                this.renderNotificationCenterModalContent();
+            }
         } catch (e) {}
     },
 
@@ -11058,6 +11091,11 @@ const PushClient = {
 
         // [길일·길시 알림 완전 배제] 사주 길일·길시 알림 생성 원천 차단
         if (notif.category === 'myeongri' || cleanAlertId.startsWith('myeongri-')) {
+            return false;
+        }
+
+        // 사용자가 이미 삭제한 알림인 경우 재생성 차단
+        if (this.isNotificationDeleted(notif.id)) {
             return false;
         }
 
@@ -11217,15 +11255,19 @@ const PushClient = {
         }
     },
 
-    markNotificationRead(id) {
+    markNotificationRead(id, showToastMsg = true) {
         if (!id) return;
         const normId = String(id).trim();
         const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+        const canonKey = this.getCanonicalPushKey(id);
+
         try {
             SafeLocalStorage.setItem(`lucky777_read_${normId}`, 'true');
             SafeLocalStorage.setItem(`lucky777_read_${cleanId}`, 'true');
+            if (canonKey) SafeLocalStorage.setItem(`lucky777_read_${canonKey}`, 'true');
             SafeLocalStorage.setItem(`lucky777_alert_fired_${normId}`, 'true');
             SafeLocalStorage.setItem(`lucky777_alert_fired_${cleanId}`, 'true');
+            if (canonKey) SafeLocalStorage.setItem(`lucky777_alert_fired_${canonKey}`, 'true');
         } catch(e) {}
 
         const list = this.getNotifications();
@@ -11234,8 +11276,10 @@ const PushClient = {
             if (!item) return;
             const itemId = String(item.id || '').trim();
             const matchesId = itemId === normId ||
+                itemId === cleanId ||
                 itemId.replace(/^push-/, '') === normId.replace(/^push-/, '') ||
                 itemId.replace('lotto-result-', 'draw-result-') === normId.replace('lotto-result-', 'draw-result-') ||
+                (canonKey && this.getCanonicalPushKey(item.id) === canonKey) ||
                 (normId.includes('admin-msg-') && itemId.includes(normId.replace(/^push-/, '').replace(/^admin-msg-/, '')));
             if (matchesId && item.unread) {
                 item.unread = false;
@@ -11246,10 +11290,7 @@ const PushClient = {
         if (normId.includes('admin-msg-')) {
             const rawMsgId = normId.replace(/^push-/, '').replace(/^admin-msg-/, '');
             this.syncAdminMessageReadToFirestore(rawMsgId);
-            let uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
-            if (typeof uid === 'string' && uid.startsWith('{')) {
-                try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
-            }
+            const uid = this.getActiveUserId();
             if (uid && rawMsgId) {
                 try {
                     SafeLocalStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
@@ -11258,10 +11299,10 @@ const PushClient = {
             }
         }
 
-        if (changed) {
-            this.saveNotifications(list);
-        } else {
-            this.renderUnreadNotificationUI();
+        this.saveNotifications(list);
+
+        if (changed && showToastMsg && typeof window.showToast === 'function') {
+            window.showToast('✓ 알림을 확인 처리했습니다.');
         }
 
         // 스마트폰 OS 알림바(Tray)에서도 해당 알림 팝업 즉시 닫기
@@ -11272,6 +11313,7 @@ const PushClient = {
                         if (n && n.tag) {
                             const nTag = String(n.tag).trim();
                             if (nTag === normId ||
+                                nTag === cleanId ||
                                 nTag.replace(/^push-/, '') === normId.replace(/^push-/, '') ||
                                 (normId.includes('admin-msg-') && nTag.includes(normId.replace(/^push-/, '').replace(/^admin-msg-/, '')))) {
                                 n.close();
@@ -11285,21 +11327,23 @@ const PushClient = {
 
     markAllNotificationsRead() {
         const list = this.getNotifications();
-        let uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
-        if (typeof uid === 'string' && uid.startsWith('{')) {
-            try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
-        }
+        const uid = this.getActiveUserId();
 
+        let changedCount = 0;
         list.forEach(item => {
             if (item) {
+                if (item.unread) changedCount++;
                 if (item.id) {
                     const normId = String(item.id).trim();
                     const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+                    const canon = this.getCanonicalPushKey(item.id);
                     try {
                         SafeLocalStorage.setItem(`lucky777_read_${normId}`, 'true');
                         SafeLocalStorage.setItem(`lucky777_read_${cleanId}`, 'true');
+                        if (canon) SafeLocalStorage.setItem(`lucky777_read_${canon}`, 'true');
                         SafeLocalStorage.setItem(`lucky777_alert_fired_${normId}`, 'true');
                         SafeLocalStorage.setItem(`lucky777_alert_fired_${cleanId}`, 'true');
+                        if (canon) SafeLocalStorage.setItem(`lucky777_alert_fired_${canon}`, 'true');
                     } catch(e) {}
                 }
                 if (item.unread && item.id && String(item.id).includes('admin-msg-')) {
@@ -11327,7 +11371,112 @@ const PushClient = {
         }
 
         if (typeof window.showToast === 'function') {
-            window.showToast('✓ 모든 미확인 알림을 읽음 처리했습니다.');
+            window.showToast(changedCount > 0 ? `✓ ${changedCount}건의 알림을 모두 읽음 처리했습니다.` : '모든 알림이 이미 확인되었습니다.');
+        }
+    },
+
+    /**
+     * 개별 알림 삭제 (사용자 삭제 기록 영구 보존으로 재시드 방지)
+     */
+    deleteNotification(id) {
+        if (!id) return;
+        const normId = String(id).trim();
+        const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+        const canonKey = this.getCanonicalPushKey(id);
+
+        try {
+            const delKey = this.getDeletedNotifsKey();
+            const raw = SafeLocalStorage.getItem(delKey);
+            const delArr = raw ? JSON.parse(raw) : [];
+            if (!delArr.includes(normId)) delArr.push(normId);
+            if (!delArr.includes(cleanId)) delArr.push(cleanId);
+            if (canonKey && !delArr.includes(canonKey)) delArr.push(canonKey);
+            SafeLocalStorage.setItem(delKey, JSON.stringify(delArr.slice(-150)));
+
+            SafeLocalStorage.setItem(`lucky777_read_${cleanId}`, 'true');
+            SafeLocalStorage.setItem(`lucky777_alert_fired_${cleanId}`, 'true');
+            if (canonKey) {
+                SafeLocalStorage.setItem(`lucky777_read_${canonKey}`, 'true');
+                SafeLocalStorage.setItem(`lucky777_alert_fired_${canonKey}`, 'true');
+            }
+        } catch (e) {}
+
+        const list = this.getNotifications();
+        const nextList = list.filter(item => {
+            if (!item || !item.id) return false;
+            const itemId = String(item.id).trim();
+            const itemClean = itemId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+            if (itemId === normId || itemClean === cleanId || itemId === cleanId) return false;
+            if (canonKey && this.getCanonicalPushKey(item.id) === canonKey) return false;
+            return true;
+        });
+
+        this.saveNotifications(nextList);
+
+        if (typeof window.showToast === 'function') {
+            window.showToast('🗑️ 알림이 삭제되었습니다.');
+        }
+    },
+
+    /**
+     * 전체 알림 일괄 삭제
+     */
+    clearAllNotifications() {
+        const list = this.getNotifications();
+        if (!list || list.length === 0) {
+            if (typeof window.showToast === 'function') {
+                window.showToast('삭제할 알림 내역이 없습니다.');
+            }
+            return;
+        }
+
+        const ok = confirm(`현재 알림함의 총 ${list.length}건 알림을 모두 삭제하시겠습니까?`);
+        if (!ok) return;
+
+        try {
+            const delKey = this.getDeletedNotifsKey();
+            const raw = SafeLocalStorage.getItem(delKey);
+            const delArr = raw ? JSON.parse(raw) : [];
+            list.forEach(item => {
+                if (item && item.id) {
+                    const normId = String(item.id).trim();
+                    const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+                    const canon = this.getCanonicalPushKey(item.id);
+                    if (!delArr.includes(normId)) delArr.push(normId);
+                    if (!delArr.includes(cleanId)) delArr.push(cleanId);
+                    if (canon && !delArr.includes(canon)) delArr.push(canon);
+                    SafeLocalStorage.setItem(`lucky777_read_${cleanId}`, 'true');
+                    SafeLocalStorage.setItem(`lucky777_alert_fired_${cleanId}`, 'true');
+                }
+            });
+            SafeLocalStorage.setItem(delKey, JSON.stringify(delArr.slice(-200)));
+
+            const uid = this.getActiveUserId();
+            SafeLocalStorage.setItem(`lucky777_inbox_cleared_${uid}`, 'true');
+        } catch (e) {}
+
+        this.saveNotifications([]);
+
+        if (typeof window.showToast === 'function') {
+            window.showToast('🗑️ 모든 알림이 삭제되었습니다.');
+        }
+    },
+
+    /**
+     * 알림 재동기화 (삭제 목록 초기화 및 최근 회차 알림 재생성)
+     */
+    resetAndSeedNotifications() {
+        const uid = this.getActiveUserId();
+        try {
+            SafeLocalStorage.removeItem(`lucky777_deleted_notifs_${uid}`);
+            SafeLocalStorage.removeItem(`lucky777_inbox_cleared_${uid}`);
+        } catch (e) {}
+
+        const seeded = this.seedRecentNotifications(uid, []);
+        this.saveNotifications(seeded);
+
+        if (typeof window.showToast === 'function') {
+            window.showToast('🔄 최신 알림 내역이 동기화되었습니다.');
         }
     },
 
@@ -12140,7 +12289,7 @@ const PushClient = {
 
         const emptyMsg = filter === 'unread'
             ? `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">확인하지 않은 새로운 알림이 없습니다.</div>
-               <div style="font-size:0.75rem; color:#64748b; margin-bottom:12px;">지난 회차별 당첨결과 및 추천번호 내역은 [전체] 탭에서 확인하실 수 있습니다.</div>
+               <div style="font-size:0.75rem; color:#64748b; margin-bottom:12px;">지난 회차별 당첨결과 및 공지 내역은 [전체] 탭에서 확인하실 수 있습니다.</div>
                <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림내역 보기 (${list.length})</button>`
             : (filter === 'result'
                 ? `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">표시할 당첨 결과가 없습니다.</div>
@@ -12148,8 +12297,9 @@ const PushClient = {
                 : (filter === 'admin'
                     ? `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">도착한 관리자 메시지가 없습니다.</div>
                        <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">전체 알림 보기 (${list.length})</button>`
-                    : `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">표시할 알림이 없습니다.</div>
-                       <button type="button" onclick="window.PushClient && window.PushClient.checkAndGenerateScheduledAlerts(true)" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">최신 알림 동기화</button>`));
+                    : `<div style="font-weight:800; color:#e2e8f0; margin-bottom:4px;">알림함에 보관된 알림이 없습니다.</div>
+                       <div style="font-size:0.75rem; color:#64748b; margin-bottom:12px;">최근 5개 회차 당첨결과 및 추천 알림을 다시 불러오시겠습니까?</div>
+                       <button type="button" onclick="window.PushClient && window.PushClient.resetAndSeedNotifications()" style="background:#f59e0b; color:#0f172a; border:none; padding:6px 14px; border-radius:8px; font-weight:800; font-size:0.75rem; cursor:pointer;">🔄 알림 내역 다시 동기화</button>`));
 
         const itemsHtml = filtered.length === 0
             ? `<div style="padding:36px 16px; text-align:center; color:#94a3b8; font-size:0.82rem;">
@@ -12157,25 +12307,38 @@ const PushClient = {
                 ${emptyMsg}
                </div>`
             : filtered.map(item => `
-                <div onclick="window.PushClient && window.PushClient.markNotificationRead('${item.id}')" style="background:${item.unread ? 'rgba(30,41,59,0.95)' : 'rgba(15,23,42,0.55)'}; border:1.5px solid ${item.unread ? 'rgba(245,158,11,0.45)' : 'rgba(255,255,255,0.07)'}; border-radius:12px; padding:12px 14px; cursor:pointer; transition:all 0.2s; opacity:${item.unread ? '1' : '0.72'};">
-                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:5px;">
+                <div onclick="window.PushClient && window.PushClient.markNotificationRead('${item.id}')" style="background:${item.unread ? 'rgba(30,41,59,0.95)' : 'rgba(15,23,42,0.55)'}; border:1.5px solid ${item.unread ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.07)'}; border-radius:12px; padding:12px 14px; cursor:pointer; transition:all 0.2s; opacity:${item.unread ? '1' : '0.8'}; position:relative;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;">
                         <div style="display:flex; align-items:center; gap:6px;">
                             ${item.unread
-                                ? '<span style="width:8px; height:8px; border-radius:50%; background:#fbbf24; display:inline-block;"></span><span style="font-size:0.68rem; font-weight:900; color:#fbbf24;">미확인</span>'
+                                ? '<span style="width:8px; height:8px; border-radius:50%; background:#fbbf24; display:inline-block; box-shadow:0 0 6px #fbbf24;"></span><span style="font-size:0.68rem; font-weight:900; color:#fbbf24;">미확인</span>'
                                 : '<span style="font-size:0.68rem; font-weight:800; color:#10b981;">✓ 확인완료</span>'}
                             <span style="font-size:0.68rem; padding:1px 7px; border-radius:6px; background:rgba(245,158,11,0.18); color:#fde68a; border:1px solid rgba(245,158,11,0.3); font-weight:800;">${item.badge || '🔔 알림'}</span>
                         </div>
-                        <span style="font-size:0.68rem; color:#94a3b8;">${item.timeLabel || ''}</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:0.68rem; color:#94a3b8;">${item.timeLabel || ''}</span>
+                            <button type="button" onclick="event.stopPropagation(); window.PushClient && window.PushClient.deleteNotification('${item.id}')" title="이 알림 삭제" style="background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.25); color:#fca5a5; font-size:0.68rem; padding:2px 7px; border-radius:6px; cursor:pointer;" onmouseover="this.style.background='rgba(239,68,68,0.25)';" onmouseout="this.style.background='rgba(239,68,68,0.12)';">
+                                <i class="fa-solid fa-trash-can"></i> 삭제
+                            </button>
+                        </div>
                     </div>
                     <div style="font-size:0.84rem; font-weight:800; color:${item.unread ? '#ffffff' : '#cbd5e1'}; line-height:1.35;">${item.title}</div>
                     <div style="font-size:0.76rem; color:#94a3b8; margin-top:4px; line-height:1.5; white-space:pre-line;">${item.body}</div>
-                    <div style="margin-top:9px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                    <div style="margin-top:10px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
                         <button type="button" onclick="event.stopPropagation(); window.PushClient && window.PushClient.handleNotificationAction('${item.id}')" style="background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; font-size:0.73rem; font-weight:800; padding:4px 10px; border-radius:7px; cursor:pointer;">
                             ${item.actionLabel || '🎱 바로가기'} →
                         </button>
-                        <span style="font-size:0.68rem; color:${item.unread ? '#fbbf24' : '#64748b'}; font-weight:700;">
-                            ${item.unread ? '탭하여 읽음 처리' : '읽음'}
-                        </span>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            ${item.unread ? `
+                                <button type="button" onclick="event.stopPropagation(); window.PushClient && window.PushClient.markNotificationRead('${item.id}')" style="background:linear-gradient(135deg, rgba(245,158,11,0.25) 0%, rgba(217,119,6,0.35) 100%); border:1px solid #fbbf24; color:#fff; font-size:0.72rem; font-weight:900; padding:4px 10px; border-radius:7px; cursor:pointer; box-shadow:0 2px 6px rgba(245,158,11,0.2);">
+                                    탭하여 읽음 처리 ✓
+                                </button>
+                            ` : `
+                                <span style="font-size:0.7rem; color:#64748b; font-weight:700; padding:3px 6px;">
+                                    ✓ 확인 완료됨
+                                </span>
+                            `}
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -12220,8 +12383,11 @@ const PushClient = {
                             <button type="button" onclick="window.PushClient && window.PushClient.markAllNotificationsRead()" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(255,255,255,0.07); color:#e2e8f0; border:1px solid rgba(255,255,255,0.12); cursor:pointer;">
                                 ✓ 모두 읽음
                             </button>
+                            <button type="button" onclick="window.PushClient && window.PushClient.clearAllNotifications()" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); cursor:pointer;">
+                                🗑️ 전체 삭제
+                            </button>
                             <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle()" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.4); cursor:pointer;">
-                                ⚙️ 푸시 설정·테스트
+                                ⚙️ 설정·테스트
                             </button>
                         </div>
                     </div>
@@ -13164,6 +13330,11 @@ if (typeof window !== 'undefined') {
     window.PushClient = PushClient;
     window.openNotificationCenterModal = (filter) => PushClient.openNotificationCenterModal(filter);
     window.openAdminMessageConsoleModal = (userId) => PushClient.openAdminMessageConsoleModal(userId);
+    window.markNotificationRead = (id, showToast) => PushClient.markNotificationRead(id, showToast);
+    window.markAllNotificationsRead = () => PushClient.markAllNotificationsRead();
+    window.deleteNotification = (id) => PushClient.deleteNotification(id);
+    window.clearAllNotifications = () => PushClient.clearAllNotifications();
+    window.resetAndSeedNotifications = () => PushClient.resetAndSeedNotifications();
 
     window.handlePushNotificationToggle = async function() {
         if (!PushClient.isSupported()) {
