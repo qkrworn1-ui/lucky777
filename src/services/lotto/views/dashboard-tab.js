@@ -737,11 +737,17 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
         el.innerHTML = finalHtml;
     });
 
-    // 🔔 알림 미설정 사용자 전용 독립 미니 위젯 렌더링
+    // 🔔 알림 미설정 사용자 전용 독립 미니 위젯 렌더링 + 미확인 알림 배너 갱신
     if (typeof renderPushNotificationMiniWidget === 'function') {
         renderPushNotificationMiniWidget();
     } else if (typeof window !== 'undefined' && typeof window.renderPushNotificationMiniWidget === 'function') {
         window.renderPushNotificationMiniWidget();
+    }
+    if (typeof window !== 'undefined' && window.PushClient) {
+        try {
+            window.PushClient.checkAndGenerateScheduledAlerts();
+            window.PushClient.renderUnreadNotificationUI();
+        } catch(e) {}
     }
 }
 
@@ -783,6 +789,7 @@ export async function saveAndApplyDashboardBirthDate(triggerBtn) {
             localStorage.setItem(storageKeyType, calendarType);
             localStorage.setItem('user_birthdate_last', birthDate);
             localStorage.setItem('user_calendartype_last', calendarType);
+            localStorage.setItem('userBirthDate', birthDate);
         } catch(e) {}
 
         // 2. window.__currentUser 세션 동기화
@@ -820,8 +827,19 @@ export async function saveAndApplyDashboardBirthDate(triggerBtn) {
         // 5. 대시보드 추천 가이드 즉각 렌더링 (모든 타겟 일괄 갱신)
         renderFortuneAdvisorCard(false);
 
+        // 6. 🔔 사주 길일·길시 푸시 스케줄 및 미확인 알림 즉시 재동기화
+        if (typeof window !== 'undefined' && window.PushClient) {
+            try {
+                window.PushClient.syncMyeongriScheduleIfNeeded();
+                window.PushClient.checkAndGenerateScheduledAlerts();
+                window.PushClient.renderUnreadNotificationUI();
+            } catch (pushErr) {
+                console.warn('[saveAndApplyDashboardBirthDate] PushClient sync warning:', pushErr);
+            }
+        }
+
         if (typeof showToast === 'function') {
-            showToast('✨ 생년월일이 등록되었습니다. 황금 구매 요일 및 길시가 분석되었습니다.');
+            showToast('✨ 생년월일이 등록되었습니다. 황금 구매 요일 및 길시 알림이 동기화되었습니다.');
         }
     } catch(err) {
         console.error('[saveAndApplyDashboardBirthDate Error]', err);

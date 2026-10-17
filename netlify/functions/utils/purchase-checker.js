@@ -13,12 +13,6 @@
 async function checkUserPurchaseCompleted(db, userId, targetRound) {
     if (!userId || userId === 'guest') return false;
 
-    // 관리자나 영구 면제 회원은 상시 패스
-    const cleanId = String(userId).trim().toLowerCase();
-    if (cleanId === 'master' || cleanId === 'admin') {
-        return true;
-    }
-
     try {
         if (!db) {
             // Firestore SDK가 없을 경우 REST API로 조회

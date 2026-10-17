@@ -80,6 +80,12 @@ export async function renderLandingDashboard() {
     if (typeof window.renderFortuneAdvisorCard === 'function') {
         try { window.renderFortuneAdvisorCard(); } catch(e){}
     }
+    if (typeof window !== 'undefined' && window.PushClient) {
+        try {
+            window.PushClient.checkAndGenerateScheduledAlerts();
+            window.PushClient.renderUnreadNotificationUI();
+        } catch(e){}
+    }
 
     // ⚡ 16인 전체회원 스냅샷 동기화 스트립 표시
     const syncStripText = document.getElementById('lpSyncStripText');

@@ -102,48 +102,135 @@ export const PushClient = {
 
     /**
      * 회원의 사주명리 길일·길시 스케줄 정보 추출
+     * (calculateMyeongriProfile 및 모든 생년월일 저장소 키 완벽 호환)
      */
     getMyeongriSchedule() {
         try {
-            // 사용자 생년월일 가져오기 (SafeAuth / window.__cachedUsersWithStatus / Firestore)
             let birthDate = null;
             let calendarType = 'solar';
-            const currentUserId = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : null;
+            let currentUserId = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : null;
+            if (typeof currentUserId === 'string' && currentUserId.startsWith('{')) {
+                try { currentUserId = JSON.parse(currentUserId).userid || currentUserId; } catch (e) {}
+            }
+            currentUserId = (currentUserId || '').trim();
 
-            if (currentUserId && window.__cachedUsersWithStatus) {
-                const userObj = window.__cachedUsersWithStatus.find(u => String(u.id).toLowerCase() === String(currentUserId).toLowerCase());
-                if (userObj && userObj.data && userObj.data.birthDate) {
-                    birthDate = userObj.data.birthDate;
-                    calendarType = userObj.data.calendarType || 'solar';
+            // 1. window.__currentUser 우선 확인
+            if (window.__currentUser && window.__currentUser.birthDate) {
+                birthDate = window.__currentUser.birthDate;
+                calendarType = window.__currentUser.calendarType || 'solar';
+            }
+
+            // 2. window.__cachedUsersWithStatus 확인
+            if (!birthDate && currentUserId && Array.isArray(window.__cachedUsersWithStatus)) {
+                const userObj = window.__cachedUsersWithStatus.find(u =>
+                    String(u.id || u.userId || '').toLowerCase() === String(currentUserId).toLowerCase()
+                );
+                if (userObj) {
+                    const bDate = userObj.birthDate || (userObj.data && userObj.data.birthDate);
+                    if (bDate) {
+                        birthDate = bDate;
+                        calendarType = userObj.calendarType || (userObj.data && userObj.data.calendarType) || 'solar';
+                    }
                 }
             }
 
-            if (!birthDate) {
-                // fallback to localStorage or inputs
-                const storedBirth = localStorage.getItem('userBirthDate');
-                if (storedBirth) birthDate = storedBirth;
+            // 3. localStorage 다양한 키 확인 (user_birthdate_{id}, user_birthdate_last, userBirthDate)
+            if (!birthDate && typeof localStorage !== 'undefined') {
+                if (currentUserId) {
+                    birthDate = localStorage.getItem('user_birthdate_' + currentUserId);
+                    calendarType = localStorage.getItem('user_calendartype_' + currentUserId) || calendarType;
+                }
+                if (!birthDate) {
+                    birthDate = localStorage.getItem('user_birthdate_last')
+                        || localStorage.getItem('user_birthdate_guest')
+                        || localStorage.getItem('userBirthDate');
+                    calendarType = localStorage.getItem('user_calendartype_last')
+                        || localStorage.getItem('user_calendartype_guest')
+                        || calendarType;
+                }
             }
 
-            if (!birthDate || !window.MyeongriService || typeof window.MyeongriService.analyzeBirth !== 'function') {
+            if (!birthDate || !window.MyeongriService) {
                 return null;
             }
 
-            const analysis = window.MyeongriService.analyzeBirth(birthDate, calendarType);
-            if (!analysis || !analysis.stem) return null;
+            // MyeongriService.calculateMyeongriProfile 정식 호출 (하위 호환 analyzeBirth 폴백 포함)
+            let profile = null;
+            if (typeof window.MyeongriService.calculateMyeongriProfile === 'function') {
+                profile = window.MyeongriService.calculateMyeongriProfile(birthDate, { calendarType });
+            } else if (typeof window.MyeongriService.analyzeBirth === 'function') {
+                profile = window.MyeongriService.analyzeBirth(birthDate, calendarType);
+            }
 
-            const stem = analysis.stem;
+            if (!profile) return null;
+
+            const stem = profile.stem || profile;
             return {
-                stemName: stem.name,
-                elementKo: stem.elementKo,
-                wealthElementKo: stem.wealthElementKo,
-                primaryDayShort: stem.primaryDayShort,
-                luckyColor: stem.luckyColor,
-                timeSlot1: stem.timeSlot1,
-                timeSlot2: stem.timeSlot2
+                birthDate,
+                calendarType,
+                stemKey: profile.stemKey || stem.key || '',
+                stemName: stem.name || '',
+                elementKo: stem.elementKo || '',
+                wealthElementKo: stem.wealthElementKo || '',
+                primaryDays: Array.isArray(stem.primaryDays) ? stem.primaryDays : [],
+                secondaryDays: Array.isArray(stem.secondaryDays) ? stem.secondaryDays : [],
+                primaryDayShort: stem.primaryDayShort || (Array.isArray(stem.primaryDays) ? stem.primaryDays.join(', ') : ''),
+                luckyColor: stem.luckyColor || '',
+                timeSlot1: stem.timeSlot1 || '',
+                timeSlot2: stem.timeSlot2 || '',
+                todayReport: profile.todayReport || null
             };
         } catch (err) {
             console.warn('[PushClient] Myeongri schedule extraction error:', err);
             return null;
+        }
+    },
+
+    /**
+     * 생년월일/사주 변경 시 이미 구독 중인 사용자의 스케줄을 서버/Firestore에 즉시 재동기화
+     */
+    async syncMyeongriScheduleIfNeeded() {
+        try {
+            const sub = await this.getSubscription();
+            if (!sub) return false;
+            const myeongriSchedule = this.getMyeongriSchedule();
+            if (!myeongriSchedule) return false;
+
+            let userId = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest';
+            if (typeof userId === 'string' && userId.startsWith('{')) {
+                try { userId = JSON.parse(userId).userid || userId; } catch (e) {}
+            }
+            const userName = this.getCurrentUserName();
+            let savedSettings = {};
+            try {
+                savedSettings = JSON.parse(localStorage.getItem('lucky777_push_settings') || '{}');
+            } catch (e) {}
+
+            const subData = {
+                endpoint: sub.endpoint,
+                keys: {
+                    p256dh: sub.toJSON().keys ? sub.toJSON().keys.p256dh : '',
+                    auth: sub.toJSON().keys ? sub.toJSON().keys.auth : ''
+                },
+                userId: userId || 'guest',
+                userName: userName,
+                myeongriSchedule: myeongriSchedule,
+                settings: {
+                    notifyMyeongri: savedSettings.notifyMyeongri !== false,
+                    notifyLockReminder: savedSettings.notifyLockReminder !== false,
+                    notifyDrawResult: savedSettings.notifyDrawResult !== false,
+                    skipIfPurchased: true
+                },
+                platform: navigator.platform || 'Unknown',
+                userAgent: navigator.userAgent,
+                updatedAt: new Date().toISOString()
+            };
+
+            await this.saveSubscriptionToServer(subData);
+            return true;
+        } catch (e) {
+            console.warn('[PushClient] syncMyeongriScheduleIfNeeded error:', e);
+            return false;
         }
     },
 
@@ -182,7 +269,10 @@ export const PushClient = {
 
         // 4. 사주 스케줄 및 사용자 정보 패키징
         const myeongriSchedule = this.getMyeongriSchedule();
-        const userId = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest';
+        let userId = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest';
+        if (typeof userId === 'string' && userId.startsWith('{')) {
+            try { userId = JSON.parse(userId).userid || userId; } catch (e) {}
+        }
         const userName = this.getCurrentUserName();
         const subData = {
             endpoint: sub.endpoint,
@@ -207,7 +297,10 @@ export const PushClient = {
         // 5. 서버에 구독 정보 동기화 (Netlify Function 또는 Firestore 직접 저장)
         await this.saveSubscriptionToServer(subData);
 
-        // 6. 성공 피드백 진동
+        // 6. 구독 완료 후 즉시 길일·길시 도래 여부 체크
+        this.checkAndGenerateScheduledAlerts(true);
+
+        // 7. 성공 피드백 진동
         if ('vibrate' in navigator) {
             navigator.vibrate([40, 60, 40]);
         }
@@ -243,7 +336,6 @@ export const PushClient = {
         // 2) Firestore 직접 연동 Fallback
         if (window.db && subData.userId && subData.userId !== 'guest') {
             try {
-                // key based on hash of endpoint
                 const hash = btoa(subData.endpoint).replace(/[^a-zA-Z0-9]/g, '').slice(-20);
                 await window.db.collection('push_subscriptions').doc(`${subData.userId}_${hash}`).set(subData, { merge: true });
                 console.log('[PushClient] Push subscription registered directly to Firestore.');
@@ -284,15 +376,10 @@ export const PushClient = {
                 } else {
                     await navigator.clearAppBadge();
                 }
-            } catch (e) {
-                // Ignore error on uninstalled web context
-            }
+            } catch (e) {}
         }
     },
 
-    /**
-     * App Badging API: 앱 아이콘 배지 초기화
-     */
     /**
      * App Badging API: 앱 아이콘 배지 초기화
      */
@@ -304,9 +391,633 @@ export const PushClient = {
         }
     },
 
+    // =========================================================================
+    // 📬 미확인 알림 센터 (Unread Notification Inbox & Hybrid Schedule Engine)
+    // =========================================================================
+
+    getInboxStorageKey() {
+        let uid = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : 'guest';
+        if (typeof uid === 'string' && uid.startsWith('{')) {
+            try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
+        }
+        uid = String(uid || 'guest').trim().toLowerCase();
+        return `lucky777_notification_inbox_${uid}`;
+    },
+
+    getNotifications() {
+        try {
+            const raw = localStorage.getItem(this.getInboxStorageKey());
+            const list = raw ? JSON.parse(raw) : [];
+            return Array.isArray(list) ? list : [];
+        } catch (e) {
+            return [];
+        }
+    },
+
+    saveNotifications(list) {
+        try {
+            const trimmed = (Array.isArray(list) ? list : []).slice(0, 40);
+            localStorage.setItem(this.getInboxStorageKey(), JSON.stringify(trimmed));
+            const unreadCount = trimmed.filter(n => n && n.unread).length;
+            this.setBadge(unreadCount);
+            this.renderUnreadNotificationUI();
+        } catch (e) {}
+    },
+
+    addNotification(notif, showBrowserAlert = false) {
+        if (!notif || !notif.id) return false;
+        const list = this.getNotifications();
+        if (list.some(item => item.id === notif.id)) {
+            return false; // 중복 알림 방지
+        }
+
+        const newItem = {
+            id: notif.id,
+            category: notif.category || 'myeongri',
+            badge: notif.badge || '🔮 사주 길일·길시',
+            title: notif.title || '운도실력 맞춤 알림',
+            body: notif.body || '',
+            createdAt: notif.createdAt || new Date().toISOString(),
+            timeLabel: notif.timeLabel || this.formatTimeLabel(notif.createdAt),
+            unread: notif.unread !== false,
+            actionType: notif.actionType || 'generator',
+            actionLabel: notif.actionLabel || '🎱 맞춤 번호 확인하기'
+        };
+
+        list.unshift(newItem);
+        this.saveNotifications(list);
+
+        if (showBrowserAlert && typeof Notification !== 'undefined' && Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+            navigator.serviceWorker.ready.then(reg => {
+                const origin = window.location.origin;
+                const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
+                reg.showNotification(newItem.title, {
+                    body: newItem.body,
+                    icon: `${origin}${basePath}icons/icon-192.png`,
+                    badge: `${origin}${basePath}icons/favicon.png`,
+                    tag: newItem.id,
+                    vibrate: [150, 80, 150],
+                    data: { url: `${origin}${basePath}?tab=tab-generator` }
+                }).catch(() => {});
+            }).catch(() => {});
+        }
+        return true;
+    },
+
+    formatTimeLabel(isoStr) {
+        try {
+            const d = isoStr ? new Date(isoStr) : new Date();
+            const month = d.getMonth() + 1;
+            const date = d.getDate();
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            return `${month}/${date} ${hh}:${mm}`;
+        } catch (e) {
+            return '방금 전';
+        }
+    },
+
+    markNotificationRead(id) {
+        const list = this.getNotifications();
+        let changed = false;
+        list.forEach(item => {
+            if (item && item.id === id && item.unread) {
+                item.unread = false;
+                changed = true;
+            }
+        });
+        if (changed) {
+            this.saveNotifications(list);
+        } else {
+            this.renderUnreadNotificationUI();
+        }
+    },
+
+    markAllNotificationsRead() {
+        const list = this.getNotifications();
+        list.forEach(item => {
+            if (item) item.unread = false;
+        });
+        this.saveNotifications(list);
+        if (typeof window.showToast === 'function') {
+            window.showToast('✓ 모든 미확인 알림을 읽음 처리했습니다.');
+        }
+    },
+
+    /**
+     * Service Worker IndexedDB('lucky777_notifications_db')에 쌓인 백그라운드 푸시 알림을 로컬 알림함으로 병합
+     */
+    async syncFromServiceWorkerDB() {
+        if (typeof indexedDB === 'undefined') return;
+        return new Promise((resolve) => {
+            try {
+                const req = indexedDB.open('lucky777_notifications_db', 1);
+                req.onupgradeneeded = (ev) => {
+                    const db = ev.target.result;
+                    if (!db.objectStoreNames.contains('inbox')) {
+                        db.createObjectStore('inbox', { keyPath: 'id' });
+                    }
+                };
+                req.onsuccess = (ev) => {
+                    try {
+                        const db = ev.target.result;
+                        if (!db.objectStoreNames.contains('inbox')) return resolve();
+                        const tx = db.transaction('inbox', 'readwrite');
+                        const store = tx.objectStore('inbox');
+                        const getAllReq = store.getAll();
+                        getAllReq.onsuccess = () => {
+                            const items = getAllReq.result || [];
+                            if (items.length > 0) {
+                                items.forEach(it => {
+                                    this.addNotification({
+                                        id: it.id,
+                                        category: it.category || 'myeongri',
+                                        badge: it.badge || '🔮 사주 길일·길시',
+                                        title: it.title,
+                                        body: it.body,
+                                        createdAt: it.createdAt,
+                                        unread: true,
+                                        actionType: 'generator',
+                                        actionLabel: '🎱 바로 확인하기'
+                                    }, false);
+                                });
+                                store.clear();
+                            }
+                            resolve();
+                        };
+                        getAllReq.onerror = () => resolve();
+                    } catch (e) {
+                        resolve();
+                    }
+                };
+                req.onerror = () => resolve();
+            } catch (e) {
+                resolve();
+            }
+        });
+    },
+
+    /**
+     * 현재 진행 회차에 사용자가 이미 실구매 영수증을 등록했는지 확인
+     */
+    hasPurchasedCurrentRound(targetRound) {
+        try {
+            let uid = (typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '';
+            if (typeof uid === 'string' && uid.startsWith('{')) {
+                try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
+            }
+            uid = String(uid || '').trim().toLowerCase();
+
+            let ledger = (window.state && window.state.globalLedger) ? window.state.globalLedger : null;
+            if ((!ledger || Object.keys(ledger).length === 0) && uid) {
+                const raw = localStorage.getItem(`lotto_actual_ledger_${uid}`);
+                if (raw) ledger = JSON.parse(raw);
+            }
+            if (!ledger) return false;
+            const receipts = ledger[String(targetRound)] || ledger[targetRound] || [];
+            if (Array.isArray(receipts) && receipts.some(r => r && Array.isArray(r.combos) && r.combos.length > 0)) {
+                return true;
+            }
+        } catch (e) {}
+        return false;
+    },
+
+    /**
+     * 진행 중인 목표 회차 계산 (2002-12-07 1회 기준)
+     */
+    getUpcomingRoundNumber() {
+        try {
+            if (window.state && Array.isArray(window.state.lottoData) && window.state.lottoData.length > 0) {
+                const maxDraw = Math.max(...window.state.lottoData.map(d => Number(d.round || d.drwNo || 0)));
+                if (maxDraw > 1000) return maxDraw + 1;
+            }
+        } catch (e) {}
+        const baseDate = new Date('2002-12-07T20:00:00+09:00');
+        const diffWeeks = Math.floor((Date.now() - baseDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+        return 1 + diffWeeks + 1;
+    },
+
+    /**
+     * 🔮 스마트 하이브리드 스케줄러:
+     * 앱 접속 또는 포그라운드 복귀 시 오늘의 [사주 길일], [사주 길시(1시간 전 및 진행중)], [토요일 마감 임박], [추첨 결과 발표]를 자동 점검하여
+     * 놓친 알림을 미확인 알림함에 자동 생성하고 필요 시 브라우저 알림을 발송합니다.
+     */
+    checkAndGenerateScheduledAlerts(isInitialSubscribe = false) {
+        try {
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const dateKey = `${yyyy}-${mm}-${dd}`;
+            const daysKo = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
+            const todayName = daysKo[now.getDay()];
+            const curMinutes = now.getHours() * 60 + now.getMinutes();
+
+            const targetRound = this.getUpcomingRoundNumber();
+            const alreadyPurchased = this.hasPurchasedCurrentRound(targetRound);
+            const dispName = this.getUserDisplayName();
+            const schedule = this.getMyeongriSchedule();
+
+            // 1. 사주 길일·길시 알림 체크 (이번 회차 미구매 시에만 생성, 단 이미 생성된 알림은 유지)
+            if (schedule && !alreadyPurchased) {
+                const isPrimaryDay = Array.isArray(schedule.primaryDays) && schedule.primaryDays.includes(todayName);
+                const isSecondaryDay = Array.isArray(schedule.secondaryDays) && schedule.secondaryDays.includes(todayName);
+                const isAuspiciousDay = isPrimaryDay || isSecondaryDay || todayName === '토요일';
+
+                // 1-A) 오늘의 길일 브리핑 알림 (오전 08:00 이후)
+                if ((isPrimaryDay || isSecondaryDay) && curMinutes >= 8 * 60) {
+                    const dayRankLabel = isPrimaryDay ? '1순위 황금 재물 길일' : '2순위 재물 길일';
+                    this.addNotification({
+                        id: `myeongri-day-${dateKey}`,
+                        category: 'myeongri',
+                        badge: `☀️ 오늘의 ${isPrimaryDay ? '1순위' : '2순위'} 길일`,
+                        title: `오늘은 ${dispName}의 ${dayRankLabel}(${todayName})입니다!`,
+                        body: `${schedule.stemName}(${schedule.elementKo}) 일간 기준 오늘의 추천 집중 길시는 [${schedule.timeSlot1}] 및 [${schedule.timeSlot2}]이며, 행운 색상은 [${schedule.luckyColor}]입니다.`,
+                        timeLabel: `오늘 (${todayName}) 길일 안내`,
+                        unread: true,
+                        actionType: 'fortune',
+                        actionLabel: '🧭 사주 길일·길시 상세 보기'
+                    }, false);
+                }
+
+                // 1-B) 오늘의 길시 1시간 전 & 진행중 알림 체크
+                if (isAuspiciousDay) {
+                    const slots = [
+                        { label: schedule.timeSlot1, rank: '1순위 집중 길시' },
+                        { label: schedule.timeSlot2, rank: '2순위 보조 길시' }
+                    ].filter(s => s.label);
+
+                    slots.forEach((slotObj, idx) => {
+                        const match = slotObj.label.match(/(\d{1,2}):(\d{2})\s*~\s*(\d{1,2}):(\d{2})/);
+                        if (!match) return;
+                        const startMin = parseInt(match[1], 10) * 60 + parseInt(match[2], 10);
+                        const endMin = parseInt(match[3], 10) * 60 + parseInt(match[4], 10);
+                        const oneHourBeforeMin = startMin - 60;
+
+                        // 길시 1시간 전 ~ 길시 종료 사이이거나, 오늘 이미 지나간 길시(놓친 길시)도 당일 미확인 알림으로 브리핑 제공
+                        if (curMinutes >= oneHourBeforeMin) {
+                            const isCurrentlyActive = curMinutes >= startMin && curMinutes <= endMin;
+                            const isPreAlertWindow = curMinutes >= oneHourBeforeMin && curMinutes < startMin;
+                            const statusTitle = isPreAlertWindow
+                                ? `[길시 1시간 전] ${dispName}의 ${slotObj.rank}(${slotObj.label}) 도래 안내`
+                                : (isCurrentlyActive
+                                    ? `[지금은 황금 길시!] ${dispName}의 ${slotObj.rank}(${slotObj.label}) 진행 중`
+                                    : `[오늘의 길시 알림] ${dispName}의 ${slotObj.rank}(${slotObj.label}) 안내`);
+
+                            this.addNotification({
+                                id: `myeongri-slot${idx + 1}-${dateKey}`,
+                                category: 'myeongri',
+                                badge: isCurrentlyActive ? '🔮 황금 길시 진행중' : '🔮 사주 길시 알림',
+                                title: statusTitle,
+                                body: `오늘(${todayName}) ${dispName}의 일간(${schedule.stemName})과 재성(${schedule.wealthElementKo}) 기운이 조화를 이루는 [${slotObj.label}] 시간대입니다. 아직 제 ${targetRound}회차 구매 등록 전이시라면 맞춤 번호를 확인해 보세요.`,
+                                timeLabel: `오늘 ${match[1]}:${match[2]} 길시`,
+                                unread: true,
+                                actionType: 'generator',
+                                actionLabel: '🎱 길시 맞춤 번호 생성하기'
+                            }, isPreAlertWindow || isCurrentlyActive);
+                        }
+                    });
+                }
+            }
+
+            // 2. 토요일 판매 마감 임박 리마인더 (토요일 18:00 ~ 20:00 사이, 미구매 회원)
+            if (todayName === '토요일' && curMinutes >= 18 * 60 && curMinutes < 20 * 60 && !alreadyPurchased) {
+                this.addNotification({
+                    id: `lock-reminder-${targetRound}`,
+                    category: 'reminder',
+                    badge: '⏰ 마감 임박 리마인더',
+                    title: `제 ${targetRound}회차 로또 판매 마감(20:00) 임박 안내`,
+                    body: `오늘 20:00에 제 ${targetRound}회차 복권 판매 및 실구매 인증이 마감됩니다. 실물 복권을 구매하셨다면 지금 QR 스캔으로 간편 등록하세요.`,
+                    timeLabel: '오늘 토요일 마감 안내',
+                    unread: true,
+                    actionType: 'qr',
+                    actionLabel: '📷 실구매 QR 영수증 등록하기'
+                }, true);
+            }
+
+            // 3. 최신 회차 추첨 결과 발표 알림 (최신 추첨 회차 기준 1회 생성)
+            const latestDrawnRound = targetRound - 1;
+            if (latestDrawnRound >= 1235) {
+                const seenDrawKey = `lucky777_draw_notified_${latestDrawnRound}`;
+                if (!localStorage.getItem(seenDrawKey)) {
+                    localStorage.setItem(seenDrawKey, 'true');
+                    this.addNotification({
+                        id: `draw-result-${latestDrawnRound}`,
+                        category: 'result',
+                        badge: '🏆 추첨 결과 리포트',
+                        title: `제 ${latestDrawnRound}회차 당첨번호 및 적중 결과 안내`,
+                        body: `제 ${latestDrawnRound}회차 공식 당첨번호(본번호 ✓ · 보너스 +) 채점이 완료되었습니다. 실구매 확정 장부 및 AI 추천번호 복기 결과를 확인해 보세요.`,
+                        timeLabel: `제 ${latestDrawnRound}회 정산 완료`,
+                        unread: true,
+                        actionType: 'confirmed',
+                        actionLabel: '📊 당첨 결과 확인하기'
+                    }, false);
+                }
+            }
+
+            this.renderUnreadNotificationUI();
+        } catch (err) {
+            console.warn('[PushClient] checkAndGenerateScheduledAlerts error:', err);
+        }
+    },
+
+    /**
+     * 알림 액션 실행 (번호생성 / QR등록 / 사주운세 / 당첨확인 탭 이동)
+     */
+    handleNotificationAction(notifId) {
+        const list = this.getNotifications();
+        const target = list.find(n => n && n.id === notifId);
+        this.markNotificationRead(notifId);
+        this.closeNotificationCenterModal();
+
+        const actionType = target ? target.actionType : 'generator';
+        if (actionType === 'qr') {
+            if (typeof window.showLotto === 'function') window.showLotto();
+            setTimeout(() => {
+                if (typeof window.openManualLedgerModal === 'function') window.openManualLedgerModal();
+                else if (document.getElementById('btnOpenManualLedger')) document.getElementById('btnOpenManualLedger').click();
+            }, 120);
+        } else if (actionType === 'confirmed') {
+            if (typeof window.showLotto === 'function') window.showLotto();
+            setTimeout(() => {
+                if (typeof window.switchTab === 'function') window.switchTab('tab-confirmed-list');
+            }, 100);
+        } else if (actionType === 'fortune') {
+            if (typeof window.showLotto === 'function') window.showLotto();
+            setTimeout(() => {
+                if (typeof window.switchTab === 'function') window.switchTab('tab-dashboard');
+                const el = document.getElementById('dashboardFortuneAdvisorContainer');
+                if (el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 120);
+        } else {
+            if (typeof window.showLotto === 'function') window.showLotto();
+            setTimeout(() => {
+                if (typeof window.switchTab === 'function') window.switchTab('tab-generator');
+            }, 100);
+        }
+    },
+
+    /**
+     * 대시보드(홈 & 로또 대시보드) 미확인 알림 배너 및 상단 헤더 배지 실시간 렌더링
+     */
+    renderUnreadNotificationUI() {
+        const list = this.getNotifications();
+        const unreadList = list.filter(n => n && n.unread);
+        const unreadCount = unreadList.length;
+
+        // 1. 모바일/데스크톱 상단 알림 버튼에 미확인 건수 배지 업데이트
+        const mobileBtn = document.getElementById('lpMobilePushBtn');
+        if (mobileBtn) {
+            const txtEl = mobileBtn.querySelector('.lp-dday-text');
+            if (txtEl) {
+                txtEl.innerHTML = unreadCount > 0
+                    ? `알림 <span style="display:inline-block; background:#ef4444; color:#fff; font-size:0.65rem; font-weight:900; padding:0 5px; border-radius:999px; margin-left:2px; line-height:1.35;">${unreadCount}</span>`
+                    : '알림함';
+            }
+            mobileBtn.onclick = (e) => {
+                if (e) e.stopPropagation();
+                this.openNotificationCenterModal();
+            };
+        }
+
+        const desktopBtn = document.getElementById('btnPushNotifyTop');
+        if (desktopBtn) {
+            desktopBtn.innerHTML = unreadCount > 0
+                ? `<i class="fa-solid fa-bell"></i> <span>미확인 알림</span> <span style="background:#ef4444; color:#fff; font-size:0.7rem; font-weight:900; padding:1px 6px; border-radius:999px; margin-left:4px;">${unreadCount}</span>`
+                : `<i class="fa-solid fa-bell"></i> <span>알림함</span>`;
+            desktopBtn.onclick = (e) => {
+                if (e) e.stopPropagation();
+                this.openNotificationCenterModal();
+            };
+        }
+
+        // 2. 홈 대시보드 & 로또 대시보드 미확인 알림 브리핑 배너 렌더링
+        this.ensureDashboardUnreadContainers();
+        const containers = document.querySelectorAll('.lucky777-unread-banner-slot');
+        containers.forEach(slot => {
+            if (unreadCount === 0) {
+                slot.innerHTML = `
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 14px; border-radius:12px; background:rgba(15,23,42,0.72); border:1px solid rgba(255,255,255,0.08); margin-bottom:10px; font-size:0.76rem; color:#94a3b8;">
+                        <div style="display:flex; align-items:center; gap:7px; min-width:0;">
+                            <span style="color:#10b981; font-weight:900;">✓</span>
+                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">길일·길시 및 추첨 알림을 모두 확인하셨습니다.</span>
+                        </div>
+                        <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal()" style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:#fbbf24; font-size:0.72rem; font-weight:800; padding:4px 10px; border-radius:8px; cursor:pointer; flex-shrink:0;">
+                            🔔 알림함 (${list.length})
+                        </button>
+                    </div>
+                `;
+                return;
+            }
+
+            const latest = unreadList[0];
+            slot.innerHTML = `
+                <div style="background:linear-gradient(135deg, rgba(245,158,11,0.16) 0%, rgba(15,23,42,0.92) 65%, rgba(30,41,59,0.92) 100%); border:1.5px solid rgba(245,158,11,0.45); border-radius:14px; padding:11px 14px; margin-bottom:12px; box-shadow:0 6px 20px rgba(245,158,11,0.12);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:7px; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#fbbf24; box-shadow:0 0 8px #fbbf24;"></span>
+                            <span style="font-size:0.8rem; font-weight:900; color:#fbbf24;">🔔 미확인 알림 ${unreadCount}건</span>
+                            <span style="font-size:0.68rem; padding:1px 6px; border-radius:6px; background:rgba(245,158,11,0.2); color:#fde68a; font-weight:800;">${latest.badge || '길일·길시'}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button type="button" onclick="window.PushClient && window.PushClient.markAllNotificationsRead()" style="background:transparent; border:none; color:#cbd5e1; font-size:0.72rem; font-weight:700; text-decoration:underline; cursor:pointer; padding:2px 4px;">
+                                모두 읽음
+                            </button>
+                            <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal()" style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.45); color:#fde047; font-size:0.72rem; font-weight:800; padding:3px 9px; border-radius:7px; cursor:pointer;">
+                                전체보기 (${unreadCount}) ›
+                            </button>
+                        </div>
+                    </div>
+                    <div onclick="window.PushClient && window.PushClient.openNotificationCenterModal()" style="background:rgba(9,13,22,0.75); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:9px 11px; display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer;">
+                        <div style="min-width:0; flex:1;">
+                            <div style="font-size:0.8rem; font-weight:800; color:#ffffff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${latest.title}</div>
+                            <div style="font-size:0.73rem; color:#cbd5e1; margin-top:2px; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;">${latest.body}</div>
+                        </div>
+                        <button type="button" onclick="event.stopPropagation(); window.PushClient && window.PushClient.markNotificationRead('${latest.id}')" style="background:#f59e0b; color:#0f172a; border:none; font-size:0.73rem; font-weight:900; padding:6px 11px; border-radius:8px; cursor:pointer; flex-shrink:0;">
+                            확인 ✓
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        // 모달이 열려 있다면 내부 리스트도 즉시 갱신
+        const modalEl = document.getElementById('lucky777NotificationCenterModal');
+        if (modalEl && modalEl.style.display === 'flex') {
+            this.renderNotificationCenterModalContent();
+        }
+    },
+
+    /**
+     * 홈 대시보드 및 로또 대시보드 상단에 미확인 알림 슬롯 자동 주입
+     */
+    ensureDashboardUnreadContainers() {
+        // 1) 홈 대시보드: #landingFortuneAdvisorContainer 위 또는 #lpDrawCountdownBanner 아래
+        if (!document.getElementById('landingUnreadNotificationSlot')) {
+            const fortuneEl = document.getElementById('landingFortuneAdvisorContainer');
+            const countdownEl = document.getElementById('lpDrawCountdownBanner');
+            const slot = document.createElement('div');
+            slot.id = 'landingUnreadNotificationSlot';
+            slot.className = 'lucky777-unread-banner-slot';
+            slot.style.cssText = 'width: 100%; max-width: 900px; margin: 0 auto 4px auto; box-sizing: border-box;';
+            if (fortuneEl && fortuneEl.parentNode) {
+                fortuneEl.parentNode.insertBefore(slot, fortuneEl);
+            } else if (countdownEl && countdownEl.parentNode) {
+                countdownEl.parentNode.insertBefore(slot, countdownEl.nextSibling);
+            }
+        }
+
+        // 2) 로또 대시보드(통계분석/사주 탭): #dashboardFortuneAdvisorContainer 위
+        if (!document.getElementById('lottoDashUnreadNotificationSlot')) {
+            const dashFortuneEl = document.getElementById('dashboardFortuneAdvisorContainer');
+            if (dashFortuneEl && dashFortuneEl.parentNode) {
+                const slot2 = document.createElement('div');
+                slot2.id = 'lottoDashUnreadNotificationSlot';
+                slot2.className = 'lucky777-unread-banner-slot';
+                slot2.style.cssText = 'width: 100%; box-sizing: border-box; margin-bottom: 8px;';
+                dashFortuneEl.parentNode.insertBefore(slot2, dashFortuneEl);
+            }
+        }
+    },
+
+    /**
+     * 통합 미확인 알림 센터 모달 열기
+     */
+    openNotificationCenterModal(filter = 'all') {
+        this._currentModalFilter = filter || this._currentModalFilter || 'all';
+        let modal = document.getElementById('lucky777NotificationCenterModal');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'lucky777NotificationCenterModal';
+            modal.style.cssText = 'position:fixed; inset:0; background:rgba(7,10,20,0.85); backdrop-filter:blur(8px); z-index:100000; display:none; align-items:center; justify-content:center; padding:14px; box-sizing:border-box;';
+            modal.onclick = (e) => {
+                if (e.target === modal) this.closeNotificationCenterModal();
+            };
+            document.body.appendChild(modal);
+        }
+        this.renderNotificationCenterModalContent();
+        modal.style.display = 'flex';
+    },
+
+    closeNotificationCenterModal() {
+        const modal = document.getElementById('lucky777NotificationCenterModal');
+        if (modal) modal.style.display = 'none';
+    },
+
+    renderNotificationCenterModalContent() {
+        const modal = document.getElementById('lucky777NotificationCenterModal');
+        if (!modal) return;
+
+        const list = this.getNotifications();
+        const unreadCount = list.filter(n => n && n.unread).length;
+        const filter = this._currentModalFilter || 'all';
+        const filtered = filter === 'unread'
+            ? list.filter(n => n && n.unread)
+            : (filter === 'myeongri' ? list.filter(n => n && n.category === 'myeongri') : list);
+
+        const schedule = this.getMyeongriSchedule();
+        const isPermGranted = typeof Notification !== 'undefined' && Notification.permission === 'granted';
+        const isSubscribed = isPermGranted && localStorage.getItem('lucky777_push_subscribed') === 'true';
+
+        const scheduleSummaryHtml = schedule
+            ? `<div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:10px; padding:9px 12px; margin-bottom:10px; font-size:0.74rem; color:#e2e8f0; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+                <div>
+                    <span style="color:#fbbf24; font-weight:800;">🧭 내 사주 길일·길시 스케줄:</span>
+                    <strong style="color:#fff; margin-left:4px;">${schedule.primaryDayShort || '토요일'}</strong> · 집중 길시 <strong style="color:#fde047;">${schedule.timeSlot1}</strong>
+                </div>
+                <span style="font-size:0.68rem; padding:2px 7px; border-radius:999px; background:${isSubscribed ? 'rgba(16,185,129,0.2)' : 'rgba(245,158,11,0.2)'}; color:${isSubscribed ? '#34d399' : '#fbbf24'}; font-weight:800;">
+                    ${isSubscribed ? '🟢 푸시+앱내 자동감지 활성' : '⚡ 앱내 길일·길시 자동감지 활성'}
+                </span>
+               </div>`
+            : `<div style="background:rgba(59,130,246,0.1); border:1px solid rgba(59,130,246,0.3); border-radius:10px; padding:9px 12px; margin-bottom:10px; font-size:0.74rem; color:#cbd5e1; display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                <span>💡 생년월일을 등록하시면 사주 맞춤 길일·길시 알림이 자동 생성됩니다.</span>
+                <button type="button" onclick="window.PushClient.handleNotificationAction('fortune')" style="background:#3b82f6; color:#fff; border:none; padding:4px 9px; border-radius:6px; font-size:0.7rem; font-weight:800; cursor:pointer;">등록하기</button>
+               </div>`;
+
+        const itemsHtml = filtered.length === 0
+            ? `<div style="padding:36px 16px; text-align:center; color:#94a3b8; font-size:0.82rem;">
+                <div style="font-size:1.8rem; margin-bottom:8px;">✨</div>
+                <div>표시할 알림이 없습니다.</div>
+               </div>`
+            : filtered.map(item => `
+                <div onclick="window.PushClient && window.PushClient.markNotificationRead('${item.id}')" style="background:${item.unread ? 'rgba(30,41,59,0.95)' : 'rgba(15,23,42,0.55)'}; border:1.5px solid ${item.unread ? 'rgba(245,158,11,0.45)' : 'rgba(255,255,255,0.07)'}; border-radius:12px; padding:12px 14px; cursor:pointer; transition:all 0.2s; opacity:${item.unread ? '1' : '0.72'};">
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:5px;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            ${item.unread
+                                ? '<span style="width:8px; height:8px; border-radius:50%; background:#fbbf24; display:inline-block;"></span><span style="font-size:0.68rem; font-weight:900; color:#fbbf24;">미확인</span>'
+                                : '<span style="font-size:0.68rem; font-weight:800; color:#10b981;">✓ 확인완료</span>'}
+                            <span style="font-size:0.68rem; padding:1px 7px; border-radius:6px; background:rgba(245,158,11,0.18); color:#fde68a; border:1px solid rgba(245,158,11,0.3); font-weight:800;">${item.badge || '🔔 알림'}</span>
+                        </div>
+                        <span style="font-size:0.68rem; color:#94a3b8;">${item.timeLabel || ''}</span>
+                    </div>
+                    <div style="font-size:0.84rem; font-weight:800; color:${item.unread ? '#ffffff' : '#cbd5e1'}; line-height:1.35;">${item.title}</div>
+                    <div style="font-size:0.76rem; color:#94a3b8; margin-top:4px; line-height:1.5;">${item.body}</div>
+                    <div style="margin-top:9px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                        <button type="button" onclick="event.stopPropagation(); window.PushClient && window.PushClient.handleNotificationAction('${item.id}')" style="background:rgba(245,158,11,0.18); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; font-size:0.73rem; font-weight:800; padding:4px 10px; border-radius:7px; cursor:pointer;">
+                            ${item.actionLabel || '🎱 바로가기'} →
+                        </button>
+                        <span style="font-size:0.68rem; color:${item.unread ? '#fbbf24' : '#64748b'}; font-weight:700;">
+                            ${item.unread ? '탭하여 읽음 처리' : '읽음'}
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+
+        modal.innerHTML = `
+            <div style="width:100%; max-width:520px; max-height:88vh; background:#0f172a; border:1.5px solid rgba(245,158,11,0.4); border-radius:18px; box-shadow:0 24px 60px rgba(0,0,0,0.85); display:flex; flex-direction:column; overflow:hidden;">
+                <!-- Header -->
+                <div style="padding:14px 16px; background:linear-gradient(135deg, #1e293b 0%, #0f172a 100%); border-bottom:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:1.2rem;">🔔</span>
+                        <div>
+                            <div style="font-size:0.95rem; font-weight:900; color:#fff; display:flex; align-items:center; gap:6px;">
+                                <span>운도실력 통합 알림 센터</span>
+                                <span style="font-size:0.7rem; padding:1px 7px; border-radius:999px; background:${unreadCount > 0 ? '#ef4444' : 'rgba(16,185,129,0.2)'}; color:${unreadCount > 0 ? '#fff' : '#34d399'}; font-weight:900;">
+                                    ${unreadCount > 0 ? `미확인 ${unreadCount}건` : '모두 확인'}
+                                </span>
+                            </div>
+                            <div style="font-size:0.7rem; color:#94a3b8;">사주 길일·길시 · 마감 임박 · 추첨 결과 알림 내역</div>
+                        </div>
+                    </div>
+                    <button type="button" onclick="window.PushClient && window.PushClient.closeNotificationCenterModal()" style="background:rgba(255,255,255,0.08); border:none; color:#cbd5e1; width:30px; height:30px; border-radius:50%; font-size:1.1rem; cursor:pointer;">&times;</button>
+                </div>
+
+                <!-- Sub Toolbar -->
+                <div style="padding:10px 14px; background:#090d16; border-bottom:1px solid rgba(255,255,255,0.06);">
+                    ${scheduleSummaryHtml}
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;">
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('all')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'all' ? '#f59e0b' : '#1e293b'}; color:${filter === 'all' ? '#0f172a' : '#cbd5e1'};">
+                                전체 (${list.length})
+                            </button>
+                            <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('unread')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'unread' ? '#f59e0b' : '#1e293b'}; color:${filter === 'unread' ? '#0f172a' : '#cbd5e1'};">
+                                미확인 (${unreadCount})
+                            </button>
+                            <button type="button" onclick="window.PushClient && window.PushClient.openNotificationCenterModal('myeongri')" style="padding:4px 10px; border-radius:7px; font-size:0.73rem; font-weight:800; border:none; cursor:pointer; background:${filter === 'myeongri' ? '#f59e0b' : '#1e293b'}; color:${filter === 'myeongri' ? '#0f172a' : '#cbd5e1'};">
+                                🔮 길일·길시
+                            </button>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <button type="button" onclick="window.PushClient && window.PushClient.markAllNotificationsRead()" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(255,255,255,0.07); color:#e2e8f0; border:1px solid rgba(255,255,255,0.12); cursor:pointer;">
+                                ✓ 모두 읽음
+                            </button>
+                            <button type="button" onclick="window.handlePushNotificationToggle && window.handlePushNotificationToggle()" style="padding:4px 9px; border-radius:7px; font-size:0.72rem; font-weight:800; background:rgba(59,130,246,0.2); color:#93c5fd; border:1px solid rgba(59,130,246,0.4); cursor:pointer;">
+                                ⚙️ 푸시 설정·테스트
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List Body -->
+                <div style="padding:12px 14px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:8px;">
+                    ${itemsHtml}
+                </div>
+            </div>
+        `;
+    },
+
     /**
      * 알림 수신 상태에 따라 홈화면 배너 숨김/표시 처리
-     * (알림 수신 확인/구독 완료 회원은 홈화면 배너 자동 숨김)
      */
     async updateBannerVisibility() {
         const banner = document.getElementById('lpPushNotificationBanner');
@@ -347,18 +1058,19 @@ export const PushClient = {
             popoverPushBtnText.textContent = isSubscribed ? '맞춤 알림 관리 (수신 중 🟢)' : '맞춤 알림 설정 (길시 1시간 전)';
         }
         if (lpMobilePushBtn) {
-            lpMobilePushBtn.title = isSubscribed ? '길시 1시간 전 알림 수신 중 (클릭 시 관리/테스트)' : '길시 1시간 전 맞춤 알림 신청';
+            lpMobilePushBtn.title = '미확인 알림함 및 길일·길시 알림 설정';
         }
 
-        // 🔔 홈화면 황금구매가이드 독립 미니 알림 위젯 상태 동기화
         if (typeof window !== 'undefined' && typeof window.renderPushNotificationMiniWidget === 'function') {
             try { window.renderPushNotificationMiniWidget(); } catch(e) {}
         }
+
+        // 미확인 알림 UI 동기화
+        this.renderUnreadNotificationUI();
     },
 
     /**
-     * 🧪 알림 동작 테스트: 지정된 초(기본 3초) 뒤에 백그라운드 푸시 알림 팝업
-     * (사용자가 전원 버튼을 눌러 화면을 끄고 잠금화면 팝업 및 진동을 직접 체험할 수 있음)
+     * 🧪 알림 동작 테스트: 지정된 초(기본 3초) 뒤에 백그라운드 푸시 알림 팝업 + 미확인 알림함 기록
      */
     async sendTestNotification(delaySec = 3) {
         if (!('serviceWorker' in navigator) || !('Notification' in window)) {
@@ -373,18 +1085,23 @@ export const PushClient = {
 
         const reg = await navigator.serviceWorker.ready;
         const displayName = this.getUserDisplayName();
-        const msg = `🧪 ${delaySec}초 뒤 [${displayName}]을 위한 품격화된 테스트 알림이 발송됩니다!\n\n지금 스마트폰의 [전원 버튼]을 눌러 화면을 끄고 기다려보세요.\n화면이 꺼진 상태에서도 잠금화면에 정갈한 알림이 도착합니다.`;
+        const schedule = this.getMyeongriSchedule();
+        const slotInfo = schedule ? `${schedule.primaryDayShort || '토요일'} ${schedule.timeSlot1}` : '맞춤 길시';
+        const msg = `🧪 ${delaySec}초 뒤 [${displayName}]을 위한 길일·길시 테스트 알림이 발송됩니다!\n\n지금 스마트폰의 [전원 버튼]을 눌러 화면을 끄거나 대시보드 상단 [미확인 알림 배너]에 도착하는지 확인해 보세요.`;
         
         if (typeof window.showToast === 'function') {
-            window.showToast(`🧪 ${delaySec}초 뒤 [${displayName}] 테스트 알림 발송! 지금 화면을 꺼보세요.`);
+            window.showToast(`🧪 ${delaySec}초 뒤 [${displayName}] 테스트 알림 발송!`);
         }
         alert(msg);
 
         setTimeout(() => {
             const origin = window.location.origin;
             const basePath = (reg.scope && reg.scope.includes('/lucky777/')) ? '/lucky777/' : '/';
-            reg.showNotification(`🌿 [운도실력] ${displayName}의 맞춤 알림 연결 완료`, {
-                body: `${displayName}의 스마트폰 잠금화면 및 백그라운드 수신 환경이 품격 있게 연결되었습니다.`,
+            const title = `🌿 [운도실력] ${displayName}의 길일·길시 알림 연결 완료`;
+            const body = `${displayName}의 사주 맞춤 스케줄(${slotInfo}) 및 대시보드 미확인 알림함이 정상 연결되었습니다.`;
+
+            reg.showNotification(title, {
+                body,
                 icon: `${origin}${basePath}icons/icon-192.png`,
                 badge: `${origin}${basePath}icons/favicon.png`,
                 vibrate: [200, 100, 200, 100, 400],
@@ -392,8 +1109,17 @@ export const PushClient = {
                 data: { url: `${origin}${basePath}?tab=tab-confirmed` }
             });
 
-            // App Badging API 배지 테스트
-            PushClient.setBadge(1);
+            this.addNotification({
+                id: `test-alert-${Date.now()}`,
+                category: 'myeongri',
+                badge: '🧪 길일·길시 테스트',
+                title,
+                body,
+                timeLabel: '방금 도착',
+                unread: true,
+                actionType: 'generator',
+                actionLabel: '🎱 추천번호 확인하기'
+            }, false);
         }, delaySec * 1000);
     }
 };
@@ -401,6 +1127,7 @@ export const PushClient = {
 // 전역 윈도우 등록 및 인터랙티브 토글 헬퍼
 if (typeof window !== 'undefined') {
     window.PushClient = PushClient;
+    window.openNotificationCenterModal = (filter) => PushClient.openNotificationCenterModal(filter);
 
     window.handlePushNotificationToggle = async function() {
         if (!PushClient.isSupported()) {
@@ -412,9 +1139,10 @@ if (typeof window !== 'undefined') {
             const displayName = PushClient.getUserDisplayName();
             const existingSub = await PushClient.getSubscription();
             if (existingSub) {
-                const choice = confirm(`🟢 현재 [${displayName}]을 위한 [일간 조화 시간 & 공식 통계 리포트] 알림이 정상 등록되어 있습니다.\n\n[확인] : 3초 뒤 테스트 알림 받기 (화면 끄고 확인)\n[취소] : 알림 수신 해제 창으로 이동`);
+                // 구독 정보가 이미 있으면 최신 사주 스케줄을 자동 재동기화
+                await PushClient.syncMyeongriScheduleIfNeeded();
+                const choice = confirm(`🟢 현재 [${displayName}]을 위한 [사주 길일·길시 & 공식 통계 리포트] 알림이 정상 등록되어 있습니다.\n\n[확인] : 3초 뒤 테스트 알림 발송 (알림함 기록 포함)\n[취소] : 알림 수신 해제 창으로 이동`);
                 if (choice) {
-                    // 테스트 알림 실행
                     await PushClient.sendTestNotification(3);
                 } else {
                     const wantCancel = confirm('정말 알림 수신을 해제하시겠습니까?');
@@ -431,13 +1159,13 @@ if (typeof window !== 'undefined') {
                 return;
             }
 
-            const ok = confirm(`🌿 [운도실력 맞춤 알림 서비스]\n\n1. [${displayName}]의 일간 조화 시간 1시간 전 정갈한 리마인더 안내\n2. 해당 주차 구매등록 완료 시 알림 자동 생략 (안심 스마트 케어)\n3. 토요일 20:45 공식 데이터 통계 정산 리포트 통보\n\n알림을 허용하시겠습니까?`);
+            const ok = confirm(`🌿 [운도실력 맞춤 알림 서비스]\n\n1. [${displayName}]의 사주 길일·길시 1시간 전 정갈한 리마인더 안내\n2. 해당 주차 구매등록 완료 시 알림 자동 생략 (안심 스마트 케어)\n3. 대시보드 미확인 알림함에 자동 보관되어 놓친 알림도 100% 확인 가능\n\n알림을 허용하시겠습니까?`);
             if (!ok) return;
 
             const sub = await PushClient.subscribe();
             if (sub) {
                 await PushClient.updateBannerVisibility();
-                const testNow = confirm(`✨ [${displayName}]을 위한 맞춤 알림이 성공적으로 등록되었습니다!\n\n지금 화면을 끄고 3초 뒤 정갈한 테스트 알림이 오는지 시험해 보시겠습니까?`);
+                const testNow = confirm(`✨ [${displayName}]을 위한 맞춤 알림이 성공적으로 등록되었습니다!\n\n지금 3초 뒤 테스트 알림이 오는지 시험해 보시겠습니까?`);
                 if (testNow) {
                     await PushClient.sendTestNotification(3);
                 }
@@ -448,22 +1176,43 @@ if (typeof window !== 'undefined') {
         }
     };
 
-    // 앱 실행 및 화면 복귀 시 배지 초기화 및 홈화면 배너 가시성 실시간 자동 동기화
+    // 앱 실행 및 화면 복귀 시 백그라운드 푸시 병합 + 길일·길시 스케줄 자동 감지 + 미확인 알림 배너 렌더링
     function initPushUI() {
-        PushClient.clearBadge();
-        PushClient.updateBannerVisibility();
+        PushClient.syncFromServiceWorkerDB().then(() => {
+            PushClient.checkAndGenerateScheduledAlerts();
+            PushClient.updateBannerVisibility();
+            PushClient.syncMyeongriScheduleIfNeeded();
+        });
 
-        // 1. 스마트폰 설정 등 외부에서 알림을 끄고 앱으로 돌아왔을 때 즉시 감지 (focus / visibilitychange)
+        // Service Worker 실시간 postMessage 수신 리스너
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'LUCKY777_PUSH_RECEIVED' && event.data.notification) {
+                    PushClient.addNotification(event.data.notification, false);
+                }
+            });
+        }
+
+        // 1분 주기로 길시 도래 여부 백그라운드 점검
+        setInterval(() => {
+            PushClient.checkAndGenerateScheduledAlerts();
+        }, 60 * 1000);
+
         window.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'visible') {
-                PushClient.updateBannerVisibility();
+                PushClient.syncFromServiceWorkerDB().then(() => {
+                    PushClient.checkAndGenerateScheduledAlerts();
+                    PushClient.updateBannerVisibility();
+                });
             }
         });
         window.addEventListener('focus', () => {
-            PushClient.updateBannerVisibility();
+            PushClient.syncFromServiceWorkerDB().then(() => {
+                PushClient.checkAndGenerateScheduledAlerts();
+                PushClient.updateBannerVisibility();
+            });
         });
 
-        // 2. W3C Permissions API 권한 변경 실시간 리스너 (브라우저 설정 변경 즉시 반영)
         if ('permissions' in navigator && navigator.permissions.query) {
             try {
                 navigator.permissions.query({ name: 'notifications' }).then((status) => {
@@ -481,4 +1230,5 @@ if (typeof window !== 'undefined') {
         initPushUI();
     }
 }
+
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lucky777-pwa-v2026.10.17.1245.54';
+const CACHE_NAME = 'lucky777-pwa-v2026.10.17.1457';
 
 function getBasePath() {
   try {
@@ -102,6 +102,34 @@ self.addEventListener('fetch', (e) => {
 // 🔔 Web Push & Background Notification Listeners (Myeongri & Draw Alert)
 // ============================================================================
 
+function savePushToIndexedDB(item) {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open('lucky777_notifications_db', 1);
+      req.onupgradeneeded = (ev) => {
+        const db = ev.target.result;
+        if (!db.objectStoreNames.contains('inbox')) {
+          db.createObjectStore('inbox', { keyPath: 'id' });
+        }
+      };
+      req.onsuccess = (ev) => {
+        try {
+          const db = ev.target.result;
+          const tx = db.transaction('inbox', 'readwrite');
+          tx.objectStore('inbox').put(item);
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => resolve(false);
+        } catch (e) {
+          resolve(false);
+        }
+      };
+      req.onerror = () => resolve(false);
+    } catch (e) {
+      resolve(false);
+    }
+  });
+}
+
 self.addEventListener('push', (event) => {
   let data = {
     title: '🌿 [운도실력]',
@@ -142,9 +170,28 @@ self.addEventListener('push', (event) => {
     ]
   };
 
+  const inboxItem = {
+    id: data.id || (`push-${data.tag || 'alert'}-${Date.now()}`),
+    category: (data.tag && data.tag.includes('myeongri')) ? 'myeongri' : (data.category || 'system'),
+    badge: (data.tag && data.tag.includes('myeongri')) ? '🔮 사주 길일·길시' : (data.badgeText || '🔔 스마트 알림'),
+    title: data.title,
+    body: data.body,
+    createdAt: new Date().toISOString(),
+    unread: true,
+    actionUrl: (data.data && data.data.url) ? data.data.url : `${BASE_PATH}?tab=tab-generator`
+  };
+
   event.waitUntil(
     Promise.all([
       self.registration.showNotification(data.title, options),
+      savePushToIndexedDB(inboxItem),
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+        clientList.forEach((client) => {
+          try {
+            client.postMessage({ type: 'LUCKY777_PUSH_RECEIVED', notification: inboxItem });
+          } catch (e) {}
+        });
+      }).catch(() => {}),
       (typeof self.navigator !== 'undefined' && 'setAppBadge' in self.navigator)
         ? self.navigator.setAppBadge(1).catch(() => {})
         : Promise.resolve()
