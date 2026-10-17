@@ -2109,6 +2109,11 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
 
     if (typeof updateDebugMonitor === 'function') updateDebugMonitor(protectedLedger);
 
+    // 🔔 Web Push & 알림함 스마트 동기화: 구매 등록 완료 시 미구매 독려 푸시/알림 자동 해제
+    if (typeof window !== 'undefined' && window.PushClient && typeof window.PushClient.onPurchaseRegistered === 'function') {
+        try { window.PushClient.onPurchaseRegistered(targetRound); } catch(e) {}
+    }
+
     if (successMsg && typeof showToast === 'function') {
         const prefix = isServerSaved ? '💾 장부 저장 완료' : '⚠️ 로컬 장부저장';
         showToast(`${prefix}: ${successMsg}`);

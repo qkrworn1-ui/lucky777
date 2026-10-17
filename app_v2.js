@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.1653.28 - BUILD_DATE: 2026-10-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.17.2039 - BUILD_DATE: 2026-10-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.17.1653.28)
+ * Lucky777 Smart Bundle (v2026.10.17.2039)
  */
 
 
@@ -10880,18 +10880,120 @@ const PushClient = {
             }
             uid = String(uid || '').trim().toLowerCase();
 
-            let ledger = (window.state && window.state.globalLedger) ? window.state.globalLedger : null;
-            if ((!ledger || Object.keys(ledger).length === 0) && uid) {
-                const raw = SafeLocalStorage.getItem(`lotto_actual_ledger_${uid}`);
-                if (raw) ledger = JSON.parse(raw);
+            const rNum = Number(targetRound) || this.getUpcomingRoundNumber();
+
+            // 1. Check getUserConfirmedGameCountForRound if available
+            if (typeof window.getUserConfirmedGameCountForRound === 'function') {
+                try {
+                    const count = window.getUserConfirmedGameCountForRound(uid, rNum);
+                    if (count > 0) return true;
+                } catch(e) {}
             }
-            if (!ledger) return false;
-            const receipts = ledger[String(targetRound)] || ledger[targetRound] || [];
-            if (Array.isArray(receipts) && receipts.some(r => r && Array.isArray(r.combos) && r.combos.length > 0)) {
-                return true;
+
+            // 2. Check getUserPurchasesForRound if available
+            if (typeof window.getUserPurchasesForRound === 'function') {
+                try {
+                    const p = window.getUserPurchasesForRound(uid, rNum);
+                    if (Array.isArray(p) && p.length > 0) return true;
+                } catch(e) {}
+            }
+
+            // 3. Check in-memory state.globalLedger
+            let ledger = (window.state && window.state.globalLedger) ? window.state.globalLedger : null;
+
+            // 4. Check state.allUsersPurchasesMap
+            if ((!ledger || Object.keys(ledger).length === 0) && window.state && window.state.allUsersPurchasesMap && uid) {
+                if (window.state.allUsersPurchasesMap[uid] && window.state.allUsersPurchasesMap[uid].ledger) {
+                    ledger = window.state.allUsersPurchasesMap[uid].ledger;
+                }
+            }
+
+            // 5. Check SafeLocalStorage by multiple keys
+            if (!ledger || Object.keys(ledger).length === 0) {
+                const keys = [`lotto_actual_ledger_${uid}`, `lotto_actual_ledger_${uid.toLowerCase()}`, 'lotto_actual_ledger_guest'];
+                for (const k of keys) {
+                    const raw = SafeLocalStorage.getItem(k);
+                    if (raw) {
+                        try {
+                            const parsed = JSON.parse(raw);
+                            if (parsed && typeof parsed === 'object') {
+                                const rList = parsed[String(rNum)] || parsed[rNum];
+                                if (Array.isArray(rList) && rList.some(r => r && Array.isArray(r.combos) && r.combos.length > 0)) {
+                                    return true;
+                                }
+                            }
+                        } catch(e) {}
+                    }
+                }
+            }
+
+            if (ledger) {
+                const receipts = ledger[String(rNum)] || ledger[rNum] || [];
+                if (Array.isArray(receipts) && receipts.some(r => r && Array.isArray(r.combos) && r.combos.length > 0)) {
+                    return true;
+                }
             }
         } catch (e) {}
         return false;
+    },
+
+    /**
+     * 실구매 등록 성공 시 호출되는 알림 동기화 핸들러:
+     * 이미 등록된 해당 회차의 구매 독려 알림 자동 정리 및 알림 배지 리셋
+     */
+    onPurchaseRegistered(round) {
+        try {
+            const rNum = Number(round) || this.getUpcomingRoundNumber();
+            console.log(`[PushClient] Purchase registered for round ${rNum}. Dismissing reminders...`);
+            this.dismissPurchaseRemindersForRound(rNum);
+            this.updateBannerVisibility();
+        } catch(e) {
+            console.warn('[PushClient] onPurchaseRegistered error:', e);
+        }
+    },
+
+    /**
+     * 해당 회차 구매 완료 시 미구매 유도/마감 리마인더 알림 자동 읽음 처리 및 OS 알림 닫기
+     */
+    dismissPurchaseRemindersForRound(round) {
+        try {
+            const rNum = Number(round) || this.getUpcomingRoundNumber();
+            const list = this.getNotifications();
+            let changed = false;
+            list.forEach(item => {
+                if (!item) return;
+                const isRoundLock = item.id && (item.id.includes(`lock-reminder-${rNum}`) || item.id.includes('lock-reminder'));
+                const isPurchasePrompt = item.body && (
+                    item.body.includes('구매 등록 전이시라면') ||
+                    item.body.includes('실구매 영수증 등록') ||
+                    item.body.includes('구매등록 전') ||
+                    item.body.includes('실물 복권을 구매하셨다면')
+                );
+                if ((isRoundLock || isPurchasePrompt) && item.unread) {
+                    item.unread = false;
+                    item.badge = '✅ 구매완료 (알림 종료)';
+                    changed = true;
+                }
+            });
+            if (changed) {
+                this.saveNotifications(list);
+            }
+
+            // 스마트폰 OS 알림 트레이에 남아있는 리마인더 팝업 즉시 닫기
+            if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.getNotifications().then(notifs => {
+                        notifs.forEach(n => {
+                            if (n && n.tag && (n.tag.includes(`lock-reminder-${rNum}`) || n.tag.includes('myeongri-'))) {
+                                n.close();
+                            }
+                        });
+                    }).catch(() => {});
+                }).catch(() => {});
+            }
+        } catch(e) {
+            console.warn('[PushClient] dismissPurchaseRemindersForRound error:', e);
+        }
     },
 
     /**
@@ -10899,6 +11001,9 @@ const PushClient = {
      */
     getUpcomingRoundNumber() {
         try {
+            if (typeof window.getUpcomingLottoRound === 'function') {
+                return window.getUpcomingLottoRound();
+            }
             if (window.state && Array.isArray(window.state.lottoData) && window.state.lottoData.length > 0) {
                 const maxDraw = Math.max(...window.state.lottoData.map(d => Number(d.round || d.drwNo || 0)));
                 if (maxDraw > 1000) return maxDraw + 1;
@@ -10929,6 +11034,11 @@ const PushClient = {
             const alreadyPurchased = this.hasPurchasedCurrentRound(targetRound);
             const dispName = this.getUserDisplayName();
             const schedule = this.getMyeongriSchedule();
+
+            // 이번 회차 구매가 완료된 경우: 기존 미구매 유도 알림 자동 정리 및 신규 리마인더 발송 차단
+            if (alreadyPurchased) {
+                this.dismissPurchaseRemindersForRound(targetRound);
+            }
 
             // 1. 사주 길일·길시 알림 체크 (이번 회차 미구매 시에만 생성, 단 이미 생성된 알림은 유지)
             if (schedule && !alreadyPurchased) {
@@ -14680,6 +14790,11 @@ async function saveLedgerDirectly(ledger, user = null, successMsg = null, target
     }
 
     if (typeof updateDebugMonitor === 'function') updateDebugMonitor(protectedLedger);
+
+    // 🔔 Web Push & 알림함 스마트 동기화: 구매 등록 완료 시 미구매 독려 푸시/알림 자동 해제
+    if (typeof window !== 'undefined' && window.PushClient && typeof window.PushClient.onPurchaseRegistered === 'function') {
+        try { window.PushClient.onPurchaseRegistered(targetRound); } catch(e) {}
+    }
 
     if (successMsg && typeof showToast === 'function') {
         const prefix = isServerSaved ? '💾 장부 저장 완료' : '⚠️ 로컬 장부저장';
