@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.18.1348 - BUILD_DATE: 2026-10-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.18.1518.58 - BUILD_DATE: 2026-10-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.18.1348)
+ * Lucky777 Smart Bundle (v2026.10.18.1518.58)
  */
 
 
@@ -2007,6 +2007,34 @@ const SafeAuth = {
     },
     clear: function() { _clearRaw('lotto_auth'); }
 };
+
+function syncPushClientOnLogin(authId) {
+    if (!authId) return;
+    const cleanId = String(authId).trim();
+    setTimeout(async () => {
+        if (typeof window !== 'undefined' && window.PushClient) {
+            try {
+                if (typeof window.PushClient.initLocalMemorySync === 'function') {
+                    window.PushClient.initLocalMemorySync(cleanId);
+                }
+                if (typeof window.PushClient.loadNotificationsFromServer === 'function') {
+                    await window.PushClient.loadNotificationsFromServer(cleanId);
+                }
+                if (typeof window.PushClient.listenNotificationsFromServer === 'function') {
+                    window.PushClient.listenNotificationsFromServer(cleanId);
+                }
+                if (typeof window.PushClient.startAdminMessageListener === 'function') {
+                    window.PushClient.startAdminMessageListener(cleanId);
+                }
+                if (typeof window.PushClient.checkAndGenerateScheduledAlerts === 'function') {
+                    window.PushClient.checkAndGenerateScheduledAlerts();
+                }
+            } catch(e) {
+                console.warn('[syncPushClientOnLogin]', e);
+            }
+        }
+    }, 200);
+}
 
 const AuthState = {
     IDLE: 'IDLE',
@@ -4081,6 +4109,7 @@ function processKakaoLoginSuccess(res, authObj = {}) {
                 }
             })();
         }
+        syncPushClientOnLogin(customUserId);
         return true;
     } catch(err) {
         console.error('[processKakaoLoginSuccess Error]', err);
@@ -5436,6 +5465,7 @@ function setupAuthEvents(initFirebaseAndData) {
                         console.warn('[Background auth check error]', ex);
                     }
                 }, 180);
+                syncPushClientOnLogin(authId);
             }
 
             // 1. Instant Master/Admin bypass
@@ -7533,6 +7563,7 @@ function setupAuthEvents(initFirebaseAndData) {
             }
 
             SafeAuth.set(userId);
+            syncPushClientOnLogin(userId);
             try { localStorage.setItem('pledge_signed_' + userId, 'true'); } catch(e){}
             showToast(`🎉 [${realName}]님, 필수 정보 등록 및 전자 서약이 완료되었습니다!`);
 
@@ -10159,6 +10190,10 @@ window.startBatchWinningSend = async function() {
             __exports.SafeAuth = SafeAuth;
             if (typeof window !== 'undefined') window.SafeAuth = SafeAuth;
         }
+        if (typeof syncPushClientOnLogin !== 'undefined') {
+            __exports.syncPushClientOnLogin = syncPushClientOnLogin;
+            if (typeof window !== 'undefined') window.syncPushClientOnLogin = syncPushClientOnLogin;
+        }
         if (typeof AuthState !== 'undefined') {
             __exports.AuthState = AuthState;
             if (typeof window !== 'undefined') window.AuthState = AuthState;
@@ -10716,10 +10751,14 @@ const PushClient = {
     _memoryDeletedIds: new Set(),
     _memoryClearedUsers: new Set(),
     _memoryInboxMap: {},
+    _serverKnownDeletedIds: {},
+    _isServerLoaded: {},
+    _serverLoadPromise: {},
     _lastActionGuardTs: 0,
     _lastActionGuardKey: '',
     _notificationsFsDocId: null,
     _notificationsFsUnsubscribe: null,
+    _notificationsFsUnsubscribes: [],
     _saveNotificationsTimer: null,
 
     /**
@@ -10912,6 +10951,19 @@ const PushClient = {
                 });
             });
 
+            if (this._serverKnownDeletedIds && this._serverKnownDeletedIds[uid]) {
+                this._serverKnownDeletedIds[uid].forEach(id => {
+                    if (id) {
+                        const normId = String(id).trim();
+                        const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
+                        const canonKey = this.getCanonicalPushKey(id);
+                        this._memoryDeletedIds.add(normId);
+                        this._memoryDeletedIds.add(cleanId);
+                        if (canonKey) this._memoryDeletedIds.add(canonKey);
+                    }
+                });
+            }
+
             const readKeys = [`lucky777_read_notifs_${uid}`, 'lucky777_read_notifs_global'];
             readKeys.forEach(rk => {
                 const arr = this._getStoredIdsArray(rk);
@@ -10947,6 +10999,16 @@ const PushClient = {
             const docId = this.getNotificationDocId(uid);
             if (!docId) return false;
 
+            const isExplicitReset = !!(customPayload && customPayload.isExplicitReset === true);
+
+            // 🔒 Hydration Gate: 미동기화된 초기 메모리/스토리지 상태로 서버 데이터를 덮어쓰는 오류 원천 방지
+            // 만약 서버 데이터를 아직 조회하지 않았다면 loadNotificationsFromServer 완료를 먼저 대기한다.
+            if (!this._isServerLoaded?.[uid] && !isExplicitReset && (!customPayload || !customPayload.forceSync)) {
+                try {
+                    await this.loadNotificationsFromServer(uid);
+                } catch(e) {}
+            }
+
             const isCleared = (customPayload && typeof customPayload.isCleared === 'boolean')
                 ? customPayload.isCleared
                 : this.isInboxCleared(uid);
@@ -10965,12 +11027,24 @@ const PushClient = {
                 ...this._getStoredIdsArray('lucky777_read_notifs_global')
             ])).slice(-300);
 
-            const delArr = Array.from(new Set([
-                ...Array.from(this._memoryDeletedIds),
-                ...this._getStoredIdsArray(this.getDeletedNotifsKey(uid)),
-                ...this._getStoredIdsArray('lucky777_deleted_notifs_global'),
-                ...(Array.isArray(customPayload && customPayload.deletedIds) ? customPayload.deletedIds : [])
-            ])).slice(-300);
+            if (!this._serverKnownDeletedIds) this._serverKnownDeletedIds = {};
+            if (!this._serverKnownDeletedIds[uid]) this._serverKnownDeletedIds[uid] = new Set();
+            const serverKnown = this._serverKnownDeletedIds[uid];
+
+            let delArr;
+            if (isExplicitReset) {
+                delArr = Array.isArray(customPayload.deletedIds) ? customPayload.deletedIds : [];
+                this._serverKnownDeletedIds[uid] = new Set(delArr);
+            } else {
+                delArr = Array.from(new Set([
+                    ...Array.from(serverKnown),
+                    ...Array.from(this._memoryDeletedIds),
+                    ...this._getStoredIdsArray(this.getDeletedNotifsKey(uid)),
+                    ...this._getStoredIdsArray('lucky777_deleted_notifs_global'),
+                    ...(Array.isArray(customPayload && customPayload.deletedIds) ? customPayload.deletedIds : [])
+                ])).slice(-300);
+                delArr.forEach(id => serverKnown.add(id));
+            }
 
             const payload = {
                 userId: uid,
@@ -11002,6 +11076,8 @@ const PushClient = {
             }, { merge: true }).catch(() => {});
 
             await Promise.allSettled([p1, p2, p3]);
+            this._isServerLoaded = this._isServerLoaded || {};
+            this._isServerLoaded[uid] = true;
             return true;
         } catch (err) {
             console.warn('[PushClient] saveNotificationsToServer note:', err);
@@ -11020,76 +11096,91 @@ const PushClient = {
     },
 
     /**
-     * Firestore에서 서버 알림 내역을 로드하여 로컬에 완전 복원
+     * Firestore에서 서버 알림 내역을 로드하여 로컬에 완전 복원 (lotto_purchases 및 서브컬렉션 병렬 조회 & 삭제내역 완벽 합집합 병합)
      */
     async loadNotificationsFromServer(userId = null) {
         const fs = this.getFirestore();
         if (!fs) return false;
-        try {
-            const uid = String(userId || this.getActiveUserId()).trim().toLowerCase();
-            const docId = this.getNotificationDocId(uid);
-            if (!docId) return false;
+        const uid = String(userId || this.getActiveUserId()).trim().toLowerCase();
+        const docId = this.getNotificationDocId(uid);
+        if (!docId) return false;
 
-            let data = null;
-
-            // 1. lotto_users/{docId}/notifications/inbox 우선 조회 (캐시 우선 150ms)
-            try {
-                const subRef = fs.collection('lotto_users').doc(docId).collection('notifications').doc('inbox');
-                const cacheSnap = await Promise.race([
-                    subRef.get({ source: 'cache' }),
-                    new Promise(resolve => setTimeout(() => resolve(null), 150))
-                ]);
-                if (cacheSnap && cacheSnap.exists) {
-                    data = cacheSnap.data();
-                } else {
-                    const netSnap = await Promise.race([
-                        subRef.get(),
-                        new Promise(resolve => setTimeout(() => resolve(null), 1800))
-                    ]);
-                    if (netSnap && netSnap.exists) {
-                        data = netSnap.data();
-                    }
-                }
-            } catch(e) {}
-
-            // 2. 서브컬렉션 미발견 시 lotto_purchases/notifs_{docId} 보조 조회
-            if (!data) {
-                try {
-                    const pRef = fs.collection('lotto_purchases').doc(`notifs_${docId}`);
-                    const pSnap = await Promise.race([
-                        pRef.get(),
-                        new Promise(resolve => setTimeout(() => resolve(null), 1800))
-                    ]);
-                    if (pSnap && pSnap.exists) {
-                        data = pSnap.data();
-                    }
-                } catch(e) {}
-            }
-
-            // 3. 만약 위 둘 모두 없으면 lotto_users/{docId}.notificationMeta 조회
-            if (!data) {
-                try {
-                    const uRef = fs.collection('lotto_users').doc(docId);
-                    const uSnap = await Promise.race([
-                        uRef.get(),
-                        new Promise(resolve => setTimeout(() => resolve(null), 1800))
-                    ]);
-                    if (uSnap && uSnap.exists && uSnap.data().notificationMeta) {
-                        data = uSnap.data().notificationMeta;
-                    }
-                } catch(e) {}
-            }
-
-            if (!data) {
-                return false;
-            }
-
-            this.applyServerNotificationData(uid, data);
-            return true;
-        } catch (err) {
-            console.warn('[PushClient] loadNotificationsFromServer note:', err);
-            return false;
+        if (this._serverLoadPromise && this._serverLoadPromise[uid]) {
+            return this._serverLoadPromise[uid];
         }
+
+        this._serverLoadPromise = this._serverLoadPromise || {};
+        this._serverLoadPromise[uid] = (async () => {
+            try {
+                // 1. lotto_purchases/notifs_{docId} 와 lotto_users/{docId}/notifications/inbox 동시 병렬 조회
+                const p1 = fs.collection('lotto_purchases').doc(`notifs_${docId}`).get().catch(() => null);
+                const p2 = fs.collection('lotto_users').doc(docId).collection('notifications').doc('inbox').get().catch(() => null);
+
+                const [pSnap, subSnap] = await Promise.race([
+                    Promise.all([p1, p2]),
+                    new Promise(resolve => setTimeout(() => resolve([null, null]), 2500))
+                ]);
+
+                let pData = (pSnap && pSnap.exists) ? pSnap.data() : null;
+                let subData = (subSnap && subSnap.exists) ? subSnap.data() : null;
+
+                let data = null;
+                if (pData && subData) {
+                    const pTime = new Date(pData.updatedAt || 0).getTime();
+                    const sTime = new Date(subData.updatedAt || 0).getTime();
+                    data = (pTime >= sTime) ? { ...pData } : { ...subData };
+                    // 삭제 목록과 읽음 목록은 양쪽 문서의 완벽한 합집합(Union) 보장 (어느 한쪽이라도 삭제한 기록이 있으면 영구 보존)
+                    const unionDel = Array.from(new Set([
+                        ...(Array.isArray(pData.deletedIds) ? pData.deletedIds : []),
+                        ...(Array.isArray(subData.deletedIds) ? subData.deletedIds : [])
+                    ]));
+                    const unionRead = Array.from(new Set([
+                        ...(Array.isArray(pData.readIds) ? pData.readIds : []),
+                        ...(Array.isArray(subData.readIds) ? subData.readIds : [])
+                    ]));
+                    data.deletedIds = unionDel;
+                    data.readIds = unionRead;
+                } else if (pData) {
+                    data = pData;
+                } else if (subData) {
+                    data = subData;
+                } else {
+                    // 보조: lotto_users/{docId}.notificationMeta 확인
+                    try {
+                        const uSnap = await Promise.race([
+                            fs.collection('lotto_users').doc(docId).get(),
+                            new Promise(resolve => setTimeout(() => resolve(null), 1500))
+                        ]);
+                        if (uSnap && uSnap.exists && uSnap.data() && uSnap.data().notificationMeta) {
+                            data = uSnap.data().notificationMeta;
+                        }
+                    } catch(e) {}
+                }
+
+                if (!this._serverKnownDeletedIds) this._serverKnownDeletedIds = {};
+                if (!this._serverKnownDeletedIds[uid]) this._serverKnownDeletedIds[uid] = new Set();
+
+                if (data) {
+                    this.applyServerNotificationData(uid, data);
+                    this._isServerLoaded = this._isServerLoaded || {};
+                    this._isServerLoaded[uid] = true;
+                    return true;
+                } else {
+                    this._isServerLoaded = this._isServerLoaded || {};
+                    this._isServerLoaded[uid] = true;
+                    return false;
+                }
+            } catch (err) {
+                console.warn('[PushClient] loadNotificationsFromServer note:', err);
+                return false;
+            } finally {
+                if (this._serverLoadPromise) {
+                    this._serverLoadPromise[uid] = null;
+                }
+            }
+        })();
+
+        return this._serverLoadPromise[uid];
     },
 
     /**
@@ -11114,6 +11205,10 @@ const PushClient = {
         }
 
         // 2. deletedIds 복원
+        if (!this._serverKnownDeletedIds) this._serverKnownDeletedIds = {};
+        if (!this._serverKnownDeletedIds[uid]) this._serverKnownDeletedIds[uid] = new Set();
+        const serverKnown = this._serverKnownDeletedIds[uid];
+
         if (Array.isArray(data.deletedIds) && data.deletedIds.length > 0) {
             const delKey = this.getDeletedNotifsKey(uid);
             let localDelArr = this._getStoredIdsArray(delKey);
@@ -11127,6 +11222,10 @@ const PushClient = {
                 this._memoryDeletedIds.add(cleanId);
                 if (canonKey) this._memoryDeletedIds.add(canonKey);
 
+                serverKnown.add(normId);
+                serverKnown.add(cleanId);
+                if (canonKey) serverKnown.add(canonKey);
+
                 this.safeSetItem(`lucky777_deleted_${normId}`, 'true');
                 this.safeSetItem(`lucky777_deleted_${cleanId}`, 'true');
                 if (canonKey) this.safeSetItem(`lucky777_deleted_${canonKey}`, 'true');
@@ -11136,6 +11235,9 @@ const PushClient = {
                     this._memoryDeletedIds.add(`admin-msg-${rawAdm}`);
                     this._memoryDeletedIds.add(`admin_${rawAdm}`);
                     this._memoryDeletedIds.add(rawAdm);
+                    serverKnown.add(`admin-msg-${rawAdm}`);
+                    serverKnown.add(`admin_${rawAdm}`);
+                    serverKnown.add(rawAdm);
                     this.safeSetItem(`lucky777_deleted_admin-msg-${rawAdm}`, 'true');
                     this.safeSetItem(`lucky777_deleted_admin_${rawAdm}`, 'true');
                     this.safeSetItem(`lucky777_deleted_${rawAdm}`, 'true');
@@ -11147,6 +11249,9 @@ const PushClient = {
                     this._memoryDeletedIds.add(`draw-result-${r}`);
                     this._memoryDeletedIds.add(`win-celebrate-${r}`);
                     this._memoryDeletedIds.add(`round_${r}_result`);
+                    serverKnown.add(`draw-result-${r}`);
+                    serverKnown.add(`win-celebrate-${r}`);
+                    serverKnown.add(`round_${r}_result`);
                     this.safeSetItem(`lucky777_deleted_draw-result-${r}`, 'true');
                     this.safeSetItem(`lucky777_deleted_win-celebrate-${r}`, 'true');
                     this.safeSetItem(`lucky777_deleted_round_${r}_result`, 'true');
@@ -11245,31 +11350,48 @@ const PushClient = {
         const docId = this.getNotificationDocId(uid);
         if (!docId) return;
 
-        if (this._notificationsFsDocId === docId && this._notificationsFsUnsubscribe) {
+        if (this._notificationsFsDocId === docId && Array.isArray(this._notificationsFsUnsubscribes) && this._notificationsFsUnsubscribes.length > 0) {
             return;
         }
 
+        if (this._notificationsFsUnsubscribes && Array.isArray(this._notificationsFsUnsubscribes)) {
+            this._notificationsFsUnsubscribes.forEach(unsub => {
+                try { unsub(); } catch(e) {}
+            });
+        }
         if (this._notificationsFsUnsubscribe) {
             try { this._notificationsFsUnsubscribe(); } catch(e) {}
             this._notificationsFsUnsubscribe = null;
         }
-
+        this._notificationsFsUnsubscribes = [];
         this._notificationsFsDocId = docId;
 
+        const handleSnapshot = (doc, sourceName) => {
+            if (!doc || !doc.exists) return;
+            if (doc.metadata && doc.metadata.hasPendingWrites) {
+                return;
+            }
+            const serverData = doc.data() || {};
+            this.applyServerNotificationData(uid, serverData);
+        };
+
+        // 1. lotto_purchases/notifs_{docId} 실시간 리스너 (주요 최상위 컬렉션 실시간 동기화)
         try {
-            this._notificationsFsUnsubscribe = fs.collection('lotto_users').doc(docId).collection('notifications').doc('inbox').onSnapshot((doc) => {
-                if (!doc || !doc.exists) return;
-                if (doc.metadata && doc.metadata.hasPendingWrites) {
-                    return;
-                }
-                const serverData = doc.data() || {};
-                this.applyServerNotificationData(uid, serverData);
-            }, (err) => {
-                console.warn('[PushClient] notifications inbox onSnapshot note:', err);
-            });
-        } catch (err) {
-            console.warn('[PushClient] listenNotificationsFromServer error:', err);
-        }
+            const unsub1 = fs.collection('lotto_purchases').doc(`notifs_${docId}`).onSnapshot(
+                doc => handleSnapshot(doc, 'lotto_purchases'),
+                err => console.warn('[PushClient] lotto_purchases notifs onSnapshot note:', err)
+            );
+            this._notificationsFsUnsubscribes.push(unsub1);
+        } catch(e) {}
+
+        // 2. lotto_users/{docId}/notifications/inbox 실시간 리스너 (서브컬렉션 보조 동기화)
+        try {
+            const unsub2 = fs.collection('lotto_users').doc(docId).collection('notifications').doc('inbox').onSnapshot(
+                doc => handleSnapshot(doc, 'lotto_users_inbox'),
+                err => console.warn('[PushClient] lotto_users inbox onSnapshot note:', err)
+            );
+            this._notificationsFsUnsubscribes.push(unsub2);
+        } catch(e) {}
     },
 
     getActiveUserId() {
@@ -11316,6 +11438,31 @@ const PushClient = {
                 return true;
             }
 
+            const uid = this.getActiveUserId();
+            const serverKnown = this._serverKnownDeletedIds && this._serverKnownDeletedIds[uid];
+            if (serverKnown) {
+                if (serverKnown.has(normId) || serverKnown.has(cleanId) || (canonKey && serverKnown.has(canonKey))) {
+                    return true;
+                }
+                if (normId.startsWith('admin-msg-') || normId.startsWith('admin_')) {
+                    const rawAdm = normId.replace(/^admin-msg-/, '').replace(/^admin_/, '');
+                    if (serverKnown.has(rawAdm) || serverKnown.has(`admin_${rawAdm}`) || serverKnown.has(`admin-msg-${rawAdm}`)) {
+                        return true;
+                    }
+                }
+                const drawM = normId.match(/(?:draw-result|win-celebrate)-(\d+)/);
+                if (drawM) {
+                    const r = drawM[1];
+                    if (
+                        serverKnown.has(`draw-result-${r}`) ||
+                        serverKnown.has(`win-celebrate-${r}`) ||
+                        serverKnown.has(`round_${r}_result`)
+                    ) {
+                        return true;
+                    }
+                }
+            }
+
             if (normId.startsWith('admin-msg-') || normId.startsWith('admin_')) {
                 const rawAdm = normId.replace(/^admin-msg-/, '').replace(/^admin_/, '');
                 if (this._memoryDeletedIds.has(rawAdm) || this._memoryDeletedIds.has(`admin_${rawAdm}`) || this._memoryDeletedIds.has(`admin-msg-${rawAdm}`)) {
@@ -11351,7 +11498,6 @@ const PushClient = {
                 return true;
             }
 
-            const uid = this.getActiveUserId();
             const delKeys = [this.getDeletedNotifsKey(), 'lucky777_deleted_notifs_global'];
             for (const delKey of delKeys) {
                 const raw = this.safeGetItem(delKey) || (typeof SafeLocalStorage !== 'undefined' ? SafeLocalStorage.getItem(delKey) : null);
@@ -11603,7 +11749,9 @@ const PushClient = {
                 latestDrawnRound = 1246;
             }
 
-            const isUserAlreadySeeded = (this.safeGetItem(`lucky777_inbox_seeded_${uid}`) === 'true') ||
+            const isGuest = (uid === 'guest');
+            const isUserAlreadySeeded = !isGuest ||
+                (this.safeGetItem(`lucky777_inbox_seeded_${uid}`) === 'true') ||
                 (typeof SafeLocalStorage !== 'undefined' && SafeLocalStorage.getItem(`lucky777_inbox_seeded_${uid}`) === 'true') ||
                 (list.length > 0);
 
@@ -11719,7 +11867,7 @@ const PushClient = {
             // 3. 운도실력 공식 서비스 안내 알림 보장 (신규 사용자 최초 시딩 시에만 등록, 기존 사용자가 삭제한 경우 재시드 절대 금지)
             const welcomeNotifId = 'admin-msg-welcome';
             const hasWelcome = list.some(it => it && (it.id === welcomeNotifId || it.id === `push-${welcomeNotifId}`));
-            if (!hasWelcome && !isUserAlreadySeeded && !this.isNotificationDeleted(welcomeNotifId) && !this.isNotificationDeleted('admin_welcome')) {
+            if (!hasWelcome && !isUserAlreadySeeded && !this.isNotificationDeleted(welcomeNotifId) && !this.isNotificationDeleted('admin_welcome') && !this.isNotificationDeleted('welcome')) {
                 list.push({
                     id: welcomeNotifId,
                     category: 'admin',
@@ -12386,6 +12534,20 @@ const PushClient = {
             return true;
         });
 
+        if (!this._serverKnownDeletedIds) this._serverKnownDeletedIds = {};
+        if (!this._serverKnownDeletedIds[uid]) this._serverKnownDeletedIds[uid] = new Set();
+        const serverKnown = this._serverKnownDeletedIds[uid];
+        serverKnown.add(normId);
+        serverKnown.add(cleanId);
+        if (canonKey) serverKnown.add(canonKey);
+
+        const delArr = Array.from(new Set([
+            ...Array.from(serverKnown),
+            ...Array.from(this._memoryDeletedIds),
+            ...this._getStoredIdsArray(this.getDeletedNotifsKey(uid)),
+            ...this._getStoredIdsArray('lucky777_deleted_notifs_global')
+        ])).slice(-300);
+
         // 마지막 알림까지 모두 삭제된 경우 자동 재시딩(부활) 방지 플래그 설정
         if (nextList.length === 0) {
             this._memoryClearedUsers.add(uid);
@@ -12401,7 +12563,7 @@ const PushClient = {
             this.saveNotificationsToServer(uid, { inbox: nextList, isCleared: false });
         }
 
-        this.saveNotifications(nextList);
+        this.saveNotifications(nextList, false);
         this.renderUnreadNotificationUI();
         const modal = document.getElementById('lucky777NotificationCenterModal');
         if (modal && modal.style.display !== 'none') {
@@ -12521,8 +12683,23 @@ const PushClient = {
             } catch(e2) {}
         }
 
-        this.saveNotifications([]);
-        this.saveNotificationsToServer(uid, { inbox: [], isCleared: true, clearedAt: new Date().toISOString() });
+        if (!this._serverKnownDeletedIds) this._serverKnownDeletedIds = {};
+        if (!this._serverKnownDeletedIds[uid]) this._serverKnownDeletedIds[uid] = new Set();
+        delArr.forEach(id => this._serverKnownDeletedIds[uid].add(id));
+
+        const finalDelArr = Array.from(new Set([
+            ...Array.from(this._serverKnownDeletedIds[uid]),
+            ...delArr
+        ])).slice(-300);
+
+        this.saveNotifications([], false);
+        this.saveNotificationsToServer(uid, {
+            inbox: [],
+            isCleared: true,
+            clearedAt: new Date().toISOString(),
+            deletedIds: finalDelArr,
+            forceSync: true
+        });
         this.renderUnreadNotificationUI();
         const modal = document.getElementById('lucky777NotificationCenterModal');
         if (modal && modal.style.display !== 'none') {
@@ -12542,6 +12719,9 @@ const PushClient = {
         this._memoryDeletedIds.clear();
         this._memoryClearedUsers.delete(uid);
         this._memoryClearedUsers.delete('global');
+        if (this._serverKnownDeletedIds) {
+            this._serverKnownDeletedIds[uid] = new Set();
+        }
 
         this.safeRemoveItem(`lucky777_deleted_notifs_${uid}`);
         this.safeRemoveItem('lucky777_deleted_notifs_global');
@@ -12564,8 +12744,8 @@ const PushClient = {
         } catch (e) {}
 
         const seeded = this.seedRecentNotifications(uid, []);
-        this.saveNotifications(seeded);
-        this.saveNotificationsToServer(uid, { inbox: seeded, isCleared: false, deletedIds: [] });
+        this.saveNotifications(seeded, false);
+        this.saveNotificationsToServer(uid, { inbox: seeded, isCleared: false, deletedIds: [], isExplicitReset: true, forceSync: true });
         this.renderUnreadNotificationUI();
         const modal = document.getElementById('lucky777NotificationCenterModal');
         if (modal && modal.style.display !== 'none') {

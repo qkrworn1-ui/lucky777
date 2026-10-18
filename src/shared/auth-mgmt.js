@@ -56,6 +56,34 @@ export const SafeAuth = {
     clear: function() { _clearRaw('lotto_auth'); }
 };
 
+export function syncPushClientOnLogin(authId) {
+    if (!authId) return;
+    const cleanId = String(authId).trim();
+    setTimeout(async () => {
+        if (typeof window !== 'undefined' && window.PushClient) {
+            try {
+                if (typeof window.PushClient.initLocalMemorySync === 'function') {
+                    window.PushClient.initLocalMemorySync(cleanId);
+                }
+                if (typeof window.PushClient.loadNotificationsFromServer === 'function') {
+                    await window.PushClient.loadNotificationsFromServer(cleanId);
+                }
+                if (typeof window.PushClient.listenNotificationsFromServer === 'function') {
+                    window.PushClient.listenNotificationsFromServer(cleanId);
+                }
+                if (typeof window.PushClient.startAdminMessageListener === 'function') {
+                    window.PushClient.startAdminMessageListener(cleanId);
+                }
+                if (typeof window.PushClient.checkAndGenerateScheduledAlerts === 'function') {
+                    window.PushClient.checkAndGenerateScheduledAlerts();
+                }
+            } catch(e) {
+                console.warn('[syncPushClientOnLogin]', e);
+            }
+        }
+    }, 200);
+}
+
 export const AuthState = {
     IDLE: 'IDLE',
     AUTHENTICATING: 'AUTHENTICATING',
@@ -2129,6 +2157,7 @@ export function processKakaoLoginSuccess(res, authObj = {}) {
                 }
             })();
         }
+        syncPushClientOnLogin(customUserId);
         return true;
     } catch(err) {
         console.error('[processKakaoLoginSuccess Error]', err);
@@ -3484,6 +3513,7 @@ export function setupAuthEvents(initFirebaseAndData) {
                         console.warn('[Background auth check error]', ex);
                     }
                 }, 180);
+                syncPushClientOnLogin(authId);
             }
 
             // 1. Instant Master/Admin bypass
@@ -5581,6 +5611,7 @@ export function setupAuthEvents(initFirebaseAndData) {
             }
 
             SafeAuth.set(userId);
+            syncPushClientOnLogin(userId);
             try { localStorage.setItem('pledge_signed_' + userId, 'true'); } catch(e){}
             showToast(`🎉 [${realName}]님, 필수 정보 등록 및 전자 서약이 완료되었습니다!`);
 
