@@ -4638,6 +4638,33 @@ Lotto 6/45
         self.assertIn("@media (max-width: 380px)", css_code)
         self.assertIn("@media (max-width: 540px)", css_code)
 
+    # [Test 129] Ensure notification system documents (notif_*, notifs_*) are filtered from user lists
+    def test_129_filter_notif_system_metadata_from_users(self):
+        utils_path = os.path.join(self.root_dir, 'src', 'shared', 'utils.js')
+        user_ctx_path = os.path.join(self.root_dir, 'src', 'shared', 'user-context.js')
+        batch_path = os.path.join(self.root_dir, 'batch_evaluate_winnings.py')
+
+        with open(utils_path, 'r', encoding='utf-8') as f:
+            utils_code = f.read()
+        with open(user_ctx_path, 'r', encoding='utf-8') as f:
+            user_ctx_code = f.read()
+        with open(batch_path, 'r', encoding='utf-8') as f:
+            batch_code = f.read()
+
+        # 1. utils.js isSystemOrDummyUser filters notif_ and notifs_
+        self.assertIn("clean.startsWith('notif_')", utils_code)
+        self.assertIn("clean.startsWith('notifs_')", utils_code)
+
+        # 2. user-context.js filters notif_ and notifs_
+        self.assertIn("cleanId.startsWith('notif_')", user_ctx_code)
+        self.assertIn("cleanId.startsWith('notifs_')", user_ctx_code)
+        self.assertIn("uId.startsWith('notif_')", user_ctx_code)
+        self.assertIn("uId.startsWith('notifs_')", user_ctx_code)
+
+        # 3. batch_evaluate_winnings.py filters notif_ and notifs_
+        self.assertIn("uid.startswith('notif_')", batch_code)
+        self.assertIn("uid.startswith('notifs_')", batch_code)
+
 if __name__ == '__main__':
     unittest.main()
 

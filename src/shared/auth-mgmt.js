@@ -4550,7 +4550,7 @@ export function setupAuthEvents(initFirebaseAndData) {
             if (purchasesSnapshot && typeof purchasesSnapshot.forEach === 'function') {
                 purchasesSnapshot.forEach(doc => {
                     const pId = (doc.id || '').toLowerCase().trim();
-                    if (pId === 'app_latest_version' || pId === 'dashboard_summary_latest') return;
+                    if (pId === 'app_latest_version' || pId === 'dashboard_summary_latest' || pId.startsWith('notif_') || pId.startsWith('notifs_')) return;
                     purchasesMap.set(pId, doc.data());
                     purchasesMap.set(doc.id, doc.data());
                 });

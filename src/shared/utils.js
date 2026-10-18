@@ -60,7 +60,7 @@ export function isSystemOrDummyUser(userId) {
     }
     if (!clean) return true;
     if (clean === 'all' || clean.startsWith('guest') || clean === 'app_latest_version' ||
-        clean === 'dashboard_summary_latest' ||
+        clean === 'dashboard_summary_latest' || clean.startsWith('notif_') || clean.startsWith('notifs_') ||
         clean === 'global_trash' || clean === 'global_state' || clean === 'global_saved' || clean === 'extra_history' ||
         clean === 'user_alpha' || clean === 'user_beta' || clean === 'user_gamma' || clean === 'sample' || clean === 'hms' ||
         clean === 'kakao_5081608503' || clean === 'kakao_5090399860' || clean === 'kakao_5105087435' || clean === 'kakao_5078158815' ||

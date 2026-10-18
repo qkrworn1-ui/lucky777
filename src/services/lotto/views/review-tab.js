@@ -386,7 +386,7 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (isSystemOrDummyUser(cleanUser) || cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest') return null;
+    if (isSystemOrDummyUser(cleanUser) || cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || cleanUser.startsWith('notif_') || cleanUser.startsWith('notifs_')) return null;
     const rNum = parseInt(roundNum, 10);
     const rKey = String(rNum);
 
@@ -485,7 +485,7 @@ if (typeof window !== 'undefined') {
 export async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotData = null) {
     if (!userId || !roundNum) return null;
     const cleanUser = String(userId).toLowerCase().trim();
-    if (cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || isSystemOrDummyUser(cleanUser)) return null;
+    if (cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || cleanUser.startsWith('notif_') || cleanUser.startsWith('notifs_') || isSystemOrDummyUser(cleanUser)) return null;
 
     // 🔒 가입일 이전 회차는 추천번호 영구 스냅샷 저장 원천 차단 (가입 전 발급 불가)
     const joinRound = getUserJoinRound(cleanUser);
@@ -3826,7 +3826,7 @@ export async function shareAdmin1235ReviewToKakao() {
     const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
     const registeredUsers = rawUsers.filter(u => {
         const uId = (u.id || '').trim().toLowerCase();
-        return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'dashboard_summary_latest' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted' && !isSystemOrDummyUser(uId);
+        return !uId.startsWith('{') && !uId.startsWith('test_') && !uId.startsWith('notif_') && !uId.startsWith('notifs_') && uId !== 'app_latest_version' && uId !== 'dashboard_summary_latest' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted' && !isSystemOrDummyUser(uId);
     });
     const baseList = (registeredUsers && registeredUsers.length > 0) ? registeredUsers : [{ id: 'master', name: '관리자' }];
 

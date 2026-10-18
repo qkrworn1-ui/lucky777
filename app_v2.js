@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.18.0122 - BUILD_DATE: 2026-10-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.18.1148 - BUILD_DATE: 2026-10-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.18.0122)
+ * Lucky777 Smart Bundle (v2026.10.18.1148)
  */
 
 
@@ -83,7 +83,7 @@ function isSystemOrDummyUser(userId) {
     }
     if (!clean) return true;
     if (clean === 'all' || clean.startsWith('guest') || clean === 'app_latest_version' ||
-        clean === 'dashboard_summary_latest' ||
+        clean === 'dashboard_summary_latest' || clean.startsWith('notif_') || clean.startsWith('notifs_') ||
         clean === 'global_trash' || clean === 'global_state' || clean === 'global_saved' || clean === 'extra_history' ||
         clean === 'user_alpha' || clean === 'user_beta' || clean === 'user_gamma' || clean === 'sample' || clean === 'hms' ||
         clean === 'kakao_5081608503' || clean === 'kakao_5090399860' || clean === 'kakao_5105087435' || clean === 'kakao_5078158815' ||
@@ -1763,6 +1763,7 @@ const UserContextManager = {
             Object.keys(window.state.allUsersPurchasesMap).forEach(uId => {
                 const cleanId = String(uId).trim().toLowerCase();
                 if (!cleanId || cleanId === 'app_latest_version' || cleanId === 'dashboard_summary_latest' || 
+                    cleanId.startsWith('notif_') || cleanId.startsWith('notifs_') ||
                     cleanId.startsWith('{') || cleanId.startsWith('test') || cleanId.startsWith('guest') ||
                     cleanId === 'global_trash' || cleanId === 'global_state' || cleanId === 'global_saved' || cleanId === 'all') {
                     return;
@@ -1867,7 +1868,7 @@ const UserContextManager = {
             if (!u || !u.id) return false;
             const uId = String(u.id).trim().toLowerCase();
             if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || deletedUserIds.has(uId) || (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uId))) return false;
-            if (uId.startsWith('{') || uId.startsWith('test') || uId.startsWith('guest') || uId === 'app_latest_version' ||
+            if (uId.startsWith('{') || uId.startsWith('test') || uId.startsWith('guest') || uId.startsWith('notif_') || uId.startsWith('notifs_') || uId === 'app_latest_version' ||
                 uId === 'dashboard_summary_latest' ||
                 uId === 'global_trash' || uId === 'global_state' || uId === 'global_saved' || uId === 'extra_history' ||
                 uId === 'user_alpha' || uId === 'user_beta' || uId === 'user_gamma' || uId === 'sample' || uId === 'hms' ||
@@ -6501,7 +6502,7 @@ function setupAuthEvents(initFirebaseAndData) {
             if (purchasesSnapshot && typeof purchasesSnapshot.forEach === 'function') {
                 purchasesSnapshot.forEach(doc => {
                     const pId = (doc.id || '').toLowerCase().trim();
-                    if (pId === 'app_latest_version' || pId === 'dashboard_summary_latest') return;
+                    if (pId === 'app_latest_version' || pId === 'dashboard_summary_latest' || pId.startsWith('notif_') || pId.startsWith('notifs_')) return;
                     purchasesMap.set(pId, doc.data());
                     purchasesMap.set(doc.id, doc.data());
                 });
@@ -23994,7 +23995,7 @@ function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         } catch(e) {}
     }
     cleanUser = cleanUser.toLowerCase().trim();
-    if (isSystemOrDummyUser(cleanUser) || cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest') return null;
+    if (isSystemOrDummyUser(cleanUser) || cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || cleanUser.startsWith('notif_') || cleanUser.startsWith('notifs_')) return null;
     const rNum = parseInt(roundNum, 10);
     const rKey = String(rNum);
 
@@ -24093,7 +24094,7 @@ if (typeof window !== 'undefined') {
 async function saveUserWeeklyRecommendationSnapshot(userId, roundNum, snapshotData = null) {
     if (!userId || !roundNum) return null;
     const cleanUser = String(userId).toLowerCase().trim();
-    if (cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || isSystemOrDummyUser(cleanUser)) return null;
+    if (cleanUser === 'app_latest_version' || cleanUser === 'dashboard_summary_latest' || cleanUser.startsWith('notif_') || cleanUser.startsWith('notifs_') || isSystemOrDummyUser(cleanUser)) return null;
 
     // 🔒 가입일 이전 회차는 추천번호 영구 스냅샷 저장 원천 차단 (가입 전 발급 불가)
     const joinRound = getUserJoinRound(cleanUser);
@@ -27434,7 +27435,7 @@ async function shareAdmin1235ReviewToKakao() {
     const rawUsers = state.allRegisteredUsersList || Object.keys(state.allUsersPurchasesMap || {}).map(id => ({ id, name: id }));
     const registeredUsers = rawUsers.filter(u => {
         const uId = (u.id || '').trim().toLowerCase();
-        return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'dashboard_summary_latest' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted' && !isSystemOrDummyUser(uId);
+        return !uId.startsWith('{') && !uId.startsWith('test_') && !uId.startsWith('notif_') && !uId.startsWith('notifs_') && uId !== 'app_latest_version' && uId !== 'dashboard_summary_latest' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted' && !isSystemOrDummyUser(uId);
     });
     const baseList = (registeredUsers && registeredUsers.length > 0) ? registeredUsers : [{ id: 'master', name: '관리자' }];
 
@@ -30161,7 +30162,7 @@ async function renderTop5Combinations(isRollingAnimation = false) {
                     state.allRegisteredUsersList = [];
                     uSnap.forEach(d => {
                         const uId = d.id.trim().toLowerCase();
-                        if (uId.startsWith('{') || uId.startsWith('test_') || uId === 'app_latest_version' || uId === 'dashboard_summary_latest' || uId === 'user_alpha' || uId === 'user_beta' || uId === 'sample' || uId === 'hms' || uId === 'admin') return;
+                        if (uId.startsWith('{') || uId.startsWith('test_') || uId.startsWith('notif_') || uId.startsWith('notifs_') || uId === 'app_latest_version' || uId === 'dashboard_summary_latest' || uId === 'user_alpha' || uId === 'user_beta' || uId === 'sample' || uId === 'hms' || uId === 'admin') return;
                         const uData = d.data() || {};
                         if (uData.isDeleted === true || uData.status === 'trash' || uData.status === 'deleted') return;
                         const isPerm = !!(uData.isPermanent === true || uData.isPermanent === 'true' || uData.userType === 'permanent' || uData.isAdmin === true || uData.role === 'admin' || d.id === 'master' || d.id === 'admin');
@@ -33549,7 +33550,7 @@ function getCombosForSimulationRound(round, config = null, customUserId = null) 
             }
             const filteredUsers = userList.filter(u => {
                 const uId = (u.id || '').trim().toLowerCase();
-                return !uId.startsWith('{') && !uId.startsWith('test_') && uId !== 'app_latest_version' && uId !== 'dashboard_summary_latest' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && uId !== 'admin' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
+                return !uId.startsWith('{') && !uId.startsWith('test_') && !uId.startsWith('notif_') && !uId.startsWith('notifs_') && uId !== 'app_latest_version' && uId !== 'dashboard_summary_latest' && uId !== 'user_alpha' && uId !== 'user_beta' && uId !== 'sample' && uId !== 'hms' && uId !== 'admin' && u.isDeleted !== true && u.status !== 'trash' && u.status !== 'deleted';
             });
             const finalUsers = filteredUsers.length > 0 ? filteredUsers : [{ id: 'master', name: '관리자 본인' }];
             
@@ -45745,14 +45746,14 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
 
     const purchasesMap = {};
     purchasesDocs.forEach(p => {
-        if (p.id && p.id !== 'app_latest_version' && p.id !== 'dashboard_summary_latest') {
+        if (p.id && p.id !== 'app_latest_version' && p.id !== 'dashboard_summary_latest' && !p.id.startsWith('notif_') && !p.id.startsWith('notifs_')) {
             purchasesMap[p.id] = p;
         }
     });
 
     const allUserIds = Array.from(new Set([
-        ...purchasesDocs.map(p => p.id).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest'),
-        ...Object.keys(usersMap).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest')
+        ...purchasesDocs.map(p => p.id).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest' && !id.startsWith('notif_') && !id.startsWith('notifs_')),
+        ...Object.keys(usersMap).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest' && !id.startsWith('notif_') && !id.startsWith('notifs_'))
     ])).filter(id => {
         const clean = (id || '').trim().toLowerCase();
         if (isSystemOrDummyUser(clean)) return false;
@@ -45763,7 +45764,7 @@ async function fetchSnapshotAuditData(forceRefresh = false) {
             pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted') {
             return false;
         }
-        return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
+        return clean && !clean.startsWith('{') && !clean.startsWith('test_') && !clean.startsWith('notif_') && !clean.startsWith('notifs_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
     });
 
     // If still empty, add fallback master/admin

@@ -214,14 +214,14 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
 
     const purchasesMap = {};
     purchasesDocs.forEach(p => {
-        if (p.id && p.id !== 'app_latest_version' && p.id !== 'dashboard_summary_latest') {
+        if (p.id && p.id !== 'app_latest_version' && p.id !== 'dashboard_summary_latest' && !p.id.startsWith('notif_') && !p.id.startsWith('notifs_')) {
             purchasesMap[p.id] = p;
         }
     });
 
     const allUserIds = Array.from(new Set([
-        ...purchasesDocs.map(p => p.id).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest'),
-        ...Object.keys(usersMap).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest')
+        ...purchasesDocs.map(p => p.id).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest' && !id.startsWith('notif_') && !id.startsWith('notifs_')),
+        ...Object.keys(usersMap).filter(id => id && id !== 'app_latest_version' && id !== 'dashboard_summary_latest' && !id.startsWith('notif_') && !id.startsWith('notifs_'))
     ])).filter(id => {
         const clean = (id || '').trim().toLowerCase();
         if (isSystemOrDummyUser(clean)) return false;
@@ -232,7 +232,7 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
             pData.isDeleted === true || pData.status === 'trash' || pData.status === 'deleted') {
             return false;
         }
-        return clean && !clean.startsWith('{') && !clean.startsWith('test_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
+        return clean && !clean.startsWith('{') && !clean.startsWith('test_') && !clean.startsWith('notif_') && !clean.startsWith('notifs_') && clean !== 'app_latest_version' && clean !== 'dashboard_summary_latest' && clean !== 'user_alpha' && clean !== 'user_beta' && clean !== 'sample' && clean !== 'hms' && clean !== 'admin';
     });
 
     // If still empty, add fallback master/admin

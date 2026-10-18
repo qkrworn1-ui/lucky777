@@ -301,6 +301,7 @@ export const UserContextManager = {
             Object.keys(window.state.allUsersPurchasesMap).forEach(uId => {
                 const cleanId = String(uId).trim().toLowerCase();
                 if (!cleanId || cleanId === 'app_latest_version' || cleanId === 'dashboard_summary_latest' || 
+                    cleanId.startsWith('notif_') || cleanId.startsWith('notifs_') ||
                     cleanId.startsWith('{') || cleanId.startsWith('test') || cleanId.startsWith('guest') ||
                     cleanId === 'global_trash' || cleanId === 'global_state' || cleanId === 'global_saved' || cleanId === 'all') {
                     return;
@@ -405,7 +406,7 @@ export const UserContextManager = {
             if (!u || !u.id) return false;
             const uId = String(u.id).trim().toLowerCase();
             if (u.isDeleted === true || u.status === 'trash' || u.status === 'deleted' || deletedUserIds.has(uId) || (typeof isSystemOrDummyUser === 'function' && isSystemOrDummyUser(uId))) return false;
-            if (uId.startsWith('{') || uId.startsWith('test') || uId.startsWith('guest') || uId === 'app_latest_version' ||
+            if (uId.startsWith('{') || uId.startsWith('test') || uId.startsWith('guest') || uId.startsWith('notif_') || uId.startsWith('notifs_') || uId === 'app_latest_version' ||
                 uId === 'dashboard_summary_latest' ||
                 uId === 'global_trash' || uId === 'global_state' || uId === 'global_saved' || uId === 'extra_history' ||
                 uId === 'user_alpha' || uId === 'user_beta' || uId === 'user_gamma' || uId === 'sample' || uId === 'hms' ||

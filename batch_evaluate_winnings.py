@@ -274,7 +274,7 @@ def run_evaluation_batch():
     KNOWN_DELETED = ('app_latest_version', 'dashboard_summary_latest', 'test_write_perm', 'sample', 'test_alpha', 'guest', 'kakao_5081608503', 'kakao_5090399860', 'kakao_5105087435', 'kakao_5078158815')
     for u in users:
         uid = u.get('id', '')
-        if uid in KNOWN_DELETED:
+        if uid in KNOWN_DELETED or uid.startswith('notif_') or uid.startswith('notifs_'):
             continue
         if u.get('isDeleted') is True or u.get('status') in ('trash', 'deleted'):
             continue
@@ -294,7 +294,7 @@ def run_evaluation_batch():
     
     for p in purchases:
         uid = p.get('id', '')
-        if uid in KNOWN_DELETED:
+        if uid in KNOWN_DELETED or uid.startswith('notif_') or uid.startswith('notifs_'):
             continue
         if p.get('isDeleted') is True or p.get('status') in ('trash', 'deleted'):
             continue
