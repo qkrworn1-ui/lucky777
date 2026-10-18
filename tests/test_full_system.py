@@ -4638,6 +4638,10 @@ Lotto 6/45
         self.assertIn("@media (max-width: 380px)", css_code)
         self.assertIn("@media (max-width: 540px)", css_code)
 
+        # 6. landing-dashboard.js accurately extracts v4 hits and win-prob-modal has zero-defense fallback
+        self.assertIn("v4Hits = rev.v4Eval.hits || rev.v4Eval.rankHits", landing_code)
+        self.assertIn("base.rankHits[4] > 0", modal_code)
+
     # [Test 129] Ensure notification system documents (notif_*, notifs_*) are filtered from user lists
     def test_129_filter_notif_system_metadata_from_users(self):
         utils_path = os.path.join(self.root_dir, 'src', 'shared', 'utils.js')

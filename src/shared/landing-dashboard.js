@@ -751,13 +751,12 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
                             const v4Count = (rev.v4Combos && rev.v4Combos.length) || 10;
                             grandV4Games += v4Count;
                             grandV4Prize += (rev.v4Eval.totalPrize || 0);
-                            if (rev.v4Eval.rankHits) {
-                                grandV4Rank1 += (rev.v4Eval.rankHits[1] || 0);
-                                grandV4Rank2 += (rev.v4Eval.rankHits[2] || 0);
-                                grandV4Rank3 += (rev.v4Eval.rankHits[3] || 0);
-                                grandV4Rank4 += (rev.v4Eval.rankHits[4] || 0);
-                                grandV4Rank5 += (rev.v4Eval.rankHits[5] || 0);
-                            }
+                            const v4Hits = rev.v4Eval.hits || rev.v4Eval.rankHits || {};
+                            grandV4Rank1 += (v4Hits[1] || v4Hits['1'] || 0);
+                            grandV4Rank2 += (v4Hits[2] || v4Hits['2'] || 0);
+                            grandV4Rank3 += (v4Hits[3] || v4Hits['3'] || 0);
+                            grandV4Rank4 += (v4Hits[4] || v4Hits['4'] || 0);
+                            grandV4Rank5 += (v4Hits[5] || v4Hits['5'] || 0);
                         }
                         if (rnd === maxRound) {
                             latestTotalGames += games;

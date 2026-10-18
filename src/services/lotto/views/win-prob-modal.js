@@ -120,28 +120,42 @@ export function getLiveWinProbStats(tabId = 'v4') {
             computed.totalGames = liveTotalGames;
             computed.totalCost = liveTotalGames * 1000;
             computed.totalPrize = liveTotalPrize;
-            computed.rankHits = {
-                1: Number(summaryData.grandRank1 || 0),
-                2: Number(summaryData.grandRank2 || 0),
-                3: Number(summaryData.grandRank3 || 0),
-                4: Number(summaryData.grandRank4 || 0),
-                5: Number(summaryData.grandRank5 || 0)
-            };
+            const r4Val = Number(summaryData.grandRank4 || 0);
+            const r5Val = Number(summaryData.grandRank5 || 0);
+            if (r4Val === 0 && r5Val === 0 && base.rankHits[4] > 0) {
+                computed.rankHits = { ...base.rankHits };
+            } else {
+                computed.rankHits = {
+                    1: Number(summaryData.grandRank1 || 0),
+                    2: Number(summaryData.grandRank2 || 0),
+                    3: Number(summaryData.grandRank3 || 0),
+                    4: r4Val,
+                    5: r5Val
+                };
+            }
             computed.tag = `${roundRangeLabel} ${liveTotalGames.toLocaleString()}게임 전수 대조`;
         } else {
             // v4 올라운더 팩
             if (summaryData.v4Summary && Number(summaryData.v4Summary.totalGames) > 0) {
                 const v4 = summaryData.v4Summary;
-                computed.totalGames = Number(v4.totalGames);
-                computed.totalCost = computed.totalGames * 1000;
-                computed.totalPrize = Number(v4.totalPrize || 0);
-                computed.rankHits = {
-                    1: Number(v4.rankHits?.[1] || 0),
-                    2: Number(v4.rankHits?.[2] || 0),
-                    3: Number(v4.rankHits?.[3] || 0),
-                    4: Number(v4.rankHits?.[4] || 0),
-                    5: Number(v4.rankHits?.[5] || 0)
-                };
+                const v4Hits = v4.rankHits || v4.hits || {};
+                const r1 = Number(v4Hits[1] || v4Hits['1'] || 0);
+                const r2 = Number(v4Hits[2] || v4Hits['2'] || 0);
+                const r3 = Number(v4Hits[3] || v4Hits['3'] || 0);
+                const r4 = Number(v4Hits[4] || v4Hits['4'] || 0);
+                const r5 = Number(v4Hits[5] || v4Hits['5'] || 0);
+
+                if (r4 === 0 && r5 === 0 && base.rankHits[4] > 0) {
+                    computed.totalGames = base.totalGames;
+                    computed.totalCost = base.totalCost;
+                    computed.totalPrize = base.totalPrize;
+                    computed.rankHits = { ...base.rankHits };
+                } else {
+                    computed.totalGames = Number(v4.totalGames);
+                    computed.totalCost = computed.totalGames * 1000;
+                    computed.totalPrize = Number(v4.totalPrize || 0);
+                    computed.rankHits = { 1: r1, 2: r2, 3: r3, 4: r4, 5: r5 };
+                }
             }
         }
     }
@@ -432,7 +446,7 @@ export function renderWinProbModalContent(tabId = 'v4') {
                     <div class="box-detail-list">
                         <div class="box-detail-item">
                             <span class="dt-lbl"><i class="fa-solid fa-circle-check" style="color: #fbbf24;"></i> 4등 (5만원)</span>
-                            <span class="dt-val text-gold"><strong>${isV4 ? '매주 0.88번 (80G당 1회)' : data.cycleGames[4]}</strong> <span class="pill-mini">${data.multipliers[4].split(' ')[0]}</span></span>
+                            <span class="dt-val text-gold"><strong>${isV4 ? `매주 ${exp70.rank4}회 (${data.cycleGames[4]})` : data.cycleGames[4]}</strong> <span class="pill-mini">${data.multipliers[4].split(' ')[0]}</span></span>
                         </div>
                         <div class="box-detail-item">
                             <span class="dt-lbl"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> 5등 (5천원)</span>
@@ -440,7 +454,7 @@ export function renderWinProbModalContent(tabId = 'v4') {
                         </div>
                         <div class="box-detail-item">
                             <span class="dt-lbl"><i class="fa-solid fa-shield-halved" style="color: #38bdf8;"></i> 원금 방어</span>
-                            <span class="dt-val text-cyan">5등만으로 원금 27% 즉시 방어</span>
+                            <span class="dt-val text-cyan">5등만으로 원금 ${Math.round((exp70.rank5 * 5000 / 70000) * 100)}% 즉시 방어</span>
                         </div>
                     </div>
                 </div>
@@ -486,7 +500,7 @@ export function renderWinProbModalContent(tabId = 'v4') {
                                 <strong class="text-gold">${data.rates[4]}%</strong>
                                 <span class="col-sub text-gold">${data.cycleGames[4]}</span>
                             </div>
-                            <span class="col-cycle text-gold">${isV4 ? '70게임 구매 시 매주 0.88회 적중' : `${data.totalGames}게임 중 ${data.rankHits[4]}건 적중`}</span>
+                            <span class="col-cycle text-gold">${isV4 ? `70게임 구매 시 매주 ${exp70.rank4}회 적중` : `${data.totalGames}게임 중 ${data.rankHits[4]}건 적중`}</span>
                         </div>
                     </div>
 
