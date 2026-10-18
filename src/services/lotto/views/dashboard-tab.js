@@ -193,6 +193,10 @@ export function renderDashboardCharts() {
         }
     }
 
+    if (typeof window.renderJackpotRadar === 'function') {
+        try { window.renderJackpotRadar(); } catch(e) {}
+    }
+
     if (typeof window.initHexMap === 'function') {
         window.initHexMap();
     } else if (typeof window.renderHexFreqMap === 'function') {

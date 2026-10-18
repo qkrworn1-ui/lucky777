@@ -251,6 +251,7 @@ FILES_TO_BUNDLE = [
     "src/services/lotto/views/confirmed-tab.js",
     "src/services/lotto/myeongri-service.js",
     "src/services/lotto/views/dashboard-tab.js",
+    "src/services/lotto/views/jackpot-radar.js",
     "src/services/lotto/views/wheeling.js",
     "src/services/lotto/views/verification.js",
     "src/services/lotto/views/prediction-report.js",
