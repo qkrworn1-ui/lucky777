@@ -564,8 +564,22 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         _user70ReviewCache[cacheKey] = dummyResult;
         return dummyResult;
     }
+    const curDraw = (typeof getSafeActualDraw === 'function') 
+        ? (getSafeActualDraw(roundNum) || (state.mergedHistory ? state.mergedHistory[roundNum] : null)) 
+        : (state.mergedHistory ? state.mergedHistory[roundNum] : null);
+    const curDrawKey = (curDraw && Array.isArray(curDraw.numbers) && curDraw.numbers.length === 6)
+        ? `${curDraw.numbers.join(',')}+${curDraw.bonus}`
+        : 'pending';
+
     if (_user70ReviewCache[cacheKey]) {
-        return _user70ReviewCache[cacheKey];
+        const cached = _user70ReviewCache[cacheKey];
+        const cachedDrawKey = (cached.actualDraw && Array.isArray(cached.actualDraw.numbers) && cached.actualDraw.numbers.length === 6)
+            ? `${cached.actualDraw.numbers.join(',')}+${cached.actualDraw.bonus}`
+            : 'pending';
+        if (curDrawKey === cachedDrawKey) {
+            return cached;
+        }
+        delete _user70ReviewCache[cacheKey];
     }
 
     try {
@@ -573,8 +587,15 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         if (localCached) {
             const parsed = JSON.parse(localCached);
             if (parsed && typeof parsed === 'object' && parsed.userId === cleanUser && parsed.roundNum === roundNum && parsed.v4Combos && parsed.v3Combos && parsed.extraPackEvals && parsed.extraPackEvals.length === 5) {
-                _user70ReviewCache[cacheKey] = parsed;
-                return parsed;
+                const cachedDrawKey = (parsed.actualDraw && Array.isArray(parsed.actualDraw.numbers) && parsed.actualDraw.numbers.length === 6)
+                    ? `${parsed.actualDraw.numbers.join(',')}+${parsed.actualDraw.bonus}`
+                    : 'pending';
+                if (curDrawKey === cachedDrawKey) {
+                    _user70ReviewCache[cacheKey] = parsed;
+                    return parsed;
+                } else {
+                    localStorage.removeItem(`lotto_review_v2_${cacheKey}`);
+                }
             }
         }
     } catch(e) {}
@@ -1143,6 +1164,10 @@ export function selectSpecificReviewRound(roundNum) {
     const sel = document.getElementById('reviewRoundSelector');
     if (sel) {
         sel.value = String(roundNum);
+    }
+    const label = document.getElementById('reviewRoundDisplayLabel');
+    if (label) {
+        label.innerText = `제 ${roundNum}회차`;
     }
     renderReviewDetail(roundNum);
     setTimeout(() => {
@@ -2220,6 +2245,15 @@ export async function renderReviewDetail(r) {
     const roundNum = parseInt(r);
     if (isNaN(roundNum)) return;
 
+    const selEl = document.getElementById('reviewRoundSelector');
+    if (selEl && selEl.value !== String(roundNum)) {
+        selEl.value = String(roundNum);
+    }
+    const labelEl = document.getElementById('reviewRoundDisplayLabel');
+    if (labelEl) {
+        labelEl.innerText = `제 ${roundNum}회차`;
+    }
+
     let rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
     if (typeof rawAuth === 'string' && rawAuth.startsWith('{')) {
         try {
@@ -2455,8 +2489,16 @@ export async function renderReviewDetail(r) {
     if (isAdmin && isAllUsers) {
         let memberRowsHtml = '';
         membersEvalList.forEach(m => {
-            const userLedger = (state.allUsersPurchasesMap && state.allUsersPurchasesMap[m.userId] && state.allUsersPurchasesMap[m.userId].ledger) ? state.allUsersPurchasesMap[m.userId].ledger : {};
-            const roundReceipts = userLedger[roundNum] || [];
+            const cleanMId = (m.userId || '').toLowerCase().trim();
+            let userLedger = (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanMId] && state.allUsersPurchasesMap[cleanMId].ledger) ? state.allUsersPurchasesMap[cleanMId].ledger : {};
+            if (typeof userLedger === 'string') {
+                try { userLedger = JSON.parse(userLedger); } catch(e) { userLedger = {}; }
+            }
+            if (!userLedger || typeof userLedger !== 'object' || Object.keys(userLedger).length === 0) {
+                userLedger = (typeof getLedger === 'function') ? getLedger(cleanMId) : {};
+            }
+            const rawReceipts = (userLedger && (userLedger[roundNum] || userLedger[String(roundNum)])) || [];
+            const roundReceipts = Array.isArray(rawReceipts) ? rawReceipts : (rawReceipts && typeof rawReceipts === 'object' ? Object.values(rawReceipts) : []);
             const realPurchasedGames = roundReceipts.reduce((acc, cur) => acc + (cur && Array.isArray(cur.combos) ? cur.combos.length : 0), 0);
 
             memberRowsHtml += `
