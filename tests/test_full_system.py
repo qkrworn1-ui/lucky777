@@ -4738,8 +4738,74 @@ Lotto 6/45
         self.assertIn("const localMap = (typeof localStorage !== 'undefined') ? localStorage.getItem('lotto_all_users_purchases_map_cache') : null;", review_code)
         self.assertIn("const localUsers = (typeof localStorage !== 'undefined') ? localStorage.getItem('lotto_all_users_list_cache') : null;", review_code)
 
+    def test_jackpot_proximity_radar_diversification(self):
+        """Verify upgraded jackpot proximity radar with user selection, data sources, and cumulative all-rounds."""
+        radar_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'jackpot-radar.js')
+        self.assertTrue(os.path.exists(radar_path))
+
+        with open(radar_path, 'r', encoding='utf-8') as f:
+            code = f.read()
+
+        # 1. User Selection & Multi-user Support
+        self.assertIn("changeJackpotRadarUser", code)
+        self.assertIn("jackpotRadarUserSelect", code)
+        self.assertIn("getAllAvailableUsers", code)
+        self.assertIn("syncUserDropdownOptions", code)
+
+        # 2. Data Source Diversity (Actual, Recommendation, Combined)
+        self.assertIn("switchJackpotRadarSource", code)
+        self.assertIn("btnRadarSrcCombined", code)
+        self.assertIn("btnRadarSrcActual", code)
+        self.assertIn("btnRadarSrcRecommend", code)
+        self.assertIn("currentDataSource", code)
+
+        # 3. Round Selection Diversity (Cumulative All-Rounds, Recent 10, Single Rounds)
+        self.assertIn("all_rounds", code)
+        self.assertIn("recent10", code)
+        self.assertIn("changeJackpotRadarRound", code)
+        self.assertIn("syncRoundDropdownOptions", code)
+
+        # 4. Strict Donghang 6/45 Grading Logic Verification in JS
+        self.assertIn("gradeSingleComboStrict", code)
+        self.assertIn("matchCount === 6", code)
+        self.assertIn("matchCount === 5 && hasBonus", code)
+        self.assertIn("matchCount === 5 && !hasBonus", code)
+        self.assertIn("matchCount === 4", code)
+        self.assertIn("matchCount === 3", code)
+
+        # 5. Telemetry & Radar Canvas Elements
+        self.assertIn("jackpotRadarCanvas", code)
+        self.assertIn("radarTrajectoryBars", code)
+        self.assertIn("nearMissBallBox", code)
+        self.assertIn("toggleJackpotRadarWhatIf", code)
+
+        # 6. Python strict simulation of 1246 draw
+        win_1246 = [16, 22, 23, 24, 27, 28]
+        bonus_1246 = 6
+
+        # 4 matches + bonus 6 -> strictly 4th rank (50,000), NEVER 3rd rank!
+        rank, prize = evaluate_lotto_rank([16, 22, 23, 24, 6, 40], win_1246, bonus_1246)
+        self.assertEqual(rank, 4)
+        self.assertEqual(prize, 50000)
+
+        # 5 matches, no bonus -> strictly 3rd rank
+        rank, prize = evaluate_lotto_rank([16, 22, 23, 24, 27, 40], win_1246, bonus_1246)
+        self.assertEqual(rank, 3)
+        self.assertEqual(prize, 1500000)
+
+        # 5 matches + bonus 6 -> strictly 2nd rank
+        rank, prize = evaluate_lotto_rank([16, 22, 23, 24, 27, 6], win_1246, bonus_1246)
+        self.assertEqual(rank, 2)
+        self.assertEqual(prize, 50000000)
+
+        # Park Jae-goo 1246 real purchase [2, 16, 19, 22, 23, 27] -> 4 matches (4th rank)
+        rank, prize = evaluate_lotto_rank([2, 16, 19, 22, 23, 27], win_1246, bonus_1246)
+        self.assertEqual(rank, 4)
+        self.assertEqual(prize, 50000)
+
 if __name__ == '__main__':
     unittest.main()
+
 
 
 
