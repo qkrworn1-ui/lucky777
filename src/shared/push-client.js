@@ -1473,11 +1473,11 @@ export const PushClient = {
 
                     notifBadge = '🎉 당첨결과 & 구매확정 당첨';
                     notifTitle = `🎉 [제 ${r}회 당첨결과] 1등 ${drawNumsHeader} (구매확정 ${grade.totalWins}건 당첨!)`;
-                    notifBody = `제 ${r}회 당첨번호: ${drawNumsHeader}\n🎊 ${dispName}님의 구매확정 ${grade.totalGames}게임 채점 결과, ${hitsDesc} 총 ${grade.totalWins}건 당첨(총 당첨금 ${grade.totalPrize.toLocaleString()}원)을 축하드립니다! 확정 장부에서 상세 결과를 확인하세요.`;
+                    notifBody = `제 ${r}회 당첨번호: ${drawNumsHeader}\n🎊 ${dispName}의 구매확정 ${grade.totalGames}게임 채점 결과, ${hitsDesc} 총 ${grade.totalWins}건 당첨(총 당첨금 ${grade.totalPrize.toLocaleString()}원)을 축하드립니다! 확정 장부에서 상세 결과를 확인하세요.`;
                 } else if (grade && grade.totalGames > 0 && grade.totalWins === 0) {
                     notifBadge = '📊 당첨결과 & 구매확정 채점';
                     notifTitle = `📊 [제 ${r}회 당첨결과] 1등 ${drawNumsHeader} (구매확정 채점완료)`;
-                    notifBody = `제 ${r}회 당첨번호: ${drawNumsHeader}\n📊 ${dispName}님의 구매확정 ${grade.totalGames}게임 채점 결과: 이번 회차는 아쉽게도 낙첨되었습니다. 차기 제 ${targetRound}회차 맞춤 조합을 확인해 보세요.`;
+                    notifBody = `제 ${r}회 당첨번호: ${drawNumsHeader}\n📊 ${dispName}의 구매확정 ${grade.totalGames}게임 채점 결과: 이번 회차는 아쉽게도 낙첨되었습니다. 차기 제 ${targetRound}회차 맞춤 조합을 확인해 보세요.`;
                 } else {
                     const firstPrizeText = drawData.rank1Prize ? ` (1등 ${(drawData.rank1Prize / 100000000).toFixed(1)}억 원)` : '';
                     notifBadge = (r === latestDrawnRound) ? '🏆 최신회차 추첨결과 발표' : '🏆 공식 추첨결과 발표';
@@ -2498,8 +2498,12 @@ export const PushClient = {
                 } catch(e) {}
             }
 
-            // 3. Check in-memory state.globalLedger
-            let ledger = (window.state && window.state.globalLedger) ? window.state.globalLedger : null;
+            // 3. Check in-memory state.globalLedger (현재 활성 로그인 사용자와 일치할 때만)
+            const currentActiveUid = (this.getCurrentUserId() || '').trim().toLowerCase();
+            let ledger = null;
+            if (currentActiveUid === uid && window.state && window.state.globalLedger) {
+                ledger = window.state.globalLedger;
+            }
 
             // 4. Check state.allUsersPurchasesMap
             if ((!ledger || Object.keys(ledger).length === 0) && window.state && window.state.allUsersPurchasesMap && uid) {
@@ -2508,9 +2512,13 @@ export const PushClient = {
                 }
             }
 
-            // 5. Check localStorage by multiple individual keys
+            // 5. Check localStorage by multiple individual keys (해당 사용자 고유 키만 검사)
             if (!ledger || Object.keys(ledger).length === 0) {
-                const keys = [`lotto_actual_ledger_${uid}`, `lotto_actual_ledger_${uid.toLowerCase()}`, 'lotto_actual_ledger_guest'];
+                const keys = [`lotto_actual_ledger_${uid}`, `lotto_actual_ledger_${uid.toLowerCase()}`];
+                if (uid === 'guest') keys.push('lotto_actual_ledger_guest');
+                if (uid === 'master' || uid === 'admin') {
+                    keys.push('lotto_actual_ledger_master', 'lotto_actual_ledger_admin');
+                }
                 for (const k of keys) {
                     const raw = localStorage.getItem(k);
                     if (raw) {
@@ -2580,7 +2588,7 @@ export const PushClient = {
         // 1. Try window.getUserPurchasesForRound
         if (typeof window.getUserPurchasesForRound === 'function') {
             try {
-                const p = window.getUserPurchasesForRound(uid || 'all', rNum);
+                const p = window.getUserPurchasesForRound(uid, rNum);
                 if (Array.isArray(p) && p.length > 0) return p;
             } catch(e) {}
         }
@@ -2594,20 +2602,29 @@ export const PushClient = {
             }
         }
 
-        // 3. Try window.state.globalLedger
-        if (window.state && window.state.globalLedger) {
+        // 3. Try window.state.globalLedger (현재 활성 로그인 사용자와 일치할 때만)
+        const currentActiveUid = (this.getCurrentUserId() || '').trim().toLowerCase();
+        if (currentActiveUid === uid && window.state && window.state.globalLedger) {
             const rList = window.state.globalLedger[String(rNum)] || window.state.globalLedger[rNum];
-            if (Array.isArray(rList) && rList.length > 0) return rList;
+            if (Array.isArray(rList) && rList.length > 0) {
+                const myReceipts = rList.filter(p => {
+                    if (!p) return false;
+                    const pUser = (p.user || p.userId || '').trim().toLowerCase();
+                    return !pUser || pUser === uid;
+                });
+                if (myReceipts.length > 0) return myReceipts;
+            }
         }
 
-        // 4. Try localStorage individual keys
+        // 4. Try localStorage individual keys (해당 사용자 고유 키만 검사)
         const keys = [
             `lotto_actual_ledger_${uid}`,
-            `lotto_actual_ledger_${uid.toLowerCase()}`,
-            'lotto_actual_ledger_guest',
-            'lotto_actual_ledger_master',
-            'lotto_actual_ledger_admin'
+            `lotto_actual_ledger_${uid.toLowerCase()}`
         ];
+        if (uid === 'guest') keys.push('lotto_actual_ledger_guest');
+        if (uid === 'master' || uid === 'admin') {
+            keys.push('lotto_actual_ledger_master', 'lotto_actual_ledger_admin');
+        }
         for (const k of keys) {
             try {
                 const raw = localStorage.getItem(k);
@@ -2970,12 +2987,12 @@ export const PushClient = {
 
                             notifBadge = '🎉 당첨결과 & 구매확정 당첨';
                             notifTitle = `🎉 [제 ${latestDrawnRound}회 당첨결과] 1등 ${drawNumsHeader} (구매확정 ${grade.totalWins}건 당첨!)`;
-                            notifBody = `제 ${latestDrawnRound}회 당첨번호: ${drawNumsHeader}\n🎊 ${dispName}님의 구매확정 ${grade.totalGames}게임 채점 결과, ${hitsDesc} 총 ${grade.totalWins}건 당첨(총 당첨금 ${grade.totalPrize.toLocaleString()}원)을 축하드립니다! 확정 장부에서 상세 결과를 확인하세요.`;
+                            notifBody = `제 ${latestDrawnRound}회 당첨번호: ${drawNumsHeader}\n🎊 ${dispName}의 구매확정 ${grade.totalGames}게임 채점 결과, ${hitsDesc} 총 ${grade.totalWins}건 당첨(총 당첨금 ${grade.totalPrize.toLocaleString()}원)을 축하드립니다! 확정 장부에서 상세 결과를 확인하세요.`;
                         } else if (grade && grade.totalGames > 0 && grade.totalWins === 0) {
                             // 3-B) 실구매 복권 미당첨(낙첨): 당첨번호 + 구매확정 채점결과 통합
                             notifBadge = '📊 당첨결과 & 구매확정 채점';
                             notifTitle = `📊 [제 ${latestDrawnRound}회 당첨결과] 1등 ${drawNumsHeader} (구매확정 채점완료)`;
-                            notifBody = `제 ${latestDrawnRound}회 당첨번호: ${drawNumsHeader}\n📊 ${dispName}님의 구매확정 ${grade.totalGames}게임 채점 결과: 이번 회차는 아쉽게도 낙첨되었습니다. 차기 제 ${targetRound}회차 맞춤 조합을 확인해 보세요.`;
+                            notifBody = `제 ${latestDrawnRound}회 당첨번호: ${drawNumsHeader}\n📊 ${dispName}의 구매확정 ${grade.totalGames}게임 채점 결과: 이번 회차는 아쉽게도 낙첨되었습니다. 차기 제 ${targetRound}회차 맞춤 조합을 확인해 보세요.`;
                         } else {
                             // 3-C) 미구매 회원: 최신회차 당첨번호 안내
                             const firstPrizeText = drawData.rank1Prize ? ` (1등 ${(drawData.rank1Prize / 100000000).toFixed(1)}억 원)` : '';
