@@ -2077,10 +2077,20 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     const roundNum = parseInt(round, 10);
     const docKey = `${cleanUser}_${roundNum}`;
 
-    // Collect candidate user identifiers for alias / display name mapping (e.g. 박재구 <-> pjg <-> kakao_5070244665)
+    // ⚡ 0ms 즉시 로컬 캐시 복원: state.allUsersPurchasesMap 비어있으면 localStorage에서 즉시 복원
+    if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+        try {
+            const rawMap = (typeof localStorage !== 'undefined') ? localStorage.getItem('lotto_all_users_purchases_map_cache') : null;
+            if (rawMap) state.allUsersPurchasesMap = JSON.parse(rawMap);
+        } catch(e) {}
+    }
+
+    // Collect candidate user identifiers for alias / display name mapping (e.g. 박재구 <-> pjg <-> kakao_5070244665 <-> master)
     const candidateIds = new Set([cleanUser]);
-    if (cleanUser === '박재구' || cleanUser === 'pjg' || cleanUser === 'kakao_5070244665') {
+    if (cleanUser === '박재구' || cleanUser === 'pjg' || cleanUser === 'kakao_5070244665' || cleanUser === 'master' || cleanUser === 'admin') {
         candidateIds.add('kakao_5070244665');
+        candidateIds.add('master');
+        candidateIds.add('admin');
         candidateIds.add('박재구');
         candidateIds.add('pjg');
     }

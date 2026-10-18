@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.18.1759.31 - BUILD_DATE: 2026-10-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.18.1816 - BUILD_DATE: 2026-10-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.18.1759.31)
+ * Lucky777 Smart Bundle (v2026.10.18.1816)
  */
 
 
@@ -23477,10 +23477,20 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     const roundNum = parseInt(round, 10);
     const docKey = `${cleanUser}_${roundNum}`;
 
-    // Collect candidate user identifiers for alias / display name mapping (e.g. 박재구 <-> pjg <-> kakao_5070244665)
+    // ⚡ 0ms 즉시 로컬 캐시 복원: state.allUsersPurchasesMap 비어있으면 SafeLocalStorage에서 즉시 복원
+    if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+        try {
+            const rawMap = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem('lotto_all_users_purchases_map_cache') : null;
+            if (rawMap) state.allUsersPurchasesMap = JSON.parse(rawMap);
+        } catch(e) {}
+    }
+
+    // Collect candidate user identifiers for alias / display name mapping (e.g. 박재구 <-> pjg <-> kakao_5070244665 <-> master)
     const candidateIds = new Set([cleanUser]);
-    if (cleanUser === '박재구' || cleanUser === 'pjg' || cleanUser === 'kakao_5070244665') {
+    if (cleanUser === '박재구' || cleanUser === 'pjg' || cleanUser === 'kakao_5070244665' || cleanUser === 'master' || cleanUser === 'admin') {
         candidateIds.add('kakao_5070244665');
+        candidateIds.add('master');
+        candidateIds.add('admin');
         candidateIds.add('박재구');
         candidateIds.add('pjg');
     }
@@ -24260,9 +24270,26 @@ function getUserSingleMasterDocSync(userId) {
     cleanUser = cleanUser.toLowerCase().trim();
     if (isSystemOrDummyUser(cleanUser)) return null;
 
-    if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
-        const doc = state.allUsersPurchasesMap[cleanUser];
-        if (doc && !doc.isDeleted && doc.status !== 'trash') return doc;
+    // ⚡ 0ms 즉시 로컬 캐시 복원: state.allUsersPurchasesMap 비어있으면 SafeLocalStorage에서 즉시 복원
+    if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+        try {
+            const rawMap = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem('lotto_all_users_purchases_map_cache') : null;
+            if (rawMap) state.allUsersPurchasesMap = JSON.parse(rawMap);
+        } catch(e) {}
+    }
+
+    const candidateIds = [cleanUser];
+    if (cleanUser === '박재구' || cleanUser === 'pjg' || cleanUser === 'kakao_5070244665' || cleanUser === 'master' || cleanUser === 'admin') {
+        candidateIds.push('kakao_5070244665', 'master', 'admin', '박재구', 'pjg');
+    }
+
+    if (state.allUsersPurchasesMap) {
+        for (const cId of candidateIds) {
+            if (state.allUsersPurchasesMap[cId]) {
+                const doc = state.allUsersPurchasesMap[cId];
+                if (doc && !doc.isDeleted && doc.status !== 'trash') return doc;
+            }
+        }
     }
     return null;
 }
@@ -24282,16 +24309,32 @@ function getUserWeeklyWinningEvaluationSync(userId, roundNum) {
     cleanUser = cleanUser.toLowerCase().trim();
     if (isSystemOrDummyUser(cleanUser)) return null;
     const rKey = String(roundNum);
-    const cacheKey = `${cleanUser}_${roundNum}`;
+    const rNum = parseInt(roundNum, 10);
+
+    const candidateIds = [cleanUser];
+    if (cleanUser === '박재구' || cleanUser === 'pjg' || cleanUser === 'kakao_5070244665' || cleanUser === 'master' || cleanUser === 'admin') {
+        candidateIds.push('kakao_5070244665', 'master', 'admin', '박재구', 'pjg');
+    }
 
     // 1. In-memory state userWinningEvaluations
-    if (state.userWinningEvaluations && state.userWinningEvaluations[cacheKey]) {
-        return state.userWinningEvaluations[cacheKey];
+    if (state.userWinningEvaluations) {
+        for (const cId of candidateIds) {
+            const cacheKey = `${cId}_${rNum}`;
+            if (state.userWinningEvaluations[cacheKey]) {
+                return state.userWinningEvaluations[cacheKey];
+            }
+        }
     }
+
     // 2. From user's single master document in state.allUsersPurchasesMap
-    const masterDoc = getUserSingleMasterDocSync(cleanUser);
-    if (masterDoc && masterDoc.winningEvaluations && masterDoc.winningEvaluations[rKey]) {
-        return masterDoc.winningEvaluations[rKey];
+    for (const cId of candidateIds) {
+        const masterDoc = getUserSingleMasterDocSync(cId);
+        if (masterDoc && masterDoc.winningEvaluations) {
+            const ev = masterDoc.winningEvaluations[rKey] || masterDoc.winningEvaluations[rNum];
+            if (ev && (!ev.isPreJoin || !cleanUser.startsWith('kakao_') || rNum >= 1240)) {
+                return ev;
+            }
+        }
     }
     return null;
 }
@@ -24316,10 +24359,20 @@ function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
     const rNum = parseInt(roundNum, 10);
     const rKey = String(rNum);
 
-    // Collect candidate user identifiers for alias / display name mapping (e.g. 박재구 <-> pjg <-> kakao_5070244665)
+    // ⚡ 0ms 즉시 로컬 캐시 복원: state.allUsersPurchasesMap 비어있으면 SafeLocalStorage에서 즉시 복원
+    if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+        try {
+            const rawMap = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem('lotto_all_users_purchases_map_cache') : null;
+            if (rawMap) state.allUsersPurchasesMap = JSON.parse(rawMap);
+        } catch(e) {}
+    }
+
+    // Collect candidate user identifiers for alias / display name mapping (e.g. 박재구 <-> pjg <-> kakao_5070244665 <-> master)
     const candidateIds = new Set([cleanUser]);
-    if (cleanUser === '박재구' || cleanUser === 'pjg' || cleanUser === 'kakao_5070244665') {
+    if (cleanUser === '박재구' || cleanUser === 'pjg' || cleanUser === 'kakao_5070244665' || cleanUser === 'master' || cleanUser === 'admin') {
         candidateIds.add('kakao_5070244665');
+        candidateIds.add('master');
+        candidateIds.add('admin');
         candidateIds.add('박재구');
         candidateIds.add('pjg');
     }
@@ -24356,13 +24409,48 @@ function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
         } catch(e) {}
     }
 
+    // 🔒 1순위: 메모리 state 스냅샷 확인
     for (const cId of candidateIds) {
         const cacheKey = `${cId}_${rNum}`;
-        // 1. In-memory state snapshots
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cacheKey]) {
             return hydrateLeanSnapshot(state.userRecommendationSnapshots[cacheKey]);
         }
-        // 2. LocalStorage cache
+    }
+
+    // 🔒 2순위: 서버 단일 마스터 문서(state.allUsersPurchasesMap) 최우선 확인 (진실의 원천 - 로컬 캐시보다 우선!)
+    for (const cId of candidateIds) {
+        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
+            const pDoc = state.allUsersPurchasesMap[cId];
+            const pSnaps = pDoc.recommendationSnapshots;
+            if (pSnaps && (pSnaps[rKey] || pSnaps[rNum])) {
+                const hydrated = hydrateLeanSnapshot(pSnaps[rKey] || pSnaps[rNum]);
+                if (hydrated && (hydrated.v4Combos || hydrated.v3Combos || hydrated.extraPacks)) {
+                    if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                    state.userRecommendationSnapshots[`${cId}_${rNum}`] = hydrated;
+                    try { SafeLocalStorage.setItem(`lotto_rec_snapshot_${cId}_${rNum}`, JSON.stringify(hydrated)); } catch(e) {}
+                    return hydrated;
+                }
+            }
+        }
+        // state.allRegisteredUsersList
+        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
+            const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
+            const uSnaps = u ? u.recommendationSnapshots : null;
+            if (uSnaps && (uSnaps[rKey] || uSnaps[rNum])) {
+                const hydrated = hydrateLeanSnapshot(uSnaps[rKey] || uSnaps[rNum]);
+                if (hydrated && (hydrated.v4Combos || hydrated.v3Combos || hydrated.extraPacks)) {
+                    if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+                    state.userRecommendationSnapshots[`${cId}_${rNum}`] = hydrated;
+                    try { SafeLocalStorage.setItem(`lotto_rec_snapshot_${cId}_${rNum}`, JSON.stringify(hydrated)); } catch(e) {}
+                    return hydrated;
+                }
+            }
+        }
+    }
+
+    // 🔒 3순위: LocalStorage 불변 캐시 확인 (서버 데이터 없을 때 로컬 복원)
+    for (const cId of candidateIds) {
+        const cacheKey = `${cId}_${rNum}`;
         try {
             const raw = SafeLocalStorage.getItem(`lotto_rec_snapshot_${cacheKey}`);
             if (raw) {
@@ -24372,22 +24460,6 @@ function getUserWeeklyRecommendationSnapshotSync(userId, roundNum) {
                 }
             }
         } catch(e) {}
-        // 3. state.allUsersPurchasesMap (User's Single Master Document)
-        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
-            const pDoc = state.allUsersPurchasesMap[cId];
-            const pSnaps = pDoc.recommendationSnapshots;
-            if (pSnaps && (pSnaps[rKey] || pSnaps[rNum])) {
-                return hydrateLeanSnapshot(pSnaps[rKey] || pSnaps[rNum]);
-            }
-        }
-        // 4. state.allRegisteredUsersList
-        if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
-            const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
-            const uSnaps = u ? u.recommendationSnapshots : null;
-            if (uSnaps && (uSnaps[rKey] || uSnaps[rNum])) {
-                return hydrateLeanSnapshot(uSnaps[rKey] || uSnaps[rNum]);
-            }
-        }
     }
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[rKey]) {
@@ -24497,12 +24569,16 @@ function computeUser70RecommendationsReview(userId, roundNum) {
         ? `${curDraw.numbers.join(',')}+${curDraw.bonus}`
         : 'pending';
 
+    const serverEvalCheck = getUserWeeklyWinningEvaluationSync(cleanUser, roundNum);
+    const hasServerWinningPrize = (serverEvalCheck && serverEvalCheck.recSummary && Number(serverEvalCheck.recSummary.totalPrize || 0) > 0);
+
     if (_user70ReviewCache[cacheKey]) {
         const cached = _user70ReviewCache[cacheKey];
         const cachedDrawKey = (cached.actualDraw && Array.isArray(cached.actualDraw.numbers) && cached.actualDraw.numbers.length === 6)
             ? `${cached.actualDraw.numbers.join(',')}+${cached.actualDraw.bonus}`
             : 'pending';
-        if (curDrawKey === cachedDrawKey) {
+        // 🛡️ 캐시된 총 당첨금이 0원이지만, 서버 사전 판별에 0원 초과 실적이 존재하면 0원 오염 캐시 즉시 무효화
+        if (curDrawKey === cachedDrawKey && (!hasServerWinningPrize || cached.totalPrize > 0)) {
             return cached;
         }
         delete _user70ReviewCache[cacheKey];
@@ -24516,7 +24592,8 @@ function computeUser70RecommendationsReview(userId, roundNum) {
                 const cachedDrawKey = (parsed.actualDraw && Array.isArray(parsed.actualDraw.numbers) && parsed.actualDraw.numbers.length === 6)
                     ? `${parsed.actualDraw.numbers.join(',')}+${parsed.actualDraw.bonus}`
                     : 'pending';
-                if (curDrawKey === cachedDrawKey) {
+                // 🛡️ 로컬 캐시가 0원이지만 서버에 실제 당첨 실적이 존재하는 경우 0원 오염 캐시 즉시 제거
+                if (curDrawKey === cachedDrawKey && (!hasServerWinningPrize || parsed.totalPrize > 0)) {
                     _user70ReviewCache[cacheKey] = parsed;
                     return parsed;
                 } else {
@@ -24760,7 +24837,7 @@ function computeUser70RecommendationsReview(userId, roundNum) {
     const roi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
 
     // 🔒 단일 마스터 문서(Single Master Document)의 사전 판별 데이터(winningEvaluations) 최우선 동기화
-    const preEval = getUserWeeklyWinningEvaluationSync(cleanUser, roundNum);
+    const preEval = serverEvalCheck || getUserWeeklyWinningEvaluationSync(cleanUser, roundNum);
     let finalHits = grandHits;
     let finalPrize = totalPrize;
     let finalWins = totalWins;
@@ -24793,9 +24870,25 @@ function computeUser70RecommendationsReview(userId, roundNum) {
             if (s.algoSummaries && typeof s.algoSummaries === 'object') {
                 if (s.algoSummaries.v4 && v4Eval) {
                     v4Eval.totalPrize = Number(s.algoSummaries.v4.prize ?? v4Eval.totalPrize);
+                    if (s.algoSummaries.v4.hits && typeof s.algoSummaries.v4.hits === 'object') {
+                        for (let k = 1; k <= 5; k++) {
+                            if (s.algoSummaries.v4.hits[k] !== undefined || s.algoSummaries.v4.hits[String(k)] !== undefined) {
+                                v4Eval.hits[k] = Number(s.algoSummaries.v4.hits[k] ?? s.algoSummaries.v4.hits[String(k)]);
+                            }
+                        }
+                        v4Eval.totalWins = v4Eval.hits[1] + v4Eval.hits[2] + v4Eval.hits[3] + v4Eval.hits[4] + v4Eval.hits[5];
+                    }
                 }
                 if (s.algoSummaries.v3 && v3Eval) {
                     v3Eval.totalPrize = Number(s.algoSummaries.v3.prize ?? v3Eval.totalPrize);
+                    if (s.algoSummaries.v3.hits && typeof s.algoSummaries.v3.hits === 'object') {
+                        for (let k = 1; k <= 5; k++) {
+                            if (s.algoSummaries.v3.hits[k] !== undefined || s.algoSummaries.v3.hits[String(k)] !== undefined) {
+                                v3Eval.hits[k] = Number(s.algoSummaries.v3.hits[k] ?? s.algoSummaries.v3.hits[String(k)]);
+                            }
+                        }
+                        v3Eval.totalWins = v3Eval.hits[1] + v3Eval.hits[2] + v3Eval.hits[3] + v3Eval.hits[4] + v3Eval.hits[5];
+                    }
                 }
                 extraPackEvals.forEach(ep => {
                     const k1 = `extra_${ep.packId}`;
@@ -24803,6 +24896,14 @@ function computeUser70RecommendationsReview(userId, roundNum) {
                     const aObj = s.algoSummaries[k1] || s.algoSummaries[k2];
                     if (aObj && ep.evalData) {
                         ep.evalData.totalPrize = Number(aObj.prize ?? ep.evalData.totalPrize);
+                        if (aObj.hits && typeof aObj.hits === 'object') {
+                            for (let k = 1; k <= 5; k++) {
+                                if (aObj.hits[k] !== undefined || aObj.hits[String(k)] !== undefined) {
+                                    ep.evalData.hits[k] = Number(aObj.hits[k] ?? aObj.hits[String(k)]);
+                                }
+                            }
+                            ep.evalData.totalWins = ep.evalData.hits[1] + ep.evalData.hits[2] + ep.evalData.hits[3] + ep.evalData.hits[4] + ep.evalData.hits[5];
+                        }
                     }
                 });
             }
@@ -24865,6 +24966,22 @@ async function renderReviewTab() {
         const cleanAuth = authId.toLowerCase();
         const isAdmin = (cleanAuth === 'master' || cleanAuth === 'admin' || (typeof isAdminUser === 'function' && isAdminUser(cleanAuth)));
 
+        // ⚡ 0ms 즉시 로컬 캐시 복원: 스마트폰/PC 접속 시 구매 맵 및 회원 목록 즉각 복원
+        if (!state.allUsersPurchasesMap || Object.keys(state.allUsersPurchasesMap).length === 0) {
+            try {
+                const localMap = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem('lotto_all_users_purchases_map_cache') : null;
+                const localMerged = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem('lotto_all_users_merged_ledger_cache') : null;
+                if (localMap) state.allUsersPurchasesMap = JSON.parse(localMap);
+                if (localMerged) state.allUsersMergedLedger = JSON.parse(localMerged);
+            } catch(e) {}
+        }
+        if (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0) {
+            try {
+                const localUsers = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem('lotto_all_users_list_cache') : null;
+                if (localUsers) state.allRegisteredUsersList = JSON.parse(localUsers);
+            } catch(e) {}
+        }
+
         if (!isAdmin) {
             reviewAdminViewingUser = authId;
             if (typeof window !== 'undefined') window.selectedAdminViewingUser = authId;
@@ -24879,9 +24996,9 @@ async function renderReviewTab() {
                 reviewAdminViewingUser = 'all';
                 if (typeof window !== 'undefined') window.selectedAdminViewingUser = reviewAdminViewingUser;
             }
-            // 관리자이며 회원 목록이 전혀 로드되지 않은 경우에만 1회 백그라운드 지연 로드
-            if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0)) {
-                setTimeout(() => { fetchAllUsersPurchases().catch(() => {}); }, 300);
+            // 회원 목록이나 구매 맵이 비어있는 경우 백그라운드 지연 로드
+            if ((typeof window !== 'undefined' && window.db || db) && (!state.allRegisteredUsersList || state.allRegisteredUsersList.length === 0 || !state.allUsersPurchasesMap)) {
+                setTimeout(() => { fetchAllUsersPurchases().catch(() => {}); }, 150);
             }
         }
 

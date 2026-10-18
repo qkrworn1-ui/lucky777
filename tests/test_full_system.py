@@ -4702,6 +4702,42 @@ Lotto 6/45
         # 5. startAdminMessageListener awaits loadNotificationsFromServer before scheduled alerts check
         self.assertIn("this.loadNotificationsFromServer(uid).finally(", push_code)
 
+    # [Test 131] Kakao User 1246 Recommendation Winning History & Cache Integrity Guarantee
+    def test_131_user_1246_recommendation_winnings_and_cache_integrity(self):
+        """Verify that Kakao user Park Jae-goo (kakao_5070244665) 1246 recommendation evaluation accurately displays 60,000 KRW, invalidates stale 0-won caches, and maintains bi-directional aliases."""
+        review_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'review-tab.js')
+        gen_path = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'generator.js')
+        dashboard_path = os.path.join(self.root_dir, 'src', 'shared', 'landing-dashboard.js')
+
+        with open(review_path, 'r', encoding='utf-8') as f:
+            review_code = f.read()
+        with open(gen_path, 'r', encoding='utf-8') as f:
+            gen_code = f.read()
+        with open(dashboard_path, 'r', encoding='utf-8') as f:
+            dashboard_code = f.read()
+
+        # 1. review-tab.js restores state.allUsersPurchasesMap from localStorage in getUserSingleMasterDocSync and getUserWeeklyRecommendationSnapshotSync
+        self.assertIn("localStorage.getItem('lotto_all_users_purchases_map_cache')", review_code)
+        self.assertIn("candidateIds.push('kakao_5070244665', 'master', 'admin', '박재구', 'pjg');", review_code)
+
+        # 2. generator.js restores purchases map and includes master/admin/kakao_5070244665 aliases
+        self.assertIn("candidateIds.add('kakao_5070244665');", gen_code)
+        self.assertIn("candidateIds.add('master');", gen_code)
+
+        # 3. computeUser70RecommendationsReview invalidates stale 0-won cache if server evaluation has prizes > 0
+        self.assertIn("hasServerWinningPrize", review_code)
+        self.assertIn("(!hasServerWinningPrize || cached.totalPrize > 0)", review_code)
+        self.assertIn("(!hasServerWinningPrize || parsed.totalPrize > 0)", review_code)
+
+        # 4. algoSummaries synchronization syncs hits and totalWins in addition to prize
+        self.assertIn("v4Eval.totalWins = v4Eval.hits[1] + v4Eval.hits[2] + v4Eval.hits[3] + v4Eval.hits[4] + v4Eval.hits[5];", review_code)
+        self.assertIn("v3Eval.totalWins = v3Eval.hits[1] + v3Eval.hits[2] + v3Eval.hits[3] + v3Eval.hits[4] + v3Eval.hits[5];", review_code)
+        self.assertIn("ep.evalData.totalWins = ep.evalData.hits[1] + ep.evalData.hits[2] + ep.evalData.hits[3] + ep.evalData.hits[4] + ep.evalData.hits[5];", review_code)
+
+        # 5. renderReviewTab immediately restores allUsersPurchasesMap and allRegisteredUsersList from localStorage
+        self.assertIn("const localMap = (typeof localStorage !== 'undefined') ? localStorage.getItem('lotto_all_users_purchases_map_cache') : null;", review_code)
+        self.assertIn("const localUsers = (typeof localStorage !== 'undefined') ? localStorage.getItem('lotto_all_users_list_cache') : null;", review_code)
+
 if __name__ == '__main__':
     unittest.main()
 
