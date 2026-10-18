@@ -4669,6 +4669,39 @@ Lotto 6/45
         self.assertIn("uid.startswith('notif_')", batch_code)
         self.assertIn("uid.startswith('notifs_')", batch_code)
 
+    # [Test 130] Notification Revival Defense and Server Sync Integrity Guarantee
+    def test_130_notification_revival_defense_and_server_sync_integrity(self):
+        """Verify that deleted and read notifications never resurrect upon restart/re-login via server pre-hydration and seed suppression."""
+        auth_path = os.path.join(self.root_dir, 'src', 'shared', 'auth-mgmt.js')
+        push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
+
+        with open(auth_path, 'r', encoding='utf-8') as f:
+            auth_code = f.read()
+        with open(push_path, 'r', encoding='utf-8') as f:
+            push_code = f.read()
+
+        # 1. auth-mgmt.js hydrates memory and awaits server data on login before alerts check
+        self.assertIn("window.PushClient.initLocalMemorySync(authId)", auth_code)
+        self.assertIn("await window.PushClient.loadNotificationsFromServer(authId)", auth_code)
+        self.assertIn("window.PushClient.listenNotificationsFromServer(authId)", auth_code)
+
+        # 2. push-client.js initLocalMemorySync accepts userId parameter and registers all aliases
+        self.assertIn("initLocalMemorySync(userId = null)", push_code)
+        self.assertIn("getDeletedNotifsKey(uid)", push_code)
+
+        # 3. seedRecentNotifications suppresses past 5 rounds and welcome notice for already seeded users
+        self.assertIn("isUserAlreadySeeded", push_code)
+        self.assertIn("roundsToCheck = isUserAlreadySeeded\n                ? [latestDrawnRound]", push_code)
+        self.assertIn("!hasWelcome && !isUserAlreadySeeded && !this.isNotificationDeleted(welcomeNotifId)", push_code)
+
+        # 4. deleteNotification immediately syncs nextList to Firestore and deletes all aliases
+        self.assertIn("this.saveNotificationsToServer(uid, { inbox: nextList, isCleared: false });", push_code)
+        self.assertIn("lucky777_deleted_admin-msg-", push_code)
+        self.assertIn("lucky777_deleted_draw-result-", push_code)
+
+        # 5. startAdminMessageListener awaits loadNotificationsFromServer before scheduled alerts check
+        self.assertIn("this.loadNotificationsFromServer(uid).finally(", push_code)
+
 if __name__ == '__main__':
     unittest.main()
 

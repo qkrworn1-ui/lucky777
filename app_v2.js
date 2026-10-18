@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.18.1219 - BUILD_DATE: 2026-10-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.18.1348 - BUILD_DATE: 2026-10-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.18.1219)
+ * Lucky777 Smart Bundle (v2026.10.18.1348)
  */
 
 
@@ -3693,14 +3693,25 @@ async function checkAuthOnLoad(initFirebaseAndData) {
         }
 
         // 📨 [Admin Message Auto-Receive & Push] Immediately listen for and pop up unread admin messages upon login
-        setTimeout(() => {
-            if (window.PushClient && typeof window.PushClient.startAdminMessageListener === 'function') {
-                window.PushClient.startAdminMessageListener(authId);
+        setTimeout(async () => {
+            if (window.PushClient) {
+                if (typeof window.PushClient.initLocalMemorySync === 'function') {
+                    window.PushClient.initLocalMemorySync(authId);
+                }
+                if (typeof window.PushClient.loadNotificationsFromServer === 'function') {
+                    await window.PushClient.loadNotificationsFromServer(authId);
+                }
+                if (typeof window.PushClient.listenNotificationsFromServer === 'function') {
+                    window.PushClient.listenNotificationsFromServer(authId);
+                }
+                if (typeof window.PushClient.startAdminMessageListener === 'function') {
+                    window.PushClient.startAdminMessageListener(authId);
+                }
+                if (typeof window.PushClient.checkAndGenerateScheduledAlerts === 'function') {
+                    window.PushClient.checkAndGenerateScheduledAlerts();
+                }
             }
-            if (window.PushClient && typeof window.PushClient.checkAndGenerateScheduledAlerts === 'function') {
-                window.PushClient.checkAndGenerateScheduledAlerts();
-            }
-        }, 450);
+        }, 300);
 
         // 💬 [Kakao Auto-Dispatch] Check pending queue & auto-dispatch unsent real winning reports upon login
         setTimeout(async () => {
@@ -10868,10 +10879,10 @@ const PushClient = {
     /**
      * 브라우저 재실행 시 로컬 스토리지에 남아있는 읽음/삭제 목록을 메모리 Set에 즉시 0ms 동기화
      */
-    initLocalMemorySync() {
+    initLocalMemorySync(userId = null) {
         try {
-            const uid = this.getActiveUserId();
-            const delKeys = [this.getDeletedNotifsKey(), 'lucky777_deleted_notifs_global'];
+            const uid = String(userId || this.getActiveUserId()).trim().toLowerCase();
+            const delKeys = [this.getDeletedNotifsKey(uid), 'lucky777_deleted_notifs_global'];
             delKeys.forEach(dk => {
                 const arr = this._getStoredIdsArray(dk);
                 arr.forEach(id => {
@@ -10882,6 +10893,21 @@ const PushClient = {
                         this._memoryDeletedIds.add(normId);
                         this._memoryDeletedIds.add(cleanId);
                         if (canonKey) this._memoryDeletedIds.add(canonKey);
+
+                        if (normId.startsWith('admin-msg-') || normId.startsWith('admin_')) {
+                            const rawAdmId = normId.replace(/^admin-msg-/, '').replace(/^admin_/, '');
+                            this._memoryDeletedIds.add(`admin-msg-${rawAdmId}`);
+                            this._memoryDeletedIds.add(`admin_${rawAdmId}`);
+                            this._memoryDeletedIds.add(rawAdmId);
+                        }
+
+                        const drawM = normId.match(/(?:draw-result|win-celebrate)-(\d+)/);
+                        if (drawM) {
+                            const r = drawM[1];
+                            this._memoryDeletedIds.add(`draw-result-${r}`);
+                            this._memoryDeletedIds.add(`win-celebrate-${r}`);
+                            this._memoryDeletedIds.add(`round_${r}_result`);
+                        }
                     }
                 });
             });
@@ -10941,8 +10967,9 @@ const PushClient = {
 
             const delArr = Array.from(new Set([
                 ...Array.from(this._memoryDeletedIds),
-                ...this._getStoredIdsArray(this.getDeletedNotifsKey()),
-                ...this._getStoredIdsArray('lucky777_deleted_notifs_global')
+                ...this._getStoredIdsArray(this.getDeletedNotifsKey(uid)),
+                ...this._getStoredIdsArray('lucky777_deleted_notifs_global'),
+                ...(Array.isArray(customPayload && customPayload.deletedIds) ? customPayload.deletedIds : [])
             ])).slice(-300);
 
             const payload = {
@@ -11088,7 +11115,7 @@ const PushClient = {
 
         // 2. deletedIds 복원
         if (Array.isArray(data.deletedIds) && data.deletedIds.length > 0) {
-            const delKey = this.getDeletedNotifsKey();
+            const delKey = this.getDeletedNotifsKey(uid);
             let localDelArr = this._getStoredIdsArray(delKey);
 
             data.deletedIds.forEach(id => {
@@ -11103,6 +11130,27 @@ const PushClient = {
                 this.safeSetItem(`lucky777_deleted_${normId}`, 'true');
                 this.safeSetItem(`lucky777_deleted_${cleanId}`, 'true');
                 if (canonKey) this.safeSetItem(`lucky777_deleted_${canonKey}`, 'true');
+
+                if (normId.startsWith('admin-msg-') || normId.startsWith('admin_')) {
+                    const rawAdm = normId.replace(/^admin-msg-/, '').replace(/^admin_/, '');
+                    this._memoryDeletedIds.add(`admin-msg-${rawAdm}`);
+                    this._memoryDeletedIds.add(`admin_${rawAdm}`);
+                    this._memoryDeletedIds.add(rawAdm);
+                    this.safeSetItem(`lucky777_deleted_admin-msg-${rawAdm}`, 'true');
+                    this.safeSetItem(`lucky777_deleted_admin_${rawAdm}`, 'true');
+                    this.safeSetItem(`lucky777_deleted_${rawAdm}`, 'true');
+                }
+
+                const drawM = normId.match(/(?:draw-result|win-celebrate)-(\d+)/);
+                if (drawM) {
+                    const r = drawM[1];
+                    this._memoryDeletedIds.add(`draw-result-${r}`);
+                    this._memoryDeletedIds.add(`win-celebrate-${r}`);
+                    this._memoryDeletedIds.add(`round_${r}_result`);
+                    this.safeSetItem(`lucky777_deleted_draw-result-${r}`, 'true');
+                    this.safeSetItem(`lucky777_deleted_win-celebrate-${r}`, 'true');
+                    this.safeSetItem(`lucky777_deleted_round_${r}_result`, 'true');
+                }
 
                 if (!localDelArr.includes(normId)) localDelArr.push(normId);
                 if (!localDelArr.includes(cleanId)) localDelArr.push(cleanId);
@@ -11151,7 +11199,7 @@ const PushClient = {
         }
 
         // 4. inbox 복원 및 병합 (삭제된 알림은 배제하고 읽음 상태 동기화)
-        const key = this.getInboxStorageKey();
+        const key = this.getInboxStorageKey(uid);
         let list = [];
         if (data.isCleared === true) {
             list = [];
@@ -11176,6 +11224,9 @@ const PushClient = {
         try {
             SafeLocalStorage.setItem(key, JSON.stringify(list.slice(0, 40)));
         } catch(e) {}
+
+        this.safeSetItem(`lucky777_inbox_seeded_${uid}`, 'true');
+        try { SafeLocalStorage.setItem(`lucky777_inbox_seeded_${uid}`, 'true'); } catch(e) {}
 
         this.renderUnreadNotificationUI();
         const modal = document.getElementById('lucky777NotificationCenterModal');
@@ -11229,13 +11280,13 @@ const PushClient = {
         return String(uid || 'guest').trim().toLowerCase();
     },
 
-    getInboxStorageKey() {
-        const uid = this.getActiveUserId();
+    getInboxStorageKey(userId = null) {
+        const uid = String(userId || this.getActiveUserId()).trim().toLowerCase();
         return `lucky777_notification_inbox_${uid}`;
     },
 
-    getDeletedNotifsKey() {
-        const uid = this.getActiveUserId();
+    getDeletedNotifsKey(userId = null) {
+        const uid = String(userId || this.getActiveUserId()).trim().toLowerCase();
         return `lucky777_deleted_notifs_${uid}`;
     },
 
@@ -11263,6 +11314,25 @@ const PushClient = {
                 (canonKey && this._memoryDeletedIds.has(canonKey))
             ) {
                 return true;
+            }
+
+            if (normId.startsWith('admin-msg-') || normId.startsWith('admin_')) {
+                const rawAdm = normId.replace(/^admin-msg-/, '').replace(/^admin_/, '');
+                if (this._memoryDeletedIds.has(rawAdm) || this._memoryDeletedIds.has(`admin_${rawAdm}`) || this._memoryDeletedIds.has(`admin-msg-${rawAdm}`)) {
+                    return true;
+                }
+            }
+
+            const drawM = normId.match(/(?:draw-result|win-celebrate)-(\d+)/);
+            if (drawM) {
+                const r = drawM[1];
+                if (
+                    this._memoryDeletedIds.has(`draw-result-${r}`) ||
+                    this._memoryDeletedIds.has(`win-celebrate-${r}`) ||
+                    this._memoryDeletedIds.has(`round_${r}_result`)
+                ) {
+                    return true;
+                }
             }
 
             if (
@@ -11533,12 +11603,16 @@ const PushClient = {
                 latestDrawnRound = 1246;
             }
 
+            const isUserAlreadySeeded = (this.safeGetItem(`lucky777_inbox_seeded_${uid}`) === 'true') ||
+                (typeof SafeLocalStorage !== 'undefined' && SafeLocalStorage.getItem(`lucky777_inbox_seeded_${uid}`) === 'true') ||
+                (list.length > 0);
+
             // 1. 차기 회차 AI 퀀트 추천번호 오픈 알림 보장
             if (targetRound >= 1246) {
                 const recNotifId = `rec-ready-${targetRound}`;
                 const hasRec = list.some(it => it && (it.id === recNotifId || this.getCanonicalPushKey(it.id) === `round_${targetRound}_rec`));
                 const isRecRead = this.isNotificationRead(recNotifId);
-                if (!hasRec && !this.isNotificationDeleted(recNotifId)) {
+                if (!hasRec && !this.isNotificationDeleted(recNotifId) && !this.isNotificationDeleted(`round_${targetRound}_rec`)) {
                     list.push({
                         id: recNotifId,
                         category: 'generator',
@@ -11560,7 +11634,10 @@ const PushClient = {
             }
 
             // 2. 최근 5개 회차별 공식 당첨결과 & 실구매 채점 알림 내역 보장
-            const roundsToCheck = [latestDrawnRound, latestDrawnRound - 1, latestDrawnRound - 2, latestDrawnRound - 3, latestDrawnRound - 4].filter(r => r >= 1235);
+            // 신규 사용자 최초 진입 시에만 과거 5개 회차를 시딩하고, 이미 시딩된 사용자는 최신 회차(latestDrawnRound)만 점검하여 삭제된 과거 회차 재시드(부활)를 원천 차단
+            const roundsToCheck = isUserAlreadySeeded
+                ? [latestDrawnRound]
+                : [latestDrawnRound, latestDrawnRound - 1, latestDrawnRound - 2, latestDrawnRound - 3, latestDrawnRound - 4].filter(r => r >= 1235);
             roundsToCheck.forEach(r => {
                 const drawData = this.getDrawData(r);
                 if (!drawData || !Array.isArray(drawData.numbers) || drawData.numbers.length !== 6) return;
@@ -11639,10 +11716,10 @@ const PushClient = {
                 }
             });
 
-            // 3. 운도실력 공식 서비스 안내 알림 보장
+            // 3. 운도실력 공식 서비스 안내 알림 보장 (신규 사용자 최초 시딩 시에만 등록, 기존 사용자가 삭제한 경우 재시드 절대 금지)
             const welcomeNotifId = 'admin-msg-welcome';
             const hasWelcome = list.some(it => it && (it.id === welcomeNotifId || it.id === `push-${welcomeNotifId}`));
-            if (!hasWelcome && !this.isNotificationDeleted(welcomeNotifId)) {
+            if (!hasWelcome && !isUserAlreadySeeded && !this.isNotificationDeleted(welcomeNotifId) && !this.isNotificationDeleted('admin_welcome')) {
                 list.push({
                     id: welcomeNotifId,
                     category: 'admin',
@@ -11669,7 +11746,10 @@ const PushClient = {
                 return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
             });
 
-            const key = this.getInboxStorageKey();
+            this.safeSetItem(`lucky777_inbox_seeded_${uid}`, 'true');
+            try { SafeLocalStorage.setItem(`lucky777_inbox_seeded_${uid}`, 'true'); } catch(e) {}
+
+            const key = this.getInboxStorageKey(uid);
             const trimmed = list.slice(0, 40);
             this._memoryInboxMap[key] = trimmed;
             this.safeSetItem(key, JSON.stringify(trimmed));
@@ -12225,8 +12305,48 @@ const PushClient = {
             this.safeSetItem(`lucky777_alert_fired_${canonKey}`, 'true');
         }
 
+        if (normId.startsWith('admin-msg-') || normId.startsWith('admin_')) {
+            const rawMsgId = normId.replace(/^push-/, '').replace(/^admin-msg-/, '').replace(/^admin_/, '');
+            this.syncAdminMessageReadToFirestore(rawMsgId);
+            this._memoryDeletedIds.add(`admin-msg-${rawMsgId}`);
+            this._memoryDeletedIds.add(`admin_${rawMsgId}`);
+            this._memoryDeletedIds.add(rawMsgId);
+            this.safeSetItem(`lucky777_deleted_admin-msg-${rawMsgId}`, 'true');
+            this.safeSetItem(`lucky777_deleted_admin_${rawMsgId}`, 'true');
+            this.safeSetItem(`lucky777_deleted_${rawMsgId}`, 'true');
+            try {
+                SafeLocalStorage.setItem(`lucky777_deleted_admin-msg-${rawMsgId}`, 'true');
+                SafeLocalStorage.setItem(`lucky777_deleted_admin_${rawMsgId}`, 'true');
+                SafeLocalStorage.setItem(`lucky777_deleted_${rawMsgId}`, 'true');
+            } catch(e) {}
+            if (uid && rawMsgId) {
+                this.safeSetItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
+                this.safeSetItem(`lucky777_admin_notified_${uid}_${rawMsgId}`, 'true');
+                try {
+                    SafeLocalStorage.setItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
+                    SafeLocalStorage.setItem(`lucky777_admin_notified_${uid}_${rawMsgId}`, 'true');
+                } catch(e) {}
+            }
+        }
+
+        const drawMatch = normId.match(/(?:draw-result|win-celebrate)-(\d+)/);
+        if (drawMatch) {
+            const rNum = drawMatch[1];
+            this._memoryDeletedIds.add(`draw-result-${rNum}`);
+            this._memoryDeletedIds.add(`win-celebrate-${rNum}`);
+            this._memoryDeletedIds.add(`round_${rNum}_result`);
+            this.safeSetItem(`lucky777_deleted_draw-result-${rNum}`, 'true');
+            this.safeSetItem(`lucky777_deleted_win-celebrate-${rNum}`, 'true');
+            this.safeSetItem(`lucky777_deleted_round_${rNum}_result`, 'true');
+            try {
+                SafeLocalStorage.setItem(`lucky777_deleted_draw-result-${rNum}`, 'true');
+                SafeLocalStorage.setItem(`lucky777_deleted_win-celebrate-${rNum}`, 'true');
+                SafeLocalStorage.setItem(`lucky777_deleted_round_${rNum}_result`, 'true');
+            } catch(e) {}
+        }
+
         try {
-            const delKey = this.getDeletedNotifsKey();
+            const delKey = this.getDeletedNotifsKey(uid);
             const delKeys = [delKey, 'lucky777_deleted_notifs_global'];
             delKeys.forEach(dk => {
                 try {
@@ -12255,15 +12375,6 @@ const PushClient = {
             } catch(e2) {}
         }
 
-        if (normId.includes('admin-msg-')) {
-            const rawMsgId = normId.replace(/^push-/, '').replace(/^admin-msg-/, '');
-            this.syncAdminMessageReadToFirestore(rawMsgId);
-            if (uid && rawMsgId) {
-                this.safeSetItem(`admin_popup_dismissed_${uid}_${rawMsgId}`, 'true');
-                this.safeSetItem(`lucky777_admin_notified_${uid}_${rawMsgId}`, 'true');
-            }
-        }
-
         const list = this.getNotifications();
         const nextList = list.filter(item => {
             if (!item || !item.id) return false;
@@ -12286,6 +12397,8 @@ const PushClient = {
                 SafeLocalStorage.setItem('lucky777_inbox_cleared_global', 'true');
             } catch (e) {}
             this.saveNotificationsToServer(uid, { inbox: [], isCleared: true, clearedAt: new Date().toISOString() });
+        } else {
+            this.saveNotificationsToServer(uid, { inbox: nextList, isCleared: false });
         }
 
         this.saveNotifications(nextList);
@@ -13630,9 +13743,11 @@ const PushClient = {
             this._adminMsgUnsubscribe = null;
         }
         this._adminMsgActiveUserId = uid;
-        this.loadNotificationsFromServer(uid);
-        this.listenNotificationsFromServer(uid);
-        this.checkAndGenerateScheduledAlerts();
+        this.initLocalMemorySync(uid);
+        this.loadNotificationsFromServer(uid).finally(() => {
+            this.listenNotificationsFromServer(uid);
+            this.checkAndGenerateScheduledAlerts();
+        });
 
         try {
             this._adminMsgUnsubscribe = window.db.collection('lotto_users').doc(uid).onSnapshot((doc) => {
@@ -13658,8 +13773,13 @@ const PushClient = {
 
         const unreadMsgs = [];
         allMsgs.forEach(msg => {
-            const inboxId = `admin-msg-${msg.id}`;
-            if (this.isNotificationDeleted(inboxId)) return;
+            const rawId = String(msg.id).trim();
+            const inboxId = `admin-msg-${rawId}`;
+            if (
+                this.isNotificationDeleted(inboxId) ||
+                this.isNotificationDeleted(rawId) ||
+                this.isNotificationDeleted(`admin_${rawId}`)
+            ) return;
 
             const existingList = this.getNotifications();
             const existingItem = existingList.find(it => it && (

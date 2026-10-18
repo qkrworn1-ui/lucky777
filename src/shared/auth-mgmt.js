@@ -1741,14 +1741,25 @@ export async function checkAuthOnLoad(initFirebaseAndData) {
         }
 
         // 📨 [Admin Message Auto-Receive & Push] Immediately listen for and pop up unread admin messages upon login
-        setTimeout(() => {
-            if (window.PushClient && typeof window.PushClient.startAdminMessageListener === 'function') {
-                window.PushClient.startAdminMessageListener(authId);
+        setTimeout(async () => {
+            if (window.PushClient) {
+                if (typeof window.PushClient.initLocalMemorySync === 'function') {
+                    window.PushClient.initLocalMemorySync(authId);
+                }
+                if (typeof window.PushClient.loadNotificationsFromServer === 'function') {
+                    await window.PushClient.loadNotificationsFromServer(authId);
+                }
+                if (typeof window.PushClient.listenNotificationsFromServer === 'function') {
+                    window.PushClient.listenNotificationsFromServer(authId);
+                }
+                if (typeof window.PushClient.startAdminMessageListener === 'function') {
+                    window.PushClient.startAdminMessageListener(authId);
+                }
+                if (typeof window.PushClient.checkAndGenerateScheduledAlerts === 'function') {
+                    window.PushClient.checkAndGenerateScheduledAlerts();
+                }
             }
-            if (window.PushClient && typeof window.PushClient.checkAndGenerateScheduledAlerts === 'function') {
-                window.PushClient.checkAndGenerateScheduledAlerts();
-            }
-        }, 450);
+        }, 300);
 
         // 💬 [Kakao Auto-Dispatch] Check pending queue & auto-dispatch unsent real winning reports upon login
         setTimeout(async () => {
