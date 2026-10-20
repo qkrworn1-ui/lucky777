@@ -46,6 +46,7 @@ if (typeof window !== 'undefined') {
 
 // 🔒 연속 및 단건 등록 안정화: 저장/인식 중복 실행 방지 락 & 잘못된/중복 QR 경고 스로틀링
 let isSavingManualLedger = false;
+let lastSaveSuccessAt = 0;
 let isProcessingQrPayload = false;
 let lastAcceptedQrPayload = '';
 let lastAcceptedQrAt = 0;
@@ -106,6 +107,12 @@ export function updateQrSessionStatusBanner() {
     const banner = document.getElementById('qrSessionStatusBanner');
     const countText = document.getElementById('qrSessionStatusText');
     const autoBtn = document.getElementById('btnToggleAutoContinuousSave');
+    const vfBadge = document.getElementById('qrViewfinderCountBadge');
+    const vfCountNum = document.getElementById('qrViewfinderCountNumber');
+    const vfCountLabel = document.getElementById('qrViewfinderCountLabel');
+    const saveBtnText = document.getElementById('btnSaveManualLedgerText');
+    const combosEl = document.getElementById('manualLedgerCombos');
+
     if (autoBtn) {
         autoBtn.style.background = isAutoContinuousSaveEnabled
             ? 'linear-gradient(135deg, #10b981, #059669)'
@@ -116,13 +123,37 @@ export function updateQrSessionStatusBanner() {
             ? '<i class="fa-solid fa-bolt"></i> 자동 연속저장 ON'
             : '<i class="fa-solid fa-bolt" style="color:#fbbf24;"></i> 자동 연속저장 OFF';
     }
-    if (!banner || !countText) return;
-    if (sessionRegisteredReceiptsCount > 0) {
+
+    // 🎯 뷰파인더 HUD 실시간 등록/인식 장수 카운트 업데이트
+    if (vfBadge && vfCountNum) {
+        if (sessionRegisteredReceiptsCount > 0) {
+            vfBadge.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+            vfBadge.style.color = '#34d399';
+            if (vfCountLabel) vfCountLabel.textContent = '저장완료:';
+            vfCountNum.innerHTML = `<span style="color:#34d399;">${sessionRegisteredReceiptsCount}장</span>`;
+        } else {
+            vfBadge.style.borderColor = 'rgba(251, 191, 36, 0.45)';
+            vfBadge.style.color = '#fbbf24';
+            if (vfCountLabel) vfCountLabel.textContent = '인식:';
+            vfCountNum.textContent = '0장';
+        }
+    }
+
+    if (banner && countText) {
         banner.style.display = 'flex';
-        countText.innerHTML = `<i class="fa-solid fa-circle-check" style="color:#34d399;"></i> 이번 등록 완료: <strong>${sessionRegisteredReceiptsCount}장</strong> (${sessionRegisteredGamesCount}게임 · ${(sessionRegisteredGamesCount * 1000).toLocaleString()}원)`;
-    } else {
-        banner.style.display = 'flex';
-        countText.innerHTML = `<i class="fa-solid fa-camera" style="color:#38bdf8;"></i> 1장씩 바로 등록 및 여러 장 연속 스캔 모두 지원`;
+        if (sessionRegisteredReceiptsCount > 0) {
+            countText.innerHTML = `<i class="fa-solid fa-receipt" style="color:#fbbf24;"></i> 연속 등록: <strong>${sessionRegisteredReceiptsCount}장 저장 완료</strong> (${sessionRegisteredGamesCount}게임 · ${sessionRegisteredGamesCount * 1000}원) <span style="font-size:0.75rem; color:#94a3b8; margin-left:4px;">(다음 장을 비추거나 [실구매 등록 완료] 클릭)</span>`.replace(/(\d+)(?=(\d{3})+(?!\d))/g, "$1,");
+        } else {
+            countText.innerHTML = `<i class="fa-solid fa-camera" style="color:#38bdf8;"></i> 1장씩 바로 등록 및 여러 장 연속 스캔 모두 지원`;
+        }
+    }
+
+    if (saveBtnText && (!combosEl || !combosEl.value.trim())) {
+        if (sessionRegisteredReceiptsCount > 0) {
+            saveBtnText.innerHTML = `<strong>실구매 등록 완료 (${sessionRegisteredReceiptsCount}장 저장됨)</strong>`;
+        } else {
+            saveBtnText.textContent = '실구매 등록하기';
+        }
     }
 }
 
@@ -492,15 +523,21 @@ export function renderDigitalReceiptCard(round, parsedCombos, check, serial) {
 
     const summaryTitle = document.getElementById('receiptSummaryTitle');
     if (summaryTitle) {
+        const countBadge = sessionRegisteredReceiptsCount > 0 
+            ? `<span style="font-size: 0.72rem; vertical-align: middle; background: rgba(251, 191, 36, 0.2); border: 1px solid #fbbf24; color: #fbbf24; padding: 2px 7px; border-radius: 12px; margin-right: 6px;"><i class="fa-solid fa-layer-group"></i> 연속 ${sessionRegisteredReceiptsCount + 1}장째</span> `
+            : '';
         summaryTitle.innerHTML = isOnline 
-            ? `<i class="fa-solid fa-globe" style="color: #38bdf8;"></i> 온라인 영수증 분석 완료!`
-            : `QR 영수증 인식 완료!`;
+            ? `${countBadge}<i class="fa-solid fa-globe" style="color: #38bdf8;"></i> 온라인 영수증 분석 완료!`
+            : `${countBadge}QR 영수증 인식 완료!`;
     }
 
     if (subtitleTag) {
+        const prevSavedInfo = sessionRegisteredReceiptsCount > 0 
+            ? ` (이전 ${sessionRegisteredReceiptsCount}장 저장됨)`
+            : '';
         subtitleTag.textContent = isOnline
-            ? `${parsedCombos.length}개 게임 (${totalAmount.toLocaleString()}원) · 온라인 실구매 확인`
-            : `${parsedCombos.length}개 게임 (${totalAmount.toLocaleString()}원) · AI 추천 일치 확인`;
+            ? `${parsedCombos.length}개 게임 (${totalAmount.toLocaleString()}원) · 온라인 실구매 확인${prevSavedInfo}`
+            : `${parsedCombos.length}개 게임 (${totalAmount.toLocaleString()}원) · AI 추천 일치 확인${prevSavedInfo}`;
     }
 
     let memberPrefix = '';
@@ -516,9 +553,10 @@ export function renderDigitalReceiptCard(round, parsedCombos, check, serial) {
     }
 
     if (saveBtnText) {
+        const sheetPrefix = sessionRegisteredReceiptsCount > 0 ? `(${sessionRegisteredReceiptsCount + 1}장째) ` : '';
         saveBtnText.innerHTML = isOnline
-            ? `<strong>${memberPrefix}온라인 실구매 구매확정 (+${totalAmount.toLocaleString()}원)</strong>`
-            : `${memberPrefix}실구매 등록하기 (+${totalAmount.toLocaleString()}원)`;
+            ? `<strong>${memberPrefix}${sheetPrefix}온라인 실구매 구매확정 (+${totalAmount.toLocaleString()}원)</strong>`
+            : `${memberPrefix}${sheetPrefix}실구매 등록하기 (+${totalAmount.toLocaleString()}원)`;
     }
 
     // Direct Instant Purchase Confirmation Action Button right inside the card
@@ -1509,8 +1547,7 @@ export function setupManualLedgerModal() {
     if (btnCloseManualLedgerModal && manualLedgerModal) {
         btnCloseManualLedgerModal.onclick = async (e) => {
             if (e) { e.preventDefault(); e.stopPropagation(); }
-            await stopScanning();
-            manualLedgerModal.style.display = 'none';
+            await closeManualLedgerModal();
         };
     }
 
@@ -1627,6 +1664,21 @@ export function processLottoQrPayload(rawText, options = {}) {
                 // Trigger real-time cross check immediately
                 updateManualModalCrossCheck();
                 
+                // 🎯 뷰파인더 HUD에 인식된 복권 장수 실시간 반영
+                const vfCountNum = document.getElementById('qrViewfinderCountNumber');
+                const vfCountLabel = document.getElementById('qrViewfinderCountLabel');
+                const vfBadge = document.getElementById('qrViewfinderCountBadge');
+                if (vfCountNum) {
+                    vfCountNum.textContent = `${sessionRegisteredReceiptsCount + 1}장째`;
+                }
+                if (vfCountLabel) {
+                    vfCountLabel.textContent = '스캔성공:';
+                }
+                if (vfBadge) {
+                    vfBadge.style.borderColor = 'rgba(52, 211, 153, 0.8)';
+                    vfBadge.style.color = '#34d399';
+                }
+
                 // Haptic feedback & visual indicator
                 if (navigator.vibrate) {
                     try { navigator.vibrate([50, 70, 50]); } catch(e) {}
@@ -2471,6 +2523,12 @@ if (typeof window !== 'undefined') {
 }
 
 export async function handleSaveManualLedger(keepScanning = false) {
+    const now = Date.now();
+    if (now - lastSaveSuccessAt < 800) {
+        console.log('[handleSaveManualLedger] Save debounced (<800ms)');
+        return;
+    }
+
     // 🔒 0. 중복 실행 방지 (하단 버튼 + 카드 내 [구매확정] 버튼 연타 시 이중 저장 차단)
     if (isSavingManualLedger) {
         console.log('[handleSaveManualLedger] Save already in progress — ignored duplicate tap');
@@ -2503,6 +2561,49 @@ export async function handleSaveManualLedger(keepScanning = false) {
             return;
         }
         if (!combosText) {
+            // 🎯 [연속 등록 세션 완료 처리]
+            // 이미 1장 이상의 영수증이 등록된 상태에서 번호 입력창이 비어있을 때 [실구매 등록하기]를 누르면
+            // "스캔된 번호 조합이 없습니다" 오류 대신 연속 등록 세션을 깔끔하게 종료하고 구매확정 목록으로 전환
+            if (sessionRegisteredReceiptsCount > 0) {
+                const totalReceipts = sessionRegisteredReceiptsCount;
+                const totalGames = sessionRegisteredGamesCount;
+                sessionRegisteredReceiptsCount = 0;
+                sessionRegisteredGamesCount = 0;
+                lastSaveSuccessAt = Date.now();
+                updateQrSessionStatusBanner();
+
+                if (manualLedgerModal) {
+                    manualLedgerModal.style.display = 'none';
+                }
+                const overlay = document.getElementById('manualLedgerModalOverlay');
+                if (overlay) overlay.style.display = 'none';
+
+                try { stopScanning(); } catch(e) {}
+
+                if (typeof state !== 'undefined') {
+                    state.confirmedActiveRoundFilter = 'all';
+                }
+
+                if (typeof window.switchLottoTab === 'function') {
+                    window.switchLottoTab('tab-confirmed-list');
+                } else if (typeof switchLottoTab === 'function') {
+                    switchLottoTab('tab-confirmed-list');
+                }
+
+                if (typeof renderConfirmedPurchasesList === 'function') {
+                    renderConfirmedPurchasesList();
+                }
+
+                setTimeout(() => {
+                    if (typeof renderReviewTab === 'function') renderReviewTab();
+                    if (typeof window.renderLandingDashboard === 'function') window.renderLandingDashboard();
+                }, 120);
+
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                showToast(`🎉 총 ${totalReceipts}장 (${totalGames}게임) 실구매 등록이 모두 완료되었습니다!`, 4000);
+                return;
+            }
+
             alert('⚠️ 스캔된 번호 조합이 없습니다.\n\n[📷 QR 코드 다시 스캔하기] 버튼을 눌러 복권 영수증을 카메라로 비춰주세요.');
             setTimeout(() => { resumeOrStartScanner(); }, 80);
             return;
@@ -2684,10 +2785,11 @@ export async function handleSaveManualLedger(keepScanning = false) {
         // Update session registration counters
         sessionRegisteredReceiptsCount += 1;
         sessionRegisteredGamesCount += newCombos.length;
+        lastSaveSuccessAt = Date.now();
         updateQrSessionStatusBanner();
 
         // Reset button HTML and styles to clean default for the next receipt
-        restoreBtnHtml = defaultBtnHtml;
+        restoreBtnHtml = `<i class="fa-solid fa-circle-check"></i> <span id="btnSaveManualLedgerText"><strong>실구매 등록 완료 (${sessionRegisteredReceiptsCount}장 저장됨)</strong></span>`;
         if (btnSave) {
             btnSave.style.background = '';
             btnSave.style.boxShadow = '';
@@ -2748,6 +2850,13 @@ export async function handleSaveManualLedger(keepScanning = false) {
         // Release camera hardware completely so reopening [실구매 등록] for the next sheet starts with a clean idle camera
         try { stopScanning(); } catch(e) {}
 
+        // 단건 또는 연속 등록 세션 완료 모드: 카운터 정리 및 상태 갱신
+        const totalSavedReceipts = sessionRegisteredReceiptsCount;
+        const totalSavedGames = sessionRegisteredGamesCount;
+        sessionRegisteredReceiptsCount = 0;
+        sessionRegisteredGamesCount = 0;
+        updateQrSessionStatusBanner();
+
         // 최신회차 등록 후 구매확정 탭 이동 시: 필터를 전체로 리셋하여 최신회차는 펼쳐지고 지난회차는 자동 접히도록 보장
         if (typeof state !== 'undefined') {
             state.confirmedActiveRoundFilter = 'all';
@@ -2771,7 +2880,10 @@ export async function handleSaveManualLedger(keepScanning = false) {
         }, 120);
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        showToast(successNotice);
+        const finalNotice = totalSavedReceipts > 1
+            ? `🎉 총 ${totalSavedReceipts}장 (${totalSavedGames}게임) 실구매 영수증이 모두 등록되었습니다!`
+            : successNotice;
+        showToast(finalNotice);
     } catch (err) {
         console.error('[handleSaveManualLedger] Error:', err);
         if (typeof alert === 'function') alert('실구매 내역 저장 중 오류가 발생했습니다: ' + err.message);
@@ -2824,6 +2936,8 @@ export function openManualLedgerModal() {
         if (previewContainer) {
             previewContainer.style.display = 'none';
         }
+        sessionRegisteredReceiptsCount = 0;
+        sessionRegisteredGamesCount = 0;
         const btnSave = document.getElementById('btnSaveManualLedger');
         if (btnSave) {
             btnSave.style.background = '';
@@ -2960,6 +3074,9 @@ export function openManualLedgerModal() {
 
 export async function closeManualLedgerModal() {
     await stopScanning();
+    sessionRegisteredReceiptsCount = 0;
+    sessionRegisteredGamesCount = 0;
+    updateQrSessionStatusBanner();
     const modal = document.getElementById('manualLedgerModal');
     if (modal) modal.style.display = 'none';
     const overlay = document.getElementById('manualLedgerModalOverlay');
