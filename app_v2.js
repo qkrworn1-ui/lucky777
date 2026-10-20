@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.20.2050 - BUILD_DATE: 2026-10-20] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.20.2057.24 - BUILD_DATE: 2026-10-20] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.20.2050)
+ * Lucky777 Smart Bundle (v2026.10.20.2057.24)
  */
 
 
@@ -43747,7 +43747,13 @@ let lastInvalidQrAt = 0;
 let qrModeStartTimer = null;
 let sessionRegisteredReceiptsCount = 0;
 let sessionRegisteredGamesCount = 0;
-let isAutoContinuousSaveEnabled = false;
+let isAutoContinuousSaveEnabled = true; // ⚡ 기본 연속등록 모드 활성화
+try {
+    const savedAutoContinuous = SafeLocalStorage.getItem('lucky777_auto_continuous_save');
+    if (savedAutoContinuous !== null) {
+        isAutoContinuousSaveEnabled = (savedAutoContinuous === 'true');
+    }
+} catch(e) {}
 
 function isGenericOrPlaceholderSerial(s) {
     if (!s) return true;
@@ -43834,7 +43840,9 @@ function updateQrSessionStatusBanner() {
         if (sessionRegisteredReceiptsCount > 0) {
             countText.innerHTML = `<i class="fa-solid fa-receipt" style="color:#fbbf24;"></i> 연속 등록: <strong>${sessionRegisteredReceiptsCount}장 저장 완료</strong> (${sessionRegisteredGamesCount}게임 · ${sessionRegisteredGamesCount * 1000}원) <span style="font-size:0.75rem; color:#94a3b8; margin-left:4px;">(다음 장을 비추거나 [실구매 등록 완료] 클릭)</span>`.replace(/(\d+)(?=(\d{3})+(?!\d))/g, "$1,");
         } else {
-            countText.innerHTML = `<i class="fa-solid fa-camera" style="color:#38bdf8;"></i> 1장씩 바로 등록 및 여러 장 연속 스캔 모두 지원`;
+            countText.innerHTML = isAutoContinuousSaveEnabled
+                ? `<i class="fa-solid fa-bolt" style="color:#34d399;"></i> 기본 연속등록 모드: QR 인식 즉시 자동 저장 & 다음 장 연속 스캔`
+                : `<i class="fa-solid fa-camera" style="color:#38bdf8;"></i> 단건 확인 모드: 영수증 인식 후 번호 확인 카드를 거쳐 저장`;
         }
     }
 
@@ -43849,6 +43857,9 @@ function updateQrSessionStatusBanner() {
 
 function toggleAutoContinuousQrSave() {
     isAutoContinuousSaveEnabled = !isAutoContinuousSaveEnabled;
+    try {
+        SafeLocalStorage.setItem('lucky777_auto_continuous_save', String(isAutoContinuousSaveEnabled));
+    } catch(e) {}
     updateQrSessionStatusBanner();
     if (isAutoContinuousSaveEnabled) {
         showToast('⚡ [자동 연속저장 ON] 영수증 QR 인식 즉시 자동으로 장부에 저장되고 다음 장을 연속 스캔합니다.');

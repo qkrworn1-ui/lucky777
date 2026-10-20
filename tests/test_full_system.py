@@ -4826,6 +4826,8 @@ Lotto 6/45
         self.assertIn('qrViewfinderCountNumber', modal_code)
         self.assertIn('if (!combosText)', modal_code)
         self.assertIn('if (sessionRegisteredReceiptsCount > 0)', modal_code)
+        self.assertIn('isAutoContinuousSaveEnabled = true', modal_code)
+        self.assertIn('자동 연속저장 ON', html)
 
         # Node.js simulation
         import subprocess, shutil, os
