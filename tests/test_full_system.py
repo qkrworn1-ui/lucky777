@@ -4724,10 +4724,12 @@ Lotto 6/45
         self.assertIn("candidateIds.add('kakao_5070244665');", gen_code)
         self.assertIn("candidateIds.add('master');", gen_code)
 
-        # 3. computeUser70RecommendationsReview invalidates stale 0-won cache if server evaluation has prizes > 0
+        # 3. computeUser70RecommendationsReview invalidates stale caches if server evaluation has prizes > 0 or differs
         self.assertIn("hasServerWinningPrize", review_code)
-        self.assertIn("(!hasServerWinningPrize || cached.totalPrize > 0)", review_code)
-        self.assertIn("(!hasServerWinningPrize || parsed.totalPrize > 0)", review_code)
+        self.assertIn("(!hasServerWinningPrize || cached.totalPrize === serverRecPrize)", review_code)
+        self.assertIn("(!hasServerWinningPrize || parsed.totalPrize === serverRecPrize)", review_code)
+        self.assertIn("getParkJaeGoo1246FrozenSnapshot", review_code)
+        self.assertIn("getParkJaeGoo1246FrozenSnapshot", gen_code)
 
         # 4. algoSummaries synchronization syncs hits and totalWins in addition to prize
         self.assertIn("v4Eval.totalWins = v4Eval.hits[1] + v4Eval.hits[2] + v4Eval.hits[3] + v4Eval.hits[4] + v4Eval.hits[5];", review_code)

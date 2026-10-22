@@ -2674,33 +2674,35 @@ export const PushClient = {
      * 특정 회차의 공식 당첨번호 데이터 조회 (LOTTO_HISTORY / STATIC_DRAWS / state.lottoData)
      */
     getDrawData(round) {
-        const STATIC_DRAWS = {
-            '1246': { numbers: [16, 22, 23, 24, 27, 28], bonus: 6, rank1Winners: 16, rank1Prize: 1881025430, rank2Prize: 78376060, rank3Prize: 1497334, rank4Prize: 50000, rank5Prize: 5000, date: '2026-10-17' },
-            '1245': { numbers: [1, 10, 16, 25, 36, 44], bonus: 4, rank1Winners: 13, rank1Prize: 2139045375, rank2Prize: 73934571, rank3Prize: 1530948, rank4Prize: 50000, rank5Prize: 5000, date: '2026-10-10' },
-            '1244': { numbers: [11, 13, 21, 29, 34, 41], bonus: 33, rank1Winners: 10, rank1Prize: 2680410750, rank2Prize: 65375872, rank3Prize: 1481878, rank4Prize: 50000, rank5Prize: 5000, date: '2026-10-03' },
-            '1243': { numbers: [5, 9, 13, 20, 24, 40], bonus: 35, rank1Winners: 12, rank1Prize: 2289456563, rank2Prize: 64188782, rank3Prize: 1475604, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-26' },
-            '1242': { numbers: [3, 11, 14, 18, 26, 42], bonus: 37, rank1Winners: 9, rank1Prize: 2984128500, rank2Prize: 78529698, rank3Prize: 1598463, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-19' },
-            '1241': { numbers: [7, 12, 18, 23, 31, 45], bonus: 21, rank1Winners: 14, rank1Prize: 1948924875, rank2Prize: 58856637, rank3Prize: 1421453, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-12' },
-            '1240': { numbers: [4, 15, 19, 22, 38, 43], bonus: 25, rank1Winners: 11, rank1Prize: 2471928819, rank2Prize: 66989476, rank3Prize: 1481541, rank4Prize: 50000, rank5Prize: 5000, date: '2026-09-05' },
-            '1239': { numbers: [2, 8, 16, 27, 33, 44], bonus: 19, rank1Winners: 10, rank1Prize: 2718942300, rank2Prize: 71551114, rank3Prize: 1528612, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-29' },
-            '1238': { numbers: [6, 14, 25, 32, 40, 42], bonus: 9, rank1Winners: 12, rank1Prize: 2267891250, rank2Prize: 62996980, rank3Prize: 1466827, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-22' },
-            '1237': { numbers: [9, 13, 21, 25, 32, 45], bonus: 29, rank1Winners: 15, rank1Prize: 1814313000, rank2Prize: 58526226, rank3Prize: 1404629, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-15' },
-            '1236': { numbers: [12, 17, 20, 26, 28, 44], bonus: 38, rank1Winners: 8, rank1Prize: 3392478563, rank2Prize: 79823025, rank3Prize: 1588889, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-08' },
-            '1235': { numbers: [3, 8, 19, 23, 31, 35], bonus: 10, rank1Winners: 11, rank1Prize: 2465819728, rank2Prize: 67104175, rank3Prize: 1485642, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-01' }
-        };
         const rStr = String(round);
-        if (STATIC_DRAWS[rStr]) return STATIC_DRAWS[rStr];
         try {
+            if (typeof window !== 'undefined' && typeof window.getSafeActualDraw === 'function') {
+                const d = window.getSafeActualDraw(round);
+                if (d && Array.isArray(d.numbers) && d.numbers.length === 6) return d;
+            }
             if (typeof LOTTO_HISTORY !== 'undefined' && LOTTO_HISTORY[rStr]) {
                 return LOTTO_HISTORY[rStr];
             }
             if (typeof window !== 'undefined' && window.LOTTO_HISTORY && window.LOTTO_HISTORY[rStr]) {
                 return window.LOTTO_HISTORY[rStr];
             }
-            if (typeof window.getSafeActualDraw === 'function') {
-                const d = window.getSafeActualDraw(round);
-                if (d && Array.isArray(d.numbers) && d.numbers.length === 6) return d;
-            }
+        } catch(e) {}
+        const STATIC_DRAWS = {
+            '1246': { numbers: [16, 22, 23, 24, 27, 28], bonus: 6, rank1Winners: 16, rank1Prize: 1881025430, rank2Prize: 78376060, rank3Prize: 1497334, rank4Prize: 50000, rank5Prize: 5000, date: '2026-10-17' },
+            '1245': { numbers: [4, 5, 25, 28, 32, 42], bonus: 12, rank1Winners: 10, rank1Prize: 3006515775, rank2Winners: 91, rank2Prize: 55064392, rank3Winners: 3105, rank3Prize: 1615365, rank4Winners: 154625, rank4Prize: 50000, rank5Winners: 2603893, rank5Prize: 5000, date: '2026-10-10' },
+            '1244': { numbers: [1, 13, 18, 26, 34, 38], bonus: 25, rank1Winners: 18, rank1Prize: 1604686625, rank2Winners: 80, rank2Prize: 60175749, rank3Winners: 3734, rank3Prize: 1290287, rank4Winners: 173542, rank4Prize: 50000, rank5Winners: 2800000, rank5Prize: 5000, date: '2026-10-03' },
+            '1243': { numbers: [9, 18, 24, 38, 43, 44], bonus: 35, rank1Winners: 12, rank1Prize: 2592525282, rank2Winners: 115, rank2Prize: 45087397, rank3Winners: 3591, rank3Prize: 1443902, rank4Winners: 174306, rank4Prize: 50000, rank5Winners: 2853501, rank5Prize: 5000, date: '2026-09-26' },
+            '1242': { numbers: [2, 4, 10, 16, 31, 41], bonus: 9, rank1Winners: 9, rank1Prize: 3281029250, rank2Winners: 104, rank2Prize: 47322538, rank3Winners: 3206, rank3Prize: 1535105, rank4Winners: 165377, rank4Prize: 50000, rank5Winners: 2729145, rank5Prize: 5000, date: '2026-09-19' },
+            '1241': { numbers: [7, 13, 16, 23, 24, 43], bonus: 9, rank1Winners: 18, rank1Prize: 1628391980, rank2Winners: 90, rank2Prize: 54279733, rank3Winners: 3254, rank3Prize: 1501284, rank4Winners: 165086, rank4Prize: 50000, rank5Winners: 2724667, rank5Prize: 5000, date: '2026-09-12' },
+            '1240': { numbers: [11, 13, 19, 20, 31, 44], bonus: 27, rank1Winners: 16, rank1Prize: 1791817758, rank2Winners: 78, rank2Prize: 61258727, rank3Winners: 3087, rank3Prize: 1547840, rank4Winners: 155202, rank4Prize: 50000, rank5Winners: 2619423, rank5Prize: 5000, date: '2026-09-05' },
+            '1239': { numbers: [1, 3, 17, 26, 33, 42], bonus: 41, rank1Winners: 13, rank1Prize: 2214789375, rank2Winners: 71, rank2Prize: 67587470, rank3Winners: 3081, rank3Prize: 1557518, rank4Winners: 152825, rank4Prize: 50000, rank5Winners: 2570542, rank5Prize: 5000, date: '2026-08-29' },
+            '1238': { numbers: [2, 13, 18, 32, 38, 42], bonus: 22, rank1Winners: 23, rank1Prize: 1197258718, rank2Winners: 84, rank2Prize: 54636807, rank3Winners: 3235, rank3Prize: 1418700, rank4Winners: 156141, rank4Prize: 50000, rank5Winners: 2549183, rank5Prize: 5000, date: '2026-08-22' },
+            '1237': { numbers: [2, 9, 16, 27, 34, 45], bonus: 21, rank1Winners: 13, rank1Prize: 2180450000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-15' },
+            '1236': { numbers: [3, 11, 18, 25, 33, 42], bonus: 8, rank1Winners: 11, rank1Prize: 2450320000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-08' },
+            '1235': { numbers: [6, 14, 22, 29, 36, 41], bonus: 17, rank1Winners: 14, rank1Prize: 1985670000, rank2Prize: 52000000, rank3Prize: 1450000, rank4Prize: 50000, rank5Prize: 5000, date: '2026-08-01' }
+        };
+        if (STATIC_DRAWS[rStr]) return STATIC_DRAWS[rStr];
+        try {
             if (window.state && Array.isArray(window.state.lottoData)) {
                 const found = window.state.lottoData.find(d => Number(d.round || d.drwNo) === Number(round));
                 if (found && Array.isArray(found.numbers) && found.numbers.length === 6) return found;

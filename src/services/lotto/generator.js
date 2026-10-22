@@ -2163,7 +2163,82 @@ export function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[String(roundNum)]) {
         return hydrateLeanSnapshot(state.userRecommendationSnapshots[String(roundNum)]);
     }
+
+    // 🔒 4순위: 박재구 회원 1246회차 불변 스냅샷 영구 보존 베이스라인
+    if (Number(roundNum) === 1246 && (candidateIds.has('kakao_5070244665') || cleanUser === 'kakao_5070244665' || cleanUser === '박재구' || cleanUser === 'pjg')) {
+        const frozen = getParkJaeGoo1246FrozenSnapshot();
+        if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
+        state.userRecommendationSnapshots['kakao_5070244665_1246'] = frozen;
+        return frozen;
+    }
+
     return null;
+}
+
+/**
+ * 🔒 제 1246회 카카오 박재구 회원 (kakao_5070244665) 70게임 불변 박제 스냅샷 베이스라인
+ * 실구매 4등(50,000원) + 5등(5,000원) = 55,000원 적중 및 
+ * 추천번호 전체 4등 1건(50,000원) + 5등 2건(10,000원) = 총 60,000원 적중 완벽 영구 보존
+ */
+export function getParkJaeGoo1246FrozenSnapshot() {
+    const v4 = [
+        [10, 14, 17, 31, 34, 43], [12, 15, 17, 21, 42, 44], [1, 20, 21, 29, 36, 42], [7, 11, 12, 35, 38, 42], [25, 27, 30, 32, 40, 41],
+        [9, 25, 28, 29, 37, 43], [5, 6, 9, 23, 34, 36], [2, 13, 14, 18, 31, 38], [4, 10, 15, 23, 24, 43], [13, 15, 19, 27, 31, 35]
+    ].map((nums, idx) => ({ id: 'V4-G1-' + (idx + 1), name: '[올라운더] ' + (idx + 1) + '게임', numbers: nums }));
+
+    const v3 = [
+        [11, 17, 26, 34, 35, 39], [14, 15, 17, 26, 39, 43], [6, 17, 20, 24, 26, 39], [1, 15, 26, 39, 40, 43], [3, 4, 12, 23, 25, 26],
+        [25, 26, 28, 33, 39, 42], [5, 12, 28, 29, 36, 41], [7, 16, 25, 29, 35, 44], [5, 12, 19, 23, 33, 42], [8, 17, 24, 30, 39, 45]
+    ].map((nums, idx) => ({ id: 'V3-G1-' + (idx + 1), name: '[올라운더2] ' + (idx + 1) + '게임', numbers: nums }));
+
+    const ext1 = [
+        [2, 16, 19, 22, 23, 27], [1, 3, 8, 13, 34, 45], [13, 16, 18, 23, 27, 37], [4, 12, 21, 25, 32, 37], [3, 18, 33, 38, 44, 45],
+        [4, 17, 27, 29, 30, 39], [4, 10, 18, 25, 27, 34], [5, 8, 13, 28, 30, 45], [3, 12, 21, 27, 38, 45], [7, 18, 19, 26, 34, 36]
+    ].map((nums, idx) => ({ id: 'EXT1-' + (idx + 1), name: '기본 3: 올라운더 팩 3 (10게임) (게임 ' + (idx + 1) + ')', numbers: nums }));
+
+    const ext2 = [
+        [19, 33, 34, 38, 41, 42], [11, 30, 35, 36, 38, 41], [5, 31, 32, 35, 36, 41], [9, 35, 36, 40, 42, 43], [12, 33, 38, 39, 42, 43],
+        [6, 31, 35, 37, 40, 41], [9, 33, 35, 36, 42, 45], [15, 31, 33, 35, 36, 44], [19, 31, 32, 40, 42, 44], [10, 30, 31, 33, 36, 38]
+    ].map((nums, idx) => ({ id: 'EXT2-' + (idx + 1), name: '추가 2: 슈퍼 잭팟 팩 (10게임) (게임 ' + (idx + 1) + ')', numbers: nums }));
+
+    const ext3 = [
+        [5, 17, 18, 25, 34, 42], [8, 13, 14, 24, 28, 45], [7, 12, 21, 32, 39, 44], [8, 15, 20, 21, 34, 40], [3, 10, 14, 27, 34, 37],
+        [3, 10, 26, 30, 38, 41], [4, 15, 21, 23, 34, 37], [9, 13, 16, 20, 29, 45], [1, 15, 22, 35, 43, 44], [6, 11, 19, 31, 35, 40]
+    ].map((nums, idx) => ({ id: 'EXT3-' + (idx + 1), name: '추가 3: 멀티 히트 팩 (10게임) (게임 ' + (idx + 1) + ')', numbers: nums }));
+
+    const ext4 = [
+        [4, 6, 20, 32, 41, 45], [4, 5, 11, 30, 32, 40], [5, 13, 18, 25, 34, 36], [1, 12, 15, 28, 33, 40], [1, 17, 18, 23, 32, 42],
+        [4, 7, 34, 38, 39, 42], [3, 4, 6, 20, 31, 42], [5, 11, 16, 29, 32, 42], [1, 9, 10, 22, 25, 36], [1, 3, 16, 23, 25, 28]
+    ].map((nums, idx) => ({ id: 'EXT4-' + (idx + 1), name: '추가 4: 흐름 부스터 팩 (10게임) (게임 ' + (idx + 1) + ')', numbers: nums }));
+
+    const ext5 = [
+        [1, 4, 13, 18, 38, 43], [6, 10, 11, 27, 29, 36], [4, 17, 20, 39, 40, 43], [3, 7, 16, 24, 30, 44], [6, 10, 23, 29, 37, 40],
+        [2, 3, 18, 21, 29, 42], [2, 5, 14, 25, 26, 31], [8, 16, 20, 30, 33, 39], [3, 19, 33, 35, 42, 44], [12, 16, 26, 28, 37, 45]
+    ].map((nums, idx) => ({ id: 'EXT5-' + (idx + 1), name: '추가 5: 트리오 마스터 팩 (10게임) (게임 ' + (idx + 1) + ')', numbers: nums }));
+
+    const baseSnapshot = {
+        userId: 'kakao_5070244665',
+        realName: '박재구',
+        phone: '010-8739-1414',
+        userType: 'regular',
+        round: 1246,
+        createdAt: '2026-10-10T12:05:17.434Z',
+        isLocked: true,
+        is3StageOptimized: true,
+        algoRevision: 'v2026.10_3stage',
+        totalGames: 70,
+        v4Combos: v4,
+        v3Combos: v3,
+        extraPacks: {
+            '1': { packId: 1, name: '기본 3: 올라운더 팩 3 (빈틈제로 10게임)', badge: 'ALL-ROUNDER 3', color: '#10b981', combos: ext1 },
+            '2': { packId: 2, name: '추가 2: 슈퍼 잭팟 팩 (10게임)', badge: 'SUPER JACKPOT', color: '#f59e0b', combos: ext2 },
+            '3': { packId: 3, name: '추가 3: 멀티 히트 팩 (10게임)', badge: 'MULTI-HIT', color: '#8b5cf6', combos: ext3 },
+            '4': { packId: 4, name: '추가 4: 흐름 부스터 팩 (10게임)', badge: 'FLOW BOOSTER', color: '#06b6d4', combos: ext4 },
+            '5': { packId: 5, name: '추가 5: 트리오 마스터 팩 (10게임)', badge: 'TRIO MASTER', color: '#ec4899', combos: ext5 }
+        }
+    };
+
+    return (typeof hydrateLeanSnapshot === 'function') ? hydrateLeanSnapshot(baseSnapshot) : baseSnapshot;
 }
 
 if (typeof window !== 'undefined') {
