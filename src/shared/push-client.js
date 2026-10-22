@@ -3594,11 +3594,20 @@ export const PushClient = {
             try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
         }
         uid = String(uid || '').trim();
-        if (!uid || !window.db) return;
+
+        const firestore = this.getFirestore();
+        if (!uid || !firestore) {
+            if (uid && (!this._adminMsgRetryCount || this._adminMsgRetryCount < 20)) {
+                this._adminMsgRetryCount = (this._adminMsgRetryCount || 0) + 1;
+                setTimeout(() => this.startAdminMessageListener(uid), 400);
+            }
+            return;
+        }
+        this._adminMsgRetryCount = 0;
 
         if (this._adminMsgActiveUserId === uid && this._adminMsgUnsubscribe) {
             // 이미 동일 회원으로 실시간 리스너가 연결되어 있으면 1회 수동 점검만 수행
-            window.db.collection('lotto_users').doc(uid).get().then(doc => {
+            firestore.collection('lotto_users').doc(uid).get().then(doc => {
                 if (doc && doc.exists) {
                     this.processIncomingAdminMessages(uid, doc.data() || {});
                 }
@@ -3618,7 +3627,7 @@ export const PushClient = {
         });
 
         try {
-            this._adminMsgUnsubscribe = window.db.collection('lotto_users').doc(uid).onSnapshot((doc) => {
+            this._adminMsgUnsubscribe = firestore.collection('lotto_users').doc(uid).onSnapshot((doc) => {
                 if (!doc || !doc.exists) return;
                 const uData = doc.data() || {};
                 this.processIncomingAdminMessages(uid, uData);
@@ -3683,7 +3692,7 @@ export const PushClient = {
                         unread: isUnread,
                         actionType: msg.actionType || 'generator',
                         actionLabel: msg.actionLabel || '🎱 바로 확인하기'
-                    }, false); // 스마트폰 푸시 제외 (알림함 및 로그인 팝업에서 확인)
+                    }, isUnread); // 🔥 미확인 관리자 메시지는 스마트폰 알림 권한이 있으면 OS 상단 알림바로도 즉시 표출!
                 } else if (!isUnread && existingItem.unread) {
                     existingItem.unread = false;
                     this.saveNotifications(existingList);
