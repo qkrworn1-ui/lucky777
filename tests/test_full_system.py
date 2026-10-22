@@ -4403,6 +4403,8 @@ Lotto 6/45
 
         # 5. Saturday post-draw cutoff suppresses purchase prompts
         self.assertIn("const isSaturdayPostDraw = (todayName === '토요일' && curMinutes >= 20 * 60);", push_code)
+        # 6. Active user ID resolver exists on PushClient
+        self.assertIn("getCurrentUserId()", push_code)
 
     def test_107_push_once_inbox_driven_persistence(self):
         """Test 107: Verify consolidated push fires once and other notifications are confined to inbox without smartphone popups."""

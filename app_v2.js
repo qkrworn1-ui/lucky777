@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.22.1750 - BUILD_DATE: 2026-10-22] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.22.1821 - BUILD_DATE: 2026-10-22] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.22.1750)
+ * Lucky777 Smart Bundle (v2026.10.22.1821)
  */
 
 
@@ -10387,6 +10387,20 @@ const PushClient = {
     getPermissionState() {
         if (!('Notification' in window)) return 'unsupported';
         return Notification.permission;
+    },
+
+    /**
+     * 👤 현재 활성 로그인 사용자 ID 반환
+     */
+    getCurrentUserId() {
+        if (typeof window !== 'undefined' && window.SafeAuth && typeof window.SafeAuth.get === 'function') {
+            let uid = window.SafeAuth.get();
+            if (typeof uid === 'string' && uid.startsWith('{')) {
+                try { uid = JSON.parse(uid).userid || JSON.parse(uid).userId || uid; } catch (e) {}
+            }
+            if (uid) return String(uid).trim();
+        }
+        return (typeof this._adminMsgActiveUserId !== 'undefined' && this._adminMsgActiveUserId) ? this._adminMsgActiveUserId : 'guest';
     },
 
     /**

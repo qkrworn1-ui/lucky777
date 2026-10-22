@@ -40,6 +40,20 @@ export const PushClient = {
     },
 
     /**
+     * 👤 현재 활성 로그인 사용자 ID 반환
+     */
+    getCurrentUserId() {
+        if (typeof window !== 'undefined' && window.SafeAuth && typeof window.SafeAuth.get === 'function') {
+            let uid = window.SafeAuth.get();
+            if (typeof uid === 'string' && uid.startsWith('{')) {
+                try { uid = JSON.parse(uid).userid || JSON.parse(uid).userId || uid; } catch (e) {}
+            }
+            if (uid) return String(uid).trim();
+        }
+        return (typeof this._adminMsgActiveUserId !== 'undefined' && this._adminMsgActiveUserId) ? this._adminMsgActiveUserId : 'guest';
+    },
+
+    /**
      * 현재 활성화된 PushSubscription 객체 조회
      */
     async getSubscription() {
