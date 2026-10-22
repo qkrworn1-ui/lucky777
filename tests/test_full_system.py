@@ -3458,6 +3458,22 @@ Lotto 6/45
                     process.exit(4);
                 }
 
+                // Test: Today (2 hours ago) should return '오늘 HH:mm'
+                const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+                const twoHoursFormatted = authMod.formatLastAccessTime(twoHoursAgo);
+                if (!twoHoursFormatted.startsWith('오늘 ')) {
+                    console.error('formatLastAccessTime(2h) failed: ' + twoHoursFormatted);
+                    process.exit(41);
+                }
+
+                // Test: Yesterday / past date should return 'MM월DD일'
+                const yesterdayIso = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                const yesterdayFormatted = authMod.formatLastAccessTime(yesterdayIso);
+                if (!yesterdayFormatted.includes('월')) {
+                    console.error('formatLastAccessTime(yesterday) failed: ' + yesterdayFormatted);
+                    process.exit(42);
+                }
+
                 // Test 3: recordLastAccess with 30-min throttle
                 let firestoreWrites = 0;
                 global.window.db = {

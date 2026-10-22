@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.22.1704.30 - BUILD_DATE: 2026-10-22] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.22.1750 - BUILD_DATE: 2026-10-22] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.22.1704.30)
+ * Lucky777 Smart Bundle (v2026.10.22.1750)
  */
 
 
@@ -2363,6 +2363,8 @@ function formatLastAccessTime(timestamp) {
         const diffMs = now.getTime() - dt.getTime();
         if (diffMs < 0) return '방금 전';
 
+        const pad = (n) => String(n).padStart(2, '0');
+
         const isToday = dt.getFullYear() === now.getFullYear() &&
                         dt.getMonth() === now.getMonth() &&
                         dt.getDate() === now.getDate();
@@ -2376,9 +2378,12 @@ function formatLastAccessTime(timestamp) {
             return `오늘 ${timeStr}`;
         }
 
-        // 📅 당일이 아닌 경우: "10월03일" 형식으로 표시
+        // 📅 당일이 아닌 경우: "10월03일" 형식으로 표시 (연도가 다를 경우 "YYYY.MM.DD")
         const monthStr = pad(dt.getMonth() + 1);
         const dayStr = pad(dt.getDate());
+        if (dt.getFullYear() !== now.getFullYear()) {
+            return `${dt.getFullYear()}.${monthStr}.${dayStr}`;
+        }
         return `${monthStr}월${dayStr}일`;
     } catch(e) {
         return '미기록';

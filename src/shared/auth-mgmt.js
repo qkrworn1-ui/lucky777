@@ -411,6 +411,8 @@ export function formatLastAccessTime(timestamp) {
         const diffMs = now.getTime() - dt.getTime();
         if (diffMs < 0) return '방금 전';
 
+        const pad = (n) => String(n).padStart(2, '0');
+
         const isToday = dt.getFullYear() === now.getFullYear() &&
                         dt.getMonth() === now.getMonth() &&
                         dt.getDate() === now.getDate();
@@ -424,9 +426,12 @@ export function formatLastAccessTime(timestamp) {
             return `오늘 ${timeStr}`;
         }
 
-        // 📅 당일이 아닌 경우: "10월03일" 형식으로 표시
+        // 📅 당일이 아닌 경우: "10월03일" 형식으로 표시 (연도가 다를 경우 "YYYY.MM.DD")
         const monthStr = pad(dt.getMonth() + 1);
         const dayStr = pad(dt.getDate());
+        if (dt.getFullYear() !== now.getFullYear()) {
+            return `${dt.getFullYear()}.${monthStr}.${dayStr}`;
+        }
         return `${monthStr}월${dayStr}일`;
     } catch(e) {
         return '미기록';
