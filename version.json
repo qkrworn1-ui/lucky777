@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.22.1841",
+  "version": "v2026.10.22.1854.59",
   "buildDate": "2026-10-22",
   "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가",
-  "buildTimestamp": "2026-10-22T18:41:31.399703",
+  "buildTimestamp": "2026-10-22T18:54:59.455647",
   "buildHistory": [
-    {
-      "version": "v2026.10.20.2050",
-      "buildDate": "2026-10-20",
-      "buildTime": "20:50",
-      "buildDateTime": "2026-10-20 20:50",
-      "buildTimestamp": "2026-10-20T20:50:21.947465",
-      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
-    },
-    {
-      "version": "v2026.10.20.2057",
-      "buildDate": "2026-10-20",
-      "buildTime": "20:57",
-      "buildDateTime": "2026-10-20 20:57",
-      "buildTimestamp": "2026-10-20T20:57:06.573991",
-      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
-    },
     {
       "version": "v2026.10.20.2057.24",
       "buildDate": "2026-10-20",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-22 18:41",
       "buildTimestamp": "2026-10-22T18:41:31.399703",
       "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
+    },
+    {
+      "version": "v2026.10.22.1854",
+      "buildDate": "2026-10-22",
+      "buildTime": "18:54",
+      "buildDateTime": "2026-10-22 18:54",
+      "buildTimestamp": "2026-10-22T18:54:14.613356",
+      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
+    },
+    {
+      "version": "v2026.10.22.1854.59",
+      "buildDate": "2026-10-22",
+      "buildTime": "18:54",
+      "buildDateTime": "2026-10-22 18:54",
+      "buildTimestamp": "2026-10-22T18:54:59.455647",
+      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
     }
   ],
-  "buildTime": "18:41",
-  "buildDateTime": "2026-10-22 18:41"
+  "buildTime": "18:54",
+  "buildDateTime": "2026-10-22 18:54"
 }

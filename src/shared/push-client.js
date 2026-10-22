@@ -678,17 +678,17 @@ export const PushClient = {
                 } catch(e) {}
             }
 
+            const listToSave = (customPayload && Array.isArray(customPayload.inbox))
+                ? customPayload.inbox
+                : this.getNotifications();
+
             const isCleared = (customPayload && typeof customPayload.isCleared === 'boolean')
                 ? customPayload.isCleared
-                : this.isInboxCleared(uid);
+                : (listToSave.length === 0 && this.isInboxCleared(uid));
 
             const clearedAt = (customPayload && customPayload.clearedAt)
                 ? customPayload.clearedAt
                 : (this.safeGetItem(`lucky777_inbox_cleared_at_${uid}`) || (isCleared ? new Date().toISOString() : null));
-
-            const listToSave = (customPayload && Array.isArray(customPayload.inbox))
-                ? customPayload.inbox
-                : this.getNotifications();
 
             const readArr = Array.from(new Set([
                 ...Array.from(this._memoryReadIds),
@@ -1083,6 +1083,12 @@ export const PushClient = {
 
     isInboxCleared(uid) {
         const targetUid = String(uid || this.getActiveUserId()).trim().toLowerCase();
+        // 알림함에 실제 알림 아이템이 존재한다면 비워진 상태가 아님
+        const inboxKey = this.getInboxStorageKey(targetUid);
+        const cachedInbox = this._memoryInboxMap && this._memoryInboxMap[inboxKey];
+        if (Array.isArray(cachedInbox) && cachedInbox.length > 0) {
+            return false;
+        }
         if (this._memoryClearedUsers.has(targetUid) || this._memoryClearedUsers.has('global')) return true;
         return (this.safeGetItem(`lucky777_inbox_cleared_${targetUid}`) === 'true') ||
             (this.safeGetItem('lucky777_inbox_cleared_global') === 'true') ||
@@ -1092,12 +1098,29 @@ export const PushClient = {
             ));
     },
 
+    resetInboxCleared(uid) {
+        const targetUid = String(uid || this.getActiveUserId()).trim().toLowerCase();
+        if (this._memoryClearedUsers) {
+            this._memoryClearedUsers.delete(targetUid);
+            this._memoryClearedUsers.delete('global');
+        }
+        this.safeRemoveItem(`lucky777_inbox_cleared_${targetUid}`);
+        this.safeRemoveItem('lucky777_inbox_cleared_global');
+        try {
+            if (typeof localStorage !== 'undefined') {
+                localStorage.removeItem(`lucky777_inbox_cleared_${targetUid}`);
+                localStorage.removeItem('lucky777_inbox_cleared_global');
+            }
+        } catch(e) {}
+    },
+
     isNotificationDeleted(notifId) {
         if (!notifId) return false;
         try {
             const normId = String(notifId).trim();
             const cleanId = normId.replace(/^push-/, '').replace('lotto-result-', 'draw-result-');
             const canonKey = this.getCanonicalPushKey(notifId);
+            const isAdminMsg = normId.startsWith('admin-msg-') || normId.startsWith('adm_') || normId.startsWith('admin_');
 
             if (
                 this._memoryDeletedIds.has(normId) ||
@@ -1186,8 +1209,9 @@ export const PushClient = {
                 }
             }
 
-            if (this.isInboxCleared(uid) || this.isInboxCleared('global')) {
-                return true;
+            // 관리자 맞춤 메시지는 과거 알림함 비움 상태여도 삭제된 것으로 취급하지 않음
+            if (isAdminMsg) {
+                return false;
             }
 
             return false;
@@ -1734,6 +1758,9 @@ export const PushClient = {
         if (notif.category !== 'result' && !cleanAlertId.startsWith('test-alert-')) {
             showBrowserAlert = false;
         }
+
+        const uid = this.getActiveUserId();
+        this.resetInboxCleared(uid);
 
         const list = this.getNotifications();
 
@@ -3696,6 +3723,9 @@ export const PushClient = {
                 } else if (!isUnread && existingItem.unread) {
                     existingItem.unread = false;
                     this.saveNotifications(existingList);
+                } else if (isUnread && !existingItem.unread) {
+                    existingItem.unread = true;
+                    this.saveNotifications(existingList);
                 }
             } else if (isUnread && !alreadyAlerted && !this.isPushAlreadyFired(inboxId)) {
                 this.safeSetItem(notifiedKey, 'true');
@@ -3800,7 +3830,8 @@ export const PushClient = {
     },
 
     async syncAdminMessageReadToFirestore(msgId) {
-        if (!msgId || !window.db) return;
+        const db = this.getFirestore();
+        if (!msgId || !db) return;
         let uid = this._adminMsgActiveUserId || ((typeof window.SafeAuth !== 'undefined' && window.SafeAuth.get) ? window.SafeAuth.get() : '');
         if (typeof uid === 'string' && uid.startsWith('{')) {
             try { uid = JSON.parse(uid).userid || uid; } catch (e) {}
@@ -3810,7 +3841,7 @@ export const PushClient = {
 
         const nowIso = new Date().toISOString();
         try {
-            await window.db.collection('lotto_users').doc(uid).set({
+            await db.collection('lotto_users').doc(uid).set({
                 adminMessages: {
                     [msgId]: {
                         status: 'read',

@@ -4929,6 +4929,121 @@ Lotto 6/45
             self.assertIn("SUCCESS", proc.stdout)
 
 
+
+    # [Test 120] Admin Message Delivery & Popup Display Under Prior Inbox Cleared State
+    def test_120_admin_message_delivery_despite_inbox_clear(self):
+        """Verify admin messages are never dropped or deleted when incoming after an inbox clear,
+        and popup modal is properly displayed with unread status."""
+        push_path = os.path.join(self.root_dir, 'src', 'shared', 'push-client.js')
+        with open(push_path, 'r', encoding='utf-8') as f:
+            push_code = f.read().replace('\r\n', '\n')
+
+        # 1. Verification of admin message immunity against inbox clear
+        self.assertIn("const isAdminMsg = normId.startsWith('admin-msg-') || normId.startsWith('adm_') || normId.startsWith('admin_');", push_code)
+        self.assertIn("if (isAdminMsg) {\n                return false;\n            }", push_code)
+        self.assertIn("resetInboxCleared(uid)", push_code)
+        self.assertIn("const isCleared = (customPayload && typeof customPayload.isCleared === 'boolean')\n                ? customPayload.isCleared\n                : (listToSave.length === 0 && this.isInboxCleared(uid));", push_code)
+        self.assertIn("const db = this.getFirestore();\n        if (!msgId || !db) return;", push_code)
+
+        # 2. Dynamic Node.js simulation of user with cleared inbox receiving unread admin message
+        import subprocess, shutil
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if os.path.exists(node_bin):
+            js_script = """
+            import('./src/shared/push-client.js').then(async ({ PushClient }) => {
+                const storage = {};
+                const mockStorage = {
+                    getItem: (k) => storage[k] || null,
+                    setItem: (k, v) => { storage[k] = String(v); },
+                    removeItem: (k) => { delete storage[k]; }
+                };
+                global.window = {
+                    addEventListener: () => {},
+                    sessionStorage: mockStorage,
+                    localStorage: mockStorage,
+                    navigator: { userAgent: 'test' },
+                    SafeAuth: { get: () => 'kakao_5070244665' },
+                    state: { allRegisteredUsersList: [] }
+                };
+                global.localStorage = mockStorage;
+                global.sessionStorage = mockStorage;
+                let modalDisplay = 'none';
+                global.document = {
+                    addEventListener: () => {},
+                    getElementById: (id) => (id === 'lucky777AdminMessagePopupModal' ? { style: { display: modalDisplay }, set innerHTML(val) { modalDisplay = 'flex'; } } : null),
+                    querySelector: () => null,
+                    querySelectorAll: () => [],
+                    createElement: () => ({ id: 'lucky777AdminMessagePopupModal', style: { display: 'none' }, set innerHTML(val) { modalDisplay = 'flex'; } }),
+                    head: { appendChild: () => {} },
+                    body: { appendChild: () => {} }
+                };
+
+                const uid = 'kakao_5070244665';
+                const serverInboxData = {
+                    isCleared: true,
+                    clearedAt: '2026-10-18T18:36:46.630Z',
+                    deletedIds: [
+                        'admin-msg-adm_1792219421753',
+                        'rec-ready-1247',
+                        'draw-result-1246'
+                    ],
+                    inbox: []
+                };
+
+                PushClient.initLocalMemorySync(uid);
+                PushClient.applyServerNotificationData(uid, serverInboxData);
+
+                const mockUData = {
+                    adminMessages: {
+                        'adm_1792219421753': {
+                            id: 'adm_1792219421753',
+                            title: '제 1246회차 실구매 영수증(QR) 등록 안내',
+                            status: 'read'
+                        },
+                        'adm_1792659453742': {
+                            id: 'adm_1792659453742',
+                            title: '제 1247회차 실구매 영수증(QR) 등록 안내',
+                            body: '테스트',
+                            badge: '📷 실구매 인증 안내',
+                            status: 'unread',
+                            popupOnLogin: true,
+                            saveToInbox: true,
+                            createdAt: '2026-10-22T08:57:33.741Z'
+                        }
+                    }
+                };
+
+                PushClient.processIncomingAdminMessages(uid, mockUData);
+                const notifs = PushClient.getNotifications();
+
+                if (PushClient.isNotificationDeleted('admin-msg-adm_1792219421753') !== true) {
+                    console.error('Old deleted message should remain deleted');
+                    process.exit(1);
+                }
+                if (PushClient.isNotificationDeleted('admin-msg-adm_1792659453742') !== false) {
+                    console.error('New admin message must not be marked deleted');
+                    process.exit(1);
+                }
+                if (notifs.length !== 1 || notifs[0].id !== 'admin-msg-adm_1792659453742' || notifs[0].unread !== true) {
+                    console.error('Inbox should have 1 unread admin message, got:', notifs);
+                    process.exit(1);
+                }
+                if (modalDisplay !== 'flex') {
+                    console.error('Login popup modal should be flex');
+                    process.exit(1);
+                }
+
+                console.log('SUCCESS_TEST_120');
+            }).catch(err => {
+                console.error(err);
+                process.exit(1);
+            });
+            """
+            proc = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, encoding='utf-8', cwd=self.root_dir)
+            self.assertEqual(proc.returncode, 0, f"Node.js script failed: {proc.stderr}")
+            self.assertIn("SUCCESS_TEST_120", proc.stdout)
+
+
 if __name__ == '__main__':
     unittest.main()
 
