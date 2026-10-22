@@ -1939,6 +1939,72 @@ export function formatConfirmedRoundLabel(rounds, emptyText = '구매확정 없�
 
 
 
+/**
+ * 🔒 실구매 장부(ledger)로부터 추첨 완료 회차들의 실구매 당첨 실적(realSummary) 즉각 계산 (SSOT 엔진)
+ */
+export function computeUserWinningEvaluationsFromLedgerSync(userId, ledger) {
+    if (!ledger || typeof ledger !== 'object') return {};
+    const evaluations = {};
+    for (const rKey in ledger) {
+        const roundNum = parseInt(rKey, 10);
+        if (isNaN(roundNum)) continue;
+        const actualDraw = getSafeActualDraw(roundNum);
+        if (!actualDraw || !Array.isArray(actualDraw.numbers) || actualDraw.numbers.length !== 6) continue;
+
+        const winningSet = new Set(actualDraw.numbers);
+        const bonus = actualDraw.bonus;
+        const receipts = ledger[rKey] || [];
+        let totalCombos = 0;
+        let totalPrize = 0;
+        let hits = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+        receipts.forEach(rcpt => {
+            if (Array.isArray(rcpt.combos)) {
+                rcpt.combos.forEach(c => {
+                    const nums = getComboNumbers(c);
+                    if (nums.length === 6) {
+                        totalCombos++;
+                        const matchCount = nums.filter(n => winningSet.has(n)).length;
+                        const hasBonus = bonus ? nums.includes(bonus) : false;
+                        if (matchCount === 6) {
+                            hits[1]++;
+                            totalPrize += actualDraw.rank1Prize || actualDraw.firstWinamnt || 2000000000;
+                        } else if (matchCount === 5 && hasBonus) {
+                            hits[2]++;
+                            totalPrize += actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000);
+                        } else if (matchCount === 5) {
+                            hits[3]++;
+                            totalPrize += actualDraw.rank3Prize || (actualDraw.prizes && actualDraw.prizes[3] ? actualDraw.prizes[3].prize : 1500000);
+                        } else if (matchCount === 4) {
+                            hits[4]++;
+                            totalPrize += 50000;
+                        } else if (matchCount === 3) {
+                            hits[5]++;
+                            totalPrize += 5000;
+                        }
+                    }
+                });
+            }
+        });
+
+        evaluations[rKey] = {
+            round: roundNum,
+            userId: userId,
+            drawNumbers: actualDraw.numbers,
+            drawBonus: actualDraw.bonus,
+            evaluatedAt: new Date().toISOString(),
+            realSummary: {
+                totalGames: totalCombos,
+                receiptCount: receipts.length,
+                totalPrize: totalPrize,
+                totalWins: hits[1] + hits[2] + hits[3] + hits[4] + hits[5],
+                hits: hits
+            }
+        };
+    }
+    return evaluations;
+}
+
 // 🔒 Strict FIFO Promise Serialization Queue per user for Firestore synchronization
 // Prevents out-of-order writes and data corruption during rapid sequential QR registrations
 const _firestoreSyncQueueByUser = new Map();
@@ -2012,11 +2078,29 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
     state.ledgerFinancialsCache = null; // Invalidate memoized cache
     _allUsersFinancialsCache = null;
 
+    // 🔒 [실시간 서버 간편문서 자동 동기화] 추첨 완료 회차들의 실구매 당첨 평가(winningEvaluations) 즉시 계산
+    const realEvaluations = computeUserWinningEvaluationsFromLedgerSync(authId, protectedLedger);
+    const existingWinningEvals = (state.allUsersPurchasesMap && state.allUsersPurchasesMap[authId] && state.allUsersPurchasesMap[authId].winningEvaluations) 
+        ? { ...state.allUsersPurchasesMap[authId].winningEvaluations } 
+        : {};
+
+    for (const rKey in realEvaluations) {
+        const prevRec = existingWinningEvals[rKey] ? existingWinningEvals[rKey].recSummary : null;
+        existingWinningEvals[rKey] = {
+            ...(existingWinningEvals[rKey] || {}),
+            ...realEvaluations[rKey],
+            recSummary: prevRec || (existingWinningEvals[rKey] ? existingWinningEvals[rKey].recSummary : null)
+        };
+        if (!state.userWinningEvaluations) state.userWinningEvaluations = {};
+        state.userWinningEvaluations[`${authId}_${parseInt(rKey, 10)}`] = existingWinningEvals[rKey];
+    }
+
     if (state.allUsersPurchasesMap) {
         if (!state.allUsersPurchasesMap[authId]) {
-            state.allUsersPurchasesMap[authId] = { ledger: protectedLedger };
+            state.allUsersPurchasesMap[authId] = { userId: authId, ledger: protectedLedger, winningEvaluations: existingWinningEvals };
         } else {
             state.allUsersPurchasesMap[authId].ledger = protectedLedger;
+            state.allUsersPurchasesMap[authId].winningEvaluations = existingWinningEvals;
         }
         state.allUsersMergedLedger = rebuildMergedLedgerFromPurchasesMap(state.allUsersPurchasesMap);
         try {
@@ -2044,9 +2128,12 @@ export async function saveLedgerDirectly(ledger, user = null, successMsg = null,
         if (!firestore) return false;
 
         try {
-            // Direct server save with 4-second safety guard
+            // Direct server save with 4-second safety guard: ledger & winningEvaluations atomically synced
             await Promise.race([
-                firestore.collection('lotto_purchases').doc(authId).set({ ledger: cleanLedger }, { merge: true }),
+                firestore.collection('lotto_purchases').doc(authId).set({ 
+                    ledger: cleanLedger,
+                    winningEvaluations: removeUndefined(existingWinningEvals)
+                }, { merge: true }),
                 new Promise((_, reject) => setTimeout(() => reject(new Error('Firestore sync timeout')), 4000))
             ]);
 
