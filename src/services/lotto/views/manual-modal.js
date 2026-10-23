@@ -12,6 +12,7 @@ let isStartingScanner = false;
 let startScannerPromise = null;
 let stopScanningPromise = null;
 let currentScannerSessionId = 0;
+let scannerPausedWithLiveTrack = false;
 
 // 🔒 Universal Active MediaStream Tracker (Prevents Android / Samsung Galaxy OS hardware camera locks)
 if (typeof window !== 'undefined') {

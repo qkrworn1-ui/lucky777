@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.22.1854.59 - BUILD_DATE: 2026-10-22] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.23.1036 - BUILD_DATE: 2026-10-23] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.22.1854.59)
+ * Lucky777 Smart Bundle (v2026.10.23.1036)
  */
 
 
@@ -44062,6 +44062,7 @@ let isStartingScanner = false;
 let startScannerPromise = null;
 let stopScanningPromise = null;
 let currentScannerSessionId = 0;
+let scannerPausedWithLiveTrack = false;
 
 // 🔒 Universal Active MediaStream Tracker (Prevents Android / Samsung Galaxy OS hardware camera locks)
 if (typeof window !== 'undefined') {
