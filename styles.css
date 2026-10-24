@@ -24856,3 +24856,657 @@ body.lotto-mode-active .app-container {
     }
 }
 
+
+
+/* ==========================================================================
+   ☀️ DESIGN 2: WHITE / LIGHT THEME (Apple & Toss Style Clean Light Mode)
+   Activated by: html[data-theme="light"], html.theme-light, body[data-theme="light"], body.theme-light
+   ========================================================================== */
+
+/* 1. Root Tokens Override for Light Mode */
+:root[data-theme="light"],
+html[data-theme="light"],
+html.theme-light,
+body[data-theme="light"],
+body.theme-light {
+    --bg-dark: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
+    --bg-glass: rgba(255, 255, 255, 0.88);
+    
+    --border-color: #e2e8f0;
+    --border-glow: transparent;
+    --border-gold: #e2e8f0;
+    
+    --primary: #059669;
+    --primary-light: #10b981;
+    --primary-hover: #047857;
+    --primary-glow: rgba(5, 150, 105, 0.15);
+    
+    --accent-gold: #b45309;
+    --accent-blue: #0284c7;
+    --accent-red: #ef4444;
+    --accent-purple: #64748b;
+    --accent-green: #059669;
+    --accent-cyan: #0284c7;
+
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+}
+
+/* 2. Global Canvas & Body Background */
+html[data-theme="light"] body,
+html.theme-light body,
+body[data-theme="light"],
+body.theme-light {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+}
+
+/* 3. Theme Toggle Buttons */
+.btn-theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.btn-theme-compact {
+    width: 32px;
+    height: 32px;
+    font-size: 0.88rem;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: #f8fafc;
+}
+.btn-lp-theme {
+    width: 36px;
+    height: 36px;
+    font-size: 0.95rem;
+    border: 1px solid #1e293b;
+    background: #111827;
+    color: #f8fafc;
+    border-radius: 12px;
+}
+html[data-theme="light"] .btn-theme-compact,
+html[data-theme="light"] .btn-lp-theme {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .btn-theme-compact:hover,
+html[data-theme="light"] .btn-lp-theme:hover {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+/* 4. App Header & Main Navigation (Lotto Page) */
+html[data-theme="light"] .app-header,
+html.theme-light .app-header {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05) !important;
+}
+html[data-theme="light"] .logo-area h1,
+html.theme-light .logo-area h1 {
+    color: #0f172a !important;
+}
+html[data-theme="light"] .logo-area .subtitle,
+html.theme-light .logo-area .subtitle {
+    color: #64748b !important;
+}
+html[data-theme="light"] #serverStatusBadge,
+html.theme-light #serverStatusBadge {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+html[data-theme="light"] .btn-home-compact,
+html[data-theme="light"] .btn-logout-compact,
+html[data-theme="light"] .btn-user-mgmt-compact,
+html[data-theme="light"] .btn-snapshot-audit-compact {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .btn-mobile-header-qr {
+    background: #f0fdf4 !important;
+    border-color: #bbf7d0 !important;
+    color: #059669 !important;
+}
+
+/* Navigation Tabs Bar */
+html[data-theme="light"] .nav-tabs,
+html.theme-light .nav-tabs {
+    background: #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+}
+html[data-theme="light"] .nav-tab,
+html.theme-light .nav-tab {
+    color: #64748b !important;
+}
+html[data-theme="light"] .nav-tab:hover,
+html.theme-light .nav-tab:hover {
+    color: #0f172a !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+}
+html[data-theme="light"] .nav-tab.active,
+html.theme-light .nav-tab.active {
+    background: #ffffff !important;
+    color: #059669 !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+    font-weight: 800 !important;
+}
+
+/* 5. Landing Page Atmosphere & Surfaces */
+html[data-theme="light"] #landingPage,
+html.theme-light #landingPage {
+    background: #f8fafc !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .lp-header-title,
+html.theme-light .lp-header-title {
+    color: #0f172a !important;
+}
+html[data-theme="light"] .lp-header-title .lp-accent,
+html.theme-light .lp-header-title .lp-accent {
+    color: #059669 !important;
+}
+html[data-theme="light"] .lp-tagline,
+html.theme-light .lp-tagline {
+    color: #64748b !important;
+}
+html[data-theme="light"] .lp-brand-badge,
+html.theme-light .lp-brand-badge {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .lp-brand-badge-text,
+html.theme-light .lp-brand-badge-text {
+    color: #475569 !important;
+}
+html[data-theme="light"] .lp-brand-badge .app-version-badge,
+html.theme-light .lp-brand-badge .app-version-badge {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+}
+html[data-theme="light"] .lp-countdown-container,
+html[data-theme="light"] .lp-ticker-container,
+html[data-theme="light"] .mobile-header-countdown,
+html[data-theme="light"] #mobileHeaderRoundCountdown {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .server-status-pill,
+html.theme-light .server-status-pill {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+html[data-theme="light"] .server-status-pill .status-latency {
+    color: #64748b !important;
+}
+html[data-theme="light"] .lp-mobile-dday-badge,
+html.theme-light .lp-mobile-dday-badge {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .btn-lp-manual,
+html[data-theme="light"] .btn-lp-pwa,
+html[data-theme="light"] .btn-lp-user {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .btn-lp-manual:hover,
+html[data-theme="light"] .btn-lp-pwa:hover,
+html[data-theme="light"] .btn-lp-user:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+/* Landing Core Cards */
+html[data-theme="light"] .lp-card,
+html.theme-light .lp-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+html[data-theme="light"] .lp-card:hover,
+html.theme-light .lp-card:hover {
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.09) !important;
+}
+html[data-theme="light"] .lp-card-title,
+html.theme-light .lp-card-title {
+    color: #0f172a !important;
+}
+html[data-theme="light"] .lp-card-desc,
+html.theme-light .lp-card-desc {
+    color: #475569 !important;
+}
+html[data-theme="light"] .lp-card-icon,
+html.theme-light .lp-card-icon {
+    background: #f0fdf4 !important;
+    border-color: #bbf7d0 !important;
+    color: #059669 !important;
+}
+html[data-theme="light"] .lp-card-icon-toto,
+html.theme-light .lp-card-icon-toto {
+    background: #f0f9ff !important;
+    border-color: #bae6fd !important;
+    color: #0284c7 !important;
+}
+html[data-theme="light"] .lp-card-badge,
+html.theme-light .lp-card-badge {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+    border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .lp-card-features li,
+html.theme-light .lp-card-features li {
+    color: #64748b !important;
+}
+html[data-theme="light"] .lp-btn-toto-main {
+    background: #f8fafc !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+}
+html[data-theme="light"] .lp-btn-toto-main:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #94a3b8 !important;
+}
+html[data-theme="light"] .lp-btn-toss-sub {
+    background: #f8fafc !important;
+    color: #475569 !important;
+    border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .lp-btn-toss-sub:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+/* Landing Financial Summary & Fortune Advisor */
+html[data-theme="light"] .lp-financial-summary,
+html.theme-light .lp-financial-summary {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+html[data-theme="light"] .lp-fin-title-area,
+html.theme-light .lp-fin-title-area {
+    border-bottom-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .lp-fin-title,
+html.theme-light .lp-fin-title {
+    color: #0f172a !important;
+}
+html[data-theme="light"] .lp-fin-label,
+html.theme-light .lp-fin-label {
+    color: #64748b !important;
+}
+html[data-theme="light"] .lp-desktop-confirmed-pill,
+html[data-theme="light"] .lp-mobile-confirmed-pill {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+html[data-theme="light"] .lp-btn-prob-compare,
+html[data-theme="light"] .lp-btn-prob-compare-sm {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+}
+html[data-theme="light"] .lp-btn-prob-compare:hover,
+html[data-theme="light"] .lp-btn-prob-compare-sm:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .lp-stat-item,
+html.theme-light .lp-stat-item {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .lp-stat-label,
+html.theme-light .lp-stat-label {
+    color: #64748b !important;
+}
+html[data-theme="light"] .lp-stat-val,
+html.theme-light .lp-stat-val {
+    color: #0f172a !important;
+}
+html[data-theme="light"] .fortune-advisor-card,
+html[data-theme="light"] .fortune-advisor-target-container > div {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+html[data-theme="light"] .lp-server-sync-strip,
+html.theme-light .lp-server-sync-strip {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+
+/* 6. Lotto Ball Colors in Light Theme (High Contrast & Clean Pastel Rim) */
+html[data-theme="light"] .ball-yellow,
+html[data-theme="light"] .lotto-ball.ball-yellow,
+html[data-theme="light"] .lotto-ball-mini.ball-yellow,
+html.theme-light .ball-yellow {
+    background: #fef3c7 !important;
+    border: 1.5px solid #f59e0b !important;
+    color: #b45309 !important;
+    box-shadow: 0 1px 3px rgba(245, 158, 11, 0.2) !important;
+    text-shadow: none !important;
+}
+html[data-theme="light"] .ball-blue,
+html[data-theme="light"] .lotto-ball.ball-blue,
+html[data-theme="light"] .lotto-ball-mini.ball-blue,
+html.theme-light .ball-blue {
+    background: #e0f2fe !important;
+    border: 1.5px solid #0284c7 !important;
+    color: #0369a1 !important;
+    box-shadow: 0 1px 3px rgba(2, 132, 199, 0.2) !important;
+    text-shadow: none !important;
+}
+html[data-theme="light"] .ball-red,
+html[data-theme="light"] .lotto-ball.ball-red,
+html[data-theme="light"] .lotto-ball-mini.ball-red,
+html.theme-light .ball-red {
+    background: #fee2e2 !important;
+    border: 1.5px solid #ef4444 !important;
+    color: #b91c1c !important;
+    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.2) !important;
+    text-shadow: none !important;
+}
+html[data-theme="light"] .ball-gray,
+html[data-theme="light"] .lotto-ball.ball-gray,
+html[data-theme="light"] .lotto-ball-mini.ball-gray,
+html.theme-light .ball-gray {
+    background: #f1f5f9 !important;
+    border: 1.5px solid #94a3b8 !important;
+    color: #334155 !important;
+    box-shadow: 0 1px 3px rgba(148, 163, 184, 0.2) !important;
+    text-shadow: none !important;
+}
+html[data-theme="light"] .ball-green,
+html[data-theme="light"] .lotto-ball.ball-green,
+html[data-theme="light"] .lotto-ball-mini.ball-green,
+html.theme-light .ball-green {
+    background: #dcfce7 !important;
+    border: 1.5px solid #10b981 !important;
+    color: #15803d !important;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.2) !important;
+    text-shadow: none !important;
+}
+
+/* 7. Core Cards, Tabs & Content Containers */
+html[data-theme="light"] .card,
+html[data-theme="light"] .dashboard-card,
+html[data-theme="light"] .round-result-card,
+html[data-theme="light"] .algo-card,
+html[data-theme="light"] .algo-report-card,
+html[data-theme="light"] .confirmed-card,
+html.theme-light .card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04) !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .combo-card,
+html.theme-light .combo-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .combo-card:hover {
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06) !important;
+}
+html[data-theme="light"] .combo-header {
+    border-bottom-color: #f1f5f9 !important;
+}
+html[data-theme="light"] .combo-title {
+    color: #0f172a !important;
+}
+html[data-theme="light"] .combo-meta {
+    color: #64748b !important;
+}
+html[data-theme="light"] .extra-combo-row {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .extra-combo-row:hover {
+    background: #f1f5f9 !important;
+}
+
+/* 8. Confirmed Purchases & Digital Receipt Cards */
+html[data-theme="light"] .confirmed-unified-toolbar,
+html[data-theme="light"] .confirmed-round-card,
+html[data-theme="light"] .confirmed-summary-box,
+html[data-theme="light"] .confirmed-receipt-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .confirmed-round-header {
+    background: #ffffff !important;
+    border-bottom-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .confirmed-game-row {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .confirmed-receipt-qr-link-bar {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .digital-receipt-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05) !important;
+}
+html[data-theme="light"] .btn-receipt-action-copy {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #475569 !important;
+}
+html[data-theme="light"] .btn-receipt-action-copy:hover {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+
+/* 9. Forms, Inputs, Dropdowns & Modals */
+html[data-theme="light"] .modern-input,
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+html[data-theme="light"] .modern-input:focus,
+html[data-theme="light"] input:focus,
+html[data-theme="light"] select:focus,
+html[data-theme="light"] textarea:focus {
+    border-color: #059669 !important;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15) !important;
+}
+html[data-theme="light"] .modal-content,
+html.theme-light .modal-content {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.18) !important;
+}
+html[data-theme="light"] .modal-header,
+html[data-theme="light"] .modal-footer {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .modal-body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .modal-overlay {
+    background: rgba(15, 23, 42, 0.55) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+html[data-theme="light"] .close-modal {
+    background: #f1f5f9 !important;
+    color: #64748b !important;
+}
+html[data-theme="light"] .close-modal:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .manual-mode-tabs {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .manual-tab-btn {
+    color: #64748b !important;
+}
+html[data-theme="light"] .manual-tab-btn.active {
+    background: #ffffff !important;
+    color: #059669 !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+}
+html[data-theme="light"] #qrSessionStatusBanner {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+/* 10. Tables, Lists & Grids */
+html[data-theme="light"] table,
+html[data-theme="light"] th,
+html[data-theme="light"] td {
+    border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] th {
+    background: #f1f5f9 !important;
+    color: #475569 !important;
+}
+html[data-theme="light"] td {
+    color: #0f172a !important;
+}
+html[data-theme="light"] tr:hover td {
+    background: #f8fafc !important;
+}
+
+/* 11. Confirmed Ledger & Statistics Refinements for Light Mode */
+html[data-theme="light"] .confirmed-quick-filter-bar {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .confirmed-filter-title {
+    color: #0f172a !important;
+}
+html[data-theme="light"] .confirmed-filter-active-desc {
+    color: #64748b !important;
+}
+html[data-theme="light"] .confirmed-filter-chip {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+html[data-theme="light"] .confirmed-filter-chip:hover {
+    background: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .confirmed-filter-chip.active {
+    background: #059669 !important;
+    border-color: #059669 !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(5, 150, 105, 0.25) !important;
+}
+html[data-theme="light"] .confirmed-stats-toggle-bar {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .confirmed-stats-toggle-bar:hover {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+html[data-theme="light"] .confirmed-stats-content {
+    background: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+html[data-theme="light"] .confirmed-rank-grid > div {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03) !important;
+}
+html[data-theme="light"] .confirmed-rank-grid > div > div:first-child {
+    color: #64748b !important;
+}
+html[data-theme="light"] .confirmed-rank-grid > div > div:last-child {
+    color: #0f172a !important;
+}
+html[data-theme="light"] .slim-picker-trigger {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+}
+html[data-theme="light"] .slim-picker-trigger:hover {
+    background: #f1f5f9 !important;
+    border-color: #94a3b8 !important;
+    color: #0f172a !important;
+}
+html[data-theme="light"] .toast {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+}
+html[data-theme="light"] .dday-urgent-banner {
+    background: #fef2f2 !important;
+    border-color: #fecaca !important;
+    color: #991b1b !important;
+}
+html[data-theme="light"] .lp-trend-banner {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
+}
+html[data-theme="light"] .trend-badge {
+    background: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+html[data-theme="light"] .trend-summary-sub {
+    color: #64748b !important;
+}
+html[data-theme="light"] .trend-stat-val {
+    color: #0f172a !important;
+}
+html[data-theme="light"] .trend-arrow-icon {
+    color: #94a3b8 !important;
+}
+html[data-theme="light"] .trend-arrow-icon:hover {
+    color: #059669 !important;
+}

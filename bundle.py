@@ -229,6 +229,7 @@ def verify_version_crosscheck(expected_version):
 
 FILES_TO_BUNDLE = [
     "src/shared/utils.js",
+    "src/shared/theme.js",
     "src/shared/crypto-utils.js",
     "src/shared/components.js",
     "src/shared/db.js",

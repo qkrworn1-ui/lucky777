@@ -147,6 +147,14 @@ export async function renderConfirmedPurchasesList() {
     // Render Charts
     try {
         const totalWins = hits.reduce((a,b) => a+b, 0);
+        const chartTheme = (typeof window !== 'undefined' && typeof window.getChartThemeColors === 'function')
+            ? window.getChartThemeColors()
+            : {
+                textColor: (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light' ? '#334155' : '#cbd5e1'),
+                borderColor: (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light' ? '#ffffff' : 'rgba(15,23,42,0.8)'),
+                gridColor: (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light' ? 'rgba(0,0,0,0.07)' : 'rgba(255,255,255,0.05)'),
+                investColor: (typeof document !== 'undefined' && document.documentElement.getAttribute('data-theme') === 'light' ? '#64748b' : '#cbd5e1')
+            };
         if (state.confirmedPrizeChartInstance) state.confirmedPrizeChartInstance.destroy();
         const canvasPie = document.getElementById('confirmedPrizeRatioChart');
         if (canvasPie && typeof canvasPie.getContext === 'function' && typeof window.Chart === 'function') {
@@ -159,14 +167,14 @@ export async function renderConfirmedPurchasesList() {
                         data: totalWins > 0 ? hits : [0, 0, 0, 0, 1],
                         backgroundColor: ['#fbc400', '#69c8f2', '#ff7272', '#a0aec0', '#b0d840'],
                         borderWidth: 1,
-                        borderColor: 'rgba(15,23,42,0.8)'
+                        borderColor: chartTheme.borderColor
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'right', labels: { color: '#cbd5e1', font: { size: 9 } } },
+                        legend: { position: 'right', labels: { color: chartTheme.textColor, font: { size: 9 } } },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -195,7 +203,7 @@ export async function renderConfirmedPurchasesList() {
                         {
                             label: '누적 구매금',
                             data: trendInvest.length > 0 ? trendInvest : [0],
-                            borderColor: '#cbd5e1',
+                            borderColor: chartTheme.investColor,
                             borderDash: [5, 5],
                             backgroundColor: 'transparent',
                             borderWidth: 1.5,
@@ -215,12 +223,12 @@ export async function renderConfirmedPurchasesList() {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: '#cbd5e1', font: { size: 9 } } } },
+                    plugins: { legend: { labels: { color: chartTheme.textColor, font: { size: 9 } } } },
                     scales: {
-                        x: { ticks: { color: '#cbd5e1', font: { size: 8 } }, grid: { display: false } },
+                        x: { ticks: { color: chartTheme.textColor, font: { size: 8 } }, grid: { display: false } },
                         y: { 
                             ticks: { 
-                                color: '#cbd5e1', 
+                                color: chartTheme.textColor,
                                 font: { size: 8 },
                                 callback: function(value) { 
                                     if (value >= 10000) {
@@ -229,7 +237,7 @@ export async function renderConfirmedPurchasesList() {
                                     return value.toLocaleString() + '원';
                                 }
                             }, 
-                            grid: { color: 'rgba(255,255,255,0.05)' }
+                            grid: { color: chartTheme.gridColor }
                         }
                     }
                 }
