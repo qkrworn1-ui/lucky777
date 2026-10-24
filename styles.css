@@ -24538,7 +24538,7 @@ body.lotto-mode-active .app-container {
     background: #111827 !important;
     border: 1px solid #1e293b !important;
     border-radius: 9px !important;
-    padding: 7px 4px !important;
+    padding: 8px 4px !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
@@ -24550,28 +24550,130 @@ body.lotto-mode-active .app-container {
     min-width: 0 !important;
     width: 100% !important;
     text-align: center !important;
+    color: #f8fafc !important;
 }
 
-.lp-toss-nav-chip:hover {
-    background: #1e293b !important;
-    border-color: #334155 !important;
+.lp-toss-nav-chip.chip-my {
+    background: rgba(16, 185, 129, 0.1) !important;
+    border: 1px solid rgba(16, 185, 129, 0.35) !important;
+}
+
+.lp-toss-nav-chip.chip-my:hover {
+    background: rgba(16, 185, 129, 0.2) !important;
+    border-color: rgba(16, 185, 129, 0.6) !important;
+    transform: translateY(-1px) !important;
+}
+
+.lp-toss-nav-chip.chip-all {
+    background: rgba(56, 189, 248, 0.1) !important;
+    border: 1px solid rgba(56, 189, 248, 0.35) !important;
+}
+
+.lp-toss-nav-chip.chip-all:hover {
+    background: rgba(56, 189, 248, 0.2) !important;
+    border-color: rgba(56, 189, 248, 0.6) !important;
+    transform: translateY(-1px) !important;
+}
+
+.lp-toss-nav-chip.chip-review {
+    background: rgba(168, 85, 247, 0.1) !important;
+    border: 1px solid rgba(168, 85, 247, 0.35) !important;
+}
+
+.lp-toss-nav-chip.chip-review:hover {
+    background: rgba(168, 85, 247, 0.2) !important;
+    border-color: rgba(168, 85, 247, 0.6) !important;
     transform: translateY(-1px) !important;
 }
 
 .lp-toss-nav-chip .lp-chip-sub {
-    font-size: 0.65rem !important;
-    color: #94a3b8 !important;
-    font-weight: 700 !important;
+    font-size: 0.68rem !important;
+    color: #f1f5f9 !important;
+    font-weight: 800 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     max-width: 100% !important;
+    letter-spacing: -0.2px !important;
 }
 
 .lp-toss-nav-chip .lp-chip-action {
-    font-size: 0.72rem !important;
+    font-size: 0.74rem !important;
     font-weight: 900 !important;
     white-space: nowrap !important;
+    color: #f8fafc !important;
+}
+
+.lp-toss-nav-chip.chip-my .lp-chip-action,
+.lp-toss-nav-chip .lp-chip-action.text-emerald-400 {
+    color: #34d399 !important;
+}
+
+.lp-toss-nav-chip.chip-all .lp-chip-action,
+.lp-toss-nav-chip .lp-chip-action.text-sky-400 {
+    color: #38bdf8 !important;
+}
+
+.lp-toss-nav-chip.chip-review .lp-chip-action,
+.lp-toss-nav-chip .lp-chip-action.text-purple-400 {
+    color: #c084fc !important;
+}
+
+/* Light Theme overrides for 3-part navigation chips */
+[data-theme="light"] .lp-toss-nav-chip.chip-my,
+.light-theme .lp-toss-nav-chip.chip-my {
+    background: #ecfdf5 !important;
+    border: 1px solid #a7f3d0 !important;
+}
+[data-theme="light"] .lp-toss-nav-chip.chip-my:hover,
+.light-theme .lp-toss-nav-chip.chip-my:hover {
+    background: #d1fae5 !important;
+}
+
+[data-theme="light"] .lp-toss-nav-chip.chip-all,
+.light-theme .lp-toss-nav-chip.chip-all {
+    background: #f0f9ff !important;
+    border: 1px solid #bae6fd !important;
+}
+[data-theme="light"] .lp-toss-nav-chip.chip-all:hover,
+.light-theme .lp-toss-nav-chip.chip-all:hover {
+    background: #e0f2fe !important;
+}
+
+[data-theme="light"] .lp-toss-nav-chip.chip-review,
+.light-theme .lp-toss-nav-chip.chip-review {
+    background: #faf5ff !important;
+    border: 1px solid #e9d5ff !important;
+}
+[data-theme="light"] .lp-toss-nav-chip.chip-review:hover,
+.light-theme .lp-toss-nav-chip.chip-review:hover {
+    background: #f3e8ff !important;
+}
+
+[data-theme="light"] .lp-toss-nav-chip .lp-chip-sub,
+.light-theme .lp-toss-nav-chip .lp-chip-sub {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .lp-toss-nav-chip.chip-my .lp-chip-action,
+[data-theme="light"] .lp-toss-nav-chip .lp-chip-action.text-emerald-400,
+.light-theme .lp-toss-nav-chip.chip-my .lp-chip-action,
+.light-theme .lp-toss-nav-chip .lp-chip-action.text-emerald-400 {
+    color: #059669 !important;
+}
+
+[data-theme="light"] .lp-toss-nav-chip.chip-all .lp-chip-action,
+[data-theme="light"] .lp-toss-nav-chip .lp-chip-action.text-sky-400,
+.light-theme .lp-toss-nav-chip.chip-all .lp-chip-action,
+.light-theme .lp-toss-nav-chip .lp-chip-action.text-sky-400 {
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .lp-toss-nav-chip.chip-review .lp-chip-action,
+[data-theme="light"] .lp-toss-nav-chip .lp-chip-action.text-purple-400,
+.light-theme .lp-toss-nav-chip.chip-review .lp-chip-action,
+.light-theme .lp-toss-nav-chip .lp-chip-action.text-purple-400 {
+    color: #7e22ce !important;
 }
 
 /* 5. A안 5번: 사주 길일·길시 미니멀 1줄 스트립 */
