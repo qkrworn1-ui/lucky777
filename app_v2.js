@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.24.1933.55 - BUILD_DATE: 2026-10-24] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.24.1945.39 - BUILD_DATE: 2026-10-24] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.24.1933.55)
+ * Lucky777 Smart Bundle (v2026.10.24.1945.39)
  */
 
 
@@ -13711,14 +13711,19 @@ const PushClient = {
         const unreadList = list.filter(n => n && n.unread);
         const unreadCount = unreadList.length;
 
-        // 1. 모바일/데스크톱 상단 알림 버튼에 미확인 건수 배지 업데이트
+        // 1. 모바일/데스크톱/앱 상단 알림 아이콘 버튼에 미확인 건수 플로팅 뱃지 업데이트
+        const displayCountStr = unreadCount > 9 ? '9+' : String(unreadCount);
+        const titleStr = unreadCount > 0 ? `알림함 (미확인 ${unreadCount}건)` : '운도실력 통합 알림 센터 (알림함)';
+
+        // 1-1. 모바일 상단 알림 아이콘 버튼 (28px)
         const mobileBtn = document.getElementById('lpMobilePushBtn');
         if (mobileBtn) {
-            const txtEl = mobileBtn.querySelector('.lp-dday-text');
-            if (txtEl) {
-                txtEl.innerHTML = unreadCount > 0
-                    ? `알림 <span style="display:inline-block; background:#ef4444; color:#fff; font-size:0.65rem; font-weight:900; padding:0 5px; border-radius:999px; margin-left:2px; line-height:1.35;">${unreadCount}</span>`
-                    : '알림함';
+            mobileBtn.setAttribute('title', titleStr);
+            mobileBtn.setAttribute('aria-label', titleStr);
+            const mobileBadge = document.getElementById('landingNotifyBadgeMobile') || mobileBtn.querySelector('.notify-badge-pill');
+            if (mobileBadge) {
+                mobileBadge.textContent = displayCountStr;
+                mobileBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
             }
             mobileBtn.onclick = (e) => {
                 if (e) e.stopPropagation();
@@ -13726,12 +13731,33 @@ const PushClient = {
             };
         }
 
+        // 1-2. 데스크톱 상단 알림 아이콘 버튼 (36px)
         const desktopBtn = document.getElementById('btnPushNotifyTop');
         if (desktopBtn) {
-            desktopBtn.innerHTML = unreadCount > 0
-                ? `<i class="fa-solid fa-bell"></i> <span>미확인 알림</span> <span style="background:#ef4444; color:#fff; font-size:0.7rem; font-weight:900; padding:1px 6px; border-radius:999px; margin-left:4px;">${unreadCount}</span>`
-                : `<i class="fa-solid fa-bell"></i> <span>알림함</span>`;
+            desktopBtn.setAttribute('title', titleStr);
+            desktopBtn.setAttribute('aria-label', titleStr);
+            const desktopBadge = document.getElementById('landingNotifyBadgeDesktop') || desktopBtn.querySelector('.notify-badge-pill');
+            if (desktopBadge) {
+                desktopBadge.textContent = displayCountStr;
+                desktopBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
+            }
             desktopBtn.onclick = (e) => {
+                if (e) e.stopPropagation();
+                this.openNotificationCenterModal();
+            };
+        }
+
+        // 1-3. 로또 앱 상단 알림 아이콘 버튼 (32px)
+        const appBtn = document.getElementById('btnAppPushNotify');
+        if (appBtn) {
+            appBtn.setAttribute('title', titleStr);
+            appBtn.setAttribute('aria-label', titleStr);
+            const appBadge = document.getElementById('appNotifyBadge') || appBtn.querySelector('.notify-badge-pill');
+            if (appBadge) {
+                appBadge.textContent = displayCountStr;
+                appBadge.style.display = unreadCount > 0 ? 'flex' : 'none';
+            }
+            appBtn.onclick = (e) => {
                 if (e) e.stopPropagation();
                 this.openNotificationCenterModal();
             };

@@ -25510,3 +25510,158 @@ html[data-theme="light"] .trend-arrow-icon {
 html[data-theme="light"] .trend-arrow-icon:hover {
     color: #059669 !important;
 }
+
+/* ==========================================================================
+   🔔 DASHBOARD NOTIFICATION BELL: ICON-ONLY DESIGN & FLOATING BADGE
+   ========================================================================== */
+
+/* 🖥️ Desktop Notification Bell (36px Icon-Only) */
+.btn-lp-notify-icon {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    border-radius: 12px !important;
+    background: rgba(245, 158, 11, 0.15) !important;
+    border: 1.5px solid rgba(245, 158, 11, 0.4) !important;
+    color: #fbbf24 !important;
+    cursor: pointer !important;
+    font-size: 0.95rem !important;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.12) !important;
+}
+.btn-lp-notify-icon:hover {
+    transform: translateY(-2px) scale(1.05) !important;
+    background: rgba(245, 158, 11, 0.25) !important;
+    border-color: #f59e0b !important;
+    color: #fde047 !important;
+}
+.btn-lp-notify-icon:active {
+    transform: translateY(0) scale(0.96) !important;
+}
+
+/* 📱 Mobile Notification Bell (28px Compact) */
+.mobile-notify-btn-compact {
+    width: 28px !important;
+    height: 28px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    border-radius: 8px !important;
+    background: rgba(245, 158, 11, 0.18) !important;
+    border: 1px solid rgba(245, 158, 11, 0.45) !important;
+    color: #fbbf24 !important;
+    cursor: pointer !important;
+    font-size: 0.82rem !important;
+    transition: all 0.2s ease !important;
+}
+.mobile-notify-btn-compact:hover {
+    background: rgba(245, 158, 11, 0.3) !important;
+    border-color: #f59e0b !important;
+}
+.mobile-notify-btn-compact:active {
+    transform: scale(0.95) !important;
+}
+
+/* 🎯 Lotto App Header Notification Bell (32px Compact) */
+.btn-app-notify-compact {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: relative !important;
+    border-radius: 8px !important;
+    background: rgba(245, 158, 11, 0.15) !important;
+    border: 1px solid rgba(245, 158, 11, 0.4) !important;
+    color: #fbbf24 !important;
+    cursor: pointer !important;
+    font-size: 0.88rem !important;
+    transition: all 0.2s ease !important;
+}
+.btn-app-notify-compact:hover {
+    background: rgba(245, 158, 11, 0.25) !important;
+    border-color: #f59e0b !important;
+}
+
+/* 🔴 Floating Notification Badge Pill */
+.notify-badge-pill {
+    position: absolute !important;
+    top: -4px !important;
+    right: -4px !important;
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    font-size: 0.65rem !important;
+    font-weight: 900 !important;
+    min-width: 17px !important;
+    height: 17px !important;
+    padding: 0 4px !important;
+    border-radius: 999px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 2px solid #0f172a !important;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.7) !important;
+    line-height: 1 !important;
+    z-index: 5 !important;
+    animation: pulseBadge 2.2s infinite ease-in-out !important;
+}
+.notify-badge-pill-mobile {
+    top: -3px !important;
+    right: -3px !important;
+    min-width: 14px !important;
+    height: 14px !important;
+    font-size: 0.58rem !important;
+    padding: 0 3px !important;
+}
+
+@keyframes pulseBadge {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.12); box-shadow: 0 0 12px rgba(239, 68, 68, 0.9); }
+}
+
+@keyframes ringBell {
+    0% { transform: rotate(0); }
+    15% { transform: rotate(14deg); }
+    30% { transform: rotate(-14deg); }
+    45% { transform: rotate(10deg); }
+    60% { transform: rotate(-8deg); }
+    75% { transform: rotate(4deg); }
+    100% { transform: rotate(0); }
+}
+.btn-lp-notify-icon:hover i,
+.mobile-notify-btn-compact:hover i,
+.btn-app-notify-compact:hover i {
+    animation: ringBell 0.7s ease both !important;
+    transform-origin: top center !important;
+}
+
+/* ☀️ Light Theme Styling for Notification Bell */
+html[data-theme="light"] .btn-lp-notify-icon,
+html.theme-light .btn-lp-notify-icon,
+html[data-theme="light"] .mobile-notify-btn-compact,
+html.theme-light .mobile-notify-btn-compact,
+html[data-theme="light"] .btn-app-notify-compact,
+html.theme-light .btn-app-notify-compact {
+    background: #ffffff !important;
+    border-color: #fde68a !important;
+    color: #d97706 !important;
+    box-shadow: 0 1px 4px rgba(217, 119, 6, 0.12) !important;
+}
+html[data-theme="light"] .btn-lp-notify-icon:hover,
+html[data-theme="light"] .mobile-notify-btn-compact:hover,
+html[data-theme="light"] .btn-app-notify-compact:hover {
+    background: #fefce8 !important;
+    border-color: #f59e0b !important;
+    color: #b45309 !important;
+}
+html[data-theme="light"] .notify-badge-pill,
+html.theme-light .notify-badge-pill {
+    border-color: #ffffff !important;
+}

@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.24.1933.55",
+  "version": "v2026.10.24.1945.39",
   "buildDate": "2026-10-24",
-  "description": "Apple & Toss 스타일 화이트/다크 테마 토글 및 차트·영수증 반응형 스타일링 추가",
-  "buildTimestamp": "2026-10-24T19:33:55.474478",
+  "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료",
+  "buildTimestamp": "2026-10-24T19:45:39.891681",
   "buildHistory": [
-    {
-      "version": "v2026.10.22.1704.30",
-      "buildDate": "2026-10-22",
-      "buildTime": "17:04",
-      "buildDateTime": "2026-10-22 17:04",
-      "buildTimestamp": "2026-10-22T17:04:30.586405",
-      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
-    },
-    {
-      "version": "v2026.10.22.1749",
-      "buildDate": "2026-10-22",
-      "buildTime": "17:49",
-      "buildDateTime": "2026-10-22 17:49",
-      "buildTimestamp": "2026-10-22T17:49:03.953721",
-      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
-    },
     {
       "version": "v2026.10.22.1750",
       "buildDate": "2026-10-22",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-24 19:33",
       "buildTimestamp": "2026-10-24T19:33:55.474478",
       "description": "Apple & Toss 스타일 화이트/다크 테마 토글 및 차트·영수증 반응형 스타일링 추가"
+    },
+    {
+      "version": "v2026.10.24.1945",
+      "buildDate": "2026-10-24",
+      "buildTime": "19:45",
+      "buildDateTime": "2026-10-24 19:45",
+      "buildTimestamp": "2026-10-24T19:45:10.883807",
+      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
+    },
+    {
+      "version": "v2026.10.24.1945.39",
+      "buildDate": "2026-10-24",
+      "buildTime": "19:45",
+      "buildDateTime": "2026-10-24 19:45",
+      "buildTimestamp": "2026-10-24T19:45:39.891681",
+      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
     }
   ],
-  "buildTime": "19:33",
-  "buildDateTime": "2026-10-24 19:33"
+  "buildTime": "19:45",
+  "buildDateTime": "2026-10-24 19:45"
 }
