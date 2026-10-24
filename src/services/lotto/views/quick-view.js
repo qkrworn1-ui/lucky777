@@ -2,6 +2,7 @@ import { state } from '../state.js';
 import { getBallHexColor, getBallColorClass, showToast } from '../../../shared/utils.js';
 import { getUpcomingLottoRound, getUserRealName } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, isUserEligibleForExtraPacks } from '../ledger.js';
+import { isUserSuspended } from '../../../shared/user-context.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId } from '../generator.js';
 
 let currentQuickAlgo = 'v4'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
@@ -179,6 +180,17 @@ export function checkQuickViewExtraPackEligibility(userId = null, targetRound = 
 export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
     const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
 
+    if (typeof isUserSuspended === 'function' && isUserSuspended(effectiveUserId)) {
+        return {
+            versionLabel: '계정 정지됨',
+            badgeColor: '#ef4444',
+            combos: [],
+            effectiveUserId,
+            targetRound: null,
+            isLocked: true
+        };
+    }
+
     const targetRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : 
         ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 
         (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243))));
@@ -302,6 +314,10 @@ export function openCompactView(algo = null) {
     }
 
     const effectiveUserId = getEffectiveGeneratorUserId();
+    if (typeof isUserSuspended === 'function' && isUserSuspended(effectiveUserId)) {
+        alert('🚫 [계정 이용 정지]\n\n회원님의 계정은 현재 이용 정지 상태입니다.\n추천번호 발급 및 간편 조회가 제한됩니다.\n관리자에게 문의해주세요.');
+        return;
+    }
     const targetRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : 
         ((typeof window !== 'undefined' && window.getUpcomingLottoRound) ? window.getUpcomingLottoRound() : 
         (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1243))));

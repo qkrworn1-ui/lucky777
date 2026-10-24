@@ -4985,6 +4985,7 @@ Lotto 6/45
                     deletedIds: [
                         'admin-msg-adm_1792219421753',
                         'rec-ready-1247',
+                        'rec-ready-1248',
                         'draw-result-1246'
                     ],
                     inbox: []

@@ -1,49 +1,9 @@
 {
-  "version": "v2026.10.24.1945.39",
+  "version": "v2026.10.24.2005.40",
   "buildDate": "2026-10-24",
   "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료",
-  "buildTimestamp": "2026-10-24T19:45:39.891681",
+  "buildTimestamp": "2026-10-24T20:05:40.763099",
   "buildHistory": [
-    {
-      "version": "v2026.10.22.1750",
-      "buildDate": "2026-10-22",
-      "buildTime": "17:50",
-      "buildDateTime": "2026-10-22 17:50",
-      "buildTimestamp": "2026-10-22T17:50:22.334735",
-      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
-    },
-    {
-      "version": "v2026.10.22.1820",
-      "buildDate": "2026-10-22",
-      "buildTime": "18:20",
-      "buildDateTime": "2026-10-22 18:20",
-      "buildTimestamp": "2026-10-22T18:20:31.696066",
-      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
-    },
-    {
-      "version": "v2026.10.22.1821",
-      "buildDate": "2026-10-22",
-      "buildTime": "18:21",
-      "buildDateTime": "2026-10-22 18:21",
-      "buildTimestamp": "2026-10-22T18:21:08.574517",
-      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
-    },
-    {
-      "version": "v2026.10.22.1840",
-      "buildDate": "2026-10-22",
-      "buildTime": "18:40",
-      "buildDateTime": "2026-10-22 18:40",
-      "buildTimestamp": "2026-10-22T18:40:44.036047",
-      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
-    },
-    {
-      "version": "v2026.10.22.1841",
-      "buildDate": "2026-10-22",
-      "buildTime": "18:41",
-      "buildDateTime": "2026-10-22 18:41",
-      "buildTimestamp": "2026-10-22T18:41:31.399703",
-      "description": "알림함 미확인 알림 탭하여 읽음 처리 실시간 반영 및 알림 개별/전체 삭제 기능 추가"
-    },
     {
       "version": "v2026.10.22.1854",
       "buildDate": "2026-10-22",
@@ -123,8 +83,48 @@
       "buildDateTime": "2026-10-24 19:45",
       "buildTimestamp": "2026-10-24T19:45:39.891681",
       "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
+    },
+    {
+      "version": "v2026.10.24.2003",
+      "buildDate": "2026-10-24",
+      "buildTime": "20:03",
+      "buildDateTime": "2026-10-24 20:03",
+      "buildTimestamp": "2026-10-24T20:03:12.361439",
+      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
+    },
+    {
+      "version": "v2026.10.24.2003.38",
+      "buildDate": "2026-10-24",
+      "buildTime": "20:03",
+      "buildDateTime": "2026-10-24 20:03",
+      "buildTimestamp": "2026-10-24T20:03:38.131962",
+      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
+    },
+    {
+      "version": "v2026.10.24.2004",
+      "buildDate": "2026-10-24",
+      "buildTime": "20:04",
+      "buildDateTime": "2026-10-24 20:04",
+      "buildTimestamp": "2026-10-24T20:04:34.432705",
+      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
+    },
+    {
+      "version": "v2026.10.24.2005",
+      "buildDate": "2026-10-24",
+      "buildTime": "20:05",
+      "buildDateTime": "2026-10-24 20:05",
+      "buildTimestamp": "2026-10-24T20:05:22.491423",
+      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
+    },
+    {
+      "version": "v2026.10.24.2005.40",
+      "buildDate": "2026-10-24",
+      "buildTime": "20:05",
+      "buildDateTime": "2026-10-24 20:05",
+      "buildTimestamp": "2026-10-24T20:05:40.763099",
+      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
     }
   ],
-  "buildTime": "19:45",
-  "buildDateTime": "2026-10-24 19:45"
+  "buildTime": "20:05",
+  "buildDateTime": "2026-10-24 20:05"
 }

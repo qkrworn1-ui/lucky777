@@ -4,7 +4,7 @@ import { createBallHtml } from '../../../shared/components.js';
 import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId } from '../generator.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPermanentUser } from '../../../shared/auth-mgmt.js';
-import { getAllUnifiedRegisteredUsers } from '../../../shared/user-context.js';
+import { getAllUnifiedRegisteredUsers, isUserSuspended } from '../../../shared/user-context.js';
 import { getComboNumbers, getLedger, getHistoricalTop10Combinations, saveToLedger } from '../ledger.js';
 import { calculate7AlgorithmsPerformance } from './algorithms-tab.js';
 
@@ -613,6 +613,26 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
 
         const container = document.getElementById('combinationsContainer');
         if (!container) return;
+
+        if (typeof isUserSuspended === 'function' && isUserSuspended(effectiveUserId)) {
+            container.innerHTML = `
+                <div style="background: linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1.5px solid rgba(239,68,68,0.4); border-radius: 14px; padding: 36px 20px; text-align: center; margin: 20px 0;">
+                    <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(239,68,68,0.2); border: 2px solid #ef4444; color: #ef4444; font-size: 1.8rem; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+                        <i class="fa-solid fa-user-slash"></i>
+                    </div>
+                    <h3 style="color: #fca5a5; font-size: 1.15rem; font-weight: 800; margin-bottom: 8px;">계정 이용 정지 상태 안내</h3>
+                    <p style="color: #cbd5e1; font-size: 0.88rem; max-width: 480px; margin: 0 auto 18px; line-height: 1.6;">
+                        회원(<strong style="color:#f87171;">${effectiveUserId}</strong>) 계정은 현재 <strong style="color:#ef4444;">이용 정지</strong> 상태입니다.<br>
+                        정지 기간 동안에는 AI 추천번호 발급 및 실시간 조합 열람이 제한됩니다.
+                    </p>
+                    <div style="font-size: 0.78rem; color: #94a3b8; background: rgba(0,0,0,0.3); padding: 10px 16px; border-radius: 8px; display: inline-block;">
+                        이용 문의 및 정지 해제 신청은 서비스 관리자에게 문의해 주세요.
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
         container.innerHTML = `
             <!-- 📱 10조합 뷰 모드 툴바 -->
             <div class="combo-view-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; padding: 8px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; flex-wrap: wrap; gap: 8px;">
@@ -1306,13 +1326,18 @@ export function renderSavedList() {
 }
 
 export function handleGenerateAllClick() {
+    const effectiveUserId = getEffectiveGeneratorUserId();
+    if (typeof isUserSuspended === 'function' && isUserSuspended(effectiveUserId)) {
+        alert('🚫 [계정 이용 정지]\n\n회원님의 계정은 현재 이용 정지 상태입니다.\n추천번호 발급 및 서비스 이용이 제한됩니다.\n관리자에게 문의해주세요.');
+        return;
+    }
+
     const chkReportLogic = document.getElementById('chkUseV4ReportLogic');
     const localPref = localStorage.getItem('lotto_pref_v4');
     const currentAlgo = state.currentSelectedAlgoId || (localPref === 'ar3' || localPref === 'extra1' || localPref === 'v5' ? 'extra1' : (localPref === 'false' ? 'v3' : 'v4'));
     const isAr3 = (currentAlgo === 'extra1' || currentAlgo === 'ar3' || currentAlgo === 'v5');
     const isV4 = isAr3 ? false : (chkReportLogic ? chkReportLogic.checked : true);
     const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
-    const effectiveUserId = getEffectiveGeneratorUserId();
     
     // 🔒 영구 불변 스냅샷 보호: 이미 해당 회차의 확정 스냅샷이 배정되어 있는 경우 불변 스냅샷 유지
     const existingSnap = (typeof getUserWeeklyRecommendationSnapshotSync === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId))
@@ -2031,6 +2056,10 @@ export function handleRemoveSingleExtraPack(packId) {
  */
 export function handleGenerateAllExtraPacks() {
     const effectiveUserId = getEffectiveGeneratorUserId();
+    if (typeof isUserSuspended === 'function' && isUserSuspended(effectiveUserId)) {
+        alert('🚫 [계정 이용 정지]\n\n회원님의 계정은 현재 이용 정지 상태입니다.\n추가팩 발급이 제한됩니다.\n관리자에게 문의해주세요.');
+        return;
+    }
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));

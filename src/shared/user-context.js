@@ -449,6 +449,62 @@ export const UserContextManager = {
     }
 };
 
+export function isUserSuspended(userId, userData = null) {
+    if (!userId) return false;
+    let cleanId = String(userId).trim();
+    if (cleanId.startsWith('{')) {
+        try {
+            const p = JSON.parse(cleanId);
+            cleanId = p.userId || p.userid || p.id || cleanId;
+        } catch(e) {}
+    }
+    cleanId = cleanId.toLowerCase().trim();
+    if (cleanId === 'master' || cleanId === 'admin' || cleanId === 'guest' || cleanId === 'all') return false;
+
+    // 1. Check userData param
+    if (userData) {
+        const st = userData.status || (userData.data && userData.data.status) || '';
+        const isSusp = userData.isSuspended === true || (userData.data && userData.data.isSuspended === true);
+        if (isSusp || st === 'suspended' || st === 'suspended_nopurchase') return true;
+    }
+
+    // 2. Check window.__cachedUsersWithStatus
+    if (typeof window !== 'undefined' && Array.isArray(window.__cachedUsersWithStatus)) {
+        const found = window.__cachedUsersWithStatus.find(u => (u.userId || '').toLowerCase().trim() === cleanId);
+        if (found) {
+            const st = found.status || (found.data && found.data.status) || '';
+            const isSusp = found.isSuspended === true || (found.data && found.data.isSuspended === true);
+            if (isSusp || st === 'suspended' || st === 'suspended_nopurchase') return true;
+        }
+    }
+
+    // 3. Check lotto_users_with_status_cache in localStorage
+    try {
+        if (typeof localStorage !== 'undefined') {
+            const raw = localStorage.getItem('lotto_users_with_status_cache');
+            if (raw) {
+                const list = JSON.parse(raw);
+                if (Array.isArray(list)) {
+                    const found = list.find(u => (u.userId || u.id || '').toLowerCase().trim() === cleanId);
+                    if (found) {
+                        const st = found.status || (found.data && found.data.status) || '';
+                        const isSusp = found.isSuspended === true || (found.data && found.data.isSuspended === true);
+                        if (isSusp || st === 'suspended' || st === 'suspended_nopurchase') return true;
+                    }
+                }
+            }
+        }
+    } catch(e) {}
+
+    // 4. Check DEFAULT_KNOWN_USERS baseline
+    if (typeof DEFAULT_KNOWN_USERS !== 'undefined' && Array.isArray(DEFAULT_KNOWN_USERS)) {
+        const found = DEFAULT_KNOWN_USERS.find(u => (u.id || '').toLowerCase().trim() === cleanId);
+        if (found && (found.status === 'suspended' || found.status === 'suspended_nopurchase')) return true;
+    }
+
+    return false;
+}
+
 export function getAllUnifiedRegisteredUsers() {
     return UserContextManager.getAllUnifiedUsers();
 }
@@ -457,4 +513,5 @@ if (typeof window !== 'undefined') {
     window.LottoTimeService = LottoTimeService;
     window.UserContextManager = UserContextManager;
     window.getAllUnifiedRegisteredUsers = getAllUnifiedRegisteredUsers;
+    window.isUserSuspended = isUserSuspended;
 }

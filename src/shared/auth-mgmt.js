@@ -506,6 +506,84 @@ if (typeof window !== 'undefined') {
     window.recordLastAccess = recordLastAccess;
 }
 
+/**
+ * 🔒 정지 회원의 재가입 및 로그인 차단 검증 (아이디 또는 연락처 일치 여부 전수 검사)
+ */
+export async function checkIsSuspendedForRegistration(userId, phone = '') {
+    const cleanId = userId ? String(userId).trim().toLowerCase() : '';
+    const cleanPhone = phone ? String(phone).replace(/[^0-9]/g, '') : '';
+
+    const checkObj = (u) => {
+        if (!u) return false;
+        const status = u.status || (u.data && u.data.status) || '';
+        const isSusp = u.isSuspended === true || (u.data && u.data.isSuspended === true) || status === 'suspended' || status === 'suspended_nopurchase';
+        if (!isSusp) return false;
+
+        const uId = (u.userId || u.id || '').toLowerCase().trim();
+        if (cleanId && uId === cleanId) return true;
+
+        const uPhone = (u.data && (u.data.phoneNumber || u.data.phone) || u.phone || u.phoneNumber || '').replace(/[^0-9]/g, '');
+        if (cleanPhone && cleanPhone.length >= 8 && uPhone === cleanPhone) return true;
+
+        return false;
+    };
+
+    if (typeof __cachedUsersWithStatus !== 'undefined' && Array.isArray(__cachedUsersWithStatus)) {
+        for (const u of __cachedUsersWithStatus) {
+            if (checkObj(u)) {
+                return { isBanned: true, reason: (u.data && u.data.suspensionReason) || u.suspensionReason || '이용 정지 이력', matchedId: u.userId };
+            }
+        }
+    }
+
+    try {
+        const rawCache = typeof localStorage !== 'undefined' ? localStorage.getItem('lotto_users_with_status_cache') : null;
+        if (rawCache) {
+            const list = JSON.parse(rawCache);
+            if (Array.isArray(list)) {
+                for (const u of list) {
+                    if (checkObj(u)) {
+                        return { isBanned: true, reason: (u.data && u.data.suspensionReason) || u.suspensionReason || '이용 정지 이력', matchedId: u.userId || u.id };
+                    }
+                }
+            }
+        }
+    } catch(e) {}
+
+    const firestore = window.db || (typeof db !== 'undefined' && db && typeof db.getFirestore === 'function' ? db.getFirestore() : null);
+    if (firestore) {
+        try {
+            if (cleanId) {
+                const doc = await firestore.collection('lotto_users').doc(cleanId).get();
+                if (doc.exists) {
+                    const data = doc.data() || {};
+                    if (data.status === 'suspended' || data.status === 'suspended_nopurchase') {
+                        return { isBanned: true, reason: data.suspensionReason || '이용 정지 이력', matchedId: cleanId };
+                    }
+                }
+            }
+            if (cleanPhone && cleanPhone.length >= 8) {
+                const qPhone = await firestore.collection('lotto_users').where('phoneNumber', '==', phone.trim()).get();
+                if (!qPhone.empty) {
+                    for (const doc of qPhone.docs) {
+                        const data = doc.data() || {};
+                        if (data.status === 'suspended' || data.status === 'suspended_nopurchase') {
+                            return { isBanned: true, reason: data.suspensionReason || '이용 정지 이력', matchedId: doc.id };
+                        }
+                    }
+                }
+            }
+        } catch(e) {
+            console.warn('[checkIsSuspendedForRegistration Firestore Error]', e);
+        }
+    }
+
+    return { isBanned: false };
+}
+if (typeof window !== 'undefined') {
+    window.checkIsSuspendedForRegistration = checkIsSuspendedForRegistration;
+}
+
 export function updateDebugMonitor(globalLedger = {}) {
     const debugAuth = document.getElementById('debug-auth-id');
     const debugDb = document.getElementById('debug-db-status');
@@ -1886,6 +1964,10 @@ function _setKakaoButtonsLoading(isLoading) {
 }
 
 export function processKakaoLoginSuccess(res, authObj = {}) {
+    return _execProcessKakaoLoginSuccess(res, authObj);
+}
+
+async function _execProcessKakaoLoginSuccess(res, authObj = {}) {
     if (_isProcessingKakaoLogin) {
         console.log('[Kakao] Login already processing, ignoring duplicate call');
         return;
@@ -1902,6 +1984,21 @@ export function processKakaoLoginSuccess(res, authObj = {}) {
         const nowIso = now.toISOString();
 
         console.log('[Kakao] Login successful for user:', customUserId, nickname);
+
+        // 🔒 [정지 회원 가입/로그인 차단 가드] 정지 회원은 재가입 및 로그인 원천 차단
+        if (typeof checkIsSuspendedForRegistration === 'function') {
+            const banCheck = await checkIsSuspendedForRegistration(customUserId);
+            if (banCheck && banCheck.isBanned) {
+                SafeAuth.clear();
+                try {
+                    window.sessionStorage.removeItem('lotto_auth');
+                    window.localStorage.removeItem('lotto_auth');
+                } catch(e) {}
+                alert(`🚫 [계정 이용 정지 및 재가입 불가]\n\n회원님의 카카오 계정(${customUserId})은 이용 정지 상태입니다.\n사유: ${banCheck.reason || '관리자에 의한 계정 정지'}\n재가입 및 서비스 로그인이 영구히 제한됩니다.\n\n관리자에게 문의해주세요.`);
+                if (typeof handleLogout === 'function') handleLogout();
+                return;
+            }
+        }
         window.__justLoggedIn = true;
 
         // Clean any ?code=, ?logout=, ?error= query params immediately
@@ -3294,10 +3391,32 @@ export function setupAuthEvents(initFirebaseAndData) {
                     submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> 서약 문서 생성 및 가입 처리 중...';
                 }
 
+                // 🔒 Check Suspended / Banned Status (아이디 또는 연락처 재가입 차단)
+                if (typeof checkIsSuspendedForRegistration === 'function') {
+                    const banCheck = await checkIsSuspendedForRegistration(rawId, cleanPhone);
+                    if (banCheck && banCheck.isBanned) {
+                        if (errEl) {
+                            errEl.textContent = `🚫 이용 정지된 회원(아이디 또는 연락처 일치)은 재가입이 제한됩니다. 사유: ${banCheck.reason || '이용 정지 이력'}`;
+                            errEl.style.display = 'block';
+                        }
+                        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '동의하고 회원가입 완료'; }
+                        return;
+                    }
+                }
+
                 // Check ID existence
                 const userDoc = await firestore.collection('lotto_users').doc(rawId).get();
                 if (userDoc.exists || rawId.toLowerCase() === 'master' || rawId.toLowerCase() === 'admin') {
+                    if (userDoc.exists) {
+                        const existingData = userDoc.data() || {};
+                        if (existingData.status === 'suspended' || existingData.status === 'suspended_nopurchase') {
+                            if (errEl) { errEl.textContent = '🚫 해당 아이디는 이용 정지된 회원입니다. 재가입이 영구히 제한됩니다. 관리자에게 문의하세요.'; errEl.style.display = 'block'; }
+                            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '동의하고 회원가입 완료'; }
+                            return;
+                        }
+                    }
                     if (errEl) { errEl.textContent = '이미 사용 중인 아이디입니다. 다른 아이디를 선택해주세요.'; errEl.style.display = 'block'; }
+                    if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = '동의하고 회원가입 완료'; }
                     return;
                 }
 
@@ -3860,7 +3979,14 @@ export function setupAuthEvents(initFirebaseAndData) {
                 return false;
             }
 
-            // Category Tab filter
+            // 🔒 [정지 회원 분리 이동] 정지 회원은 '정지회원' 탭에만 표시되고, 일반 탭(전체, 카카오, 영구, 실구매)에서는 제외
+            if (tab === 'suspended') {
+                return isSuspended === true;
+            } else if (isSuspended === true) {
+                return false; // 일반 탭에서 정지 회원 숨김
+            }
+
+            // Category Tab filter for active members
             if (tab === 'kakao') {
                 return userId.startsWith('kakao_') || !!(data.kakaoAuth && data.kakaoAuth.hasTalkMessageScope);
             }
@@ -3870,16 +3996,13 @@ export function setupAuthEvents(initFirebaseAndData) {
             if (tab === 'purchased') {
                 return !!(pStatus && pStatus.hasPurchased);
             }
-            if (tab === 'suspended') {
-                return isSuspended;
-            }
             return true;
         });
 
-        renderUserListCards(filtered, query.length > 0 || tab !== 'all', tab === 'trash');
+        renderUserListCards(filtered, query.length > 0 || tab !== 'all', tab === 'trash', tab === 'suspended');
     };
 
-    function renderUserListCards(usersList, isFiltered = false, isTrashMode = false) {
+    function renderUserListCards(usersList, isFiltered = false, isTrashMode = false, isSuspendedMode = false) {
         const userListContainer = document.getElementById('userListContainer');
         if (!userListContainer) return;
 
@@ -3890,6 +4013,13 @@ export function setupAuthEvents(initFirebaseAndData) {
                     <i class="fa-solid fa-trash-can-arrow-up" style="font-size:1.8rem; color:#64748b; margin-bottom:8px; display:block;"></i>
                     <div style="font-size:0.88rem; font-weight:700; color:#cbd5e1;">휴지통이 비어 있습니다.</div>
                     <div style="font-size:0.74rem; color:#64748b; margin-top:3px;">현재 삭제된 회원 계정이 없습니다.</div>
+                </div>`;
+            } else if (isSuspendedMode) {
+                userListContainer.innerHTML = `
+                <div style="text-align:center; padding: 36px 16px; color:#94a3b8; background:rgba(15,23,42,0.4); border-radius:10px; border:1px dashed rgba(255,255,255,0.1);">
+                    <i class="fa-solid fa-shield-halved" style="font-size:1.8rem; color:#10b981; margin-bottom:8px; display:block;"></i>
+                    <div style="font-size:0.88rem; font-weight:700; color:#cbd5e1;">정지된 회원이 없습니다.</div>
+                    <div style="font-size:0.74rem; color:#64748b; margin-top:3px;">현재 계정 이용 정지 처리된 회원이 없습니다. 모든 회원이 정상 이용 중입니다.</div>
                 </div>`;
             } else {
                 userListContainer.innerHTML = `
@@ -3940,6 +4070,55 @@ export function setupAuthEvents(initFirebaseAndData) {
                         </button>
                         <button type="button" onclick="window.permanentlyDeleteUser(decodeURIComponent('${safeUserId}'))" style="height:28px; padding:0 6px; background:rgba(239,68,68,0.25); border:1px solid #ef4444; color:#fca5a5; border-radius:5px; font-size:0.72rem; font-weight:800; cursor:pointer;">
                             <i class="fa-solid fa-fire"></i>
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            userListContainer.innerHTML = html;
+            return;
+        }
+
+        if (isSuspendedMode) {
+            html += `
+            <div style="background:rgba(239, 68, 68, 0.12); border-bottom:1px solid rgba(239, 68, 68, 0.35); padding:8px 12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px; box-sizing:border-box;">
+                <div style="font-size:0.8rem; color:#fca5a5; font-weight:800; display:flex; align-items:center; gap:6px;">
+                    <i class="fa-solid fa-ban"></i> 계정 이용 정지 회원 목록 (${usersList.length}명)
+                </div>
+                <div style="font-size:0.72rem; color:#cbd5e1;">
+                    정지회원은 로그인/재가입/추천번호 발급이 영구 차단됩니다.
+                </div>
+            </div>`;
+
+            usersList.forEach(item => {
+                const { userId, data, isNoPurchaseSuspended, status } = item;
+                const safeUserId = encodeURIComponent(userId);
+                const realName = data.realName && data.realName !== userId ? `(${data.realName})` : '';
+                const phoneDisplay = data.phoneNumber || data.phone || '연락처 미등록';
+                const suspendedDate = data.suspendedAt ? data.suspendedAt.slice(0, 10) : '-';
+                const reason = data.suspensionReason || (isNoPurchaseSuspended ? '주간 실구매 미등록' : '관리자 수동 정지');
+                const reasonTag = isNoPurchaseSuspended
+                    ? `<span style="font-size:0.65rem; background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; padding:1px 4px; border-radius:4px;">🟡미구매</span>`
+                    : `<span style="font-size:0.65rem; background:rgba(239,68,68,0.2); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; padding:1px 4px; border-radius:4px;">🔴수동정지</span>`;
+
+                html += `
+                <div onclick="window.openUserDetailDrawer(decodeURIComponent('${safeUserId}'))" class="user-row-item" style="display:flex; align-items:center; justify-content:space-between; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.06); gap:8px; background:rgba(239,68,68,0.04); box-sizing:border-box; cursor:pointer;">
+                    <div style="display:flex; align-items:center; gap:8px; min-width:0; flex:1;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:#ef4444; flex-shrink:0;"></span>
+                        <div style="min-width:0; flex:1;">
+                            <div style="display:flex; align-items:center; gap:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                <span style="font-weight:800; color:#fca5a5; font-size:0.83rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${userId}</span>
+                                ${realName ? `<span style="font-size:0.74rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${realName}</span>` : ''}
+                                ${reasonTag}
+                            </div>
+                            <div style="font-size:0.68rem; color:#94a3b8; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:1px;">
+                                <span>${phoneDisplay}</span> · <span style="color:#f87171;">정지일: ${suspendedDate}</span> · <span style="color:#cbd5e1;" title="${reason}">사유: ${reason}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                        <button type="button" onclick="event.stopPropagation(); window.toggleUserStatus(decodeURIComponent('${safeUserId}'), '${status || 'suspended'}')" title="계정 이용 정지 해제" style="height:28px; padding:0 10px; background:#10b981; color:#fff; border:none; border-radius:5px; font-size:0.72rem; font-weight:800; cursor:pointer; display:inline-flex; align-items:center; gap:3px;">
+                            <i class="fa-solid fa-unlock"></i> 해제
                         </button>
                     </div>
                 </div>`;
@@ -4048,6 +4227,10 @@ export function setupAuthEvents(initFirebaseAndData) {
                         <button type="button" onclick="event.stopPropagation(); window.openAdminMessageConsoleModal && window.openAdminMessageConsoleModal(decodeURIComponent('${safeUserId}'))" title="이 회원에게 1:1 메시지 보내기 (로그인 팝업·푸시)" style="background:rgba(245,158,11,0.16); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; width:24px; height:24px; border-radius:6px; font-size:0.72rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0;">
                             <i class="fa-solid fa-paper-plane"></i>
                         </button>
+                        ${!(isMaster || isUserAdmin) ? `
+                        <button type="button" onclick="event.stopPropagation(); window.toggleUserStatus(decodeURIComponent('${safeUserId}'), '${status || 'active'}')" title="이 회원 계정 이용 정지" style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.4); color:#fca5a5; width:24px; height:24px; border-radius:6px; font-size:0.72rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; padding:0;">
+                            <i class="fa-solid fa-user-slash"></i>
+                        </button>` : ''}
                     </div>
                     <i class="fa-solid fa-chevron-right" style="font-size:0.68rem; color:#475569; margin-left:1px;"></i>
                 </div>
@@ -4231,6 +4414,32 @@ export function setupAuthEvents(initFirebaseAndData) {
             };
         }
 
+        // 4-1. Wire Drawer Suspension Action Box
+        const drawerSuspensionActionBox = document.getElementById('drawerSuspensionActionBox');
+        const btnDrawerToggleSuspend = document.getElementById('btnDrawerToggleSuspend');
+        if (drawerSuspensionActionBox && btnDrawerToggleSuspend) {
+            if (isMaster || isUserAdmin) {
+                drawerSuspensionActionBox.style.display = 'none';
+            } else {
+                drawerSuspensionActionBox.style.display = 'block';
+                const isCurrentlySuspended = (status === 'suspended' || status === 'suspended_nopurchase');
+                if (isCurrentlySuspended) {
+                    btnDrawerToggleSuspend.style.background = '#10b981';
+                    btnDrawerToggleSuspend.style.color = '#ffffff';
+                    btnDrawerToggleSuspend.style.border = 'none';
+                    btnDrawerToggleSuspend.innerHTML = '<i class="fa-solid fa-unlock"></i> <span>🟢 이용 정지 해제하기</span>';
+                } else {
+                    btnDrawerToggleSuspend.style.background = 'rgba(239, 68, 68, 0.15)';
+                    btnDrawerToggleSuspend.style.color = '#fca5a5';
+                    btnDrawerToggleSuspend.style.border = '1px solid #ef4444';
+                    btnDrawerToggleSuspend.innerHTML = '<i class="fa-solid fa-user-slash"></i> <span>🔴 계정 이용 정지하기</span>';
+                }
+                btnDrawerToggleSuspend.onclick = async () => {
+                    await window.toggleUserStatus(userId, status);
+                };
+            }
+        }
+
         // 5. Open Drawer
         const backdrop = document.getElementById('userDetailDrawerBackdrop');
         if (backdrop) backdrop.style.display = 'flex';
@@ -4406,15 +4615,22 @@ export function setupAuthEvents(initFirebaseAndData) {
         // Helper to update summary badge
         const updateSummaryDisplay = (isSyncing = false) => {
             if (!summaryBadge || !__cachedUsersWithStatus) return;
-            const activeUsers = __cachedUsersWithStatus.filter(u => !u.isDeleted);
+            const nonDeletedUsers = __cachedUsersWithStatus.filter(u => !u.isDeleted);
+            const activeUsers = nonDeletedUsers.filter(u => !u.isSuspended);
+            const suspendedUsers = nonDeletedUsers.filter(u => u.isSuspended);
             const trashUsers = __cachedUsersWithStatus.filter(u => u.isDeleted);
             const purchasedCount = activeUsers.filter(u => u.pStatus && u.pStatus.hasPurchased).length;
             const kakaoCount = activeUsers.filter(u => u.userId.startsWith('kakao_') || (u.data && u.data.kakaoAuth && u.data.kakaoAuth.hasTalkMessageScope)).length;
+            const suspendedText = (suspendedUsers.length > 0) ? ` · <span style="color:#fbbf24; font-weight:700;"><i class="fa-solid fa-user-slash"></i> 정지 ${suspendedUsers.length}</span>` : '';
             const trashText = (hasAdminPerm && trashUsers.length > 0) ? ` · <span style="color:#fca5a5; font-weight:700;"><i class="fa-solid fa-trash-can"></i> 휴지통 ${trashUsers.length}</span>` : '';
             const syncIcon = isSyncing ? ` <span style="font-size:0.7rem; color:#93c5fd; margin-left:4px;"><i class="fa-solid fa-arrows-rotate fa-spin"></i></span>` : '';
-            summaryBadge.innerHTML = `총 <strong style="color:#fff;">${activeUsers.length}</strong>명 (실구매 ${purchasedCount} · 카카오 ${kakaoCount}${trashText})${syncIcon}`;
+            summaryBadge.innerHTML = `총 <strong style="color:#fff;">${activeUsers.length}</strong>명 (실구매 ${purchasedCount} · 카카오 ${kakaoCount}${suspendedText}${trashText})${syncIcon}`;
             if (trashBadge) {
                 trashBadge.textContent = hasAdminPerm ? trashUsers.length : '0';
+            }
+            const suspendedBadge = document.getElementById('userSuspendedCountBadge');
+            if (suspendedBadge) {
+                suspendedBadge.textContent = suspendedUsers.length;
             }
         };
 
@@ -6201,35 +6417,96 @@ export function setupAuthEvents(initFirebaseAndData) {
     };
 
     window.toggleUserStatus = async function(userId, currentStatus) {
+        if (!userId) return;
+        const cleanId = String(userId).trim().toLowerCase();
+        if (cleanId === 'master' || cleanId === 'admin') {
+            alert('⚠️ 마스터 및 최고 관리자 계정은 이용 정지할 수 없습니다.');
+            return;
+        }
+
         const isCurrentlySuspended = (currentStatus === 'suspended' || currentStatus === 'suspended_nopurchase');
         
         if (isCurrentlySuspended) {
             if (!confirm(`[${userId}] 계정의 이용 정지를 해제하고 '정상 활성' 상태로 복구하시겠습니까?`)) return;
             try {
-                await window.db.collection('lotto_users').doc(userId).update({
-                    status: 'active',
-                    suspensionReason: null,
-                    suspendedAt: null
-                });
+                if (window.db) {
+                    await window.db.collection('lotto_users').doc(userId).set({
+                        status: 'active',
+                        suspensionReason: null,
+                        suspendedAt: null,
+                        updatedAt: new Date().toISOString()
+                    }, { merge: true });
+                }
+
+                // Instant in-memory cache update
+                if (typeof __cachedUsersWithStatus !== 'undefined' && Array.isArray(__cachedUsersWithStatus)) {
+                    const target = __cachedUsersWithStatus.find(u => (u.userId || '').toLowerCase() === cleanId);
+                    if (target) {
+                        target.status = 'active';
+                        target.isSuspended = false;
+                        target.isNoPurchaseSuspended = false;
+                        if (target.data) {
+                            target.data.status = 'active';
+                            target.data.suspensionReason = null;
+                            target.data.suspendedAt = null;
+                        }
+                    }
+                    try {
+                        localStorage.setItem('lotto_users_with_status_cache', JSON.stringify(__cachedUsersWithStatus));
+                    } catch(e) {}
+                }
+
                 showToast(`🎉 [${userId}] 계정의 이용 정지가 해제되었습니다.`);
-                loadUserList();
+                if (typeof window.filterUserList === 'function') window.filterUserList();
+                if (typeof loadUserList === 'function') loadUserList();
+                if (window.currentDrawerUserId === userId && typeof window.openUserDetailDrawer === 'function') {
+                    window.openUserDetailDrawer(userId);
+                }
             } catch (err) {
-                alert('상태 변경 실패');
+                alert('정지 해제 실패');
                 console.error(err);
             }
         } else {
             const customReason = prompt(`[${userId}] 계정을 이용 정지하시겠습니까?\n정지 사유를 입력하세요:`, '관리자에 의한 수동 이용정지');
             if (customReason === null) return;
+            const finalReason = customReason.trim() || '관리자에 의한 수동 이용정지';
+            const nowIso = new Date().toISOString();
             try {
-                await window.db.collection('lotto_users').doc(userId).update({
-                    status: 'suspended',
-                    suspensionReason: customReason.trim() || '관리자에 의한 수동 이용정지',
-                    suspendedAt: new Date().toISOString()
-                });
+                if (window.db) {
+                    await window.db.collection('lotto_users').doc(userId).set({
+                        status: 'suspended',
+                        suspensionReason: finalReason,
+                        suspendedAt: nowIso,
+                        updatedAt: nowIso
+                    }, { merge: true });
+                }
+
+                // Instant in-memory cache update
+                if (typeof __cachedUsersWithStatus !== 'undefined' && Array.isArray(__cachedUsersWithStatus)) {
+                    const target = __cachedUsersWithStatus.find(u => (u.userId || '').toLowerCase() === cleanId);
+                    if (target) {
+                        target.status = 'suspended';
+                        target.isSuspended = true;
+                        target.isNoPurchaseSuspended = false;
+                        if (target.data) {
+                            target.data.status = 'suspended';
+                            target.data.suspensionReason = finalReason;
+                            target.data.suspendedAt = nowIso;
+                        }
+                    }
+                    try {
+                        localStorage.setItem('lotto_users_with_status_cache', JSON.stringify(__cachedUsersWithStatus));
+                    } catch(e) {}
+                }
+
                 showToast(`🚫 [${userId}] 계정이 이용 정지되었습니다.`);
-                loadUserList();
+                if (typeof window.filterUserList === 'function') window.filterUserList();
+                if (typeof loadUserList === 'function') loadUserList();
+                if (window.currentDrawerUserId === userId && typeof window.openUserDetailDrawer === 'function') {
+                    window.openUserDetailDrawer(userId);
+                }
             } catch (err) {
-                alert('상태 변경 실패');
+                alert('계정 정지 실패');
                 console.error(err);
             }
         }
