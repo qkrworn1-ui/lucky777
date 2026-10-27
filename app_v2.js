@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.24.2014 - BUILD_DATE: 2026-10-24] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.27.1541.32 - BUILD_DATE: 2026-10-27] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.24.2014)
+ * Lucky777 Smart Bundle (v2026.10.27.1541.32)
  */
 
 
@@ -45086,6 +45086,7 @@ async function stopScanning() {
         isStartingScanner = false;
         startScannerPromise = null;
         stopLiveBarcodeDetectorLoop();
+        applySoftwareZoom(1.0);
         isTorchActive = false;
         currentZoomLevel = 1.0;
 
@@ -46546,7 +46547,7 @@ async function startLottoQrScanner() {
 
             let started = false;
 
-            // 1단계: Full HD 1080p + continuous focus + ideal environment (삼성 갤럭시 Fold 7 최적화)
+            // 1단계: Universal Full HD 1080p + continuous focus + ideal environment (삼성 갤럭시 Fold 7 및 플래그십 최적화)
             started = await attemptStart({
                 facingMode: { ideal: "environment" },
                 width: { ideal: 1920 },
@@ -46558,27 +46559,26 @@ async function startLottoQrScanner() {
                 ]
             });
 
-            // 1.2단계: 실패 시 720p HD + continuous focus 시도
+            // 1.2단계: 실패 시 720p HD 범용 시도 (iOS Safari, 일반 보급형 기기 초고속 호환)
             if (!started && thisSessionId === currentScannerSessionId) {
-                console.log('[QR Scanner] Retrying 720p HD camera with continuous focus...');
+                console.log('[QR Scanner] Retrying 720p HD camera with universal compatibility...');
                 started = await attemptStart({
                     facingMode: { ideal: "environment" },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 },
-                    advanced: [{ focusMode: "continuous" }]
-                }, 150);
+                    width: { min: 640, ideal: 1280, max: 1920 },
+                    height: { min: 480, ideal: 720, max: 1080 }
+                }, 100);
             }
 
             // 1.5단계: 실패 시 기본 ideal environment 시도
             if (!started && thisSessionId === currentScannerSessionId) {
                 console.log('[QR Scanner] Retrying basic ideal environment camera...');
-                started = await attemptStart({ facingMode: { ideal: "environment" } }, 150);
+                started = await attemptStart({ facingMode: { ideal: "environment" } }, 120);
             }
 
-            // 1.8단계: 실패 시 250ms OS 드라이버 해제 대기 후 엄격한 environment 시도
+            // 1.8단계: 실패 시 200ms OS 드라이버 해제 대기 후 엄격한 environment 시도
             if (!started && thisSessionId === currentScannerSessionId) {
-                console.log('[QR Scanner] Retrying environment camera with 250ms driver cooldown backoff...');
-                started = await attemptStart({ facingMode: "environment" }, 250);
+                console.log('[QR Scanner] Retrying environment camera with 200ms driver cooldown backoff...');
+                started = await attemptStart({ facingMode: "environment" }, 200);
             }
 
             // 2단계: 실패 시 카메라 목록 조회 후 최적 후면 카메라 ID 직접 선택 (폴드7 다중 렌즈 호환)
@@ -46637,63 +46637,184 @@ async function startLottoQrScanner() {
     return startScannerPromise;
 }
 
-let liveDetectorRunning = false;
-let liveDetectorInterval = null;
+let liveScannerRunning = false;
+let liveScannerInterval = null;
+let offscreenCanvas = null;
+let offscreenCtx = null;
+let lastAutoNudgeTime = Date.now();
+let lastDecodedPayload = null;
+let lastDecodedTime = 0;
+let consecutiveScanFailures = 0;
 
 function stopLiveBarcodeDetectorLoop() {
-    liveDetectorRunning = false;
-    if (liveDetectorInterval) {
-        clearInterval(liveDetectorInterval);
-        liveDetectorInterval = null;
+    liveScannerRunning = false;
+    if (liveScannerInterval) {
+        clearInterval(liveScannerInterval);
+        liveScannerInterval = null;
     }
 }
 
-/**
- * ⚡ Dual-Engine Live BarcodeDetector Interceptor (Hardware ML Kit accelerated)
- * Runs parallel to Html5Qrcode to instantly decode tilted, low-contrast, or motion-blurred QR codes
- */
 function startLiveBarcodeDetectorLoop() {
-    if (typeof window === 'undefined' || !('BarcodeDetector' in window)) return;
+    startUniversalLiveQrScannerLoop();
+}
+
+/**
+ * ⚡ Universal Multi-Engine Live QR Scanner Loop
+ * - Engine 1: Native BarcodeDetector (Hardware ML Kit - Android Chrome, Edge, Samsung Internet)
+ * - Engine 2: Pure-JS jsQR with Macro Center-Crop (1.67x digital macro - iOS Safari, Android, WebViews)
+ * - Engine 3: Fast Adaptive Contrast Binarization (Thermal receipt paper glare & shadow immunity)
+ * - Auto-pulse: Nudges VCM actuator every 3.5s if no QR detected to prevent stuck focus
+ */
+function startUniversalLiveQrScannerLoop() {
+    if (typeof window === 'undefined') return;
     stopLiveBarcodeDetectorLoop();
 
-    liveDetectorRunning = true;
-    let detector = null;
-    try {
-        detector = new window.BarcodeDetector({ formats: ['qr_code'] });
-    } catch(e) {
-        return;
+    liveScannerRunning = true;
+    const thisSession = currentScannerSessionId;
+    lastAutoNudgeTime = Date.now();
+    consecutiveScanFailures = 0;
+
+    // Check Native BarcodeDetector support
+    let nativeDetector = null;
+    if ('BarcodeDetector' in window) {
+        try {
+            nativeDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+        } catch(e) {
+            nativeDetector = null;
+        }
     }
 
-    const thisSession = currentScannerSessionId;
-    let isDetecting = false;
+    // Lazy create offscreen canvas for frame processing
+    if (!offscreenCanvas && typeof document !== 'undefined') {
+        offscreenCanvas = document.createElement('canvas');
+        offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+    }
 
-    liveDetectorInterval = setInterval(async () => {
-        if (!liveDetectorRunning || thisSession !== currentScannerSessionId) {
+    let isProcessingFrame = false;
+    let tickCounter = 0;
+
+    liveScannerInterval = setInterval(async () => {
+        if (!liveScannerRunning || thisSession !== currentScannerSessionId) {
             stopLiveBarcodeDetectorLoop();
             return;
         }
-        if (isDetecting) return;
+        if (isProcessingFrame) return;
 
         const videoEl = document.querySelector('#qrReader video');
         if (!videoEl || videoEl.readyState < 2 || videoEl.paused || videoEl.ended) return;
 
-        isDetecting = true;
+        isProcessingFrame = true;
+        tickCounter++;
+
         try {
-            const barcodes = await detector.detect(videoEl);
-            if (barcodes && barcodes.length > 0 && liveDetectorRunning && thisSession === currentScannerSessionId) {
-                const rawVal = barcodes[0].rawValue;
-                if (rawVal) {
-                    console.log('[Native BarcodeDetector Live Match]:', rawVal);
-                    const accepted = processLottoQrPayload(rawVal, { fromLiveCamera: true });
-                    if (accepted) {
-                        stopLiveBarcodeDetectorLoop();
+            let matchedPayload = null;
+
+            // ⚡ 1. Primary Engine: Native BarcodeDetector (Hardware Accelerated - Android Chrome/Samsung/Edge)
+            if (nativeDetector) {
+                try {
+                    const barcodes = await nativeDetector.detect(videoEl);
+                    if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
+                        matchedPayload = barcodes[0].rawValue;
+                    }
+                } catch(e) {}
+            }
+
+            // ⚡ 2. Secondary Engine: jsQR with Macro Center-Crop (Universal for iOS Safari & Android)
+            if (!matchedPayload && typeof window !== 'undefined' && typeof window.jsQR === 'function' && offscreenCanvas && offscreenCtx) {
+                const vw = videoEl.videoWidth || 640;
+                const vh = videoEl.videoHeight || 480;
+
+                if (vw > 100 && vh > 100) {
+                    // Pass A: Center Macro Crop (60% area) — 1.67x digital macro zoom
+                    // Allows user to hold phone 15~20cm away where lenses focus sharply, while capturing 400x400 QR pixels
+                    const cropSize = Math.floor(Math.min(vw, vh) * 0.65);
+                    const sx = Math.floor((vw - cropSize) / 2);
+                    const sy = Math.floor((vh - cropSize) / 2);
+
+                    const targetDim = 400; // Optimal speed & accuracy
+                    if (offscreenCanvas.width !== targetDim || offscreenCanvas.height !== targetDim) {
+                        offscreenCanvas.width = targetDim;
+                        offscreenCanvas.height = targetDim;
+                    }
+
+                    offscreenCtx.drawImage(videoEl, sx, sy, cropSize, cropSize, 0, 0, targetDim, targetDim);
+                    const imgData = offscreenCtx.getImageData(0, 0, targetDim, targetDim);
+
+                    const qrResult = window.jsQR(imgData.data, targetDim, targetDim, {
+                        inversionAttempts: 'attemptBoth' // Inverted contrast support for thermal receipt paper glare
+                    });
+
+                    if (qrResult && qrResult.data) {
+                        matchedPayload = qrResult.data;
+                    }
+
+                    // Pass B: Full Frame Scan (every 3rd tick or when center crop misses)
+                    if (!matchedPayload && (tickCounter % 3 === 0)) {
+                        const fullDim = 480;
+                        if (offscreenCanvas.width !== fullDim || offscreenCanvas.height !== fullDim) {
+                            offscreenCanvas.width = fullDim;
+                            offscreenCanvas.height = fullDim;
+                        }
+                        offscreenCtx.drawImage(videoEl, 0, 0, fullDim, fullDim);
+                        const fullImgData = offscreenCtx.getImageData(0, 0, fullDim, fullDim);
+                        const fullQrResult = window.jsQR(fullImgData.data, fullDim, fullDim, {
+                            inversionAttempts: 'attemptBoth'
+                        });
+                        if (fullQrResult && fullQrResult.data) {
+                            matchedPayload = fullQrResult.data;
+                        }
+                    }
+
+                    // Pass C: Fast Adaptive Contrast Binarization (every 4th tick for dim indoor lighting / paper glare)
+                    if (!matchedPayload && (tickCounter % 4 === 0)) {
+                        const d = imgData.data;
+                        for (let i = 0; i < d.length; i += 4) {
+                            const gray = (d[i] * 299 + d[i+1] * 587 + d[i+2] * 114) / 1000;
+                            const bin = gray > 115 ? 255 : 0;
+                            d[i] = bin;
+                            d[i+1] = bin;
+                            d[i+2] = bin;
+                        }
+                        offscreenCtx.putImageData(imgData, 0, 0);
+                        const binQr = window.jsQR(imgData.data, targetDim, targetDim, {
+                            inversionAttempts: 'dontInvert'
+                        });
+                        if (binQr && binQr.data) {
+                            matchedPayload = binQr.data;
+                        }
                     }
                 }
             }
+
+            // 🎯 Match Handling with Duplicate Debouncing
+            if (matchedPayload && liveScannerRunning && thisSession === currentScannerSessionId) {
+                const now = Date.now();
+                if (matchedPayload !== lastDecodedPayload || (now - lastDecodedTime) > 1200) {
+                    console.log('[Universal Live QR Match]:', matchedPayload);
+                    lastDecodedPayload = matchedPayload;
+                    lastDecodedTime = now;
+                    consecutiveScanFailures = 0;
+                    lastAutoNudgeTime = now;
+
+                    processLottoQrPayload(matchedPayload, { fromLiveCamera: true });
+                }
+            } else {
+                consecutiveScanFailures++;
+            }
+
+            // 🔄 3. Smart Background Auto-Focus Nudge
+            // If camera has been scanning for 3.5 seconds with consecutive misses,
+            // gently nudge the autofocus so lens doesn't stay locked out-of-focus
+            const nowTime = Date.now();
+            if (nowTime - lastAutoNudgeTime > 3500 && consecutiveScanFailures > 25) {
+                lastAutoNudgeTime = nowTime;
+                triggerCameraAutoFocus(null, /* isAutoNudge */ true);
+            }
+
         } catch(err) {
-            // Ignore temporary frame capture errors
+            // Frame capture error or context lost
         } finally {
-            isDetecting = false;
+            isProcessingFrame = false;
         }
     }, 110);
 }
@@ -46737,7 +46858,24 @@ function getActiveCameraTrack() {
 }
 
 /**
- * 🎯 Apply Continuous AutoFocus & Macro-friendly Default Zoom
+ * 🔍 Apply Software CSS Zoom on Viewfinder Video (Universal iOS Safari Fallback)
+ */
+function applySoftwareZoom(level = 1.0) {
+    const videoEl = document.querySelector('#qrReader video');
+    if (videoEl) {
+        if (level > 1.0) {
+            videoEl.style.transform = `scale(${level})`;
+            videoEl.style.transformOrigin = 'center center';
+            videoEl.style.transition = 'transform 0.25s ease-out';
+        } else {
+            videoEl.style.transform = '';
+            videoEl.style.transformOrigin = '';
+        }
+    }
+}
+
+/**
+ * 🎯 Apply Continuous AutoFocus & Macro-friendly Default Zoom (1.5x)
  */
 async function applyCameraFocusOptimization() {
     const track = getActiveCameraTrack();
@@ -46747,16 +46885,16 @@ async function applyCameraFocusOptimization() {
         const caps = (typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
         const advanced = [];
 
-        // 1. Continuous AutoFocus
+        // 1. Continuous AutoFocus (Android Chrome, Samsung Internet)
         if (caps.focusMode && Array.isArray(caps.focusMode)) {
             if (caps.focusMode.includes('continuous')) {
-                advanced.push({ focusMode: 'continuous' });
+                advanced.push({ focusMode: "continuous" });
             } else if (caps.focusMode.includes('single-shot')) {
-                advanced.push({ focusMode: 'single-shot' });
+                advanced.push({ focusMode: "single-shot" });
             }
         }
 
-        // 2. Exposure & White Balance
+        // 2. Continuous Exposure & White Balance
         if (caps.exposureMode && Array.isArray(caps.exposureMode) && caps.exposureMode.includes('continuous')) {
             advanced.push({ exposureMode: 'continuous' });
         }
@@ -46765,26 +46903,42 @@ async function applyCameraFocusOptimization() {
         }
 
         if (advanced.length > 0 && typeof track.applyConstraints === 'function') {
-            await track.applyConstraints({ advanced });
-            console.log('[Camera Focus] Continuous focus applied:', advanced);
+            try {
+                await track.applyConstraints({ advanced });
+                console.log('[Camera Focus] Continuous focus applied:', advanced);
+            } catch(cErr) {
+                console.warn('[Camera focus constraint warning]:', cErr);
+            }
         }
 
-        // 3. Recommended Default Macro-Avoidance Zoom (1.25x ~ 1.5x)
+        // 3. Recommended Default Macro-Friendly Zoom (1.5x)
+        // 스마트폰 광각 메인 렌즈(23~26mm)는 10~15cm 이내에서 물리적으로 초점이 안 잡히므로,
+        // 기본 1.5x 줌을 설정하여 18~25cm 최적 선명 거리에서 영수증 QR이 프레임에 꽉 차도록 유도
+        let zoomApplied = false;
         if (caps.zoom && typeof caps.zoom === 'object') {
             const minZ = caps.zoom.min || 1.0;
             const maxZ = caps.zoom.max || 1.0;
             if (maxZ >= 1.5) {
-                const targetZ = Math.min(1.5, Math.max(minZ, 1.25));
+                const targetZ = Math.min(1.5, Math.max(minZ, 1.5));
                 try {
                     await track.applyConstraints({ advanced: [{ zoom: targetZ }] });
                     currentZoomLevel = targetZ;
+                    zoomApplied = true;
                     const btnZoom = document.getElementById('btnToggleZoom');
                     if (btnZoom) btnZoom.innerHTML = `${targetZ}x`;
-                    console.log(`[Camera Focus] Macro-friendly default zoom applied: ${targetZ}x`);
+                    console.log(`[Camera Focus] Hardware macro zoom applied: ${targetZ}x`);
                 } catch(zErr) {
                     console.warn('[Camera zoom init note]:', zErr);
                 }
             }
+        }
+
+        // 하드웨어 줌 미지원 브라우저(예: 구형 iOS 사파리)를 위한 소프트웨어 CSS 줌 fallback
+        if (!zoomApplied) {
+            currentZoomLevel = 1.5;
+            applySoftwareZoom(1.3);
+            const btnZoom = document.getElementById('btnToggleZoom');
+            if (btnZoom) btnZoom.innerHTML = `1.5x`;
         }
 
         return true;
@@ -46795,34 +46949,43 @@ async function applyCameraFocusOptimization() {
 }
 
 /**
- * 🎯 Tap-to-Focus (화면 터치 시 즉시 초점 재조정)
+ * 🎯 Tap-to-Focus with Dual Trigger & Multi-step VCM Sweeping
  */
-async function triggerCameraAutoFocus(event = null) {
+async function triggerCameraAutoFocus(event = null, isAutoNudge = false) {
     const frame = document.getElementById('qrViewfinderFrame') || document.getElementById('qrReader');
-    if (frame && event) {
-        const rect = frame.getBoundingClientRect();
-        const clientX = (event.touches && event.touches[0]) ? event.touches[0].clientX : event.clientX;
-        const clientY = (event.touches && event.touches[0]) ? event.touches[0].clientY : event.clientY;
+    if (frame) {
+        let x = Math.round(frame.clientWidth / 2);
+        let y = Math.round(frame.clientHeight / 2);
 
-        if (clientX !== undefined && clientY !== undefined) {
-            const x = Math.round(clientX - rect.left);
-            const y = Math.round(clientY - rect.top);
+        if (event && !isAutoNudge) {
+            const rect = frame.getBoundingClientRect();
+            const clientX = (event.touches && event.touches[0]) ? event.touches[0].clientX : event.clientX;
+            const clientY = (event.touches && event.touches[0]) ? event.touches[0].clientY : event.clientY;
 
-            const oldRing = frame.querySelector('.qr-focus-ring');
-            if (oldRing) oldRing.remove();
-
-            const ring = document.createElement('div');
-            ring.className = 'qr-focus-ring';
-            ring.style.left = `${x}px`;
-            ring.style.top = `${y}px`;
-            frame.appendChild(ring);
-
-            setTimeout(() => { try { ring.remove(); } catch(e){} }, 700);
+            if (clientX !== undefined && clientY !== undefined && clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom) {
+                x = Math.round(clientX - rect.left);
+                y = Math.round(clientY - rect.top);
+            }
         }
+
+        const oldRing = frame.querySelector('.qr-focus-ring');
+        if (oldRing) oldRing.remove();
+
+        const ring = document.createElement('div');
+        ring.className = 'qr-focus-ring';
+        ring.style.left = `${x}px`;
+        ring.style.top = `${y}px`;
+        if (isAutoNudge) {
+            ring.style.borderColor = 'rgba(52, 211, 153, 0.7)';
+            ring.style.boxShadow = '0 0 10px rgba(52, 211, 153, 0.5)';
+        }
+        frame.appendChild(ring);
+
+        setTimeout(() => { try { ring.remove(); } catch(e){} }, 750);
     }
 
-    if (navigator.vibrate) {
-        try { navigator.vibrate(35); } catch(e) {}
+    if (!isAutoNudge && navigator.vibrate) {
+        try { navigator.vibrate(30); } catch(e) {}
     }
 
     const track = getActiveCameraTrack();
@@ -46830,22 +46993,53 @@ async function triggerCameraAutoFocus(event = null) {
 
     try {
         const caps = (typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
+
+        // 1. Cycle single-shot -> continuous to force VCM actuator to sweep focal plane
         if (caps.focusMode && Array.isArray(caps.focusMode)) {
-            // Cycle single-shot -> continuous to force VCM actuator to sweep focal plane
             if (caps.focusMode.includes('single-shot')) {
-                await track.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+                await track.applyConstraints({ advanced: [{ focusMode: "single-shot" }] });
                 setTimeout(async () => {
                     try {
                         if (caps.focusMode.includes('continuous')) {
-                            await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+                            await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
                         }
                     } catch(e) {}
-                }, 350);
+                }, 280);
             } else if (caps.focusMode.includes('continuous')) {
-                await track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+                await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
             }
         }
-        showToast('🎯 카메라 초점을 다시 맞췄습니다.');
+
+        // 2. Android Manual Focus Distance Sweep (diopters)
+        if (caps.focusDistance && typeof caps.focusDistance === 'object') {
+            try {
+                await track.applyConstraints({ advanced: [{ focusDistance: 5.0 }] });
+                setTimeout(async () => {
+                    try {
+                        if (caps.focusMode && caps.focusMode.includes('continuous')) {
+                            await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+                        }
+                    } catch(e) {}
+                }, 300);
+            } catch(e) {}
+        }
+
+        // 3. iOS Safari Exposure Nudge to wake autofocus
+        if (caps.exposureCompensation && typeof track.applyConstraints === 'function') {
+            try {
+                const cur = track.getSettings ? (track.getSettings().exposureCompensation || 0) : 0;
+                await track.applyConstraints({ advanced: [{ exposureCompensation: cur + 0.1 }] });
+                setTimeout(async () => {
+                    try {
+                        await track.applyConstraints({ advanced: [{ exposureCompensation: cur }] });
+                    } catch(e) {}
+                }, 200);
+            } catch(e) {}
+        }
+
+        if (!isAutoNudge) {
+            showToast('🎯 카메라 초점을 다시 맞췄습니다. (15~20cm 거리 유지)', 1800);
+        }
         return true;
     } catch(err) {
         console.warn('[Focus trigger note]:', err);
@@ -46868,20 +47062,20 @@ function setupCameraCapabilities() {
         const btnZoom = document.getElementById('btnToggleZoom');
         const btnFocus = document.getElementById('btnTriggerFocus');
 
+        // Focus & Zoom controls are ALWAYS available (hardware or software fallback)
         if (btnFocus) {
             btnFocus.style.display = 'inline-flex';
         }
-
-        const hasTorch = (trackCaps && trackCaps.torch) || (scannerCaps && scannerCaps.torchFeature && scannerCaps.torchFeature().isSupported());
-        if (btnTorch && hasTorch) {
-            btnTorch.style.display = 'inline-flex';
-        }
-
-        const hasZoom = (trackCaps && trackCaps.zoom) || (scannerCaps && scannerCaps.zoomFeature && scannerCaps.zoomFeature().isSupported());
-        if (btnZoom && hasZoom) {
+        if (btnZoom) {
             btnZoom.style.display = 'inline-flex';
             const displayZ = currentZoomLevel > 1.0 ? `${currentZoomLevel}x` : '1.5x';
             btnZoom.innerHTML = displayZ;
+        }
+
+        // Flash/Torch is shown when supported
+        const hasTorch = (trackCaps && trackCaps.torch) || (scannerCaps && scannerCaps.torchFeature && scannerCaps.torchFeature().isSupported());
+        if (btnTorch && hasTorch) {
+            btnTorch.style.display = 'inline-flex';
         }
     } catch(e) {
         console.warn('[Camera capabilities check warn]:', e);
@@ -46929,63 +47123,68 @@ async function toggleLottoTorch() {
 }
 
 /**
- * 🔍 Toggle Zoom (1.0x -> 1.5x -> 2.0x -> 1.0x)
+ * 🔍 Toggle Zoom (1.5x -> 2.0x -> 1.0x -> 1.5x)
  */
 async function toggleLottoZoom() {
     const track = getActiveCameraTrack();
     const btnZoom = document.getElementById('btnToggleZoom');
 
+    // Cycle: 1.5x -> 2.0x -> 1.0x -> 1.5x
+    if (currentZoomLevel <= 1.1) {
+        currentZoomLevel = 1.5;
+    } else if (currentZoomLevel <= 1.6) {
+        currentZoomLevel = 2.0;
+    } else {
+        currentZoomLevel = 1.0;
+    }
+
+    let hardwareSuccess = false;
+
+    // 1. Try track constraints
     if (track && typeof track.applyConstraints === 'function') {
         const caps = (typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
         if (caps.zoom && typeof caps.zoom === 'object') {
             const minZ = caps.zoom.min || 1.0;
             const maxZ = caps.zoom.max || 3.0;
-
-            if (currentZoomLevel <= 1.1 && maxZ >= 1.5) {
-                currentZoomLevel = 1.5;
-            } else if (currentZoomLevel <= 1.6 && maxZ >= 2.0) {
-                currentZoomLevel = 2.0;
-            } else {
-                currentZoomLevel = 1.0;
-            }
-
+            const targetZ = Math.min(maxZ, Math.max(minZ, currentZoomLevel));
             try {
-                await track.applyConstraints({ advanced: [{ zoom: currentZoomLevel }] });
-                if (btnZoom) btnZoom.innerHTML = `${currentZoomLevel}x`;
-                showToast(`🔍 줌 배율: ${currentZoomLevel}x`);
-                return;
+                await track.applyConstraints({ advanced: [{ zoom: targetZ }] });
+                hardwareSuccess = true;
+                currentZoomLevel = targetZ;
             } catch(e) {}
         }
     }
 
-    if (html5QrScanner && typeof html5QrScanner.getRunningTrackCameraCapabilities === 'function') {
+    // 2. Try Html5Qrcode zoomFeature
+    if (!hardwareSuccess && html5QrScanner && typeof html5QrScanner.getRunningTrackCameraCapabilities === 'function') {
         try {
             const capabilities = html5QrScanner.getRunningTrackCameraCapabilities();
-            if (capabilities && capabilities.zoomFeature) {
+            if (capabilities && capabilities.zoomFeature && capabilities.zoomFeature().isSupported()) {
                 const zoomFeature = capabilities.zoomFeature();
                 const minZ = zoomFeature.min() || 1.0;
                 const maxZ = zoomFeature.max() || 3.0;
-
-                if (currentZoomLevel <= 1.1 && maxZ >= 1.5) {
-                    currentZoomLevel = 1.5;
-                } else if (currentZoomLevel <= 1.6 && maxZ >= 2.0) {
-                    currentZoomLevel = 2.0;
-                } else {
-                    currentZoomLevel = 1.0;
-                }
-
-                zoomFeature.apply(currentZoomLevel);
-                if (btnZoom) btnZoom.innerHTML = `${currentZoomLevel}x`;
-                showToast(`🔍 줌 배율: ${currentZoomLevel}x`);
+                const targetZ = Math.min(maxZ, Math.max(minZ, currentZoomLevel));
+                zoomFeature.apply(targetZ);
+                hardwareSuccess = true;
+                currentZoomLevel = targetZ;
             }
-        } catch(e) {
-            console.warn('Zoom toggle error:', e);
-        }
+        } catch(e) {}
     }
+
+    // 3. Fallback: Software CSS Zoom (iOS Safari 등)
+    if (!hardwareSuccess) {
+        const cssScale = currentZoomLevel === 2.0 ? 1.55 : (currentZoomLevel === 1.5 ? 1.3 : 1.0);
+        applySoftwareZoom(cssScale);
+    } else {
+        applySoftwareZoom(1.0);
+    }
+
+    if (btnZoom) btnZoom.innerHTML = `${currentZoomLevel}x`;
+    showToast(`🔍 줌 배율: ${currentZoomLevel}x (초점 최적화)`, 1200);
 }
 
 /**
- * Helper to decode a single image file into a QR raw payload string using 3-tier engine
+ * Helper to decode a single image file into a QR raw payload string using Multi-engine OCR
  */
 async function decodeSingleQrImageFile(file) {
     if (!file) return null;
@@ -47000,11 +47199,21 @@ async function decodeSingleQrImageFile(file) {
                 return barcodes[0].rawValue;
             }
         } catch(e) {
-            console.warn('[Native BarcodeDetector file attempt failed, trying Html5Qrcode]', e);
+            console.warn('[Native BarcodeDetector file attempt failed, trying enhanced scan]', e);
         }
     }
 
-    // 2. Try Html5Qrcode file scan
+    // 2. Try Enhanced Multi-Engine & Contrast scan (jsQR + Top-Half Crop + Adaptive Contrast)
+    try {
+        const enhancedResult = await scanWithContrastEnhancement(file);
+        if (enhancedResult) {
+            return enhancedResult;
+        }
+    } catch(e) {
+        console.error('[Enhanced scan error]', e);
+    }
+
+    // 3. Try Html5Qrcode raw file scan fallback
     if (typeof Html5Qrcode !== 'undefined') {
         try {
             const fileScanner = new Html5Qrcode("qrReader", {
@@ -47016,18 +47225,8 @@ async function decodeSingleQrImageFile(file) {
                 return decodedText;
             }
         } catch(err) {
-            console.warn('[Html5Qrcode file scan failed, trying downscaled canvas enhanced scan]', err);
+            console.warn('[Html5Qrcode file scan failed]', err);
         }
-    }
-
-    // 3. Fallback: Downscaled Multi-contrast Canvas Preprocessor
-    try {
-        const enhancedResult = await scanWithContrastEnhancement(file);
-        if (enhancedResult) {
-            return enhancedResult;
-        }
-    } catch(e) {
-        console.error('[Enhanced scan error]', e);
     }
 
     return null;
@@ -47117,7 +47316,7 @@ async function handleLottoQrFile(event) {
 }
 
 /**
- * Helper to scan with downscaling & canvas grayscale contrast boost
+ * Helper to scan with downscaling, top-crop & canvas grayscale contrast boost
  */
 async function scanWithContrastEnhancement(file) {
     return new Promise((resolve) => {
@@ -47151,38 +47350,76 @@ async function scanWithContrastEnhancement(file) {
                         try {
                             const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
                             const barcodes = await detector.detect(canvas);
-                            if (barcodes && barcodes.length > 0) {
+                            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
                                 resolve(barcodes[0].rawValue);
                                 return;
                             }
                         } catch(bErr) {}
                     }
 
-                    // 2) Apply High Contrast Grayscale Thresholding
+                    // 2) Try jsQR on downscaled original
+                    if (typeof window !== 'undefined' && typeof window.jsQR === 'function') {
+                        try {
+                            const origData = ctx.getImageData(0, 0, w, h);
+                            const res = window.jsQR(origData.data, w, h, { inversionAttempts: 'attemptBoth' });
+                            if (res && res.data) {
+                                resolve(res.data);
+                                return;
+                            }
+                        } catch(jErr) {}
+                    }
+
+                    // 3) Try jsQR on TOP HALF Crop (Where Donghang lottery QR code is physically located)
+                    // Doubles effective resolution of QR code and removes noisy text/background
+                    if (typeof window !== 'undefined' && typeof window.jsQR === 'function' && h > 200) {
+                        try {
+                            const topH = Math.floor(h * 0.5);
+                            const topData = ctx.getImageData(0, 0, w, topH);
+                            const resTop = window.jsQR(topData.data, w, topH, { inversionAttempts: 'attemptBoth' });
+                            if (resTop && resTop.data) {
+                                resolve(resTop.data);
+                                return;
+                            }
+                        } catch(tErr) {}
+                    }
+
+                    // 4) Apply High Contrast Grayscale Thresholding
                     const imgData = ctx.getImageData(0, 0, w, h);
                     const d = imgData.data;
                     for (let i = 0; i < d.length; i += 4) {
                         const gray = (d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114);
-                        const enhanced = gray > 120 ? 255 : 0;
+                        const enhanced = gray > 122 ? 255 : 0;
                         d[i] = enhanced;
                         d[i + 1] = enhanced;
                         d[i + 2] = enhanced;
                     }
                     ctx.putImageData(imgData, 0, 0);
 
-                    // 3) Try BarcodeDetector on high contrast canvas
+                    // 5) Try BarcodeDetector on high contrast canvas
                     if ('BarcodeDetector' in window) {
                         try {
                             const detector = new window.BarcodeDetector({ formats: ['qr_code'] });
                             const barcodes = await detector.detect(canvas);
-                            if (barcodes && barcodes.length > 0) {
+                            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
                                 resolve(barcodes[0].rawValue);
                                 return;
                             }
                         } catch(bErr) {}
                     }
 
-                    // 4) Try Html5Qrcode on canvas blob
+                    // 6) Try jsQR on high contrast canvas
+                    if (typeof window !== 'undefined' && typeof window.jsQR === 'function') {
+                        try {
+                            const binData = ctx.getImageData(0, 0, w, h);
+                            const resBin = window.jsQR(binData.data, w, h, { inversionAttempts: 'dontInvert' });
+                            if (resBin && resBin.data) {
+                                resolve(resBin.data);
+                                return;
+                            }
+                        } catch(bErr2) {}
+                    }
+
+                    // 7) Try Html5Qrcode on canvas blob
                     if (typeof Html5Qrcode !== 'undefined' && canvas.toBlob) {
                         canvas.toBlob(async (blob) => {
                             if (blob) {
@@ -47224,6 +47461,10 @@ if (typeof window !== 'undefined') {
     window.processLottoQrPayload = processLottoQrPayload;
     window.triggerCameraAutoFocus = triggerCameraAutoFocus;
     window.applyCameraFocusOptimization = applyCameraFocusOptimization;
+    window.startLiveBarcodeDetectorLoop = startLiveBarcodeDetectorLoop;
+    window.startUniversalLiveQrScannerLoop = startUniversalLiveQrScannerLoop;
+    window.stopLiveBarcodeDetectorLoop = stopLiveBarcodeDetectorLoop;
+    window.applySoftwareZoom = applySoftwareZoom;
 }
 
 async function handleSaveManualLedger(keepScanning = false) {
@@ -47957,9 +48198,17 @@ if (typeof window !== 'undefined') {
             __exports.startLiveBarcodeDetectorLoop = startLiveBarcodeDetectorLoop;
             if (typeof window !== 'undefined') window.startLiveBarcodeDetectorLoop = startLiveBarcodeDetectorLoop;
         }
+        if (typeof startUniversalLiveQrScannerLoop !== 'undefined') {
+            __exports.startUniversalLiveQrScannerLoop = startUniversalLiveQrScannerLoop;
+            if (typeof window !== 'undefined') window.startUniversalLiveQrScannerLoop = startUniversalLiveQrScannerLoop;
+        }
         if (typeof getActiveCameraTrack !== 'undefined') {
             __exports.getActiveCameraTrack = getActiveCameraTrack;
             if (typeof window !== 'undefined') window.getActiveCameraTrack = getActiveCameraTrack;
+        }
+        if (typeof applySoftwareZoom !== 'undefined') {
+            __exports.applySoftwareZoom = applySoftwareZoom;
+            if (typeof window !== 'undefined') window.applySoftwareZoom = applySoftwareZoom;
         }
         if (typeof applyCameraFocusOptimization !== 'undefined') {
             __exports.applyCameraFocusOptimization = applyCameraFocusOptimization;
