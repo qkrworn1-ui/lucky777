@@ -73,5 +73,30 @@ class TestQrSmartphoneCompatibility(unittest.TestCase):
         self.assertIn('window.triggerCameraAutoFocus = triggerCameraAutoFocus', self.manual_js)
         self.assertIn('window.toggleLottoZoom = toggleLottoZoom', self.manual_js)
 
+    def test_09_galaxy_s24_plus_safeguards(self):
+        """Verify Galaxy S24+ specific fixes: no initial advanced constraints, ultra-wide filter, local jsqr, sw cache."""
+        # 1. No advanced constraints in step 1 getUserMedia (prevents OverconstrainedError on S24+ HAL)
+        step1_match = re.search(r'// 1단계: Universal Full HD 1080p.*?started = await attemptStart\((\{.*?\})\);', self.manual_js, re.DOTALL)
+        self.assertTrue(step1_match, "Step 1 attemptStart must be present")
+        step1_code = step1_match.group(1)
+        self.assertNotIn('advanced:', step1_code, "Step 1 must NOT pass advanced constraints in getUserMedia")
+
+        # 2. Exclude fixed-focus 0.5x ultra-wide camera on S24+
+        self.assertIn('isUltraWide', self.manual_js)
+        self.assertIn('!isUltraWide', self.manual_js)
+
+        # 3. Local jsqr.min.js load & PWA offline cache in sw.js
+        self.assertIn('jsqr.min.js', self.html)
+        sw_path = os.path.join(self.root_dir, 'sw.js')
+        with open(sw_path, 'r', encoding='utf-8') as f:
+            sw_code = f.read()
+        self.assertIn('jsqr.min.js', sw_code)
+
+        # 4. Atomic applyConstraints combining focus, exposure and zoom together
+        self.assertIn('Combined focus, exposure & zoom applied atomically', self.manual_js)
+
+        # 5. Dual BarcodeDetector + jsQR on magnified macro crop
+        self.assertIn('cropBarcodes = await nativeDetector.detect(offscreenCanvas)', self.manual_js)
+
 if __name__ == '__main__':
     unittest.main()

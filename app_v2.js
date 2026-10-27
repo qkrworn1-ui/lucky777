@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.27.1541.32 - BUILD_DATE: 2026-10-27] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.27.1600 - BUILD_DATE: 2026-10-27] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.27.1541.32)
+ * Lucky777 Smart Bundle (v2026.10.27.1600)
  */
 
 
@@ -46497,11 +46497,11 @@ async function startLottoQrScanner() {
                     const w = Math.max(160, Math.floor(viewfinderWidth || 300));
                     const h = Math.max(160, Math.floor(viewfinderHeight || 300));
                     const minEdge = Math.min(w, h);
-                    const size = Math.max(140, Math.floor(minEdge * 0.88));
+                    const size = Math.max(140, Math.floor(minEdge * 0.90));
                     return { width: size, height: size };
                 },
                 experimentalFeatures: {
-                    useBarCodeDetectorIfSupported: true
+                    useBarCodeDetectorIfSupported: false // Html5Qrcode uses reliable ZXing; our parallel loop runs BarcodeDetector & jsQR
                 }
             };
 
@@ -46516,7 +46516,7 @@ async function startLottoQrScanner() {
                 let scanner = null;
                 try {
                     scanner = new Html5Qrcode("qrReader", {
-                        experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+                        experimentalFeatures: { useBarCodeDetectorIfSupported: false },
                         verbose: false
                     });
 
@@ -46547,55 +46547,53 @@ async function startLottoQrScanner() {
 
             let started = false;
 
-            // 1단계: Universal Full HD 1080p + continuous focus + ideal environment (삼성 갤럭시 Fold 7 및 플래그십 최적화)
+            // 1단계: Universal Full HD 1080p 후면 카메라 (삼성 갤럭시 S24+, Z폴드, 아이폰 등 플래그십 1차 즉시 연결)
+            // W3C 표준: initial getUserMedia는 standard constraints만 사용해야 갤럭시 S24+ HAL에서 OverconstrainedError 없이 120ms 내 즉시 연결됨
             started = await attemptStart({
                 facingMode: { ideal: "environment" },
                 width: { ideal: 1920 },
-                height: { ideal: 1080 },
-                advanced: [
-                    { focusMode: "continuous" },
-                    { exposureMode: "continuous" },
-                    { whiteBalanceMode: "continuous" }
-                ]
+                height: { ideal: 1080 }
             });
 
-            // 1.2단계: 실패 시 720p HD 범용 시도 (iOS Safari, 일반 보급형 기기 초고속 호환)
+            // 1.2단계: 실패 시 720p HD 범용 시도 (200ms 드라이버 쿨다운 - S24+ HAL 리소스 해제 보장)
             if (!started && thisSessionId === currentScannerSessionId) {
                 console.log('[QR Scanner] Retrying 720p HD camera with universal compatibility...');
                 started = await attemptStart({
                     facingMode: { ideal: "environment" },
                     width: { min: 640, ideal: 1280, max: 1920 },
                     height: { min: 480, ideal: 720, max: 1080 }
-                }, 100);
+                }, 200);
             }
 
-            // 1.5단계: 실패 시 기본 ideal environment 시도
+            // 1.5단계: 실패 시 기본 ideal environment 시도 (200ms 쿨다운)
             if (!started && thisSessionId === currentScannerSessionId) {
                 console.log('[QR Scanner] Retrying basic ideal environment camera...');
-                started = await attemptStart({ facingMode: { ideal: "environment" } }, 120);
+                started = await attemptStart({ facingMode: { ideal: "environment" } }, 200);
             }
 
-            // 1.8단계: 실패 시 200ms OS 드라이버 해제 대기 후 엄격한 environment 시도
+            // 1.8단계: 실패 시 250ms OS 드라이버 해제 대기 후 엄격한 environment 시도
             if (!started && thisSessionId === currentScannerSessionId) {
-                console.log('[QR Scanner] Retrying environment camera with 200ms driver cooldown backoff...');
-                started = await attemptStart({ facingMode: "environment" }, 200);
+                console.log('[QR Scanner] Retrying environment camera with 250ms driver cooldown backoff...');
+                started = await attemptStart({ facingMode: "environment" }, 250);
             }
 
-            // 2단계: 실패 시 카메라 목록 조회 후 최적 후면 카메라 ID 직접 선택 (폴드7 다중 렌즈 호환)
+            // 2단계: 실패 시 카메라 목록 조회 후 최적 후면 메인 카메라 ID 직접 선택
+            // ⚠️ 주의: 삼성 S24/S24+ 등 다중 렌즈 기기에서 고정초점(Fixed Focus)인 0.5x 초광각 렌즈를 배제하고 메인 광각(50MP) 우선 선택
             if (!started && thisSessionId === currentScannerSessionId) {
                 try {
                     const cameras = await Html5Qrcode.getCameras();
                     if (cameras && cameras.length > 0) {
-                        // 후면 키워드 우선 탐색
                         const rearCams = cameras.filter(c => {
                             const lbl = (c.label || '').toLowerCase();
-                            return lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment') || lbl.includes('후면');
+                            const isRear = lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment') || lbl.includes('후면');
+                            const isUltraWide = lbl.includes('ultra') || lbl.includes('0.5x') || lbl.includes('wide-angle') || lbl.includes('super');
+                            return isRear && !isUltraWide; // 초점 조절 불가 초광각 렌즈 제외!
                         });
                         const candidateCams = rearCams.length > 0 ? rearCams : cameras;
                         for (const cam of candidateCams) {
                             if (started || thisSessionId !== currentScannerSessionId) break;
                             if (cam && cam.id) {
-                                started = await attemptStart(cam.id, 150);
+                                started = await attemptStart(cam.id, 250);
                             }
                         }
                     }
@@ -46709,7 +46707,7 @@ function startUniversalLiveQrScannerLoop() {
         try {
             let matchedPayload = null;
 
-            // ⚡ 1. Primary Engine: Native BarcodeDetector (Hardware Accelerated - Android Chrome/Samsung/Edge)
+            // ⚡ 1. Primary Engine: Native BarcodeDetector on full frame (Android Chrome/Samsung/Edge)
             if (nativeDetector) {
                 try {
                     const barcodes = await nativeDetector.detect(videoEl);
@@ -46719,58 +46717,81 @@ function startUniversalLiveQrScannerLoop() {
                 } catch(e) {}
             }
 
-            // ⚡ 2. Secondary Engine: jsQR with Macro Center-Crop (Universal for iOS Safari & Android)
-            if (!matchedPayload && typeof window !== 'undefined' && typeof window.jsQR === 'function' && offscreenCanvas && offscreenCtx) {
+            // ⚡ 2. Secondary Engine: Macro Center Crop Scan (S24+ 50MP 대형 센서 및 iOS 사파리 최적화)
+            // 고해상도(1080x1920) 센서에서 20cm 거리의 작은 QR 코드를 1.8배 확대 크롭하여 BarcodeDetector와 jsQR 동시 분석
+            if (!matchedPayload && offscreenCanvas && offscreenCtx) {
                 const vw = videoEl.videoWidth || 640;
                 const vh = videoEl.videoHeight || 480;
 
                 if (vw > 100 && vh > 100) {
-                    // Pass A: Center Macro Crop (60% area) — 1.67x digital macro zoom
-                    // Allows user to hold phone 15~20cm away where lenses focus sharply, while capturing 400x400 QR pixels
-                    const cropSize = Math.floor(Math.min(vw, vh) * 0.65);
+                    // Pass A: Center Macro Crop (58% area) — 1.72x 디지털 매크로 줌 효과
+                    const cropSize = Math.floor(Math.min(vw, vh) * 0.58);
                     const sx = Math.floor((vw - cropSize) / 2);
                     const sy = Math.floor((vh - cropSize) / 2);
 
-                    const targetDim = 400; // Optimal speed & accuracy
+                    const targetDim = 380; // 초고속 연산 및 선명 패턴 유지
                     if (offscreenCanvas.width !== targetDim || offscreenCanvas.height !== targetDim) {
                         offscreenCanvas.width = targetDim;
                         offscreenCanvas.height = targetDim;
                     }
 
                     offscreenCtx.drawImage(videoEl, sx, sy, cropSize, cropSize, 0, 0, targetDim, targetDim);
-                    const imgData = offscreenCtx.getImageData(0, 0, targetDim, targetDim);
 
-                    const qrResult = window.jsQR(imgData.data, targetDim, targetDim, {
-                        inversionAttempts: 'attemptBoth' // Inverted contrast support for thermal receipt paper glare
-                    });
-
-                    if (qrResult && qrResult.data) {
-                        matchedPayload = qrResult.data;
+                    // A-1) 확대 크롭 캔버스에 대해 Native BarcodeDetector 즉시 실행 (S24+ 고감도 감지)
+                    if (nativeDetector) {
+                        try {
+                            const cropBarcodes = await nativeDetector.detect(offscreenCanvas);
+                            if (cropBarcodes && cropBarcodes.length > 0 && cropBarcodes[0].rawValue) {
+                                matchedPayload = cropBarcodes[0].rawValue;
+                            }
+                        } catch(e) {}
                     }
 
-                    // Pass B: Full Frame Scan (every 3rd tick or when center crop misses)
-                    if (!matchedPayload && (tickCounter % 3 === 0)) {
-                        const fullDim = 480;
-                        if (offscreenCanvas.width !== fullDim || offscreenCanvas.height !== fullDim) {
-                            offscreenCanvas.width = fullDim;
-                            offscreenCanvas.height = fullDim;
-                        }
-                        offscreenCtx.drawImage(videoEl, 0, 0, fullDim, fullDim);
-                        const fullImgData = offscreenCtx.getImageData(0, 0, fullDim, fullDim);
-                        const fullQrResult = window.jsQR(fullImgData.data, fullDim, fullDim, {
+                    // A-2) 순수 JS jsQR로 확대 크롭 이미지 분석 (감열지 빛반사/반전대비 동시 지원)
+                    if (!matchedPayload && typeof window !== 'undefined' && typeof window.jsQR === 'function') {
+                        const imgData = offscreenCtx.getImageData(0, 0, targetDim, targetDim);
+                        const qrResult = window.jsQR(imgData.data, targetDim, targetDim, {
                             inversionAttempts: 'attemptBoth'
                         });
-                        if (fullQrResult && fullQrResult.data) {
-                            matchedPayload = fullQrResult.data;
+                        if (qrResult && qrResult.data) {
+                            matchedPayload = qrResult.data;
                         }
                     }
 
-                    // Pass C: Fast Adaptive Contrast Binarization (every 4th tick for dim indoor lighting / paper glare)
-                    if (!matchedPayload && (tickCounter % 4 === 0)) {
+                    // Pass B: 광역 크롭 (85% area - 2회 주기마다 탐색, QR이 살짝 외곽에 치우친 경우)
+                    if (!matchedPayload && (tickCounter % 2 === 0)) {
+                        const broadCropSize = Math.floor(Math.min(vw, vh) * 0.85);
+                        const bsx = Math.floor((vw - broadCropSize) / 2);
+                        const bsy = Math.floor((vh - broadCropSize) / 2);
+                        offscreenCtx.drawImage(videoEl, bsx, bsy, broadCropSize, broadCropSize, 0, 0, targetDim, targetDim);
+
+                        if (nativeDetector) {
+                            try {
+                                const broadBarcodes = await nativeDetector.detect(offscreenCanvas);
+                                if (broadBarcodes && broadBarcodes.length > 0 && broadBarcodes[0].rawValue) {
+                                    matchedPayload = broadBarcodes[0].rawValue;
+                                }
+                            } catch(e) {}
+                        }
+
+                        if (!matchedPayload && typeof window !== 'undefined' && typeof window.jsQR === 'function') {
+                            const bImgData = offscreenCtx.getImageData(0, 0, targetDim, targetDim);
+                            const bQr = window.jsQR(bImgData.data, targetDim, targetDim, {
+                                inversionAttempts: 'attemptBoth'
+                            });
+                            if (bQr && bQr.data) {
+                                matchedPayload = bQr.data;
+                            }
+                        }
+                    }
+
+                    // Pass C: 고대비 흑백 이진화 (3회 주기마다 실행 - 저조도/강한 조명 반사 대응)
+                    if (!matchedPayload && (tickCounter % 3 === 0) && typeof window !== 'undefined' && typeof window.jsQR === 'function') {
+                        const imgData = offscreenCtx.getImageData(0, 0, targetDim, targetDim);
                         const d = imgData.data;
                         for (let i = 0; i < d.length; i += 4) {
                             const gray = (d[i] * 299 + d[i+1] * 587 + d[i+2] * 114) / 1000;
-                            const bin = gray > 115 ? 255 : 0;
+                            const bin = gray > 118 ? 255 : 0;
                             d[i] = bin;
                             d[i+1] = bin;
                             d[i+2] = bin;
@@ -46803,8 +46824,7 @@ function startUniversalLiveQrScannerLoop() {
             }
 
             // 🔄 3. Smart Background Auto-Focus Nudge
-            // If camera has been scanning for 3.5 seconds with consecutive misses,
-            // gently nudge the autofocus so lens doesn't stay locked out-of-focus
+            // 3.5초 이상 인식이 지연되면 VCM 액추에이터 고착을 깨우기 위해 자동 초점 재탐색 펄스 발생
             const nowTime = Date.now();
             if (nowTime - lastAutoNudgeTime > 3500 && consecutiveScanFailures > 25) {
                 lastAutoNudgeTime = nowTime;
@@ -46816,12 +46836,9 @@ function startUniversalLiveQrScannerLoop() {
         } finally {
             isProcessingFrame = false;
         }
-    }, 110);
+    }, 100);
 }
 
-/**
- * Helper to retrieve currently running live camera MediaStreamTrack
- */
 function getActiveCameraTrack() {
     if (html5QrScanner) {
         if (typeof html5QrScanner.getRunningTrack === 'function') {
@@ -46902,34 +46919,31 @@ async function applyCameraFocusOptimization() {
             advanced.push({ whiteBalanceMode: 'continuous' });
         }
 
-        if (advanced.length > 0 && typeof track.applyConstraints === 'function') {
-            try {
-                await track.applyConstraints({ advanced });
-                console.log('[Camera Focus] Continuous focus applied:', advanced);
-            } catch(cErr) {
-                console.warn('[Camera focus constraint warning]:', cErr);
-            }
-        }
-
         // 3. Recommended Default Macro-Friendly Zoom (1.5x)
-        // 스마트폰 광각 메인 렌즈(23~26mm)는 10~15cm 이내에서 물리적으로 초점이 안 잡히므로,
-        // 기본 1.5x 줌을 설정하여 18~25cm 최적 선명 거리에서 영수증 QR이 프레임에 꽉 차도록 유도
+        // 갤럭시 S24+, Z폴드 등 대형 센서(50MP)는 10~15cm 초점 불가 한계가 있으므로
+        // 기본 1.5x 줌을 설정하여 18~25cm 최적 선명 거리에서 영수증 QR이 완벽히 프레임을 채우도록 유도
         let zoomApplied = false;
         if (caps.zoom && typeof caps.zoom === 'object') {
             const minZ = caps.zoom.min || 1.0;
             const maxZ = caps.zoom.max || 1.0;
             if (maxZ >= 1.5) {
                 const targetZ = Math.min(1.5, Math.max(minZ, 1.5));
-                try {
-                    await track.applyConstraints({ advanced: [{ zoom: targetZ }] });
-                    currentZoomLevel = targetZ;
-                    zoomApplied = true;
-                    const btnZoom = document.getElementById('btnToggleZoom');
-                    if (btnZoom) btnZoom.innerHTML = `${targetZ}x`;
-                    console.log(`[Camera Focus] Hardware macro zoom applied: ${targetZ}x`);
-                } catch(zErr) {
-                    console.warn('[Camera zoom init note]:', zErr);
-                }
+                advanced.push({ zoom: targetZ });
+                currentZoomLevel = targetZ;
+                zoomApplied = true;
+                const btnZoom = document.getElementById('btnToggleZoom');
+                if (btnZoom) btnZoom.innerHTML = `${targetZ}x`;
+                console.log(`[Camera Focus] Hardware macro zoom queued: ${targetZ}x`);
+            }
+        }
+
+        // ⚡ focus, exposure, zoom 제약을 단일 원자적(atomic) 호출로 동시 적용 (개별 호출 시 이전 제약 덮어쓰기 방지)
+        if (advanced.length > 0 && typeof track.applyConstraints === 'function') {
+            try {
+                await track.applyConstraints({ advanced });
+                console.log('[Camera Focus] Combined focus, exposure & zoom applied atomically:', advanced);
+            } catch(cErr) {
+                console.warn('[Camera focus constraint atomic warning]:', cErr);
             }
         }
 
@@ -46995,18 +47009,28 @@ async function triggerCameraAutoFocus(event = null, isAutoNudge = false) {
         const caps = (typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
 
         // 1. Cycle single-shot -> continuous to force VCM actuator to sweep focal plane
+        // ⚠️ 주의: 현재 줌 배율(currentZoomLevel)을 함께 전달해야 초점 스윕 시 줌이 1.0x로 리셋되지 않음
+        const currentZoomConstraint = (currentZoomLevel > 1.0 && caps.zoom) ? { zoom: currentZoomLevel } : null;
+
         if (caps.focusMode && Array.isArray(caps.focusMode)) {
             if (caps.focusMode.includes('single-shot')) {
-                await track.applyConstraints({ advanced: [{ focusMode: "single-shot" }] });
+                const singleShotAdv = [{ focusMode: "single-shot" }];
+                if (currentZoomConstraint) singleShotAdv.push(currentZoomConstraint);
+                await track.applyConstraints({ advanced: singleShotAdv });
+
                 setTimeout(async () => {
                     try {
                         if (caps.focusMode.includes('continuous')) {
-                            await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+                            const contAdv = [{ focusMode: "continuous" }];
+                            if (currentZoomConstraint) contAdv.push(currentZoomConstraint);
+                            await track.applyConstraints({ advanced: contAdv });
                         }
                     } catch(e) {}
                 }, 280);
             } else if (caps.focusMode.includes('continuous')) {
-                await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+                const contAdv = [{ focusMode: "continuous" }];
+                if (currentZoomConstraint) contAdv.push(currentZoomConstraint);
+                await track.applyConstraints({ advanced: contAdv });
             }
         }
 

@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.27.1541.32",
+  "version": "v2026.10.27.1600",
   "buildDate": "2026-10-27",
   "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료",
-  "buildTimestamp": "2026-10-27T15:41:32.991135",
+  "buildTimestamp": "2026-10-27T16:00:27.023362",
   "buildHistory": [
-    {
-      "version": "v2026.10.24.1926",
-      "buildDate": "2026-10-24",
-      "buildTime": "19:26",
-      "buildDateTime": "2026-10-24 19:26",
-      "buildTimestamp": "2026-10-24T19:26:59.057033",
-      "description": "QR 실구매 연속등록 카메라 웜 재개 안정화 및 영수증 등록 파이프라인 무결성 점검 완료"
-    },
-    {
-      "version": "v2026.10.24.1932",
-      "buildDate": "2026-10-24",
-      "buildTime": "19:32",
-      "buildDateTime": "2026-10-24 19:32",
-      "buildTimestamp": "2026-10-24T19:32:47.091404",
-      "description": "QR 실구매 연속등록 카메라 웜 재개 안정화 및 영수증 등록 파이프라인 무결성 점검 완료"
-    },
     {
       "version": "v2026.10.24.1933",
       "buildDate": "2026-10-24",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-27 15:41",
       "buildTimestamp": "2026-10-27T15:41:32.991135",
       "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
+    },
+    {
+      "version": "v2026.10.27.1559",
+      "buildDate": "2026-10-27",
+      "buildTime": "15:59",
+      "buildDateTime": "2026-10-27 15:59",
+      "buildTimestamp": "2026-10-27T15:59:52.800878",
+      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
+    },
+    {
+      "version": "v2026.10.27.1600",
+      "buildDate": "2026-10-27",
+      "buildTime": "16:00",
+      "buildDateTime": "2026-10-27 16:00",
+      "buildTimestamp": "2026-10-27T16:00:27.023362",
+      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
     }
   ],
-  "buildTime": "15:41",
-  "buildDateTime": "2026-10-27 15:41"
+  "buildTime": "16:00",
+  "buildDateTime": "2026-10-27 16:00"
 }

@@ -156,6 +156,7 @@ def sync_version_assets(auto_bump=True, explicit_version=None, build_desc=""):
         html = re.sub(r'app_v2\.js\?v=[a-zA-Z0-9_.-]+', f'app_v2.js?v={v_num}', html)
         html = re.sub(r'sw\.js\?v=[a-zA-Z0-9_.-]+', f'sw.js?v={v_num}', html)
         html = re.sub(r'data\.js\?v=[a-zA-Z0-9_.-]+', f'data.js?v={v_num}', html)
+        html = re.sub(r'jsqr\.min\.js\?v=[a-zA-Z0-9_.-]+', f'jsqr.min.js?v={v_num}', html)
         html = re.sub(r'New version \([^)]+\) installed!', f'New version ({version}) installed!', html)
         html = re.sub(
             r'(<span[^>]*id="appVersionBadgeLanding"[^>]*>\s*<i class="fa-solid fa-code-branch"></i>\s*)([vV0-9_.-]+)(\s*<i class="fa-solid fa-rotate"[^>]*></i>\s*</span>)',

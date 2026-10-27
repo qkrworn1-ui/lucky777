@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lucky777-pwa-v2026.10.27.1541.32';
+const CACHE_NAME = 'lucky777-pwa-v2026.10.27.1600';
 
 function getBasePath() {
   try {
@@ -14,6 +14,7 @@ const ASSETS_TO_CACHE = [
   `${BASE_PATH}index.html`,
   `${BASE_PATH}styles.css`,
   `${BASE_PATH}app_v2.js`,
+  `${BASE_PATH}jsqr.min.js`,
   `${BASE_PATH}manifest.json`,
   `${BASE_PATH}icons/icon-192.png`,
   `${BASE_PATH}icons/icon-512.png`,
