@@ -98,5 +98,23 @@ class TestQrSmartphoneCompatibility(unittest.TestCase):
         # 5. Dual BarcodeDetector + jsQR on magnified macro crop
         self.assertIn('cropBarcodes = await nativeDetector.detect(offscreenCanvas)', self.manual_js)
 
+    def test_10_galaxy_s24_plus_lens_switch_and_macro_pulse(self):
+        """Verify Galaxy S24+ lens switch UI, manual lens cycling, 22cm macro pulse, and distance calibration."""
+        # 1. UI Switch Lens button
+        self.assertIn('id="btnSwitchCamera"', self.html, "index.html must provide #btnSwitchCamera button in viewfinder")
+        self.assertIn('switchLottoCamera', self.html, "btnSwitchCamera must call switchLottoCamera")
+
+        # 2. Logic & Functions
+        self.assertIn('switchLottoCamera', self.manual_js, "manual-modal.js must implement switchLottoCamera")
+        self.assertIn('updateAvailableLottoCameras', self.manual_js, "manual-modal.js must implement updateAvailableLottoCameras")
+        self.assertIn('availableLottoCameras', self.manual_js)
+
+        # 3. 22cm macro focus pulse & distance calibration
+        self.assertIn('0.22', self.manual_js, "Focus distance must be calibrated to 0.22m (22cm macro)")
+        self.assertIn('macroPulse', self.manual_js, "Must include initial macro pulse to unstick VCM actuator")
+
+        # 4. Window export
+        self.assertIn('window.switchLottoCamera = switchLottoCamera', self.manual_js)
+
 if __name__ == '__main__':
     unittest.main()

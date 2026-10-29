@@ -401,6 +401,7 @@ export async function stopScanning() {
         const qrScannerContainer = document.getElementById('qrScannerContainer');
         const scanner = html5QrScanner;
         html5QrScanner = null;
+        currentActiveCameraId = null;
 
         if (scanner) {
             await safeStopScanner(scanner, 450);
@@ -416,9 +417,11 @@ export async function stopScanning() {
         const btnTorch = document.getElementById('btnToggleTorch');
         const btnZoom = document.getElementById('btnToggleZoom');
         const btnFocus = document.getElementById('btnTriggerFocus');
+        const btnSwitch = document.getElementById('btnSwitchCamera');
         if (btnTorch) btnTorch.style.display = 'none';
         if (btnZoom) btnZoom.style.display = 'none';
         if (btnFocus) btnFocus.style.display = 'none';
+        if (btnSwitch) btnSwitch.style.display = 'none';
     })().finally(() => {
         stopScanningPromise = null;
         isStartingScanner = false;
@@ -1582,6 +1585,9 @@ export function setupManualLedgerModal() {
 
 let isTorchActive = false;
 let currentZoomLevel = 1.0;
+let availableLottoCameras = [];
+let currentCameraIndex = 0;
+let currentActiveCameraId = null;
 
 /**
  * 🔒 Parse and apply Donghang Lottery QR Payload (Universal across all smartphone browsers)
@@ -1744,7 +1750,7 @@ export function processLottoQrPayload(rawText, options = {}) {
  * 📷 Start QR Scanner with Universal Multi-tier Hardware/Camera Fallbacks
  * Optimized for Samsung Galaxy Z Fold 7 and all mobile camera drivers
  */
-export async function startLottoQrScanner() {
+export async function startLottoQrScanner(targetCameraId = null) {
     // 0. If a start is already running, return the active promise (Idempotent single entry)
     if (startScannerPromise) {
         return startScannerPromise;
@@ -1855,13 +1861,43 @@ export async function startLottoQrScanner() {
 
             let started = false;
 
+            // 0단계: 기기 사전 조회 - 메인 광각(50MP PDAF) 카메라 ID가 식별되는 경우 고정초점 초광각(0.5x) 회피를 위해 우선 연결
+            let preselectedCameraId = targetCameraId;
+            if (!preselectedCameraId && typeof Html5Qrcode !== 'undefined' && Html5Qrcode.getCameras) {
+                try {
+                    const existingCams = await Html5Qrcode.getCameras();
+                    if (existingCams && existingCams.length > 0) {
+                        const primeCam = existingCams.find(c => {
+                            const lbl = (c.label || '').toLowerCase();
+                            const isRear = lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment') || lbl.includes('후면') || lbl.includes('camera2 0');
+                            const isUltraWide = lbl.includes('ultra') || lbl.includes('0.5x') || lbl.includes('super') || lbl.includes('camera2 2');
+                            const isTele = lbl.includes('tele') || lbl.includes('3x') || lbl.includes('camera2 3');
+                            return isRear && !isUltraWide && !isTele;
+                        });
+                        if (primeCam && primeCam.id && primeCam.label) {
+                            preselectedCameraId = primeCam.id;
+                            console.log('[QR Scanner] Pre-selected primary wide camera:', primeCam.label);
+                        }
+                    }
+                } catch(e) {}
+            }
+
+            if (preselectedCameraId) {
+                started = await attemptStart(preselectedCameraId, 40);
+                if (started) {
+                    currentActiveCameraId = preselectedCameraId;
+                }
+            }
+
             // 1단계: Universal Full HD 1080p 후면 카메라 (삼성 갤럭시 S24+, Z폴드, 아이폰 등 플래그십 1차 즉시 연결)
             // W3C 표준: initial getUserMedia는 standard constraints만 사용해야 갤럭시 S24+ HAL에서 OverconstrainedError 없이 120ms 내 즉시 연결됨
-            started = await attemptStart({
-                facingMode: { ideal: "environment" },
-                width: { ideal: 1920 },
-                height: { ideal: 1080 }
-            });
+            if (!started && thisSessionId === currentScannerSessionId) {
+                started = await attemptStart({
+                    facingMode: { ideal: "environment" },
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 }
+                });
+            }
 
             // 1.2단계: 실패 시 720p HD 범용 시도 (200ms 드라이버 쿨다운 - S24+ HAL 리소스 해제 보장)
             if (!started && thisSessionId === currentScannerSessionId) {
@@ -1902,6 +1938,7 @@ export async function startLottoQrScanner() {
                             if (started || thisSessionId !== currentScannerSessionId) break;
                             if (cam && cam.id) {
                                 started = await attemptStart(cam.id, 250);
+                                if (started) currentActiveCameraId = cam.id;
                             }
                         }
                     }
@@ -2207,6 +2244,25 @@ export async function applyCameraFocusOptimization() {
     if (!track) return false;
 
     try {
+        // 갤럭시 S24+ 다중 렌즈 안전장치: WebRTC가 고정초점(Fixed Focus)인 초광각(0.5x, camera2 2)을 선택한 경우 메인 50MP 광각으로 자동 재지정
+        const activeLabel = (track.label || '').toLowerCase();
+        const isAuxUltraWide = activeLabel.includes('ultra') || activeLabel.includes('0.5x') || activeLabel.includes('camera2 2');
+        if (isAuxUltraWide && availableLottoCameras && availableLottoCameras.length > 1) {
+            const mainCam = availableLottoCameras.find(c => {
+                const l = (c.label || '').toLowerCase();
+                const isRear = l.includes('back') || l.includes('rear') || l.includes('camera2 0') || l.includes('후면');
+                const isNotAux = !l.includes('ultra') && !l.includes('0.5x') && !l.includes('camera2 2') && !l.includes('tele');
+                return isRear && isNotAux;
+            });
+            if (mainCam && mainCam.id && mainCam.id !== currentActiveCameraId) {
+                console.warn('[Camera Optimization] Ultra-wide detected; redirecting to main 50MP wide lens:', mainCam.label);
+                setTimeout(() => {
+                    switchLottoCameraToId(mainCam.id);
+                }, 80);
+                return false;
+            }
+        }
+
         const caps = (typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
         const advanced = [];
 
@@ -2262,6 +2318,46 @@ export async function applyCameraFocusOptimization() {
             const btnZoom = document.getElementById('btnToggleZoom');
             if (btnZoom) btnZoom.innerHTML = `1.5x`;
         }
+
+        // 🎯 4. 갤럭시 S24+ 초기 기동 22cm 매크로 초점 펄스 (350ms 후)
+        // 삼성 One UI 카메라 드라이버가 무한대(Infinity) 상태로 멈추는 데드밴드(Deadband)를 강제 해제
+        setTimeout(async () => {
+            try {
+                const curTrack = getActiveCameraTrack();
+                if (!curTrack || typeof curTrack.applyConstraints !== 'function') return;
+                const curCaps = (typeof curTrack.getCapabilities === 'function') ? curTrack.getCapabilities() : {};
+
+                if (curCaps.focusDistance && typeof curCaps.focusDistance === 'object') {
+                    const macroDist = Math.max(curCaps.focusDistance.min || 0.1, Math.min(curCaps.focusDistance.max || 1.0, 0.22));
+                    const macroPulse = [{ focusMode: 'manual', focusDistance: macroDist }];
+                    if (currentZoomLevel > 1.0 && curCaps.zoom) macroPulse.push({ zoom: currentZoomLevel });
+                    await curTrack.applyConstraints({ advanced: macroPulse });
+
+                    setTimeout(async () => {
+                        try {
+                            const contAdv = [{ focusMode: 'continuous' }];
+                            if (currentZoomLevel > 1.0 && curCaps.zoom) contAdv.push({ zoom: currentZoomLevel });
+                            await curTrack.applyConstraints({ advanced: contAdv });
+                            console.log('[Camera Focus] Initial 22cm macro pulse completed; continuous AF locked');
+                        } catch(e) {}
+                    }, 180);
+                } else if (curCaps.focusMode && Array.isArray(curCaps.focusMode) && curCaps.focusMode.includes('single-shot')) {
+                    const pulseAdv = [{ focusMode: 'single-shot' }];
+                    if (currentZoomLevel > 1.0 && curCaps.zoom) pulseAdv.push({ zoom: currentZoomLevel });
+                    await curTrack.applyConstraints({ advanced: pulseAdv });
+
+                    setTimeout(async () => {
+                        try {
+                            const contAdv = [{ focusMode: 'continuous' }];
+                            if (currentZoomLevel > 1.0 && curCaps.zoom) contAdv.push({ zoom: currentZoomLevel });
+                            await curTrack.applyConstraints({ advanced: contAdv });
+                        } catch(e) {}
+                    }, 180);
+                }
+            } catch(pulseErr) {
+                console.warn('[Initial focus pulse warn]:', pulseErr);
+            }
+        }, 350);
 
         return true;
     } catch(err) {
@@ -2342,14 +2438,20 @@ export async function triggerCameraAutoFocus(event = null, isAutoNudge = false) 
             }
         }
 
-        // 2. Android Manual Focus Distance Sweep (diopters)
+        // 2. Android Manual Focus Distance Sweep (macro receipt distance: 0.22m / 22cm)
         if (caps.focusDistance && typeof caps.focusDistance === 'object') {
             try {
-                await track.applyConstraints({ advanced: [{ focusDistance: 5.0 }] });
+                const macroDist = Math.max(caps.focusDistance.min || 0.1, Math.min(caps.focusDistance.max || 1.0, 0.22));
+                const distAdv = [{ focusDistance: macroDist }];
+                if (currentZoomConstraint) distAdv.push(currentZoomConstraint);
+                await track.applyConstraints({ advanced: distAdv });
+
                 setTimeout(async () => {
                     try {
                         if (caps.focusMode && caps.focusMode.includes('continuous')) {
-                            await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] });
+                            const contAdv = [{ focusMode: "continuous" }];
+                            if (currentZoomConstraint) contAdv.push(currentZoomConstraint);
+                            await track.applyConstraints({ advanced: contAdv });
                         }
                     } catch(e) {}
                 }, 300);
@@ -2382,7 +2484,7 @@ export async function triggerCameraAutoFocus(event = null, isAutoNudge = false) 
 /**
  * Check camera capabilities (torch, zoom, focus) and show controls
  */
-function setupCameraCapabilities() {
+async function setupCameraCapabilities() {
     try {
         const track = getActiveCameraTrack();
         const trackCaps = (track && typeof track.getCapabilities === 'function') ? track.getCapabilities() : {};
@@ -2393,6 +2495,7 @@ function setupCameraCapabilities() {
         const btnTorch = document.getElementById('btnToggleTorch');
         const btnZoom = document.getElementById('btnToggleZoom');
         const btnFocus = document.getElementById('btnTriggerFocus');
+        const btnSwitch = document.getElementById('btnSwitchCamera');
 
         // Focus & Zoom controls are ALWAYS available (hardware or software fallback)
         if (btnFocus) {
@@ -2408,6 +2511,16 @@ function setupCameraCapabilities() {
         const hasTorch = (trackCaps && trackCaps.torch) || (scannerCaps && scannerCaps.torchFeature && scannerCaps.torchFeature().isSupported());
         if (btnTorch && hasTorch) {
             btnTorch.style.display = 'inline-flex';
+        }
+
+        // Camera lens switch button (shown if 2 or more cameras available)
+        await updateAvailableLottoCameras();
+        if (btnSwitch) {
+            if (availableLottoCameras && availableLottoCameras.length > 1) {
+                btnSwitch.style.display = 'inline-flex';
+            } else {
+                btnSwitch.style.display = 'none';
+            }
         }
     } catch(e) {
         console.warn('[Camera capabilities check warn]:', e);
@@ -2513,6 +2626,72 @@ export async function toggleLottoZoom() {
 
     if (btnZoom) btnZoom.innerHTML = `${currentZoomLevel}x`;
     showToast(`🔍 줌 배율: ${currentZoomLevel}x (초점 최적화)`, 1200);
+}
+
+/**
+ * 🔄 Update available camera list for lens switching (Galaxy S24+ multi-lens support)
+ */
+export async function updateAvailableLottoCameras() {
+    try {
+        if (typeof Html5Qrcode !== 'undefined' && Html5Qrcode.getCameras) {
+            const cameras = await Html5Qrcode.getCameras();
+            if (cameras && cameras.length > 0) {
+                const rearCameras = cameras.filter(c => {
+                    const lbl = (c.label || '').toLowerCase();
+                    return lbl.includes('back') || lbl.includes('rear') || lbl.includes('environment') || lbl.includes('후면') || lbl.includes('camera2');
+                });
+                availableLottoCameras = rearCameras.length > 0 ? rearCameras : cameras;
+
+                const track = getActiveCameraTrack();
+                if (track && track.label) {
+                    const activeIdx = availableLottoCameras.findIndex(c => c.label === track.label || (c.id && track.getSettings && track.getSettings().deviceId === c.id));
+                    if (activeIdx >= 0) {
+                        currentCameraIndex = activeIdx;
+                        currentActiveCameraId = availableLottoCameras[activeIdx].id;
+                    }
+                }
+            }
+        }
+    } catch(e) {
+        console.warn('[updateAvailableLottoCameras warn]:', e);
+    }
+}
+
+/**
+ * 🔄 Switch between rear camera lenses (Main Wide vs Ultra-wide vs Telephoto)
+ */
+export async function switchLottoCamera() {
+    if (!availableLottoCameras || availableLottoCameras.length <= 1) {
+        await updateAvailableLottoCameras();
+    }
+    if (!availableLottoCameras || availableLottoCameras.length <= 1) {
+        showToast('🔄 전환 가능한 다른 후면 카메라가 없습니다.', 1500);
+        return false;
+    }
+
+    currentCameraIndex = (currentCameraIndex + 1) % availableLottoCameras.length;
+    const nextCam = availableLottoCameras[currentCameraIndex];
+    currentActiveCameraId = nextCam.id;
+
+    let friendlyLabel = nextCam.label || `카메라 #${currentCameraIndex + 1}`;
+    const lowerLbl = friendlyLabel.toLowerCase();
+    if (lowerLbl.includes('camera2 0')) friendlyLabel = '메인 광각 (50MP)';
+    else if (lowerLbl.includes('camera2 2')) friendlyLabel = '초광각 (0.5x)';
+    else if (lowerLbl.includes('camera2 3')) friendlyLabel = '망원 (3x)';
+
+    showToast(`📷 ${friendlyLabel} 렌즈로 전환 중...`, 1300);
+
+    await stopScanning();
+    await new Promise(r => setTimeout(r, 200));
+    return await startLottoQrScanner(currentActiveCameraId);
+}
+
+export async function switchLottoCameraToId(targetId) {
+    if (!targetId || targetId === currentActiveCameraId) return false;
+    currentActiveCameraId = targetId;
+    await stopScanning();
+    await new Promise(r => setTimeout(r, 180));
+    return await startLottoQrScanner(targetId);
 }
 
 /**
@@ -2790,6 +2969,7 @@ if (typeof window !== 'undefined') {
     window.handleLottoQrFile = handleLottoQrFile;
     window.toggleLottoTorch = toggleLottoTorch;
     window.toggleLottoZoom = toggleLottoZoom;
+    window.switchLottoCamera = switchLottoCamera;
     window.processLottoQrPayload = processLottoQrPayload;
     window.triggerCameraAutoFocus = triggerCameraAutoFocus;
     window.applyCameraFocusOptimization = applyCameraFocusOptimization;
@@ -3391,5 +3571,6 @@ if (typeof window !== 'undefined') {
     window.randomFillActiveGame = randomFillActiveGame;
     window.clearActiveGame = clearActiveGame;
     window.clearAllGames = clearAllGames;
+    window.switchLottoCamera = switchLottoCamera;
 }
 
