@@ -1,25 +1,9 @@
 {
-  "version": "v2026.10.29.1501.43",
+  "version": "v2026.10.29.1513.22",
   "buildDate": "2026-10-29",
   "description": "갤럭시 S24+ 카메라 초점 최적화(50MP 메인렌즈 사전선택, 22cm 매크로 펄스, 수동 렌즈 전환 지원)",
-  "buildTimestamp": "2026-10-29T15:01:43.815400",
+  "buildTimestamp": "2026-10-29T15:13:22.509351",
   "buildHistory": [
-    {
-      "version": "v2026.10.24.1945.39",
-      "buildDate": "2026-10-24",
-      "buildTime": "19:45",
-      "buildDateTime": "2026-10-24 19:45",
-      "buildTimestamp": "2026-10-24T19:45:39.891681",
-      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
-    },
-    {
-      "version": "v2026.10.24.2003",
-      "buildDate": "2026-10-24",
-      "buildTime": "20:03",
-      "buildDateTime": "2026-10-24 20:03",
-      "buildTimestamp": "2026-10-24T20:03:12.361439",
-      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
-    },
     {
       "version": "v2026.10.24.2003.38",
       "buildDate": "2026-10-24",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-10-29 15:01",
       "buildTimestamp": "2026-10-29T15:01:43.815400",
       "description": "갤럭시 S24+ 카메라 초점 최적화(50MP 메인렌즈 사전선택, 22cm 매크로 펄스, 수동 렌즈 전환 지원)"
+    },
+    {
+      "version": "v2026.10.29.1513",
+      "buildDate": "2026-10-29",
+      "buildTime": "15:13",
+      "buildDateTime": "2026-10-29 15:13",
+      "buildTimestamp": "2026-10-29T15:13:00.901049",
+      "description": "갤럭시 S24+ 카메라 초점 최적화(50MP 메인렌즈 사전선택, 22cm 매크로 펄스, 수동 렌즈 전환 지원)"
+    },
+    {
+      "version": "v2026.10.29.1513.22",
+      "buildDate": "2026-10-29",
+      "buildTime": "15:13",
+      "buildDateTime": "2026-10-29 15:13",
+      "buildTimestamp": "2026-10-29T15:13:22.509351",
+      "description": "갤럭시 S24+ 카메라 초점 최적화(50MP 메인렌즈 사전선택, 22cm 매크로 펄스, 수동 렌즈 전환 지원)"
     }
   ],
-  "buildTime": "15:01",
-  "buildDateTime": "2026-10-29 15:01"
+  "buildTime": "15:13",
+  "buildDateTime": "2026-10-29 15:13"
 }

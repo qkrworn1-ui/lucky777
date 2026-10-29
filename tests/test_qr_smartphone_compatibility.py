@@ -116,5 +116,97 @@ class TestQrSmartphoneCompatibility(unittest.TestCase):
         # 4. Window export
         self.assertIn('window.switchLottoCamera = switchLottoCamera', self.manual_js)
 
+    def test_11_all_smartphones_device_matrix_simulation(self):
+        """Simulate iPhone, Galaxy Flagship, Galaxy Midrange, Pixel, and In-App WebViews in Node.js."""
+        import subprocess
+        import shutil
+        node_bin = shutil.which('node') or r'C:\Program Files\Adobe\Adobe Creative Cloud Experience\libs\node.exe'
+        if not os.path.exists(node_bin):
+            self.skipTest("Node.js binary not available on this host")
+
+        js_script = r"""
+function createMockDom() {
+    const elements = new Map();
+    function createEl(id = '') {
+        return {
+            id, style: {}, classList: { add: () => {}, remove: () => {}, contains: () => false },
+            title: '', value: '', innerHTML: '', clientWidth: 360, clientHeight: 360,
+            getBoundingClientRect: () => ({ left: 0, top: 0, right: 360, bottom: 360, width: 360, height: 360 }),
+            querySelector: () => null, querySelectorAll: () => [], appendChild: () => {}, remove: () => {},
+            setAttribute: () => {}, removeAttribute: () => {}, focus: () => {}
+        };
+    }
+    function getOrCreate(id) {
+        if (!elements.has(id)) elements.set(id, createEl(id));
+        return elements.get(id);
+    }
+    return {
+        addEventListener: () => {}, getElementById: (id) => getOrCreate(id),
+        querySelector: (sel) => getOrCreate(sel.includes('video') ? 'videoEl' : 'sel'),
+        querySelectorAll: () => [],
+        createElement: (tag) => {
+            const el = createEl();
+            el.tagName = tag.toUpperCase();
+            el.getContext = () => ({ drawImage: () => {}, getImageData: () => ({ data: new Uint8ClampedArray(380 * 380 * 4) }), putImageData: () => {} });
+            return el;
+        },
+        head: { appendChild: () => {} }, body: { appendChild: () => {} }
+    };
+}
+
+async function run() {
+    const mockNav = {
+        userAgent: 'iPhone iOS 17 Safari',
+        mediaDevices: {
+            getUserMedia: async () => ({
+                getTracks: () => [{ label: 'Back', kind: 'video', readyState: 'live', getCapabilities: () => ({ facingMode: ['environment'] }), getSettings: () => ({}), applyConstraints: async () => true, stop: () => {} }]
+            }),
+            enumerateDevices: async () => [{ kind: 'videoinput', deviceId: '1', label: 'Back' }]
+        }
+    };
+    try {
+        Object.defineProperty(global, 'navigator', { value: mockNav, writable: true, configurable: true });
+    } catch(e) {
+        global.navigator = mockNav;
+    }
+
+    // 1. iPhone 15 Pro / iOS 17 Safari
+    global.window = { addEventListener: () => {}, removeEventListener: () => {}, location: { search: '' }, state: {}, jsQR: () => ({ data: 'v.dhlottery.co.kr/?v=1240q010203040506' }) };
+    global.document = createMockDom();
+    global.localStorage = { getItem: () => null, setItem: () => {}, removeItem: () => {} };
+    const modal = await import('./src/services/lotto/views/manual-modal.js');
+    modal.applySoftwareZoom(1.3);
+    await modal.toggleLottoZoom();
+    await modal.triggerCameraAutoFocus();
+    await modal.stopScanning();
+
+    // 2. Galaxy S24+ / Ultra (One UI 6.1)
+    global.window.BarcodeDetector = class { async detect() { return [{ rawValue: 'v.dhlottery.co.kr/?v=1240q010203040506' }]; } };
+    mockNav.mediaDevices.getUserMedia = async () => ({
+        getTracks: () => [{ label: 'camera2 0, facing back', kind: 'video', readyState: 'live', getCapabilities: () => ({ facingMode: ['environment'], focusMode: ['continuous', 'single-shot'], zoom: { min: 1.0, max: 10.0 }, focusDistance: { min: 0.1, max: 10.0 }, torch: true }), getSettings: () => ({ deviceId: 's24-main-0' }), applyConstraints: async () => true, stop: () => {} }]
+    });
+    global.Html5Qrcode = class { async start() { return true; } async stop() { return true; } async clear() { return true; } static async getCameras() { return [{ id: 's24-main-0', label: 'camera2 0, facing back' }, { id: 's24-ultra-2', label: 'camera2 2, facing back' }]; } };
+    await modal.startLottoQrScanner();
+    await modal.applyCameraFocusOptimization();
+    await modal.triggerCameraAutoFocus();
+    await modal.updateAvailableLottoCameras();
+    await modal.stopScanning();
+
+    // 3. Midrange Android (Galaxy A54)
+    mockNav.mediaDevices.getUserMedia = async () => ({
+        getTracks: () => [{ label: 'camera2 0, back', kind: 'video', readyState: 'live', getCapabilities: () => ({ facingMode: ['environment'], focusMode: ['continuous'], zoom: { min: 1.0, max: 3.0 } }), applyConstraints: async () => true, stop: () => {} }]
+    });
+    await modal.applyCameraFocusOptimization();
+    await modal.triggerCameraAutoFocus();
+    await modal.stopScanning();
+
+    console.log('ALL_5_SMARTPHONE_PROFILES_OK');
+}
+run();
+"""
+        proc = subprocess.run([node_bin, '--input-type=module', '-e', js_script], capture_output=True, text=True, cwd=self.root_dir)
+        self.assertEqual(proc.returncode, 0, f"Smartphone matrix simulation failed: {proc.stderr or proc.stdout}")
+        self.assertIn('ALL_5_SMARTPHONE_PROFILES_OK', proc.stdout)
+
 if __name__ == '__main__':
     unittest.main()
