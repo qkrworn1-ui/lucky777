@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.09.1107.48 - BUILD_DATE: 2026-11-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.09.1138.32 - BUILD_DATE: 2026-11-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.09.1107.48)
+ * Lucky777 Smart Bundle (v2026.11.09.1138.32)
  */
 
 
@@ -31275,8 +31275,28 @@ async function render7AlgorithmsRealReviewSection() {
         return;
     }
 
-    // 1. Horizontal Quick Reference Mini Chips for each of the 7 algorithms
+    // 1. Horizontal Quick Reference Mini Chips for each of the 7 algorithms (with Top 3 Star Rank)
+    const sortedForTop3 = [...(results || [])].sort((a, b) => {
+        const rateA = parseFloat(a.winRate) || 0;
+        const rateB = parseFloat(b.winRate) || 0;
+        if (rateB !== rateA) return rateB - rateA;
+        const prizeA = a.totalPrize || 0;
+        const prizeB = b.totalPrize || 0;
+        if (prizeB !== prizeA) return prizeB - prizeA;
+        return (b.totalWins || 0) - (a.totalWins || 0);
+    });
+    const reviewTop3Map = new Map();
+    sortedForTop3.slice(0, 3).forEach((algo, idx) => {
+        if (algo && algo.id) reviewTop3Map.set(algo.id, idx + 1);
+    });
+
     const algoChipsHtml = (results || []).map(algo => {
+        const top3Rank = reviewTop3Map.get(algo.id);
+        let starBadge = '';
+        if (top3Rank === 1) starBadge = `<span style="background: rgba(251,191,36,0.3); border: 1px solid #fbbf24; color: #fef08a; padding: 1px 4px; border-radius: 4px; font-size: 0.68rem; font-weight: 800;"><i class="fa-solid fa-star"></i> 1위</span>`;
+        else if (top3Rank === 2) starBadge = `<span style="background: rgba(226,232,240,0.25); border: 1px solid #e2e8f0; color: #ffffff; padding: 1px 4px; border-radius: 4px; font-size: 0.68rem; font-weight: 800;"><i class="fa-solid fa-star"></i> 2위</span>`;
+        else if (top3Rank === 3) starBadge = `<span style="background: rgba(245,158,11,0.25); border: 1px solid #f59e0b; color: #fde68a; padding: 1px 4px; border-radius: 4px; font-size: 0.68rem; font-weight: 800;"><i class="fa-solid fa-star"></i> 3위</span>`;
+
         let topBadge = '';
         if (algo.topRank === 1) topBadge = `<span style="background: rgba(251,191,36,0.3); border: 1px solid #fbbf24; color: #fbbf24; padding: 1px 4px; border-radius: 4px; font-size: 0.68rem; font-weight: 800;">1등</span>`;
         else if (algo.topRank === 2) topBadge = `<span style="background: rgba(248,113,113,0.3); border: 1px solid #f87171; color: #f87171; padding: 1px 4px; border-radius: 4px; font-size: 0.68rem; font-weight: 800;">2등</span>`;
@@ -31290,6 +31310,7 @@ async function render7AlgorithmsRealReviewSection() {
             <div style="background: ${algo.bgGradient}; border: 1px solid ${algo.borderColor}; border-radius: 8px; padding: 6px 10px; display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0;">
                 <i class="fa-solid ${algo.icon}" style="color: ${aColor}; font-size: 0.8rem;"></i>
                 <span style="font-size: 0.74rem; font-weight: 700; color: #f8fafc; white-space: nowrap;">${algo.shortName}</span>
+                ${starBadge}
                 ${topBadge}
                 <span style="font-size: 0.72rem; color: #fbbf24; font-weight: 700; white-space: nowrap;">${algo.totalWins || 0}회 적중</span>
                 <span style="font-size: 0.72rem; color: #34d399; font-weight: 700; white-space: nowrap;">(+${formatPrizeCompact(algo.totalPrize || 0)})</span>
@@ -33301,6 +33322,7 @@ function resetGeneratorAdminViewingUser(authId = null) {
         window.generatorAdminViewingUser = authId;
         window.selectedAdminViewingUser = authId;
     }
+    try { updateTop7AlgoUI(); } catch(e) {}
 }
 
 /**
@@ -33322,6 +33344,7 @@ function changeGeneratorAdminViewingUser(userId) {
     renderTop5Combinations();
     renderExtraAddonPacksSection();
     render7AlgorithmsRealReviewSection();
+    try { updateTop7AlgoUI(); } catch(e) {}
     // Prediction Report Modal update (if open or available)
     const reportModal = document.getElementById('predictionReportModal');
     if (reportModal && (reportModal.classList.contains('active') || reportModal.style.display === 'flex')) {
@@ -33399,6 +33422,7 @@ if (typeof window !== 'undefined') {
     window.resetGeneratorAdminViewingUser = resetGeneratorAdminViewingUser;
     window.getUserActiveExtraPackIds = getUserActiveExtraPackIds;
     window.getEffectiveUserExtraPacks = getEffectiveUserExtraPacks;
+    window.applyTop3AlgoStarBadges = applyTop3AlgoStarBadges;
     window.updateTop7AlgoUI = updateTop7AlgoUI;
     window.selectGeneratorAlgo = selectGeneratorAlgo;
     window.handleGenerateAll70Games = handleGenerateAll70Games;
@@ -33459,6 +33483,147 @@ async function copyGolden30Games() {
 /**
  * 🎛️ Updates the Top 7 Algorithms Selection Grid and Purchase Status Banner
  */
+/**
+ * ⭐ 추천번호 메뉴: 회원별 실제 추천번호 당첨이력 기반 적중률 TOP 3 알고리즘 별표시 UI 적용
+ * @param {string|null} targetUserId
+ */
+async function applyTop3AlgoStarBadges(targetUserId = null) {
+    try {
+        const effectiveUserId = targetUserId || getEffectiveGeneratorUserId();
+        const cleanEffUser = String(effectiveUserId || '').toLowerCase().trim();
+
+        // 1. 해당 회원의 실제 추천번호 당첨 실데이터 집계 (1235회차부터)
+        let statsData = await compute7AlgorithmsRealStats(1235, effectiveUserId);
+        let results = statsData && Array.isArray(statsData.results) ? statsData.results : [];
+
+        // 회원의 실제 게임 이력 및 당첨 이력이 전혀 없는 경우 전체 회원('all') 데이터로 graceful fallback
+        const hasUserActivity = results.some(r => (r.totalGames || 0) > 0 && (r.totalWins || 0) > 0);
+        let isFallbackToAll = false;
+
+        if (!hasUserActivity && cleanEffUser !== 'all') {
+            const allStatsData = await compute7AlgorithmsRealStats(1235, 'all');
+            if (allStatsData && Array.isArray(allStatsData.results) && allStatsData.results.length > 0) {
+                results = allStatsData.results;
+                isFallbackToAll = true;
+            }
+        }
+
+        // 2. 적중률(winRate) 내림차순 정렬 (동률 시 누적 당첨금, 당첨 횟수 순)
+        const sortedAlgos = [...results].sort((a, b) => {
+            const rateA = parseFloat(a.winRate) || 0;
+            const rateB = parseFloat(b.winRate) || 0;
+            if (rateB !== rateA) return rateB - rateA;
+            const prizeA = a.totalPrize || 0;
+            const prizeB = b.totalPrize || 0;
+            if (prizeB !== prizeA) return prizeB - prizeA;
+            return (b.totalWins || 0) - (a.totalWins || 0);
+        });
+
+        // 7대 알고리즘 목록 정의
+        const ALL_ALGO_IDS = ['v4', 'v3', 'extra1', 'extra2', 'extra3', 'extra4', 'extra5'];
+
+        // Top 3 매핑 (rank: 1, 2, 3)
+        const top3Map = new Map();
+        const top3Slice = sortedAlgos.slice(0, 3);
+        top3Slice.forEach((algo, index) => {
+            if (algo && algo.id) {
+                top3Map.set(algo.id, {
+                    rank: index + 1,
+                    winRate: algo.winRate || '0.0',
+                    totalWins: algo.totalWins || 0,
+                    totalPrize: algo.totalPrize || 0,
+                    name: algo.name || algo.shortName || algo.id
+                });
+            }
+        });
+
+        if (typeof window !== 'undefined') {
+            window._currentTop3AlgosMap = top3Map;
+        }
+
+        // 3. 각 7개 알고리즘 카드 상단 별표시 배지 및 카드 테두리 하이라이트 적용
+        ALL_ALGO_IDS.forEach(id => {
+            const starElem = document.getElementById(`topAlgoStar_${id}`);
+            const cardElem = document.getElementById(`topAlgoCard_${id}`);
+
+            // 기존 순위 클래스 초기화
+            if (cardElem) {
+                cardElem.classList.remove('is-top-algo-1');
+                cardElem.classList.remove('is-top-algo-2');
+                cardElem.classList.remove('is-top-algo-3');
+            }
+
+            if (top3Map.has(id)) {
+                const info = top3Map.get(id);
+                const rank = info.rank; // 1, 2, 3
+                const prizeStr = formatPrizeCompact(info.totalPrize);
+                const winRateVal = (typeof info.winRate === 'number') ? info.winRate.toFixed(1) : info.winRate;
+
+                if (starElem) {
+                    starElem.className = `algo-top-star-badge rank-${rank}`;
+                    starElem.style.display = 'inline-flex';
+                    starElem.setAttribute('title', `실제 적중률 ${winRateVal}% (${info.totalWins}회 적중 / 누적 +${prizeStr})`);
+                    starElem.innerHTML = `<i class="fa-solid fa-star"></i> <span>${rank}위 ${winRateVal}%</span>`;
+                }
+                if (cardElem) {
+                    cardElem.classList.add(`is-top-algo-${rank}`);
+                }
+            } else {
+                if (starElem) {
+                    starElem.style.display = 'none';
+                    starElem.innerHTML = '';
+                    starElem.className = 'algo-top-star-badge';
+                }
+            }
+        });
+
+        // 4. 상단 안내 배너 텍스트 업데이트
+        const noticeElem = document.getElementById('userTop3AlgoNotice');
+        const noticeText = document.getElementById('userTop3AlgoNoticeText');
+        if (noticeElem && noticeText && top3Slice.length > 0) {
+            let userLabel = '';
+            if (cleanEffUser === 'all') {
+                userLabel = '전체 회원 누적 실데이터';
+            } else if (isFallbackToAll) {
+                userLabel = '신규 회원 맞춤(전체 누적 실데이터 기준)';
+            } else {
+                const realName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || '';
+                const userDisplay = realName || (cleanEffUser === 'master' ? '최고관리자' : (cleanEffUser.startsWith('kakao_') ? `카카오회원(${cleanEffUser.slice(-4)})` : cleanEffUser));
+                userLabel = `[${userDisplay}] 회원님의 실제 당첨 이력`;
+            }
+
+            const top1 = top3Slice[0] ? `${top3Slice[0].shortName || top3Slice[0].name}(${top3Slice[0].winRate}%)` : '';
+            const top2 = top3Slice[1] ? `${top3Slice[1].shortName || top3Slice[1].name}(${top3Slice[1].winRate}%)` : '';
+            const top3 = top3Slice[2] ? `${top3Slice[2].shortName || top3Slice[2].name}(${top3Slice[2].winRate}%)` : '';
+            const top3Summary = [top1, top2, top3].filter(Boolean).join(', ');
+
+            noticeText.innerHTML = `<strong>${userLabel}</strong> 기반 최고 적중률 TOP 3 알고리즘: <span style="color:#fef08a; font-weight:700;">${top3Summary}</span>에 ⭐ 별표시가 적용되었습니다.`;
+            noticeElem.style.display = 'flex';
+        }
+
+        // 5. 스페셜 추가팩 퀵 버튼(추가 1~5)에도 TOP 3 별표시 인디케이터 반영
+        for (let p = 1; p <= 5; p++) {
+            const btn = document.getElementById(`btnQuickPack_${p}`);
+            if (btn) {
+                const pAlgoId = (p === 1) ? 'extra1' : `extra${p}`;
+                const existingStar = btn.querySelector('.btn-star-mark');
+                if (existingStar) existingStar.remove();
+                if (top3Map.has(pAlgoId)) {
+                    const info = top3Map.get(pAlgoId);
+                    const starSpan = document.createElement('span');
+                    starSpan.className = 'btn-star-mark';
+                    starSpan.style.cssText = 'color: #fbbf24; font-size: 0.75rem; margin-right: 4px; display: inline-flex; align-items: center;';
+                    starSpan.setAttribute('title', `실제 적중률 ${info.rank}위 (${info.winRate}%)`);
+                    starSpan.innerHTML = `<i class="fa-solid fa-star"></i>`;
+                    btn.insertBefore(starSpan, btn.firstChild);
+                }
+            }
+        }
+    } catch (err) {
+        console.warn('[applyTop3AlgoStarBadges error]', err);
+    }
+}
+
 function updateTop7AlgoUI() {
     try {
         let rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : (typeof window !== 'undefined' && window.SafeAuth ? window.SafeAuth.get() : null)) || 'guest';
@@ -33602,6 +33767,9 @@ function updateTop7AlgoUI() {
                 }
             }
         }
+
+        // 4. 회원별 실제 추천번호 당첨 이력 기반 적중률 TOP 3 알고리즘 별표시 UI 적용
+        applyTop3AlgoStarBadges(effectiveUserId).catch(e => console.warn('[applyTop3AlgoStarBadges error]', e));
     } catch (e) {
         console.warn('[updateTop7AlgoUI error]', e);
     }
@@ -33914,6 +34082,10 @@ async function handleGenerateAll70Games() {
         if (typeof copyGolden30Games !== 'undefined') {
             __exports.copyGolden30Games = copyGolden30Games;
             if (typeof window !== 'undefined') window.copyGolden30Games = copyGolden30Games;
+        }
+        if (typeof applyTop3AlgoStarBadges !== 'undefined') {
+            __exports.applyTop3AlgoStarBadges = applyTop3AlgoStarBadges;
+            if (typeof window !== 'undefined') window.applyTop3AlgoStarBadges = applyTop3AlgoStarBadges;
         }
         if (typeof updateTop7AlgoUI !== 'undefined') {
             __exports.updateTop7AlgoUI = updateTop7AlgoUI;
