@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.09.1029.24 - BUILD_DATE: 2026-11-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.09.1107.48 - BUILD_DATE: 2026-11-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.09.1029.24)
+ * Lucky777 Smart Bundle (v2026.11.09.1107.48)
  */
 
 
@@ -22760,6 +22760,7 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
         ];
 
         const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+        const isRound1250Upgrade = (roundForSeed >= 1250);
 
         for (let i = 0; i < 10; i++) {
             let attempts = 0;
@@ -22770,6 +22771,9 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
                 while (attempts < 500) {
                     attempts++;
                     let candidate = new Set();
+                    if (isRound1250Upgrade && prevDrawNums.length > 0) {
+                        candidate.add(prevDrawNums[i % prevDrawNums.length]);
+                    }
                     while (candidate.size < 6) {
                         let pool = (rng2() < 0.7 && warmNumbers.length > 0) ? warmNumbers : Array.from({ length: 45 }, (_, k) => k + 1);
                         candidate.add(pool[Math.floor(rng2() * pool.length)]);
@@ -22795,6 +22799,9 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
 
                 if (!bestCandidateObj) {
                     let fallbackCandidate = new Set();
+                    if (isRound1250Upgrade && prevDrawNums.length > 0) {
+                        fallbackCandidate.add(prevDrawNums[i % prevDrawNums.length]);
+                    }
                     let fAttempts = 0;
                     while (fallbackCandidate.size < 6) {
                         fallbackCandidate.add(Math.floor(rng2() * 45) + 1);
@@ -22803,6 +22810,9 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
                     while (existingCombos.has(nums.join(',')) && fAttempts < 50) {
                         fAttempts++;
                         fallbackCandidate.clear();
+                        if (isRound1250Upgrade && prevDrawNums.length > 0) {
+                            fallbackCandidate.add(prevDrawNums[i % prevDrawNums.length]);
+                        }
                         while (fallbackCandidate.size < 6) fallbackCandidate.add(Math.floor(rng2() * 45) + 1);
                         nums = Array.from(fallbackCandidate).sort((a, b) => a - b);
                     }
@@ -22821,13 +22831,18 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
                         rankBadge: `BALANCE-2 ${i + 1}`,
                         rankClass: `top-1-badge`,
                         badgeClass: `strategy-a`,
-                        name: `올라운더 2 통계 밸런스 로직`,
-                        tag: `합계 115~165 | 홀짝 2:4~4:2 | 끝수 분산`,
-                        desc: '올라운더 1의 정규분포 프레임워크를 기반으로 슬롯 2 고유 시드를 주입하여, 상호보완적인 밸런스 대역을 정밀하게 추출합니다.',
+                        name: isRound1250Upgrade ? `올라운더 2 이월수 분산 밸런스 로직` : `올라운더 2 통계 밸런스 로직`,
+                        tag: isRound1250Upgrade ? `이월수 교차 로테이션 | 합 115~165 | 홀짝 2:4~4:2` : `합계 115~165 | 홀짝 2:4~4:2 | 끝수 분산`,
+                        desc: isRound1250Upgrade
+                            ? '올라운더 1의 정규분포 프레임워크를 기반으로 직전 회차 이월수를 게임별로 분산 교차 배치하여 상호보완 적중률을 극대화합니다.'
+                            : '올라운더 1의 정규분포 프레임워크를 기반으로 슬롯 2 고유 시드를 주입하여, 상호보완적인 밸런스 대역을 정밀하게 추출합니다.',
                         lawName: '그룹 1: 통계 밸런스 앙상블 (게임 1~4)',
                         probRationale: '올라운더 1과 비대칭 교차 검증된 웜넘버 정규분포 구역에서 소액당첨을 빈틈없이 방어합니다.',
                         targetBenefit: '올라운더 1 상호보완 4·5등 당첨 방어 및 안정성 극대화',
-                        numReasons: bestCandidateObj.nums.map(n => `${n}번: 슬롯 2 웜 넘버 정규분포 상호보완 배치`)
+                        numReasons: bestCandidateObj.nums.map(n => {
+                            if (isRound1250Upgrade && prevDrawNums.includes(n)) return `${n}번: 직전 회차 분산 이월수 앵커`;
+                            return `${n}번: 슬롯 2 웜 넘버 정규분포 상호보완 배치`;
+                        })
                     }
                 });
 
@@ -22837,9 +22852,13 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
                     attempts++;
                     let candidate = new Set();
 
-                    // 직전 이월수 1개
-                    let shuffledPrev = seededShuffle(prevDrawNums, rng2);
-                    if (shuffledPrev.length > 0) candidate.add(shuffledPrev[0]);
+                    // 직전 이월수 1개 (1250회차부터 6수 전체 분산 로테이션)
+                    if (isRound1250Upgrade && prevDrawNums.length > 0) {
+                        candidate.add(prevDrawNums[i % prevDrawNums.length]);
+                    } else {
+                        let shuffledPrev = seededShuffle(prevDrawNums, rng2);
+                        if (shuffledPrev.length > 0) candidate.add(shuffledPrev[0]);
+                    }
 
                     // 연번 1쌍
                     let seqStart = Math.floor(rng2() * 44) + 1;
@@ -22888,6 +22907,9 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
 
                 if (!bestCandidateObj) {
                     let fallbackCandidate = new Set();
+                    if (isRound1250Upgrade && prevDrawNums.length > 0) {
+                        fallbackCandidate.add(prevDrawNums[i % prevDrawNums.length]);
+                    }
                     let fAttempts = 0;
                     while (fallbackCandidate.size < 6) {
                         fallbackCandidate.add(Math.floor(rng2() * 45) + 1);
@@ -22896,6 +22918,9 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
                     while (existingCombos.has(nums.join(',')) && fAttempts < 50) {
                         fAttempts++;
                         fallbackCandidate.clear();
+                        if (isRound1250Upgrade && prevDrawNums.length > 0) {
+                            fallbackCandidate.add(prevDrawNums[i % prevDrawNums.length]);
+                        }
                         while (fallbackCandidate.size < 6) fallbackCandidate.add(Math.floor(rng2() * 45) + 1);
                         nums = Array.from(fallbackCandidate).sort((a, b) => a - b);
                     }
@@ -23332,12 +23357,16 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
 
     const packMetas = {
         1: {
-            name: '기본 3: 올라운더 팩 3 (빈틈제로 10게임)',
-            shortName: '올라운더 3: 빈틈제로',
-            badge: 'ALL-ROUNDER 3 (ZERO-GAP 100%)',
+            name: (curUpcomingRound >= 1250) ? '기본 3: 올라운더 팩 3 (결손반등·핫휠링 10게임)' : '기본 3: 올라운더 팩 3 (빈틈제로 10게임)',
+            shortName: (curUpcomingRound >= 1250) ? '올라운더 3: 결손반등·핫휠링' : '올라운더 3: 빈틈제로',
+            badge: (curUpcomingRound >= 1250) ? 'ALL-ROUNDER 3 (OVERDUE REBOUND WHEEL)' : 'ALL-ROUNDER 3 (ZERO-GAP 100%)',
             color: '#10b981',
-            desc: '기본 20게임 미선택 번호 중 결손 회귀 가능성 높은 번호와 핫 앵커·이월수를 결합한 사각지대 제로 포트폴리오 (1~45번 100% 전수 방어망)',
-            tag: '올라운더 3 | 1~45번 100% 완전 커버 | 결손 회귀 앵커 | AC 7+'
+            desc: (curUpcomingRound >= 1250)
+                ? '장기 결손 번호 중 반등 주기 최상위 앵커와 핫 모멘텀 앵커를 결합한 고효율 휠링 포트폴리오'
+                : '기본 20게임 미선택 번호 중 결손 회귀 가능성 높은 번호와 핫 앵커·이월수를 결합한 사각지대 제로 포트폴리오 (1~45번 100% 전수 방어망)',
+            tag: (curUpcomingRound >= 1250)
+                ? '올라운더 3 | 결손 반등 앵커 | 핫 모멘텀 휠링 | AC 7+'
+                : '올라운더 3 | 1~45번 100% 완전 커버 | 결손 회귀 앵커 | AC 7+'
         },
         2: {
             name: '추가 2: 슈퍼 잭팟 팩 (10게임)',
@@ -23571,46 +23600,109 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
                     // ====================================================
                     // All-Rounder 3: All-Rounder 1 Framework + Slot 3 + Clique C + 100% Zero-Gap Missing Numbers
                     // ====================================================
-                    const assignedMissing = pack1MissingDistribution[(i + userShift) % 10] || [];
-                    assignedMissing.forEach(n => candidate.add(n));
+                    const isRound1250Upgrade = (curUpcomingRound >= 1250);
 
-                    if (i < 4) {
-                        // Group 1: 전수 커버 밸런스 C (게임 1~4)
-                        let pool = (packRandom() < 0.7 && warmNumbers.length > 0) ? warmNumbers : allNumbers1To45;
-                        while (candidate.size < 6) {
-                            let n = pool[Math.floor(packRandom() * pool.length)];
-                            candidate.add(n);
-                        }
-                    } else if (i < 7) {
-                        // Group 2: 클러스터 & 소수 앙상블 C (게임 5~7)
-                        const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43];
-                        candidate.add(primes[Math.floor(packRandom() * primes.length)]);
-                        let shuffledHot = seededShuffle(topHotAnchors, packRandom);
-                        if (shuffledHot.length > 0) candidate.add(shuffledHot[0]);
-                        while (candidate.size < 6) {
-                            const picked = pickWeightedNumber(allNumbers1To45, candidate);
-                            if (picked) candidate.add(picked);
-                            else candidate.add(Math.floor(packRandom() * 45) + 1);
+                    if (isRound1250Upgrade) {
+                        // [1250회차+ 최적화] 선별적 장기 결손 반등 앵커(Overdue Rebound) + 핫 모멘텀 앵커 휠링
+                        const overdueList = allNumbers1To45.filter(n => (state.MISSING_WEEKS && state.MISSING_WEEKS[n] >= 10));
+                        overdueList.sort((a, b) => {
+                            let scoreA = ((state.MISSING_WEEKS[a] || 0) * 2.0) + ((state.HISTORICAL_FREQUENCY && state.HISTORICAL_FREQUENCY[a] || 0) * 1.0);
+                            let scoreB = ((state.MISSING_WEEKS[b] || 0) * 2.0) + ((state.HISTORICAL_FREQUENCY && state.HISTORICAL_FREQUENCY[b] || 0) * 1.0);
+                            return scoreB - scoreA;
+                        });
+                        const overdueAnchor = overdueList.length > 0 ? overdueList[0] : 10;
+                        const hotAnchor = (topHotAnchors && topHotAnchors.length > 0) ? topHotAnchors[0] : 1;
+
+                        if (i < 4) {
+                            // Group 1: 결손 반등 앵커 + 핫 모멘텀 앵커 + 웜넘버 휠링 (게임 1~4)
+                            candidate.add(overdueAnchor);
+                            candidate.add(hotAnchor);
+                            let pool = (packRandom() < 0.7 && warmNumbers.length > 0) ? warmNumbers : allNumbers1To45;
+                            while (candidate.size < 6) {
+                                let n = pool[Math.floor(packRandom() * pool.length)];
+                                candidate.add(n);
+                            }
+                        } else if (i < 7) {
+                            // Group 2: 최상위 핫 앵커 로테이션 + 소수 앙상블 C (게임 5~7)
+                            const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43];
+                            const primePick = primes[Math.floor(packRandom() * primes.length)];
+                            candidate.add(primePick);
+                            const hotPick = (topHotAnchors && topHotAnchors.length > 0)
+                                ? topHotAnchors[(i + 1) % topHotAnchors.length]
+                                : primes[(i + 2) % primes.length];
+                            candidate.add(hotPick);
+                            while (candidate.size < 6) {
+                                const picked = pickWeightedNumber(allNumbers1To45, candidate);
+                                if (picked) candidate.add(picked);
+                                else candidate.add(Math.floor(packRandom() * 45) + 1);
+                            }
+                        } else {
+                            // Group 3: 역사적 과적합 골든 클리크 C + 결손 반등 앵커 주입 (게임 8~10)
+                            const cliqueSetC = [
+                                [3, 11, 20, 28, 36, 41],
+                                [6, 14, 21, 27, 34, 43],
+                                [9, 15, 22, 32, 38, 45]
+                            ];
+                            let arr = [...cliqueSetC[i - 7]];
+                            let baseSet = new Set(arr);
+                            let uIdx = getUserDispersionIndex(effectiveUserId) + 7;
+                            let mutIdx = Math.floor(packRandom() * arr.length);
+                            baseSet.delete(arr[mutIdx]);
+                            baseSet.add(overdueAnchor);
+                            if (baseSet.size < 6) {
+                                let pool = warmNumbers.filter(n => !baseSet.has(n));
+                                if (pool.length === 0) pool = allNumbers1To45.filter(n => !baseSet.has(n));
+                                let rep = pool[(Math.floor(packRandom() * pool.length) + uIdx) % pool.length] || Math.min(45, (arr[mutIdx] + 3) % 45 + 1);
+                                baseSet.add(rep);
+                            }
+                            baseSet.forEach(n => candidate.add(n));
+                            while (candidate.size < 6) {
+                                candidate.add(Math.floor(packRandom() * 45) + 1);
+                            }
                         }
                     } else {
-                        // Group 3: 역사적 과적합 골든 클리크 C (게임 8~10)
-                        const cliqueSetC = [
-                            [3, 11, 20, 28, 36, 41],
-                            [6, 14, 21, 27, 34, 43],
-                            [9, 15, 22, 32, 38, 45]
-                        ];
-                        let arr = [...cliqueSetC[i - 7]];
-                        let baseSet = new Set(arr);
-                        let uIdx = getUserDispersionIndex(effectiveUserId) + 7;
-                        let mutIdx = Math.floor(packRandom() * arr.length);
-                        let pool = warmNumbers.filter(n => !arr.includes(n));
-                        if (pool.length === 0) pool = allNumbers1To45.filter(n => !arr.includes(n));
-                        let rep = pool[(Math.floor(packRandom() * pool.length) + uIdx) % pool.length] || Math.min(45, (arr[mutIdx] + 3) % 45 + 1);
-                        baseSet.delete(arr[mutIdx]);
-                        baseSet.add(rep);
-                        baseSet.forEach(n => candidate.add(n));
-                        while (candidate.size < 6) {
-                            candidate.add(Math.floor(packRandom() * 45) + 1);
+                        // [1249회차 이하 레거시 보존] 100% 동일한 기존 pack1MissingDistribution 로직 유지
+                        const assignedMissing = pack1MissingDistribution[(i + userShift) % 10] || [];
+                        assignedMissing.forEach(n => candidate.add(n));
+
+                        if (i < 4) {
+                            // Group 1: 전수 커버 밸런스 C (게임 1~4)
+                            let pool = (packRandom() < 0.7 && warmNumbers.length > 0) ? warmNumbers : allNumbers1To45;
+                            while (candidate.size < 6) {
+                                let n = pool[Math.floor(packRandom() * pool.length)];
+                                candidate.add(n);
+                            }
+                        } else if (i < 7) {
+                            // Group 2: 클러스터 & 소수 앙상블 C (게임 5~7)
+                            const primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43];
+                            candidate.add(primes[Math.floor(packRandom() * primes.length)]);
+                            let shuffledHot = seededShuffle(topHotAnchors, packRandom);
+                            if (shuffledHot.length > 0) candidate.add(shuffledHot[0]);
+                            while (candidate.size < 6) {
+                                const picked = pickWeightedNumber(allNumbers1To45, candidate);
+                                if (picked) candidate.add(picked);
+                                else candidate.add(Math.floor(packRandom() * 45) + 1);
+                            }
+                        } else {
+                            // Group 3: 역사적 과적합 골든 클리크 C (게임 8~10)
+                            const cliqueSetC = [
+                                [3, 11, 20, 28, 36, 41],
+                                [6, 14, 21, 27, 34, 43],
+                                [9, 15, 22, 32, 38, 45]
+                            ];
+                            let arr = [...cliqueSetC[i - 7]];
+                            let baseSet = new Set(arr);
+                            let uIdx = getUserDispersionIndex(effectiveUserId) + 7;
+                            let mutIdx = Math.floor(packRandom() * arr.length);
+                            let pool = warmNumbers.filter(n => !arr.includes(n));
+                            if (pool.length === 0) pool = allNumbers1To45.filter(n => !arr.includes(n));
+                            let rep = pool[(Math.floor(packRandom() * pool.length) + uIdx) % pool.length] || Math.min(45, (arr[mutIdx] + 3) % 45 + 1);
+                            baseSet.delete(arr[mutIdx]);
+                            baseSet.add(rep);
+                            baseSet.forEach(n => candidate.add(n));
+                            while (candidate.size < 6) {
+                                candidate.add(Math.floor(packRandom() * 45) + 1);
+                            }
                         }
                     }
 
@@ -23735,10 +23827,12 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
                 metaClass = (i < 4) ? 'top-1-badge' : (i < 7 ? 'top-4-badge' : 'badge-v3-engine');
                 if (i < 4) {
                     metaRankBadge = `AR3-BAL ${i + 1}`;
-                    metaName = `올라운더 3: 빈틈제로 밸런스 #${i + 1}`;
-                    metaLaw = '그룹 1: 전수 커버 밸런스 C (게임 1~4)';
-                    metaTag = `미선택 결손 흡수 | 합계 ${sum} | AC ${ac}`;
-                    metaDesc = '기본 20게임(올라운더 1·2)에서 미선택된 번호를 우선 흡수하여 1~45번 100% 완전 커버리지를 완성하는 밸런스 조합입니다.';
+                    metaName = (curUpcomingRound >= 1250) ? `올라운더 3: 결손반등 휠링 #${i + 1}` : `올라운더 3: 빈틈제로 밸런스 #${i + 1}`;
+                    metaLaw = (curUpcomingRound >= 1250) ? '그룹 1: 장기 결손 반등 & 핫 모멘텀 휠링 (게임 1~4)' : '그룹 1: 전수 커버 밸런스 C (게임 1~4)';
+                    metaTag = (curUpcomingRound >= 1250) ? `결손 반등 앵커 | 핫 모멘텀 | AC ${ac}` : `미선택 결손 흡수 | 합계 ${sum} | AC ${ac}`;
+                    metaDesc = (curUpcomingRound >= 1250)
+                        ? '10주 이상 장기 미출현 번호 중 반등 주기 최상위 앵커와 핫 모멘텀 앵커를 결합하여 기댓값과 고액 당첨을 동시에 견인합니다.'
+                        : '기본 20게임(올라운더 1·2)에서 미선택된 번호를 우선 흡수하여 1~45번 100% 완전 커버리지를 완성하는 밸런스 조합입니다.';
                 } else if (i < 7) {
                     metaRankBadge = `AR3-CLUS ${i - 3}`;
                     metaName = `올라운더 3: 클러스터 & 소수 #${i - 3}`;
