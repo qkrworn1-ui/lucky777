@@ -3823,13 +3823,29 @@ export function getSafeActualDraw(round) {
 
         1245: { numbers: [4, 5, 25, 28, 32, 42], bonus: 12, rank1Winners: 10, rank1Prize: 3006515775, rank2Winners: 91, rank2Prize: 55064392, rank3Winners: 3105, rank3Prize: 1615365, rank4Winners: 154625, rank4Prize: 50000, rank5Winners: 2603893, rank5Prize: 5000, date: '2026-10-10' },
 
-        1246: { numbers: [16, 22, 23, 24, 27, 28], bonus: 6, rank1Winners: 16, rank1Prize: 1881025430, rank2Winners: 64, rank2Prize: 78376060, rank3Winners: 3352, rank3Prize: 1497334, rank4Winners: 168430, rank4Prize: 50000, rank5Winners: 2795804, rank5Prize: 5000, date: '2026-10-17' }
+        1246: { numbers: [16, 22, 23, 24, 27, 28], bonus: 6, rank1Winners: 16, rank1Prize: 1881025430, rank2Winners: 64, rank2Prize: 78376060, rank3Winners: 3352, rank3Prize: 1497334, rank4Winners: 168430, rank4Prize: 50000, rank5Winners: 2795804, rank5Prize: 5000, date: '2026-10-17' },
+
+        1247: { numbers: [8, 14, 21, 22, 42, 45], bonus: 24, rank1Winners: 8, rank1Prize: 3637439250, rank2Winners: 74, rank2Prize: 65539446, rank3Winners: 2983, rank3Prize: 1625853, rank4Winners: 154703, rank4Prize: 50000, rank5Winners: 2591204, rank5Prize: 5000, date: '2026-10-24' },
+
+        1248: { numbers: [16, 18, 27, 36, 38, 42], bonus: 22, rank1Winners: 15, rank1Prize: 1933658450, rank2Winners: 91, rank2Prize: 53122485, rank3Winners: 3265, rank3Prize: 1480597, rank4Winners: 167745, rank4Prize: 50000, rank5Winners: 2723467, rank5Prize: 5000, date: '2026-10-31' },
+
+        1249: { numbers: [2, 11, 16, 25, 34, 35], bonus: 14, rank1Winners: 14, rank1Prize: 2025045509, rank2Winners: 93, rank2Prize: 50807594, rank3Winners: 3550, rank3Prize: 1331016, rank4Winners: 162101, rank4Prize: 50000, rank5Winners: 2634961, rank5Prize: 5000, date: '2026-11-07' }
 
     };
 
     if (STATIC_DRAWS[r]) return STATIC_DRAWS[r];
 
+    if (state.lottoExtraHistory && state.lottoExtraHistory[r]) return state.lottoExtraHistory[r];
+    if (state.lottoExtraHistory && state.lottoExtraHistory[String(r)]) return state.lottoExtraHistory[String(r)];
 
+    if (state.latestDrawData && Number(state.latestDrawData.drwNo) === r && Array.isArray(state.latestDrawData.numbers) && state.latestDrawData.numbers.length === 6) {
+        return state.latestDrawData;
+    }
+
+    if (typeof window !== 'undefined' && window.__globalHistoryBackup) {
+        if (window.__globalHistoryBackup[r]) return window.__globalHistoryBackup[r];
+        if (window.__globalHistoryBackup[String(r)]) return window.__globalHistoryBackup[String(r)];
+    }
 
     if (state.mergedHistory && state.mergedHistory[r]) return state.mergedHistory[r];
 

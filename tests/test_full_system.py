@@ -5025,8 +5025,9 @@ Lotto 6/45
                     console.error('New admin message must not be marked deleted');
                     process.exit(1);
                 }
-                if (notifs.length !== 1 || notifs[0].id !== 'admin-msg-adm_1792659453742' || notifs[0].unread !== true) {
-                    console.error('Inbox should have 1 unread admin message, got:', notifs);
+                const adminNotifs = notifs.filter(n => n.category === 'admin');
+                if (adminNotifs.length !== 1 || adminNotifs[0].id !== 'admin-msg-adm_1792659453742' || adminNotifs[0].unread !== true) {
+                    console.error('Inbox should have 1 unread admin message, got:', adminNotifs);
                     process.exit(1);
                 }
                 if (modalDisplay !== 'flex') {

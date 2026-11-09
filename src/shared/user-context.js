@@ -143,7 +143,7 @@ export const UserContextManager = {
         const createdAt = this.getUserCreatedAt(cleanId);
         if (createdAt) {
             const calced = LottoTimeService.calcRoundFromDate(createdAt);
-            const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1244;
+            const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
             return Math.max(1235, Math.min(calced, fallbackLatest));
         }
 
@@ -157,7 +157,7 @@ export const UserContextManager = {
 
     getValidRoundsForUser(userId, latestRound) {
         const joinRound = this.getUserJoinRound(userId);
-        const curLatest = latestRound || (typeof window !== 'undefined' && window.getLatestDrawnRound ? window.getLatestDrawnRound() : 1244);
+        const curLatest = latestRound || (typeof window !== 'undefined' && window.getLatestDrawnRound ? window.getLatestDrawnRound() : 1249);
         const minRound = Math.max(1235, Math.min(joinRound, curLatest));
         const maxRound = Math.max(minRound, curLatest);
         const rounds = [];

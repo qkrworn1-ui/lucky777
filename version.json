@@ -1,41 +1,9 @@
 {
-  "version": "v2026.10.29.1513.22",
-  "buildDate": "2026-10-29",
-  "description": "갤럭시 S24+ 카메라 초점 최적화(50MP 메인렌즈 사전선택, 22cm 매크로 펄스, 수동 렌즈 전환 지원)",
-  "buildTimestamp": "2026-10-29T15:13:22.509351",
+  "version": "v2026.11.09.1029.24",
+  "buildDate": "2026-11-09",
+  "description": "당첨결과 전체회원 조회 시 최신 회차(1247~1249) 추천당첨결과 0원 표시 오류 해결",
+  "buildTimestamp": "2026-11-09T10:29:24.611306",
   "buildHistory": [
-    {
-      "version": "v2026.10.24.2003.38",
-      "buildDate": "2026-10-24",
-      "buildTime": "20:03",
-      "buildDateTime": "2026-10-24 20:03",
-      "buildTimestamp": "2026-10-24T20:03:38.131962",
-      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
-    },
-    {
-      "version": "v2026.10.24.2004",
-      "buildDate": "2026-10-24",
-      "buildTime": "20:04",
-      "buildDateTime": "2026-10-24 20:04",
-      "buildTimestamp": "2026-10-24T20:04:34.432705",
-      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
-    },
-    {
-      "version": "v2026.10.24.2005",
-      "buildDate": "2026-10-24",
-      "buildTime": "20:05",
-      "buildDateTime": "2026-10-24 20:05",
-      "buildTimestamp": "2026-10-24T20:05:22.491423",
-      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
-    },
-    {
-      "version": "v2026.10.24.2005.40",
-      "buildDate": "2026-10-24",
-      "buildTime": "20:05",
-      "buildDateTime": "2026-10-24 20:05",
-      "buildTimestamp": "2026-10-24T20:05:40.763099",
-      "description": "대시보드 및 상단 바 알림함 아이콘 전용(Icon-Only) 플로팅 뱃지 버튼 개편 완료"
-    },
     {
       "version": "v2026.10.24.2013",
       "buildDate": "2026-10-24",
@@ -123,8 +91,40 @@
       "buildDateTime": "2026-10-29 15:13",
       "buildTimestamp": "2026-10-29T15:13:22.509351",
       "description": "갤럭시 S24+ 카메라 초점 최적화(50MP 메인렌즈 사전선택, 22cm 매크로 펄스, 수동 렌즈 전환 지원)"
+    },
+    {
+      "version": "v2026.11.09.1027",
+      "buildDate": "2026-11-09",
+      "buildTime": "10:27",
+      "buildDateTime": "2026-11-09 10:27",
+      "buildTimestamp": "2026-11-09T10:27:55.491772",
+      "description": "갤럭시 S24+ 카메라 초점 최적화(50MP 메인렌즈 사전선택, 22cm 매크로 펄스, 수동 렌즈 전환 지원)"
+    },
+    {
+      "version": "v2026.11.09.1028",
+      "buildDate": "2026-11-09",
+      "buildTime": "10:28",
+      "buildDateTime": "2026-11-09 10:28",
+      "buildTimestamp": "2026-11-09T10:28:30.341665",
+      "description": "갤럭시 S24+ 카메라 초점 최적화(50MP 메인렌즈 사전선택, 22cm 매크로 펄스, 수동 렌즈 전환 지원)"
+    },
+    {
+      "version": "v2026.11.09.1029",
+      "buildDate": "2026-11-09",
+      "buildTime": "10:29",
+      "buildDateTime": "2026-11-09 10:29",
+      "buildTimestamp": "2026-11-09T10:29:04.957363",
+      "description": "당첨결과 전체회원 조회 시 최신 회차(1247~1249) 추천당첨결과 0원 표시 오류 해결"
+    },
+    {
+      "version": "v2026.11.09.1029.24",
+      "buildDate": "2026-11-09",
+      "buildTime": "10:29",
+      "buildDateTime": "2026-11-09 10:29",
+      "buildTimestamp": "2026-11-09T10:29:24.611306",
+      "description": "당첨결과 전체회원 조회 시 최신 회차(1247~1249) 추천당첨결과 0원 표시 오류 해결"
     }
   ],
-  "buildTime": "15:13",
-  "buildDateTime": "2026-10-29 15:13"
+  "buildTime": "10:29",
+  "buildDateTime": "2026-11-09 10:29"
 }

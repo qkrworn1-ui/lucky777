@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.10.29.1513.22 - BUILD_DATE: 2026-10-29] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.09.1029.24 - BUILD_DATE: 2026-11-09] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.10.29.1513.22)
+ * Lucky777 Smart Bundle (v2026.11.09.1029.24)
  */
 
 
@@ -1410,7 +1410,7 @@ window._renderSlimRoundList = function(minRound = null, maxRound = null) {
         .filter(n => !isNaN(n) && n >= 1 && history[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window.getLatestDrawnRound === 'function') ? window.getLatestDrawnRound() : 1243;
+    const fallbackLatest = (typeof window.getLatestDrawnRound === 'function') ? window.getLatestDrawnRound() : 1249;
     const latestRoundNum = maxRound || _activeRoundMax || ((window.state && window.state.latestDrawData && window.state.latestDrawData.numbers?.length === 6)
         ? Math.max(window.state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || fallbackLatest));
@@ -1826,7 +1826,7 @@ const UserContextManager = {
         const createdAt = this.getUserCreatedAt(cleanId);
         if (createdAt) {
             const calced = LottoTimeService.calcRoundFromDate(createdAt);
-            const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1244;
+            const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
             return Math.max(1235, Math.min(calced, fallbackLatest));
         }
 
@@ -1840,7 +1840,7 @@ const UserContextManager = {
 
     getValidRoundsForUser(userId, latestRound) {
         const joinRound = this.getUserJoinRound(userId);
-        const curLatest = latestRound || (typeof window !== 'undefined' && window.getLatestDrawnRound ? window.getLatestDrawnRound() : 1244);
+        const curLatest = latestRound || (typeof window !== 'undefined' && window.getLatestDrawnRound ? window.getLatestDrawnRound() : 1249);
         const minRound = Math.max(1235, Math.min(joinRound, curLatest));
         const maxRound = Math.max(minRound, curLatest);
         const rounds = [];
@@ -19510,13 +19510,29 @@ function getSafeActualDraw(round) {
 
         1245: { numbers: [4, 5, 25, 28, 32, 42], bonus: 12, rank1Winners: 10, rank1Prize: 3006515775, rank2Winners: 91, rank2Prize: 55064392, rank3Winners: 3105, rank3Prize: 1615365, rank4Winners: 154625, rank4Prize: 50000, rank5Winners: 2603893, rank5Prize: 5000, date: '2026-10-10' },
 
-        1246: { numbers: [16, 22, 23, 24, 27, 28], bonus: 6, rank1Winners: 16, rank1Prize: 1881025430, rank2Winners: 64, rank2Prize: 78376060, rank3Winners: 3352, rank3Prize: 1497334, rank4Winners: 168430, rank4Prize: 50000, rank5Winners: 2795804, rank5Prize: 5000, date: '2026-10-17' }
+        1246: { numbers: [16, 22, 23, 24, 27, 28], bonus: 6, rank1Winners: 16, rank1Prize: 1881025430, rank2Winners: 64, rank2Prize: 78376060, rank3Winners: 3352, rank3Prize: 1497334, rank4Winners: 168430, rank4Prize: 50000, rank5Winners: 2795804, rank5Prize: 5000, date: '2026-10-17' },
+
+        1247: { numbers: [8, 14, 21, 22, 42, 45], bonus: 24, rank1Winners: 8, rank1Prize: 3637439250, rank2Winners: 74, rank2Prize: 65539446, rank3Winners: 2983, rank3Prize: 1625853, rank4Winners: 154703, rank4Prize: 50000, rank5Winners: 2591204, rank5Prize: 5000, date: '2026-10-24' },
+
+        1248: { numbers: [16, 18, 27, 36, 38, 42], bonus: 22, rank1Winners: 15, rank1Prize: 1933658450, rank2Winners: 91, rank2Prize: 53122485, rank3Winners: 3265, rank3Prize: 1480597, rank4Winners: 167745, rank4Prize: 50000, rank5Winners: 2723467, rank5Prize: 5000, date: '2026-10-31' },
+
+        1249: { numbers: [2, 11, 16, 25, 34, 35], bonus: 14, rank1Winners: 14, rank1Prize: 2025045509, rank2Winners: 93, rank2Prize: 50807594, rank3Winners: 3550, rank3Prize: 1331016, rank4Winners: 162101, rank4Prize: 50000, rank5Winners: 2634961, rank5Prize: 5000, date: '2026-11-07' }
 
     };
 
     if (STATIC_DRAWS[r]) return STATIC_DRAWS[r];
 
+    if (state.lottoExtraHistory && state.lottoExtraHistory[r]) return state.lottoExtraHistory[r];
+    if (state.lottoExtraHistory && state.lottoExtraHistory[String(r)]) return state.lottoExtraHistory[String(r)];
 
+    if (state.latestDrawData && Number(state.latestDrawData.drwNo) === r && Array.isArray(state.latestDrawData.numbers) && state.latestDrawData.numbers.length === 6) {
+        return state.latestDrawData;
+    }
+
+    if (typeof window !== 'undefined' && window.__globalHistoryBackup) {
+        if (window.__globalHistoryBackup[r]) return window.__globalHistoryBackup[r];
+        if (window.__globalHistoryBackup[String(r)]) return window.__globalHistoryBackup[String(r)];
+    }
 
     if (state.mergedHistory && state.mergedHistory[r]) return state.mergedHistory[r];
 
@@ -24988,7 +25004,7 @@ function getUserJoinRound(userId) {
                     const weeks = Math.floor(diff / (7 * 24 * 60 * 60 * 1000));
                     const calcedRound = 2 + weeks;
                     const historyRounds = Object.keys(state.mergedHistory || {}).map(Number).filter(n => !isNaN(n) && n >= 1);
-                    const fallbackMax = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1244;
+                    const fallbackMax = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
                     const latestDrawn = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
                         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackMax))
                         : (historyRounds.length ? Math.max(...historyRounds) : fallbackMax);
@@ -25496,7 +25512,7 @@ function computeUser70RecommendationsReview(userId, roundNum) {
         // 🛡️ 서버 사전 판별 실적과 캐시된 당첨금 또는 당첨건수가 불일치하면 오염 캐시 즉시 무효화 (5000원 등 구버전 캐시 원천 소탕)
         if (serverRecPrize !== null && (cached.totalPrize !== serverRecPrize || (serverRecWins !== null && cached.totalWins !== serverRecWins))) {
             delete _user70ReviewCache[cacheKey];
-        } else if (curDrawKey === cachedDrawKey && (!hasServerWinningPrize || cached.totalPrize === serverRecPrize)) {
+        } else if (curDrawKey !== 'pending' && curDrawKey === cachedDrawKey && (!hasServerWinningPrize || cached.totalPrize === serverRecPrize)) {
             return cached;
         } else {
             delete _user70ReviewCache[cacheKey];
@@ -25514,7 +25530,7 @@ function computeUser70RecommendationsReview(userId, roundNum) {
                 // 🛡️ 서버 사전 판별 실적과 로컬 캐시 당첨금 또는 당첨건수가 불일치하면 오염 캐시 즉시 제거
                 if (serverRecPrize !== null && (parsed.totalPrize !== serverRecPrize || (serverRecWins !== null && parsed.totalWins !== serverRecWins))) {
                     SafeLocalStorage.removeItem(`lotto_review_v2_${cacheKey}`);
-                } else if (curDrawKey === cachedDrawKey && (!hasServerWinningPrize || parsed.totalPrize === serverRecPrize)) {
+                } else if (curDrawKey !== 'pending' && curDrawKey === cachedDrawKey && (!hasServerWinningPrize || parsed.totalPrize === serverRecPrize)) {
                     _user70ReviewCache[cacheKey] = parsed;
                     return parsed;
                 } else {
@@ -25789,9 +25805,14 @@ function computeUser70RecommendationsReview(userId, roundNum) {
         const s = preEval.recSummary;
         const evalGames = Number(s.totalGames || 0);
         const actualComboGames = (v4Combos.length + v3Combos.length + extraPackEvals.reduce((sum, p) => sum + ((p.combos && p.combos.length) || 0), 0));
+        const sPrize = (s.totalPrize !== undefined) ? Number(s.totalPrize || 0) : null;
+        const sHitsCount = (s.hits && typeof s.hits === 'object')
+            ? (Number(s.hits['1'] ?? s.hits[1] ?? 0) + Number(s.hits['2'] ?? s.hits[2] ?? 0) + Number(s.hits['3'] ?? s.hits[3] ?? 0) + Number(s.hits['4'] ?? s.hits[4] ?? 0) + Number(s.hits['5'] ?? s.hits[5] ?? 0))
+            : (s.totalWins !== undefined ? Number(s.totalWins || 0) : 0);
+        const isCorruptZeroEval = (totalPrize > 0 && sPrize === 0 && sHitsCount === 0);
         
         // 🛡️ 서버 사전 판별에 실제 게임이 평가되었거나, 로컬 조합도 없는 경우에만 덮어쓰기 (빈 판별문서로 인한 0원 오염 방어)
-        if (evalGames > 0 || actualComboGames === 0) {
+        if (!isCorruptZeroEval && (evalGames > 0 || actualComboGames === 0)) {
             if (s.totalPrize !== undefined) finalPrize = Number(s.totalPrize || 0);
             if (s.hits && typeof s.hits === 'object') {
                 finalHits = {
@@ -26051,7 +26072,7 @@ function updateReviewRoundSelector(selectedRound = null) {
         .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -26110,7 +26131,7 @@ if (typeof window !== 'undefined') {
             .map(Number)
             .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
             .sort((a, b) => b - a);
-        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1239;
+        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
         const latestDrawn = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
             : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -26194,7 +26215,7 @@ async function renderAllRoundsReviewDetail() {
         .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -26259,18 +26280,11 @@ async function renderAllRoundsReviewDetail() {
             };
         });
 
-        const drawnRounds = Object.keys(state.mergedHistory || {})
-            .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers))
-            .map(Number);
-        const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1237;
-
         let _rCnt = 0;
         for (const rnd of validRounds) {
             _rCnt++;
             if (_rCnt % 2 === 0) await new Promise(res => setTimeout(res, 0));
-            const wasIsolated = enterHistoryIsolation(rnd, maxKnownDrawnRound);
-            try {
-                const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
+            const actualDraw = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
                 const drawDate = actualDraw && (actualDraw.date || actualDraw.drwNoDate) ? (actualDraw.date || actualDraw.drwNoDate) : '';
                 
                 // Active users joined on or before rnd
@@ -26351,10 +26365,7 @@ async function renderAllRoundsReviewDetail() {
             dispHits[5] += rHits[5];
             dispPrize += rPrize;
             dispCombos += rGames;
-        } finally {
-            exitHistoryIsolation(wasIsolated);
         }
-    }
 
         // Calculate member totals and real purchases
         for (const u of baseList) {
@@ -28042,7 +28053,7 @@ async function openAdmin1235ReviewModal(initialRound = null, initialUser = null)
             .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
             .sort((a, b) => b - a);
 
-        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
+        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
         const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
             : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -28262,7 +28273,7 @@ async function renderAdmin1235ReviewModalContent() {
         .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -28277,7 +28288,8 @@ async function renderAdmin1235ReviewModalContent() {
         // ==========================================
         const validRounds = [];
         for (let rnd = latestDrawnRound; rnd >= 1235; rnd--) {
-            if (state.mergedHistory && state.mergedHistory[rnd] && state.mergedHistory[rnd].numbers?.length === 6) {
+            const d = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
+            if (d && Array.isArray(d.numbers) && d.numbers.length === 6) {
                 validRounds.push(rnd);
             }
         }
@@ -28850,7 +28862,7 @@ async function shareAdmin1235ReviewToKakao() {
         .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -28868,7 +28880,8 @@ async function shareAdmin1235ReviewToKakao() {
     if (roundVal === 'all_rounds') {
         const validRounds = [];
         for (let rnd = latestDrawnRound; rnd >= 1235; rnd--) {
-            if (state.mergedHistory && state.mergedHistory[rnd] && state.mergedHistory[rnd].numbers?.length === 6) {
+            const d = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
+            if (d && Array.isArray(d.numbers) && d.numbers.length === 6) {
                 validRounds.push(rnd);
             }
         }
@@ -29238,7 +29251,7 @@ async function copyAdmin1235ReviewText() {
         .filter(n => !isNaN(n) && n >= 1 && state.mergedHistory[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1240;
+    const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
     const latestDrawnRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
         ? Math.max(state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || state.latestRoundNum || fallbackLatest);
@@ -29249,7 +29262,8 @@ async function copyAdmin1235ReviewText() {
     if (roundVal === 'all_rounds') {
         const validRounds = [];
         for (let rnd = latestDrawnRound; rnd >= 1235; rnd--) {
-            if (state.mergedHistory && state.mergedHistory[rnd] && state.mergedHistory[rnd].numbers?.length === 6) {
+            const d = (typeof getSafeActualDraw === 'function') ? (getSafeActualDraw(rnd) || (state.mergedHistory ? state.mergedHistory[rnd] : null)) : (state.mergedHistory ? state.mergedHistory[rnd] : null);
+            if (d && Array.isArray(d.numbers) && d.numbers.length === 6) {
                 validRounds.push(rnd);
             }
         }
@@ -60395,7 +60409,7 @@ async function updateHomeReviewDashboard(forceRefresh = false) {
             .filter(n => !isNaN(n) && n >= fromRound && Array.isArray(history[n]?.numbers) && history[n].numbers.length === 6)
             .sort((a, b) => a - b);
 
-        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
+        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
         const maxRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);

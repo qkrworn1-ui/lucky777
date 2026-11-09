@@ -569,7 +569,7 @@ export async function updateHomeReviewDashboard(forceRefresh = false) {
             .filter(n => !isNaN(n) && n >= fromRound && Array.isArray(history[n]?.numbers) && history[n].numbers.length === 6)
             .sort((a, b) => a - b);
 
-        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1243;
+        const fallbackLatest = (typeof window !== 'undefined' && window.getLatestDrawnRound) ? window.getLatestDrawnRound() : 1249;
         const maxRound = (state.latestDrawData && state.latestDrawData.numbers?.length === 6)
             ? Math.max(state.latestDrawData.drwNo, (historyRounds[historyRounds.length - 1] || fallbackLatest))
             : (historyRounds[historyRounds.length - 1] || state.latestRoundNum || fallbackLatest);

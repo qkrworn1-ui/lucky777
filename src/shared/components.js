@@ -498,7 +498,7 @@ window._renderSlimRoundList = function(minRound = null, maxRound = null) {
         .filter(n => !isNaN(n) && n >= 1 && history[n]?.numbers?.length === 6)
         .sort((a, b) => b - a);
 
-    const fallbackLatest = (typeof window.getLatestDrawnRound === 'function') ? window.getLatestDrawnRound() : 1243;
+    const fallbackLatest = (typeof window.getLatestDrawnRound === 'function') ? window.getLatestDrawnRound() : 1249;
     const latestRoundNum = maxRound || _activeRoundMax || ((window.state && window.state.latestDrawData && window.state.latestDrawData.numbers?.length === 6)
         ? Math.max(window.state.latestDrawData.drwNo, (historyRounds[0] || fallbackLatest))
         : (historyRounds[0] || fallbackLatest));
