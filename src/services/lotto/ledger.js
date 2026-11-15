@@ -1615,6 +1615,18 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
         state.allUsersMergedLedger = mergedLedger;
         _lastFetchAllUsersPurchasesTime = Date.now();
 
+        // Purge any pre-snapshot cold-boot combo caches so newly fetched Firestore snapshots take immediate effect
+        if (typeof window !== 'undefined' && typeof window.invalidateRecommendationRuntimeCaches === 'function') {
+            window.invalidateRecommendationRuntimeCaches();
+        } else {
+            state.localComboCache = {};
+            state.extraPackCache = {};
+            state.fixedTop5Combinations = null;
+            state.fixedTop5Combinations_v4 = null;
+            state.fixedTop5Combinations_v3 = null;
+            state.fixedTop5Combinations_ar3 = null;
+        }
+
         try {
             localStorage.setItem('lotto_all_users_purchases_map_cache', JSON.stringify(allUsersMap));
             localStorage.setItem('lotto_all_users_merged_ledger_cache', JSON.stringify(mergedLedger));
@@ -1653,9 +1665,17 @@ export async function fetchAllUsersPurchases(forceRefresh = false) {
                     window.renderStatisticsTab();
                 } else if (curTab === 'tab-dashboard' && typeof window.renderDashboardTab === 'function') {
                     window.renderDashboardTab();
-                } else if (curTab === 'tab-generator' && typeof window.renderGeneratorTab === 'function') {
-                    window.renderGeneratorTab();
+                } else if (curTab === 'tab-generator') {
+                    if (typeof window.renderGeneratorTab === 'function') {
+                        window.renderGeneratorTab(false);
+                    } else if (typeof window.renderTop5Combinations === 'function') {
+                        window.renderTop5Combinations(false);
+                    }
                 }
+            }
+            const compactModal = document.getElementById('compactViewModal');
+            if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex') && typeof window.renderQuickViewContent === 'function') {
+                try { window.renderQuickViewContent(); } catch(e) {}
             }
         }
 

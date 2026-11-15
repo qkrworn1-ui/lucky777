@@ -3,7 +3,7 @@ import { getBallHexColor, getBallColorClass, showToast } from '../../../shared/u
 import { getUpcomingLottoRound, getUserRealName } from '../../../shared/auth-mgmt.js';
 import { getComboNumbers, isUserEligibleForExtraPacks } from '../ledger.js';
 import { isUserSuspended } from '../../../shared/user-context.js';
-import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId } from '../generator.js';
+import { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId, getUserWeeklyRecommendationSnapshotSync } from '../generator.js';
 
 let currentQuickAlgo = 'v4'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
 let quickViewWakeLock = null;
@@ -198,15 +198,37 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
     const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);
     const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
+    const snap = (typeof getUserWeeklyRecommendationSnapshotSync === 'function' && effectiveUserId && effectiveUserId !== 'all')
+        ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, targetRound)
+        : null;
+    if (snap) {
+        if (Array.isArray(snap.v4Combos) && snap.v4Combos.length > 0) {
+            state.fixedTop5Combinations_v4 = snap.v4Combos;
+            state.fixedTop5Combinations_v4_userId = effectiveUserId;
+            state.fixedTop5Combinations_v4_round = targetRound;
+            state.fixedTop5Combinations = snap.v4Combos;
+        }
+        if (Array.isArray(snap.v3Combos) && snap.v3Combos.length > 0) {
+            state.fixedTop5Combinations_v3 = snap.v3Combos;
+            state.fixedTop5Combinations_v3_userId = effectiveUserId;
+            state.fixedTop5Combinations_v3_round = targetRound;
+        }
+    }
+
     const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
         state.fixedTop5Combinations_v3_userId === effectiveUserId && state.fixedTop5Combinations_v3_round === targetRound);
     const isV4Valid = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10 &&
         state.fixedTop5Combinations_v4_userId === effectiveUserId && state.fixedTop5Combinations_v4_round === targetRound);
 
+    const resolveV3Combos = () => (snap && Array.isArray(snap.v3Combos) && snap.v3Combos.length > 0)
+        ? snap.v3Combos
+        : (isV3Valid ? state.fixedTop5Combinations_v3 : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []));
+    const resolveV4Combos = () => (snap && Array.isArray(snap.v4Combos) && snap.v4Combos.length > 0)
+        ? snap.v4Combos
+        : (isV4Valid ? state.fixedTop5Combinations_v4 : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []));
+
     if (algo === 'v3') {
-        const v3Combos = isV3Valid
-            ? state.fixedTop5Combinations_v3
-            : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
+        const v3Combos = resolveV3Combos();
         return {
             versionLabel: '기본 2: 올라운더 팩 2',
             badgeColor: '#3b82f6',
@@ -216,9 +238,7 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             isLocked: false
         };
     } else if (algo === 'v4') {
-        const v4Combos = isV4Valid
-            ? state.fixedTop5Combinations_v4
-            : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
+        const v4Combos = resolveV4Combos();
         return {
             versionLabel: '기본 1: 올라운더 팩',
             badgeColor: '#10b981',
@@ -259,12 +279,8 @@ export function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
         };
     } else {
         // 'all' -> Combines V4 + V3 + AR3 (30G Basic Core) (+ all active Extra Packs 2~5 if eligible)
-        const v3Combos = isV3Valid
-            ? state.fixedTop5Combinations_v3
-            : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
-        const v4Combos = isV4Valid
-            ? state.fixedTop5Combinations_v4
-            : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
+        const v3Combos = resolveV3Combos();
+        const v4Combos = resolveV4Combos();
         const pack1 = generateExtraAddonPack(1, targetRound, effectiveUserId);
         const p1Combos = (pack1 && Array.isArray(pack1.combos) && pack1.combos.length > 0)
             ? pack1.combos

@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.09.1138.32 - BUILD_DATE: 2026-11-09] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.15.1023 - BUILD_DATE: 2026-11-15] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.09.1138.32)
+ * Lucky777 Smart Bundle (v2026.11.15.1023)
  */
 
 
@@ -17302,6 +17302,18 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
         state.allUsersMergedLedger = mergedLedger;
         _lastFetchAllUsersPurchasesTime = Date.now();
 
+        // Purge any pre-snapshot cold-boot combo caches so newly fetched Firestore snapshots take immediate effect
+        if (typeof window !== 'undefined' && typeof window.invalidateRecommendationRuntimeCaches === 'function') {
+            window.invalidateRecommendationRuntimeCaches();
+        } else {
+            state.localComboCache = {};
+            state.extraPackCache = {};
+            state.fixedTop5Combinations = null;
+            state.fixedTop5Combinations_v4 = null;
+            state.fixedTop5Combinations_v3 = null;
+            state.fixedTop5Combinations_ar3 = null;
+        }
+
         try {
             SafeLocalStorage.setItem('lotto_all_users_purchases_map_cache', JSON.stringify(allUsersMap));
             SafeLocalStorage.setItem('lotto_all_users_merged_ledger_cache', JSON.stringify(mergedLedger));
@@ -17340,9 +17352,17 @@ async function fetchAllUsersPurchases(forceRefresh = false) {
                     window.renderStatisticsTab();
                 } else if (curTab === 'tab-dashboard' && typeof window.renderDashboardTab === 'function') {
                     window.renderDashboardTab();
-                } else if (curTab === 'tab-generator' && typeof window.renderGeneratorTab === 'function') {
-                    window.renderGeneratorTab();
+                } else if (curTab === 'tab-generator') {
+                    if (typeof window.renderGeneratorTab === 'function') {
+                        window.renderGeneratorTab(false);
+                    } else if (typeof window.renderTop5Combinations === 'function') {
+                        window.renderTop5Combinations(false);
+                    }
                 }
+            }
+            const compactModal = document.getElementById('compactViewModal');
+            if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex') && typeof window.renderQuickViewContent === 'function') {
+                try { window.renderQuickViewContent(); } catch(e) {}
             }
         }
 
@@ -22349,17 +22369,7 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
     const isRound1245 = (roundForSeed === 1245);
     const isPastDrawnRound = (maxKnownDrawnRound && roundForSeed <= maxKnownDrawnRound);
 
-    if ((!forceRegenerate || isPastDrawnRound) && state.localComboCache[cacheKey] && Array.isArray(state.localComboCache[cacheKey]) && state.localComboCache[cacheKey].length > 0) {
-        const hasLegacy = !useReportLogic && isRound1245 && state.localComboCache[cacheKey].some(c => 
-            (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
-            (c.customLabel && c.customLabel.includes('수학퀀트'))
-        );
-        if (!hasLegacy) {
-            return state.localComboCache[cacheKey];
-        }
-    }
-
-    // 🔒 1순위: 이미 저장된 불변 추천번호 스냅샷이 존재하는 경우, 알고리즘 업데이트와 무관하게 기존 스냅샷 반환
+    // 🔒 1순위: 이미 저장된 불변 추천번호 스냅샷이 존재하는 경우, 임시 메모리 캐시(localComboCache)보다 항상 우선하여 기존 스냅샷 반환
     // (과거 추첨 완료 회차는 forceRegenerate 여부와 무관하게 기존 스냅샷 100% 영구 불변 보존)
     if ((!forceRegenerate || isPastDrawnRound) && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
         const snapshot = (typeof getUserWeeklyRecommendationSnapshotSync === 'function')
@@ -22373,15 +22383,23 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
             const isRound1245Upgrade = (isRound1245 && hasLegacyMathQuant);
             if (!isRound1245Upgrade) {
                 if (useReportLogic && Array.isArray(snapshot.v4Combos) && snapshot.v4Combos.length > 0) {
-                    if (!state.localComboCache) state.localComboCache = {};
                     state.localComboCache[cacheKey] = snapshot.v4Combos;
                     return snapshot.v4Combos;
                 } else if (!useReportLogic && Array.isArray(snapshot.v3Combos) && snapshot.v3Combos.length > 0) {
-                    if (!state.localComboCache) state.localComboCache = {};
                     state.localComboCache[cacheKey] = snapshot.v3Combos;
                     return snapshot.v3Combos;
                 }
             }
+        }
+    }
+
+    if ((!forceRegenerate || isPastDrawnRound) && state.localComboCache[cacheKey] && Array.isArray(state.localComboCache[cacheKey]) && state.localComboCache[cacheKey].length > 0) {
+        const hasLegacy = !useReportLogic && isRound1245 && state.localComboCache[cacheKey].some(c => 
+            (c.name && (c.name.includes('수학 퀀트') || c.name.includes('수학퀀트') || c.name.includes('TOP '))) || 
+            (c.customLabel && c.customLabel.includes('수학퀀트'))
+        );
+        if (!hasLegacy) {
+            return state.localComboCache[cacheKey];
         }
     }
     
@@ -23333,11 +23351,8 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
     
     if (!state.extraPackCache) state.extraPackCache = {};
     const cacheKey = `extra_${pIdx}_${curUpcomingRound}_${effectiveUserId}`;
-    if (state.extraPackCache[cacheKey]) {
-        return state.extraPackCache[cacheKey];
-    }
 
-    // 🔒 1순위: 이미 저장된 불변 추천번호 스냅샷에 해당 추가팩이 존재하는 경우, 스냅샷 팩 번호 반환
+    // 🔒 1순위: 이미 저장된 불변 추천번호 스냅샷에 해당 추가팩이 존재하는 경우, 임시 메모리 캐시보다 우선하여 스냅샷 팩 번호 반환
     if (effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
         const snapshot = (typeof getUserWeeklyRecommendationSnapshotSync === 'function')
             ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)
@@ -23349,6 +23364,10 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
                 return snapPack;
             }
         }
+    }
+
+    if (state.extraPackCache[cacheKey]) {
+        return state.extraPackCache[cacheKey];
     }
 
     // Deterministic PRNG seed unique to user, round and packIndex
@@ -24036,6 +24055,59 @@ if (typeof window !== 'undefined') {
     window.hydrateLeanSnapshot = hydrateLeanSnapshot;
 }
 
+function _comboSignature(combosList) {
+    if (!Array.isArray(combosList) || combosList.length === 0) return '';
+    return combosList.map(c => (Array.isArray(c && c.numbers) ? [...c.numbers].sort((a, b) => a - b).join(',') : '')).join('|');
+}
+
+/**
+ * Invalidate temporary in-memory combo/pack caches when canonical snapshots load asynchronously.
+ */
+function invalidateRecommendationRuntimeCaches(userId = null, roundNum = null) {
+    const cleanU = userId ? String(userId).trim().toLowerCase() : null;
+    const rNum = (roundNum !== null && roundNum !== undefined) ? parseInt(roundNum, 10) : null;
+    const hasFilter = !!(cleanU && !isNaN(rNum));
+
+    if (!hasFilter) {
+        state.localComboCache = {};
+        state.extraPackCache = {};
+        state.fixedTop5Combinations = null;
+        for (const suffix of ['v4', 'v3', 'ar3']) {
+            state[`fixedTop5Combinations_${suffix}`] = null;
+            state[`fixedTop5Combinations_${suffix}_userId`] = null;
+            state[`fixedTop5Combinations_${suffix}_round`] = null;
+        }
+        return;
+    }
+
+    const rPrefix = `lotto_weekly_top10_${rNum}_`;
+    const uSuffix = `_${cleanU}`;
+    if (state.localComboCache) {
+        for (const k of Object.keys(state.localComboCache)) {
+            if (k.startsWith(rPrefix) && k.endsWith(uSuffix)) {
+                delete state.localComboCache[k];
+            }
+        }
+    }
+    const extraSuffix = `_${rNum}_${cleanU}`;
+    if (state.extraPackCache) {
+        for (const k of Object.keys(state.extraPackCache)) {
+            if (k.startsWith('extra_') && k.endsWith(extraSuffix)) {
+                delete state.extraPackCache[k];
+            }
+        }
+    }
+    for (const suffix of ['v4', 'v3', 'ar3']) {
+        if (state[`fixedTop5Combinations_${suffix}_round`] === rNum &&
+            String(state[`fixedTop5Combinations_${suffix}_userId`] || '').trim().toLowerCase() === cleanU) {
+            state[`fixedTop5Combinations_${suffix}`] = null;
+            state[`fixedTop5Combinations_${suffix}_userId`] = null;
+            state[`fixedTop5Combinations_${suffix}_round`] = null;
+            if (suffix === 'v4') state.fixedTop5Combinations = null;
+        }
+    }
+}
+
 /**
  * 🔒 Immutable Recommendation Snapshot Storage:
  * Permanently snapshots a user's complete 70 combinations (V4 10G, V3 10G, Extra Packs 1~5 50G) for a specific round.
@@ -24115,10 +24187,58 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
             }
 
             if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks) {
+                const hydratedExisting = (typeof hydrateLeanSnapshot === 'function')
+                    ? hydrateLeanSnapshot(existingData)
+                    : existingData;
+
+                // Detect if cold-boot caches held pre-snapshot live combos for this user & round
+                let hadStaleMismatch = false;
+                if (state.fixedTop5Combinations_v4_round === roundNum &&
+                    String(state.fixedTop5Combinations_v4_userId || '').trim().toLowerCase() === cleanUser &&
+                    Array.isArray(state.fixedTop5Combinations_v4) &&
+                    _comboSignature(state.fixedTop5Combinations_v4) !== _comboSignature(hydratedExisting.v4Combos)) {
+                    hadStaleMismatch = true;
+                }
+                if (state.fixedTop5Combinations_v3_round === roundNum &&
+                    String(state.fixedTop5Combinations_v3_userId || '').trim().toLowerCase() === cleanUser &&
+                    Array.isArray(state.fixedTop5Combinations_v3) &&
+                    _comboSignature(state.fixedTop5Combinations_v3) !== _comboSignature(hydratedExisting.v3Combos)) {
+                    hadStaleMismatch = true;
+                }
+                const snapPack1 = extractPackFromSnapshot(hydratedExisting.extraPacks, 1);
+                if (snapPack1 && Array.isArray(snapPack1.combos) &&
+                    state.fixedTop5Combinations_ar3_round === roundNum &&
+                    String(state.fixedTop5Combinations_ar3_userId || '').trim().toLowerCase() === cleanUser &&
+                    Array.isArray(state.fixedTop5Combinations_ar3) &&
+                    _comboSignature(state.fixedTop5Combinations_ar3) !== _comboSignature(snapPack1.combos)) {
+                    hadStaleMismatch = true;
+                }
+
                 if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
-                state.userRecommendationSnapshots[docKey] = existingData;
+                state.userRecommendationSnapshots[docKey] = hydratedExisting;
+                if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser]) {
+                    if (!state.allUsersPurchasesMap[cleanUser].recommendationSnapshots) {
+                        state.allUsersPurchasesMap[cleanUser].recommendationSnapshots = {};
+                    }
+                    state.allUsersPurchasesMap[cleanUser].recommendationSnapshots[String(roundNum)] = hydratedExisting;
+                }
                 try { SafeLocalStorage.setItem(`lotto_rec_snapshot_${docKey}`, JSON.stringify(existingData)); } catch(e) {}
-                return existingData;
+
+                if (hadStaleMismatch) {
+                    invalidateRecommendationRuntimeCaches(cleanUser, roundNum);
+                    if (typeof window !== 'undefined') {
+                        if (typeof window.renderTop5Combinations === 'function' && (!window.__currentLottoTab || window.__currentLottoTab === 'tab-generator')) {
+                            try { window.renderTop5Combinations(false); } catch(e) {}
+                        }
+                        if (typeof document !== 'undefined' && typeof window.renderQuickViewContent === 'function') {
+                            const compactModal = document.getElementById('compactViewModal');
+                            if (compactModal && (compactModal.classList.contains('active') || compactModal.style.display === 'flex')) {
+                                try { window.renderQuickViewContent(); } catch(e) {}
+                            }
+                        }
+                    }
+                }
+                return hydratedExisting;
             }
         } catch(e) {
             console.warn('[Snapshot Check from Firestore Failed]', e);
@@ -24500,6 +24620,7 @@ if (typeof window !== 'undefined') {
     window.generateExtraAddonPack = generateExtraAddonPack;
     window.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;
     window.getUserWeeklyRecommendationSnapshotSync = getUserWeeklyRecommendationSnapshotSync;
+    window.invalidateRecommendationRuntimeCaches = invalidateRecommendationRuntimeCaches;
 }
 
         if (typeof getEffectiveGeneratorUserId !== 'undefined') {
@@ -24553,6 +24674,10 @@ if (typeof window !== 'undefined') {
         if (typeof hydrateLeanSnapshot !== 'undefined') {
             __exports.hydrateLeanSnapshot = hydrateLeanSnapshot;
             if (typeof window !== 'undefined') window.hydrateLeanSnapshot = hydrateLeanSnapshot;
+        }
+        if (typeof invalidateRecommendationRuntimeCaches !== 'undefined') {
+            __exports.invalidateRecommendationRuntimeCaches = invalidateRecommendationRuntimeCaches;
+            if (typeof window !== 'undefined') window.invalidateRecommendationRuntimeCaches = invalidateRecommendationRuntimeCaches;
         }
         if (typeof saveUserWeeklyRecommendationSnapshot !== 'undefined') {
             __exports.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;
@@ -33429,6 +33554,8 @@ if (typeof window !== 'undefined') {
     window.handleGenerateAllClick = handleGenerateAllClick;
     window.handleConfirmPurchaseHeroClick = handleConfirmPurchaseHeroClick;
     window.copyGolden30Games = copyGolden30Games;
+    window.renderTop5Combinations = renderTop5Combinations;
+    window.renderGeneratorTab = renderTop5Combinations;
 }
 
 /**
@@ -44130,7 +44257,7 @@ const { getBallHexColor, getBallColorClass, showToast } = (typeof __M_shared_uti
 const { getUpcomingLottoRound, getUserRealName } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getComboNumbers, isUserEligibleForExtraPacks } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 const { isUserSuspended } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
-const { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { computeAbsoluteTop10Combinations, generateExtraAddonPack, getEffectiveGeneratorUserId, getUserWeeklyRecommendationSnapshotSync } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 
 let currentQuickAlgo = 'v4'; // 'v3', 'v4', 'extra_1'...'extra_5', or 'all'
 let quickViewWakeLock = null;
@@ -44325,15 +44452,37 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
     const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);
     const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
 
+    const snap = (typeof getUserWeeklyRecommendationSnapshotSync === 'function' && effectiveUserId && effectiveUserId !== 'all')
+        ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, targetRound)
+        : null;
+    if (snap) {
+        if (Array.isArray(snap.v4Combos) && snap.v4Combos.length > 0) {
+            state.fixedTop5Combinations_v4 = snap.v4Combos;
+            state.fixedTop5Combinations_v4_userId = effectiveUserId;
+            state.fixedTop5Combinations_v4_round = targetRound;
+            state.fixedTop5Combinations = snap.v4Combos;
+        }
+        if (Array.isArray(snap.v3Combos) && snap.v3Combos.length > 0) {
+            state.fixedTop5Combinations_v3 = snap.v3Combos;
+            state.fixedTop5Combinations_v3_userId = effectiveUserId;
+            state.fixedTop5Combinations_v3_round = targetRound;
+        }
+    }
+
     const isV3Valid = (state.fixedTop5Combinations_v3 && state.fixedTop5Combinations_v3.length === 10 &&
         state.fixedTop5Combinations_v3_userId === effectiveUserId && state.fixedTop5Combinations_v3_round === targetRound);
     const isV4Valid = (state.fixedTop5Combinations_v4 && state.fixedTop5Combinations_v4.length === 10 &&
         state.fixedTop5Combinations_v4_userId === effectiveUserId && state.fixedTop5Combinations_v4_round === targetRound);
 
+    const resolveV3Combos = () => (snap && Array.isArray(snap.v3Combos) && snap.v3Combos.length > 0)
+        ? snap.v3Combos
+        : (isV3Valid ? state.fixedTop5Combinations_v3 : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []));
+    const resolveV4Combos = () => (snap && Array.isArray(snap.v4Combos) && snap.v4Combos.length > 0)
+        ? snap.v4Combos
+        : (isV4Valid ? state.fixedTop5Combinations_v4 : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []));
+
     if (algo === 'v3') {
-        const v3Combos = isV3Valid
-            ? state.fixedTop5Combinations_v3
-            : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
+        const v3Combos = resolveV3Combos();
         return {
             versionLabel: '기본 2: 올라운더 팩 2',
             badgeColor: '#3b82f6',
@@ -44343,9 +44492,7 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
             isLocked: false
         };
     } else if (algo === 'v4') {
-        const v4Combos = isV4Valid
-            ? state.fixedTop5Combinations_v4
-            : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
+        const v4Combos = resolveV4Combos();
         return {
             versionLabel: '기본 1: 올라운더 팩',
             badgeColor: '#10b981',
@@ -44386,12 +44533,8 @@ function getQuickCombos(algo = currentQuickAlgo, customUserId = null) {
         };
     } else {
         // 'all' -> Combines V4 + V3 + AR3 (30G Basic Core) (+ all active Extra Packs 2~5 if eligible)
-        const v3Combos = isV3Valid
-            ? state.fixedTop5Combinations_v3
-            : (computeAbsoluteTop10Combinations(false, targetRound, 'v3', true, effectiveUserId) || []);
-        const v4Combos = isV4Valid
-            ? state.fixedTop5Combinations_v4
-            : (computeAbsoluteTop10Combinations(false, targetRound, 'v4', true, effectiveUserId) || []);
+        const v3Combos = resolveV3Combos();
+        const v4Combos = resolveV4Combos();
         const pack1 = generateExtraAddonPack(1, targetRound, effectiveUserId);
         const p1Combos = (pack1 && Array.isArray(pack1.combos) && pack1.combos.length > 0)
             ? pack1.combos

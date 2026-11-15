@@ -2261,6 +2261,8 @@ if (typeof window !== 'undefined') {
     window.handleGenerateAllClick = handleGenerateAllClick;
     window.handleConfirmPurchaseHeroClick = handleConfirmPurchaseHeroClick;
     window.copyGolden30Games = copyGolden30Games;
+    window.renderTop5Combinations = renderTop5Combinations;
+    window.renderGeneratorTab = renderTop5Combinations;
 }
 
 /**
