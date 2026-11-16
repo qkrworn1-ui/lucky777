@@ -1,7 +1,7 @@
 import { state } from '../state.js';
 import { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml } from '../../../shared/components.js';
-import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId } from '../generator.js';
+import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId, isRound1251UpgradePending } from '../generator.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPermanentUser } from '../../../shared/auth-mgmt.js';
 import { getAllUnifiedRegisteredUsers, isUserSuspended } from '../../../shared/user-context.js';
@@ -725,7 +725,9 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         }
 
         // 🔒 차기 회차에 대해 사용자별 7대 알고리즘 영구 불변 스냅샷 자동 생성/보존 (Write-Once)
-        if (typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
+        // 단, 직전 회차(curUpcomingRound - 1)가 아직 스크랩 전이라면 스크랩 완료 직후 저장하도록 대기
+        const isPrevRoundSynced = (state.latestRoundNum || 0) >= (curUpcomingRound - 1);
+        if (isPrevRoundSynced && typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
             saveUserWeeklyRecommendationSnapshot(effectiveUserId, curUpcomingRound).catch(e => console.warn('[Auto Snapshot Error]', e));
         }
 
@@ -1365,7 +1367,7 @@ export function handleGenerateAllClick() {
         ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)
         : null;
 
-    if (existingSnap && Array.isArray(existingSnap.v4Combos) && existingSnap.v4Combos.length > 0 && Array.isArray(existingSnap.v3Combos) && existingSnap.v3Combos.length > 0) {
+    if (existingSnap && Array.isArray(existingSnap.v4Combos) && existingSnap.v4Combos.length > 0 && Array.isArray(existingSnap.v3Combos) && existingSnap.v3Combos.length > 0 && !isRound1251UpgradePending(existingSnap, curUpcomingRound, effectiveUserId)) {
         state.fixedTop5Combinations_v3 = existingSnap.v3Combos;
         state.fixedTop5Combinations_v3_userId = effectiveUserId;
         state.fixedTop5Combinations_v3_round = curUpcomingRound;
@@ -2729,7 +2731,7 @@ export async function handleGenerateAll70Games() {
         ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)
         : null;
 
-    if (existingSnap && Array.isArray(existingSnap.v4Combos) && existingSnap.v4Combos.length > 0 && Array.isArray(existingSnap.v3Combos) && existingSnap.v3Combos.length > 0) {
+    if (existingSnap && Array.isArray(existingSnap.v4Combos) && existingSnap.v4Combos.length > 0 && Array.isArray(existingSnap.v3Combos) && existingSnap.v3Combos.length > 0 && !isRound1251UpgradePending(existingSnap, curUpcomingRound, effectiveUserId)) {
         state.fixedTop5Combinations_v3 = existingSnap.v3Combos;
         state.fixedTop5Combinations_v3_userId = effectiveUserId;
         state.fixedTop5Combinations_v3_round = curUpcomingRound;

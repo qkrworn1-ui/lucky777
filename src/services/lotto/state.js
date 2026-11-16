@@ -18,6 +18,9 @@ export const state = {
     lottoExtraHistory: {},
     mergedHistory: {},
     HISTORICAL_FREQUENCY: {},
+    EWMA_FREQUENCY: {},
+    DYNAMIC_ROUND_SCORE: {},
+    CROWD_EV_RATIO: 1.07,
     MISSING_WEEKS: {},
     PAIR_FREQUENCIES: {},
     TRANSITION_MATRIX: {},
@@ -44,6 +47,8 @@ export const state = {
     latestRoundNum: 0,
     nextRoundNum: 0,
     localComboCache: {},
+    extraPackCache: {},
+    ar3bPortfolioCache: {},
     aiState: {
         generation: 1,
         fitnessScore: 95.0,
@@ -129,6 +134,15 @@ export function applyNewDrawData(drawObj) {
     saveGlobalState();
 
     if (typeof recalculateGroups === 'function') recalculateGroups();
+    if (typeof invalidateRecommendationRuntimeCaches === 'function') {
+        invalidateRecommendationRuntimeCaches();
+    } else if (typeof window !== 'undefined' && typeof window.invalidateRecommendationRuntimeCaches === 'function') {
+        window.invalidateRecommendationRuntimeCaches();
+    } else {
+        state.localComboCache = {};
+        state.extraPackCache = {};
+        state.ar3bPortfolioCache = {};
+    }
     if (typeof renderLatestDrawBanner === 'function') renderLatestDrawBanner();
     
     if (typeof computeAbsoluteTop10Combinations === 'function') {

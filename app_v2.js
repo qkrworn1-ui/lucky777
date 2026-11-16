@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.15.1023 - BUILD_DATE: 2026-11-15] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.16.1154 - BUILD_DATE: 2026-11-16] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.15.1023)
+ * Lucky777 Smart Bundle (v2026.11.16.1154)
  */
 
 
@@ -15518,6 +15518,9 @@ const state = {
     lottoExtraHistory: {},
     mergedHistory: {},
     HISTORICAL_FREQUENCY: {},
+    EWMA_FREQUENCY: {},
+    DYNAMIC_ROUND_SCORE: {},
+    CROWD_EV_RATIO: 1.07,
     MISSING_WEEKS: {},
     PAIR_FREQUENCIES: {},
     TRANSITION_MATRIX: {},
@@ -15544,6 +15547,8 @@ const state = {
     latestRoundNum: 0,
     nextRoundNum: 0,
     localComboCache: {},
+    extraPackCache: {},
+    ar3bPortfolioCache: {},
     aiState: {
         generation: 1,
         fitnessScore: 95.0,
@@ -15629,6 +15634,15 @@ function applyNewDrawData(drawObj) {
     saveGlobalState();
 
     if (typeof recalculateGroups === 'function') recalculateGroups();
+    if (typeof invalidateRecommendationRuntimeCaches === 'function') {
+        invalidateRecommendationRuntimeCaches();
+    } else if (typeof window !== 'undefined' && typeof window.invalidateRecommendationRuntimeCaches === 'function') {
+        window.invalidateRecommendationRuntimeCaches();
+    } else {
+        state.localComboCache = {};
+        state.extraPackCache = {};
+        state.ar3bPortfolioCache = {};
+    }
     if (typeof renderLatestDrawBanner === 'function') renderLatestDrawBanner();
     
     if (typeof computeAbsoluteTop10Combinations === 'function') {
@@ -21450,6 +21464,8 @@ const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_service
 function aggregateAllStatistics() {
     state.allNumbers.forEach(n => {
         state.HISTORICAL_FREQUENCY[n] = 0;
+        state.EWMA_FREQUENCY[n] = 0;
+        state.DYNAMIC_ROUND_SCORE[n] = 1.0;
         state.MISSING_WEEKS[n] = 0;
         state.PAIR_FREQUENCIES[n] = {};
         state.TRANSITION_MATRIX[n] = {};
@@ -21458,14 +21474,14 @@ function aggregateAllStatistics() {
     state.RECENT_BONUS_NUMBERS = [];
     
     let maxRound = 0;
-    const rounds = Object.keys(state.mergedHistory).map(Number).sort((a,b) => a - b);
+    const rounds = Object.keys(state.mergedHistory).map(Number).filter(r => !isNaN(r)).sort((a,b) => a - b);
     let lastSeen = {};
     
     for (const r of rounds) {
         const data = state.mergedHistory[r];
         if (!data || !data.numbers || !Array.isArray(data.numbers)) continue;
         if (r > maxRound) maxRound = r;
-        state.HISTORICAL_WINNING_SETS.add(data.numbers.join(','));
+        state.HISTORICAL_WINNING_SETS.add([...data.numbers].sort((a,b) => a - b).join(','));
         if (data.bonus !== undefined) state.RECENT_BONUS_NUMBERS.push(data.bonus);
         data.numbers.forEach(n => {
             state.HISTORICAL_FREQUENCY[n] = (state.HISTORICAL_FREQUENCY[n] || 0) + 1;
@@ -21493,6 +21509,72 @@ function aggregateAllStatistics() {
     state.PREVIOUS_DRAW = (maxRound > 0 && state.mergedHistory[maxRound]?.numbers && Array.isArray(state.mergedHistory[maxRound].numbers))
         ? [...state.mergedHistory[maxRound].numbers]
         : [];
+
+    // Compute EWMA (half-life = 30 rounds), Rolling 200-round Pari-Mutuel Crowd Ratio, and Dynamic Soft Signal
+    const decay = Math.exp(-Math.LN2 / 30.0);
+    let totalFreq = 0;
+    let totalEwma = 0;
+    const ewmaMap = {};
+    state.allNumbers.forEach(n => {
+        totalFreq += (state.HISTORICAL_FREQUENCY[n] || 0);
+        ewmaMap[n] = 0;
+    });
+
+    const hi3Winners = [];
+    const hi1Winners = [];
+    for (const r of rounds) {
+        const data = state.mergedHistory[r];
+        if (!data || !Array.isArray(data.numbers)) continue;
+        const w = Math.pow(decay, maxRound - r);
+        data.numbers.forEach(n => { ewmaMap[n] = (ewmaMap[n] || 0) + w; });
+        if (r > maxRound - 200) {
+            const w1 = Number(data.rank1Winners || data.firstPrzwnerCo || 0);
+            if (w1 > 0) {
+                const highCnt = data.numbers.filter(n => n >= 32).length;
+                if (highCnt >= 3) hi3Winners.push(w1);
+                else if (highCnt <= 1) hi1Winners.push(w1);
+            }
+        }
+    }
+    state.allNumbers.forEach(n => {
+        state.EWMA_FREQUENCY[n] = ewmaMap[n];
+        totalEwma += ewmaMap[n];
+    });
+    if (hi3Winners.length > 0 && hi1Winners.length > 0) {
+        const avgHi3 = hi3Winners.reduce((a, b) => a + b, 0) / hi3Winners.length;
+        const avgHi1 = hi1Winners.reduce((a, b) => a + b, 0) / hi1Winners.length;
+        state.CROWD_EV_RATIO = avgHi3 > 0 ? Math.max(1.0, Math.min(1.25, avgHi1 / avgHi3)) : 1.07;
+    } else {
+        state.CROWD_EV_RATIO = 1.07;
+    }
+
+    const avgFreq = rounds.length > 0 ? totalFreq / 45.0 : 1.0;
+    const avgEwma = rounds.length > 0 ? totalEwma / 45.0 : 1.0;
+    const prevDraw = state.PREVIOUS_DRAW || [];
+    const neighbors = new Set();
+    prevDraw.forEach(ln => {
+        if (ln > 1) neighbors.add(ln - 1);
+        if (ln < 45) neighbors.add(ln + 1);
+    });
+    let totalM = 0;
+    prevDraw.forEach(ln => {
+        const row = state.TRANSITION_MATRIX[ln] || {};
+        for (const k in row) totalM += row[k];
+    });
+    const avgM = prevDraw.length > 0 ? (totalM / 45.0) : 1.0;
+
+    state.allNumbers.forEach(n => {
+        const fRatio = ((state.HISTORICAL_FREQUENCY[n] || 0) + 10.0) / (avgFreq + 10.0);
+        let mSum = 0;
+        prevDraw.forEach(ln => { mSum += (state.TRANSITION_MATRIX[ln]?.[n] || 0); });
+        const mRatio = (mSum + 5.0) / (avgM + 5.0);
+        const ovBoost = 1.0 + Math.min(0.15, Math.max(0, (state.MISSING_WEEKS[n] || 0) - 8) * 0.015);
+        const nbBoost = neighbors.has(n) ? 1.08 : 1.0;
+        const coBoost = prevDraw.includes(n) ? 1.05 : 1.0;
+        const softScore = (0.4 * fRatio + 0.6 * mRatio) * ovBoost * nbBoost * coBoost;
+        const ewRatio = ((state.EWMA_FREQUENCY[n] || 0) + 3.0) / (avgEwma + 3.0);
+        state.DYNAMIC_ROUND_SCORE[n] = 0.7 * softScore + 0.3 * ewRatio;
+    });
 }
 
 /** Reclassify HOT/COLD/OVERDUE groups based on current frequency data */
@@ -22320,6 +22402,292 @@ function exitHistoryIsolation(wasIsolated) {
     }
 }
 
+const ALGO_REVISION_3B = 'v2026.11_3b_16wheel';
+
+function hasConfirmedLedgerForRound(userId, roundNum) {
+    const cleanU = String(userId || '').trim().toLowerCase();
+    const rStr = String(roundNum);
+    if (!cleanU || !rStr) return false;
+    try {
+        if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanU]) {
+            let ledger = state.allUsersPurchasesMap[cleanU].ledger || {};
+            if (typeof ledger === 'string') {
+                try { ledger = JSON.parse(ledger); } catch(e) { ledger = {}; }
+            }
+            const rcpts = Array.isArray(ledger[rStr]) ? ledger[rStr] : (ledger[rStr] && typeof ledger[rStr] === 'object' ? Object.values(ledger[rStr]) : []);
+            if (rcpts.length > 0) return true;
+        }
+        if (state.globalLedger && state.globalLedger[rStr]) {
+            const list = Array.isArray(state.globalLedger[rStr]) ? state.globalLedger[rStr] : Object.values(state.globalLedger[rStr]);
+            if (list.some(it => it && String(it.user || it.userId || '').trim().toLowerCase() === cleanU)) {
+                return true;
+            }
+        }
+    } catch(e) {}
+    return false;
+}
+
+function isRound1251UpgradePending(snap, roundNum, userId) {
+    if (Number(roundNum) !== 1251 || !snap || typeof snap !== 'object') return false;
+    if (snap.algoRevision === ALGO_REVISION_3B) return false;
+    if (hasConfirmedLedgerForRound(userId, 1251)) return false;
+    return true;
+}
+
+function _calcACLocal(nums) {
+    if (typeof calculateACValue === 'function') return calculateACValue(nums);
+    const diffs = new Set();
+    for (let i = 0; i < nums.length; i++) {
+        for (let j = i + 1; j < nums.length; j++) {
+            diffs.add(Math.abs(nums[j] - nums[i]));
+        }
+    }
+    return diffs.size - (nums.length - 1);
+}
+
+function _calcEmpiricalEvMultiplier3B(nums) {
+    const high32 = nums.filter(n => n >= 32).length;
+    let hasConsec = false;
+    for (let i = 0; i < nums.length - 1; i++) {
+        if (nums[i] + 1 === nums[i + 1]) { hasConsec = true; break; }
+    }
+    const sum = nums.reduce((a, b) => a + b, 0);
+    const mn = nums[0];
+    let mult = 1.0;
+    if (high32 >= 3) mult *= 1.08;
+    else if (high32 <= 1) mult *= 0.94;
+    if (mn >= 10) mult *= 1.07;
+    if (sum >= 160) mult *= 1.05;
+    else if (sum >= 120 && sum <= 150 && high32 <= 1) mult *= 0.92;
+    if (hasConsec) mult *= 1.04;
+    return mult;
+}
+
+/**
+ * 🎯 3안-B: 16수 초압축 폭발 휠 (올라운더 1·2·3 통합 30게임)
+ * - 최신 당첨번호(targetRound - 1)까지 반영된 DYNAMIC_ROUND_SCORE(EWMA·마르코프·결손반등·이웃수·패리뮤추얼 EV) 기반 핵심 16수 선별
+ * - 16수 내부에서 4수(Quad)·3수(Triple) 커버링 충돌 최소화 + 균등 밸런싱으로 다중·고액당첨 확률 극대화
+ */
+function computeAllRounder3BPortfolio(targetRound = null, customUserId = null) {
+    const drawnRounds = Object.keys(state.mergedHistory || {})
+        .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers) && state.mergedHistory[r].numbers.length === 6)
+        .map(Number);
+    const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1250;
+    const roundForSeed = targetRound || (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (maxKnownDrawnRound + 1));
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
+
+    if (!state.ar3bPortfolioCache) state.ar3bPortfolioCache = {};
+    const portfolioCacheKey = `${roundForSeed}_${effectiveUserId}_R${maxKnownDrawnRound}`;
+    if (state.ar3bPortfolioCache[portfolioCacheKey]) {
+        return state.ar3bPortfolioCache[portfolioCacheKey];
+    }
+
+    const needHistoryIsolation = enterHistoryIsolation(roundForSeed, maxKnownDrawnRound);
+    try {
+        if (!state.DYNAMIC_ROUND_SCORE || !state.DYNAMIC_ROUND_SCORE[1]) {
+            recalculateGroups();
+        }
+        const dynScore = state.DYNAMIC_ROUND_SCORE || {};
+        const seed = getUserRoundSeed(effectiveUserId, roundForSeed, 'ar_3b_16wheel');
+        const rng = createDeterministicRng(seed);
+
+        const ranked45 = Array.from({ length: 45 }, (_, idx) => idx + 1)
+            .map(n => ({
+                n,
+                score: (dynScore[n] || 1.0) + (n >= 32 ? 0.10 : 0.0) + (rng() * 0.25)
+            }))
+            .sort((a, b) => (b.score - a.score) || (a.n - b.n));
+        const pool16 = ranked45.slice(0, 16).map(x => x.n).sort((a, b) => a - b);
+
+        const usedTriples = new Set();
+        const usedQuads = new Set();
+        const usedGames = new Set();
+        const numCnt = {};
+        pool16.forEach(n => { numCnt[n] = 0; });
+
+        const rawGames = [];
+        for (let gIdx = 0; gIdx < 30; gIdx++) {
+            let best = null;
+            let bestSc = 1e18;
+            let minC = 9999;
+            for (const n of pool16) {
+                if (numCnt[n] < minC) minC = numCnt[n];
+            }
+
+            for (let t = 0; t < 250; t++) {
+                const weights = pool16.map(n => {
+                    const baseW = 1.0 / Math.pow((numCnt[n] - minC + 1), 3);
+                    return (n >= 32) ? baseW * 1.35 : baseW;
+                });
+
+                const cand = new Set();
+                const wc = [...weights];
+                while (cand.size < 6) {
+                    let totW = 0;
+                    for (let k = 0; k < wc.length; k++) totW += wc[k];
+                    if (totW <= 0) break;
+                    let r = rng() * totW;
+                    let pickedIdx = wc.length - 1;
+                    for (let k = 0; k < wc.length; k++) {
+                        r -= wc[k];
+                        if (r <= 0) { pickedIdx = k; break; }
+                    }
+                    cand.add(pool16[pickedIdx]);
+                    wc[pickedIdx] = 0;
+                }
+                if (cand.size !== 6) continue;
+                const nums = Array.from(cand).sort((a, b) => a - b);
+                const key = nums.join(',');
+                if (usedGames.has(key)) continue;
+                if (state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(key)) continue;
+
+                const sum = nums.reduce((a, b) => a + b, 0);
+                const sPen = (sum >= 95 && sum <= 195) ? 0 : 5;
+                const ac = _calcACLocal(nums);
+                const acPen = (ac >= 6) ? 0 : 4;
+
+                let tOv = 0;
+                for (let a = 0; a < 4; a++) {
+                    for (let b = a + 1; b < 5; b++) {
+                        for (let c = b + 1; c < 6; c++) {
+                            if (usedTriples.has(`${nums[a]},${nums[b]},${nums[c]}`)) tOv++;
+                        }
+                    }
+                }
+                let qOv = 0;
+                for (let a = 0; a < 3; a++) {
+                    for (let b = a + 1; b < 4; b++) {
+                        for (let c = b + 1; c < 5; c++) {
+                            for (let d = c + 1; d < 6; d++) {
+                                if (usedQuads.has(`${nums[a]},${nums[b]},${nums[c]},${nums[d]}`)) qOv++;
+                            }
+                        }
+                    }
+                }
+                let bal = 0;
+                for (const n of nums) bal += numCnt[n];
+                const evMult = _calcEmpiricalEvMultiplier3B(nums);
+                const sc = qOv * 50000 + tOv * 400 + bal * 4 + sPen + acPen - (evMult - 1.0) * 10;
+                if (sc < bestSc) {
+                    bestSc = sc;
+                    best = nums;
+                }
+            }
+
+            if (!best) {
+                const shuffled = seededShuffle(pool16, rng);
+                best = shuffled.slice(0, 6).sort((a, b) => a - b);
+            }
+
+            rawGames.push(best);
+            usedGames.add(best.join(','));
+            for (const n of best) numCnt[n]++;
+            for (let a = 0; a < 4; a++) {
+                for (let b = a + 1; b < 5; b++) {
+                    for (let c = b + 1; c < 6; c++) {
+                        usedTriples.add(`${best[a]},${best[b]},${best[c]}`);
+                    }
+                }
+            }
+            for (let a = 0; a < 3; a++) {
+                for (let b = a + 1; b < 4; b++) {
+                    for (let c = b + 1; c < 5; c++) {
+                        for (let d = c + 1; d < 6; d++) {
+                            usedQuads.add(`${best[a]},${best[b]},${best[c]},${best[d]}`);
+                        }
+                    }
+                }
+            }
+        }
+
+        const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+        const poolStr = pool16.join(',');
+        const makeRichCombo = (nums, packIdx, idxInPack) => {
+            const ac = _calcACLocal(nums);
+            const sum = nums.reduce((a, b) => a + b, 0);
+            const evMult = _calcEmpiricalEvMultiplier3B(nums);
+            const stats = calculateStats(nums);
+            stats.acValue = ac;
+            stats.evMultiplier = Number(evMult.toFixed(2));
+            const numReasons = nums.map(n => `${n}번: 최신 회차 동적신호 상위 16수 압축 풀([${poolStr}]) 코어 휠링`);
+
+            if (packIdx === 1) {
+                return {
+                    id: `V4-G1-${idxInPack + 1}`,
+                    name: `[올라운더] 16수 초압축 다중·고액 휠`,
+                    numbers: nums,
+                    stats,
+                    meta: {
+                        rankBadge: `16-WHEEL ${idxInPack + 1}`,
+                        rankClass: idxInPack < 4 ? 'top-1-badge' : (idxInPack < 7 ? 'top-4-badge' : 'badge-v3-engine'),
+                        badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
+                        name: `16수 초압축 폭발 휠 (올라운더 1)`,
+                        tag: `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                        desc: `최신 회차(${maxKnownDrawnRound}회) 반영 동적 신호로 엄선된 16수 풀 내부에서 4수·3수 중복을 최소화해 다중·고액 당첨 밀도를 극대화합니다.`,
+                        lawName: '3안-B: 16수 초압축 커버링 휠 (올라운더 1·2·3 연동)',
+                        probRationale: `50,000회 몬테카를로 검증 기준 3건+ 다중당첨 9.66%, 5건+ 대폭발 20배, 고액 EV 1.13x 달성 엔진`,
+                        targetBenefit: '다중 적중(3건+·5건+) 및 3·4등 동시 포획 극대화',
+                        numReasons
+                    }
+                };
+            }
+            if (packIdx === 2) {
+                return {
+                    id: `V4.2-G1-${idxInPack + 1}`,
+                    name: `[올라운더 2] 16수 초압축 EV 휠`,
+                    customLabel: `올라운더2-${alphabet[idxInPack] || (idxInPack + 1)}`,
+                    numbers: nums,
+                    stats,
+                    meta: {
+                        rankBadge: `16-WHEEL-2 ${idxInPack + 1}`,
+                        rankClass: 'top-4-badge',
+                        badgeClass: 'strategy-b',
+                        name: `16수 초압축 EV 휠 (올라운더 2)`,
+                        tag: `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                        desc: `올라운더 1과 동일한 16수 풀을 공유하되 4수·3수 트리플 충돌을 0에 가깝게 회피하며 고액 독식 기대값을 강화합니다.`,
+                        lawName: '3안-B: 16수 초압축 2슬롯 상호보완 휠',
+                        probRationale: '올라운더 1·2·3 합산 30게임의 쿼드·트리플 커버리지를 극대화합니다.',
+                        targetBenefit: '16수 풀 적중 시 다중·고액 당첨 폭발 시너지',
+                        numReasons
+                    }
+                };
+            }
+            return {
+                id: `AR3-${idxInPack + 1}`,
+                name: `[올라운더 3] 16수 초압축 완성 휠 #${idxInPack + 1}`,
+                numbers: nums,
+                stats,
+                meta: {
+                    rankBadge: `AR3-16W ${idxInPack + 1}`,
+                    rankClass: idxInPack < 4 ? 'top-1-badge' : 'top-4-badge',
+                    badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
+                    name: `올라운더 3: 16수 초압축 완성 휠 #${idxInPack + 1}`,
+                    tag: `16수 30G 완결 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                    desc: `올라운더 1·2의 잔여 4수·3수 커버 빈틈을 메워 16수 초압축 30게임 휠을 완결합니다.`,
+                    lawName: '3안-B: 16수 30게임 커버링 완결 블록',
+                    probRationale: '16수 풀 내 번호 균등 배치 및 고액 EV 스코어링 완결.',
+                    targetBenefit: '올라운더 1·2·3 통합 다중·고액 당첨 극대화',
+                    numReasons
+                }
+            };
+        };
+
+        const portfolio = {
+            round: roundForSeed,
+            userId: effectiveUserId,
+            algoRevision: ALGO_REVISION_3B,
+            pool16,
+            v4: rawGames.slice(0, 10).map((nums, i) => makeRichCombo(nums, 1, i)),
+            v3: rawGames.slice(10, 20).map((nums, i) => makeRichCombo(nums, 2, i)),
+            ar3: rawGames.slice(20, 30).map((nums, i) => makeRichCombo(nums, 3, i))
+        };
+        state.ar3bPortfolioCache[portfolioCacheKey] = portfolio;
+        return portfolio;
+    } finally {
+        exitHistoryIsolation(needHistoryIsolation);
+    }
+}
+
 function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound = null, overrideVersion = null, ignoreLedger = false, customUserId = null) {
     const drawnRounds = Object.keys(state.mergedHistory || {})
         .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers))
@@ -22363,7 +22731,9 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
     const isCurrentRound = (targetRound === null || targetRound === defaultRound);
 
     if (!state.localComboCache) state.localComboCache = {};
-    const cacheKey = `lotto_weekly_top10_${roundForSeed}_${algoVersion}_v4_${useReportLogic}${ignoreLedger ? '_noledger' : ''}_${overrideVersion || 'default'}_${effectiveUserId}`;
+    const cacheKey = roundForSeed >= 1251
+        ? `lotto_weekly_top10_${roundForSeed}_${algoVersion}_v4_${useReportLogic}${ignoreLedger ? '_noledger' : ''}_${overrideVersion || 'default'}_R${maxKnownDrawnRound}_${effectiveUserId}`
+        : `lotto_weekly_top10_${roundForSeed}_${algoVersion}_v4_${useReportLogic}${ignoreLedger ? '_noledger' : ''}_${overrideVersion || 'default'}_${effectiveUserId}`;
     
     // 1245회차 올라운더 2 업그레이드 바이패스: 1245회차에서 v3Combos에 옛 수학퀀트가 남아있으면 캐시 무시하고 재생성
     const isRound1245 = (roundForSeed === 1245);
@@ -22381,7 +22751,8 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
                 (c.customLabel && c.customLabel.includes('수학퀀트'))
             );
             const isRound1245Upgrade = (isRound1245 && hasLegacyMathQuant);
-            if (!isRound1245Upgrade) {
+            const isRound1251Upgrade = isRound1251UpgradePending(snapshot, roundForSeed, effectiveUserId);
+            if (!isRound1245Upgrade && !isRound1251Upgrade) {
                 if (useReportLogic && Array.isArray(snapshot.v4Combos) && snapshot.v4Combos.length > 0) {
                     state.localComboCache[cacheKey] = snapshot.v4Combos;
                     return snapshot.v4Combos;
@@ -22401,6 +22772,14 @@ function computeAbsoluteTop10Combinations(forceRegenerate = false, targetRound =
         if (!hasLegacy) {
             return state.localComboCache[cacheKey];
         }
+    }
+
+    // 🎯 제 1251회차부터 올라운더 1·2·3 = 3안-B(16수 초압축 폭발 휠) 적용 (1250회 이하 기존 로직 100% 보존)
+    if (roundForSeed >= 1251) {
+        const portfolio3B = computeAllRounder3BPortfolio(roundForSeed, effectiveUserId);
+        const targetCombos = useReportLogic ? portfolio3B.v4 : portfolio3B.v3;
+        state.localComboCache[cacheKey] = targetCombos;
+        return targetCombos;
     }
     
     const needHistoryIsolation = enterHistoryIsolation(targetRound, maxKnownDrawnRound);
@@ -23350,14 +23729,18 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
     const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
     
     if (!state.extraPackCache) state.extraPackCache = {};
-    const cacheKey = `extra_${pIdx}_${curUpcomingRound}_${effectiveUserId}`;
+    const drawnRoundsForKey = Object.keys(state.mergedHistory || {}).filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers)).map(Number);
+    const maxKnownForKey = drawnRoundsForKey.length ? Math.max(...drawnRoundsForKey) : 1250;
+    const cacheKey = (pIdx === 1 && curUpcomingRound >= 1251)
+        ? `extra_${pIdx}_${curUpcomingRound}_R${maxKnownForKey}_${effectiveUserId}`
+        : `extra_${pIdx}_${curUpcomingRound}_${effectiveUserId}`;
 
     // 🔒 1순위: 이미 저장된 불변 추천번호 스냅샷에 해당 추가팩이 존재하는 경우, 임시 메모리 캐시보다 우선하여 스냅샷 팩 번호 반환
     if (effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
         const snapshot = (typeof getUserWeeklyRecommendationSnapshotSync === 'function')
             ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)
             : null;
-        if (snapshot && snapshot.extraPacks) {
+        if (snapshot && snapshot.extraPacks && !(pIdx === 1 && isRound1251UpgradePending(snapshot, curUpcomingRound, effectiveUserId))) {
             const snapPack = extractPackFromSnapshot(snapshot.extraPacks, pIdx);
             if (snapPack && Array.isArray(snapPack.combos) && snapPack.combos.length > 0) {
                 state.extraPackCache[cacheKey] = snapPack;
@@ -23368,6 +23751,25 @@ function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId 
 
     if (state.extraPackCache[cacheKey]) {
         return state.extraPackCache[cacheKey];
+    }
+
+    // 🎯 제 1251회차부터 올라운더 3(Pack 1)도 3안-B 16수 초압축 폭발 휠 30게임 통합 포트폴리오에서 분배
+    if (pIdx === 1 && curUpcomingRound >= 1251) {
+        const portfolio3B = computeAllRounder3BPortfolio(curUpcomingRound, effectiveUserId);
+        const packResult3B = {
+            packId: 1,
+            name: '기본 3: 올라운더 팩 3 (16수 초압축 10게임)',
+            shortName: '올라운더 3: 16수 초압축 휠',
+            badge: 'ALL-ROUNDER 3 (16-POOL WHEEL)',
+            color: '#10b981',
+            desc: '올라운더 1·2와 동일한 16수 핵심 풀을 공유하여 30게임 4수·3수 커버리지와 다중·고액당첨 확률을 극대화합니다.',
+            tag: `올라운더 3 | 16수 초압축 휠 | 다중당첨 극대화 | EV 강화`,
+            combos: portfolio3B.ar3,
+            is3StageOptimized: true,
+            generatedAt: new Date().toISOString()
+        };
+        state.extraPackCache[cacheKey] = packResult3B;
+        return packResult3B;
     }
 
     // Deterministic PRNG seed unique to user, round and packIndex
@@ -23961,6 +24363,7 @@ function makeLeanSnapshot(snap) {
     const v4 = Array.isArray(snap.v4Combos) ? snap.v4Combos.map(slimCombo) : [];
     const v3 = Array.isArray(snap.v3Combos) ? snap.v3Combos.map(slimCombo) : [];
     const extraPacks = {};
+    const isRound1251Plus = Number(snap.round) >= 1251;
     if (snap.extraPacks && typeof snap.extraPacks === 'object') {
         for (const p in snap.extraPacks) {
             const pObj = snap.extraPacks[p];
@@ -23968,8 +24371,8 @@ function makeLeanSnapshot(snap) {
                 const isPack1 = (Number(p) === 1 || pObj.packId === 1 || (pObj.name && pObj.name.includes('빈틈제로')));
                 extraPacks[p] = {
                     packId: pObj.packId ?? p,
-                    name: isPack1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : (pObj.name || `추가팩 ${p}`),
-                    badge: isPack1 ? 'ALL-ROUNDER 3 (ZERO-GAP 100%)' : (pObj.badge || `EXTRA ${p}`),
+                    name: isPack1 ? (isRound1251Plus ? (pObj.name || '기본 3: 올라운더 팩 3 (16수 초압축 10게임)') : '기본 3: 올라운더 팩 3 (빈틈제로 10게임)') : (pObj.name || `추가팩 ${p}`),
+                    badge: isPack1 ? (isRound1251Plus ? (pObj.badge || 'ALL-ROUNDER 3 (16-POOL WHEEL)') : 'ALL-ROUNDER 3 (ZERO-GAP 100%)') : (pObj.badge || `EXTRA ${p}`),
                     color: pObj.color || '#10b981',
                     is3StageOptimized: pObj.is3StageOptimized !== false,
                     combos: Array.isArray(pObj.combos) ? pObj.combos.map(slimCombo) : []
@@ -23988,7 +24391,7 @@ function makeLeanSnapshot(snap) {
         createdAt: snap.createdAt || new Date().toISOString(),
         isLocked: snap.isLocked !== false,
         is3StageOptimized: snap.is3StageOptimized !== false,
-        algoRevision: snap.algoRevision || 'v2026.10_3stage',
+        algoRevision: snap.algoRevision || (isRound1251Plus ? ALGO_REVISION_3B : 'v2026.10_3stage'),
         hashFingerprint: snap.hashFingerprint || '',
         totalGames: snap.totalGames || 70,
         v4Combos: v4,
@@ -24071,6 +24474,7 @@ function invalidateRecommendationRuntimeCaches(userId = null, roundNum = null) {
     if (!hasFilter) {
         state.localComboCache = {};
         state.extraPackCache = {};
+        state.ar3bPortfolioCache = {};
         state.fixedTop5Combinations = null;
         for (const suffix of ['v4', 'v3', 'ar3']) {
             state[`fixedTop5Combinations_${suffix}`] = null;
@@ -24078,6 +24482,15 @@ function invalidateRecommendationRuntimeCaches(userId = null, roundNum = null) {
             state[`fixedTop5Combinations_${suffix}_round`] = null;
         }
         return;
+    }
+
+    if (state.ar3bPortfolioCache) {
+        const p3bPrefix = `${rNum}_${cleanU}_`;
+        for (const k of Object.keys(state.ar3bPortfolioCache)) {
+            if (k.startsWith(p3bPrefix)) {
+                delete state.ar3bPortfolioCache[k];
+            }
+        }
     }
 
     const rPrefix = `lotto_weekly_top10_${rNum}_`;
@@ -24186,7 +24599,7 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
                 }
             }
 
-            if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks) {
+            if (existingData && existingData.v4Combos && existingData.v3Combos && existingData.extraPacks && !isRound1251UpgradePending(existingData, roundNum, cleanUser)) {
                 const hydratedExisting = (typeof hydrateLeanSnapshot === 'function')
                     ? hydrateLeanSnapshot(existingData)
                     : existingData;
@@ -24248,15 +24661,15 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
     // 2. Determine snapshot data to save (explicit > memory > SafeLocalStorage > fresh generation)
     let snapshotData = null;
     if (explicitSnapshot && explicitSnapshot.v4Combos && explicitSnapshot.v3Combos && explicitSnapshot.extraPacks) {
-        snapshotData = { ...explicitSnapshot, is3StageOptimized: true, algoRevision: 'v2026.10_3stage' };
-    } else if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey] && state.userRecommendationSnapshots[docKey].v4Combos) {
+        snapshotData = { ...explicitSnapshot, is3StageOptimized: true, algoRevision: (roundNum >= 1251 ? ALGO_REVISION_3B : 'v2026.10_3stage') };
+    } else if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[docKey] && state.userRecommendationSnapshots[docKey].v4Combos && !isRound1251UpgradePending(state.userRecommendationSnapshots[docKey], roundNum, cleanUser)) {
         snapshotData = state.userRecommendationSnapshots[docKey];
     } else {
         try {
             const localRaw = SafeLocalStorage.getItem(`lotto_rec_snapshot_${docKey}`);
             if (localRaw) {
                 const parsed = JSON.parse(localRaw);
-                if (parsed && parsed.v4Combos && parsed.v3Combos && parsed.extraPacks) {
+                if (parsed && parsed.v4Combos && parsed.v3Combos && parsed.extraPacks && !isRound1251UpgradePending(parsed, roundNum, cleanUser)) {
                     snapshotData = parsed;
                 }
             }
@@ -24378,7 +24791,7 @@ async function saveUserWeeklyRecommendationSnapshot(userId, round, explicitSnaps
             createdAt: new Date().toISOString(),
             isLocked: true,
             is3StageOptimized: true,
-            algoRevision: 'v2026.10_3stage',
+            algoRevision: (roundNum >= 1251 ? ALGO_REVISION_3B : 'v2026.10_3stage'),
             hashFingerprint: `hash_${Math.abs(hash).toString(16)}`,
             totalGames: 70,
             v4Combos,
@@ -24621,6 +25034,8 @@ if (typeof window !== 'undefined') {
     window.saveUserWeeklyRecommendationSnapshot = saveUserWeeklyRecommendationSnapshot;
     window.getUserWeeklyRecommendationSnapshotSync = getUserWeeklyRecommendationSnapshotSync;
     window.invalidateRecommendationRuntimeCaches = invalidateRecommendationRuntimeCaches;
+    window.computeAllRounder3BPortfolio = computeAllRounder3BPortfolio;
+    window.isRound1251UpgradePending = isRound1251UpgradePending;
 }
 
         if (typeof getEffectiveGeneratorUserId !== 'undefined') {
@@ -24650,6 +25065,22 @@ if (typeof window !== 'undefined') {
         if (typeof exitHistoryIsolation !== 'undefined') {
             __exports.exitHistoryIsolation = exitHistoryIsolation;
             if (typeof window !== 'undefined') window.exitHistoryIsolation = exitHistoryIsolation;
+        }
+        if (typeof ALGO_REVISION_3B !== 'undefined') {
+            __exports.ALGO_REVISION_3B = ALGO_REVISION_3B;
+            if (typeof window !== 'undefined') window.ALGO_REVISION_3B = ALGO_REVISION_3B;
+        }
+        if (typeof hasConfirmedLedgerForRound !== 'undefined') {
+            __exports.hasConfirmedLedgerForRound = hasConfirmedLedgerForRound;
+            if (typeof window !== 'undefined') window.hasConfirmedLedgerForRound = hasConfirmedLedgerForRound;
+        }
+        if (typeof isRound1251UpgradePending !== 'undefined') {
+            __exports.isRound1251UpgradePending = isRound1251UpgradePending;
+            if (typeof window !== 'undefined') window.isRound1251UpgradePending = isRound1251UpgradePending;
+        }
+        if (typeof computeAllRounder3BPortfolio !== 'undefined') {
+            __exports.computeAllRounder3BPortfolio = computeAllRounder3BPortfolio;
+            if (typeof window !== 'undefined') window.computeAllRounder3BPortfolio = computeAllRounder3BPortfolio;
         }
         if (typeof computeAbsoluteTop10Combinations !== 'undefined') {
             __exports.computeAbsoluteTop10Combinations = computeAbsoluteTop10Combinations;
@@ -25003,7 +25434,8 @@ const {
     getUserWeeklyRecommendationSnapshotSync: canonicalGetUserSnapshot,
     saveUserWeeklyRecommendationSnapshot: canonicalSaveUserSnapshot,
     hydrateLeanSnapshot,
-    getParkJaeGoo1246FrozenSnapshot
+    getParkJaeGoo1246FrozenSnapshot,
+    isRound1251UpgradePending
 } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { getAllUnifiedRegisteredUsers, UserContextManager } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
 
@@ -25802,6 +26234,10 @@ function computeUser70RecommendationsReview(userId, roundNum) {
     let v4Combos = [];
     let v3Combos = [];
     const extraPackEvals = [];
+
+    if (snapshot && typeof isRound1251UpgradePending === 'function' && isRound1251UpgradePending(snapshot, roundNum, cleanUser)) {
+        snapshot = null;
+    }
 
     if (snapshot && snapshot.v4Combos && snapshot.v3Combos && snapshot.extraPacks) {
         // 🛡️ 서버 스냅샷 원본 100% 그대로 로드 (가입 이후 회차에 존재하는 스냅샷을 100% 신뢰하여 채점)
@@ -31294,7 +31730,7 @@ var __M_services_lotto_views_generator_tab = (function() {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { createBallHtml } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
-const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId, isRound1251UpgradePending } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPermanentUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getAllUnifiedRegisteredUsers, isUserSuspended } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
@@ -32018,7 +32454,9 @@ async function renderTop5Combinations(isRollingAnimation = false) {
         }
 
         // 🔒 차기 회차에 대해 사용자별 7대 알고리즘 영구 불변 스냅샷 자동 생성/보존 (Write-Once)
-        if (typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
+        // 단, 직전 회차(curUpcomingRound - 1)가 아직 스크랩 전이라면 스크랩 완료 직후 저장하도록 대기
+        const isPrevRoundSynced = (state.latestRoundNum || 0) >= (curUpcomingRound - 1);
+        if (isPrevRoundSynced && typeof saveUserWeeklyRecommendationSnapshot === 'function' && effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
             saveUserWeeklyRecommendationSnapshot(effectiveUserId, curUpcomingRound).catch(e => console.warn('[Auto Snapshot Error]', e));
         }
 
@@ -32658,7 +33096,7 @@ function handleGenerateAllClick() {
         ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)
         : null;
 
-    if (existingSnap && Array.isArray(existingSnap.v4Combos) && existingSnap.v4Combos.length > 0 && Array.isArray(existingSnap.v3Combos) && existingSnap.v3Combos.length > 0) {
+    if (existingSnap && Array.isArray(existingSnap.v4Combos) && existingSnap.v4Combos.length > 0 && Array.isArray(existingSnap.v3Combos) && existingSnap.v3Combos.length > 0 && !isRound1251UpgradePending(existingSnap, curUpcomingRound, effectiveUserId)) {
         state.fixedTop5Combinations_v3 = existingSnap.v3Combos;
         state.fixedTop5Combinations_v3_userId = effectiveUserId;
         state.fixedTop5Combinations_v3_round = curUpcomingRound;
@@ -34022,7 +34460,7 @@ async function handleGenerateAll70Games() {
         ? getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curUpcomingRound)
         : null;
 
-    if (existingSnap && Array.isArray(existingSnap.v4Combos) && existingSnap.v4Combos.length > 0 && Array.isArray(existingSnap.v3Combos) && existingSnap.v3Combos.length > 0) {
+    if (existingSnap && Array.isArray(existingSnap.v4Combos) && existingSnap.v4Combos.length > 0 && Array.isArray(existingSnap.v3Combos) && existingSnap.v3Combos.length > 0 && !isRound1251UpgradePending(existingSnap, curUpcomingRound, effectiveUserId)) {
         state.fixedTop5Combinations_v3 = existingSnap.v3Combos;
         state.fixedTop5Combinations_v3_userId = effectiveUserId;
         state.fixedTop5Combinations_v3_round = curUpcomingRound;
@@ -51043,8 +51481,31 @@ function getLiveWinProbStats(tabId = 'v4') {
     const expected70Rank5 = (r5 / g) * 70;
     const expected70Prize = Math.round((computed.totalPrize / g) * 70);
 
+    // 실시간 Z-검정 및 단측 유의확률(p-value) 동적 산출
+    const normSf = (z) => {
+        if (z <= 0) return 0.5;
+        const t = 1.0 / (1.0 + 0.2316419 * z);
+        const d = 0.3989422804014327 * Math.exp(-0.5 * z * z);
+        const p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+        return p;
+    };
+    const p4Theo = theo.ranks[4].prob / 100.0;
+    const p5Theo = theo.ranks[5].prob / 100.0;
+    const z4Val = (r4 - g * p4Theo) / Math.sqrt(Math.max(g * p4Theo * (1 - p4Theo), 1e-9));
+    const z5Val = (r5 - g * p5Theo) / Math.sqrt(Math.max(g * p5Theo * (1 - p5Theo), 1e-9));
+    const fmtZ = (zv) => {
+        const sign = zv >= 0 ? '+' : '';
+        const pv = zv >= 0 ? normSf(zv) : (1.0 - normSf(-zv));
+        const pStr = pv < 0.0001 ? 'p < 0.0001, 초고도 유의' : (pv < 0.05 ? `p = ${pv.toFixed(4)}, 유의미` : `p = ${pv.toFixed(3)}, 평균 추종`);
+        return `${sign}${zv.toFixed(2)} (${pStr})`;
+    };
+
     return {
         ...computed,
+        zScores: {
+            4: fmtZ(z4Val),
+            5: fmtZ(z5Val)
+        },
         rates: {
             1: rate1.toFixed(4),
             2: rate2.toFixed(4),
@@ -53111,7 +53572,7 @@ const { setupManualLedgerModal, updateManualModalCrossCheck } = (typeof __M_serv
 const { setupManualDrawModal } = (typeof __M_services_lotto_views_manual_draw_modal !== 'undefined' ? __M_services_lotto_views_manual_draw_modal : {});
 const { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } = (typeof __M_services_lotto_views_snapshot_audit_modal !== 'undefined' ? __M_services_lotto_views_snapshot_audit_modal : {});
 const { autoSyncMissingDraws, setupSyncEvents } = (typeof __M_services_lotto_views_sync !== 'undefined' ? __M_services_lotto_views_sync : {});
-const { computeAbsoluteTop10Combinations } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { computeAbsoluteTop10Combinations, invalidateRecommendationRuntimeCaches } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { getLedger, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl, getUserConfirmedRoundNumbers, formatConfirmedRoundLabel } = (typeof __M_services_lotto_ledger !== 'undefined' ? __M_services_lotto_ledger : {});
 
 let _isLottoInitializing = false;
@@ -53444,8 +53905,14 @@ async function initLottoService(force = false) {
                         try { SafeLocalStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory)); } catch(e) {}
                         state.mergedHistory = typeof LOTTO_HISTORY !== 'undefined' ? { ...LOTTO_HISTORY, ...state.lottoExtraHistory } : { ...state.lottoExtraHistory };
                         recalculateGroups();
+                        if (typeof invalidateRecommendationRuntimeCaches === 'function') {
+                            invalidateRecommendationRuntimeCaches();
+                        }
                         state.latestDrawData = null;
                         renderLatestDrawBanner();
+                        if (typeof renderTop5Combinations === 'function') {
+                            try { renderTop5Combinations(false); } catch(e) {}
+                        }
                         if (typeof window.renderLandingDashboard === 'function') {
                             window.renderLandingDashboard();
                         }

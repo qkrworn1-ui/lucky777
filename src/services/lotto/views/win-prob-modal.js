@@ -193,8 +193,31 @@ export function getLiveWinProbStats(tabId = 'v4') {
     const expected70Rank5 = (r5 / g) * 70;
     const expected70Prize = Math.round((computed.totalPrize / g) * 70);
 
+    // 실시간 Z-검정 및 단측 유의확률(p-value) 동적 산출
+    const normSf = (z) => {
+        if (z <= 0) return 0.5;
+        const t = 1.0 / (1.0 + 0.2316419 * z);
+        const d = 0.3989422804014327 * Math.exp(-0.5 * z * z);
+        const p = d * t * (0.319381530 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+        return p;
+    };
+    const p4Theo = theo.ranks[4].prob / 100.0;
+    const p5Theo = theo.ranks[5].prob / 100.0;
+    const z4Val = (r4 - g * p4Theo) / Math.sqrt(Math.max(g * p4Theo * (1 - p4Theo), 1e-9));
+    const z5Val = (r5 - g * p5Theo) / Math.sqrt(Math.max(g * p5Theo * (1 - p5Theo), 1e-9));
+    const fmtZ = (zv) => {
+        const sign = zv >= 0 ? '+' : '';
+        const pv = zv >= 0 ? normSf(zv) : (1.0 - normSf(-zv));
+        const pStr = pv < 0.0001 ? 'p < 0.0001, 초고도 유의' : (pv < 0.05 ? `p = ${pv.toFixed(4)}, 유의미` : `p = ${pv.toFixed(3)}, 평균 추종`);
+        return `${sign}${zv.toFixed(2)} (${pStr})`;
+    };
+
     return {
         ...computed,
+        zScores: {
+            4: fmtZ(z4Val),
+            5: fmtZ(z5Val)
+        },
         rates: {
             1: rate1.toFixed(4),
             2: rate2.toFixed(4),

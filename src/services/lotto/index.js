@@ -18,7 +18,7 @@ import { setupManualLedgerModal, updateManualModalCrossCheck } from './views/man
 import { setupManualDrawModal } from './views/manual-draw-modal.js';
 import { setupSnapshotAuditEvents, openSnapshotAuditModal, closeSnapshotAuditModal, renderSnapshotAuditView } from './views/snapshot-audit-modal.js';
 import { autoSyncMissingDraws, setupSyncEvents } from './views/sync.js';
-import { computeAbsoluteTop10Combinations } from './generator.js';
+import { computeAbsoluteTop10Combinations, invalidateRecommendationRuntimeCaches } from './generator.js';
 import { getLedger, getUserPurchasesForRound, calculateLedgerFinancials, calculateAllUsersTotalFinancials, getSafeActualDraw, saveToLedger, exportLedgerToFile, importLedgerFromFile, clearEntireLedger, getReceiptTrashList, saveReceiptTrashList, moveToReceiptTrash, restoreFromReceiptTrash, permanentDeleteFromReceiptTrash, emptyEntireReceiptTrash, fetchReceiptTrash, getReceiptCombosFingerprint, toggleReceiptLock, toggleRoundLock, normalizeMaster1239Order, parseDonghangLotteryQrUrl, syncPurchaseWithQrUrl, getUserConfirmedRoundNumbers, formatConfirmedRoundLabel } from './ledger.js';
 
 let _isLottoInitializing = false;
@@ -351,8 +351,14 @@ export async function initLottoService(force = false) {
                         try { localStorage.setItem('lotto_extra_history', JSON.stringify(state.lottoExtraHistory)); } catch(e) {}
                         state.mergedHistory = typeof LOTTO_HISTORY !== 'undefined' ? { ...LOTTO_HISTORY, ...state.lottoExtraHistory } : { ...state.lottoExtraHistory };
                         recalculateGroups();
+                        if (typeof invalidateRecommendationRuntimeCaches === 'function') {
+                            invalidateRecommendationRuntimeCaches();
+                        }
                         state.latestDrawData = null;
                         renderLatestDrawBanner();
+                        if (typeof renderTop5Combinations === 'function') {
+                            try { renderTop5Combinations(false); } catch(e) {}
+                        }
                         if (typeof window.renderLandingDashboard === 'function') {
                             window.renderLandingDashboard();
                         }

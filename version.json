@@ -1,25 +1,9 @@
 {
-  "version": "v2026.11.15.1023",
-  "buildDate": "2026-11-15",
-  "description": "스냅샷 최우선 정합성 보장 및 간편마킹뷰-생성기 동기화",
-  "buildTimestamp": "2026-11-15T10:23:08.052674",
+  "version": "v2026.11.16.1154",
+  "buildDate": "2026-11-16",
+  "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)",
+  "buildTimestamp": "2026-11-16T11:54:58.486940",
   "buildHistory": [
-    {
-      "version": "v2026.10.29.1500",
-      "buildDate": "2026-10-29",
-      "buildTime": "15:00",
-      "buildDateTime": "2026-10-29 15:00",
-      "buildTimestamp": "2026-10-29T15:00:53.927815",
-      "description": "갤럭시 S24+ 카메라 초점 최적화(50MP 메인렌즈 사전선택, 22cm 매크로 펄스, 수동 렌즈 전환 지원)"
-    },
-    {
-      "version": "v2026.10.29.1501",
-      "buildDate": "2026-10-29",
-      "buildTime": "15:01",
-      "buildDateTime": "2026-10-29 15:01",
-      "buildTimestamp": "2026-10-29T15:01:17.140430",
-      "description": "갤럭시 S24+ 카메라 초점 최적화(50MP 메인렌즈 사전선택, 22cm 매크로 펄스, 수동 렌즈 전환 지원)"
-    },
     {
       "version": "v2026.10.29.1501.43",
       "buildDate": "2026-10-29",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-11-15 10:23",
       "buildTimestamp": "2026-11-15T10:23:08.052674",
       "description": "스냅샷 최우선 정합성 보장 및 간편마킹뷰-생성기 동기화"
+    },
+    {
+      "version": "v2026.11.16.1151",
+      "buildDate": "2026-11-16",
+      "buildTime": "11:51",
+      "buildDateTime": "2026-11-16 11:51",
+      "buildTimestamp": "2026-11-16T11:51:21.854238",
+      "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)"
+    },
+    {
+      "version": "v2026.11.16.1154",
+      "buildDate": "2026-11-16",
+      "buildTime": "11:54",
+      "buildDateTime": "2026-11-16 11:54",
+      "buildTimestamp": "2026-11-16T11:54:58.486940",
+      "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)"
     }
   ],
-  "buildTime": "10:23",
-  "buildDateTime": "2026-11-15 10:23"
+  "buildTime": "11:54",
+  "buildDateTime": "2026-11-16 11:54"
 }

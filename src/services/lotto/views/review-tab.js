@@ -12,7 +12,8 @@ import {
     getUserWeeklyRecommendationSnapshotSync as canonicalGetUserSnapshot,
     saveUserWeeklyRecommendationSnapshot as canonicalSaveUserSnapshot,
     hydrateLeanSnapshot,
-    getParkJaeGoo1246FrozenSnapshot
+    getParkJaeGoo1246FrozenSnapshot,
+    isRound1251UpgradePending
 } from '../generator.js';
 import { getAllUnifiedRegisteredUsers, UserContextManager } from '../../../shared/user-context.js';
 
@@ -811,6 +812,10 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
     let v4Combos = [];
     let v3Combos = [];
     const extraPackEvals = [];
+
+    if (snapshot && typeof isRound1251UpgradePending === 'function' && isRound1251UpgradePending(snapshot, roundNum, cleanUser)) {
+        snapshot = null;
+    }
 
     if (snapshot && snapshot.v4Combos && snapshot.v3Combos && snapshot.extraPacks) {
         // 🛡️ 서버 스냅샷 원본 100% 그대로 로드 (가입 이후 회차에 존재하는 스냅샷을 100% 신뢰하여 채점)

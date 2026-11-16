@@ -4,6 +4,8 @@ import { state } from './state.js';
 export function aggregateAllStatistics() {
     state.allNumbers.forEach(n => {
         state.HISTORICAL_FREQUENCY[n] = 0;
+        state.EWMA_FREQUENCY[n] = 0;
+        state.DYNAMIC_ROUND_SCORE[n] = 1.0;
         state.MISSING_WEEKS[n] = 0;
         state.PAIR_FREQUENCIES[n] = {};
         state.TRANSITION_MATRIX[n] = {};
@@ -12,14 +14,14 @@ export function aggregateAllStatistics() {
     state.RECENT_BONUS_NUMBERS = [];
     
     let maxRound = 0;
-    const rounds = Object.keys(state.mergedHistory).map(Number).sort((a,b) => a - b);
+    const rounds = Object.keys(state.mergedHistory).map(Number).filter(r => !isNaN(r)).sort((a,b) => a - b);
     let lastSeen = {};
     
     for (const r of rounds) {
         const data = state.mergedHistory[r];
         if (!data || !data.numbers || !Array.isArray(data.numbers)) continue;
         if (r > maxRound) maxRound = r;
-        state.HISTORICAL_WINNING_SETS.add(data.numbers.join(','));
+        state.HISTORICAL_WINNING_SETS.add([...data.numbers].sort((a,b) => a - b).join(','));
         if (data.bonus !== undefined) state.RECENT_BONUS_NUMBERS.push(data.bonus);
         data.numbers.forEach(n => {
             state.HISTORICAL_FREQUENCY[n] = (state.HISTORICAL_FREQUENCY[n] || 0) + 1;
@@ -47,6 +49,72 @@ export function aggregateAllStatistics() {
     state.PREVIOUS_DRAW = (maxRound > 0 && state.mergedHistory[maxRound]?.numbers && Array.isArray(state.mergedHistory[maxRound].numbers))
         ? [...state.mergedHistory[maxRound].numbers]
         : [];
+
+    // Compute EWMA (half-life = 30 rounds), Rolling 200-round Pari-Mutuel Crowd Ratio, and Dynamic Soft Signal
+    const decay = Math.exp(-Math.LN2 / 30.0);
+    let totalFreq = 0;
+    let totalEwma = 0;
+    const ewmaMap = {};
+    state.allNumbers.forEach(n => {
+        totalFreq += (state.HISTORICAL_FREQUENCY[n] || 0);
+        ewmaMap[n] = 0;
+    });
+
+    const hi3Winners = [];
+    const hi1Winners = [];
+    for (const r of rounds) {
+        const data = state.mergedHistory[r];
+        if (!data || !Array.isArray(data.numbers)) continue;
+        const w = Math.pow(decay, maxRound - r);
+        data.numbers.forEach(n => { ewmaMap[n] = (ewmaMap[n] || 0) + w; });
+        if (r > maxRound - 200) {
+            const w1 = Number(data.rank1Winners || data.firstPrzwnerCo || 0);
+            if (w1 > 0) {
+                const highCnt = data.numbers.filter(n => n >= 32).length;
+                if (highCnt >= 3) hi3Winners.push(w1);
+                else if (highCnt <= 1) hi1Winners.push(w1);
+            }
+        }
+    }
+    state.allNumbers.forEach(n => {
+        state.EWMA_FREQUENCY[n] = ewmaMap[n];
+        totalEwma += ewmaMap[n];
+    });
+    if (hi3Winners.length > 0 && hi1Winners.length > 0) {
+        const avgHi3 = hi3Winners.reduce((a, b) => a + b, 0) / hi3Winners.length;
+        const avgHi1 = hi1Winners.reduce((a, b) => a + b, 0) / hi1Winners.length;
+        state.CROWD_EV_RATIO = avgHi3 > 0 ? Math.max(1.0, Math.min(1.25, avgHi1 / avgHi3)) : 1.07;
+    } else {
+        state.CROWD_EV_RATIO = 1.07;
+    }
+
+    const avgFreq = rounds.length > 0 ? totalFreq / 45.0 : 1.0;
+    const avgEwma = rounds.length > 0 ? totalEwma / 45.0 : 1.0;
+    const prevDraw = state.PREVIOUS_DRAW || [];
+    const neighbors = new Set();
+    prevDraw.forEach(ln => {
+        if (ln > 1) neighbors.add(ln - 1);
+        if (ln < 45) neighbors.add(ln + 1);
+    });
+    let totalM = 0;
+    prevDraw.forEach(ln => {
+        const row = state.TRANSITION_MATRIX[ln] || {};
+        for (const k in row) totalM += row[k];
+    });
+    const avgM = prevDraw.length > 0 ? (totalM / 45.0) : 1.0;
+
+    state.allNumbers.forEach(n => {
+        const fRatio = ((state.HISTORICAL_FREQUENCY[n] || 0) + 10.0) / (avgFreq + 10.0);
+        let mSum = 0;
+        prevDraw.forEach(ln => { mSum += (state.TRANSITION_MATRIX[ln]?.[n] || 0); });
+        const mRatio = (mSum + 5.0) / (avgM + 5.0);
+        const ovBoost = 1.0 + Math.min(0.15, Math.max(0, (state.MISSING_WEEKS[n] || 0) - 8) * 0.015);
+        const nbBoost = neighbors.has(n) ? 1.08 : 1.0;
+        const coBoost = prevDraw.includes(n) ? 1.05 : 1.0;
+        const softScore = (0.4 * fRatio + 0.6 * mRatio) * ovBoost * nbBoost * coBoost;
+        const ewRatio = ((state.EWMA_FREQUENCY[n] || 0) + 3.0) / (avgEwma + 3.0);
+        state.DYNAMIC_ROUND_SCORE[n] = 0.7 * softScore + 0.3 * ewRatio;
+    });
 }
 
 /** Reclassify HOT/COLD/OVERDUE groups based on current frequency data */
