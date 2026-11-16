@@ -104,6 +104,7 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                 });
                 const hydrated = window.hydrateLeanSnapshot(JSON.parse(JSON.stringify(lean)));
                 const frozen = window.getParkJaeGoo1246FrozenSnapshot();
+                const coreSummary = window.getWeeklyCoreNumbersSummary(1251, 'master');
 
                 window.state.mergedHistory[1251] = { numbers: [2, 9, 14, 31, 35, 45], bonus: 22 };
                 window.applyNewDrawData({ drwNo: 1251, numbers: [2, 9, 14, 31, 35, 45], bonus: 22 });
@@ -124,6 +125,11 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                     hydratedKeys: Object.keys(hydrated.extraPacks),
                     frozenTotalGames: frozen.totalGames,
                     frozenKeys: Object.keys(frozen.extraPacks),
+                    corePoolSize: coreSummary ? coreSummary.poolSize : 0,
+                    coreTop6Len: coreSummary ? coreSummary.topAnchors.length : 0,
+                    coreSupportLen: coreSummary ? coreSummary.supportPool.length : 0,
+                    coreMatchesPool: coreSummary ? JSON.stringify(coreSummary.poolNumbers) === JSON.stringify(Array.from(pool).sort((a,b) => a-b)) : false,
+                    coreFreqTotal: coreSummary ? coreSummary.itemsSortedAsc.reduce((a, x) => a + x.freq30, 0) : 0,
                     afterScrapeLatest: window.state.latestRoundNum,
                     pool1252Valid: pool1252.size <= 16 && pool1252.size >= 10
                 };
@@ -144,8 +150,27 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         self.assertEqual(res['hydratedKeys'], ['1'])
         self.assertEqual(res['frozenTotalGames'], 30)
         self.assertEqual(res['frozenKeys'], ['1'])
+        self.assertEqual(res['corePoolSize'], 16)
+        self.assertEqual(res['coreTop6Len'], 6)
+        self.assertEqual(res['coreSupportLen'], 10)
+        self.assertTrue(res['coreMatchesPool'])
+        self.assertEqual(res['coreFreqTotal'], 180)
         self.assertEqual(res['afterScrapeLatest'], 1251)
         self.assertTrue(res['pool1252Valid'])
+
+    def test_weekly_core_numbers_ui_wiring(self):
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        with open(os.path.join(root_dir, 'index.html'), 'r', encoding='utf-8') as f:
+            idx_html = f.read()
+        with open(os.path.join(root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js'), 'r', encoding='utf-8') as f:
+            gen_tab_js = f.read()
+        core_pos = idx_html.find('id="weeklyCoreNumbersSection"')
+        comb_pos = idx_html.find('id="combinationsContainer"')
+        self.assertGreater(core_pos, 0)
+        self.assertLess(core_pos, comb_pos)
+        self.assertIn('export function renderWeeklyCoreNumbersCard', gen_tab_js)
+        self.assertIn('export function toggleWeeklyCoreNumber', gen_tab_js)
+        self.assertIn('applyWeeklyCoreHighlightFilter', gen_tab_js)
 
     def test_batch_evaluate_only_ar3(self):
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

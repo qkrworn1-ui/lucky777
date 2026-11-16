@@ -2612,6 +2612,149 @@ export function getParkJaeGoo1246FrozenSnapshot() {
     return (typeof hydrateLeanSnapshot === 'function') ? hydrateLeanSnapshot(baseSnapshot) : baseSnapshot;
 }
 
+/**
+ * 🎯 이번 주 올라운더 1·2·3 코어 핵심 숫자 요약 반환 (스냅샷 우선 / 3안-B 16수 풀 연동)
+ * @param {number|null} targetRound
+ * @param {string|null} customUserId
+ */
+export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = null) {
+    const drawnRounds = Object.keys(state.mergedHistory || {})
+        .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers) && state.mergedHistory[r].numbers.length === 6)
+        .map(Number);
+    const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : 1250;
+    const curRound = targetRound || (typeof getUpcomingLottoRound === 'function'
+        ? getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (maxKnownDrawnRound + 1)));
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
+
+    let v4Combos = [];
+    let v3Combos = [];
+    let ar3Combos = [];
+    let explicitPool16 = null;
+
+    // 1. Immutable Snapshot Priority (only if not pending 1251 3B upgrade)
+    if (effectiveUserId && effectiveUserId !== 'all' && !isSystemOrDummyUser(effectiveUserId)) {
+        const snap = getUserWeeklyRecommendationSnapshotSync(effectiveUserId, curRound);
+        if (snap && snap.v4Combos && snap.v3Combos && snap.extraPacks && !isRound1251UpgradePending(snap, curRound, effectiveUserId)) {
+            v4Combos = Array.isArray(snap.v4Combos) ? snap.v4Combos : [];
+            v3Combos = Array.isArray(snap.v3Combos) ? snap.v3Combos : [];
+            const p1 = extractPackFromSnapshot(snap.extraPacks, 1);
+            ar3Combos = (p1 && Array.isArray(p1.combos)) ? p1.combos : [];
+        }
+    }
+
+    // 2. Fallback to live deterministic generation (3안-B for 1251+, legacy for <=1250)
+    if (v4Combos.length === 0 || v3Combos.length === 0 || ar3Combos.length === 0) {
+        if (curRound >= 1251) {
+            const pf = computeAllRounder3BPortfolio(curRound, effectiveUserId);
+            if (pf) {
+                v4Combos = pf.v4 || [];
+                v3Combos = pf.v3 || [];
+                ar3Combos = pf.ar3 || [];
+                explicitPool16 = Array.isArray(pf.pool16) ? pf.pool16 : null;
+            }
+        } else {
+            v4Combos = computeAbsoluteTop10Combinations(false, curRound, 'v4', true, effectiveUserId) || [];
+            v3Combos = computeAbsoluteTop10Combinations(false, curRound, 'v3', true, effectiveUserId) || [];
+            const p1 = generateExtraAddonPack(1, curRound, effectiveUserId);
+            ar3Combos = (p1 && Array.isArray(p1.combos)) ? p1.combos : [];
+        }
+    }
+
+    const extractNums = (list) => (Array.isArray(list) ? list : [])
+        .map(c => Array.isArray(c) ? c : (c && Array.isArray(c.numbers) ? c.numbers : []))
+        .filter(arr => arr.length === 6);
+
+    const v4Nums = extractNums(v4Combos);
+    const v3Nums = extractNums(v3Combos);
+    const ar3Nums = extractNums(ar3Combos);
+    const all30Nums = [...v4Nums, ...v3Nums, ...ar3Nums];
+
+    const freq30 = {};
+    const packCounts = { v4: {}, v3: {}, extra1: {} };
+    const countInto = (arrs, targetMap) => {
+        arrs.forEach(nums => {
+            nums.forEach(n => {
+                targetMap[n] = (targetMap[n] || 0) + 1;
+            });
+        });
+    };
+    countInto(all30Nums, freq30);
+    countInto(v4Nums, packCounts.v4);
+    countInto(v3Nums, packCounts.v3);
+    countInto(ar3Nums, packCounts.extra1);
+
+    const needHistoryIsolation = enterHistoryIsolation(curRound, maxKnownDrawnRound);
+    let dynScore = {};
+    let missWeeks = {};
+    let prevDrawNums = [];
+    try {
+        if (!state.DYNAMIC_ROUND_SCORE || !state.DYNAMIC_ROUND_SCORE[1]) {
+            recalculateGroups();
+        }
+        dynScore = { ...(state.DYNAMIC_ROUND_SCORE || {}) };
+        missWeeks = { ...(state.MISSING_WEEKS || {}) };
+        prevDrawNums = (state.mergedHistory && state.mergedHistory[maxKnownDrawnRound] && Array.isArray(state.mergedHistory[maxKnownDrawnRound].numbers))
+            ? [...state.mergedHistory[maxKnownDrawnRound].numbers]
+            : [];
+    } finally {
+        exitHistoryIsolation(needHistoryIsolation);
+    }
+
+    const is3BMode = (curRound >= 1251);
+    const seed = getUserRoundSeed(effectiveUserId, curRound, 'ar_3b_16wheel');
+    const tieRng = createDeterministicRng(seed);
+    const tieNoise = {};
+    for (let n = 1; n <= 45; n++) tieNoise[n] = tieRng() * 0.25;
+
+    let candidateNums = [];
+    if (explicitPool16 && explicitPool16.length > 0) {
+        candidateNums = [...new Set(explicitPool16)];
+    } else if (is3BMode) {
+        candidateNums = Array.from(new Set(all30Nums.flat()));
+    } else {
+        candidateNums = Object.keys(freq30).map(Number);
+    }
+
+    const enriched = candidateNums.map(n => ({
+        n,
+        freq30: freq30[n] || 0,
+        v4Count: packCounts.v4[n] || 0,
+        v3Count: packCounts.v3[n] || 0,
+        extra1Count: packCounts.extra1[n] || 0,
+        dynScore: Number((dynScore[n] || 1.0).toFixed(2)),
+        rankScore: (dynScore[n] || 1.0) + (n >= 32 ? 0.10 : 0.0) + (tieNoise[n] || 0),
+        missWeeks: missWeeks[n] || 0,
+        isCarryover: prevDrawNums.includes(n),
+        isHighEv: n >= 32
+    }));
+
+    if (is3BMode) {
+        enriched.sort((a, b) => (b.rankScore - a.rankScore) || (b.freq30 - a.freq30) || (a.n - b.n));
+    } else {
+        enriched.sort((a, b) => (b.freq30 - a.freq30) || (b.dynScore - a.dynScore) || (a.n - b.n));
+    }
+
+    const capped = is3BMode ? enriched : enriched.slice(0, 16);
+    const topAnchors = capped.slice(0, 6);
+    const supportPool = capped.slice(6).sort((a, b) => a.n - b.n);
+    const topAnchorSet = new Set(topAnchors.map(x => x.n));
+
+    return {
+        round: curRound,
+        userId: effectiveUserId,
+        maxKnownDrawnRound,
+        is3BMode,
+        totalGamesCount: all30Nums.length,
+        poolSize: capped.length,
+        poolNumbers: capped.map(x => x.n).sort((a, b) => a - b),
+        topAnchors,
+        supportPool,
+        itemsSortedAsc: [...capped].sort((a, b) => a.n - b.n).map(x => ({ ...x, isTopAnchor: topAnchorSet.has(x.n) })),
+        prevDrawNumbers: prevDrawNums
+    };
+}
+
 if (typeof window !== 'undefined') {
     window.getEffectiveGeneratorUserId = getEffectiveGeneratorUserId;
     window.computeAbsoluteTop10Combinations = computeAbsoluteTop10Combinations;
@@ -2622,5 +2765,6 @@ if (typeof window !== 'undefined') {
     window.getUserWeeklyRecommendationSnapshotSync = getUserWeeklyRecommendationSnapshotSync;
     window.invalidateRecommendationRuntimeCaches = invalidateRecommendationRuntimeCaches;
     window.computeAllRounder3BPortfolio = computeAllRounder3BPortfolio;
+    window.getWeeklyCoreNumbersSummary = getWeeklyCoreNumbersSummary;
     window.isRound1251UpgradePending = isRound1251UpgradePending;
 }

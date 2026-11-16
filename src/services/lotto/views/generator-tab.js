@@ -1,7 +1,7 @@
 import { state } from '../state.js';
 import { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } from '../../../shared/utils.js';
 import { createBallHtml } from '../../../shared/components.js';
-import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId, isRound1251UpgradePending } from '../generator.js';
+import { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId, isRound1251UpgradePending, getWeeklyCoreNumbersSummary } from '../generator.js';
 import { db } from '../../../shared/db.js';
 import { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPermanentUser } from '../../../shared/auth-mgmt.js';
 import { getAllUnifiedRegisteredUsers, isUserSuspended } from '../../../shared/user-context.js';
@@ -11,6 +11,10 @@ import { calculate7AlgorithmsPerformance } from './algorithms-tab.js';
 let currentAlgoReviewStartRound = 1235;
 let algoAccordionStateMap = {};
 let generatorAdminViewingUser = null;
+const selectedWeeklyCoreNums = new Set();
+let isWeeklyCoreExpanded = true;
+let _lastWeeklyCoreCtxKey = '';
+let _lastWeeklyCoreParams = { userId: null, round: null, algoKey: 'v4' };
 
 /**
  * 1235회차부터 최신 회차까지 7대 알고리즘의 100% 무결점 실데이터 전수 복기 채점 집계
@@ -777,6 +781,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
             const cardEl = document.createElement('div');
             cardEl.className = 'combo-card is-compact';
             cardEl.setAttribute('data-combo-idx', String(index));
+            cardEl.setAttribute('data-numbers', numbers.join(','));
             if (isPurchased) {
                 cardEl.style.borderColor = 'rgba(16, 185, 129, 0.6)';
                 cardEl.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.15)';
@@ -846,7 +851,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                     <div class="combo-compact-left">
                         <span class="combo-compact-num ${index < 3 ? 'num-gold' : ''}">#${(index + 1).toString().padStart(2, '0')}</span>
                         <div class="combo-compact-balls">
-                            ${numbers.map(n => `<span class="ball-mono lotto-ball lotto-ball-xs ${getBallColorClass(n)}">${n.toString().padStart(2, '0')}</span>`).join('')}
+                            ${numbers.map(n => `<span data-ball-num="${n}" class="ball-mono lotto-ball lotto-ball-xs ${getBallColorClass(n)}">${n.toString().padStart(2, '0')}</span>`).join('')}
                         </div>
                         ${isPurchased ? `<span class="combo-compact-purchased"><i class="fa-solid fa-circle-check"></i> 구매</span>` : ''}
                     </div>
@@ -880,7 +885,7 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
                 <div class="combo-body">
                     <div class="balls-row">
                         ${numbers.map(n => `
-                            <div class="ball-mono lotto-ball ${getBallColorClass(n)} ${isRollingAnimation ? 'ball-rolling' : ''}">${n.toString().padStart(2, '0')}</div>
+                            <div data-ball-num="${n}" class="ball-mono lotto-ball ${getBallColorClass(n)} ${isRollingAnimation ? 'ball-rolling' : ''}">${n.toString().padStart(2, '0')}</div>
                         `).join('')}
                     </div>
                     <div class="combo-stats">
@@ -989,6 +994,8 @@ export async function renderTop5Combinations(isRollingAnimation = false) {
         }
 
         try { attachCardEvents(); } catch(e) { console.warn('[attachCardEvents Error]', e); }
+        try { renderWeeklyCoreNumbersCard(effectiveUserId, curUpcomingRound, isAr3 ? 'extra1' : (isV4 ? 'v4' : 'v3')); } catch(e) { console.warn('[renderWeeklyCoreNumbersCard Error]', e); }
+        try { applyWeeklyCoreHighlightFilter(); } catch(e) { console.warn('[applyWeeklyCoreHighlightFilter Error]', e); }
         try { renderAllComboCharts(activeCombinations); } catch(e) {}
         try { renderExtraAddonPacksSection(); } catch(e) { console.warn('[renderExtraAddonPacksSection Error]', e); }
         try { updateTop7AlgoUI(); } catch(e) { console.warn('[updateTop7AlgoUI Error]', e); }
@@ -2051,8 +2058,205 @@ if (typeof window !== 'undefined') {
     window.handleGenerateAllClick = handleGenerateAllClick;
     window.handleConfirmPurchaseHeroClick = handleConfirmPurchaseHeroClick;
     window.copyGolden30Games = copyGolden30Games;
+    window.renderWeeklyCoreNumbersCard = renderWeeklyCoreNumbersCard;
+    window.toggleWeeklyCoreNumber = toggleWeeklyCoreNumber;
+    window.clearWeeklyCoreSelection = clearWeeklyCoreSelection;
+    window.toggleWeeklyCoreAccordion = toggleWeeklyCoreAccordion;
+    window.applyWeeklyCoreHighlightFilter = applyWeeklyCoreHighlightFilter;
     window.renderTop5Combinations = renderTop5Combinations;
     window.renderGeneratorTab = renderTop5Combinations;
+}
+
+/**
+ * 🎯 이번 주 올라운더 1·2·3 코어 핵심 숫자 카드 렌더링
+ */
+export function renderWeeklyCoreNumbersCard(effectiveUserId = null, curUpcomingRound = null, currentAlgoKey = 'v4') {
+    const secEl = document.getElementById('weeklyCoreNumbersSection');
+    if (!secEl) return;
+
+    const uid = (effectiveUserId && effectiveUserId !== 'all') ? effectiveUserId : getEffectiveGeneratorUserId();
+    const round = curUpcomingRound || (typeof getUpcomingLottoRound === 'function'
+        ? getUpcomingLottoRound()
+        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1251));
+
+    const ctxKey = `${uid}_${round}`;
+    if (_lastWeeklyCoreCtxKey !== ctxKey) {
+        selectedWeeklyCoreNums.clear();
+        _lastWeeklyCoreCtxKey = ctxKey;
+    }
+    _lastWeeklyCoreParams = { userId: uid, round, algoKey: currentAlgoKey };
+
+    if (typeof getWeeklyCoreNumbersSummary !== 'function') {
+        secEl.innerHTML = '';
+        return;
+    }
+
+    const summary = getWeeklyCoreNumbersSummary(round, uid);
+    if (!summary || !Array.isArray(summary.topAnchors) || summary.poolSize === 0) {
+        secEl.innerHTML = '';
+        return;
+    }
+
+    const packField = (currentAlgoKey === 'extra1' || currentAlgoKey === 'ar3')
+        ? 'extra1Count'
+        : (currentAlgoKey === 'v3' ? 'v3Count' : 'v4Count');
+    const packShortName = (currentAlgoKey === 'extra1' || currentAlgoKey === 'ar3')
+        ? '올라운더 3'
+        : (currentAlgoKey === 'v3' ? '올라운더 2' : '올라운더 1');
+
+    const selArr = Array.from(selectedWeeklyCoreNums).sort((a, b) => a - b);
+    const hasSelection = selArr.length > 0;
+
+    const buildChipHtml = (item, isTop6) => {
+        const isSel = selectedWeeklyCoreNums.has(item.n);
+        const inPackCnt = item[packField] || 0;
+        const textColor = (item.n <= 10) ? '#0f172a' : '#ffffff';
+        const reasonParts = [];
+        if (item.isCarryover) reasonParts.push('직전 이월수');
+        if (item.isHighEv) reasonParts.push('고배당 EV(32+)');
+        if (item.missWeeks >= 10) reasonParts.push(`${item.missWeeks}주 결손`);
+        const tooltip = `${item.n}번 · 동적점수 ${item.dynScore} · 30게임 중 ${item.freq30}회 · ${packShortName} ${inPackCnt}회${reasonParts.length ? ` (${reasonParts.join(', ')})` : ''}`;
+
+        return `
+            <button type="button"
+                onclick="window.toggleWeeklyCoreNumber && window.toggleWeeklyCoreNumber(${item.n})"
+                class="weekly-core-chip ${isTop6 ? 'is-top6' : ''} ${isSel ? 'is-selected' : ''}"
+                title="${tooltip}"
+                aria-pressed="${isSel ? 'true' : 'false'}">
+                <span class="lotto-ball lotto-ball-sm ${getBallColorClass(item.n)} weekly-core-ball" style="color: ${textColor};">
+                    ${item.n}
+                </span>
+                <span class="weekly-core-freq">
+                    ${item.isHighEv ? '<span class="core-ev-dot" title="고배당 EV 32+"></span>' : ''}${item.freq30}/30G
+                </span>
+                <span class="weekly-core-pack-cnt">${packShortName} ${inPackCnt}</span>
+            </button>
+        `;
+    };
+
+    const top6Html = summary.topAnchors.map(item => buildChipHtml(item, true)).join('');
+    const supportHtml = summary.supportPool.map(item => buildChipHtml(item, false)).join('');
+    const badgeLabel = summary.is3BMode ? `제 ${summary.round}회 CORE ${summary.poolSize}` : `제 ${summary.round}회 TOP ${summary.poolSize}`;
+    const descText = summary.is3BMode
+        ? `최신 <strong>${summary.maxKnownDrawnRound}회</strong> 반영 동적 신호로 엄선된 <strong>${summary.poolSize}개 코어 수</strong>로 올라운더 1·2·3 총 ${summary.totalGamesCount}게임을 구성했습니다.`
+        : `올라운더 1·2·3 총 ${summary.totalGamesCount}게임에서 가장 집중 배정된 상위 ${summary.poolSize}개 코어 번호입니다.`;
+
+    secEl.innerHTML = `
+        <div class="weekly-core-card">
+            <div class="weekly-core-header">
+                <div class="weekly-core-title-wrap">
+                    <span class="weekly-core-badge"><i class="fa-solid fa-crosshairs"></i> ${badgeLabel}</span>
+                    <h3 class="weekly-core-title">이번 주 올라운더 1·2·3 코어 핵심 숫자</h3>
+                    <span class="weekly-core-sync-pill"><i class="fa-solid fa-circle-check"></i> ${summary.maxKnownDrawnRound}회 반영</span>
+                </div>
+                <div class="weekly-core-actions">
+                    ${hasSelection ? `
+                        <button type="button" onclick="window.clearWeeklyCoreSelection && window.clearWeeklyCoreSelection()" class="weekly-core-btn-clear">
+                            <i class="fa-solid fa-rotate-left"></i> 선택 해제 (${selArr.length})
+                        </button>
+                    ` : ''}
+                    <button type="button" onclick="window.toggleWeeklyCoreAccordion && window.toggleWeeklyCoreAccordion()" class="weekly-core-btn-toggle">
+                        <span>${isWeeklyCoreExpanded ? '접기' : '펼치기'}</span>
+                        <i class="fa-solid ${isWeeklyCoreExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="weekly-core-body" style="display: ${isWeeklyCoreExpanded ? 'flex' : 'none'};">
+                <div class="weekly-core-meta-bar">
+                    <span>${descText}</span>
+                    <span id="weeklyCoreFilterStatus" class="weekly-core-filter-status">
+                        ${hasSelection ? `선택 [${selArr.join(', ')}] 포함 조합 강조 중` : '코어 공을 탭하면 아래 10게임에서 위치를 표시합니다'}
+                    </span>
+                </div>
+
+                <div class="weekly-core-group">
+                    <div class="weekly-core-group-head">
+                        <span class="group-label-top6"><i class="fa-solid fa-star"></i> 최핵심 앵커 TOP ${summary.topAnchors.length} (동적 점수 최상위)</span>
+                        <span class="group-sub">상단 30G 빈도 · 하단 현재 팩 출현수</span>
+                    </div>
+                    <div class="weekly-core-grid">${top6Html}</div>
+                </div>
+
+                ${summary.supportPool.length > 0 ? `
+                    <div class="weekly-core-group is-support">
+                        <div class="weekly-core-group-head">
+                            <span class="group-label-support">서포트 코어 풀 ${summary.supportPool.length}수 (총 ${summary.poolSize}수 완성)</span>
+                            <span class="group-sub">오름차순 정렬</span>
+                        </div>
+                        <div class="weekly-core-grid">${supportHtml}</div>
+                    </div>
+                ` : ''}
+
+                <div class="weekly-core-legend">
+                    <span><i class="core-dot is-gold"></i> TOP 6 핵심 앵커</span>
+                    <span><i class="core-dot is-green"></i> 32번+ 고배당 EV 우대</span>
+                    <span><i class="core-dot is-blue"></i> 번호 클릭 시 아래 조합 하이라이트</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+export function toggleWeeklyCoreNumber(num) {
+    const n = parseInt(num, 10);
+    if (isNaN(n) || n < 1 || n > 45) return;
+    if (selectedWeeklyCoreNums.has(n)) selectedWeeklyCoreNums.delete(n);
+    else selectedWeeklyCoreNums.add(n);
+    renderWeeklyCoreNumbersCard(_lastWeeklyCoreParams.userId, _lastWeeklyCoreParams.round, _lastWeeklyCoreParams.algoKey);
+    applyWeeklyCoreHighlightFilter();
+}
+
+export function clearWeeklyCoreSelection() {
+    selectedWeeklyCoreNums.clear();
+    renderWeeklyCoreNumbersCard(_lastWeeklyCoreParams.userId, _lastWeeklyCoreParams.round, _lastWeeklyCoreParams.algoKey);
+    applyWeeklyCoreHighlightFilter();
+}
+
+export function toggleWeeklyCoreAccordion() {
+    isWeeklyCoreExpanded = !isWeeklyCoreExpanded;
+    renderWeeklyCoreNumbersCard(_lastWeeklyCoreParams.userId, _lastWeeklyCoreParams.round, _lastWeeklyCoreParams.algoKey);
+}
+
+export function applyWeeklyCoreHighlightFilter() {
+    const cards = document.querySelectorAll('#combinationsContainer .combo-card');
+    if (!cards || cards.length === 0) return;
+
+    const selArr = Array.from(selectedWeeklyCoreNums);
+    let exactMatchCount = 0;
+
+    cards.forEach(card => {
+        const raw = card.getAttribute('data-numbers') || '';
+        const nums = raw.split(',').map(Number).filter(n => !isNaN(n));
+        card.classList.remove('core-matched', 'core-partial', 'core-dimmed');
+
+        card.querySelectorAll('[data-ball-num]').forEach(ball => {
+            const bNum = parseInt(ball.getAttribute('data-ball-num'), 10);
+            if (selectedWeeklyCoreNums.has(bNum)) ball.classList.add('core-ball-highlight');
+            else ball.classList.remove('core-ball-highlight');
+        });
+
+        if (selArr.length > 0) {
+            const hitCount = selArr.filter(n => nums.includes(n)).length;
+            if (hitCount === selArr.length) {
+                card.classList.add('core-matched');
+                exactMatchCount++;
+            } else if (hitCount > 0) {
+                card.classList.add('core-partial');
+            } else {
+                card.classList.add('core-dimmed');
+            }
+        }
+    });
+
+    const statusEl = document.getElementById('weeklyCoreFilterStatus');
+    if (statusEl) {
+        if (selArr.length > 0) {
+            statusEl.textContent = `선택 [${selArr.sort((a, b) => a - b).join(', ')}] 모두 포함: ${exactMatchCount} / ${cards.length}게임`;
+        } else {
+            statusEl.textContent = '코어 공을 탭하면 아래 10게임에서 위치를 표시합니다';
+        }
+    }
 }
 
 /**
