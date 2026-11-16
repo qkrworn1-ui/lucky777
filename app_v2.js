@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.16.1346 - BUILD_DATE: 2026-11-16] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.16.1432 - BUILD_DATE: 2026-11-16] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.16.1346)
+ * Lucky777 Smart Bundle (v2026.11.16.1432)
  */
 
 
@@ -15521,6 +15521,7 @@ const state = {
     EWMA_FREQUENCY: {},
     DYNAMIC_ROUND_SCORE: {},
     CROWD_EV_RATIO: 1.07,
+    CROWD_AVOIDANCE_SCORE: {},
     MISSING_WEEKS: {},
     PAIR_FREQUENCIES: {},
     TRANSITION_MATRIX: {},
@@ -21466,6 +21467,7 @@ function aggregateAllStatistics() {
         state.HISTORICAL_FREQUENCY[n] = 0;
         state.EWMA_FREQUENCY[n] = 0;
         state.DYNAMIC_ROUND_SCORE[n] = 1.0;
+        state.CROWD_AVOIDANCE_SCORE[n] = 0.0;
         state.MISSING_WEEKS[n] = 0;
         state.PAIR_FREQUENCIES[n] = {};
         state.TRANSITION_MATRIX[n] = {};
@@ -21510,14 +21512,20 @@ function aggregateAllStatistics() {
         ? [...state.mergedHistory[maxRound].numbers]
         : [];
 
-    // Compute EWMA (half-life = 30 rounds), Rolling 200-round Pari-Mutuel Crowd Ratio, and Dynamic Soft Signal
+    // Compute EWMA (half-life = 30 rounds), Rolling 200-round Pari-Mutuel Crowd Ratio, and Empirical Crowd Avoidance
     const decay = Math.exp(-Math.LN2 / 30.0);
     let totalFreq = 0;
     let totalEwma = 0;
     const ewmaMap = {};
+    const numWinnerSum = {};
+    const numWinnerCnt = {};
+    let totWinnerSum = 0;
+    let totWinnerCnt = 0;
     state.allNumbers.forEach(n => {
         totalFreq += (state.HISTORICAL_FREQUENCY[n] || 0);
         ewmaMap[n] = 0;
+        numWinnerSum[n] = 0;
+        numWinnerCnt[n] = 0;
     });
 
     const hi3Winners = [];
@@ -21527,9 +21535,15 @@ function aggregateAllStatistics() {
         if (!data || !Array.isArray(data.numbers)) continue;
         const w = Math.pow(decay, maxRound - r);
         data.numbers.forEach(n => { ewmaMap[n] = (ewmaMap[n] || 0) + w; });
-        if (r > maxRound - 200) {
-            const w1 = Number(data.rank1Winners || data.firstPrzwnerCo || 0);
-            if (w1 > 0) {
+        const w1 = Number(data.rank1Winners || data.firstPrzwnerCo || 0);
+        if (w1 > 0) {
+            totWinnerSum += w1;
+            totWinnerCnt += 1;
+            data.numbers.forEach(n => {
+                numWinnerSum[n] = (numWinnerSum[n] || 0) + w1;
+                numWinnerCnt[n] = (numWinnerCnt[n] || 0) + 1;
+            });
+            if (r > maxRound - 200) {
                 const highCnt = data.numbers.filter(n => n >= 32).length;
                 if (highCnt >= 3) hi3Winners.push(w1);
                 else if (highCnt <= 1) hi1Winners.push(w1);
@@ -21548,6 +21562,7 @@ function aggregateAllStatistics() {
         state.CROWD_EV_RATIO = 1.07;
     }
 
+    const avgAllWinners = totWinnerCnt > 0 ? (totWinnerSum / totWinnerCnt) : 8.8;
     const avgFreq = rounds.length > 0 ? totalFreq / 45.0 : 1.0;
     const avgEwma = rounds.length > 0 ? totalEwma / 45.0 : 1.0;
     const prevDraw = state.PREVIOUS_DRAW || [];
@@ -21564,16 +21579,24 @@ function aggregateAllStatistics() {
     const avgM = prevDraw.length > 0 ? (totalM / 45.0) : 1.0;
 
     state.allNumbers.forEach(n => {
+        // Empirical Bayesian-shrunk crowd avoidance index (>0 => fewer 1st-prize co-winners)
+        const shrunkAvgN = (numWinnerSum[n] + 20.0 * avgAllWinners) / (numWinnerCnt[n] + 20.0);
+        const crowdAvoid = (avgAllWinners - shrunkAvgN) / Math.max(1.0, avgAllWinners);
+        state.CROWD_AVOIDANCE_SCORE[n] = crowdAvoid;
+
         const fRatio = ((state.HISTORICAL_FREQUENCY[n] || 0) + 10.0) / (avgFreq + 10.0);
         let mSum = 0;
         prevDraw.forEach(ln => { mSum += (state.TRANSITION_MATRIX[ln]?.[n] || 0); });
         const mRatio = (mSum + 5.0) / (avgM + 5.0);
-        const ovBoost = 1.0 + Math.min(0.15, Math.max(0, (state.MISSING_WEEKS[n] || 0) - 8) * 0.015);
-        const nbBoost = neighbors.has(n) ? 1.08 : 1.0;
-        const coBoost = prevDraw.includes(n) ? 1.05 : 1.0;
+        // Damped short-term signal to avoid overfitting noise, anchored by empirical crowd EV + gentle EWMA reversion
+        const ovBoost = 1.0 + Math.min(0.04, Math.max(0, (state.MISSING_WEEKS[n] || 0) - 8) * 0.004);
+        const nbBoost = neighbors.has(n) ? 1.02 : 1.0;
+        const coBoost = prevDraw.includes(n) ? 1.01 : 1.0;
         const softScore = (0.4 * fRatio + 0.6 * mRatio) * ovBoost * nbBoost * coBoost;
         const ewRatio = ((state.EWMA_FREQUENCY[n] || 0) + 3.0) / (avgEwma + 3.0);
-        state.DYNAMIC_ROUND_SCORE[n] = 0.7 * softScore + 0.3 * ewRatio;
+        const baseStat = 0.7 * softScore + 0.3 * ewRatio;
+        const ewReversion = avgEwma > 0 ? ((avgEwma - (state.EWMA_FREQUENCY[n] || 0)) / Math.max(1.0, avgEwma)) : 0;
+        state.DYNAMIC_ROUND_SCORE[n] = 1.0 + (baseStat - 1.0) * 0.25 + crowdAvoid * 2.5 + ewReversion * 0.04 + (n >= 32 ? 0.03 : 0.0);
     });
 }
 
@@ -22445,7 +22468,7 @@ function _calcACLocal(nums) {
     return diffs.size - (nums.length - 1);
 }
 
-function _calcEmpiricalEvMultiplier3B(nums) {
+function _calcEmpiricalEvMultiplier3B(nums, crowdAvoidMap = null) {
     const high32 = nums.filter(n => n >= 32).length;
     let hasConsec = false;
     for (let i = 0; i < nums.length - 1; i++) {
@@ -22460,13 +22483,292 @@ function _calcEmpiricalEvMultiplier3B(nums) {
     if (sum >= 160) mult *= 1.05;
     else if (sum >= 120 && sum <= 150 && high32 <= 1) mult *= 0.92;
     if (hasConsec) mult *= 1.04;
+    if (crowdAvoidMap) {
+        let caSum = 0;
+        for (const n of nums) caSum += (crowdAvoidMap[n] || 0);
+        const avgCa = caSum / nums.length;
+        mult *= Math.max(0.90, Math.min(1.15, 1.0 + avgCa * 2.0));
+    }
     return mult;
 }
 
 /**
+ * 16수 코어 풀 선별 (구간 최소 하한 + 홀짝 7~9 균형, 상한 차단 0%)
+ * - 각 대역 최소 바닥(1~9:2, 10대:2, 20대:2, 30대:2, 40대:1 = 9수)만 보장하고 상한은 풀어서
+ *   한 번호대 5수+ 쏠림 등 극단적 고액 독식 회차도 구조적으로 0% 차단 유지
+ */
+function _selectBalancedPool16_3B(dynScore, rng) {
+    const scoreMap = {};
+    for (let n = 1; n <= 45; n++) {
+        scoreMap[n] = (dynScore[n] || 1.0) + (rng() * 0.04);
+    }
+    const bands = [
+        { minN: 1, maxN: 9, floor: 2 },
+        { minN: 10, maxN: 19, floor: 2 },
+        { minN: 20, maxN: 29, floor: 2 },
+        { minN: 30, maxN: 39, floor: 2 },
+        { minN: 40, maxN: 45, floor: 1 }
+    ];
+    const picked = [];
+    const pickedSet = new Set();
+    const restCandidates = [];
+
+    for (const b of bands) {
+        const bNums = [];
+        for (let n = b.minN; n <= b.maxN; n++) bNums.push(n);
+        bNums.sort((a, b2) => (scoreMap[b2] - scoreMap[a]) || (a - b2));
+        for (let i = 0; i < b.floor && i < bNums.length; i++) {
+            picked.push(bNums[i]);
+            pickedSet.add(bNums[i]);
+        }
+        for (let i = b.floor; i < bNums.length; i++) {
+            restCandidates.push(bNums[i]);
+        }
+    }
+
+    restCandidates.sort((a, b) => (scoreMap[b] - scoreMap[a]) || (a - b));
+    let oddCnt = picked.filter(n => (n & 1) === 1).length;
+
+    for (const n of restCandidates) {
+        if (picked.length >= 16) break;
+        const leftAfter = 16 - picked.length - 1;
+        const nextOdd = oddCnt + (n & 1);
+        if (nextOdd > 9 || (nextOdd + leftAfter) < 7) continue;
+        picked.push(n);
+        pickedSet.add(n);
+        oddCnt = nextOdd;
+    }
+    if (picked.length < 16) {
+        for (const n of restCandidates) {
+            if (!pickedSet.has(n)) {
+                picked.push(n);
+                pickedSet.add(n);
+                if (picked.length >= 16) break;
+            }
+        }
+    }
+
+    return { pool16: picked.sort((a, b) => a - b), scoreMap };
+}
+
+function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap) {
+    const numCnt = new Int16Array(16);
+    const tCnt = new Uint16Array(4096);
+    const qCnt = new Uint8Array(65536);
+    const usedKeys = new Set();
+    const gamesIdx = [];
+
+    const tKey = (a, b, c) => (a << 8) | (b << 4) | c;
+    const qKey = (a, b, c, d) => (a << 12) | (b << 8) | (c << 4) | d;
+
+    const allTriples = [];
+    for (let a = 0; a < 14; a++) {
+        for (let b = a + 1; b < 15; b++) {
+            for (let c = b + 1; c < 16; c++) {
+                allTriples.push([a, b, c, tKey(a, b, c)]);
+            }
+        }
+    }
+
+    const gameTriples = (idxArr) => {
+        const res = [];
+        for (let a = 0; a < 4; a++) {
+            for (let b = a + 1; b < 5; b++) {
+                for (let c = b + 1; c < 6; c++) {
+                    res.push(tKey(idxArr[a], idxArr[b], idxArr[c]));
+                }
+            }
+        }
+        return res;
+    };
+    const gameQuads = (idxArr) => {
+        const res = [];
+        for (let a = 0; a < 3; a++) {
+            for (let b = a + 1; b < 4; b++) {
+                for (let c = b + 1; c < 5; c++) {
+                    for (let d = c + 1; d < 6; d++) {
+                        res.push(qKey(idxArr[a], idxArr[b], idxArr[c], idxArr[d]));
+                    }
+                }
+            }
+        }
+        return res;
+    };
+
+    const addGameCounts = (idxArr, delta) => {
+        for (let i = 0; i < 6; i++) numCnt[idxArr[i]] += delta;
+        for (const tk of gameTriples(idxArr)) tCnt[tk] += delta;
+        for (const qk of gameQuads(idxArr)) qCnt[qk] += delta;
+    };
+
+    const idxToSortedNums = (idxArr) => idxArr.map(i => pool16[i]).sort((a, b) => a - b);
+
+    // Phase 1: Covering-aware Greedy Construction (30 games)
+    for (let gIdx = 0; gIdx < 30; gIdx++) {
+        let bestIdxArr = null;
+        let bestSc = 1e18;
+        let minC = 9999;
+        for (let i = 0; i < 16; i++) {
+            if (numCnt[i] < minC) minC = numCnt[i];
+        }
+        const weights = [];
+        for (let i = 0; i < 16; i++) {
+            const n = pool16[i];
+            const baseW = 1.0 / Math.pow((numCnt[i] - minC + 1), 2.5);
+            const evBoost = 1.0 + Math.max(-0.15, Math.min(0.25, (crowdAvoidMap?.[n] || 0) * 2.5));
+            weights.push(baseW * evBoost * (n >= 32 ? 1.15 : 1.0));
+        }
+
+        for (let t = 0; t < 220; t++) {
+            const picked = [];
+            const wc = [...weights];
+            while (picked.length < 6) {
+                let totW = 0;
+                for (let k = 0; k < 16; k++) totW += wc[k];
+                if (totW <= 0) break;
+                let r = rng() * totW;
+                let pk = 15;
+                for (let k = 0; k < 16; k++) {
+                    r -= wc[k];
+                    if (r <= 0) { pk = k; break; }
+                }
+                picked.push(pk);
+                wc[pk] = 0;
+            }
+            if (picked.length !== 6) continue;
+            picked.sort((a, b) => a - b);
+            const nums = idxToSortedNums(picked);
+            const key = nums.join(',');
+            if (usedKeys.has(key)) continue;
+            if (state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(key)) continue;
+
+            let qOv = 0;
+            for (const qk of gameQuads(picked)) qOv += qCnt[qk];
+            let tOv = 0;
+            let newT = 0;
+            for (const tk of gameTriples(picked)) {
+                const c = tCnt[tk];
+                if (c === 0) newT++;
+                else tOv += c;
+            }
+            let bal = 0;
+            for (let i = 0; i < 6; i++) bal += numCnt[picked[i]];
+            const sum = nums.reduce((a, b) => a + b, 0);
+            // 고합계(185~230+) 독식 패턴은 감점하지 않고 초저합계(<85)만 미세 감점
+            const sPen = (sum >= 85) ? 0 : (85 - sum) * 0.5;
+            const ac = _calcACLocal(nums);
+            const acPen = (ac >= 5) ? 0 : (5 - ac) * 2;
+            const evMult = _calcEmpiricalEvMultiplier3B(nums, crowdAvoidMap);
+            const sc = qOv * 40000 + tOv * 600 - newT * 900 + bal * 3 + sPen + acPen - (evMult - 1.0) * 25;
+            if (sc < bestSc) {
+                bestSc = sc;
+                bestIdxArr = picked;
+            }
+        }
+
+        if (!bestIdxArr) {
+            const avail = Array.from({ length: 16 }, (_, i) => i);
+            bestIdxArr = seededShuffle(avail, rng).slice(0, 6).sort((a, b) => a - b);
+        }
+        gamesIdx.push(bestIdxArr);
+        usedKeys.add(idxToSortedNums(bestIdxArr).join(','));
+        addGameCounts(bestIdxArr, 1);
+    }
+
+    // Phase 2: Fast 2-opt Covering Refinement (3수 커버리지 극대화 + 4수 중복 비증가)
+    for (let it = 0; it < 350; it++) {
+        let hasUncovered = false;
+        for (let i = 0; i < allTriples.length; i++) {
+            if (tCnt[allTriples[i][3]] === 0) { hasUncovered = true; break; }
+        }
+        if (!hasUncovered) break;
+
+        let worstPos = -1;
+        let worstUniq = 99;
+        for (let pos = 0; pos < 30; pos++) {
+            let uniq = 0;
+            for (const tk of gameTriples(gamesIdx[pos])) {
+                if (tCnt[tk] === 1) uniq++;
+            }
+            if (uniq < worstUniq) {
+                worstUniq = uniq;
+                worstPos = pos;
+            }
+        }
+        if (worstPos < 0) break;
+
+        const oldArr = gamesIdx[worstPos];
+        const oldKey = idxToSortedNums(oldArr).join(',');
+        usedKeys.delete(oldKey);
+        addGameCounts(oldArr, -1);
+
+        const uncovered = [];
+        for (let i = 0; i < allTriples.length; i++) {
+            if (tCnt[allTriples[i][3]] === 0) uncovered.push(allTriples[i]);
+        }
+        if (uncovered.length === 0) {
+            usedKeys.add(oldKey);
+            addGameCounts(oldArr, 1);
+            break;
+        }
+
+        let oldQOv = 0;
+        for (const qk of gameQuads(oldArr)) oldQOv += qCnt[qk];
+        let oldGain = 0;
+        for (const tk of gameTriples(oldArr)) if (tCnt[tk] === 0) oldGain++;
+        const oldEv = _calcEmpiricalEvMultiplier3B(idxToSortedNums(oldArr), crowdAvoidMap);
+
+        const targetT = uncovered[Math.floor(rng() * uncovered.length)];
+        const remPool = [];
+        for (let i = 0; i < 16; i++) {
+            if (i !== targetT[0] && i !== targetT[1] && i !== targetT[2]) remPool.push(i);
+        }
+
+        let bestRep = null;
+        let bestGain = oldGain;
+        let bestQOv = oldQOv;
+        let bestEv = oldEv;
+
+        for (let c = 0; c < 45; c++) {
+            const sh = seededShuffle(remPool, rng);
+            const cand = [targetT[0], targetT[1], targetT[2], sh[0], sh[1], sh[2]].sort((a, b) => a - b);
+            const cKey = idxToSortedNums(cand).join(',');
+            if (usedKeys.has(cKey)) continue;
+            if (state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(cKey)) continue;
+
+            let qOv = 0;
+            for (const qk of gameQuads(cand)) qOv += qCnt[qk];
+            if (qOv > oldQOv) continue;
+
+            let gain = 0;
+            for (const tk of gameTriples(cand)) if (tCnt[tk] === 0) gain++;
+            const cEv = _calcEmpiricalEvMultiplier3B(idxToSortedNums(cand), crowdAvoidMap);
+
+            if (gain > bestGain || (gain === bestGain && (qOv < bestQOv || (qOv === bestQOv && cEv > bestEv + 0.02)))) {
+                bestRep = cand;
+                bestGain = gain;
+                bestQOv = qOv;
+                bestEv = cEv;
+            }
+        }
+
+        if (bestRep) {
+            gamesIdx[worstPos] = bestRep;
+            usedKeys.add(idxToSortedNums(bestRep).join(','));
+            addGameCounts(bestRep, 1);
+        } else {
+            usedKeys.add(oldKey);
+            addGameCounts(oldArr, 1);
+        }
+    }
+
+    return gamesIdx.map(idxToSortedNums);
+}
+
+/**
  * 🎯 3안-B: 16수 초압축 폭발 휠 (올라운더 1·2·3 통합 30게임)
- * - 최신 당첨번호(targetRound - 1)까지 반영된 DYNAMIC_ROUND_SCORE(EWMA·마르코프·결손반등·이웃수·패리뮤추얼 EV) 기반 핵심 16수 선별
- * - 16수 내부에서 4수(Quad)·3수(Triple) 커버링 충돌 최소화 + 균등 밸런싱으로 다중·고액당첨 확률 극대화
+ * - 최신 당첨번호(targetRound - 1)까지 반영된 DYNAMIC_ROUND_SCORE(실증 당첨자수 기반 EV·EWMA·완화된 동적신호) 기반
+ * - 구간 최소 하한 + 홀짝 균형 16수 선별 (상한 차단 0%) + 3수·4수 커버링 2-opt 30게임 최적화
  */
 function computeAllRounder3BPortfolio(targetRound = null, customUserId = null) {
     const drawnRounds = Object.keys(state.mergedHistory || {})
@@ -22488,124 +22790,22 @@ function computeAllRounder3BPortfolio(targetRound = null, customUserId = null) {
             recalculateGroups();
         }
         const dynScore = state.DYNAMIC_ROUND_SCORE || {};
+        const crowdAvoidMap = state.CROWD_AVOIDANCE_SCORE || {};
         const seed = getUserRoundSeed(effectiveUserId, roundForSeed, 'ar_3b_16wheel');
         const rng = createDeterministicRng(seed);
 
-        const ranked45 = Array.from({ length: 45 }, (_, idx) => idx + 1)
-            .map(n => ({
-                n,
-                score: (dynScore[n] || 1.0) + (n >= 32 ? 0.10 : 0.0) + (rng() * 0.25)
-            }))
-            .sort((a, b) => (b.score - a.score) || (a.n - b.n));
-        const pool16 = ranked45.slice(0, 16).map(x => x.n).sort((a, b) => a - b);
+        // 1. 실증 비인기 EV + 구간 최소 하한 + 홀짝 균형 기반 16수 코어 풀 선별 (타이브레이커 난수 0.04)
+        const { pool16 } = _selectBalancedPool16_3B(dynScore, rng);
 
-        const usedTriples = new Set();
-        const usedQuads = new Set();
-        const usedGames = new Set();
-        const numCnt = {};
-        pool16.forEach(n => { numCnt[n] = 0; });
-
-        const rawGames = [];
-        for (let gIdx = 0; gIdx < 30; gIdx++) {
-            let best = null;
-            let bestSc = 1e18;
-            let minC = 9999;
-            for (const n of pool16) {
-                if (numCnt[n] < minC) minC = numCnt[n];
-            }
-
-            for (let t = 0; t < 250; t++) {
-                const weights = pool16.map(n => {
-                    const baseW = 1.0 / Math.pow((numCnt[n] - minC + 1), 3);
-                    return (n >= 32) ? baseW * 1.35 : baseW;
-                });
-
-                const cand = new Set();
-                const wc = [...weights];
-                while (cand.size < 6) {
-                    let totW = 0;
-                    for (let k = 0; k < wc.length; k++) totW += wc[k];
-                    if (totW <= 0) break;
-                    let r = rng() * totW;
-                    let pickedIdx = wc.length - 1;
-                    for (let k = 0; k < wc.length; k++) {
-                        r -= wc[k];
-                        if (r <= 0) { pickedIdx = k; break; }
-                    }
-                    cand.add(pool16[pickedIdx]);
-                    wc[pickedIdx] = 0;
-                }
-                if (cand.size !== 6) continue;
-                const nums = Array.from(cand).sort((a, b) => a - b);
-                const key = nums.join(',');
-                if (usedGames.has(key)) continue;
-                if (state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(key)) continue;
-
-                const sum = nums.reduce((a, b) => a + b, 0);
-                const sPen = (sum >= 95 && sum <= 195) ? 0 : 5;
-                const ac = _calcACLocal(nums);
-                const acPen = (ac >= 6) ? 0 : 4;
-
-                let tOv = 0;
-                for (let a = 0; a < 4; a++) {
-                    for (let b = a + 1; b < 5; b++) {
-                        for (let c = b + 1; c < 6; c++) {
-                            if (usedTriples.has(`${nums[a]},${nums[b]},${nums[c]}`)) tOv++;
-                        }
-                    }
-                }
-                let qOv = 0;
-                for (let a = 0; a < 3; a++) {
-                    for (let b = a + 1; b < 4; b++) {
-                        for (let c = b + 1; c < 5; c++) {
-                            for (let d = c + 1; d < 6; d++) {
-                                if (usedQuads.has(`${nums[a]},${nums[b]},${nums[c]},${nums[d]}`)) qOv++;
-                            }
-                        }
-                    }
-                }
-                let bal = 0;
-                for (const n of nums) bal += numCnt[n];
-                const evMult = _calcEmpiricalEvMultiplier3B(nums);
-                const sc = qOv * 50000 + tOv * 400 + bal * 4 + sPen + acPen - (evMult - 1.0) * 10;
-                if (sc < bestSc) {
-                    bestSc = sc;
-                    best = nums;
-                }
-            }
-
-            if (!best) {
-                const shuffled = seededShuffle(pool16, rng);
-                best = shuffled.slice(0, 6).sort((a, b) => a - b);
-            }
-
-            rawGames.push(best);
-            usedGames.add(best.join(','));
-            for (const n of best) numCnt[n]++;
-            for (let a = 0; a < 4; a++) {
-                for (let b = a + 1; b < 5; b++) {
-                    for (let c = b + 1; c < 6; c++) {
-                        usedTriples.add(`${best[a]},${best[b]},${best[c]}`);
-                    }
-                }
-            }
-            for (let a = 0; a < 3; a++) {
-                for (let b = a + 1; b < 4; b++) {
-                    for (let c = b + 1; c < 5; c++) {
-                        for (let d = c + 1; d < 6; d++) {
-                            usedQuads.add(`${best[a]},${best[b]},${best[c]},${best[d]}`);
-                        }
-                    }
-                }
-            }
-        }
+        // 2. 16수 내부 커버링 2-opt 30게임 휠링 (상한/고합계 차단 없음)
+        const rawGames = _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap);
 
         const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
         const poolStr = pool16.join(',');
         const makeRichCombo = (nums, packIdx, idxInPack) => {
             const ac = _calcACLocal(nums);
             const sum = nums.reduce((a, b) => a + b, 0);
-            const evMult = _calcEmpiricalEvMultiplier3B(nums);
+            const evMult = _calcEmpiricalEvMultiplier3B(nums, crowdAvoidMap);
             const stats = calculateStats(nums);
             stats.acValue = ac;
             stats.evMultiplier = Number(evMult.toFixed(2));
@@ -24964,7 +25164,7 @@ function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = null) {
     const seed = getUserRoundSeed(effectiveUserId, curRound, 'ar_3b_16wheel');
     const tieRng = createDeterministicRng(seed);
     const tieNoise = {};
-    for (let n = 1; n <= 45; n++) tieNoise[n] = tieRng() * 0.25;
+    for (let n = 1; n <= 45; n++) tieNoise[n] = tieRng() * 0.04;
 
     let candidateNums = [];
     if (explicitPool16 && explicitPool16.length > 0) {
@@ -24982,7 +25182,7 @@ function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = null) {
         v3Count: packCounts.v3[n] || 0,
         extra1Count: packCounts.extra1[n] || 0,
         dynScore: Number((dynScore[n] || 1.0).toFixed(2)),
-        rankScore: (dynScore[n] || 1.0) + (n >= 32 ? 0.10 : 0.0) + (tieNoise[n] || 0),
+        rankScore: (dynScore[n] || 1.0) + (tieNoise[n] || 0),
         missWeeks: missWeeks[n] || 0,
         isCarryover: prevDrawNums.includes(n),
         isHighEv: n >= 32

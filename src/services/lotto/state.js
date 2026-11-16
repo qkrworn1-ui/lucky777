@@ -21,6 +21,7 @@ export const state = {
     EWMA_FREQUENCY: {},
     DYNAMIC_ROUND_SCORE: {},
     CROWD_EV_RATIO: 1.07,
+    CROWD_AVOIDANCE_SCORE: {},
     MISSING_WEEKS: {},
     PAIR_FREQUENCIES: {},
     TRANSITION_MATRIX: {},

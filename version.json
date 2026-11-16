@@ -1,25 +1,9 @@
 {
-  "version": "v2026.11.16.1346",
+  "version": "v2026.11.16.1432",
   "buildDate": "2026-11-16",
   "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)",
-  "buildTimestamp": "2026-11-16T13:46:40.315270",
+  "buildTimestamp": "2026-11-16T14:32:24.323027",
   "buildHistory": [
-    {
-      "version": "v2026.11.09.1029.24",
-      "buildDate": "2026-11-09",
-      "buildTime": "10:29",
-      "buildDateTime": "2026-11-09 10:29",
-      "buildTimestamp": "2026-11-09T10:29:24.611306",
-      "description": "당첨결과 전체회원 조회 시 최신 회차(1247~1249) 추천당첨결과 0원 표시 오류 해결"
-    },
-    {
-      "version": "v2026.11.09.1107",
-      "buildDate": "2026-11-09",
-      "buildTime": "11:07",
-      "buildDateTime": "2026-11-09 11:07",
-      "buildTimestamp": "2026-11-09T11:07:13.116890",
-      "description": "당첨결과 전체회원 조회 시 최신 회차(1247~1249) 추천당첨결과 0원 표시 오류 해결"
-    },
     {
       "version": "v2026.11.09.1107.48",
       "buildDate": "2026-11-09",
@@ -123,8 +107,24 @@
       "buildDateTime": "2026-11-16 13:46",
       "buildTimestamp": "2026-11-16T13:46:40.315270",
       "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)"
+    },
+    {
+      "version": "v2026.11.16.1431",
+      "buildDate": "2026-11-16",
+      "buildTime": "14:31",
+      "buildDateTime": "2026-11-16 14:31",
+      "buildTimestamp": "2026-11-16T14:31:03.461808",
+      "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)"
+    },
+    {
+      "version": "v2026.11.16.1432",
+      "buildDate": "2026-11-16",
+      "buildTime": "14:32",
+      "buildDateTime": "2026-11-16 14:32",
+      "buildTimestamp": "2026-11-16T14:32:24.323027",
+      "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)"
     }
   ],
-  "buildTime": "13:46",
-  "buildDateTime": "2026-11-16 13:46"
+  "buildTime": "14:32",
+  "buildDateTime": "2026-11-16 14:32"
 }
