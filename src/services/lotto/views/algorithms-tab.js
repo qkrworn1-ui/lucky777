@@ -321,262 +321,6 @@ export const SEVEN_ALGORITHMS_INFO = [
             '핫 앵커 & 직전 이월수 결합으로 적중 안정성 확보'
         ],
         getCombos: (r, uId) => { const p = generateExtraAddonPack(1, r, uId); return (p && p.combos) ? p.combos : []; }
-    },
-    {
-        id: 'extra2',
-        name: '추가 2: 슈퍼 잭팟 팩 (10게임)',
-        shortName: '추가 2: 슈퍼 잭팟',
-        tag: '25~45번대 고번호 집중 + 2연번 강제 주입 당첨금 극대화 (10게임)',
-        icon: 'fa-sack-dollar',
-        badge: 'SUPER JACKPOT',
-        badgeColor: '#f59e0b',
-        bgGradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
-        borderColor: 'rgba(245, 158, 11, 0.45)',
-        simpleBadge: '💰 혼자서 40억 독식!',
-        simpleCatch: '"사람들 몰리는 생일 번호 피해서 당첨금 독차지!"',
-        simpleSummary: '남들이 가족 생일(1~31) 찍을 때, 아무도 안 찍는 큰 번호(25~45)를 찍어 1등 당첨금을 나눠 갖지 않고 혼자 독차지합니다.',
-        renderMiniMotion: () => `
-            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(245, 158, 11, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
-                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #fde68a; margin-bottom: 8px;">
-                    "사람들 몰리는 생일 번호 피해서 당첨금 독차지!"
-                </div>
-                <div style="height: 72px; display: flex; align-items: center; justify-content: space-between; gap: 8px; position: relative;">
-                    <!-- Birthday Zone (Crowded) -->
-                    <div style="flex: 1; background: rgba(15, 23, 42, 0.9); border: 1px solid #475569; border-radius: 10px; padding: 5px 6px; text-align: center; opacity: 0.7;">
-                        <span style="font-size: 9px; font-weight: 900; color: #fb7185; display: block;">1~31번 (생일수)</span>
-                        <div style="font-size: 11px; margin: 2px 0;">👥 👥 👥</div>
-                        <span style="font-size: 9px; color: #94a3b8; text-decoration: line-through; display: block;">14명 쪼개짐 (15억)</span>
-                    </div>
-                    <!-- Right Arrow -->
-                    <div style="font-size: 12px; font-weight: 900; color: #fbbf24;">▶</div>
-                    <!-- High Number Jackpot Zone (Monopoly) -->
-                    <div style="flex: 1; background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(15, 23, 42, 0.9) 100%); border: 1.5px solid #fbbf24; border-radius: 10px; padding: 5px 6px; text-align: center; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);">
-                        <span style="font-size: 9px; font-weight: 900; color: #fbbf24; display: block;">25~45번 (고번호)</span>
-                        <div class="anim-algo-coin" style="font-size: 12px; margin: 2px 0;">👑 💰 💰</div>
-                        <span style="font-size: 10px; font-weight: 900; color: #fde047; display: block;">단독 독식 48억 폭등!</span>
-                    </div>
-                </div>
-                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
-                    <span style="color: #cbd5e1; font-weight: 700;">👑 생일 번호(1~31) 배제</span>
-                    <span style="color: #fbbf24; font-weight: 900;">당첨금 2.5배 싹쓸이</span>
-                </div>
-            </div>
-        `,
-        corePhilosophy: '대부분의 구매자가 생일(1~31) 및 저번호대를 선호한다는 점에 착안, 25~45번대 고번호 3개와 2연번, 이월수(60%)를 집중 배치하여 1등 당첨 시 당첨자 수가 급감하고 1인당 수령금이 30~50억 이상으로 폭등하도록 설계한 슈퍼 잭팟 초고배당 특화 모델',
-        comboMethod: [
-            {
-                step: '고번호(25~45) 대역 3개 이상 집중 배치',
-                desc: '조합당 25~45번 번호를 최소 3개 이상 배정하여 일반 구매자들의 생일 중심 선택 구간(1~31)과 완벽히 차별화합니다.'
-            },
-            {
-                step: '고번호 2연번 및 직전 이월수 의도적 삽입',
-                desc: '대중이 무의식적으로 기피하는 2연번 1쌍과 직전 회차 이월수(60% 확률)를 반영합니다.'
-            },
-            {
-                step: '합계 120~205 특화 퀀트 필터링',
-                desc: '고번호 중심 조합의 특성에 맞추어 총합 범위를 120~205로 상향 보정하고 AC값 7 이상을 엄격히 검증합니다.'
-            }
-        ],
-        keyFeatures: [
-            '1등 당첨 시 1인 독점 수령금(Super Jackpot) 극대화',
-            '생일수(1~31) 배제로 대중과의 당첨금 셰어링 원천 차단',
-            '고번호 2연번 & 이월수 집중 타격 전략'
-        ],
-        getCombos: (r, uId) => { const p = generateExtraAddonPack(2, r, uId); return (p && p.combos) ? p.combos : []; }
-    },
-    {
-        id: 'extra3',
-        name: '추가 3: 멀티 히트 팩 (10게임)',
-        shortName: '추가 3: 멀티 히트',
-        tag: '3구간(1~15, 16~30, 31~45) 2-2-2 자연 군집 휠링 · 3~5등 다중 적중 방어망 (10게임)',
-        icon: 'fa-dharmachakra',
-        badge: 'MULTI-HIT WHEEL',
-        badgeColor: '#8b5cf6',
-        bgGradient: 'linear-gradient(135deg, rgba(139, 92, 246, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
-        borderColor: 'rgba(139, 92, 246, 0.45)',
-        simpleBadge: '🎡 3개 구역 2-2-2 조화',
-        simpleCatch: '"앞쪽 2개, 중간 2개, 뒤쪽 2개씩 골고루 쏙쏙!"',
-        simpleSummary: '한쪽 번호대에 쏠리지 않도록 저(1~15)·중(16~30)·고(31~45) 3개 구역에서 2개씩 공평하게 뽑아 3·4·5등 여러 개를 한 번에 맞춥니다.',
-        renderMiniMotion: () => `
-            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(139, 92, 246, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
-                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #c4b5fd; margin-bottom: 8px;">
-                    "앞쪽 2개, 중간 2개, 뒤쪽 2개씩 골고루 쏙쏙!"
-                </div>
-                <div style="height: 72px; display: flex; align-items: center; justify-content: space-around; position: relative;">
-                    <!-- 3 Zone Baskets -->
-                    <div class="anim-algo-drop" style="display: flex; flex-direction: column; align-items: center;">
-                        <span style="font-size: 9px; font-weight: 900; color: #fde047; margin-bottom: 2px;">1~15구역</span>
-                        <div style="background: rgba(234, 179, 8, 0.2); border: 1px solid #eab308; border-radius: 8px; padding: 3px 5px; display: flex; gap: 3px;">
-                            <span class="lotto-ball-3d ball-yellow" style="width: 20px; height: 20px; font-size: 10px;">3</span>
-                            <span class="lotto-ball-3d ball-yellow" style="width: 20px; height: 20px; font-size: 10px;">11</span>
-                        </div>
-                        <span style="font-size: 9px; font-weight: 900; color: #fde047; margin-top: 2px;">2개 쏙!</span>
-                    </div>
-                    <span style="font-size: 11px; font-weight: 900; color: #64748b;">+</span>
-                    <div class="anim-algo-drop" style="display: flex; flex-direction: column; align-items: center; animation-delay: 0.2s;">
-                        <span style="font-size: 9px; font-weight: 900; color: #60a5fa; margin-bottom: 2px;">16~30구역</span>
-                        <div style="background: rgba(59, 130, 246, 0.2); border: 1px solid #3b82f6; border-radius: 8px; padding: 3px 5px; display: flex; gap: 3px;">
-                            <span class="lotto-ball-3d ball-blue" style="width: 20px; height: 20px; font-size: 10px;">19</span>
-                            <span class="lotto-ball-3d ball-red" style="width: 20px; height: 20px; font-size: 10px;">28</span>
-                        </div>
-                        <span style="font-size: 9px; font-weight: 900; color: #60a5fa; margin-top: 2px;">2개 쏙!</span>
-                    </div>
-                    <span style="font-size: 11px; font-weight: 900; color: #64748b;">+</span>
-                    <div class="anim-algo-drop" style="display: flex; flex-direction: column; align-items: center; animation-delay: 0.4s;">
-                        <span style="font-size: 9px; font-weight: 900; color: #f43f5e; margin-bottom: 2px;">31~45구역</span>
-                        <div style="background: rgba(244, 63, 94, 0.2); border: 1px solid #f43f5e; border-radius: 8px; padding: 3px 5px; display: flex; gap: 3px;">
-                            <span class="lotto-ball-3d ball-gray" style="width: 20px; height: 20px; font-size: 10px;">36</span>
-                            <span class="lotto-ball-3d ball-green" style="width: 20px; height: 20px; font-size: 10px;">42</span>
-                        </div>
-                        <span style="font-size: 9px; font-weight: 900; color: #f43f5e; margin-top: 2px;">2개 쏙!</span>
-                    </div>
-                </div>
-                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
-                    <span style="color: #cbd5e1; font-weight: 700;">🎡 3개 구역 2-2-2 균등 분산</span>
-                    <span style="color: #a78bfa; font-weight: 900;">3·4·5등 복수 다중 당첨 최적화</span>
-                </div>
-            </div>
-        `,
-        corePhilosophy: '로또 번호 45개를 1~15, 16~30, 31~45의 3대 자연 구역으로 분할하고, 각 구역에서 번호를 2개씩 균형 추출(2-2-2)하여 결합하는 자연 군집 휠링 시스템(Harmonic Clustering Wheel). 특정 구간 쏠림을 원천 차단하여 3등(150만원), 4등(5만원), 5등(5천원) 복수 다중 적중 확률을 극대화한 멀티 히트 구조적 모델',
-        comboMethod: [
-            {
-                step: '45개 번호 3대 자연 하모닉 구역 분할',
-                desc: '1구역(1~15 저번호), 2구역(16~30 중번호), 3구역(31~45 고번호)으로 15개씩 자연 대역 분할합니다.'
-            },
-            {
-                step: '3개 구역별 2개씩 2-2-2 균형 추출',
-                desc: '각 구역에서 퀀트 가중치 기반 번호를 2개씩 균형 있게 선별하여 2-2-2 대칭 군집을 형성합니다.'
-            },
-            {
-                step: '휠링 회전 결합 및 7대 퀀트 필터 통과',
-                desc: '10개 게임에 걸쳐 회전식(Wheeling) 매트릭스로 배치하고 역대 1등 기출 배제 및 7대 퀀트 필터를 검증합니다.'
-            }
-        ],
-        keyFeatures: [
-            '3개 대역 2-2-2 균등 분산으로 특정 구간 편중 0%',
-            '3·4·5등 복수 다중 당첨(Multi-Hit) 확률 최적화',
-            '자연 군집 휠링 매트릭스 알고리즘 적용'
-        ],
-        getCombos: (r, uId) => { const p = generateExtraAddonPack(3, r, uId); return (p && p.combos) ? p.combos : []; }
-    },
-    {
-        id: 'extra4',
-        name: '추가 4: 흐름 부스터 팩 (10게임)',
-        shortName: '추가 4: 흐름 부스터',
-        tag: '직전 회차 전이 확률 + 역대 최다 동반출현 Pair 집중 타격 (10게임)',
-        icon: 'fa-bolt',
-        badge: 'FLOW BOOSTER',
-        badgeColor: '#06b6d4',
-        bgGradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
-        borderColor: 'rgba(6, 182, 212, 0.45)',
-        simpleBadge: '⚡ 최강 2수 듀오 결합',
-        simpleCatch: '"역사상 가장 자주 같이 나온 영혼의 단짝 2수 결합!"',
-        simpleSummary: '역대 1,200회 추첨 중 가장 많이 손잡고 나온 \'최강 단짝 번호 2개\'를 필수 결합하여 당첨 흐름을 가속합니다.',
-        renderMiniMotion: () => `
-            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(6, 182, 212, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
-                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #67e8f9; margin-bottom: 8px;">
-                    "역사상 가장 자주 같이 나온 영혼의 단짝 2수 결합!"
-                </div>
-                <div style="height: 72px; display: flex; align-items: center; justify-content: center; gap: 14px; position: relative;">
-                    <div class="anim-algo-magnet" style="display: flex; align-items: center; gap: 6px;">
-                        <span class="lotto-ball-3d ball-blue" style="width: 26px; height: 26px; font-size: 12px;">11</span>
-                        <div style="font-size: 16px; color: #fde047; font-weight: 900; text-shadow: 0 0 8px #f59e0b;">⚡</div>
-                        <span class="lotto-ball-3d ball-red" style="width: 26px; height: 26px; font-size: 12px;">29</span>
-                    </div>
-                    <div style="background: rgba(6, 182, 212, 0.15); border: 1px solid #06b6d4; border-radius: 8px; padding: 4px 8px; font-size: 0.72rem; color: #e0f2fe; text-align: left;">
-                        <div style="font-weight: 900; color: #67e8f9;">동반 출현 1위 콤비</div>
-                        <div style="font-size: 9px; color: #94a3b8;">역대 최다 동시 출현 39회</div>
-                    </div>
-                </div>
-                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
-                    <span style="color: #cbd5e1; font-weight: 700;">⚡ 역대 최강 2수 듀오 결합</span>
-                    <span style="color: #22d3ee; font-weight: 900;">2·3등 중고액 적중 정밀 타격</span>
-                </div>
-            </div>
-        `,
-        corePhilosophy: '로또 추첨의 강력한 연속성을 포착하기 위해 직전 회차 당첨 번호로부터의 마르코프 1/2차 전이 확률과 역대 1,200여 회차 중 가장 높은 빈도로 함께 출현한 2수 페어(Co-occurrence Pair)를 결합한 흐름 부스터 모멘텀 타격 모델',
-        comboMethod: [
-            {
-                step: '직전 회차 번호 1수 순환 시드 주입',
-                desc: '직전 회차 6개 당첨번호 중 마르코프 전이 계수가 가장 높은 번호를 게임별 앵커로 주입합니다.'
-            },
-            {
-                step: '역대 최고 궁합 동반출현(Pair) 파트너 결합',
-                desc: '주입된 앵커 번호와 역대 데이터상 가장 많이 동반 출현한 최강 파트너 번호를 자동으로 매칭하여 2수 세트를 완성합니다.'
-            },
-            {
-                step: '통계 가중치 기반 4수 보충 및 퀀트 검증',
-                desc: '나머지 4개 번호를 누적 빈도 및 마르코프 전이 가중치 풀에서 추출하고 7대 퀀트 필터를 적용합니다.'
-            }
-        ],
-        keyFeatures: [
-            '직전 회차 흐름의 강한 연속성(Momentum) 추종',
-            '역대 최다 동반 출현 2수 페어 듀오 집중 결합',
-            '2등 및 3등 중고액 당첨 정밀 타격'
-        ],
-        getCombos: (r, uId) => { const p = generateExtraAddonPack(4, r, uId); return (p && p.combos) ? p.combos : []; }
-    },
-    {
-        id: 'extra5',
-        name: '추가 5: 트리오 마스터 팩 (10게임)',
-        shortName: '추가 5: 트리오 마스터',
-        tag: '역대 최다 동시 출현 3수 고정틀(Golden Trios) 마스터 조합 (10게임)',
-        icon: 'fa-crown',
-        badge: 'TRIO MASTER',
-        badgeColor: '#ec4899',
-        bgGradient: 'linear-gradient(135deg, rgba(236, 72, 153, 0.16) 0%, rgba(15, 23, 42, 0.85) 100%)',
-        borderColor: 'rgba(236, 72, 153, 0.45)',
-        simpleBadge: '🔺 황금 3수 클러스터',
-        simpleCatch: '"역대 가장 많이 같이 당첨된 황금 3형제 번호 고정!"',
-        simpleSummary: '역대 데이터상 3개가 동시에 나온 횟수가 가장 많은 3수 황금틀을 고정하고, 3수가 맞는 즉시 1등까지 연쇄 폭발을 노립니다.',
-        renderMiniMotion: () => `
-            <div class="algo-mini-stage" style="background: rgba(10, 15, 29, 0.95); border: 1.5px solid rgba(236, 72, 153, 0.35); border-radius: 12px; padding: 10px 12px; margin: 4px 0 8px 0; overflow: hidden; position: relative;">
-                <div style="text-align: center; font-size: 0.76rem; font-weight: 900; color: #f472b6; margin-bottom: 8px;">
-                    "역대 가장 많이 같이 당첨된 황금 3형제 번호 고정!"
-                </div>
-                <div style="height: 72px; display: flex; align-items: center; justify-content: center; position: relative;">
-                    <!-- Golden Triangle Cluster -->
-                    <div class="anim-algo-trio" style="display: flex; flex-direction: column; align-items: center;">
-                        <!-- Top Vertex -->
-                        <span class="lotto-ball-3d ball-yellow" style="width: 22px; height: 22px; font-size: 11px; margin-bottom: 3px;">1</span>
-                        <!-- Bottom Pair -->
-                        <div style="display: flex; gap: 14px;">
-                            <span class="lotto-ball-3d ball-blue" style="width: 22px; height: 22px; font-size: 11px;">13</span>
-                            <span class="lotto-ball-3d ball-gray" style="width: 22px; height: 22px; font-size: 11px;">38</span>
-                        </div>
-                    </div>
-                    <div style="position: absolute; right: 14px; background: rgba(236, 72, 153, 0.15); border: 1px solid #ec4899; border-radius: 8px; padding: 4px 8px; font-size: 0.70rem; color: #fce7f3; text-align: left;">
-                        <div style="font-weight: 900; color: #f472b6;">황금 삼각 락온</div>
-                        <div style="font-size: 8px; color: #94a3b8;">3수 적중 시 1등 연쇄 폭발</div>
-                    </div>
-                </div>
-                <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; font-size: 0.70rem;">
-                    <span style="color: #cbd5e1; font-weight: 700;">🔺 상위 10대 황금 3수 클러스터 고정</span>
-                    <span style="color: #f472b6; font-weight: 900;">3수 적중 시 연쇄 고액 당첨</span>
-                </div>
-            </div>
-        `,
-        corePhilosophy: '역대 1,200여 회의 전수 데이터 중 3개 번호가 동시에 출현한 빈도가 통계적으로 가장 높은 상위 10대 "황금 트리오(Golden Trios)"를 각 게임의 3수 고정틀로 채택하고, 나머지 3수를 퀀트 최적화하여 3수가 적중되는 즉시 5등(3수)→4등(4수)→3등(5수)→1등으로 이어지는 연쇄 당첨 폭발력을 노리는 트리오 마스터 모델',
-        comboMethod: [
-            {
-                step: '10대 황금 3수 클러스터 고정틀 배치',
-                desc: '[1, 13, 38], [11, 29, 36], [4, 17, 43], [7, 16, 44], [10, 23, 37], [2, 18, 42], [5, 14, 31], [8, 20, 39], [3, 19, 35], [12, 26, 45] 등 역대 최다 동시 출현 3수를 게임별 고정 앵커로 주입합니다.'
-            },
-            {
-                step: '3수 고정틀 기반 퀀트 가중치 3수 융합',
-                desc: '고정 3수와 궁합도가 높은 번호 3개를 전체 퀀트 가중치 풀에서 추출하여 6수 완성.'
-            },
-            {
-                step: '7대 퀀트 필터 통과 조합 최종 확정',
-                desc: '합계, AC값, 홀짝, 저고, 색상 분포 밸런스를 검증하여 최종 조합을 확정합니다.'
-            }
-        ],
-        keyFeatures: [
-            '역대 최다 동시 출현 3수 고정틀 10세트 전면 채택',
-            '3수 적중 시 연쇄 고액 당첨으로 이어지는 폭발력',
-            '최대 클리크(Maximal Clique) 수리 모델 기반'
-        ],
-        getCombos: (r, uId) => { const p = generateExtraAddonPack(5, r, uId); return (p && p.combos) ? p.combos : []; }
     }
 ];
 
@@ -1149,14 +893,14 @@ export async function renderAlgorithmsTab(fromRound = null) {
                         <i class="fa-solid fa-brain"></i> QUANT &amp; AI ENGINE
                     </span>
                     <span style="color: var(--accent-gold); font-size: 0.8rem; font-weight: 700; word-break: keep-all;">
-                        7대 알고리즘 분산 추천 &amp; 실데이터 누적 당첨 실적
+                        3대 올라운더 분산 추천 &amp; 실데이터 누적 당첨 실적
                     </span>
                 </div>
                 <h2 style="margin: 0 0 8px 0; font-size: clamp(1.15rem, 4vw, 1.45rem); font-weight: 900; color: #f8fafc; letter-spacing: -0.5px; word-break: keep-all; overflow-wrap: break-word;">
-                    로또 6/45 <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">7대 AI 알고리즘</span> 정밀 해설 &amp; 실적
+                    로또 6/45 <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">3대 올라운더 AI 알고리즘</span> 정밀 해설 &amp; 실적
                 </h2>
                 <p style="margin: 0; color: #94a3b8; font-size: 0.82rem; line-height: 1.5; max-width: 800px; word-break: keep-all; overflow-wrap: break-word;">
-                    단순한 무작위 번호 생성이 아닙니다. 올라운더 팩(포트폴리오), 올라운더 팩 2(다이나믹 모멘텀), 빈틈제로 팩(전수 커버리지), 슈퍼 잭팟(고배당), 멀티 히트(휠링) 등 7가지 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
+                    단순한 무작위 번호 생성이 아닙니다. 올라운더 팩(포트폴리오), 올라운더 팩 2(다이나믹 모멘텀), 올라운더 팩 3(초압축 휠링·결손반등) 3대 핵심 수리통계 모델의 조합 원리를 상세히 확인하고, 과거 회차 당첨 검증 데이터를 기반으로 한 실제 누적 적중 실적을 투명하게 확인하세요.
                 </p>
             </div>
 
@@ -1169,7 +913,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto; cursor: pointer;" onclick="window.toggleAlgoGuideSection && window.toggleAlgoGuideSection()" title="클릭 시 7대 알고리즘 설명 섹션 전체 접기/펼치기">
                         <span style="width: 4px; height: 18px; background: #6366f1; border-radius: 2px; display: inline-block; flex-shrink: 0;"></span>
                         <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #f8fafc; word-break: keep-all; overflow-wrap: break-word;">
-                            1. 7대 알고리즘별 번호 조합 메커니즘
+                            1. 3대 올라운더 알고리즘별 번호 조합 메커니즘
                         </h3>
                         <span style="font-size: 0.70rem; color: #a5b4fc; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); padding: 1px 7px; border-radius: 4px; font-weight: 700; white-space: nowrap;">
                             기본설명 모드
@@ -1199,7 +943,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
                         <span style="width: 4px; height: 18px; background: #fbbf24; border-radius: 2px; display: inline-block; flex-shrink: 0;"></span>
                         <h3 style="margin: 0; font-size: 1.15rem; font-weight: 900; color: #f8fafc; word-break: keep-all; overflow-wrap: break-word;">
-                            2. 추천번호 당첨 결과 기반 7대 알고리즘 전체 회원 누적 당첨 실적 (전체 회원 통합)
+                            2. 추천번호 당첨 결과 기반 3대 올라운더 알고리즘 전체 회원 누적 당첨 실적 (전체 회원 통합)
                         </h3>
                     </div>
                     
@@ -1232,11 +976,11 @@ export async function renderAlgorithmsTab(fromRound = null) {
                                 100% 무결점 실데이터 검증
                             </span>
                             <span style="font-size: 0.85rem; font-weight: 800; color: #f8fafc; word-break: keep-all;">
-                                제 1235회차부터 전체 회원 실제 추천번호 기반 7대 알고리즘별 당첨 내역 (${effectiveUserId === 'all' ? '전체 회원 통합 전수 집계' : `${maskUserDisplayName(effectiveUserId, effectiveUserId)} 회원`})
+                                제 1235회차부터 전체 회원 실제 추천번호 기반 3대 올라운더 알고리즘별 당첨 내역 (${effectiveUserId === 'all' ? '전체 회원 통합 전수 집계' : `${maskUserDisplayName(effectiveUserId, effectiveUserId)} 회원`})
                             </span>
                         </div>
                         <p style="margin: 0; font-size: 0.77rem; color: #cbd5e1; line-height: 1.45; word-break: keep-all; overflow-wrap: break-word;">
-                            본 누적 당첨 내역은 <strong style="color: #34d399;">제 1235회차부터 매주 등록된 전체 회원들에게 실제로 생성·발급된 7대 알고리즘 추천번호(각 10게임)의 영구 박제 스냅샷</strong>을 동행복권 공식 추첨 결과와 1:1로 전수 대조하여 채점한 <strong style="color: #fbbf24;">100% 실제 전수 적중 실적 데이터</strong>입니다.
+                            본 누적 당첨 내역은 <strong style="color: #34d399;">제 1235회차부터 매주 등록된 전체 회원들에게 실제로 생성·발급된 3대 올라운더 알고리즘 추천번호(각 10게임)의 영구 박제 스냅샷</strong>을 동행복권 공식 추첨 결과와 1:1로 전수 대조하여 채점한 <strong style="color: #fbbf24;">100% 실제 전수 적중 실적 데이터</strong>입니다.
                         </p>
                     </div>
                 </div>
@@ -1246,7 +990,7 @@ export async function renderAlgorithmsTab(fromRound = null) {
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
                         <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
                             <span style="background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #0f172a; padding: 2px 7px; border-radius: 6px; font-size: 0.72rem; font-weight: 900; white-space: nowrap;">
-                                <i class="fa-solid fa-trophy"></i> 7대 알고리즘 통합 실적 요약
+                                <i class="fa-solid fa-trophy"></i> 3대 올라운더 알고리즘 통합 실적 요약
                             </span>
                             <span style="font-size: 0.8rem; font-weight: 800; color: #f8fafc; word-break: keep-all;">
                                 제 ${startR}~${maxRound}회 (${totalRoundsCount}회차 실제 추천번호 전수 집계)
@@ -1317,7 +1061,7 @@ export function changeAlgoAdminViewingUser(userId) {
             window.generatePredictionReport();
         }
     }
-    showToast(userId === 'all' ? '🌐 전체 회원 7대 알고리즘 추천 결과 종합으로 전환되었습니다.' : `👑 [${userId}] 회원의 7대 알고리즘 추천 조합으로 전환되었습니다.`);
+    showToast(userId === 'all' ? '🌐 전체 회원 3대 올라운더 알고리즘 추천 결과 종합으로 전환되었습니다.' : `👑 [${userId}] 회원의 3대 올라운더 알고리즘 추천 조합으로 전환되었습니다.`);
 }
 
 /**
@@ -1464,7 +1208,7 @@ export function openSlimMemberPickerForAlgo() {
     if (typeof window.openSlimMemberPickerModal === 'function') {
         const curUser = (typeof algoAdminViewingUser !== 'undefined' && algoAdminViewingUser) || rawAuth || 'all';
         window.openSlimMemberPickerModal({
-            title: '7대 알고리즘 조회 대상 회원 선택',
+            title: '3대 올라운더 알고리즘 조회 대상 회원 선택',
             subtitle: '누적 추천 및 당첨 실적을 확인할 회원을 검색 및 선택하세요.',
             selectedUserId: curUser,
             includeAll: true,
@@ -1483,7 +1227,7 @@ export function openSlimRoundPickerForAlgo() {
         const maxR = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1243);
         window.openSlimRoundPickerModal({
             title: '알고리즘 누적 집계 시작 회차 선택',
-            subtitle: '7대 알고리즘 적중 실적의 집계 기준 시작 회차를 선택하세요 (1235회~).',
+            subtitle: '3대 올라운더 알고리즘 적중 실적의 집계 기준 시작 회차를 선택하세요 (1235회~).',
             selectedRound: currentAlgoStartRound || 1235,
             minRound: 1235,
             maxRound: maxR,

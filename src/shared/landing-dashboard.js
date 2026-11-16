@@ -949,7 +949,7 @@ export function applyDashboardReviewSummaryToUI(summaryData, maxRound, roundRang
     if (elLatestRoundNum) elLatestRoundNum.textContent = latestRound;
 
     const elLatestGames = document.getElementById('lpReviewLatestGames');
-    if (elLatestGames) elLatestGames.textContent = `${latestActiveMemberCount}명 참여 · 총 ${latestTotalGames.toLocaleString()}게임 (1인당 70조합)`;
+    if (elLatestGames) elLatestGames.textContent = `${latestActiveMemberCount}명 참여 · 총 ${latestTotalGames.toLocaleString()}게임 (1인당 30조합)`;
 
     const elLatestHits = document.getElementById('lpReviewLatestHits');
     if (elLatestHits) {
@@ -977,7 +977,7 @@ export function applyDashboardReviewSummaryToUI(summaryData, maxRound, roundRang
     const elKpiHits = document.getElementById('lpReviewKpiHits');
     const elKpiPrize = document.getElementById('lpReviewKpiPrize');
 
-    if (elKpiGames) elKpiGames.textContent = `${rRangeLabel} · 총 ${grandTotalGames.toLocaleString()}게임 (1인당 70조합)`;
+    if (elKpiGames) elKpiGames.textContent = `${rRangeLabel} · 총 ${grandTotalGames.toLocaleString()}게임 (1인당 30조합)`;
     if (elKpiHits) {
         elKpiHits.innerHTML = `
             <span style="color:${grandRank1>0?'#10b981':'#64748b'}; font-weight:700;">1등 ${grandRank1}</span> · 
@@ -1189,7 +1189,7 @@ export async function updateHomeWinningTicker() {
                 </div>`,
                 `<div class="lp-flip-item">
                     <i class="fa-solid fa-qrcode" style="color: #38bdf8; flex-shrink: 0;"></i>
-                    <span style="color: #cbd5e1; font-size: 0.82rem;">매주 5게임 실구매 영수증(QR) 등록 시 7대 퀀트 알고리즘 무료 잠금 해제</span>
+                    <span style="color: #cbd5e1; font-size: 0.82rem;">매주 5게임 실구매 영수증(QR) 등록 시 AI 시뮬레이션 연구소 무료 이용 혜택 활성화</span>
                 </div>`
             ];
         }

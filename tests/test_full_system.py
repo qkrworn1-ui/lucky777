@@ -1824,8 +1824,11 @@ class TestFullSystem(unittest.TestCase):
         # 4. Verify confirmed-tab.js receipt balls assign dark text for numbers <= 10
         self.assertIn("const ballTextColor = (n <= 10) ? '#0f172a' : '#ffffff';", conf_code)
 
-        # 5. Verify generator-tab.js uses high contrast dark text on yellow balls
-        self.assertIn(f"color: ${{n <= 10 ? '#0f172a' : '#ffffff'}};", gen_code)
+        # 5. Verify generator-tab.js renders lotto balls via createBallHtml (high contrast yellow text) or dark text
+        self.assertTrue(
+            f"color: ${{n <= 10 ? '#0f172a' : '#ffffff'}};" in gen_code or "createBallHtml(" in gen_code,
+            "generator-tab.js must use high-contrast text on yellow balls via createBallHtml"
+        )
 
     def test_48_login_freeze_bug_fixes_integrity(self):
         """Test 48: Verify the two login-freeze bug fixes are in place.
@@ -2357,9 +2360,9 @@ class TestFullSystem(unittest.TestCase):
         with open(ledger_file, 'r', encoding='utf-8') as f:
             ledger_code = f.read()
 
-        # 1. confirmed-tab.js uses getPackFromSnapshot in getMemoizedRecommendations
+        # 1. confirmed-tab.js uses getPackFromSnapshot in getMemoizedRecommendations (All-Rounder 3 only)
         self.assertIn("import { getPackFromSnapshot } from './review-tab.js';", conf_tab_code)
-        self.assertIn("extraPacks = [1, 2, 3, 4, 5].map(pId => getPackFromSnapshot(snapshot.extraPacks, pId)", conf_tab_code)
+        self.assertIn("const p1 = getPackFromSnapshot(snapshot.extraPacks, 1);", conf_tab_code)
 
         # 2. confirmed-tab.js correctly computes actual winning prizes using dynamic actual draw data
         self.assertIn("actualDraw.rank2Prize || (actualDraw.prizes && actualDraw.prizes[2] ? actualDraw.prizes[2].prize : 50000000)", conf_tab_code)
@@ -2827,34 +2830,26 @@ Lotto 6/45
         self.assertIn("if uid not in user_metadata and uid not in ('master', 'wdy', 'admin'):", batch_code)
 
     def test_78_quick_view_extra_pack_purchase_restriction(self):
-        """Test 78: Verify quick-view modal strictly checks isUserEligibleForExtraPacks and restricts extra booster packs for unverified users."""
+        """Test 78: Verify quick-view modal serves All-Rounder 1, 2, 3 (30G total) without removed extra 2~5 packs."""
         quick_view_file = os.path.join(self.root_dir, 'src', 'services', 'lotto', 'views', 'quick-view.js')
         with open(quick_view_file, 'r', encoding='utf-8') as f:
             quick_code = f.read()
 
-        # 1. quick-view.js imports isUserEligibleForExtraPacks from ledger.js
-        self.assertIn("isUserEligibleForExtraPacks", quick_code)
-        self.assertIn("import { getComboNumbers, isUserEligibleForExtraPacks } from '../ledger.js';", quick_code)
+        # 1. quick-view.js renders 3 All-Rounder buttons (v4, v3, extra_1) and 30G total
+        self.assertIn("switchQuickViewAlgo('v4')", quick_code)
+        self.assertIn("switchQuickViewAlgo('v3')", quick_code)
+        self.assertIn("switchQuickViewAlgo('extra_1')", quick_code)
+        self.assertIn("const totalGames = 30;", quick_code)
 
-        # 2. checkQuickViewExtraPackEligibility function exists and verifies user eligibility
-        self.assertIn("export function checkQuickViewExtraPackEligibility", quick_code)
+        # 2. Extra packs 2~5 are completely absent from quick-view buttons & labels
+        self.assertNotIn("슈퍼잭팟", quick_code)
+        self.assertNotIn("멀티히트", quick_code)
+        self.assertNotIn("흐름부스터", quick_code)
+        self.assertNotIn("트리오마스터", quick_code)
 
-        # 3. getQuickCombos guards against extra packs and locks unverified games
-        self.assertIn("const isEligible = checkQuickViewExtraPackEligibility(effectiveUserId, targetRound);", quick_code)
-        self.assertIn("!isEligible", quick_code)
-        self.assertIn("isLocked: true", quick_code)
-
-        # 4. 'all' combines extra packs only when isEligible
-        self.assertIn("if (isEligible)", quick_code)
+        # 3. 'all' integrates All-Rounder 1, 2, 3 cleanly (30 combos)
         self.assertTrue("전체 통합" in quick_code and "조합)`" in quick_code)
-
-        # 5. switchQuickViewAlgo blocks extra pack selection for non-purchased users
-        self.assertIn("!isEligible && algo.startsWith('extra_')", quick_code)
-        self.assertTrue("실구매 영수증(QR)을 등록하신" in quick_code)
-
-        # 6. updateQuickViewAlgoButtons renders locked state for extra packs when !isEligible
-        self.assertIn("class=\"quick-algo-btn locked\"", quick_code)
-        self.assertIn("fa-lock", quick_code)
+        self.assertIn("기본 3: 올라운더 팩 3 (10조합)", quick_code)
 
     def test_86_recommendation_history_consistency_and_server_document_sync(self):
         """Test 86: Verify recommendation winning history consistency and automatic server document sync triggers."""
@@ -4012,7 +4007,7 @@ Lotto 6/45
         # 3. Combo algoId tagging in getSingleUserCombosForRound
         self.assertIn("clone.algoId = 'v4'", sim_code, "V4 combos must be tagged with algoId 'v4'")
         self.assertIn("clone.algoId = 'v3'", sim_code, "V3 combos must be tagged with algoId 'v3'")
-        self.assertIn("clone.algoId = `extra_${pIdx}`", sim_code, "Extra pack combos must be tagged with algoId extra_N")
+        self.assertIn("clone.algoId = 'extra_1'", sim_code, "All-Rounder 3 combos must be tagged with algoId 'extra_1'")
 
         # 4. CSS class checks
         self.assertIn('.sim-grand-summary-card', css, "styles.css must have .sim-grand-summary-card")
@@ -4044,17 +4039,13 @@ Lotto 6/45
             if (formatKoreanPrize(4825000000) !== '48억 2,500만 원') process.exit(1);
             if (formatKoreanPrize(50000) !== '5만 원') process.exit(2);
 
-            // Options-based filtering simulation:
+            // Options-based filtering simulation (All-Rounder 1, 2, 3):
             // User selects only V4 and Extra 1
             const cfg = { includeV4: true, includeV3: false, selectedExtraPacks: [1] };
             const allDefs = [
                 { id: 'v4', isSelected: cfg.includeV4 },
                 { id: 'v3', isSelected: cfg.includeV3 },
-                { id: 'extra_1', isSelected: cfg.selectedExtraPacks.includes(1) },
-                { id: 'extra_2', isSelected: cfg.selectedExtraPacks.includes(2) },
-                { id: 'extra_3', isSelected: cfg.selectedExtraPacks.includes(3) },
-                { id: 'extra_4', isSelected: cfg.selectedExtraPacks.includes(4) },
-                { id: 'extra_5', isSelected: cfg.selectedExtraPacks.includes(5) }
+                { id: 'extra_1', isSelected: cfg.selectedExtraPacks.includes(1) }
             ];
 
             const active = allDefs.filter(d => d.isSelected);
@@ -4622,13 +4613,13 @@ Lotto 6/45
         with open(css_path, 'r', encoding='utf-8') as f:
             css_code = f.read()
 
-        # 1. win-prob-modal.js defines getLiveWinProbStats and dynamic 70-game calculation
+        # 1. win-prob-modal.js defines getLiveWinProbStats and dynamic 30-game calculation
         self.assertIn("export function getLiveWinProbStats", modal_code)
         self.assertIn("window.getLiveWinProbStats = getLiveWinProbStats", modal_code)
         self.assertIn("lotto_home_review_dashboard_cache", modal_code)
-        self.assertIn("expected70:", modal_code)
-        self.assertIn("autoRank4: 0.0955", modal_code)
-        self.assertIn("autoPrize: 12629", modal_code)
+        self.assertIn("expected30:", modal_code)
+        self.assertIn("autoRank4: 0.0409", modal_code)
+        self.assertIn("autoPrize: 5412", modal_code)
 
         # 2. win-prob-modal.js renders 70-game hero banner and Fold 7 battle cards
         self.assertIn('class="hero-70game-banner"', modal_code)

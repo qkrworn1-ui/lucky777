@@ -4,10 +4,10 @@
  * - 동행복권 로또 6/45 수학적 이론 확률 (순수 자동 무작위 기준)
  * - 당 프로그램(Lucky777) 실제 추천번호 스냅샷 실전 당첨률
  * - ⚡ [신규 회차 100% 자동 연동] 대시보드 서버 간편문서(dashboard_summary_latest) 및 메모리 캐시 동적 계산
- * - 70게임(7만원 투자) 1:1 진검승부 매치업 & 갤럭시 Z 폴드7 접은 화면(344px) 무결점 반응형
+ * - 30게임(3만원 투자) 1:1 진검승부 매치업 & 갤럭시 Z 폴드7 접은 화면(344px) 무결점 반응형
  */
 
-let currentProbTab = 'v4'; // 'v4' (올라운더 팩 1위) or 'all' (7대 알고리즘 종합)
+let currentProbTab = 'v4'; // 'v4' (올라운더 팩 1위) or 'all' (3대 올라운더 알고리즘 종합)
 
 export const THEORETICAL_LOTTO_PROB = {
     totalCombos: 8145060,
@@ -57,37 +57,37 @@ export const LUCKY777_LIVE_STATS = {
     },
     all: {
         id: 'all',
-        name: '7대 알고리즘 전체 합산 종합',
-        badge: '7대 퀀트 전체',
-        tag: '12회차 5,530게임 전수 대조',
-        totalGames: 5530,
-        totalCost: 5530000,
-        totalPrize: 1500000,
-        roi: 27.12,
-        rankHits: { 1: 0, 2: 0, 3: 0, 4: 15, 5: 150 },
-        rates: { 1: '0.0000', 2: '0.0000', 3: '0.0000', 4: '0.2712', 5: '2.7125' },
-        cycleGames: { 4: '369게임당 1회', 5: '37게임당 1회', total: '34게임당 1회' },
-        totalHits: 165,
-        totalRate: '2.9837',
-        multipliers: { 4: '1.99배 (199%↑)', 5: '1.21배 (121%↑)', total: '1.25배 (125%↑)', roi: '1.50배 (약 1.5배↑)' },
-        zScores: { 4: '+2.71 (p = 0.006, 유의미)', 5: '+2.63 (p = 0.008, 유의미)' },
+        name: '3대 올라운더 알고리즘 전체 합산 종합',
+        badge: '3대 올라운더 전체',
+        tag: '실전 추천 스냅샷 30게임 통합 대조',
+        totalGames: 3210,
+        totalCost: 3210000,
+        totalPrize: 1085000,
+        roi: 33.80,
+        rankHits: { 1: 0, 2: 0, 3: 0, 4: 13, 5: 87 },
+        rates: { 1: '0.0000', 2: '0.0000', 3: '0.0000', 4: '0.4050', 5: '2.7103' },
+        cycleGames: { 4: '247게임당 1회', 5: '37게임당 1회', total: '32게임당 1회' },
+        totalHits: 100,
+        totalRate: '3.1153',
+        multipliers: { 4: '2.97배 (297%↑)', 5: '1.21배 (121%↑)', total: '1.31배 (131%↑)', roi: '1.87배 (약 1.9배↑)' },
+        zScores: { 4: '+4.12 (p < 0.0001, 초고도 유의)', 5: '+1.78 (p = 0.037, 유의미)' },
         notes: {
             1: '이론적 동일 추종',
             2: '고액 당첨 근접 추종',
-            3: '트리오 마스터 팩 3수 고정틀 연계',
-            4: '✨ 올라운더(11)+트리오(3)+올라운더2(1) 총 15건 배출',
-            5: '⭐ 7대 알고리즘 전반에 걸친 안정적 5등 방어망'
+            3: '16수 초압축 폭발 휠 30게임 통합 시너지',
+            4: '✨ 올라운더 1·2·3 합산 총 13건 배출',
+            5: '⭐ 3대 올라운더 전반에 걸친 안정적 5등 방어망'
         },
-        maxRound: 1246,
+        maxRound: 1250,
         fromRound: 1235,
-        roundRangeLabel: '제 1235~1246회차'
+        roundRangeLabel: '제 1235~1250회차'
     }
 };
 
 /**
  * ⚡ [신규 회차 100% 자동 연동] 실시간 동적 확률 통계 산출 함수
  * - 파이어베이스 대시보드 간편문서(dashboard_summary_latest) 및 로컬 캐시를 읽어
- *   신규 회차가 추가될 때마다 총 게임수, 적중수, 환급률, 70게임 기대치, 배수를 자동 재계산합니다.
+ *   신규 회차가 추가될 때마다 총 게임수, 적중수, 환급률, 30게임 기대치, 배수를 자동 재계산합니다.
  */
 export function getLiveWinProbStats(tabId = 'v4') {
     let summaryData = null;
@@ -188,10 +188,10 @@ export function getLiveWinProbStats(tabId = 'v4') {
     const cycle5 = r5 > 0 ? Math.round(g / r5) : 9999;
     const cycleTotal = totalHits > 0 ? Math.round(g / totalHits) : 9999;
 
-    // 70게임 (7만원 투자) 기준 실시간 기대치 산출
-    const expected70Rank4 = (r4 / g) * 70;
-    const expected70Rank5 = (r5 / g) * 70;
-    const expected70Prize = Math.round((computed.totalPrize / g) * 70);
+    // 30게임 (3만원 투자) 기준 실시간 기대치 산출
+    const expected30Rank4 = (r4 / g) * 30;
+    const expected30Rank5 = (r5 / g) * 30;
+    const expected30Prize = Math.round((computed.totalPrize / g) * 30);
 
     // 실시간 Z-검정 및 단측 유의확률(p-value) 동적 산출
     const normSf = (z) => {
@@ -245,15 +245,15 @@ export function getLiveWinProbStats(tabId = 'v4') {
             total: multTotal,
             roi: multRoi
         },
-        expected70: {
-            cost: 70000,
-            rank4: Number(expected70Rank4.toFixed(3)),
-            rank5: Number(expected70Rank5.toFixed(2)),
-            prize: expected70Prize,
+        expected30: {
+            cost: 30000,
+            rank4: Number(expected30Rank4.toFixed(3)),
+            rank5: Number(expected30Rank5.toFixed(2)),
+            prize: expected30Prize,
             roi: Number(roi.toFixed(1)),
-            autoRank4: 0.0955,
-            autoRank5: 1.5708,
-            autoPrize: 12629,
+            autoRank4: 0.0409,
+            autoRank5: 0.6732,
+            autoPrize: 5412,
             autoRoi: 18.04
         }
     };
@@ -385,8 +385,8 @@ export function renderWinProbModalContent(tabId = 'v4') {
         footerSourceEl.innerHTML = `<i class="fa-solid fa-circle-check" style="color: #10b981;"></i> 동행복권 공식 통계(1~${data.maxRound || 1244}회) 및 회원 14인 실측 스냅샷 기준 (신규 회차 실시간 자동 연동)`;
     }
 
-    const exp70 = data.expected70;
-    const roiMultiplier = (exp70.prize / exp70.autoPrize).toFixed(1);
+    const exp30 = data.expected30;
+    const roiMultiplier = (exp30.prize / exp30.autoPrize).toFixed(1);
 
     container.innerHTML = `
         <!-- 1. Comparison Target Tabs -->
@@ -398,18 +398,18 @@ export function renderWinProbModalContent(tabId = 'v4') {
             </button>
             <button type="button" class="win-prob-tab-btn ${!isV4 ? 'active' : ''}" onclick="window.switchWinProbTab('all')">
                 <i class="fa-solid fa-layer-group" style="color: #38bdf8;"></i>
-                <span>🌐 7대 알고리즘 전체 합산 (누적 ${data.totalGames.toLocaleString()}G)</span>
+                <span>🌐 3대 올라운더 전체 합산 (누적 ${data.totalGames.toLocaleString()}G)</span>
                 <span class="win-prob-tab-sub">총 ${data.totalHits}건 적중 종합 실측치</span>
             </button>
         </div>
 
-        <!-- 2. 🔥 실전 70게임 (7만원 투자) 1:1 진검승부 HERO MATCHUP BANNER (Fold 7 특화) -->
+        <!-- 2. 🔥 실전 30게임 (3만원 투자) 1:1 진검승부 HERO MATCHUP BANNER (Fold 7 특화) -->
         <div class="hero-70game-banner">
             <div class="hero-70game-header">
                 <div class="hero-70game-title-wrap">
                     <span class="hero-70game-pill"><i class="fa-solid fa-bolt" style="color: #fbbf24;"></i> 1회차 구매 단위 실전 비교</span>
-                    <h4 class="hero-70game-title">자동 70게임 vs 운도실력 추천 70게임 1:1 매치업</h4>
-                    <p class="hero-70game-desc">복권방에서 자동 7만원(70장)을 샀을 때와 Lucky777 추천 70장을 샀을 때의 실질적 기대치 차이</p>
+                    <h4 class="hero-70game-title">자동 30게임 vs 운도실력 추천 30게임 1:1 매치업</h4>
+                    <p class="hero-70game-desc">복권방에서 자동 3만원(30장)을 샀을 때와 Lucky777 올라운더 1·2·3 추천 30게임을 샀을 때의 실질적 기대치 차이</p>
                 </div>
                 <div class="hero-70game-round-tag">
                     <i class="fa-solid fa-database"></i> ${data.roundRangeLabel || '최근 전회차'} 전수
@@ -417,32 +417,32 @@ export function renderWinProbModalContent(tabId = 'v4') {
             </div>
 
             <div class="matchup-grid">
-                <!-- BOX A: 로또 자동 70게임 -->
+                <!-- BOX A: 로또 자동 30게임 -->
                 <div class="matchup-box auto-box">
                     <div class="box-badge-row">
                         <span class="badge-type">동행복권 자동</span>
-                        <span class="badge-cost">70게임 · 70,000원</span>
+                        <span class="badge-cost">30게임 · 30,000원</span>
                     </div>
                     <div class="box-hero-metric">
                         <span class="metric-label">기대 환급금</span>
                         <div class="metric-val-row">
-                            <span class="metric-val text-dim">${exp70.autoPrize.toLocaleString()}</span>
+                            <span class="metric-val text-dim">${exp30.autoPrize.toLocaleString()}</span>
                             <span class="metric-unit">원</span>
                         </div>
-                        <span class="metric-roi text-dim">원금 회수율 ${exp70.autoRoi}% (82% 손실)</span>
+                        <span class="metric-roi text-dim">원금 회수율 ${exp30.autoRoi}% (82% 손실)</span>
                     </div>
                     <div class="box-detail-list">
                         <div class="box-detail-item">
                             <span class="dt-lbl"><i class="fa-solid fa-circle" style="font-size: 0.45rem; color: #64748b;"></i> 4등 (5만원)</span>
-                            <span class="dt-val">10.5주에 1번 (0.095개)</span>
+                            <span class="dt-val">24.4주에 1번 (0.041개)</span>
                         </div>
                         <div class="box-detail-item">
                             <span class="dt-lbl"><i class="fa-solid fa-circle" style="font-size: 0.45rem; color: #64748b;"></i> 5등 (5천원)</span>
-                            <span class="dt-val">1.57개 (7,850원)</span>
+                            <span class="dt-val">0.67개 (3,366원)</span>
                         </div>
                         <div class="box-detail-item">
                             <span class="dt-lbl"><i class="fa-solid fa-circle" style="font-size: 0.45rem; color: #64748b;"></i> 체감 성적</span>
-                            <span class="dt-val text-dim">대부분 5등 1~2장에 그침</span>
+                            <span class="dt-val text-dim">대부분 5등 0~1장에 그침</span>
                         </div>
                     </div>
                 </div>
@@ -452,32 +452,32 @@ export function renderWinProbModalContent(tabId = 'v4') {
                     <span class="vs-circle">VS</span>
                 </div>
 
-                <!-- BOX B: 운도실력 추천 70게임 (GOLD HIGHLIGHT) -->
+                <!-- BOX B: 운도실력 추천 30게임 (GOLD HIGHLIGHT) -->
                 <div class="matchup-box lucky-box">
                     <div class="box-badge-row">
-                        <span class="badge-type gold"><i class="fa-solid fa-crown"></i> 운도실력 70게임</span>
-                        <span class="badge-cost gold">70게임 · 70,000원</span>
+                        <span class="badge-type gold"><i class="fa-solid fa-crown"></i> 운도실력 30게임</span>
+                        <span class="badge-cost gold">30게임 · 30,000원</span>
                     </div>
                     <div class="box-hero-metric">
                         <span class="metric-label text-gold">기대 환급금 (실전 실측치)</span>
                         <div class="metric-val-row">
-                            <span class="metric-val text-gold">${exp70.prize.toLocaleString()}</span>
+                            <span class="metric-val text-gold">${exp30.prize.toLocaleString()}</span>
                             <span class="metric-unit text-gold">원</span>
                         </div>
-                        <span class="metric-roi text-gold">원금 회수율 <strong>${exp70.roi}%</strong> (${roiMultiplier}배 우세)</span>
+                        <span class="metric-roi text-gold">원금 회수율 <strong>${exp30.roi}%</strong> (${roiMultiplier}배 우세)</span>
                     </div>
                     <div class="box-detail-list">
                         <div class="box-detail-item">
                             <span class="dt-lbl"><i class="fa-solid fa-circle-check" style="color: #fbbf24;"></i> 4등 (5만원)</span>
-                            <span class="dt-val text-gold"><strong>${isV4 ? `매주 ${exp70.rank4}회 (${data.cycleGames[4]})` : data.cycleGames[4]}</strong> <span class="pill-mini">${data.multipliers[4].split(' ')[0]}</span></span>
+                            <span class="dt-val text-gold"><strong>${isV4 ? `매주 ${exp30.rank4}회 (${data.cycleGames[4]})` : data.cycleGames[4]}</strong> <span class="pill-mini">${data.multipliers[4].split(' ')[0]}</span></span>
                         </div>
                         <div class="box-detail-item">
                             <span class="dt-lbl"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> 5등 (5천원)</span>
-                            <span class="dt-val text-emerald"><strong>매주 ${exp70.rank5}개 (${Math.round(exp70.rank5 * 5000).toLocaleString()}원)</strong> <span class="pill-mini green">${data.multipliers[5].split(' ')[0]}</span></span>
+                            <span class="dt-val text-emerald"><strong>매주 ${exp30.rank5}개 (${Math.round(exp30.rank5 * 5000).toLocaleString()}원)</strong> <span class="pill-mini green">${data.multipliers[5].split(' ')[0]}</span></span>
                         </div>
                         <div class="box-detail-item">
                             <span class="dt-lbl"><i class="fa-solid fa-shield-halved" style="color: #38bdf8;"></i> 원금 방어</span>
-                            <span class="dt-val text-cyan">5등만으로 원금 ${Math.round((exp70.rank5 * 5000 / 70000) * 100)}% 즉시 방어</span>
+                            <span class="dt-val text-cyan">5등만으로 원금 ${Math.round((exp30.rank5 * 5000 / 30000) * 100)}% 즉시 방어</span>
                         </div>
                     </div>
                 </div>
@@ -486,7 +486,7 @@ export function renderWinProbModalContent(tabId = 'v4') {
             <!-- Bottom Surge Callout -->
             <div class="hero-70game-summary-bar">
                 <i class="fa-solid fa-trophy" style="color: #fbbf24;"></i>
-                <span>동일한 7만원(70게임) 투자 시, 운도실력은 자동 대비 <strong>기대 회수액 약 ${roiMultiplier}배 (${(exp70.prize - exp70.autoPrize).toLocaleString()}원 추가 방어)</strong>의 압도적 효율을 실증합니다.</span>
+                <span>동일한 3만원(30게임) 투자 시, 운도실력은 자동 대비 <strong>기대 회수액 약 ${roiMultiplier}배 (${(exp30.prize - exp30.autoPrize).toLocaleString()}원 추가 방어)</strong>의 압도적 효율을 실증합니다.</span>
             </div>
         </div>
 
@@ -515,7 +515,7 @@ export function renderWinProbModalContent(tabId = 'v4') {
                                 <strong class="text-dim">0.136%</strong>
                                 <span class="col-sub">1 / 733 게임</span>
                             </div>
-                            <span class="col-cycle">70게임 구매 시 10.5주에 1회 적중</span>
+                            <span class="col-cycle">30게임 구매 시 24.4주에 1회 적중</span>
                         </div>
                         <div class="battle-col lucky-col">
                             <span class="col-head text-gold">운도실력 실전 성적</span>
@@ -523,7 +523,7 @@ export function renderWinProbModalContent(tabId = 'v4') {
                                 <strong class="text-gold">${data.rates[4]}%</strong>
                                 <span class="col-sub text-gold">${data.cycleGames[4]}</span>
                             </div>
-                            <span class="col-cycle text-gold">${isV4 ? `70게임 구매 시 매주 ${exp70.rank4}회 적중` : `${data.totalGames}게임 중 ${data.rankHits[4]}건 적중`}</span>
+                            <span class="col-cycle text-gold">${isV4 ? `30게임 구매 시 매주 ${exp30.rank4}회 적중` : `${data.totalGames}게임 중 ${data.rankHits[4]}건 적중`}</span>
                         </div>
                     </div>
 
@@ -562,7 +562,7 @@ export function renderWinProbModalContent(tabId = 'v4') {
                                 <strong class="text-dim">2.244%</strong>
                                 <span class="col-sub">1 / 44.6 게임</span>
                             </div>
-                            <span class="col-cycle">70게임 구매 시 1.57개 (7,850원 회수)</span>
+                            <span class="col-cycle">30게임 구매 시 0.67개 (3,366원 회수)</span>
                         </div>
                         <div class="battle-col lucky-col">
                             <span class="col-head text-emerald">운도실력 실전 성적</span>
@@ -570,7 +570,7 @@ export function renderWinProbModalContent(tabId = 'v4') {
                                 <strong class="text-emerald">${data.rates[5]}%</strong>
                                 <span class="col-sub text-emerald">${data.cycleGames[5]}</span>
                             </div>
-                            <span class="col-cycle text-emerald">70게임 구매 시 매주 ${exp70.rank5}개 (${Math.round(exp70.rank5 * 5000).toLocaleString()}원 회수)</span>
+                            <span class="col-cycle text-emerald">30게임 구매 시 매주 ${exp30.rank5}개 (${Math.round(exp30.rank5 * 5000).toLocaleString()}원 회수)</span>
                         </div>
                     </div>
 

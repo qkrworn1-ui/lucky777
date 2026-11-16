@@ -227,17 +227,16 @@ function extractCombosFromSource(source) {
             });
         }
         if (source.extraPacks) {
-            const packVals = Array.isArray(source.extraPacks) ? source.extraPacks : Object.values(source.extraPacks);
-            packVals.forEach(p => {
-                if (!p) return;
-                const pCombos = p.combos || (Array.isArray(p) ? p : []);
-                if (Array.isArray(pCombos)) {
-                    pCombos.forEach(c => {
-                        const nums = (typeof getComboNumbers === 'function') ? getComboNumbers(c) : (Array.isArray(c) ? c : (c && (c.numbers || c.nums)));
-                        if (Array.isArray(nums) && nums.length === 6) combos.push([...nums].map(Number).sort((a,b) => a - b));
-                    });
-                }
-            });
+            const p1 = Array.isArray(source.extraPacks)
+                ? source.extraPacks.find(p => p && Number(p.packId) === 1)
+                : (source.extraPacks[1] || source.extraPacks['1']);
+            const pCombos = p1 ? (p1.combos || (Array.isArray(p1) ? p1 : [])) : [];
+            if (Array.isArray(pCombos)) {
+                pCombos.forEach(c => {
+                    const nums = (typeof getComboNumbers === 'function') ? getComboNumbers(c) : (Array.isArray(c) ? c : (c && (c.numbers || c.nums)));
+                    if (Array.isArray(nums) && nums.length === 6) combos.push([...nums].map(Number).sort((a,b) => a - b));
+                });
+            }
         }
     }
     return combos;
@@ -420,7 +419,7 @@ function getCombosWithMetaForRound(roundNum, targetUser, dataSource) {
                 }
             });
 
-            // 개별 회원 스냅샷이 없다면 공통 70조합 추천 스냅샷 조회
+            // 개별 회원 스냅샷이 없다면 공통 30조합 추천 스냅샷 조회
             if (!anyUserSnapFound) {
                 let snap = null;
                 if (typeof window.getUserWeeklyRecommendationSnapshotSync === 'function') {
@@ -439,7 +438,7 @@ function getCombosWithMetaForRound(roundNum, targetUser, dataSource) {
                             combo: c,
                             source: 'recommend',
                             userId: 'ai_engine',
-                            userName: 'AI 추천 70조합',
+                            userName: 'AI 추천 30조합',
                             round: rNum
                         });
                     });

@@ -1248,22 +1248,21 @@ export function findBestRecommendationMatch(userNums, v4Combos = [], v3Combos = 
     const userSorted = [...userNums].sort((a,b) => a - b);
     const userKey = userSorted.join(',');
 
-    // 1. Exact (6/6) match check for Extra Booster Packs / All-Rounder 3
+    // 1. Exact (6/6) match check for All-Rounder 3 (Pack 1)
     if (Array.isArray(extraPacks)) {
         for (const p of extraPacks) {
-            if (!p || !Array.isArray(p.combos)) continue;
+            if (!p || Number(p.packId) !== 1 || !Array.isArray(p.combos)) continue;
             for (let i = 0; i < p.combos.length; i++) {
                 const cNums = p.combos[i].numbers || p.combos[i];
                 if (Array.isArray(cNums) && toKey(cNums) === userKey) {
-                    const isPack1 = (p.packId === 1 || Number(p.packId) === 1 || (p.name && (p.name.includes('올라운더 3') || p.name.includes('빈틈제로'))));
-                    const vName = isPack1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : (p.name || `[${p.shortName}] 추가 팩`);
-                    const lbl = isPack1 ? `올라운더3 #${i + 1}` : `${p.shortName || '추가'} #${i + 1}`;
+                    const vName = '기본 3: 올라운더 팩 3 (빈틈제로 10게임)';
+                    const lbl = `올라운더3 #${i + 1}`;
                     return {
                         matchedVersion: vName,
                         label: lbl,
                         shortLabel: lbl,
                         index: i + 1,
-                        packId: p.packId,
+                        packId: 1,
                         matchCount: 6,
                         isExact: true,
                         isManual: false,
@@ -1346,17 +1345,17 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
 
     const v3Combos = computeAbsoluteTop10Combinations(false, round, 'v3', true, effectiveUserId) || [];
     const v4Combos = computeAbsoluteTop10Combinations(false, round, 'v4', true, effectiveUserId) || [];
-    const extraPacks = [1, 2, 3, 4, 5].map(pId => generateExtraAddonPack(pId, round, effectiveUserId));
+    const pack1 = generateExtraAddonPack(1, round, effectiveUserId);
+    const extraPacks = pack1 ? [pack1] : [];
 
     let v3MatchCount = 0;
     let v4MatchCount = 0;
     let ar3MatchCount = 0;
-    let extraMatchCount = 0;
+    const extraMatchCount = 0;
     let v3ExactCount = 0;
     let v4ExactCount = 0;
     let ar3ExactCount = 0;
-    let extraExactCount = 0;
-    let matchedExtraPackName = '';
+    const extraExactCount = 0;
     const matchDetails = [];
 
     rawCombosList.forEach((item, gIdx) => {
@@ -1375,10 +1374,6 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
             if (match.matchedVersion.includes('올라운더 3') || match.matchedVersion.includes('올라운더3') || match.matchedVersion.includes('기본 3') || (match.label && match.label.includes('올라운더3')) || (match.packId === 1 || Number(match.packId) === 1)) {
                 ar3MatchCount++;
                 if (match.isExact) ar3ExactCount++;
-            } else if (match.matchedVersion.includes('추가')) {
-                extraMatchCount++;
-                if (match.isExact) extraExactCount++;
-                if (!matchedExtraPackName) matchedExtraPackName = match.matchedVersion;
             } else if (match.matchedVersion.includes('올라운더 2') || match.matchedVersion.includes('올라운더2') || match.matchedVersion.includes('기본 2') || match.matchedVersion.includes('수학 퀀트') || match.matchedVersion.includes('수학퀀트') || match.matchedVersion.includes('V3.0')) {
                 v3MatchCount++;
                 if (match.isExact) v3ExactCount++;
@@ -1392,21 +1387,13 @@ export function crossCheckCombosWithRecommendations(round, rawCombosList, target
     let detectedVersion = '수동/직접입력';
     let summaryMessage = '';
 
-    if (ar3MatchCount > 0 && ar3MatchCount >= v4MatchCount && ar3MatchCount >= v3MatchCount && ar3MatchCount >= extraMatchCount) {
+    if (ar3MatchCount > 0 && ar3MatchCount >= v4MatchCount && ar3MatchCount >= v3MatchCount) {
         detectedVersion = '기본 3: 올라운더 팩 3 (10게임)';
         if (ar3ExactCount === rawCombosList.length) {
             summaryMessage = `🛡️ [올라운더 팩 3 자동 감지] 총 ${rawCombosList.length}게임 모두 올라운더 3 (빈틈제로) 추천번호와 100% 일치!`;
         } else {
             const manualCount = matchDetails.filter(m => m.isManual).length;
             summaryMessage = `🛡️ [올라운더 팩 3 감지] 올라운더 3 추천 ${ar3MatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
-        }
-    } else if (extraMatchCount > 0 && extraMatchCount >= v4MatchCount && extraMatchCount >= v3MatchCount) {
-        detectedVersion = matchedExtraPackName || '추가 팩 추천 조합';
-        if (extraExactCount === rawCombosList.length) {
-            summaryMessage = `🚀 [추가 팩 자동 감지] 총 ${rawCombosList.length}게임 모두 [${detectedVersion}] 번호와 100% 일치!`;
-        } else {
-            const manualCount = matchDetails.filter(m => m.isManual).length;
-            summaryMessage = `🚀 [추가 팩 감지] [${detectedVersion}] ${extraMatchCount}게임 일치 / 수동입력 ${manualCount}게임`;
         }
     } else if (v4MatchCount > 0 && v4MatchCount >= v3MatchCount) {
         detectedVersion = '기본 1: 올라운더 팩 (10게임)';
@@ -1465,7 +1452,8 @@ function extractPackFromSnapshot(extraPacks, pId) {
 }
 
 export function generateExtraAddonPack(packIndex = 1, targetRound = null, customUserId = null) {
-    const pIdx = Math.max(1, Math.min(5, parseInt(packIndex, 10) || 1));
+    const pIdx = parseInt(packIndex, 10) || 1;
+    if (pIdx !== 1) return null;
     const curUpcomingRound = targetRound || (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && window.getUpcomingLottoRound ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
     const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
     
@@ -1529,42 +1517,11 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
             tag: (curUpcomingRound >= 1250)
                 ? '올라운더 3 | 결손 반등 앵커 | 핫 모멘텀 휠링 | AC 7+'
                 : '올라운더 3 | 1~45번 100% 완전 커버 | 결손 회귀 앵커 | AC 7+'
-        },
-        2: {
-            name: '추가 2: 슈퍼 잭팟 팩 (10게임)',
-            shortName: '추가 2: 슈퍼 잭팟',
-            badge: 'SUPER JACKPOT',
-            color: '#f59e0b',
-            desc: '25~45번대 고번호 3개 + 2연번 집중으로 1등 당첨 시 1인 독점 수령금 극대화',
-            tag: '초고배당 EV | 2연번 | 2545 고번호 집중'
-        },
-        3: {
-            name: '추가 3: 멀티 히트 팩 (10게임)',
-            shortName: '추가 3: 멀티 히트',
-            badge: 'MULTI-HIT WHEEL',
-            color: '#8b5cf6',
-            desc: '1~15, 16~30, 31~45 3구간 2-2-2 자연 군집 휠링으로 3~5등 다중 복수 적중 방어망 구축',
-            tag: '자연 군집 휠링 | 3구간 2-2-2 균형 | 3·4·5등 다중 적중'
-        },
-        4: {
-            name: '추가 4: 흐름 부스터 팩 (10게임)',
-            shortName: '추가 4: 흐름 부스터',
-            badge: 'FLOW BOOSTER',
-            color: '#06b6d4',
-            desc: '직전 회차 1/2차 마르코프 전이 확률 및 역대 최다 동반 출현 최강 단짝 콤비 집중 타격',
-            tag: '마르코프 전이 모멘텀 | 최다 페어 듀오 | 핫 모멘텀'
-        },
-        5: {
-            name: '추가 5: 트리오 마스터 팩 (10게임)',
-            shortName: '추가 5: 트리오 마스터',
-            badge: 'TRIO MASTER',
-            color: '#ec4899',
-            desc: '역대 1등 추첨 데이터 최다 중복 출현 황금 3수 고정틀(Golden Trios) 기반 연쇄 당첨 마스터 조합',
-            tag: '역대 최다 동시 출현 3수 고정틀 | 연쇄 당첨 폭발력'
         }
     };
 
-    const cfg = packMetas[pIdx];
+    if (pIdx !== 1) return null;
+    const cfg = packMetas[1];
     const generatedCombos = [];
 
     const drawnRounds = Object.keys(state.mergedHistory || {})
@@ -1867,95 +1824,13 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
                             }
                         }
                     }
-
-                } else if (pIdx === 2) {
-                    // ====================================================
-                    // Pack 2: High EV Monopoly (High Numbers 30~45 + 2 Consecutive Pair)
-                    // ====================================================
-                    const highStart = 30 + Math.floor(packRandom() * 14);
-                    candidate.add(highStart);
-                    candidate.add(highStart + 1);
-
-                    const highPool = [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45];
-                    while (candidate.size < 5) {
-                        const n = pickWeightedNumber(highPool, candidate);
-                        if (n) candidate.add(n);
-                        else break;
-                    }
-
-                    while (candidate.size < 6) {
-                        const n = pickWeightedNumber(allNumbers1To45, candidate);
-                        if (n) candidate.add(n);
-                        else candidate.add(Math.floor(packRandom() * 45) + 1);
-                    }
-
-                } else if (pIdx === 3) {
-                    // ====================================================
-                    // Pack 3: Geometric Harmonic 5-Section Balanced Wheeling
-                    // ====================================================
-                    const sec1 = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-                    const sec2 = [10, 11, 12, 13, 14, 15, 16, 17, 18];
-                    const sec3 = [19, 20, 21, 22, 23, 24, 25, 26, 27];
-                    const sec4 = [28, 29, 30, 31, 32, 33, 34, 35, 36];
-                    const sec5 = [37, 38, 39, 40, 41, 42, 43, 44, 45];
-
-                    candidate.add(pickWeightedNumber(sec1, candidate) || sec1[(i + userShift) % sec1.length]);
-                    candidate.add(pickWeightedNumber(sec2, candidate) || sec2[(i + userShift) % sec2.length]);
-                    candidate.add(pickWeightedNumber(sec3, candidate) || sec3[(i + userShift) % sec3.length]);
-                    candidate.add(pickWeightedNumber(sec4, candidate) || sec4[(i + userShift) % sec4.length]);
-                    candidate.add(pickWeightedNumber(sec5, candidate) || sec5[(i + userShift) % sec5.length]);
-
-                    while (candidate.size < 6) {
-                        const picked = pickWeightedNumber(allNumbers1To45, candidate);
-                        if (picked) candidate.add(picked);
-                        else candidate.add(Math.floor(packRandom() * 45) + 1);
-                    }
-
-                } else if (pIdx === 4) {
-                    // ====================================================
-                    // Pack 4: Markov 2nd-Order Transition & Top Pair Matrix
-                    // ====================================================
-                    if (prevDrawNums.length > 0) {
-                        const pNum = prevDrawNums[(i + userShift) % prevDrawNums.length];
-                        candidate.add(pNum);
-
-                        if (state.PAIR_FREQUENCIES && state.PAIR_FREQUENCIES[pNum]) {
-                            const bestPartner = Object.keys(state.PAIR_FREQUENCIES[pNum])
-                                .map(Number)
-                                .sort((a, b) => state.PAIR_FREQUENCIES[pNum][b] - state.PAIR_FREQUENCIES[pNum][a])[0];
-                            if (bestPartner) candidate.add(bestPartner);
-                        }
-                    }
-
-                    while (candidate.size < 6) {
-                        const picked = pickWeightedNumber(allNumbers1To45, candidate);
-                        if (picked) candidate.add(picked);
-                        else candidate.add(Math.floor(packRandom() * 45) + 1);
-                    }
-
-                } else {
-                    // ====================================================
-                    // Pack 5: Golden Clique Key Trios Master All-In
-                    // ====================================================
-                    const goldenTrios = [
-                        [1, 13, 38], [11, 29, 36], [4, 17, 43], [7, 16, 44], [10, 23, 37],
-                        [2, 18, 42], [5, 14, 31], [8, 20, 39], [3, 19, 35], [12, 26, 45]
-                    ];
-                    const trio = goldenTrios[(i + userShift) % goldenTrios.length];
-                    trio.forEach(n => candidate.add(n));
-
-                    while (candidate.size < 6) {
-                        const picked = pickWeightedNumber(allNumbers1To45, candidate);
-                        if (picked) candidate.add(picked);
-                        else candidate.add(Math.floor(packRandom() * 45) + 1);
-                    }
                 }
 
                 if (candidate.size === 6) {
                     const sortedNums = Array.from(candidate).sort((a, b) => a - b);
                     const key = sortedNums.join(',');
                     if (existingComboKeys.has(key) || packGeneratedKeys.has(key)) continue;
-                    if (validateQuantCombo(sortedNums, pIdx)) {
+                    if (validateQuantCombo(sortedNums, 1)) {
                         bestNums = sortedNums;
                         packGeneratedKeys.add(key);
                         break;
@@ -1984,63 +1859,51 @@ export function generateExtraAddonPack(packIndex = 1, targetRound = null, custom
             const ac = calculateACValue(bestNums);
             const sum = bestNums.reduce((a, b) => a + b, 0);
 
-            let metaName, metaLaw, metaTag, metaDesc, metaRankBadge, metaClass;
-            if (pIdx === 1) {
-                metaClass = (i < 4) ? 'top-1-badge' : (i < 7 ? 'top-4-badge' : 'badge-v3-engine');
-                if (i < 4) {
-                    metaRankBadge = `AR3-BAL ${i + 1}`;
-                    metaName = (curUpcomingRound >= 1250) ? `올라운더 3: 결손반등 휠링 #${i + 1}` : `올라운더 3: 빈틈제로 밸런스 #${i + 1}`;
-                    metaLaw = (curUpcomingRound >= 1250) ? '그룹 1: 장기 결손 반등 & 핫 모멘텀 휠링 (게임 1~4)' : '그룹 1: 전수 커버 밸런스 C (게임 1~4)';
-                    metaTag = (curUpcomingRound >= 1250) ? `결손 반등 앵커 | 핫 모멘텀 | AC ${ac}` : `미선택 결손 흡수 | 합계 ${sum} | AC ${ac}`;
-                    metaDesc = (curUpcomingRound >= 1250)
-                        ? '10주 이상 장기 미출현 번호 중 반등 주기 최상위 앵커와 핫 모멘텀 앵커를 결합하여 기댓값과 고액 당첨을 동시에 견인합니다.'
-                        : '기본 20게임(올라운더 1·2)에서 미선택된 번호를 우선 흡수하여 1~45번 100% 완전 커버리지를 완성하는 밸런스 조합입니다.';
-                } else if (i < 7) {
-                    metaRankBadge = `AR3-CLUS ${i - 3}`;
-                    metaName = `올라운더 3: 클러스터 & 소수 #${i - 3}`;
-                    metaLaw = '그룹 2: 클러스터 & 소수 수학 조합 (게임 5~7)';
-                    metaTag = `소수·3의배수 | 핫 앵커 | AC ${ac}`;
-                    metaDesc = '올라운더 1의 수학적 앙상블 기법을 적용하여 소수와 3의 배수, 핫 앵커를 융합한 변동성 방어 조합입니다.';
-                } else {
-                    metaRankBadge = `AR3-CLIQ ${i - 6}`;
-                    metaName = `올라운더 3: 역사적 과적합 C #${i - 6}`;
-                    metaLaw = '그룹 3: 역사적 과적합 클러스터 C (게임 8~10)';
-                    metaTag = `Maximal Clique C | 제3 황금 클러스터`;
-                    metaDesc = '올라운더 1·2의 클리크 세트 A·B와 독립된 제3 황금 클러스터 C를 배치하여 3개 팩 동시 적중 시너지를 극대화합니다.';
-                }
+            const metaClass = (i < 4) ? 'top-1-badge' : (i < 7 ? 'top-4-badge' : 'badge-v3-engine');
+            let metaName, metaLaw, metaTag, metaDesc, metaRankBadge;
+            if (i < 4) {
+                metaRankBadge = `AR3-BAL ${i + 1}`;
+                metaName = (curUpcomingRound >= 1250) ? `올라운더 3: 결손반등 휠링 #${i + 1}` : `올라운더 3: 빈틈제로 밸런스 #${i + 1}`;
+                metaLaw = (curUpcomingRound >= 1250) ? '그룹 1: 장기 결손 반등 & 핫 모멘텀 휠링 (게임 1~4)' : '그룹 1: 전수 커버 밸런스 C (게임 1~4)';
+                metaTag = (curUpcomingRound >= 1250) ? `결손 반등 앵커 | 핫 모멘텀 | AC ${ac}` : `미선택 결손 흡수 | 합계 ${sum} | AC ${ac}`;
+                metaDesc = (curUpcomingRound >= 1250)
+                    ? '10주 이상 장기 미출현 번호 중 반등 주기 최상위 앵커와 핫 모멘텀 앵커를 결합하여 기댓값과 고액 당첨을 동시에 견인합니다.'
+                    : '기본 20게임(올라운더 1·2)에서 미선택된 번호를 우선 흡수하여 1~45번 100% 완전 커버리지를 완성하는 밸런스 조합입니다.';
+            } else if (i < 7) {
+                metaRankBadge = `AR3-CLUS ${i - 3}`;
+                metaName = `올라운더 3: 클러스터 & 소수 #${i - 3}`;
+                metaLaw = '그룹 2: 클러스터 & 소수 수학 조합 (게임 5~7)';
+                metaTag = `소수·3의배수 | 핫 앵커 | AC ${ac}`;
+                metaDesc = '올라운더 1의 수학적 앙상블 기법을 적용하여 소수와 3의 배수, 핫 앵커를 융합한 변동성 방어 조합입니다.';
             } else {
-                metaRankBadge = `추가 ${pIdx}-${i + 1}`;
-                metaClass = `top-${(i % 5) + 1}-badge`;
-                metaName = `${cfg.shortName} 게임 #${i + 1}`;
-                metaLaw = cfg.name;
-                metaTag = `합계 ${sum} | AC ${ac} | ${stats.evScore || 95}pt`;
-                metaDesc = cfg.desc;
+                metaRankBadge = `AR3-CLIQ ${i - 6}`;
+                metaName = `올라운더 3: 역사적 과적합 C #${i - 6}`;
+                metaLaw = '그룹 3: 역사적 과적합 클러스터 C (게임 8~10)';
+                metaTag = `Maximal Clique C | 제3 황금 클러스터`;
+                metaDesc = '올라운더 1·2의 클리크 세트 A·B와 독립된 제3 황금 클러스터 C를 배치하여 3개 팩 동시 적중 시너지를 극대화합니다.';
             }
 
             generatedCombos.push({
-                id: (pIdx === 1) ? `AR3-${i + 1}` : `EXT${pIdx}-${i + 1}`,
-                name: (pIdx === 1) ? `[올라운더 3] ${metaName}` : `${cfg.name} (게임 ${i + 1})`,
+                id: `AR3-${i + 1}`,
+                name: `[올라운더 3] ${metaName}`,
                 numbers: bestNums,
                 stats: stats,
                 meta: {
                     rankBadge: metaRankBadge,
                     rankClass: metaClass,
-                    badgeClass: (pIdx === 1) ? (i < 4 ? `strategy-a` : `strategy-b`) : `strategy-b`,
+                    badgeClass: i < 4 ? `strategy-a` : `strategy-b`,
                     name: metaName,
                     tag: metaTag,
                     desc: metaDesc,
                     lawName: metaLaw,
-                    probRationale: (pIdx === 1) ? metaTag : cfg.tag,
-                    targetBenefit: (pIdx === 1) ? '올라운더 1·2 사각지대 전수 방어망' : cfg.shortName,
+                    probRationale: metaTag,
+                    targetBenefit: '올라운더 1·2 사각지대 전수 방어망',
                     numReasons: bestNums.map(n => {
-                        if (pIdx === 1 && missingNumbers.includes(n)) {
+                        if (missingNumbers.includes(n)) {
                             return `${n}번: 기본 20게임 미선택 결손 회귀 완성수 (100% 전수 커버리지)`;
                         }
-                        if (pIdx === 1 && [3, 11, 20, 28, 36, 41, 6, 14, 21, 27, 34, 43, 9, 15, 22, 32, 38, 45].includes(n)) {
+                        if ([3, 11, 20, 28, 36, 41, 6, 14, 21, 27, 34, 43, 9, 15, 22, 32, 38, 45].includes(n)) {
                             return `${n}번: 제3 황금 클러스터 C 앵커 번호`;
-                        }
-                        if (pIdx === 2 && n >= 25) {
-                            return `${n}번: 25~45번대 고번호 (1등 당첨금 독점 타겟)`;
                         }
                         if (prevDrawNums.includes(n)) {
                             return `${n}번: 직전 회차 이월수 (출현 확률 62% 연속 모멘텀)`;
@@ -2109,11 +1972,12 @@ export function makeLeanSnapshot(snap) {
         for (const p in snap.extraPacks) {
             const pObj = snap.extraPacks[p];
             if (pObj && typeof pObj === 'object') {
-                const isPack1 = (Number(p) === 1 || pObj.packId === 1 || (pObj.name && pObj.name.includes('빈틈제로')));
-                extraPacks[p] = {
-                    packId: pObj.packId ?? p,
-                    name: isPack1 ? (isRound1251Plus ? (pObj.name || '기본 3: 올라운더 팩 3 (16수 초압축 10게임)') : '기본 3: 올라운더 팩 3 (빈틈제로 10게임)') : (pObj.name || `추가팩 ${p}`),
-                    badge: isPack1 ? (isRound1251Plus ? (pObj.badge || 'ALL-ROUNDER 3 (16-POOL WHEEL)') : 'ALL-ROUNDER 3 (ZERO-GAP 100%)') : (pObj.badge || `EXTRA ${p}`),
+                const isPack1 = (Number(p) === 1 || pObj.packId === 1 || (pObj.name && (pObj.name.includes('빈틈제로') || pObj.name.includes('올라운더 3'))));
+                if (!isPack1) continue;
+                extraPacks[1] = {
+                    packId: 1,
+                    name: isRound1251Plus ? (pObj.name || '기본 3: 올라운더 팩 3 (16수 초압축 10게임)') : '기본 3: 올라운더 팩 3 (빈틈제로 10게임)',
+                    badge: isRound1251Plus ? (pObj.badge || 'ALL-ROUNDER 3 (16-POOL WHEEL)') : 'ALL-ROUNDER 3 (ZERO-GAP 100%)',
                     color: pObj.color || '#10b981',
                     is3StageOptimized: pObj.is3StageOptimized !== false,
                     combos: Array.isArray(pObj.combos) ? pObj.combos.map(slimCombo) : []
@@ -2121,6 +1985,10 @@ export function makeLeanSnapshot(snap) {
             }
         }
     }
+
+    const filteredAlgos = Array.isArray(snap.algorithms)
+        ? snap.algorithms.filter(a => a && ['v4', 'v3', 'extra_1'].includes(a.algoId))
+        : [];
 
     return {
         userId: snap.userId,
@@ -2134,12 +2002,12 @@ export function makeLeanSnapshot(snap) {
         is3StageOptimized: snap.is3StageOptimized !== false,
         algoRevision: snap.algoRevision || (isRound1251Plus ? ALGO_REVISION_3B : 'v2026.10_3stage'),
         hashFingerprint: snap.hashFingerprint || '',
-        totalGames: snap.totalGames || 70,
+        totalGames: 30,
         v4Combos: v4,
         v3Combos: v3,
         ar3Combos: (extraPacks[1] && extraPacks[1].combos) ? extraPacks[1].combos : [],
         extraPacks: extraPacks,
-        algorithms: snap.algorithms || []
+        algorithms: filteredAlgos
     };
 }
 
@@ -2178,12 +2046,14 @@ export function hydrateLeanSnapshot(snap) {
     if (snap.extraPacks && typeof snap.extraPacks === 'object') {
         for (const p in snap.extraPacks) {
             const pObj = snap.extraPacks[p];
-            if (pObj && Array.isArray(pObj.combos)) {
-                const isPack1 = (Number(p) === 1 || pObj.packId === 1 || (pObj.name && pObj.name.includes('빈틈제로')));
+            const isPack1 = pObj && (Number(p) === 1 || pObj.packId === 1 || (pObj.name && (pObj.name.includes('빈틈제로') || pObj.name.includes('올라운더 3'))));
+            if (!isPack1) {
+                delete snap.extraPacks[p];
+                continue;
+            }
+            if (Array.isArray(pObj.combos)) {
                 pObj.combos.forEach((c, idx) => {
-                    const defaultName = isPack1 ? `올라운더 3-${idx + 1}` : `${pObj.name || `추가팩 ${p}`}-${idx + 1}`;
-                    const defaultBadge = isPack1 ? `AR3-${idx + 1}` : `EXTRA-${p}-${idx + 1}`;
-                    hydrateCombo(c, defaultName, defaultBadge);
+                    hydrateCombo(c, `올라운더 3-${idx + 1}`, `AR3-${idx + 1}`);
                 });
             }
         }
@@ -2191,6 +2061,10 @@ export function hydrateLeanSnapshot(snap) {
             snap.ar3Combos = snap.extraPacks[1].combos;
         }
     }
+    if (Array.isArray(snap.algorithms)) {
+        snap.algorithms = snap.algorithms.filter(a => a && ['v4', 'v3', 'extra_1'].includes(a.algoId));
+    }
+    snap.totalGames = 30;
     return snap;
 }
 
@@ -2418,14 +2292,14 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
     }
 
     if (!snapshotData) {
-        // 3. Generate fresh 70 combinations once for this round & user
+        // 3. Generate fresh 30 combinations (All-Rounder 1, 2, 3) once for this round & user
         const v4Combos = computeAbsoluteTop10Combinations(false, roundNum, 'v4', true, cleanUser) || [];
         const v3Combos = computeAbsoluteTop10Combinations(false, roundNum, 'v3', true, cleanUser) || [];
         const extraPacks = {};
-        for (let p = 1; p <= 5; p++) {
-            const packObj = generateExtraAddonPack(p, roundNum, cleanUser);
-            extraPacks[p] = {
-                packId: p,
+        const packObj = generateExtraAddonPack(1, roundNum, cleanUser);
+        if (packObj) {
+            extraPacks[1] = {
+                packId: 1,
                 name: packObj.name,
                 badge: packObj.badge,
                 color: packObj.color,
@@ -2434,7 +2308,7 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
             };
         }
 
-        // 🔒 Stage 3: Exact 70-Game Duplicate Elimination & Natural Wheeling Preservation
+        // 🔒 Stage 3: Exact 30-Game Duplicate Elimination & Natural Wheeling Preservation
         const seenKeys = new Set();
         const dedupSeed = getUserRoundSeed(cleanUser, roundNum, 'dedup_70');
         const dedupRng = createDeterministicRng(dedupSeed);
@@ -2478,10 +2352,8 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
 
         ensureUniqueAndNonHistorical(v4Combos);
         ensureUniqueAndNonHistorical(v3Combos);
-        for (let p = 1; p <= 5; p++) {
-            if (extraPacks[p] && extraPacks[p].combos) {
-                ensureUniqueAndNonHistorical(extraPacks[p].combos);
-            }
+        if (extraPacks[1] && extraPacks[1].combos) {
+            ensureUniqueAndNonHistorical(extraPacks[1].combos);
         }
 
         // Retrieve purchaser (user) metadata
@@ -2503,15 +2375,13 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
             { algoId: 'v4', algoName: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#8b5cf6' },
             { algoId: 'v3', algoName: '기본 2: 올라운더 팩 2 (10게임)', badge: 'ALL-ROUNDER 2', color: '#3b82f6' }
         ];
-        for (let p = 1; p <= 5; p++) {
-            if (extraPacks[p]) {
-                algorithmsMetadata.push({
-                    algoId: `extra_${p}`,
-                    algoName: extraPacks[p].name || `추가팩 ${p}`,
-                    badge: extraPacks[p].badge || `EXTRA ${p}`,
-                    color: extraPacks[p].color || '#10b981'
-                });
-            }
+        if (extraPacks[1]) {
+            algorithmsMetadata.push({
+                algoId: 'extra_1',
+                algoName: extraPacks[1].name || '기본 3: 올라운더 팩 3 (10게임)',
+                badge: extraPacks[1].badge || 'ALL-ROUNDER 3',
+                color: extraPacks[1].color || '#10b981'
+            });
         }
 
         // Hash fingerprint for data integrity
@@ -2534,7 +2404,7 @@ export async function saveUserWeeklyRecommendationSnapshot(userId, round, explic
             is3StageOptimized: true,
             algoRevision: (roundNum >= 1251 ? ALGO_REVISION_3B : 'v2026.10_3stage'),
             hashFingerprint: `hash_${Math.abs(hash).toString(16)}`,
-            totalGames: 70,
+            totalGames: 30,
             v4Combos,
             v3Combos,
             extraPacks,
@@ -2721,26 +2591,6 @@ export function getParkJaeGoo1246FrozenSnapshot() {
         [4, 17, 27, 29, 30, 39], [4, 10, 18, 25, 27, 34], [5, 8, 13, 28, 30, 45], [3, 12, 21, 27, 38, 45], [7, 18, 19, 26, 34, 36]
     ].map((nums, idx) => ({ id: 'EXT1-' + (idx + 1), name: '기본 3: 올라운더 팩 3 (10게임) (게임 ' + (idx + 1) + ')', numbers: nums }));
 
-    const ext2 = [
-        [19, 33, 34, 38, 41, 42], [11, 30, 35, 36, 38, 41], [5, 31, 32, 35, 36, 41], [9, 35, 36, 40, 42, 43], [12, 33, 38, 39, 42, 43],
-        [6, 31, 35, 37, 40, 41], [9, 33, 35, 36, 42, 45], [15, 31, 33, 35, 36, 44], [19, 31, 32, 40, 42, 44], [10, 30, 31, 33, 36, 38]
-    ].map((nums, idx) => ({ id: 'EXT2-' + (idx + 1), name: '추가 2: 슈퍼 잭팟 팩 (10게임) (게임 ' + (idx + 1) + ')', numbers: nums }));
-
-    const ext3 = [
-        [5, 17, 18, 25, 34, 42], [8, 13, 14, 24, 28, 45], [7, 12, 21, 32, 39, 44], [8, 15, 20, 21, 34, 40], [3, 10, 14, 27, 34, 37],
-        [3, 10, 26, 30, 38, 41], [4, 15, 21, 23, 34, 37], [9, 13, 16, 20, 29, 45], [1, 15, 22, 35, 43, 44], [6, 11, 19, 31, 35, 40]
-    ].map((nums, idx) => ({ id: 'EXT3-' + (idx + 1), name: '추가 3: 멀티 히트 팩 (10게임) (게임 ' + (idx + 1) + ')', numbers: nums }));
-
-    const ext4 = [
-        [4, 6, 20, 32, 41, 45], [4, 5, 11, 30, 32, 40], [5, 13, 18, 25, 34, 36], [1, 12, 15, 28, 33, 40], [1, 17, 18, 23, 32, 42],
-        [4, 7, 34, 38, 39, 42], [3, 4, 6, 20, 31, 42], [5, 11, 16, 29, 32, 42], [1, 9, 10, 22, 25, 36], [1, 3, 16, 23, 25, 28]
-    ].map((nums, idx) => ({ id: 'EXT4-' + (idx + 1), name: '추가 4: 흐름 부스터 팩 (10게임) (게임 ' + (idx + 1) + ')', numbers: nums }));
-
-    const ext5 = [
-        [1, 4, 13, 18, 38, 43], [6, 10, 11, 27, 29, 36], [4, 17, 20, 39, 40, 43], [3, 7, 16, 24, 30, 44], [6, 10, 23, 29, 37, 40],
-        [2, 3, 18, 21, 29, 42], [2, 5, 14, 25, 26, 31], [8, 16, 20, 30, 33, 39], [3, 19, 33, 35, 42, 44], [12, 16, 26, 28, 37, 45]
-    ].map((nums, idx) => ({ id: 'EXT5-' + (idx + 1), name: '추가 5: 트리오 마스터 팩 (10게임) (게임 ' + (idx + 1) + ')', numbers: nums }));
-
     const baseSnapshot = {
         userId: 'kakao_5070244665',
         realName: '박재구',
@@ -2751,15 +2601,11 @@ export function getParkJaeGoo1246FrozenSnapshot() {
         isLocked: true,
         is3StageOptimized: true,
         algoRevision: 'v2026.10_3stage',
-        totalGames: 70,
+        totalGames: 30,
         v4Combos: v4,
         v3Combos: v3,
         extraPacks: {
-            '1': { packId: 1, name: '기본 3: 올라운더 팩 3 (빈틈제로 10게임)', badge: 'ALL-ROUNDER 3', color: '#10b981', combos: ext1 },
-            '2': { packId: 2, name: '추가 2: 슈퍼 잭팟 팩 (10게임)', badge: 'SUPER JACKPOT', color: '#f59e0b', combos: ext2 },
-            '3': { packId: 3, name: '추가 3: 멀티 히트 팩 (10게임)', badge: 'MULTI-HIT', color: '#8b5cf6', combos: ext3 },
-            '4': { packId: 4, name: '추가 4: 흐름 부스터 팩 (10게임)', badge: 'FLOW BOOSTER', color: '#06b6d4', combos: ext4 },
-            '5': { packId: 5, name: '추가 5: 트리오 마스터 팩 (10게임)', badge: 'TRIO MASTER', color: '#ec4899', combos: ext5 }
+            '1': { packId: 1, name: '기본 3: 올라운더 팩 3 (빈틈제로 10게임)', badge: 'ALL-ROUNDER 3', color: '#10b981', combos: ext1 }
         }
     };
 

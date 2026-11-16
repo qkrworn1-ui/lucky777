@@ -1808,177 +1808,23 @@ export function getEffectiveUserExtraPacks(userId, round) {
     }
     curRound = Number(curRound);
 
-    const packIds = getUserActiveExtraPackIds(effectiveUserId, curRound);
-    return packIds.map(pId => generateExtraAddonPack(pId, curRound, effectiveUserId));
+    const packIds = getUserActiveExtraPackIds(effectiveUserId, curRound).filter(id => Number(id) === 1);
+    const p1 = generateExtraAddonPack(1, curRound, effectiveUserId);
+    return (packIds.length > 0 && p1) ? [p1] : (p1 ? [p1] : []);
 }
 
 /**
- * 🚀 Renders the Extra Add-on Packs Section in the Generator Tab (User-Isolated & Cloud Synced)
+ * 🚀 Renders the Extra Add-on Packs Section (Hidden in All-Rounder 1·2·3 Unified Mode)
  */
 export function renderExtraAddonPacksSection() {
+    const secEl = document.getElementById('extraPacksSection');
+    if (secEl) secEl.style.display = 'none';
     const listEl = document.getElementById('extraPacksList');
     const lblCount = document.getElementById('lblExtraPackCount');
     const headerActions = document.getElementById('extraPacksHeaderActions');
-    if (!listEl) return;
-
-    const effectiveUserId = getEffectiveGeneratorUserId();
-    const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
-        ? window.getUpcomingLottoRound()
-        : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
-
-    // ☁️ Seamless Multi-Device Sync: Fetch from cloud in background once per session
-    if (effectiveUserId !== 'guest' && (!state._extraPacksCloudSynced || !state._extraPacksCloudSynced[`${effectiveUserId}_${curUpcomingRound}`])) {
-        if (!state._extraPacksCloudSynced) state._extraPacksCloudSynced = {};
-        state._extraPacksCloudSynced[`${effectiveUserId}_${curUpcomingRound}`] = true;
-        syncUserActiveExtraPacksFromCloud(effectiveUserId, curUpcomingRound);
-    }
-
-    const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
-        ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
-        : false;
-
-    if (!isEligible) {
-        if (headerActions) headerActions.style.display = 'none';
-        if (lblCount) lblCount.textContent = `🔒 실구매 인증 잠김 (기본 30G 활성)`;
-        listEl.innerHTML = `
-            <div class="extra-packs-locked-banner">
-                <div class="locked-icon-wrap">
-                    <i class="fa-solid fa-lock"></i>
-                </div>
-                <div class="locked-title">
-                    🔒 실구매 인증 회원 전용 [스페셜 추가팩 40게임]
-                </div>
-                <p class="locked-desc">
-                    기본 30게임 코어(올라운더 1 + 2 + 3)는 상시 무료로 열람 가능하며,<br>
-                    <strong style="color: #fbbf24;">스페셜 추가 2~5팩(슈퍼 잭팟, 멀티 히트, 흐름 부스터, 트리오 마스터 등 40게임)</strong>은<br>
-                    <strong>매주 5게임 이상 실구매 영수증(QR)을 등록하신 정회원</strong>님께 무료로 잠금 해제됩니다.
-                </p>
-                <button type="button" onclick="if(window.openManualLedgerModal) { window.openManualLedgerModal(); } else if(window.switchLottoTab) { window.switchLottoTab('tab-confirmed-list'); }" class="btn-locked-qr">
-                    <i class="fa-solid fa-qrcode"></i> 실구매 QR 등록하고 스페셜 4팩(40G) 잠금 해제
-                </button>
-            </div>
-        `;
-        return;
-    }
-
-    if (headerActions) headerActions.style.display = 'flex';
-
-    const packs = getEffectiveUserExtraPacks(effectiveUserId, curUpcomingRound);
-    const packCount = packs.length;
-    const activePackIds = new Set(packs.map(p => p.packId));
-
-    if (lblCount) {
-        lblCount.textContent = `추가 ${packCount} / 5팩 (총 ${packCount * 10}게임)`;
-    }
-
-    // Update Header Pill Buttons State (추가 1 ~ 추가 5)
-    const packColors = { 1: '#10b981', 2: '#f59e0b', 3: '#8b5cf6', 4: '#06b6d4', 5: '#ec4899' };
-    const packNames = { 1: '기본 3: 올라운더 3', 2: '추가 2: 슈퍼잭팟', 3: '추가 3: 멀티히트', 4: '추가 4: 흐름부스터', 5: '추가 5: 트리오마스터' };
-
-    for (let p = 1; p <= 5; p++) {
-        const btn = document.getElementById(`btnQuickPack_${p}`);
-        if (btn) {
-            const isActive = activePackIds.has(p);
-            const pColor = packColors[p];
-            if (isActive) {
-                btn.style.background = `${pColor}35`;
-                btn.style.borderColor = pColor;
-                btn.style.boxShadow = `0 0 10px ${pColor}50`;
-                btn.innerHTML = `<i class="fa-solid fa-circle-check" style="color: #fff;"></i> <span style="color: #fff;">${packNames[p]} [발급됨]</span>`;
-            } else {
-                btn.style.background = `${pColor}15`;
-                btn.style.borderColor = `${pColor}70`;
-                btn.style.boxShadow = 'none';
-                btn.innerHTML = `<i class="fa-solid fa-circle-plus" style="color: ${pColor};"></i> <span>${packNames[p]}</span>`;
-            }
-        }
-    }
-
-    if (packCount === 0) {
-        listEl.innerHTML = `
-            <div class="extra-packs-empty-banner">
-                <i class="fa-solid fa-wand-magic-sparkles"></i>
-                <div class="empty-title">[${effectiveUserId}] 회원에게 발급된 추가팩이 없습니다.</div>
-                <div class="empty-sub">
-                    상단의 <strong style="color: #34d399;">[추가 1~5]</strong> 버튼 중 원하는 전략을 클릭하시거나,<br>
-                    <strong style="color: #fbbf24;">[1~5 전체 생성]</strong> 버튼을 누르시면 [${effectiveUserId}] 회원 고유의 10게임 조합이 즉시 발급됩니다.
-                </div>
-            </div>
-        `;
-        return;
-    }
-
-    listEl.innerHTML = packs.map((pack) => {
-        let purchasedGamesCount = 0;
-        const combosHtml = pack.combos.map((combo, cIdx) => {
-            const nums = combo.numbers;
-            const stats = combo.stats || { evScore: 70, oddEvenRatio: '3:3', sum: 135, acValue: 7 };
-            const ac = stats.acValue !== undefined ? stats.acValue : (combo.meta && combo.meta.targetBenefit && combo.meta.targetBenefit.includes('AC:') ? combo.meta.targetBenefit.split('AC:')[1].split(' ')[0] : '7+');
-            const isPurchased = isComboPurchasedInConfirmedLedger(nums, curUpcomingRound);
-            if (isPurchased) purchasedGamesCount++;
-
-            const purchasedTag = isPurchased ? `
-                <span class="combo-compact-purchased"><i class="fa-solid fa-circle-check"></i> 구매</span>
-            ` : '';
-
-            return `
-                <div class="extra-combo-row ${isPurchased ? 'is-purchased' : ''}">
-                    <div class="extra-combo-left">
-                        <span class="extra-combo-num" style="color: ${pack.color};">#${(cIdx + 1).toString().padStart(2, '0')}</span>
-                        <div class="extra-combo-balls">
-                            ${nums.map(n => `<span class="lotto-ball lotto-ball-xs ${getBallColorClass(n)}" style="color: ${n <= 10 ? '#0f172a' : '#ffffff'};">${n}</span>`).join('')}
-                        </div>
-                        ${purchasedTag}
-                    </div>
-                    <div class="extra-combo-right">
-                        <span class="extra-combo-stat-pill">합 <strong>${stats.sum}</strong></span>
-                        <span class="extra-combo-stat-pill">AC <strong>${ac}</strong></span>
-                        <span class="extra-combo-stat-pill">홀짝 <strong>${stats.oddEvenRatio}</strong></span>
-                        <span class="extra-combo-tag" style="color: ${pack.color};">${(combo.meta && combo.meta.tag) ? combo.meta.tag.split('|')[0].trim() : '퀀트'}</span>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        const packPurchasedBadge = purchasedGamesCount > 0 ? `
-            <span class="extra-pack-purchased-badge">
-                <i class="fa-solid fa-circle-check"></i> ${purchasedGamesCount === pack.combos.length ? '10게임 전수 구매' : `${purchasedGamesCount}G 구매`}
-            </span>
-        ` : '';
-
-        return `
-            <div id="extra-pack-card-${pack.packId}" class="extra-pack-card" style="border-left: 4px solid ${pack.color};">
-                <div class="extra-pack-header-row" onclick="window.toggleExtraPackCollapse && window.toggleExtraPackCollapse(${pack.packId})">
-                    <div class="extra-pack-header-left">
-                        <span class="extra-pack-badge" style="background: ${pack.color}25; border: 1px solid ${pack.color}; color: ${pack.color};">
-                            ${pack.badge}
-                        </span>
-                        <span class="extra-pack-title">
-                            ${pack.name} <span class="extra-pack-count-tag">(10게임)</span>
-                        </span>
-                        ${packPurchasedBadge}
-                        <span class="extra-pack-user-tag">👤 ${effectiveUserId}</span>
-                    </div>
-                    <div class="extra-pack-header-right" onclick="event.stopPropagation()">
-                        <button type="button" onclick="window.toggleExtraPackCollapse && window.toggleExtraPackCollapse(${pack.packId})" class="btn-extra-pack-collapse" id="btnPackCollapse_${pack.packId}" title="팩 목록 접기/펼치기">
-                            <i class="fa-solid fa-chevron-up" id="iconPackCollapse_${pack.packId}"></i>
-                        </button>
-                        <button type="button" onclick="window.handleRemoveSingleExtraPack && window.handleRemoveSingleExtraPack(${pack.packId})" class="btn-extra-pack-delete" title="이 팩 삭제">
-                            <i class="fa-solid fa-xmark"></i> 삭제
-                        </button>
-                    </div>
-                </div>
-
-                <div class="extra-pack-desc">
-                    💡 <strong>상호보완 설계:</strong> ${pack.desc}
-                </div>
-
-                <div class="extra-combos-container" id="extraPackBody-${pack.packId}">
-                    ${combosHtml}
-                </div>
-            </div>
-        `;
-    }).join('');
+    if (headerActions) headerActions.style.display = 'none';
+    if (lblCount) lblCount.textContent = '올라운더 1·2·3 (30G)';
+    if (listEl) listEl.innerHTML = '';
 }
 
 export function toggleExtraPackCollapse(packId) {
@@ -2002,55 +1848,16 @@ if (typeof window !== 'undefined') {
  * Handle Toggle or Generate a Specific Extra Pack (1 to 5) (User-Isolated)
  */
 export async function handleToggleSpecificExtraPack(packId) {
-    const pIdx = parseInt(packId);
-    if (isNaN(pIdx) || pIdx < 1 || pIdx > 5) return;
+    const pIdx = parseInt(packId, 10);
+    if (pIdx !== 1) return;
 
     const effectiveUserId = getEffectiveGeneratorUserId();
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
-    const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
-        ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
-        : false;
-
-    if (!isEligible) {
-        alert('🔒 [실구매 인증 회원 전용 혜택]\n\n추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 무료로 제공됩니다.\n\n이번 주 실구매 영수증을 등록하고 즉시 열람해 보세요!');
-        if (typeof window.switchLottoTab === 'function') window.switchLottoTab('tab-confirmed-list');
-        return;
-    }
-
-    let activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
-
-    if (activePackIds.includes(pIdx)) {
-        // Scroll smoothly to the existing card
-        const cardEl = document.getElementById(`extra-pack-card-${pIdx}`);
-        if (cardEl) {
-            cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            cardEl.style.transform = 'scale(1.02)';
-            cardEl.style.borderColor = '#fbbf24';
-            setTimeout(() => {
-                cardEl.style.transform = 'none';
-                renderExtraAddonPacksSection();
-            }, 1200);
-        }
-        showToast(`💡 [추가 ${pIdx}] 팩이 이미 발급되어 있습니다.`);
-        return;
-    }
-
-    activePackIds.push(pIdx);
-    activePackIds.sort((a, b) => a - b);
-    saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, activePackIds);
-    renderExtraAddonPacksSection();
-
-    // Scroll to the newly generated card
-    setTimeout(() => {
-        const cardEl = document.getElementById(`extra-pack-card-${pIdx}`);
-        if (cardEl) cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }, 100);
-
-    const packObj = generateExtraAddonPack(pIdx, curUpcomingRound, effectiveUserId);
-    showToast(`🎉 [${effectiveUserId}] 님의 [${packObj.shortName}] 10게임 팩이 고유 발급되었습니다!`);
+    saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [1]);
+    if (typeof selectGeneratorAlgo === 'function') selectGeneratorAlgo('extra1');
 }
 
 /**
@@ -2080,28 +1887,17 @@ export function handleRemoveSingleExtraPack(packId) {
 export function handleGenerateAllExtraPacks() {
     const effectiveUserId = getEffectiveGeneratorUserId();
     if (typeof isUserSuspended === 'function' && isUserSuspended(effectiveUserId)) {
-        alert('🚫 [계정 이용 정지]\n\n회원님의 계정은 현재 이용 정지 상태입니다.\n추가팩 발급이 제한됩니다.\n관리자에게 문의해주세요.');
+        alert('🚫 [계정 이용 정지]\n\n회원님의 계정은 현재 이용 정지 상태입니다.\n번호 발급이 제한됩니다.\n관리자에게 문의해주세요.');
         return;
     }
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
-    const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
-        ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
-        : false;
-
-    if (!isEligible) {
-        alert('🔒 [실구매 인증 회원 전용 혜택]\n\n추가 5팩(50게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 무료로 제공됩니다.\n\n이번 주 실구매 영수증을 등록하고 즉시 열람해 보세요!');
-        if (typeof window.switchLottoTab === 'function') window.switchLottoTab('tab-confirmed-list');
-        return;
-    }
-
-    const allPacks = [1, 2, 3, 4, 5];
-    saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, allPacks);
-    renderExtraAddonPacksSection();
-
-    showToast(`🎉 [${effectiveUserId}] 님의 추가팩 1~5 전체 (총 50게임)가 일괄 발급되었습니다!`);
+    saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [1]);
+    renderTop5Combinations(true);
+    updateTop7AlgoUI();
+    showToast(`🎉 [${effectiveUserId}] 님의 올라운더 1·2·3 (총 30게임)이 활성화되었습니다!`);
 }
 
 /**
@@ -2113,16 +1909,8 @@ export async function handleAddExtraPack() {
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : (state.latestRoundNum ? state.latestRoundNum + 1 : 1244));
 
-    const activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
-    if (activePackIds.length >= 5) {
-        alert('추가 팩은 최대 5개(총 50게임)까지 생성 가능합니다.');
-        return;
-    }
-
-    const availablePacks = [1, 2, 3, 4, 5].filter(p => !activePackIds.includes(p));
-    if (availablePacks.length === 0) return;
-
-    handleToggleSpecificExtraPack(availablePacks[0]);
+    saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [1]);
+    if (typeof selectGeneratorAlgo === 'function') selectGeneratorAlgo('extra1');
 }
 
 /**
@@ -2355,8 +2143,8 @@ export async function applyTop3AlgoStarBadges(targetUserId = null) {
             return (b.totalWins || 0) - (a.totalWins || 0);
         });
 
-        // 7대 알고리즘 목록 정의
-        const ALL_ALGO_IDS = ['v4', 'v3', 'extra1', 'extra2', 'extra3', 'extra4', 'extra5'];
+        // 3대 올라운더 알고리즘 목록 정의
+        const ALL_ALGO_IDS = ['v4', 'v3', 'extra1'];
 
         // Top 3 매핑 (rank: 1, 2, 3)
         const top3Map = new Map();
@@ -2501,13 +2289,13 @@ export function updateTop7AlgoUI() {
                 statusBanner.className = 'purchase-status-banner verified';
                 if (isViewerAdmin && cleanEffUser !== cleanAuth && cleanEffUser !== 'master' && cleanEffUser !== 'admin') {
                     const targetRealName = (typeof getUserRealName === 'function' ? getUserRealName(effectiveUserId) : '') || effectiveUserId;
-                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 관리자 조회 모드 - 실구매 면제]</strong> [제 ${curUpcomingRound}회차] <strong>[${targetRealName}]</strong> 회원의 7대 퀀트 알고리즘 70게임 전수가 활성화되어 있습니다.`;
+                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 관리자 조회 모드 - 실구매 면제]</strong> [제 ${curUpcomingRound}회차] <strong>[${targetRealName}]</strong> 회원의 3대 올라운더 30게임 전수가 활성화되어 있습니다.`;
                 } else if (isViewerAdmin || isTargetAdmin || cleanEffUser === 'master' || cleanEffUser === 'admin' || cleanAuth === 'master' || cleanAuth === 'admin') {
-                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 최고관리자 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
+                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-crown" style="color:#fbbf24;"></i> [👑 최고관리자 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 3대 올라운더 30게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
                 } else if (isTargetPermanent) {
-                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-gem" style="color:#60a5fa;"></i> [💎 영구회원 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 7대 퀀트 알고리즘 70게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
+                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-gem" style="color:#60a5fa;"></i> [💎 영구회원 실구매 면제]</strong> [제 ${curUpcomingRound}회차] 3대 올라운더 30게임 전수 상시 무료 이용이 활성화되어 있습니다.`;
                 } else {
-                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> [제 ${curUpcomingRound}회차] 실구매 인증 완료!</strong> 7대 퀀트 알고리즘 70게임 전수 무료 이용이 활성화되어 있습니다.`;
+                    txtStatus.innerHTML = `<strong><i class="fa-solid fa-circle-check" style="color:#10b981;"></i> [제 ${curUpcomingRound}회차] 실구매 인증 완료!</strong> 올라운더 1·2·3 (30게임) 및 AI 시뮬레이터가 활성화되어 있습니다.`;
                 }
                 if (btnStatusBanner) {
                     btnStatusBanner.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
@@ -2518,12 +2306,12 @@ export function updateTop7AlgoUI() {
             } else {
                 statusBanner.className = 'purchase-status-banner unverified';
                 const countMsg = (confirmedGameCount > 0) ? ` (${confirmedGameCount}/5게임 등록)` : '';
-                txtStatus.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> [제 ${curUpcomingRound}회차] 실구매 미등록${countMsg}</strong> 매주 5게임 이상 실구매 영수증(QR) 등록 시 7대 알고리즘(스페셜 추가 40게임)이 즉시 무료 잠금 해제됩니다!`;
+                txtStatus.innerHTML = `<strong><i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i> [제 ${curUpcomingRound}회차] 실구매 미등록${countMsg}</strong> 올라운더 1·2·3 (30게임)은 상시 무료! 5게임 실구매 등록 시 AI 시뮬레이터가 무료 활성화됩니다.`;
                 if (btnStatusBanner) {
                     btnStatusBanner.style.background = 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)';
                     btnStatusBanner.style.color = '#0f172a';
                     btnStatusBanner.style.boxShadow = '0 2px 8px rgba(245, 158, 11, 0.35)';
-                    btnStatusBanner.innerHTML = '<i class="fa-solid fa-qrcode"></i> 실구매 영수증(5게임) 등록하고 스페셜 40게임 잠금해제';
+                    btnStatusBanner.innerHTML = '<i class="fa-solid fa-qrcode"></i> 실구매 영수증(5게임) 등록하기';
                 }
             }
         }
@@ -2576,35 +2364,7 @@ export function updateTop7AlgoUI() {
             }
         }
 
-        // 3. Update Extra Packs 2~5 Cards State (실구매 혜택 40G)
-        const activePackIds = getUserActiveExtraPackIds(effectiveUserId, curUpcomingRound);
-        const activeSet = new Set(activePackIds);
-
-        for (let p = 2; p <= 5; p++) {
-            const card = document.getElementById(`topAlgoCard_extra${p}`);
-            const badge = document.getElementById(`topAlgoBadge_extra${p}`);
-            if (card && badge) {
-                if (!isEligible) {
-                    card.classList.remove('active');
-                    card.classList.add('locked');
-                    badge.className = 'algo-status-badge locked';
-                    badge.innerHTML = '<i class="fa-solid fa-lock"></i> <span>실구매 혜택</span>';
-                } else {
-                    card.classList.remove('locked');
-                    if (activeSet.has(p)) {
-                        card.classList.add('active');
-                        badge.className = 'algo-status-badge unlocked';
-                        badge.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>발급됨 (10G)</span>';
-                    } else {
-                        card.classList.remove('active');
-                        badge.className = 'algo-status-badge';
-                        badge.innerHTML = '<i class="fa-solid fa-circle-plus"></i> <span>발급받기</span>';
-                    }
-                }
-            }
-        }
-
-        // 4. 회원별 실제 추천번호 당첨 이력 기반 적중률 TOP 3 알고리즘 별표시 UI 적용
+        // 3. 회원별 실제 추천번호 당첨 이력 기반 적중률 TOP 3 알고리즘 별표시 UI 적용
         applyTop3AlgoStarBadges(effectiveUserId).catch(e => console.warn('[applyTop3AlgoStarBadges error]', e));
     } catch (e) {
         console.warn('[updateTop7AlgoUI error]', e);
@@ -2693,29 +2453,9 @@ export async function selectGeneratorAlgo(algoId) {
         return;
     }
 
-    // Extra Packs (extra2 ~ extra5)
+    // Extra Packs (extra2 ~ extra5 removed; keep only All-Rounder 1, 2, 3)
     if (algoId.startsWith('extra')) {
-        const packNum = parseInt(algoId.replace('extra', ''));
-        const curUpcomingRound = (typeof getUpcomingLottoRound === 'function' ? getUpcomingLottoRound() : (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function' ? window.getUpcomingLottoRound() : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : 1243)));
-
-        const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
-            ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
-            : false;
-
-        if (!isEligible) {
-            const wantConfirm = confirm('🔒 [실구매 인증 회원 전용 혜택]\n\n추가 2~5팩(총 40게임)은 매주 5게임 이상 실구매 영수증(QR)을 등록하신 회원님께 100% 무료로 제공됩니다.\n\n(기본 30게임(올라운더 1+2+3)은 상시 무료 제공됩니다.)\n\n지금 실구매 영수증(QR)을 등록하고 추가 40게임을 즉시 잠금 해제하시겠습니까?');
-            if (wantConfirm) {
-                if (typeof window.openManualLedgerModal === 'function') {
-                    window.openManualLedgerModal();
-                } else if (typeof window.switchLottoTab === 'function') {
-                    window.switchLottoTab('tab-confirmed-list');
-                }
-            }
-            return;
-        }
-
-        await handleToggleSpecificExtraPack(packNum);
-        updateTop7AlgoUI();
+        return;
     }
 }
 
@@ -2761,32 +2501,12 @@ export async function handleGenerateAll70Games() {
         saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [...curActive, 1]);
     }
 
-    const isEligible = (typeof window.isUserEligibleForExtraPacks === 'function')
-        ? window.isUserEligibleForExtraPacks(effectiveUserId, curUpcomingRound)
-        : false;
-
-    if (isEligible) {
-        // 2. Compute Extra 1~5 (50 Games) -> Total 70 Games
-        saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [1, 2, 3, 4, 5]);
-        renderTop5Combinations(true);
-        renderExtraAddonPacksSection();
-        updateTop7AlgoUI();
-        showToast(existingSnap 
-            ? `🔒 제${curUpcomingRound}회 확정 불변 70게임(기본 30G + 추가 40G)이 유지되었습니다!` 
-            : `🎉 7대 퀀트 알고리즘 70게임(기본 30G + 추가 40G) 전수가 생성되어 불변 저장되었습니다!`);
-    } else {
-        // Only 1 is active (core 30G = AR1 + AR2 + AR3)
-        saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [1]);
-        renderTop5Combinations(true);
-        renderExtraAddonPacksSection();
-        updateTop7AlgoUI();
-        const wantRegister = confirm(`⚡ 기본 30게임(올라운더 1 + 올라운더 2 + 올라운더 3)이 ${existingSnap ? '확정 유지되었습니다' : '성공적으로 생성되었습니다'}!\n\n추가 4팩(40게임)을 잠금 해제하시려면 이번 주 5게임 실구매 영수증(QR)을 등록해주세요.\n\n실구매 영수증(QR)을 지금 등록하시겠습니까?`);
-        if (wantRegister) {
-            if (typeof window.openManualLedgerModal === 'function') {
-                window.openManualLedgerModal();
-            } else if (typeof window.switchLottoTab === 'function') {
-                window.switchLottoTab('tab-confirmed-list');
-            }
-        }
-    }
+    // Ensure core Pack 1 (AR3) is active (Total 30 Games)
+    saveUserActiveExtraPackIds(effectiveUserId, curUpcomingRound, [1]);
+    renderTop5Combinations(true);
+    renderExtraAddonPacksSection();
+    updateTop7AlgoUI();
+    showToast(existingSnap
+        ? `🔒 제${curUpcomingRound}회 확정 불변 30게임(올라운더 1+2+3)이 유지되었습니다!`
+        : `🎉 3대 올라운더 알고리즘 30게임(올라운더 1+2+3) 전수가 생성되어 불변 저장되었습니다!`);
 }

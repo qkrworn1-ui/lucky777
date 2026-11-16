@@ -317,9 +317,9 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
                 totalPreJoinIsolatedCount++;
             } else if (snap) {
                 recStatus = 'locked';
-                recGames = snap.totalGames || 70;
+                recGames = snap.totalGames || 30;
                 recModified = snap.updatedAt || snap.createdAt || snap.generatedAt || user.docUpdateTime;
-                recAlgoDesc = '올라운더 1·2·3(30G) + 스페셜(40G)';
+                recAlgoDesc = '올라운더 1·2·3 (30G)';
                 
                 // Aggregate combos
                 recCombos = snap.combos || [];
@@ -328,15 +328,15 @@ export async function fetchSnapshotAuditData(forceRefresh = false) {
                     const v3 = snap.v3Combos || [];
                     let extra = [];
                     if (snap.extraPacks) {
-                        const packValues = Array.isArray(snap.extraPacks) ? snap.extraPacks : Object.values(snap.extraPacks);
-                        packValues.forEach(pv => {
-                            if (pv && Array.isArray(pv.combos)) extra.push(...pv.combos);
-                            else if (Array.isArray(pv)) extra.push(...pv);
-                        });
+                        const p1 = Array.isArray(snap.extraPacks)
+                            ? snap.extraPacks.find(p => p && Number(p.packId) === 1)
+                            : (snap.extraPacks[1] || snap.extraPacks['1']);
+                        if (p1 && Array.isArray(p1.combos)) extra.push(...p1.combos);
+                        else if (Array.isArray(p1)) extra.push(...p1);
                     }
                     recCombos = [...v4, ...v3, ...extra];
                 }
-                if (recCombos.length === 0 && recGames === 70) recGames = 70;
+                if (recCombos.length === 0 && recGames === 30) recGames = 30;
 
                 totalRecSnapshotsCount++;
                 totalRecGamesCount += (recCombos.length > 0 ? recCombos.length : recGames);
@@ -660,7 +660,7 @@ export async function renderSnapshotAuditView(forceRefresh = false) {
                             <span style="background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); padding: 2px 7px; border-radius: 5px; font-size: 0.72rem; font-weight: 800;">
                                 <i class="fa-solid fa-lock"></i> 고정완료 (${row.recGames}게임)
                             </span>
-                            <span style="color: #94a3b8; font-size: 0.7rem;">7대 알고리즘</span>
+                            <span style="color: #94a3b8; font-size: 0.7rem;">3대 올라운더</span>
                         </div>
                         <div style="color: #cbd5e1; font-size: 0.71rem;">수정일: <span style="color: #93c5fd;">${formatAuditDateTime(row.recModified)}</span></div>
                         ${prizeTag}
@@ -1005,7 +1005,7 @@ export async function runSnapshotIntegrityDiagnostic() {
 - 전체 등록 회원: ${auditData.kpi.totalUsers}명
 - 검사 대상 회차: ${auditData.rounds.length}개 회차 (${Math.min(...auditData.rounds)}~${Math.max(...auditData.rounds)}회)
 ----------------------------------------
-✅ 70게임 추천번호 스냅샷 고정: ${lockedOk}건 (100% 불변성 확보)
+✅ 30게임 추천번호 스냅샷 고정: ${lockedOk}건 (100% 불변성 확보)
 ✅ 가입일 이전 회차 엄격 격리: ${prejoinOk}건 (0게임 차단 정상)
 🧾 실구매 확정 영수증: ${auditData.kpi.totalReceipts}장 (${auditData.kpi.totalReceiptGames}게임)
 💰 실구매 누적 당첨금: ${auditData.kpi.totalReceiptPrize.toLocaleString()}원

@@ -49,20 +49,18 @@ export function generateAccumulatedWinsHistory() {
 }
 
 /**
- * Get current simulation settings (7 Algorithms independently selectable: V4, V3, Extra 1~5)
+ * Get current simulation settings (3 All-Rounder Algorithms independently selectable: V4, V3, AR3)
  */
 export function getSelectedSimulationConfig() {
     const chkSimV3 = document.getElementById('chkSimIncludeV3');
     const chkSimV4 = document.getElementById('chkSimIncludeV4');
+    const chkSimE1 = document.getElementById('chkSimExtraPack1');
     
     const includeV3 = chkSimV3 ? chkSimV3.checked : false;
     const includeV4 = chkSimV4 ? chkSimV4.checked : false;
     
     const selectedExtraPacks = [];
-    for (let p = 1; p <= 5; p++) {
-        const chk = document.getElementById(`chkSimExtraPack${p}`);
-        if (chk && chk.checked) selectedExtraPacks.push(p);
-    }
+    if (chkSimE1 && chkSimE1.checked) selectedExtraPacks.push(1);
     
     const selectedCount = (includeV4 ? 1 : 0) + (includeV3 ? 1 : 0) + selectedExtraPacks.length;
     const hasSelection = selectedCount > 0;
@@ -71,18 +69,15 @@ export function getSelectedSimulationConfig() {
 }
 
 /**
- * Select/Deselect all 7 simulation algorithm checkboxes
+ * Select/Deselect all 3 All-Rounder simulation algorithm checkboxes
  */
 export function selectAllSimAlgos(checked = true) {
     const chkSimV3 = document.getElementById('chkSimIncludeV3');
     const chkSimV4 = document.getElementById('chkSimIncludeV4');
+    const chkSimE1 = document.getElementById('chkSimExtraPack1');
     if (chkSimV3) chkSimV3.checked = checked;
     if (chkSimV4) chkSimV4.checked = checked;
-    
-    for (let p = 1; p <= 5; p++) {
-        const chk = document.getElementById(`chkSimExtraPack${p}`);
-        if (chk) chk.checked = checked;
-    }
+    if (chkSimE1) chkSimE1.checked = checked;
     
     const sel = document.getElementById('simRoundSelector');
     const targetRound = sel && sel.value ? parseInt(sel.value) : null;
@@ -111,18 +106,16 @@ export function getSingleUserCombosForRound(round, cfg, userId, userName = null)
             combos.push(clone);
         });
     }
-    const extraPackNames = { 1: '올라운더3: 빈틈제로', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
-    cfg.selectedExtraPacks.forEach(pIdx => {
-        const extraPack = generateExtraAddonPack(pIdx, round, userId);
+    const extraPackNames = { 1: '올라운더3' };
+    cfg.selectedExtraPacks.filter(pIdx => Number(pIdx) === 1).forEach(pIdx => {
+        const extraPack = generateExtraAddonPack(1, round, userId);
         if (extraPack && Array.isArray(extraPack.combos)) {
             extraPack.combos.forEach(c => {
                 const clone = { ...c, meta: { ...(c.meta || {}) } };
                 if (userName) clone.meta.ownerName = userName;
-                clone.algoId = `extra_${pIdx}`;
-                clone.packIdx = pIdx;
-                clone.algoName = pIdx === 1
-                    ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)'
-                    : `추가${pIdx}: ${extraPackNames[pIdx] || (extraPack && extraPack.name) || `추가팩 #${pIdx}`}`;
+                clone.algoId = 'extra_1';
+                clone.packIdx = 1;
+                clone.algoName = extraPack.name || '기본 3: 올라운더 팩 3 (10게임)';
                 combos.push(clone);
             });
         }
@@ -374,7 +367,7 @@ export function renderSimulationTab(targetRound = null) {
     const totalDraws = maxR;
     const totalCombosEvaluated = totalDraws * evaluatedGamesPerRound;
 
-    const packNames = { 1: '올라운더3', 2: '슈퍼잭팟', 3: '멀티히트', 4: '흐름부스터', 5: '트리오마스터' };
+    const packNames = { 1: '올라운더3' };
     const engineParts = [];
     if (cfg.includeV4) engineParts.push('올라운더(10G)');
     if (cfg.includeV3) engineParts.push('올라운더2(10G)');
@@ -543,7 +536,7 @@ export function renderAccumulatedWins(rankFilter) {
                 <strong>백테스팅 실행 대기 중</strong><br>
                 <span>
                     아직 백테스팅이 실행되지 않았습니다.<br>
-                    상단의 <strong style="color: #fbbf24;">[1~${maxR}회 리얼 백테스팅 시작]</strong> 버튼을 누르시면 과거 전 회차 실제 당첨번호와 7대 알고리즘의 진짜 적중 실적이 1:1로 집계됩니다.
+                    상단의 <strong style="color: #fbbf24;">[1~${maxR}회 리얼 백테스팅 시작]</strong> 버튼을 누르시면 과거 전 회차 실제 당첨번호와 3대 올라운더 알고리즘의 진짜 적중 실적이 1:1로 집계됩니다.
                 </span>
             </div>
         `;
@@ -687,12 +680,6 @@ export function detectComboAlgoId(combo) {
     if (clean.includes('올라운더 3') || clean.includes('올라운더3') || clean.includes('올라운더 팩 3') || clean.includes('ar3') || clean.includes('빈틈제로') || clean.includes('추가1')) return 'extra_1';
     if (clean.includes('3.0') || clean.includes('올라운더 팩 2') || clean.includes('올라운더 2')) return 'v3';
     if (clean.includes('4.0') || (clean.includes('올라운더') && !clean.includes('2') && !clean.includes('3') && !clean.includes('팩 2') && !clean.includes('팩 3'))) return 'v4';
-    if (clean.includes('슈퍼잭팟') || clean.includes('추가2') || clean.includes('스페셜 2')) return 'extra_2';
-    if (clean.includes('멀티히트') || clean.includes('추가3') || clean.includes('스페셜 3') || (clean.includes('팩 3') && !clean.includes('올라운더'))) return 'extra_3';
-    if (clean.includes('흐름부스터') || clean.includes('추가4') || clean.includes('스페셜 4')) return 'extra_4';
-    if (clean.includes('트리오마스터') || clean.includes('추가5') || clean.includes('스페셜 5')) return 'extra_5';
-    if (combo && combo.packIdx) return `extra_${combo.packIdx}`;
-    if (combo && combo.packId) return `extra_${combo.packId}`;
     return 'v4';
 }
 
@@ -788,7 +775,7 @@ export function renderAlgorithmPrizeTotals() {
         const selectedNames = [];
         if (cfg.includeV4) selectedNames.push('올라운더 팩(10G)');
         if (cfg.includeV3) selectedNames.push('올라운더 팩 2(10G)');
-        const packNames = { 1: '기본3: 올라운더3(10G)', 2: '추가2: 슈퍼잭팟(10G)', 3: '추가3: 멀티히트(10G)', 4: '추가4: 흐름부스터(10G)', 5: '추가5: 트리오마스터(10G)' };
+        const packNames = { 1: '기본3: 올라운더3(10G)' };
         cfg.selectedExtraPacks.forEach(p => {
             if (packNames[p]) selectedNames.push(packNames[p]);
         });
@@ -856,7 +843,7 @@ export function renderAlgorithmPrizeTotals() {
         },
         {
             id: 'extra_1',
-            name: '기본 3: 올라운더 팩 3 (빈틈제로 100% 커버)',
+            name: '기본 3: 올라운더 팩 3 (10게임)',
             shortName: '기본3: 올라운더3',
             packType: '기본 코어 #3',
             icon: 'fa-shield-halved',
@@ -865,54 +852,6 @@ export function renderAlgorithmPrizeTotals() {
             badgeBorder: 'rgba(16, 185, 129, 0.5)',
             order: 3,
             isSelected: cfg.selectedExtraPacks.includes(1)
-        },
-        {
-            id: 'extra_2',
-            name: '추가2: 슈퍼잭팟 (콜드넘버 반등)',
-            shortName: '추가2: 슈퍼잭팟',
-            packType: '애드온 팩 #2',
-            icon: 'fa-sack-dollar',
-            color: '#818cf8',
-            badgeBg: 'rgba(129, 140, 248, 0.2)',
-            badgeBorder: 'rgba(129, 140, 248, 0.5)',
-            order: 4,
-            isSelected: cfg.selectedExtraPacks.includes(2)
-        },
-        {
-            id: 'extra_3',
-            name: '추가3: 멀티히트 (연번/동끝수)',
-            shortName: '추가3: 멀티히트',
-            packType: '애드온 팩 #3',
-            icon: 'fa-dharmachakra',
-            color: '#f472b6',
-            badgeBg: 'rgba(244, 114, 182, 0.2)',
-            badgeBorder: 'rgba(244, 114, 182, 0.5)',
-            order: 5,
-            isSelected: cfg.selectedExtraPacks.includes(3)
-        },
-        {
-            id: 'extra_4',
-            name: '추가4: 흐름부스터 (홀짝/고저 균형)',
-            shortName: '추가4: 흐름부스터',
-            packType: '애드온 팩 #4',
-            icon: 'fa-bolt',
-            color: '#fb923c',
-            badgeBg: 'rgba(251, 146, 60, 0.2)',
-            badgeBorder: 'rgba(251, 146, 60, 0.5)',
-            order: 6,
-            isSelected: cfg.selectedExtraPacks.includes(4)
-        },
-        {
-            id: 'extra_5',
-            name: '추가5: 트리오마스터 (합계구간 집중)',
-            shortName: '추가5: 트리오마스터',
-            packType: '애드온 팩 #5',
-            icon: 'fa-crown',
-            color: '#c084fc',
-            badgeBg: 'rgba(192, 132, 252, 0.2)',
-            badgeBorder: 'rgba(192, 132, 252, 0.5)',
-            order: 7,
-            isSelected: cfg.selectedExtraPacks.includes(5)
         }
     ];
 
@@ -1619,10 +1558,8 @@ export function setupSimulationEvents() {
     if (chkSimV3) chkSimV3.addEventListener('change', handleConfigChange);
     if (chkSimV4) chkSimV4.addEventListener('change', handleConfigChange);
 
-    for (let p = 1; p <= 5; p++) {
-        const chk = document.getElementById(`chkSimExtraPack${p}`);
-        if (chk) chk.addEventListener('change', handleConfigChange);
-    }
+    const chkSimE1 = document.getElementById('chkSimExtraPack1');
+    if (chkSimE1) chkSimE1.addEventListener('change', handleConfigChange);
 }
 
 export function openSlimRoundPickerForSimulation() {

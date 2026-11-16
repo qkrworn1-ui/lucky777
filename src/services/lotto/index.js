@@ -378,7 +378,7 @@ export async function initLottoService(force = false) {
         if (stateDoc) {
             if (stateDoc.aiState) state.aiState = stateDoc.aiState;
             if (!stateDoc.round || stateDoc.round === upcomingRound) {
-                if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks;
+                if (Array.isArray(stateDoc.extraPacks)) state.extraPacks = stateDoc.extraPacks.filter(p => p && Number(p.packId) === 1);
             } else {
                 state.fixedTop5Combinations = [];
                 state.fixedTop5Combinations_v3 = [];
@@ -395,7 +395,8 @@ export async function initLottoService(force = false) {
         try {
             const localPacks = localStorage.getItem('lotto_extra_packs');
             if (localPacks && (!state.extraPacks || state.extraPacks.length === 0)) {
-                state.extraPacks = JSON.parse(localPacks);
+                const parsed = JSON.parse(localPacks);
+                state.extraPacks = Array.isArray(parsed) ? parsed.filter(p => p && Number(p.packId) === 1) : [];
             }
         } catch(e) {}
 
@@ -414,7 +415,7 @@ export async function initLottoService(force = false) {
                     let changed = false;
                     if (data.aiState) state.aiState = data.aiState;
                     if (Array.isArray(data.extraPacks)) {
-                        state.extraPacks = data.extraPacks;
+                        state.extraPacks = data.extraPacks.filter(p => p && Number(p.packId) === 1);
                         changed = true;
                     }
 

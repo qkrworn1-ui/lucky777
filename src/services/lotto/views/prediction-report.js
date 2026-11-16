@@ -217,7 +217,7 @@ export function generatePredictionReport() {
             <div style="background: rgba(59, 130, 246, 0.12); border: 1px solid rgba(59, 130, 246, 0.35); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px;">
                 <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;">
                     <strong style="color: #60a5fa; font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-shield-halved"></i> [복기 데이터 벤치마크] 시스템 누적 7대 알고리즘 당첨망 가동
+                        <i class="fa-solid fa-shield-halved"></i> [복기 데이터 벤치마크] 시스템 누적 3대 올라운더 알고리즘 당첨망 가동
                     </strong>
                     <span style="font-size: 0.72rem; color: #93c5fd; background: rgba(59,130,246,0.2); padding: 1px 6px; border-radius: 4px; font-weight: 700;">
                         1235회~최신 전수 연동

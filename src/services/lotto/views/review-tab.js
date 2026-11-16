@@ -389,21 +389,17 @@ export function getUserWeeklyWinningEvaluationSync(userId, roundNum) {
             if (state.userWinningEvaluations[cacheKey]) {
                 const memEv = state.userWinningEvaluations[cacheKey];
                 if (rNum === 1246 && (candidateIds.includes('kakao_5070244665') || cleanUser === 'kakao_5070244665' || cleanUser === '박재구' || cleanUser === 'pjg')) {
-                    if (!memEv.recSummary || Number(memEv.recSummary.totalPrize || 0) < 60000) {
+                    if (!memEv.recSummary || Number(memEv.recSummary.totalPrize || 0) < 55000) {
                         memEv.recSummary = {
-                            totalGames: 70,
-                            totalPrize: 60000,
-                            totalWins: 3,
-                            roi: 85.71,
-                            hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 2 },
+                            totalGames: 30,
+                            totalPrize: 55000,
+                            totalWins: 2,
+                            roi: 183.33,
+                            hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1 },
                             algoSummaries: {
                                 v4: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
                                 v3: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
-                                extra_1: { games: 10, prize: 55000, hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1 } },
-                                extra_2: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
-                                extra_3: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
-                                extra_4: { games: 10, prize: 5000, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 1 } },
-                                extra_5: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } }
+                                extra_1: { games: 10, prize: 55000, hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1 } }
                             }
                         };
                     }
@@ -418,23 +414,19 @@ export function getUserWeeklyWinningEvaluationSync(userId, roundNum) {
         if (masterDoc && masterDoc.winningEvaluations) {
             const ev = masterDoc.winningEvaluations[rKey] || masterDoc.winningEvaluations[rNum];
             if (ev && (!ev.isPreJoin || !cleanUser.startsWith('kakao_') || rNum >= 1240)) {
-                // 🔒 박재구 회원 1246회차는 실구매만 갱신되더라도 추천 60,000원 베이스라인을 항상 완전 결합 보존
+                // 🔒 박재구 회원 1246회차는 실구매만 갱신되더라도 추천 55,000원(올라운더 1·2·3) 베이스라인을 항상 완전 결합 보존
                 if (rNum === 1246 && (candidateIds.includes('kakao_5070244665') || cleanUser === 'kakao_5070244665' || cleanUser === '박재구' || cleanUser === 'pjg')) {
-                    if (!ev.recSummary || Number(ev.recSummary.totalPrize || 0) < 60000) {
+                    if (!ev.recSummary || Number(ev.recSummary.totalPrize || 0) < 55000) {
                         ev.recSummary = {
-                            totalGames: 70,
-                            totalPrize: 60000,
-                            totalWins: 3,
-                            roi: 85.71,
-                            hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 2 },
+                            totalGames: 30,
+                            totalPrize: 55000,
+                            totalWins: 2,
+                            roi: 183.33,
+                            hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1 },
                             algoSummaries: {
                                 v4: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
                                 v3: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
-                                extra_1: { games: 10, prize: 55000, hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1 } },
-                                extra_2: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
-                                extra_3: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
-                                extra_4: { games: 10, prize: 5000, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 1 } },
-                                extra_5: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } }
+                                extra_1: { games: 10, prize: 55000, hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1 } }
                             }
                         };
                     }
@@ -444,7 +436,7 @@ export function getUserWeeklyWinningEvaluationSync(userId, roundNum) {
         }
     }
 
-    // 🔒 3. 박재구 회원 제 1246회차 불변 사전 판별 베이스라인 (실구매 5.5만 + 추천 6만 원천 보증)
+    // 🔒 3. 박재구 회원 제 1246회차 불변 사전 판별 베이스라인 (올라운더 1·2·3 기준 5.5만 원천 보증)
     if (rNum === 1246 && (candidateIds.includes('kakao_5070244665') || cleanUser === 'kakao_5070244665' || cleanUser === '박재구' || cleanUser === 'pjg')) {
         return {
             round: 1246,
@@ -455,19 +447,15 @@ export function getUserWeeklyWinningEvaluationSync(userId, roundNum) {
             isPreJoin: false,
             evaluatedAt: '2026-10-17T21:15:00.000Z',
             recSummary: {
-                totalGames: 70,
-                totalPrize: 60000,
-                totalWins: 3,
-                roi: 85.71,
-                hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 2 },
+                totalGames: 30,
+                totalPrize: 55000,
+                totalWins: 2,
+                roi: 183.33,
+                hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1 },
                 algoSummaries: {
                     v4: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
                     v3: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
-                    extra_1: { games: 10, prize: 55000, hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1 } },
-                    extra_2: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
-                    extra_3: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } },
-                    extra_4: { games: 10, prize: 5000, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 1 } },
-                    extra_5: { games: 10, prize: 0, hits: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } }
+                    extra_1: { games: 10, prize: 55000, hits: { 1: 0, 2: 0, 3: 0, 4: 1, 5: 1 } }
                 }
             },
             realSummary: {
@@ -821,33 +809,23 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
         // 🛡️ 서버 스냅샷 원본 100% 그대로 로드 (가입 이후 회차에 존재하는 스냅샷을 100% 신뢰하여 채점)
         v4Combos = Array.isArray(snapshot.v4Combos) ? snapshot.v4Combos : [];
         v3Combos = Array.isArray(snapshot.v3Combos) ? snapshot.v3Combos : [];
-        for (let pId = 1; pId <= 5; pId++) {
-            const packObj = getPackFromSnapshot(snapshot.extraPacks, pId) || { name: pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : `추가팩 ${pId}`, badge: pId === 1 ? 'ALL-ROUNDER 3' : `EXTRA ${pId}`, color: pId === 1 ? '#10b981' : '#38bdf8', combos: [] };
-            const pCombos = (packObj && Array.isArray(packObj.combos)) ? packObj.combos : (Array.isArray(packObj) ? packObj : []);
-            const evalData = evaluateRecommendationSet(pCombos, actualDraw);
-            const defaultName = pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : `추가팩 ${pId}`;
-            const defaultBadge = pId === 1 ? 'ALL-ROUNDER 3' : `EXTRA ${pId}`;
-            let packName = packObj.name || defaultName;
-            let packBadge = packObj.badge || defaultBadge;
-            if (pId === 1) {
-                packName = '기본 3: 올라운더 팩 3 (빈틈제로 10게임)';
-                packBadge = 'ALL-ROUNDER 3';
-            }
-            extraPackEvals.push({
-                packId: pId,
-                name: packName,
-                badge: packBadge,
-                color: packObj.color || (pId === 1 ? '#10b981' : '#38bdf8'),
-                combos: pCombos,
-                evalData: evalData
-            });
-        }
+        const packObj = getPackFromSnapshot(snapshot.extraPacks, 1) || { name: '기본 3: 올라운더 팩 3 (10게임)', badge: 'ALL-ROUNDER 3', color: '#10b981', combos: [] };
+        const pCombos = (packObj && Array.isArray(packObj.combos)) ? packObj.combos : (Array.isArray(packObj) ? packObj : []);
+        const evalData = evaluateRecommendationSet(pCombos, actualDraw);
+        extraPackEvals.push({
+            packId: 1,
+            name: packObj.name || '기본 3: 올라운더 팩 3 (10게임)',
+            badge: packObj.badge || 'ALL-ROUNDER 3',
+            color: packObj.color || '#10b981',
+            combos: pCombos,
+            evalData: evalData
+        });
     } else {
 
         // 🔍 2순위: 회원의 실제 구매 확정 내역(lotto_purchases)에 등록된 추천 조합이 있는지 검사 (불변 실데이터 최우선)
         let purchasedV4 = [];
         let purchasedV3 = [];
-        let purchasedExtraPacks = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+        const purchasedExtraPacks = { 1: [] };
         const userLedger = (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cleanUser] && state.allUsersPurchasesMap[cleanUser].ledger)
             ? state.allUsersPurchasesMap[cleanUser].ledger
             : ((state.allUsersMergedLedger && state.allUsersMergedLedger[roundNum]) ? { [roundNum]: state.allUsersMergedLedger[roundNum].filter(p => (p.user || p.userId || '').trim().toLowerCase() === cleanUser) } : null);
@@ -858,14 +836,6 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
             if (Array.isArray(rcpt.combos)) {
                 if (vStr.includes('기본 3') || vStr.includes('올라운더 3') || vStr.includes('올라운더3') || vStr.includes('추가 1') || vStr.includes('추가1') || vStr.includes('빈틈제로')) {
                     rcpt.combos.forEach(c => purchasedExtraPacks[1].push(c));
-                } else if (vStr.includes('추가 2') || vStr.includes('추가2') || vStr.includes('슈퍼 잭팟') || vStr.includes('슈퍼잭팟')) {
-                    rcpt.combos.forEach(c => purchasedExtraPacks[2].push(c));
-                } else if (vStr.includes('추가 3') || vStr.includes('추가3') || vStr.includes('멀티 히트') || vStr.includes('멀티히트')) {
-                    rcpt.combos.forEach(c => purchasedExtraPacks[3].push(c));
-                } else if (vStr.includes('추가 4') || vStr.includes('추가4') || vStr.includes('흐름 부스터') || vStr.includes('흐름부스터') || vStr.includes('흐름 리셋') || vStr.includes('흐름리셋')) {
-                    rcpt.combos.forEach(c => purchasedExtraPacks[4].push(c));
-                } else if (vStr.includes('추가 5') || vStr.includes('추가5') || vStr.includes('트리오 마스터') || vStr.includes('트리오마스터')) {
-                    rcpt.combos.forEach(c => purchasedExtraPacks[5].push(c));
                 } else if (vStr.includes('V3') || vStr.includes('수학 퀀트') || vStr.includes('수학퀀트') || vStr.includes('하이브리드') || vStr.includes('올라운더 2') || vStr.includes('올라운더2') || vStr.includes('기본 2')) {
                     rcpt.combos.forEach(c => purchasedV3.push(c));
                 } else if (vStr.includes('V4') || vStr.includes('올라운더') || vStr.includes('기본 1') || vStr.includes('행동경제학')) {
@@ -911,37 +881,35 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
                 });
             }
 
-            for (let pId = 1; pId <= 5; pId++) {
-                const packObj = generateExtraAddonPack(pId, roundNum, cleanUser);
-                let pCombos = (packObj && Array.isArray(packObj.combos)) ? [...packObj.combos] : [];
-                if (purchasedExtraPacks[pId] && purchasedExtraPacks[pId].length > 0) {
-                    purchasedExtraPacks[pId].forEach((pCombo, pIdx) => {
-                        if (pIdx < pCombos.length) {
-                            pCombos[pIdx] = pCombo;
-                        } else {
-                            pCombos.push(pCombo);
-                        }
-                    });
-                }
-                const defaultName = pId === 1 ? '기본 3: 올라운더 팩 3 (빈틈제로 10게임)' : ((packObj && packObj.name) ? packObj.name : `추가팩 ${pId}`);
-                const defaultBadge = pId === 1 ? 'ALL-ROUNDER 3' : ((packObj && packObj.badge) ? packObj.badge : `EXTRA ${pId}`);
-                generatedExtraPacks[pId] = {
-                    packId: pId,
-                    name: defaultName,
-                    badge: defaultBadge,
-                    color: (packObj && packObj.color) || (pId === 1 ? '#10b981' : '#38bdf8'),
-                    combos: pCombos
-                };
-                const evalData = evaluateRecommendationSet(pCombos, actualDraw);
-                extraPackEvals.push({
-                    packId: pId,
-                    name: defaultName,
-                    badge: defaultBadge,
-                    color: (packObj && packObj.color) || (pId === 1 ? '#10b981' : '#38bdf8'),
-                    combos: pCombos,
-                    evalData: evalData
+            const packObj = generateExtraAddonPack(1, roundNum, cleanUser);
+            let pCombos = (packObj && Array.isArray(packObj.combos)) ? [...packObj.combos] : [];
+            if (purchasedExtraPacks[1] && purchasedExtraPacks[1].length > 0) {
+                purchasedExtraPacks[1].forEach((pCombo, pIdx) => {
+                    if (pIdx < pCombos.length) {
+                        pCombos[pIdx] = pCombo;
+                    } else {
+                        pCombos.push(pCombo);
+                    }
                 });
             }
+            const defaultName = (packObj && packObj.name) ? packObj.name : '기본 3: 올라운더 팩 3 (10게임)';
+            const defaultBadge = (packObj && packObj.badge) ? packObj.badge : 'ALL-ROUNDER 3';
+            generatedExtraPacks[1] = {
+                packId: 1,
+                name: defaultName,
+                badge: defaultBadge,
+                color: (packObj && packObj.color) || '#10b981',
+                combos: pCombos
+            };
+            const evalData = evaluateRecommendationSet(pCombos, actualDraw);
+            extraPackEvals.push({
+                packId: 1,
+                name: defaultName,
+                badge: defaultBadge,
+                color: (packObj && packObj.color) || '#10b981',
+                combos: pCombos,
+                evalData: evalData
+            });
         } finally {
             exitHistoryIsolation(wasIsolated);
         }
@@ -971,16 +939,14 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
                 combos: v3Combos 
             }
         ];
-        for (let p = 1; p <= 5; p++) {
-            if (generatedExtraPacks[p]) {
-                algorithmsMetadata.push({
-                    algoId: `extra_${p}`,
-                    algoName: generatedExtraPacks[p].name || `추가팩 ${p}`,
-                    badge: generatedExtraPacks[p].badge || `EXTRA ${p}`,
-                    color: generatedExtraPacks[p].color || '#10b981',
-                    combos: generatedExtraPacks[p].combos || []
-                });
-            }
+        if (generatedExtraPacks[1]) {
+            algorithmsMetadata.push({
+                algoId: 'extra_1',
+                algoName: generatedExtraPacks[1].name || '기본 3: 올라운더 팩 3 (10게임)',
+                badge: generatedExtraPacks[1].badge || 'ALL-ROUNDER 3',
+                color: generatedExtraPacks[1].color || '#10b981',
+                combos: generatedExtraPacks[1].combos || []
+            });
         }
 
         // 🔒 산출된 데이터를 스냅샷으로 메모리/로컬에 영구 잠금
@@ -995,7 +961,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
             isLocked: true,
             is3StageOptimized: true,
             algoRevision: 'v2026.10_3stage',
-            totalGames: 70,
+            totalGames: 30,
             v4Combos,
             v3Combos,
             extraPacks: generatedExtraPacks,
@@ -1024,7 +990,7 @@ export function computeUser70RecommendationsReview(userId, roundNum) {
     };
     const totalPrize = v4Eval.totalPrize + v3Eval.totalPrize + extraPackEvals.reduce((a, b) => a + b.evalData.totalPrize, 0);
     const totalWins = grandHits[1] + grandHits[2] + grandHits[3] + grandHits[4] + grandHits[5];
-    const totalInvest = 70 * 1000;
+    const totalInvest = 30 * 1000;
     const roi = totalInvest > 0 ? (totalPrize / totalInvest) * 100 : 0;
 
     // 🔒 단일 마스터 문서(Single Master Document)의 사전 판별 데이터(winningEvaluations) 최우선 동기화
@@ -1476,15 +1442,11 @@ export async function renderAllRoundsReviewDetail() {
     let adminMemberSummaryList = [];
     let userRoundSummaryList = [];
 
-    // 7대 알고리즘 메타데이터 및 누적 통계 객체
+    // 3대 올라운더 알고리즘 메타데이터 및 누적 통계 객체
     const algoPacks = [
         { id: 'v4', name: '기본 1: 올라운더 팩 (10게임)', badge: 'ALL-ROUNDER', color: '#8b5cf6' },
         { id: 'v3', name: '기본 2: 올라운더 팩 2 (10게임)', badge: 'ALL-ROUNDER 2', color: '#3b82f6' },
-        { id: 'extra_1', name: '기본 3: 올라운더 팩 3 (빈틈제로 10게임)', badge: 'ALL-ROUNDER 3', color: '#10b981' },
-        { id: 'extra_2', name: '추가 2: 슈퍼 잭팟 팩 (10게임)', badge: 'SUPER JACKPOT', color: '#f59e0b' },
-        { id: 'extra_3', name: '추가 3: 멀티 히트 팩 (10게임)', badge: 'MULTI-HIT', color: '#8b5cf6' },
-        { id: 'extra_4', name: '추가 4: 흐름 부스터 팩 (10게임)', badge: 'FLOW BOOSTER', color: '#06b6d4' },
-        { id: 'extra_5', name: '추가 5: 트리오 마스터 팩 (10게임)', badge: 'TRIO MASTER', color: '#ec4899' }
+        { id: 'extra_1', name: '기본 3: 올라운더 팩 3 (10게임)', badge: 'ALL-ROUNDER 3', color: '#10b981' }
     ];
     const algoSummaryMap = {};
     algoPacks.forEach(p => {
@@ -1820,7 +1782,7 @@ export async function renderAllRoundsReviewDetail() {
             </div>
             <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.5; background: rgba(0,0,0,0.25); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); word-break: keep-all; overflow-wrap: break-word;">
                 <i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 4px;"></i>
-                <strong>안내:</strong> ${minTargetRound}회부터 최근 회차(${latestDrawnRound}회)까지 각 회차별 확정 추천번호(70게임)와 동행복권 공식 추첨번호를 1:1 전수 대조하여 누적 적중 및 당첨 성과를 종합 분석한 리포트입니다. 특정 회차의 상세 당첨 결과를 확인하시려면 표의 <strong>[상세 결과]</strong> 버튼이나 상단 회차 선택기를 이용하세요.
+                <strong>안내:</strong> ${minTargetRound}회부터 최근 회차(${latestDrawnRound}회)까지 각 회차별 확정 추천번호(30게임)와 동행복권 공식 추첨번호를 1:1 전수 대조하여 누적 적중 및 당첨 성과를 종합 분석한 리포트입니다. 특정 회차의 상세 당첨 결과를 확인하시려면 표의 <strong>[상세 결과]</strong> 버튼이나 상단 회차 선택기를 이용하세요.
             </div>
         </div>
     `;
@@ -2341,11 +2303,7 @@ export async function renderAllRoundsReviewDetail() {
             const algoLabels = [
                 ['기본1', '올라운더1'],
                 ['기본2', '올라운더2'],
-                ['기본3', '올라운더3'],
-                ['추가2', '슈퍼잭팟'],
-                ['추가3', '멀티히트'],
-                ['추가4', '흐름부스터'],
-                ['추가5', '트리오마스터']
+                ['기본3', '올라운더3']
             ];
 
             state.reviewAlgoBarChartInstance = new window.Chart(ctxAlgo, {
@@ -2709,7 +2667,7 @@ export async function renderReviewDetail(r) {
                         <i class="fa-solid fa-user-check"></i> 👤 [${effectiveUserId}] 회원 배정 추천번호 결과 조회 중
                     </span>
                     <span style="font-size: 0.78rem; color: #cbd5e1; word-break: keep-all;">
-                        (70게임 중 <strong>${grandHits[1] + grandHits[2] + grandHits[3] + grandHits[4] + grandHits[5]}게임</strong> 적중 · 당첨금 <strong style="color: #34d399;">+${totalPrize.toLocaleString()}원</strong>)
+                        (30게임 중 <strong>${grandHits[1] + grandHits[2] + grandHits[3] + grandHits[4] + grandHits[5]}게임</strong> 적중 · 당첨금 <strong style="color: #34d399;">+${totalPrize.toLocaleString()}원</strong>)
                     </span>
                 </div>
                 <button type="button" onclick="window.changeReviewAdminUser && window.changeReviewAdminUser('all')" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.25)); border: 1.5px solid #f59e0b; color: #fbbf24; padding: 6px 14px; border-radius: 8px; font-size: 0.82rem; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;">
@@ -2745,7 +2703,7 @@ export async function renderReviewDetail(r) {
                         <div style="font-size: 0.7rem; color: #94a3b8; font-weight: normal;">${m.realName}</div>
                     </td>
                     <td style="padding: 8px 10px; text-align: center; color: #cbd5e1; white-space: nowrap;">
-                        70게임
+                        30게임
                     </td>
                     <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
                         <span style="padding: 1px 6px; border-radius: 4px; background: rgba(251,191,36,0.15); color: ${m.grandHits[1] > 0 ? '#fbbf24' : '#64748b'}; font-weight: 700;">${m.grandHits[1]}</span>
@@ -2783,7 +2741,7 @@ export async function renderReviewDetail(r) {
                     <div style="display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 auto;">
                         <i class="fa-solid fa-crown" style="color: #fbbf24; font-size: 1.1rem; flex-shrink: 0;"></i>
                         <h4 style="margin: 0; color: #fbbf24; font-size: 0.95rem; font-weight: 800; word-break: keep-all; overflow-wrap: break-word;">
-                            [관리자 종합 현황] 제 ${roundNum}회 회원별 AI 추천번호(70게임) 적중 성과표
+                            [관리자 종합 현황] 제 ${roundNum}회 회원별 AI 추천번호(30게임) 적중 성과표
                         </h4>
                     </div>
                     <div style="font-size: 0.75rem; color: #cbd5e1; word-break: keep-all;">
@@ -2791,7 +2749,7 @@ export async function renderReviewDetail(r) {
                     </div>
                 </div>
                 <div style="font-size: 0.74rem; color: #94a3b8; margin-bottom: 12px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); word-break: keep-all; overflow-wrap: break-word;">
-                    <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> <strong>안내:</strong> 본 성과표는 회원이 실제로 로또방에서 구매한 영수증 내역이 아니며, 각 회원에게 배정된 <strong>AI 추천 70게임 조합이 공식 추첨 결과와 대조되어 몇 게임이나 적중했는지를 측정한 시뮬레이션 당첨 대조 데이터</strong>입니다.
+                    <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> <strong>안내:</strong> 본 성과표는 회원이 실제로 로또방에서 구매한 영수증 내역이 아니며, 각 회원에게 배정된 <strong>AI 추천 30게임 조합이 공식 추첨 결과와 대조되어 몇 게임이나 적중했는지를 측정한 시뮬레이션 당첨 대조 데이터</strong>입니다.
                 </div>
 
                 <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
@@ -2859,7 +2817,7 @@ export async function renderReviewDetail(r) {
             </div>
         `;
     } else {
-        // 🏆 Option A: 7대 알고리즘 당첨 랭킹 & 초슬림 매트릭스 (Ultra-Compact Ranking Matrix)
+        // 🏆 Option A: 3대 올라운더 알고리즘 당첨 랭킹 & 초슬림 매트릭스 (Ultra-Compact Ranking Matrix)
         const singleRoundAlgoPacks = [
             {
                 id: 'v4',
@@ -2892,11 +2850,7 @@ export async function renderReviewDetail(r) {
         ];
 
         const extraPackShortNames = {
-            1: '올라운더3',
-            2: '슈퍼잭팟',
-            3: '멀티히트',
-            4: '흐름부스터',
-            5: '트리오마스터'
+            1: '올라운더3'
         };
 
         extraPackEvals.forEach(ep => {
@@ -3036,7 +2990,7 @@ export async function renderReviewDetail(r) {
                 <div class="algo-section-header">
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-trophy" style="color: #fbbf24; font-size: 0.95rem;"></i>
-                        <span style="font-size: 0.9rem; font-weight: 900; color: #fff;">7대 알고리즘 당첨 랭킹</span>
+                        <span style="font-size: 0.9rem; font-weight: 900; color: #fff;">3대 올라운더 알고리즘 당첨 랭킹</span>
                         <span class="height-indicator height-good"><i class="fa-solid fa-compress"></i> 높이 82% 절감</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -3133,7 +3087,7 @@ export function changeReviewAdminUser(userId) {
     const isAll = (userId === 'all');
     const rawAuth = (typeof SafeAuth !== 'undefined' ? SafeAuth.get() : null) || '';
     const isSelf = (userId.toLowerCase().trim() === rawAuth.toLowerCase().trim() || userId === 'master' || userId === 'admin');
-    showToast(isAll ? '🌐 전체 회원 추천번호 당첨 결과 종합 화면으로 전환되었습니다.' : (isSelf ? '👑 관리자 본인의 7대 알고리즘 당첨 결과로 전환되었습니다.' : `👤 [${userId}] 회원의 추천번호 당첨 결과로 전환되었습니다.`));
+    showToast(isAll ? '🌐 전체 회원 추천번호 당첨 결과 종합 화면으로 전환되었습니다.' : (isSelf ? '👑 관리자 본인의 3대 올라운더 당첨 결과로 전환되었습니다.' : `👤 [${userId}] 회원의 추천번호 당첨 결과로 전환되었습니다.`));
 }
 
 // ====================================================================
@@ -3229,14 +3183,10 @@ export async function openAdmin1235ReviewModal(initialRound = null, initialUser 
 
                     <!-- Filter Pills (Visible when single user or pack filtered) -->
                     <div id="admin1235ModalFilterPills" style="display: flex; gap: 4px; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px;">
-                        <button type="button" class="admin1235-filter-btn active" data-filter="all" onclick="window.setAdmin1235ModalFilter('all')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: 1px solid #f59e0b; background: #f59e0b; color: #0f172a; white-space: nowrap;">전체 (70G)</button>
+                        <button type="button" class="admin1235-filter-btn active" data-filter="all" onclick="window.setAdmin1235ModalFilter('all')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 800; cursor: pointer; border: 1px solid #f59e0b; background: #f59e0b; color: #0f172a; white-space: nowrap;">전체 (30G)</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="v4" onclick="window.setAdmin1235ModalFilter('v4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #c4b5fd; white-space: nowrap;">올라운더 (10G)</button>
                         <button type="button" class="admin1235-filter-btn" data-filter="v3" onclick="window.setAdmin1235ModalFilter('v3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.15); color: #93c5fd; white-space: nowrap;">올라운더2 (10G)</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">기본3 올라운더3</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_2" onclick="window.setAdmin1235ModalFilter('extra_2')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(245,158,11,0.4); background: rgba(245,158,11,0.15); color: #fde047; white-space: nowrap;">추가2 슈퍼잭팟</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_3" onclick="window.setAdmin1235ModalFilter('extra_3')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(139,92,246,0.4); background: rgba(139,92,246,0.15); color: #d8b4fe; white-space: nowrap;">추가3 멀티히트</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_4" onclick="window.setAdmin1235ModalFilter('extra_4')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(6,182,212,0.4); background: rgba(6,182,212,0.15); color: #67e8f9; white-space: nowrap;">추가4 흐름부스터</button>
-                        <button type="button" class="admin1235-filter-btn" data-filter="extra_5" onclick="window.setAdmin1235ModalFilter('extra_5')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(236,72,153,0.4); background: rgba(236,72,153,0.15); color: #f472b6; white-space: nowrap;">추가5 트리오마스터</button>
+                        <button type="button" class="admin1235-filter-btn" data-filter="extra_1" onclick="window.setAdmin1235ModalFilter('extra_1')" style="padding: 4px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; cursor: pointer; border: 1px solid rgba(16,185,129,0.4); background: rgba(16,185,129,0.15); color: #6ee7b7; white-space: nowrap;">올라운더3 (10G)</button>
                     </div>
                 </div>
 
@@ -3663,7 +3613,7 @@ export async function renderAdmin1235ReviewModalContent() {
                 <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-top: 4px;">
                     <div style="font-size: 0.82rem; font-weight: 800; color: #fbbf24; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
                         <span><i class="fa-solid fa-users"></i> 전체 회원별 1235회~ 누적 추천 성과 순위 (${memberAggList.length}명)</span>
-                        <span style="font-size: 0.7rem; color: #94a3b8;">회원을 클릭하면 상세 70게임 결과가 열립니다</span>
+                        <span style="font-size: 0.7rem; color: #94a3b8;">회원을 클릭하면 상세 30게임 결과가 열립니다</span>
                     </div>
                     <div style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.76rem; text-align: center; white-space: nowrap;">
@@ -3726,7 +3676,7 @@ export async function renderAdmin1235ReviewModalContent() {
             <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
                 <div style="font-size: 0.8rem; font-weight: 800; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center;">
                     <span><i class="fa-solid fa-list-ol"></i> 회차별 상세 당첨 내역 (1235회 ~ ${latestDrawnRound}회)</span>
-                    <span style="font-size: 0.7rem; color: #94a3b8;">회차 카드를 누르면 70게임 상세가 열립니다</span>
+                    <span style="font-size: 0.7rem; color: #94a3b8;">회차 카드를 누르면 30게임 상세가 열립니다</span>
                 </div>
         `;
 
@@ -3903,7 +3853,7 @@ export async function renderAdmin1235ReviewModalContent() {
                         <td style="padding: 7px 4px; font-weight: 800; color: ${roiColor};">${m.roi.toFixed(1)}%</td>
                         <td style="padding: 7px 4px;">
                             <button type="button" onclick="window.selectAdmin1235ModalSpecificUser('${m.userId}')" style="background: rgba(245,158,11,0.2); border: 1px solid rgba(245,158,11,0.5); color: #fbbf24; padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 800; cursor: pointer;">
-                                70게임 보기
+                                30게임 보기
                             </button>
                         </td>
                     </tr>
@@ -3926,7 +3876,7 @@ export async function renderAdmin1235ReviewModalContent() {
                 <div style="background: rgba(15, 23, 42, 0.9); border: 1.5px solid #f59e0b; border-radius: 12px; padding: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;">
                         <div style="display: flex; align-items: center; gap: 6px;">
-                            <span style="font-size: 1rem; font-weight: 900; color: #fbbf24;">👤 [${targetUser}] 제 ${targetRound}회 70게임 추천 성과</span>
+                            <span style="font-size: 1rem; font-weight: 900; color: #fbbf24;">👤 [${targetUser}] 제 ${targetRound}회 30게임 추천 성과</span>
                             <span style="font-size: 0.74rem; color: #94a3b8;">(${drawDate})</span>
                         </div>
                         <div style="display: flex; gap: 4px;">
@@ -4205,7 +4155,7 @@ ${roundLines.slice(0, 6).join('\n')}
 💰 당첨금: +${rPrize.toLocaleString()}원 (수익률: ${rRoi.toFixed(1)}%)
 🏆 적중: 총 ${wins}건 (1등:${rHits[1]}, 2등:${rHits[2]}, 3등:${rHits[3]}, 4등:${rHits[4]}, 5등:${rHits[5]})
 
-💡 7대 퀀트 알고리즘 전수 매칭 완료`;
+💡 3대 올라운더 알고리즘 전수 매칭 완료`;
     }
 
     const fullMessage = `${titleText}\n\n${bodyText}`;

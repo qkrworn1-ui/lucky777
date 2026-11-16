@@ -93,6 +93,18 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                 const g1251Old = window.isRound1251UpgradePending({ algoRevision: 'v2026.10_3stage' }, 1251, 'master');
                 const g1251New = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel' }, 1251, 'master');
 
+                const p2Null = window.generateExtraAddonPack(2, 1251, 'master');
+                const p3Null = window.generateExtraAddonPack(3, 1251, 'master');
+                const p4Null = window.generateExtraAddonPack(4, 1251, 'master');
+                const p5Null = window.generateExtraAddonPack(5, 1251, 'master');
+                const manualCross = window.crossCheckCombosWithRecommendations(1246, [[19, 33, 34, 38, 41, 42]], 'kakao_5070244665');
+                const lean = window.makeLeanSnapshot({
+                    userId: 'master', round: 1251, v4Combos: v4_1251, v3Combos: v3_1251, totalGames: 70,
+                    extraPacks: { '1': ar3_1251, '2': { packId: 2, combos: [[1,2,3,4,5,6]] } }
+                });
+                const hydrated = window.hydrateLeanSnapshot(JSON.parse(JSON.stringify(lean)));
+                const frozen = window.getParkJaeGoo1246FrozenSnapshot();
+
                 window.state.mergedHistory[1251] = { numbers: [2, 9, 14, 31, 35, 45], bonus: 22 };
                 window.applyNewDrawData({ drwNo: 1251, numbers: [2, 9, 14, 31, 35, 45], bonus: 22 });
                 const pool1252 = new Set(window.computeAbsoluteTop10Combinations(false, 1252, 'v4', true, 'master').flatMap(c => c.numbers));
@@ -105,6 +117,13 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                     g1250,
                     g1251Old,
                     g1251New,
+                    extra25Null: p2Null === null && p3Null === null && p4Null === null && p5Null === null,
+                    manualDetected: manualCross && manualCross.detectedVersion === '수동/직접입력',
+                    leanTotalGames: lean.totalGames,
+                    leanKeys: Object.keys(lean.extraPacks),
+                    hydratedKeys: Object.keys(hydrated.extraPacks),
+                    frozenTotalGames: frozen.totalGames,
+                    frozenKeys: Object.keys(frozen.extraPacks),
                     afterScrapeLatest: window.state.latestRoundNum,
                     pool1252Valid: pool1252.size <= 16 && pool1252.size >= 10
                 };
@@ -118,8 +137,22 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         self.assertFalse(res['g1250'])
         self.assertTrue(res['g1251Old'])
         self.assertFalse(res['g1251New'])
+        self.assertTrue(res['extra25Null'])
+        self.assertTrue(res['manualDetected'])
+        self.assertEqual(res['leanTotalGames'], 30)
+        self.assertEqual(res['leanKeys'], ['1'])
+        self.assertEqual(res['hydratedKeys'], ['1'])
+        self.assertEqual(res['frozenTotalGames'], 30)
+        self.assertEqual(res['frozenKeys'], ['1'])
         self.assertEqual(res['afterScrapeLatest'], 1251)
         self.assertTrue(res['pool1252Valid'])
+
+    def test_batch_evaluate_only_ar3(self):
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        with open(os.path.join(root_dir, 'batch_evaluate_winnings.py'), 'r', encoding='utf-8') as f:
+            code = f.read()
+        self.assertIn("p_obj = extra_packs.get('1') or {}", code)
+        self.assertNotIn("for pid in ['1', '2', '3', '4', '5']:", code)
 
 
 if __name__ == '__main__':

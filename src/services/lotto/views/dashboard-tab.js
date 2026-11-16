@@ -473,7 +473,7 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
                 <div style="margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; font-size:0.72rem; color:#94a3b8;">
                     <div style="display:flex; align-items:center; gap:6px;">
                         <i class="fa-solid fa-shield-halved" style="color:#10b981;"></i>
-                        <span>기존 7대 알고리즘 및 추천번호 추출 로직에는 전혀 영향을 미치지 않는 독립 통계 가이드입니다.</span>
+                        <span>기존 3대 올라운더 알고리즘 및 추천번호 추출 로직에는 전혀 영향을 미치지 않는 독립 통계 가이드입니다.</span>
                     </div>
                     <span style="color:#64748b;"><i class="fa-solid fa-bolt" style="color:#f59e0b;"></i> 즉시 연산 (소요시간 0.1초)</span>
                 </div>
@@ -676,7 +676,7 @@ export function renderFortuneAdvisorCard(forceShowInput = false) {
 
                 <!-- Disclaimer -->
                 <div style="margin-top:10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:0.68rem; color:#64748b;">
-                    <span>* 본 추천은 복권 구매의 재미와 심리적 기대를 돕는 역학 통계 가이드이며, 기존 7대 알고리즘 추천번호와 함께 독립적으로 참고하실 수 있습니다.</span>
+                    <span>* 본 추천은 복권 구매의 재미와 심리적 기대를 돕는 역학 통계 가이드이며, 기존 3대 올라운더 알고리즘 추천번호와 함께 독립적으로 참고하실 수 있습니다.</span>
                     <span>한반도 표준 127.5° 진태양시 기준</span>
                 </div>
             </div>

@@ -381,10 +381,9 @@ def run_evaluation_batch():
                 algo_combos['v3'] = [extract_combo_numbers(c) for c in v3]
                 extra_packs = snap_data.get('extraPacks') or {}
                 if isinstance(extra_packs, dict):
-                    for pid in ['1', '2', '3', '4', '5']:
-                        p_obj = extra_packs.get(pid) or {}
-                        p_combos = p_obj.get('combos') or []
-                        algo_combos[f'extra_{pid}'] = [extract_combo_numbers(c) for c in p_combos]
+                    p_obj = extra_packs.get('1') or {}
+                    p_combos = p_obj.get('combos') or []
+                    algo_combos['extra_1'] = [extract_combo_numbers(c) for c in p_combos]
                 for k, c_list in algo_combos.items():
                     rec_combos.extend(c_list)
             
