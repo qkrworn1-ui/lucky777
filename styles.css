@@ -26170,3 +26170,427 @@ html.theme-light .weekly-core-btn-toggle {
     border-color: #cbd5e1 !important;
     color: #334155 !important;
 }
+
+/* ========================================================
+   🎯 [신규] 토요일 최신 추첨 연동 코어 16 적중 성적표 (홈 스트립 · 상단 배너 · 추천탭)
+   ======================================================== */
+.lp-core-hit-strip-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.94) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+.lp-core-hit-strip-inner:hover {
+    border-color: #38bdf8;
+    transform: translateY(-1px);
+}
+
+.lp-core-hit-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.lp-core-hit-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(56, 189, 248, 0.14);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.lp-core-hit-texts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.lp-core-hit-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.lp-core-hit-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #f8fafc;
+}
+
+.lp-core-hit-badge {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #2563eb, #0284c7);
+    color: #ffffff;
+}
+
+.lp-core-hit-sub {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    line-height: 1.35;
+}
+
+.lp-core-hit-sub strong {
+    color: #fbbf24;
+}
+
+.lp-core-hit-action {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #38bdf8;
+    padding: 4px 9px;
+    border-radius: 6px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* 상단 최신 추첨 배너 내 코어 적중 박스 */
+.banner-core-hit-box {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.banner-core-hit-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.banner-core-hit-bar-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.banner-core-round-pill {
+    font-size: 0.72rem;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #2563eb, #0284c7);
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.banner-core-summary-txt {
+    font-size: 0.78rem;
+    color: #cbd5e1;
+}
+
+.banner-core-summary-txt strong {
+    color: #f8fafc;
+}
+
+.banner-core-summary-txt strong.text-gold {
+    color: #fbbf24;
+}
+
+.banner-core-toggle-btn {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #e2e8f0;
+    cursor: pointer;
+}
+
+.banner-core-detail-body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.banner-core-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.banner-core-kpi-card {
+    background: rgba(30, 41, 59, 0.65);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+
+.banner-core-kpi-card .kpi-lbl {
+    font-size: 0.68rem;
+    color: #94a3b8;
+}
+
+.banner-core-kpi-card .kpi-val {
+    font-size: 0.85rem;
+    font-weight: 900;
+    color: #f8fafc;
+    margin-top: 2px;
+}
+
+.banner-core-kpi-card .kpi-val.is-gold { color: #fbbf24; }
+.banner-core-kpi-card .kpi-val.is-green { color: #34d399; }
+.banner-core-kpi-card .kpi-val.is-blue { color: #38bdf8; }
+
+.banner-core-kpi-card .kpi-sub {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    margin-top: 2px;
+}
+
+.banner-core-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.banner-core-group.is-support {
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.banner-core-group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.74rem;
+}
+
+.banner-core-group-head .head-title {
+    font-weight: 800;
+    color: #e2e8f0;
+}
+
+.banner-core-group-head .head-title.is-gold {
+    color: #fbbf24;
+}
+
+.banner-core-group-head .head-count {
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.banner-core-balls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.banner-core-hit-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    min-width: 62px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.banner-core-hit-chip.is-hit-main {
+    border: 1.5px solid #fbbf24;
+    background: rgba(251, 191, 36, 0.1);
+}
+
+.banner-core-hit-chip.is-hit-bonus {
+    border: 1.5px solid #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+}
+
+.banner-core-hit-chip.is-hit-miss .banner-core-ball {
+    opacity: 0.38;
+    filter: grayscale(40%);
+}
+
+.banner-core-hit-chip.is-hit-main .banner-core-ball {
+    box-shadow: 0 0 0 2.5px #fbbf24, 0 0 10px rgba(251, 191, 36, 0.8) !important;
+}
+
+.banner-core-hit-chip.is-hit-bonus .banner-core-ball {
+    box-shadow: 0 0 0 2.5px #38bdf8, 0 0 10px rgba(56, 189, 248, 0.8) !important;
+}
+
+.core-hit-tag {
+    font-size: 0.64rem;
+    font-weight: 800;
+    padding: 1px 5px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.core-hit-tag.tag-main {
+    background: #fbbf24;
+    color: #0f172a;
+}
+
+.core-hit-tag.tag-bonus {
+    background: #38bdf8;
+    color: #0f172a;
+}
+
+.core-hit-tag.tag-miss {
+    color: #64748b;
+}
+
+/* 추천번호 탭 코어 카드 내 모드 전환 탭 및 당첨 게임 리스트 */
+.weekly-core-mode-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.weekly-core-mode-btn {
+    font-size: 0.74rem;
+    font-weight: 800;
+    padding: 6px 11px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    background: rgba(15, 23, 42, 0.7);
+    color: #cbd5e1;
+    cursor: pointer;
+    transition: all 0.16s ease;
+}
+
+.weekly-core-mode-btn.is-active {
+    background: linear-gradient(135deg, #2563eb, #0284c7);
+    border-color: #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+}
+
+.core-win-games-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.core-win-game-card {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.core-win-game-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+}
+
+.core-win-game-lbl {
+    font-weight: 800;
+    color: #f8fafc;
+}
+
+.core-win-game-badge {
+    font-weight: 800;
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.14);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.core-win-game-balls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+.core-win-ball-main {
+    box-shadow: 0 0 0 2.5px #fbbf24, 0 0 10px rgba(251, 191, 36, 0.85) !important;
+}
+
+.core-win-ball-bonus {
+    box-shadow: 0 0 0 2.5px #38bdf8, 0 0 10px rgba(56, 189, 248, 0.85) !important;
+}
+
+.core-win-ball-dim {
+    opacity: 0.42;
+}
+
+.core-win-empty {
+    grid-column: 1 / -1;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    padding: 10px;
+    text-align: center;
+}
+
+@media (max-width: 640px) {
+    .banner-core-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .core-win-games-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+html[data-theme="light"] .lp-core-hit-strip-inner,
+html.theme-light .lp-core-hit-strip-inner,
+html[data-theme="light"] .banner-core-hit-box,
+html.theme-light .banner-core-hit-box {
+    background: #ffffff !important;
+    border-color: #93c5fd !important;
+}
+html[data-theme="light"] .lp-core-hit-title,
+html.theme-light .lp-core-hit-title,
+html[data-theme="light"] .banner-core-summary-txt,
+html.theme-light .banner-core-summary-txt,
+html[data-theme="light"] .banner-core-summary-txt strong,
+html.theme-light .banner-core-summary-txt strong,
+html[data-theme="light"] .banner-core-kpi-card .kpi-val,
+html.theme-light .banner-core-kpi-card .kpi-val,
+html[data-theme="light"] .core-win-game-lbl,
+html.theme-light .core-win-game-lbl {
+    color: #0f172a !important;
+}
+html[data-theme="light"] .banner-core-kpi-card,
+html.theme-light .banner-core-kpi-card,
+html[data-theme="light"] .banner-core-hit-chip,
+html.theme-light .banner-core-hit-chip,
+html[data-theme="light"] .core-win-game-card,
+html.theme-light .core-win-game-card {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}

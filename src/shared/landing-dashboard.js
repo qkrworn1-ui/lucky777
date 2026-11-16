@@ -80,6 +80,9 @@ export async function renderLandingDashboard() {
     if (typeof window.renderFortuneAdvisorCard === 'function') {
         try { window.renderFortuneAdvisorCard(); } catch(e){}
     }
+    if (typeof window.renderLatestDrawCoreHitPanel === 'function') {
+        try { window.renderLatestDrawCoreHitPanel(); } catch(e){}
+    }
     if (typeof window !== 'undefined' && window.PushClient) {
         try {
             window.PushClient.checkAndGenerateScheduledAlerts();

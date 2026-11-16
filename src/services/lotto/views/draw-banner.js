@@ -2,6 +2,9 @@ import { state } from '../state.js';
 import { getBallColorClass, getDrawDateByRound, getNextSaturdayDate } from '../../../shared/utils.js';
 import { db } from '../../../shared/db.js';
 import { fetchFullPrizeDetailsFromHTML } from '../scraper.js';
+import { evaluateRoundCoreHitReport } from '../generator.js';
+
+let isBannerCoreDetailOpen = false;
 
 export function renderLatestDrawBanner() {
     if (!state.latestDrawData) {
@@ -196,6 +199,152 @@ export function renderLatestDrawBanner() {
             }
         });
     }
+
+    renderLatestDrawCoreHitPanel(state.latestDrawData.drwNo);
+}
+
+/**
+ * 🎯 상단 최신 추첨 배너(#latestDrawCoreHitPanel) 및 홈 랜딩(#lpCoreHitSummaryStrip)에
+ *    해당 추첨 완료 회차의 핵심 코어 6수 & 보조 코어 10수 적중 성적표 렌더링
+ */
+export function renderLatestDrawCoreHitPanel(roundNum = null) {
+    if (typeof evaluateRoundCoreHitReport !== 'function') return;
+    const report = evaluateRoundCoreHitReport(roundNum);
+
+    const lpStripEl = document.getElementById('lpCoreHitSummaryStrip');
+    const bannerPanelEl = document.getElementById('latestDrawCoreHitPanel');
+
+    if (!report) {
+        if (lpStripEl) lpStripEl.style.display = 'none';
+        if (bannerPanelEl) bannerPanelEl.style.display = 'none';
+        return;
+    }
+
+    // 1. 홈 랜딩 대시보드 요약 스트립 (#lpCoreHitSummaryStrip)
+    if (lpStripEl) {
+        lpStripEl.style.display = 'block';
+        lpStripEl.innerHTML = `
+            <div class="lp-core-hit-strip-inner" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.switchTab) window.switchTab('tab-generator'); if(window.switchWeeklyCoreCardMode) window.switchWeeklyCoreCardMode('review'); }, 80); }">
+                <div class="lp-core-hit-left">
+                    <span class="lp-core-hit-icon">🎯</span>
+                    <div class="lp-core-hit-texts">
+                        <div class="lp-core-hit-title-row">
+                            <span class="lp-core-hit-title">제 ${report.round}회 AI 코어 16 적중 리포트</span>
+                            <span class="lp-core-hit-badge">총 ${report.totalHits}/7 적중</span>
+                        </div>
+                        <div class="lp-core-hit-sub">
+                            핵심 코어 ${report.core6SummaryText} · 보조 코어 ${report.support10SummaryText} ➔ <strong>${report.wheelSummaryText}</strong>
+                        </div>
+                    </div>
+                </div>
+                <span class="lp-core-hit-action">성적표 &gt;</span>
+            </div>
+        `;
+    }
+
+    // 2. 상단 최신 추첨 배너 하단 코어 적중 아코디언 (#latestDrawCoreHitPanel)
+    if (!bannerPanelEl) return;
+    bannerPanelEl.style.display = 'block';
+
+    const buildHitBallChip = (item) => {
+        const isMain = item.hitType === 'main';
+        const isBon = item.hitType === 'bonus';
+        const textColor = (item.n <= 10) ? '#0f172a' : '#ffffff';
+        const stateCls = isMain ? 'is-hit-main' : (isBon ? 'is-hit-bonus' : 'is-hit-miss');
+        const badgeHtml = isMain
+            ? '<span class="core-hit-tag tag-main">본번호 적중</span>'
+            : (isBon
+                ? '<span class="core-hit-tag tag-bonus">보너스 적중</span>'
+                : '<span class="core-hit-tag tag-miss">미출현</span>');
+
+        return `
+            <div class="banner-core-hit-chip ${stateCls}">
+                <span class="lotto-ball lotto-ball-sm ${getBallColorClass(item.n)} banner-core-ball" style="color: ${textColor};">
+                    ${item.n}
+                </span>
+                ${badgeHtml}
+            </div>
+        `;
+    };
+
+    const core6ChipsHtml = report.top6Items.map(buildHitBallChip).join('');
+    const support10ChipsHtml = report.support10Items.map(buildHitBallChip).join('');
+
+    const core6HitNumsStr = [...report.core6MainHits.map(n => `${n}번`), ...report.core6BonusHits.map(n => `${n}번(보)`)].join(', ');
+    const sup10HitNumsStr = [...report.support10MainHits.map(n => `${n}번`), ...report.support10BonusHits.map(n => `${n}번(보)`)].join(', ');
+
+    bannerPanelEl.innerHTML = `
+        <div class="banner-core-hit-box">
+            <div class="banner-core-hit-bar">
+                <div class="banner-core-hit-bar-left">
+                    <span class="banner-core-round-pill"><i class="fa-solid fa-bullseye"></i> 제 ${report.round}회 코어 16 적중 성적</span>
+                    <span class="banner-core-summary-txt">
+                        핵심 6수 중 <strong>${report.core6MainHits.length + report.core6BonusHits.length}개</strong> · 보조 10수 중 <strong>${report.support10MainHits.length + report.support10BonusHits.length}개</strong> 적중 ➔ <strong class="text-gold">${report.wheelSummaryText}</strong>
+                    </span>
+                </div>
+                <button type="button" onclick="event.stopPropagation(); window.toggleLatestDrawCoreHitDetails && window.toggleLatestDrawCoreHitDetails()" class="banner-core-toggle-btn">
+                    <span id="lblBannerCoreToggle">${isBannerCoreDetailOpen ? '적중 상세 접기 ▲' : '적중 상세 펼치기 ▼'}</span>
+                </button>
+            </div>
+
+            <div id="latestDrawCoreHitDetailBox" class="banner-core-detail-body" style="display: ${isBannerCoreDetailOpen ? 'flex' : 'none'};">
+                <div class="banner-core-kpi-grid">
+                    <div class="banner-core-kpi-card">
+                        <div class="kpi-lbl">핵심 코어 6수 적중</div>
+                        <div class="kpi-val is-gold">${report.core6SummaryText}</div>
+                        <div class="kpi-sub">${core6HitNumsStr ? `적중: ${core6HitNumsStr}` : '#1번 직결 조합 탑재'}</div>
+                    </div>
+                    <div class="banner-core-kpi-card">
+                        <div class="kpi-lbl">보조 코어 10수 적중</div>
+                        <div class="kpi-val">${report.support10SummaryText}</div>
+                        <div class="kpi-sub">${sup10HitNumsStr ? `적중: ${sup10HitNumsStr}` : '29게임 휠 커버링'}</div>
+                    </div>
+                    <div class="banner-core-kpi-card">
+                        <div class="kpi-lbl">16수 풀 종합 포착률</div>
+                        <div class="kpi-val is-green">총 ${report.totalHits} / 7수 포착</div>
+                        <div class="kpi-sub">본번호 ${report.totalMainHits}개${report.totalBonusHits ? ` + 보너스 ${report.totalBonusHits}개` : ''}</div>
+                    </div>
+                    <div class="banner-core-kpi-card">
+                        <div class="kpi-lbl">30게임 휠 당첨 성과</div>
+                        <div class="kpi-val is-blue">${report.wheelSummaryText}</div>
+                        <div class="kpi-sub">${report.wheelDetailText}</div>
+                    </div>
+                </div>
+
+                <div class="banner-core-group">
+                    <div class="banner-core-group-head">
+                        <span class="head-title is-gold">★ 핵심 코어 TOP 6 적중 대조 (1번 게임 직결)</span>
+                        <span class="head-count">적중 ${report.core6MainHits.length + report.core6BonusHits.length}수 / 총 ${report.top6Items.length}수</span>
+                    </div>
+                    <div class="banner-core-balls-row">${core6ChipsHtml}</div>
+                </div>
+
+                <div class="banner-core-group is-support">
+                    <div class="banner-core-group-head">
+                        <span class="head-title">보조 코어 10수 적중 대조 (30게임 휠 분산)</span>
+                        <span class="head-count">적중 ${report.support10MainHits.length + report.support10BonusHits.length}수 / 총 ${report.support10Items.length}수</span>
+                    </div>
+                    <div class="banner-core-balls-row">${support10ChipsHtml}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+export function toggleLatestDrawCoreHitDetails(forceState = null) {
+    if (typeof forceState === 'boolean') {
+        isBannerCoreDetailOpen = forceState;
+    } else {
+        isBannerCoreDetailOpen = !isBannerCoreDetailOpen;
+    }
+    const detailEl = document.getElementById('latestDrawCoreHitDetailBox');
+    const lblEl = document.getElementById('lblBannerCoreToggle');
+    if (detailEl) {
+        detailEl.style.display = isBannerCoreDetailOpen ? 'flex' : 'none';
+    }
+    if (lblEl) {
+        lblEl.textContent = isBannerCoreDetailOpen ? '적중 상세 접기 ▲' : '적중 상세 펼치기 ▼';
+    }
 }
 
 let headerCountdownInterval = null;
@@ -267,5 +416,7 @@ export function startNextDrawCountdown(nextRound) {
 
 if (typeof window !== 'undefined') {
     window.startNextDrawCountdown = startNextDrawCountdown;
+    window.renderLatestDrawCoreHitPanel = renderLatestDrawCoreHitPanel;
+    window.toggleLatestDrawCoreHitDetails = toggleLatestDrawCoreHitDetails;
 }
 

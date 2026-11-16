@@ -147,7 +147,11 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                     coreMatchesPool: coreSummary ? JSON.stringify(coreSummary.poolNumbers) === JSON.stringify(Array.from(pool).sort((a,b) => a-b)) : false,
                     coreFreqTotal: coreSummary ? coreSummary.itemsSortedAsc.reduce((a, x) => a + x.freq30, 0) : 0,
                     afterScrapeLatest: window.state.latestRoundNum,
-                    pool1252Valid: pool1252.size <= 16 && pool1252.size >= 10
+                    pool1252Valid: pool1252.size <= 16 && pool1252.size >= 10,
+                    hitReportValid: (() => {
+                        const rep = window.evaluateRoundCoreHitReport(1251, 'test_user_demo');
+                        return !!(rep && rep.round === 1251 && rep.top6Items.length === 6 && rep.support10Items.length === 10 && typeof rep.totalHits === 'number');
+                    })()
                 };
             }""")
             browser.close()
@@ -177,6 +181,7 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         self.assertEqual(res['coreFreqTotal'], 180)
         self.assertEqual(res['afterScrapeLatest'], 1251)
         self.assertTrue(res['pool1252Valid'])
+        self.assertTrue(res['hitReportValid'])
 
     def test_weekly_core_numbers_ui_wiring(self):
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -184,13 +189,19 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
             idx_html = f.read()
         with open(os.path.join(root_dir, 'src', 'services', 'lotto', 'views', 'generator-tab.js'), 'r', encoding='utf-8') as f:
             gen_tab_js = f.read()
+        with open(os.path.join(root_dir, 'src', 'services', 'lotto', 'views', 'draw-banner.js'), 'r', encoding='utf-8') as f:
+            banner_js = f.read()
         core_pos = idx_html.find('id="weeklyCoreNumbersSection"')
         comb_pos = idx_html.find('id="combinationsContainer"')
         self.assertGreater(core_pos, 0)
         self.assertLess(core_pos, comb_pos)
+        self.assertIn('id="lpCoreHitSummaryStrip"', idx_html)
+        self.assertIn('id="latestDrawCoreHitPanel"', idx_html)
         self.assertIn('export function renderWeeklyCoreNumbersCard', gen_tab_js)
         self.assertIn('export function toggleWeeklyCoreNumber', gen_tab_js)
+        self.assertIn('export function switchWeeklyCoreCardMode', gen_tab_js)
         self.assertIn('applyWeeklyCoreHighlightFilter', gen_tab_js)
+        self.assertIn('export function renderLatestDrawCoreHitPanel', banner_js)
 
     def test_batch_evaluate_only_ar3(self):
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

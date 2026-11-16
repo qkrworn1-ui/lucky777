@@ -2954,7 +2954,148 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
         topAnchors,
         supportPool,
         itemsSortedAsc: [...capped].sort((a, b) => a.n - b.n).map(x => ({ ...x, isTopAnchor: topAnchorSet.has(x.n) })),
-        prevDrawNumbers: prevDrawNums
+        prevDrawNumbers: prevDrawNums,
+        packGames: { v4: v4Nums, v3: v3Nums, ar3: ar3Nums }
+    };
+}
+
+/**
+ * 🎯 추첨 완료 회차(토요일 최신 당첨번호 스크랩 기준)의 핵심 코어 6수 & 보조 코어 10수 적중 성적표 계산
+ * @param {number|null} targetDrawnRound
+ * @param {string|null} customUserId
+ */
+export function evaluateRoundCoreHitReport(targetDrawnRound = null, customUserId = null) {
+    const drawnRounds = Object.keys(state.mergedHistory || {})
+        .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers) && state.mergedHistory[r].numbers.length === 6)
+        .map(Number);
+    const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : (state.latestDrawData ? state.latestDrawData.drwNo : 1250);
+    const round = targetDrawnRound ? Number(targetDrawnRound) : (state.latestDrawData && state.latestDrawData.drwNo ? Number(state.latestDrawData.drwNo) : maxKnownDrawnRound);
+
+    const drawData = (state.mergedHistory && state.mergedHistory[round])
+        || (state.latestDrawData && Number(state.latestDrawData.drwNo) === round ? state.latestDrawData : null);
+
+    if (!drawData || !Array.isArray(drawData.numbers) || drawData.numbers.length < 6) {
+        return null;
+    }
+
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
+    const summary = getWeeklyCoreNumbersSummary(round, effectiveUserId);
+    if (!summary || !Array.isArray(summary.topAnchors) || summary.poolSize === 0) {
+        return null;
+    }
+
+    const winNums = [...drawData.numbers].map(Number).sort((a, b) => a - b);
+    const winSet = new Set(winNums);
+    const bonusNum = Number(drawData.bonus || 0);
+
+    const enrichHit = (item) => ({
+        ...item,
+        hitType: winSet.has(item.n) ? 'main' : (item.n === bonusNum ? 'bonus' : 'miss')
+    });
+
+    const top6Items = summary.topAnchors.map(enrichHit);
+    const support10Items = summary.supportPool.map(enrichHit);
+
+    const core6MainHits = top6Items.filter(x => x.hitType === 'main').map(x => x.n);
+    const core6BonusHits = top6Items.filter(x => x.hitType === 'bonus').map(x => x.n);
+    const support10MainHits = support10Items.filter(x => x.hitType === 'main').map(x => x.n);
+    const support10BonusHits = support10Items.filter(x => x.hitType === 'bonus').map(x => x.n);
+
+    const totalMainHits = core6MainHits.length + support10MainHits.length;
+    const totalBonusHits = core6BonusHits.length + support10BonusHits.length;
+    const totalHits = totalMainHits + totalBonusHits;
+
+    const prizeTable = {
+        1: Number(drawData.firstWinamnt || drawData.rank1Prize || (drawData.prizes && drawData.prizes[1] && drawData.prizes[1].prize) || 2000000000),
+        2: Number(drawData.rank2Prize || (drawData.prizes && drawData.prizes[2] && drawData.prizes[2].prize) || 55000000),
+        3: Number(drawData.rank3Prize || (drawData.prizes && drawData.prizes[3] && drawData.prizes[3].prize) || 1500000),
+        4: Number(drawData.rank4Prize || (drawData.prizes && drawData.prizes[4] && drawData.prizes[4].prize) || 50000),
+        5: Number(drawData.rank5Prize || (drawData.prizes && drawData.prizes[5] && drawData.prizes[5].prize) || 5000)
+    };
+
+    const rankCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const winningGames = [];
+    let totalPrize = 0;
+
+    const packDefs = [
+        { key: 'v4', name: '올라운더 1', games: (summary.packGames && summary.packGames.v4) || [] },
+        { key: 'v3', name: '올라운더 2', games: (summary.packGames && summary.packGames.v3) || [] },
+        { key: 'ar3', name: '올라운더 3', games: (summary.packGames && summary.packGames.ar3) || [] }
+    ];
+
+    packDefs.forEach(p => {
+        p.games.forEach((nums, idx) => {
+            if (!Array.isArray(nums) || nums.length !== 6) return;
+            const matchCount = nums.filter(n => winSet.has(n)).length;
+            const bonusMatch = bonusNum > 0 && nums.includes(bonusNum);
+            let rank = 0;
+            if (matchCount === 6) rank = 1;
+            else if (matchCount === 5 && bonusMatch) rank = 2;
+            else if (matchCount === 5) rank = 3;
+            else if (matchCount === 4) rank = 4;
+            else if (matchCount === 3) rank = 5;
+
+            if (rank > 0) {
+                const prize = prizeTable[rank] || 0;
+                rankCounts[rank] = (rankCounts[rank] || 0) + 1;
+                totalPrize += prize;
+                const isDirectTop6 = (p.key === 'v4' && idx === 0 && summary.is3BMode);
+                winningGames.push({
+                    packKey: p.key,
+                    packName: p.name,
+                    gameIndex: idx + 1,
+                    isDirectTop6,
+                    gameLabel: `${p.name} #${idx + 1}게임${isDirectTop6 ? ' (TOP6 직결)' : ''}`,
+                    numbers: [...nums].sort((a, b) => a - b),
+                    matchCount,
+                    bonusMatch,
+                    rank,
+                    prize
+                });
+            }
+        });
+    });
+
+    winningGames.sort((a, b) => (a.rank - b.rank) || (b.matchCount - a.matchCount) || (a.gameIndex - b.gameIndex));
+
+    const totalWinningGames = winningGames.length;
+    const bestRank = [1, 2, 3, 4, 5].find(rk => rankCounts[rk] > 0) || 0;
+
+    const core6SummaryText = `${core6MainHits.length}${core6BonusHits.length ? '+보너스' : ''} / ${top6Items.length}수 적중`;
+    const support10SummaryText = `${support10MainHits.length}${support10BonusHits.length ? '+보너스' : ''} / ${support10Items.length}수 적중`;
+    const wheelSummaryText = bestRank > 0
+        ? `최고 ${bestRank}등 (총 ${totalWinningGames}G 당첨)`
+        : `당첨 게임 없음 (30G 기준)`;
+    const wheelDetailText = [1, 2, 3, 4, 5]
+        .filter(rk => rankCounts[rk] > 0)
+        .map(rk => `${rk}등 ${rankCounts[rk]}G`)
+        .join(' · ') || '3개 이상 일치 조합 없음';
+
+    return {
+        round,
+        drawDate: drawData.date || drawData.drwNoDate || '',
+        userId: effectiveUserId,
+        is3BMode: summary.is3BMode,
+        winNums,
+        bonusNum,
+        top6Items,
+        support10Items,
+        core6MainHits,
+        core6BonusHits,
+        support10MainHits,
+        support10BonusHits,
+        totalMainHits,
+        totalBonusHits,
+        totalHits,
+        rankCounts,
+        totalWinningGames,
+        bestRank,
+        totalPrize,
+        winningGames,
+        core6SummaryText,
+        support10SummaryText,
+        wheelSummaryText,
+        wheelDetailText
     };
 }
 
@@ -2969,5 +3110,6 @@ if (typeof window !== 'undefined') {
     window.invalidateRecommendationRuntimeCaches = invalidateRecommendationRuntimeCaches;
     window.computeAllRounder3BPortfolio = computeAllRounder3BPortfolio;
     window.getWeeklyCoreNumbersSummary = getWeeklyCoreNumbersSummary;
+    window.evaluateRoundCoreHitReport = evaluateRoundCoreHitReport;
     window.isRound1251UpgradePending = isRound1251UpgradePending;
 }

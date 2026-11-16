@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.16.1650 - BUILD_DATE: 2026-11-16] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.16.1731.44 - BUILD_DATE: 2026-11-16] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.16.1650)
+ * Lucky777 Smart Bundle (v2026.11.16.1731.44)
  */
 
 
@@ -25236,7 +25236,148 @@ function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = null) {
         topAnchors,
         supportPool,
         itemsSortedAsc: [...capped].sort((a, b) => a.n - b.n).map(x => ({ ...x, isTopAnchor: topAnchorSet.has(x.n) })),
-        prevDrawNumbers: prevDrawNums
+        prevDrawNumbers: prevDrawNums,
+        packGames: { v4: v4Nums, v3: v3Nums, ar3: ar3Nums }
+    };
+}
+
+/**
+ * 🎯 추첨 완료 회차(토요일 최신 당첨번호 스크랩 기준)의 핵심 코어 6수 & 보조 코어 10수 적중 성적표 계산
+ * @param {number|null} targetDrawnRound
+ * @param {string|null} customUserId
+ */
+function evaluateRoundCoreHitReport(targetDrawnRound = null, customUserId = null) {
+    const drawnRounds = Object.keys(state.mergedHistory || {})
+        .filter(r => state.mergedHistory[r] && Array.isArray(state.mergedHistory[r].numbers) && state.mergedHistory[r].numbers.length === 6)
+        .map(Number);
+    const maxKnownDrawnRound = drawnRounds.length ? Math.max(...drawnRounds) : (state.latestDrawData ? state.latestDrawData.drwNo : 1250);
+    const round = targetDrawnRound ? Number(targetDrawnRound) : (state.latestDrawData && state.latestDrawData.drwNo ? Number(state.latestDrawData.drwNo) : maxKnownDrawnRound);
+
+    const drawData = (state.mergedHistory && state.mergedHistory[round])
+        || (state.latestDrawData && Number(state.latestDrawData.drwNo) === round ? state.latestDrawData : null);
+
+    if (!drawData || !Array.isArray(drawData.numbers) || drawData.numbers.length < 6) {
+        return null;
+    }
+
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
+    const summary = getWeeklyCoreNumbersSummary(round, effectiveUserId);
+    if (!summary || !Array.isArray(summary.topAnchors) || summary.poolSize === 0) {
+        return null;
+    }
+
+    const winNums = [...drawData.numbers].map(Number).sort((a, b) => a - b);
+    const winSet = new Set(winNums);
+    const bonusNum = Number(drawData.bonus || 0);
+
+    const enrichHit = (item) => ({
+        ...item,
+        hitType: winSet.has(item.n) ? 'main' : (item.n === bonusNum ? 'bonus' : 'miss')
+    });
+
+    const top6Items = summary.topAnchors.map(enrichHit);
+    const support10Items = summary.supportPool.map(enrichHit);
+
+    const core6MainHits = top6Items.filter(x => x.hitType === 'main').map(x => x.n);
+    const core6BonusHits = top6Items.filter(x => x.hitType === 'bonus').map(x => x.n);
+    const support10MainHits = support10Items.filter(x => x.hitType === 'main').map(x => x.n);
+    const support10BonusHits = support10Items.filter(x => x.hitType === 'bonus').map(x => x.n);
+
+    const totalMainHits = core6MainHits.length + support10MainHits.length;
+    const totalBonusHits = core6BonusHits.length + support10BonusHits.length;
+    const totalHits = totalMainHits + totalBonusHits;
+
+    const prizeTable = {
+        1: Number(drawData.firstWinamnt || drawData.rank1Prize || (drawData.prizes && drawData.prizes[1] && drawData.prizes[1].prize) || 2000000000),
+        2: Number(drawData.rank2Prize || (drawData.prizes && drawData.prizes[2] && drawData.prizes[2].prize) || 55000000),
+        3: Number(drawData.rank3Prize || (drawData.prizes && drawData.prizes[3] && drawData.prizes[3].prize) || 1500000),
+        4: Number(drawData.rank4Prize || (drawData.prizes && drawData.prizes[4] && drawData.prizes[4].prize) || 50000),
+        5: Number(drawData.rank5Prize || (drawData.prizes && drawData.prizes[5] && drawData.prizes[5].prize) || 5000)
+    };
+
+    const rankCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    const winningGames = [];
+    let totalPrize = 0;
+
+    const packDefs = [
+        { key: 'v4', name: '올라운더 1', games: (summary.packGames && summary.packGames.v4) || [] },
+        { key: 'v3', name: '올라운더 2', games: (summary.packGames && summary.packGames.v3) || [] },
+        { key: 'ar3', name: '올라운더 3', games: (summary.packGames && summary.packGames.ar3) || [] }
+    ];
+
+    packDefs.forEach(p => {
+        p.games.forEach((nums, idx) => {
+            if (!Array.isArray(nums) || nums.length !== 6) return;
+            const matchCount = nums.filter(n => winSet.has(n)).length;
+            const bonusMatch = bonusNum > 0 && nums.includes(bonusNum);
+            let rank = 0;
+            if (matchCount === 6) rank = 1;
+            else if (matchCount === 5 && bonusMatch) rank = 2;
+            else if (matchCount === 5) rank = 3;
+            else if (matchCount === 4) rank = 4;
+            else if (matchCount === 3) rank = 5;
+
+            if (rank > 0) {
+                const prize = prizeTable[rank] || 0;
+                rankCounts[rank] = (rankCounts[rank] || 0) + 1;
+                totalPrize += prize;
+                const isDirectTop6 = (p.key === 'v4' && idx === 0 && summary.is3BMode);
+                winningGames.push({
+                    packKey: p.key,
+                    packName: p.name,
+                    gameIndex: idx + 1,
+                    isDirectTop6,
+                    gameLabel: `${p.name} #${idx + 1}게임${isDirectTop6 ? ' (TOP6 직결)' : ''}`,
+                    numbers: [...nums].sort((a, b) => a - b),
+                    matchCount,
+                    bonusMatch,
+                    rank,
+                    prize
+                });
+            }
+        });
+    });
+
+    winningGames.sort((a, b) => (a.rank - b.rank) || (b.matchCount - a.matchCount) || (a.gameIndex - b.gameIndex));
+
+    const totalWinningGames = winningGames.length;
+    const bestRank = [1, 2, 3, 4, 5].find(rk => rankCounts[rk] > 0) || 0;
+
+    const core6SummaryText = `${core6MainHits.length}${core6BonusHits.length ? '+보너스' : ''} / ${top6Items.length}수 적중`;
+    const support10SummaryText = `${support10MainHits.length}${support10BonusHits.length ? '+보너스' : ''} / ${support10Items.length}수 적중`;
+    const wheelSummaryText = bestRank > 0
+        ? `최고 ${bestRank}등 (총 ${totalWinningGames}G 당첨)`
+        : `당첨 게임 없음 (30G 기준)`;
+    const wheelDetailText = [1, 2, 3, 4, 5]
+        .filter(rk => rankCounts[rk] > 0)
+        .map(rk => `${rk}등 ${rankCounts[rk]}G`)
+        .join(' · ') || '3개 이상 일치 조합 없음';
+
+    return {
+        round,
+        drawDate: drawData.date || drawData.drwNoDate || '',
+        userId: effectiveUserId,
+        is3BMode: summary.is3BMode,
+        winNums,
+        bonusNum,
+        top6Items,
+        support10Items,
+        core6MainHits,
+        core6BonusHits,
+        support10MainHits,
+        support10BonusHits,
+        totalMainHits,
+        totalBonusHits,
+        totalHits,
+        rankCounts,
+        totalWinningGames,
+        bestRank,
+        totalPrize,
+        winningGames,
+        core6SummaryText,
+        support10SummaryText,
+        wheelSummaryText,
+        wheelDetailText
     };
 }
 
@@ -25251,6 +25392,7 @@ if (typeof window !== 'undefined') {
     window.invalidateRecommendationRuntimeCaches = invalidateRecommendationRuntimeCaches;
     window.computeAllRounder3BPortfolio = computeAllRounder3BPortfolio;
     window.getWeeklyCoreNumbersSummary = getWeeklyCoreNumbersSummary;
+    window.evaluateRoundCoreHitReport = evaluateRoundCoreHitReport;
     window.isRound1251UpgradePending = isRound1251UpgradePending;
 }
 
@@ -25342,6 +25484,10 @@ if (typeof window !== 'undefined') {
             __exports.getWeeklyCoreNumbersSummary = getWeeklyCoreNumbersSummary;
             if (typeof window !== 'undefined') window.getWeeklyCoreNumbersSummary = getWeeklyCoreNumbersSummary;
         }
+        if (typeof evaluateRoundCoreHitReport !== 'undefined') {
+            __exports.evaluateRoundCoreHitReport = evaluateRoundCoreHitReport;
+            if (typeof window !== 'undefined') window.evaluateRoundCoreHitReport = evaluateRoundCoreHitReport;
+        }
     } catch (modErr) {
         console.error('[Module Isolation Error in src/services/lotto/generator.js]:', modErr);
     }
@@ -25355,6 +25501,9 @@ const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_service
 const { getBallColorClass, getDrawDateByRound, getNextSaturdayDate } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { fetchFullPrizeDetailsFromHTML } = (typeof __M_services_lotto_scraper !== 'undefined' ? __M_services_lotto_scraper : {});
+const { evaluateRoundCoreHitReport } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+
+let isBannerCoreDetailOpen = false;
 
 function renderLatestDrawBanner() {
     if (!state.latestDrawData) {
@@ -25549,6 +25698,152 @@ function renderLatestDrawBanner() {
             }
         });
     }
+
+    renderLatestDrawCoreHitPanel(state.latestDrawData.drwNo);
+}
+
+/**
+ * 🎯 상단 최신 추첨 배너(#latestDrawCoreHitPanel) 및 홈 랜딩(#lpCoreHitSummaryStrip)에
+ *    해당 추첨 완료 회차의 핵심 코어 6수 & 보조 코어 10수 적중 성적표 렌더링
+ */
+function renderLatestDrawCoreHitPanel(roundNum = null) {
+    if (typeof evaluateRoundCoreHitReport !== 'function') return;
+    const report = evaluateRoundCoreHitReport(roundNum);
+
+    const lpStripEl = document.getElementById('lpCoreHitSummaryStrip');
+    const bannerPanelEl = document.getElementById('latestDrawCoreHitPanel');
+
+    if (!report) {
+        if (lpStripEl) lpStripEl.style.display = 'none';
+        if (bannerPanelEl) bannerPanelEl.style.display = 'none';
+        return;
+    }
+
+    // 1. 홈 랜딩 대시보드 요약 스트립 (#lpCoreHitSummaryStrip)
+    if (lpStripEl) {
+        lpStripEl.style.display = 'block';
+        lpStripEl.innerHTML = `
+            <div class="lp-core-hit-strip-inner" onclick="if(window.showLotto){ window.showLotto(); setTimeout(() => { if(window.switchTab) window.switchTab('tab-generator'); if(window.switchWeeklyCoreCardMode) window.switchWeeklyCoreCardMode('review'); }, 80); }">
+                <div class="lp-core-hit-left">
+                    <span class="lp-core-hit-icon">🎯</span>
+                    <div class="lp-core-hit-texts">
+                        <div class="lp-core-hit-title-row">
+                            <span class="lp-core-hit-title">제 ${report.round}회 AI 코어 16 적중 리포트</span>
+                            <span class="lp-core-hit-badge">총 ${report.totalHits}/7 적중</span>
+                        </div>
+                        <div class="lp-core-hit-sub">
+                            핵심 코어 ${report.core6SummaryText} · 보조 코어 ${report.support10SummaryText} ➔ <strong>${report.wheelSummaryText}</strong>
+                        </div>
+                    </div>
+                </div>
+                <span class="lp-core-hit-action">성적표 &gt;</span>
+            </div>
+        `;
+    }
+
+    // 2. 상단 최신 추첨 배너 하단 코어 적중 아코디언 (#latestDrawCoreHitPanel)
+    if (!bannerPanelEl) return;
+    bannerPanelEl.style.display = 'block';
+
+    const buildHitBallChip = (item) => {
+        const isMain = item.hitType === 'main';
+        const isBon = item.hitType === 'bonus';
+        const textColor = (item.n <= 10) ? '#0f172a' : '#ffffff';
+        const stateCls = isMain ? 'is-hit-main' : (isBon ? 'is-hit-bonus' : 'is-hit-miss');
+        const badgeHtml = isMain
+            ? '<span class="core-hit-tag tag-main">본번호 적중</span>'
+            : (isBon
+                ? '<span class="core-hit-tag tag-bonus">보너스 적중</span>'
+                : '<span class="core-hit-tag tag-miss">미출현</span>');
+
+        return `
+            <div class="banner-core-hit-chip ${stateCls}">
+                <span class="lotto-ball lotto-ball-sm ${getBallColorClass(item.n)} banner-core-ball" style="color: ${textColor};">
+                    ${item.n}
+                </span>
+                ${badgeHtml}
+            </div>
+        `;
+    };
+
+    const core6ChipsHtml = report.top6Items.map(buildHitBallChip).join('');
+    const support10ChipsHtml = report.support10Items.map(buildHitBallChip).join('');
+
+    const core6HitNumsStr = [...report.core6MainHits.map(n => `${n}번`), ...report.core6BonusHits.map(n => `${n}번(보)`)].join(', ');
+    const sup10HitNumsStr = [...report.support10MainHits.map(n => `${n}번`), ...report.support10BonusHits.map(n => `${n}번(보)`)].join(', ');
+
+    bannerPanelEl.innerHTML = `
+        <div class="banner-core-hit-box">
+            <div class="banner-core-hit-bar">
+                <div class="banner-core-hit-bar-left">
+                    <span class="banner-core-round-pill"><i class="fa-solid fa-bullseye"></i> 제 ${report.round}회 코어 16 적중 성적</span>
+                    <span class="banner-core-summary-txt">
+                        핵심 6수 중 <strong>${report.core6MainHits.length + report.core6BonusHits.length}개</strong> · 보조 10수 중 <strong>${report.support10MainHits.length + report.support10BonusHits.length}개</strong> 적중 ➔ <strong class="text-gold">${report.wheelSummaryText}</strong>
+                    </span>
+                </div>
+                <button type="button" onclick="event.stopPropagation(); window.toggleLatestDrawCoreHitDetails && window.toggleLatestDrawCoreHitDetails()" class="banner-core-toggle-btn">
+                    <span id="lblBannerCoreToggle">${isBannerCoreDetailOpen ? '적중 상세 접기 ▲' : '적중 상세 펼치기 ▼'}</span>
+                </button>
+            </div>
+
+            <div id="latestDrawCoreHitDetailBox" class="banner-core-detail-body" style="display: ${isBannerCoreDetailOpen ? 'flex' : 'none'};">
+                <div class="banner-core-kpi-grid">
+                    <div class="banner-core-kpi-card">
+                        <div class="kpi-lbl">핵심 코어 6수 적중</div>
+                        <div class="kpi-val is-gold">${report.core6SummaryText}</div>
+                        <div class="kpi-sub">${core6HitNumsStr ? `적중: ${core6HitNumsStr}` : '#1번 직결 조합 탑재'}</div>
+                    </div>
+                    <div class="banner-core-kpi-card">
+                        <div class="kpi-lbl">보조 코어 10수 적중</div>
+                        <div class="kpi-val">${report.support10SummaryText}</div>
+                        <div class="kpi-sub">${sup10HitNumsStr ? `적중: ${sup10HitNumsStr}` : '29게임 휠 커버링'}</div>
+                    </div>
+                    <div class="banner-core-kpi-card">
+                        <div class="kpi-lbl">16수 풀 종합 포착률</div>
+                        <div class="kpi-val is-green">총 ${report.totalHits} / 7수 포착</div>
+                        <div class="kpi-sub">본번호 ${report.totalMainHits}개${report.totalBonusHits ? ` + 보너스 ${report.totalBonusHits}개` : ''}</div>
+                    </div>
+                    <div class="banner-core-kpi-card">
+                        <div class="kpi-lbl">30게임 휠 당첨 성과</div>
+                        <div class="kpi-val is-blue">${report.wheelSummaryText}</div>
+                        <div class="kpi-sub">${report.wheelDetailText}</div>
+                    </div>
+                </div>
+
+                <div class="banner-core-group">
+                    <div class="banner-core-group-head">
+                        <span class="head-title is-gold">★ 핵심 코어 TOP 6 적중 대조 (1번 게임 직결)</span>
+                        <span class="head-count">적중 ${report.core6MainHits.length + report.core6BonusHits.length}수 / 총 ${report.top6Items.length}수</span>
+                    </div>
+                    <div class="banner-core-balls-row">${core6ChipsHtml}</div>
+                </div>
+
+                <div class="banner-core-group is-support">
+                    <div class="banner-core-group-head">
+                        <span class="head-title">보조 코어 10수 적중 대조 (30게임 휠 분산)</span>
+                        <span class="head-count">적중 ${report.support10MainHits.length + report.support10BonusHits.length}수 / 총 ${report.support10Items.length}수</span>
+                    </div>
+                    <div class="banner-core-balls-row">${support10ChipsHtml}</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function toggleLatestDrawCoreHitDetails(forceState = null) {
+    if (typeof forceState === 'boolean') {
+        isBannerCoreDetailOpen = forceState;
+    } else {
+        isBannerCoreDetailOpen = !isBannerCoreDetailOpen;
+    }
+    const detailEl = document.getElementById('latestDrawCoreHitDetailBox');
+    const lblEl = document.getElementById('lblBannerCoreToggle');
+    if (detailEl) {
+        detailEl.style.display = isBannerCoreDetailOpen ? 'flex' : 'none';
+    }
+    if (lblEl) {
+        lblEl.textContent = isBannerCoreDetailOpen ? '적중 상세 접기 ▲' : '적중 상세 펼치기 ▼';
+    }
 }
 
 let headerCountdownInterval = null;
@@ -25620,12 +25915,22 @@ function startNextDrawCountdown(nextRound) {
 
 if (typeof window !== 'undefined') {
     window.startNextDrawCountdown = startNextDrawCountdown;
+    window.renderLatestDrawCoreHitPanel = renderLatestDrawCoreHitPanel;
+    window.toggleLatestDrawCoreHitDetails = toggleLatestDrawCoreHitDetails;
 }
 
 
         if (typeof renderLatestDrawBanner !== 'undefined') {
             __exports.renderLatestDrawBanner = renderLatestDrawBanner;
             if (typeof window !== 'undefined') window.renderLatestDrawBanner = renderLatestDrawBanner;
+        }
+        if (typeof renderLatestDrawCoreHitPanel !== 'undefined') {
+            __exports.renderLatestDrawCoreHitPanel = renderLatestDrawCoreHitPanel;
+            if (typeof window !== 'undefined') window.renderLatestDrawCoreHitPanel = renderLatestDrawCoreHitPanel;
+        }
+        if (typeof toggleLatestDrawCoreHitDetails !== 'undefined') {
+            __exports.toggleLatestDrawCoreHitDetails = toggleLatestDrawCoreHitDetails;
+            if (typeof window !== 'undefined') window.toggleLatestDrawCoreHitDetails = toggleLatestDrawCoreHitDetails;
         }
         if (typeof startNextDrawCountdown !== 'undefined') {
             __exports.startNextDrawCountdown = startNextDrawCountdown;
@@ -31644,7 +31949,7 @@ var __M_services_lotto_views_generator_tab = (function() {
 const { state } = (typeof __M_services_lotto_state !== 'undefined' ? __M_services_lotto_state : {});
 const { getBallColorClass, getBallHexColor, showToast, isSystemOrDummyUser } = (typeof __M_shared_utils !== 'undefined' ? __M_shared_utils : {});
 const { createBallHtml } = (typeof __M_shared_components !== 'undefined' ? __M_shared_components : {});
-const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId, isRound1251UpgradePending, getWeeklyCoreNumbersSummary } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
+const { computeAbsoluteTop10Combinations, generateExtraAddonPack, saveUserWeeklyRecommendationSnapshot, getUserWeeklyRecommendationSnapshotSync, getEffectiveGeneratorUserId, isRound1251UpgradePending, getWeeklyCoreNumbersSummary, evaluateRoundCoreHitReport } = (typeof __M_services_lotto_generator !== 'undefined' ? __M_services_lotto_generator : {});
 const { db } = (typeof __M_shared_db !== 'undefined' ? __M_shared_db : {});
 const { SafeAuth, isAdminUser, getUserRealName, getUpcomingLottoRound, isPermanentUser } = (typeof __M_shared_auth_mgmt !== 'undefined' ? __M_shared_auth_mgmt : {});
 const { getAllUnifiedRegisteredUsers, isUserSuspended } = (typeof __M_shared_user_context !== 'undefined' ? __M_shared_user_context : {});
@@ -31656,6 +31961,7 @@ let algoAccordionStateMap = {};
 let generatorAdminViewingUser = null;
 const selectedWeeklyCoreNums = new Set();
 let isWeeklyCoreExpanded = true;
+let weeklyCoreCardMode = 'next';
 let _lastWeeklyCoreCtxKey = '';
 let _lastWeeklyCoreParams = { userId: null, round: null, algoKey: 'v4' };
 
@@ -33705,13 +34011,14 @@ if (typeof window !== 'undefined') {
     window.toggleWeeklyCoreNumber = toggleWeeklyCoreNumber;
     window.clearWeeklyCoreSelection = clearWeeklyCoreSelection;
     window.toggleWeeklyCoreAccordion = toggleWeeklyCoreAccordion;
+    window.switchWeeklyCoreCardMode = switchWeeklyCoreCardMode;
     window.applyWeeklyCoreHighlightFilter = applyWeeklyCoreHighlightFilter;
     window.renderTop5Combinations = renderTop5Combinations;
     window.renderGeneratorTab = renderTop5Combinations;
 }
 
 /**
- * 🎯 이번 주 올라운더 1·2·3 코어 핵심 숫자 카드 렌더링
+ * 🎯 이번 주 올라운더 1·2·3 코어 핵심 숫자 카드 렌더링 (신규 회차 코어 16 ↔ 직전 추첨 회차 코어 적중 성적표 전환 지원)
  */
 function renderWeeklyCoreNumbersCard(effectiveUserId = null, curUpcomingRound = null, currentAlgoKey = 'v4') {
     const secEl = document.getElementById('weeklyCoreNumbersSection');
@@ -33739,6 +34046,11 @@ function renderWeeklyCoreNumbersCard(effectiveUserId = null, curUpcomingRound = 
         secEl.innerHTML = '';
         return;
     }
+
+    const latestDrawnRound = summary.maxKnownDrawnRound;
+    const hitReport = (typeof evaluateRoundCoreHitReport === 'function' && latestDrawnRound)
+        ? evaluateRoundCoreHitReport(latestDrawnRound, uid)
+        : null;
 
     const packField = (currentAlgoKey === 'extra1' || currentAlgoKey === 'ar3')
         ? 'extra1Count'
@@ -33784,16 +34096,121 @@ function renderWeeklyCoreNumbersCard(effectiveUserId = null, curUpcomingRound = 
         ? `최신 <strong>${summary.maxKnownDrawnRound}회</strong> 반영 동적 신호로 엄선된 <strong>${summary.poolSize}개 코어 수</strong>로 올라운더 1·2·3 총 ${summary.totalGamesCount}게임을 구성했습니다.`
         : `올라운더 1·2·3 총 ${summary.totalGamesCount}게임에서 가장 집중 배정된 상위 ${summary.poolSize}개 코어 번호입니다.`;
 
+    const isReviewMode = (weeklyCoreCardMode === 'review' && hitReport);
+
+    const buildReviewPaneHtml = () => {
+        if (!hitReport) return '';
+        const winSet = new Set(hitReport.winNums);
+        const bonusNum = hitReport.bonusNum;
+
+        const buildHitChip = (item) => {
+            const isMain = item.hitType === 'main';
+            const isBon = item.hitType === 'bonus';
+            const textColor = (item.n <= 10) ? '#0f172a' : '#ffffff';
+            const stateCls = isMain ? 'is-hit-main' : (isBon ? 'is-hit-bonus' : 'is-hit-miss');
+            const badgeHtml = isMain
+                ? '<span class="core-hit-tag tag-main">본번호 적중</span>'
+                : (isBon
+                    ? '<span class="core-hit-tag tag-bonus">보너스 적중</span>'
+                    : '<span class="core-hit-tag tag-miss">미출현</span>');
+            return `
+                <div class="banner-core-hit-chip ${stateCls}">
+                    <span class="lotto-ball lotto-ball-sm ${getBallColorClass(item.n)} banner-core-ball" style="color: ${textColor};">
+                        ${item.n}
+                    </span>
+                    ${badgeHtml}
+                </div>
+            `;
+        };
+
+        const revTop6Html = hitReport.top6Items.map(buildHitChip).join('');
+        const revSup10Html = hitReport.support10Items.map(buildHitChip).join('');
+
+        const sampleGames = hitReport.winningGames.slice(0, 6);
+        const gamesHtml = sampleGames.length > 0
+            ? sampleGames.map(g => {
+                const balls = g.numbers.map(n => {
+                    const isMain = winSet.has(n);
+                    const isBon = (n === bonusNum);
+                    const textColor = (n <= 10) ? '#0f172a' : '#ffffff';
+                    const cls = isMain ? 'core-win-ball-main' : (isBon ? 'core-win-ball-bonus' : 'core-win-ball-dim');
+                    return `<span class="lotto-ball lotto-ball-sm ${getBallColorClass(n)} ${cls}" style="color: ${textColor};">${n}</span>`;
+                }).join('');
+                return `
+                    <div class="core-win-game-card">
+                        <div class="core-win-game-head">
+                            <span class="core-win-game-lbl">${g.gameLabel}</span>
+                            <span class="core-win-game-badge">${g.rank}등 (+${g.prize.toLocaleString()}원)</span>
+                        </div>
+                        <div class="core-win-game-balls">${balls}</div>
+                    </div>
+                `;
+            }).join('')
+            : `<div class="core-win-empty">제 ${hitReport.round}회 30게임 중 5등 이상 당첨 조합이 없습니다.</div>`;
+
+        return `
+            <div class="weekly-core-meta-bar">
+                <span>
+                    <strong>제 ${hitReport.round}회 코어 16 적중 성적:</strong>
+                    핵심 코어 <strong>${hitReport.core6SummaryText}</strong> + 보조 코어 <strong>${hitReport.support10SummaryText}</strong>
+                    (${hitReport.wheelDetailText})
+                </span>
+                <span class="weekly-core-filter-status">
+                    ${hitReport.totalPrize > 0 ? `+${hitReport.totalPrize.toLocaleString()}원 당첨` : hitReport.wheelSummaryText}
+                </span>
+            </div>
+
+            <div class="weekly-core-group">
+                <div class="weekly-core-group-head">
+                    <span class="group-label-top6"><i class="fa-solid fa-star"></i> 제 ${hitReport.round}회 핵심 코어 TOP ${hitReport.top6Items.length} 적중 대조 (1번 조합 직결)</span>
+                    <span class="group-sub">적중 ${hitReport.core6MainHits.length + hitReport.core6BonusHits.length}수 / 총 ${hitReport.top6Items.length}수</span>
+                </div>
+                <div class="weekly-core-grid">${revTop6Html}</div>
+            </div>
+
+            <div class="weekly-core-group is-support">
+                <div class="weekly-core-group-head">
+                    <span class="group-label-support">제 ${hitReport.round}회 보조 코어 ${hitReport.support10Items.length}수 적중 대조</span>
+                    <span class="group-sub">적중 ${hitReport.support10MainHits.length + hitReport.support10BonusHits.length}수 / 총 ${hitReport.support10Items.length}수</span>
+                </div>
+                <div class="weekly-core-grid">${revSup10Html}</div>
+            </div>
+
+            <div class="weekly-core-group is-support">
+                <div class="weekly-core-group-head">
+                    <span class="group-label-support">🎯 코어 16수 적중으로 배출된 상위 당첨 게임 (30게임 중)</span>
+                    <span class="group-sub">노란 테두리 = 본번호 적중 · 하늘 테두리 = 보너스 적중</span>
+                </div>
+                <div class="core-win-games-grid">${gamesHtml}</div>
+            </div>
+        `;
+    };
+
+    const modeTabsHtml = hitReport ? `
+        <div class="weekly-core-mode-tabs">
+            <button type="button"
+                onclick="window.switchWeeklyCoreCardMode && window.switchWeeklyCoreCardMode('next')"
+                class="weekly-core-mode-btn ${!isReviewMode ? 'is-active' : ''}">
+                ✨ 이번 주 ${summary.round}회 신규 코어 ${summary.poolSize} (${summary.maxKnownDrawnRound}회 반영)
+            </button>
+            <button type="button"
+                onclick="window.switchWeeklyCoreCardMode && window.switchWeeklyCoreCardMode('review')"
+                class="weekly-core-mode-btn ${isReviewMode ? 'is-active' : ''}">
+                🏆 직전 ${hitReport.round}회 코어 적중 성적표 (총 ${hitReport.totalHits}/7 적중)
+            </button>
+        </div>
+    ` : '';
+
     secEl.innerHTML = `
         <div class="weekly-core-card">
             <div class="weekly-core-header">
                 <div class="weekly-core-title-wrap">
-                    <span class="weekly-core-badge"><i class="fa-solid fa-crosshairs"></i> ${badgeLabel}</span>
-                    <h3 class="weekly-core-title">이번 주 올라운더 1·2·3 코어 핵심 숫자</h3>
+                    <span class="weekly-core-badge"><i class="fa-solid fa-crosshairs"></i> ${isReviewMode ? `제 ${hitReport.round}회 적중 성적` : badgeLabel}</span>
+                    <h3 class="weekly-core-title">${isReviewMode ? `제 ${hitReport.round}회 핵심·보조 코어 적중 성적표` : '이번 주 올라운더 1·2·3 코어 핵심 숫자'}</h3>
                     <span class="weekly-core-sync-pill"><i class="fa-solid fa-circle-check"></i> ${summary.maxKnownDrawnRound}회 반영</span>
                 </div>
                 <div class="weekly-core-actions">
-                    ${hasSelection ? `
+                    ${(!isReviewMode && hasSelection) ? `
                         <button type="button" onclick="window.clearWeeklyCoreSelection && window.clearWeeklyCoreSelection()" class="weekly-core-btn-clear">
                             <i class="fa-solid fa-rotate-left"></i> 선택 해제 (${selArr.length})
                         </button>
@@ -33805,40 +34222,50 @@ function renderWeeklyCoreNumbersCard(effectiveUserId = null, curUpcomingRound = 
                 </div>
             </div>
 
+            ${modeTabsHtml}
+
             <div class="weekly-core-body" style="display: ${isWeeklyCoreExpanded ? 'flex' : 'none'};">
-                <div class="weekly-core-meta-bar">
-                    <span>${descText}</span>
-                    <span id="weeklyCoreFilterStatus" class="weekly-core-filter-status">
-                        ${hasSelection ? `선택 [${selArr.join(', ')}] 포함 조합 강조 중` : '코어 공을 탭하면 아래 10게임에서 위치를 표시합니다'}
-                    </span>
-                </div>
-
-                <div class="weekly-core-group">
-                    <div class="weekly-core-group-head">
-                        <span class="group-label-top6"><i class="fa-solid fa-star"></i> 최핵심 앵커 TOP ${summary.topAnchors.length} (동적 점수 최상위)</span>
-                        <span class="group-sub">상단 30G 빈도 · 하단 현재 팩 출현수</span>
+                ${isReviewMode ? buildReviewPaneHtml() : `
+                    <div class="weekly-core-meta-bar">
+                        <span>${descText}</span>
+                        <span id="weeklyCoreFilterStatus" class="weekly-core-filter-status">
+                            ${hasSelection ? `선택 [${selArr.join(', ')}] 포함 조합 강조 중` : '코어 공을 탭하면 아래 10게임에서 위치를 표시합니다'}
+                        </span>
                     </div>
-                    <div class="weekly-core-grid">${top6Html}</div>
-                </div>
 
-                ${summary.supportPool.length > 0 ? `
-                    <div class="weekly-core-group is-support">
+                    <div class="weekly-core-group">
                         <div class="weekly-core-group-head">
-                            <span class="group-label-support">서포트 코어 풀 ${summary.supportPool.length}수 (총 ${summary.poolSize}수 완성)</span>
-                            <span class="group-sub">오름차순 정렬</span>
+                            <span class="group-label-top6"><i class="fa-solid fa-star"></i> 최핵심 앵커 TOP ${summary.topAnchors.length} (동적 점수 최상위)</span>
+                            <span class="group-sub">상단 30G 빈도 · 하단 현재 팩 출현수</span>
                         </div>
-                        <div class="weekly-core-grid">${supportHtml}</div>
+                        <div class="weekly-core-grid">${top6Html}</div>
                     </div>
-                ` : ''}
 
-                <div class="weekly-core-legend">
-                    <span><i class="core-dot is-gold"></i> TOP 6 핵심 앵커</span>
-                    <span><i class="core-dot is-green"></i> 32번+ 고배당 EV 우대</span>
-                    <span><i class="core-dot is-blue"></i> 번호 클릭 시 아래 조합 하이라이트</span>
-                </div>
+                    ${summary.supportPool.length > 0 ? `
+                        <div class="weekly-core-group is-support">
+                            <div class="weekly-core-group-head">
+                                <span class="group-label-support">서포트 코어 풀 ${summary.supportPool.length}수 (총 ${summary.poolSize}수 완성)</span>
+                                <span class="group-sub">오름차순 정렬</span>
+                            </div>
+                            <div class="weekly-core-grid">${supportHtml}</div>
+                        </div>
+                    ` : ''}
+
+                    <div class="weekly-core-legend">
+                        <span><i class="core-dot is-gold"></i> TOP 6 핵심 앵커</span>
+                        <span><i class="core-dot is-green"></i> 32번+ 고배당 EV 우대</span>
+                        <span><i class="core-dot is-blue"></i> 번호 클릭 시 아래 조합 하이라이트</span>
+                    </div>
+                `}
             </div>
         </div>
     `;
+}
+
+function switchWeeklyCoreCardMode(mode) {
+    weeklyCoreCardMode = (mode === 'review') ? 'review' : 'next';
+    isWeeklyCoreExpanded = true;
+    renderWeeklyCoreNumbersCard(_lastWeeklyCoreParams.userId, _lastWeeklyCoreParams.round, _lastWeeklyCoreParams.algoKey);
 }
 
 function toggleWeeklyCoreNumber(num) {
@@ -34485,6 +34912,10 @@ async function handleGenerateAll70Games() {
         if (typeof renderWeeklyCoreNumbersCard !== 'undefined') {
             __exports.renderWeeklyCoreNumbersCard = renderWeeklyCoreNumbersCard;
             if (typeof window !== 'undefined') window.renderWeeklyCoreNumbersCard = renderWeeklyCoreNumbersCard;
+        }
+        if (typeof switchWeeklyCoreCardMode !== 'undefined') {
+            __exports.switchWeeklyCoreCardMode = switchWeeklyCoreCardMode;
+            if (typeof window !== 'undefined') window.switchWeeklyCoreCardMode = switchWeeklyCoreCardMode;
         }
         if (typeof toggleWeeklyCoreNumber !== 'undefined') {
             __exports.toggleWeeklyCoreNumber = toggleWeeklyCoreNumber;
@@ -60420,6 +60851,9 @@ async function renderLandingDashboard() {
 
     if (typeof window.renderFortuneAdvisorCard === 'function') {
         try { window.renderFortuneAdvisorCard(); } catch(e){}
+    }
+    if (typeof window.renderLatestDrawCoreHitPanel === 'function') {
+        try { window.renderLatestDrawCoreHitPanel(); } catch(e){}
     }
     if (typeof window !== 'undefined' && window.PushClient) {
         try {
