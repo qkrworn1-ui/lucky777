@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.16.1432 - BUILD_DATE: 2026-11-16] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.16.1650 - BUILD_DATE: 2026-11-16] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.16.1432)
+ * Lucky777 Smart Bundle (v2026.11.16.1650)
  */
 
 
@@ -22425,7 +22425,7 @@ function exitHistoryIsolation(wasIsolated) {
     }
 }
 
-const ALGO_REVISION_3B = 'v2026.11_3b_16wheel';
+const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_anchor1';
 
 function hasConfirmedLedgerForRound(userId, roundNum) {
     const cleanU = String(userId || '').trim().toLowerCase();
@@ -22551,7 +22551,7 @@ function _selectBalancedPool16_3B(dynScore, rng) {
     return { pool16: picked.sort((a, b) => a - b), scoreMap };
 }
 
-function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap) {
+function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null) {
     const numCnt = new Int16Array(16);
     const tCnt = new Uint16Array(4096);
     const qCnt = new Uint8Array(65536);
@@ -22603,8 +22603,20 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap) {
 
     const idxToSortedNums = (idxArr) => idxArr.map(i => pool16[i]).sort((a, b) => a - b);
 
-    // Phase 1: Covering-aware Greedy Construction (30 games)
-    for (let gIdx = 0; gIdx < 30; gIdx++) {
+    // #1 고정 슬롯: TOP 6 최핵심 앵커 6수 직결 편입 (6수 적중 시 1등, 5수+보너스 시 2등 100% 보장)
+    let hasPinnedSlot = false;
+    if (Array.isArray(pinnedTop6) && pinnedTop6.length === 6) {
+        const pinnedIdx = pinnedTop6.map(n => pool16.indexOf(n)).filter(i => i >= 0).sort((a, b) => a - b);
+        if (pinnedIdx.length === 6) {
+            gamesIdx.push(pinnedIdx);
+            usedKeys.add(idxToSortedNums(pinnedIdx).join(','));
+            addGameCounts(pinnedIdx, 1);
+            hasPinnedSlot = true;
+        }
+    }
+
+    // Phase 1: Covering-aware Greedy Construction (remaining slots up to 30 games)
+    for (let gIdx = gamesIdx.length; gIdx < 30; gIdx++) {
         let bestIdxArr = null;
         let bestSc = 1e18;
         let minC = 9999;
@@ -22675,7 +22687,8 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap) {
         addGameCounts(bestIdxArr, 1);
     }
 
-    // Phase 2: Fast 2-opt Covering Refinement (3수 커버리지 극대화 + 4수 중복 비증가)
+    // Phase 2: Fast 2-opt Covering Refinement (3수 커버리지 극대화 + 4수 중복 비증가, #1 TOP6 직결 슬롯 잠금)
+    const startSwapPos = hasPinnedSlot ? 1 : 0;
     for (let it = 0; it < 350; it++) {
         let hasUncovered = false;
         for (let i = 0; i < allTriples.length; i++) {
@@ -22685,7 +22698,7 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap) {
 
         let worstPos = -1;
         let worstUniq = 99;
-        for (let pos = 0; pos < 30; pos++) {
+        for (let pos = startSwapPos; pos < 30; pos++) {
             let uniq = 0;
             for (const tk of gameTriples(gamesIdx[pos])) {
                 if (tCnt[tk] === 1) uniq++;
@@ -22795,10 +22808,14 @@ function computeAllRounder3BPortfolio(targetRound = null, customUserId = null) {
         const rng = createDeterministicRng(seed);
 
         // 1. 실증 비인기 EV + 구간 최소 하한 + 홀짝 균형 기반 16수 코어 풀 선별 (타이브레이커 난수 0.04)
-        const { pool16 } = _selectBalancedPool16_3B(dynScore, rng);
+        const { pool16, scoreMap } = _selectBalancedPool16_3B(dynScore, rng);
+        const top6Anchors = [...pool16]
+            .sort((a, b) => (scoreMap[b] - scoreMap[a]) || (a - b))
+            .slice(0, 6)
+            .sort((a, b) => a - b);
 
-        // 2. 16수 내부 커버링 2-opt 30게임 휠링 (상한/고합계 차단 없음)
-        const rawGames = _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap);
+        // 2. #1 슬롯 TOP 6 직결 고정 + 잔여 29게임 16수 커버링 2-opt 휠링
+        const rawGames = _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, top6Anchors);
 
         const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
         const poolStr = pool16.join(',');
@@ -22809,24 +22826,33 @@ function computeAllRounder3BPortfolio(targetRound = null, customUserId = null) {
             const stats = calculateStats(nums);
             stats.acValue = ac;
             stats.evMultiplier = Number(evMult.toFixed(2));
-            const numReasons = nums.map(n => `${n}번: 최신 회차 동적신호 상위 16수 압축 풀([${poolStr}]) 코어 휠링`);
+            const isAnchorSlot = (packIdx === 1 && idxInPack === 0);
+            const numReasons = nums.map(n => isAnchorSlot
+                ? `${n}번: 최핵심 앵커 TOP 6([${top6Anchors.join(',')}]) 직결 편입 수`
+                : `${n}번: 최신 회차 동적신호 상위 16수 압축 풀([${poolStr}]) 코어 휠링`);
 
             if (packIdx === 1) {
                 return {
                     id: `V4-G1-${idxInPack + 1}`,
-                    name: `[올라운더] 16수 초압축 다중·고액 휠`,
+                    name: isAnchorSlot ? `[올라운더] 16수 초압축 TOP6 코어 직결 휠` : `[올라운더] 16수 초압축 다중·고액 휠`,
                     numbers: nums,
                     stats,
                     meta: {
-                        rankBadge: `16-WHEEL ${idxInPack + 1}`,
+                        rankBadge: isAnchorSlot ? `TOP6 직결 1` : `16-WHEEL ${idxInPack + 1}`,
                         rankClass: idxInPack < 4 ? 'top-1-badge' : (idxInPack < 7 ? 'top-4-badge' : 'badge-v3-engine'),
                         badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
-                        name: `16수 초압축 폭발 휠 (올라운더 1)`,
-                        tag: `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
-                        desc: `최신 회차(${maxKnownDrawnRound}회) 반영 동적 신호로 엄선된 16수 풀 내부에서 4수·3수 중복을 최소화해 다중·고액 당첨 밀도를 극대화합니다.`,
-                        lawName: '3안-B: 16수 초압축 커버링 휠 (올라운더 1·2·3 연동)',
-                        probRationale: `50,000회 몬테카를로 검증 기준 3건+ 다중당첨 9.66%, 5건+ 대폭발 20배, 고액 EV 1.13x 달성 엔진`,
-                        targetBenefit: '다중 적중(3건+·5건+) 및 3·4등 동시 포획 극대화',
+                        name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (올라운더 1)`,
+                        tag: isAnchorSlot
+                            ? `TOP6 직결 | 16수 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`
+                            : `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                        desc: isAnchorSlot
+                            ? `최핵심 앵커 TOP 6([${top6Anchors.join(', ')}]) 조합을 그대로 1번 슬롯에 직결 편입해 6수 전원 적중 시 1등, 5수+보너스(TOP6 내) 적중 시 2등을 100% 보장합니다.`
+                            : `최신 회차(${maxKnownDrawnRound}회) 반영 동적 신호로 엄선된 16수 풀 내부에서 4수·3수 중복을 최소화해 다중·고액 당첨 밀도를 극대화합니다.`,
+                        lawName: isAnchorSlot ? '3안-B: 최핵심 앵커 TOP 6 1등·2등 직결 슬롯' : '3안-B: 16수 초압축 커버링 휠 (올라운더 1·2·3 연동)',
+                        probRationale: isAnchorSlot
+                            ? 'TOP 6 코어 6자리 전원 적중 시 1등, 5수+보너스(TOP 6 내) 적중 시 2등, 5수 적중 시 3등 확정 구조'
+                            : `50,000회 몬테카를로 검증 기준 3건+ 다중당첨 9.66%, 5건+ 대폭발 20배, 고액 EV 1.13x 달성 엔진`,
+                        targetBenefit: isAnchorSlot ? 'TOP 6 핵심 코어 적중 시 1등·2등 무누락 직결 포획' : '다중 적중(3건+·5건+) 및 3·4등 동시 포획 극대화',
                         numReasons
                     }
                 };
@@ -25189,7 +25215,7 @@ function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = null) {
     }));
 
     if (is3BMode) {
-        enriched.sort((a, b) => (b.rankScore - a.rankScore) || (b.freq30 - a.freq30) || (a.n - b.n));
+        enriched.sort((a, b) => (b.rankScore - a.rankScore) || (a.n - b.n));
     } else {
         enriched.sort((a, b) => (b.freq30 - a.freq30) || (b.dynScore - a.dynScore) || (a.n - b.n));
     }

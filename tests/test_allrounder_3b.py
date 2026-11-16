@@ -25,7 +25,7 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         with open(modal_path, encoding='utf-8') as f:
             modal_js = f.read()
 
-        self.assertIn("ALGO_REVISION_3B = 'v2026.11_3b_16wheel'", gen_js)
+        self.assertIn("ALGO_REVISION_3B = 'v2026.11_3b_16wheel_anchor1'", gen_js)
         self.assertIn("computeAllRounder3BPortfolio", gen_js)
         self.assertIn("isRound1251UpgradePending", gen_js)
         self.assertIn("roundForSeed >= 1251", gen_js)
@@ -91,7 +91,8 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
 
                 const g1250 = window.isRound1251UpgradePending({ algoRevision: 'v2026.10_3stage' }, 1250, 'master');
                 const g1251Old = window.isRound1251UpgradePending({ algoRevision: 'v2026.10_3stage' }, 1251, 'master');
-                const g1251New = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel' }, 1251, 'master');
+                const g1251Prev3B = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel' }, 1251, 'master');
+                const g1251New = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel_anchor1' }, 1251, 'master');
 
                 const p2Null = window.generateExtraAddonPack(2, 1251, 'master');
                 const p3Null = window.generateExtraAddonPack(3, 1251, 'master');
@@ -106,6 +107,17 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                 const frozen = window.getParkJaeGoo1246FrozenSnapshot();
                 const coreSummary = window.getWeeklyCoreNumbersSummary(1251, 'master');
 
+                const top6Sorted = coreSummary ? coreSummary.topAnchors.map(x => x.n).sort((a,b) => a-b) : [];
+                const top6DirectIncluded = top6Sorted.length === 6 && JSON.stringify([...v4_1251[0].numbers].sort((a,b) => a-b)) === JSON.stringify(top6Sorted);
+                const rank1OnTop6 = all30.some(c => JSON.stringify([...c.numbers].sort((a,b) => a-b)) === JSON.stringify(top6Sorted));
+                const bonTop6 = top6Sorted[0];
+                const outsideNum = [1,2,3,4,5,6,7,8,9,10].find(n => !top6Sorted.includes(n));
+                const main5PlusOutside = [...top6Sorted.slice(1), outsideNum];
+                const rank2OnTop6Bonus = all30.some(c => {
+                    const m = c.numbers.filter(x => main5PlusOutside.includes(x)).length;
+                    return m === 5 && c.numbers.includes(bonTop6);
+                });
+
                 window.state.mergedHistory[1251] = { numbers: [2, 9, 14, 31, 35, 45], bonus: 22 };
                 window.applyNewDrawData({ drwNo: 1251, numbers: [2, 9, 14, 31, 35, 45], bonus: 22 });
                 const pool1252 = new Set(window.computeAbsoluteTop10Combinations(false, 1252, 'v4', true, 'master').flatMap(c => c.numbers));
@@ -117,7 +129,11 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                     uniqueCount: uniqGames.size,
                     g1250,
                     g1251Old,
+                    g1251Prev3B,
                     g1251New,
+                    top6DirectIncluded,
+                    rank1OnTop6,
+                    rank2OnTop6Bonus,
                     extra25Null: p2Null === null && p3Null === null && p4Null === null && p5Null === null,
                     manualDetected: manualCross && manualCross.detectedVersion === '수동/직접입력',
                     leanTotalGames: lean.totalGames,
@@ -142,7 +158,11 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         self.assertEqual(res['uniqueCount'], 30)
         self.assertFalse(res['g1250'])
         self.assertTrue(res['g1251Old'])
+        self.assertTrue(res['g1251Prev3B'])
         self.assertFalse(res['g1251New'])
+        self.assertTrue(res['top6DirectIncluded'])
+        self.assertTrue(res['rank1OnTop6'])
+        self.assertTrue(res['rank2OnTop6Bonus'])
         self.assertTrue(res['extra25Null'])
         self.assertTrue(res['manualDetected'])
         self.assertEqual(res['leanTotalGames'], 30)
