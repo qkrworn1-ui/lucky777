@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1335 - BUILD_DATE: 2026-11-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1357 - BUILD_DATE: 2026-11-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.17.1335)
+ * Lucky777 Smart Bundle (v2026.11.17.1357)
  */
 
 
@@ -21643,18 +21643,52 @@ function computeWalkForwardHedge8Snapshots(history, maxRound = null) {
                 if (lw > mx) mx = lw;
             }
             let sw = 0;
-            const ws = {};
+            const rawWeights = {};
             for (let i = 0; i < HEDGE8_EXPERT_KEYS.length; i++) {
                 const k = HEDGE8_EXPERT_KEYS[i];
                 const ev = Math.exp(expLogw[k] - mx);
-                ws[k] = ev;
+                rawWeights[k] = ev;
                 sw += ev;
             }
-            const curWeights = {};
+            for (let i = 0; i < HEDGE8_EXPERT_KEYS.length; i++) {
+                rawWeights[HEDGE8_EXPERT_KEYS[i]] /= sw;
+            }
+            // Apply simplex cap/floor projection so overdue/single-expert never dominates (Cap18% / Floor6%)
+            const curWeights = { ...rawWeights };
+            const weightCaps = { overdue: 0.18, gap_haz: 0.16, defaultMax: 0.25, floor: 0.06 };
+            for (let iter = 0; iter < 15; iter++) {
+                let fixedSum = 0;
+                let freeSum = 0;
+                const fixed = {};
+                for (let i = 0; i < HEDGE8_EXPERT_KEYS.length; i++) {
+                    const k = HEDGE8_EXPERT_KEYS[i];
+                    const maxK = weightCaps[k] || weightCaps.defaultMax;
+                    if (curWeights[k] <= weightCaps.floor) {
+                        curWeights[k] = weightCaps.floor;
+                        fixed[k] = true;
+                        fixedSum += curWeights[k];
+                    } else if (curWeights[k] >= maxK) {
+                        curWeights[k] = maxK;
+                        fixed[k] = true;
+                        fixedSum += curWeights[k];
+                    } else {
+                        freeSum += curWeights[k];
+                    }
+                }
+                const targetFree = 1.0 - fixedSum;
+                if (freeSum > 0 && Math.abs(freeSum - targetFree) > 1e-6) {
+                    const scale = targetFree / freeSum;
+                    for (let i = 0; i < HEDGE8_EXPERT_KEYS.length; i++) {
+                        const k = HEDGE8_EXPERT_KEYS[i];
+                        if (!fixed[k]) curWeights[k] *= scale;
+                    }
+                } else {
+                    break;
+                }
+            }
             for (let i = 0; i < HEDGE8_EXPERT_KEYS.length; i++) {
                 const k = HEDGE8_EXPERT_KEYS[i];
-                const w = ws[k] / sw;
-                curWeights[k] = w;
+                const w = curWeights[k];
                 const zVec = zExp[k];
                 for (let n = 1; n <= 45; n++) dynScore[n] += w * zVec[n];
             }
@@ -22709,7 +22743,7 @@ function exitHistoryIsolation(wasIsolated) {
     }
 }
 
-const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_plana_v4';
+const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_plana_v5';
 
 function hasConfirmedLedgerForRound(userId, roundNum) {
     const cleanU = String(userId || '').trim().toLowerCase();

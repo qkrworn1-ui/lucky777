@@ -143,7 +143,7 @@ export function exitHistoryIsolation(wasIsolated) {
     }
 }
 
-export const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_plana_v4';
+export const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_plana_v5';
 
 export function hasConfirmedLedgerForRound(userId, roundNum) {
     const cleanU = String(userId || '').trim().toLowerCase();
