@@ -1,11 +1,30 @@
 import { state } from '../state.js';
 import { showToast } from '../../../shared/utils.js';
-import { computeAbsoluteTop10Combinations, generateExtraAddonPack } from '../generator.js';
+import { computeAbsoluteTop10Combinations, generateExtraAddonPack, buildWalkForwardCore3BScoreCache, generateCore3BPortfolioAtRound } from '../generator.js';
 import { renderTop5Combinations, renderExtraAddonPacksSection, getUserActiveExtraPackIds, saveUserActiveExtraPackIds } from './generator-tab.js';
 import { getComboNumbers, isUserEligibleForExtraPacks } from '../ledger.js';
 import { SafeAuth, isAdminUser } from '../../../shared/auth-mgmt.js';
 
 let currentOptimizedResult = null;
+let _optBacktestRange = 50; // 50, 300, or 0 (all rounds)
+
+export function setOptBacktestRange(cnt, btnEl = null) {
+    _optBacktestRange = Number(cnt) || 0;
+    document.querySelectorAll('.opt-range-btn').forEach(b => {
+        b.style.background = 'transparent';
+        b.style.color = '#cbd5e1';
+        b.style.borderColor = '#475569';
+        b.style.fontWeight = '700';
+        b.classList.remove('active');
+    });
+    if (btnEl) {
+        btnEl.style.background = '#0284c7';
+        btnEl.style.color = '#ffffff';
+        btnEl.style.borderColor = '#38bdf8';
+        btnEl.style.fontWeight = '800';
+        btnEl.classList.add('active');
+    }
+}
 
 // Sound & Audio Context for Budget Optimizer
 let _optAudioCtx = null;
@@ -165,7 +184,13 @@ export const ALL_PACK_DEFS = [
     { id: 'extra1', type: 'extra', packId: 1, name: '기본 3: 올라운더 팩 3 (10게임)', shortName: '올라운더3(10)', games: 10, color: '#10b981' }
 ];
 
-function getPackUpcomingCombos(pack, round, userId) {
+function getPackUpcomingCombos(pack, round, userId, pf = null) {
+    const port = pf || generateCore3BPortfolioAtRound(round, userId, null, true);
+    if (port) {
+        if (pack.id === 'v4' && Array.isArray(port.v4)) return port.v4;
+        if (pack.id === 'v3' && Array.isArray(port.v3)) return port.v3;
+        if ((pack.id === 'extra1' || pack.packId === 1) && Array.isArray(port.ar3)) return port.ar3;
+    }
     if (pack.type === 'engine') {
         const c = computeAbsoluteTop10Combinations(false, round, pack.version, true, userId) || [];
         return (pack.games === 5 ? c.slice(0, 5) : c);
@@ -372,7 +397,8 @@ export async function runBudgetOptimizationSimulation() {
     const ownedNames = ownedPacks.length > 0 ? ownedPacks.map(p => p.shortName).join(' + ') : '없음 (0게임)';
     const ownedGames = ownedPacks.reduce((sum, p) => sum + p.games, 0);
 
-    const maxRound = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1238);
+    const maxRound = state.latestRoundNum || (state.latestDrawData ? state.latestDrawData.drwNo : 1250);
+    const startRound = (_optBacktestRange > 0) ? Math.max(1, maxRound - _optBacktestRange + 1) : 1;
     const curUpcomingRound = (typeof window !== 'undefined' && typeof window.getUpcomingLottoRound === 'function')
         ? window.getUpcomingLottoRound()
         : (state.latestDrawData ? state.latestDrawData.drwNo + 1 : maxRound + 1);
@@ -382,10 +408,12 @@ export async function runBudgetOptimizationSimulation() {
     const targetViewingUser = (typeof window !== 'undefined' && window.generatorAdminViewingUser) ? window.generatorAdminViewingUser : null;
     const effectiveUserId = (isAdmin && targetViewingUser ? targetViewingUser : authId).toLowerCase().trim();
 
+    const upcomingPortfolio = generateCore3BPortfolioAtRound(curUpcomingRound, effectiveUserId, null, true);
+
     // Baseline coverage calculation
     const baselineNumberSet = new Set();
     ownedPacks.forEach(p => {
-        const combos = getPackUpcomingCombos(p, curUpcomingRound, effectiveUserId);
+        const combos = getPackUpcomingCombos(p, curUpcomingRound, effectiveUserId, upcomingPortfolio);
         combos.forEach(c => {
             const nums = getComboNumbers(c);
             if (Array.isArray(nums)) nums.forEach(n => baselineNumberSet.add(n));
@@ -397,10 +425,10 @@ export async function runBudgetOptimizationSimulation() {
 
     logTerminal(`📌 [기존 보유 팩] <strong>${ownedNames}</strong> (${ownedGames}게임 고정 포함, 번호 커버리지 ${baselineCoverage}%)`, '#60a5fa', true);
     logTerminal(`🚀 [추가 구매 예산] <strong>${additionalBudget.toLocaleString()}원 (${additionalGames}게임 추가)</strong> 시너지 1위 팩 탐색 시작...`, '#38bdf8', true);
-    await new Promise(r => setTimeout(r, 60));
+    await new Promise(r => setTimeout(r, 40));
 
-    logTerminal(`📊 [빅데이터 매트릭스] 1회차 ~ ${maxRound}회차 실당첨번호 빅데이터 & 마르코프 전이 행렬 로드 완료`, '#94a3b8');
-    await new Promise(r => setTimeout(r, 60));
+    logTerminal(`📊 [현행 코어 16수 엔진] ${startRound}~${maxRound}회차 실당첨번호 & 워크포워드 동적 점수 로드 완료`, '#94a3b8');
+    await new Promise(r => setTimeout(r, 40));
 
     // 2. Determine Candidate Additional Packs (excluding already owned ones)
     let candidatePool = ALL_PACK_DEFS.filter(p => !ownedPacks.some(op => op.id === p.id));
@@ -437,92 +465,93 @@ export async function runBudgetOptimizationSimulation() {
         candidateCombinations = [ALL_PACK_DEFS.slice(0, 1)];
     }
 
-    logTerminal(`🔍 [후보군 탐색] 총 ${candidateCombinations.length}개 추가팩 조합 후보군 구성 완료. 초고속 병렬 백테스팅 대조 중...`, '#fbbf24', true);
-    await new Promise(r => setTimeout(r, 60));
+    logTerminal(`🔍 [후보군 탐색] 총 ${candidateCombinations.length}개 추가팩 조합 (${startRound}~${maxRound}회) 백테스팅 대조 중...`, '#fbbf24', true);
+    await new Promise(r => setTimeout(r, 40));
 
-    const evaluatedDrawCount = maxRound;
+    const evaluatedDrawCount = maxRound - startRound + 1;
 
-    // 3. Ultra-Fast Matrix Evaluation: Pre-evaluate each distinct pack across all rounds ONCE
+    // 3. Single-pass Core 3B Walk-Forward Matrix Evaluation across [startRound..maxRound]
     const distinctPacksMap = new Map();
     [...ownedPacks, ...candidatePool].forEach(p => distinctPacksMap.set(p.id, p));
     const distinctPacks = Array.from(distinctPacksMap.values());
 
     const packEvals = new Map();
-    const totalSteps = distinctPacks.length;
-
-    for (let pIdx = 0; pIdx < distinctPacks.length; pIdx++) {
-        const pack = distinctPacks[pIdx];
-        const matrixCacheKey = `${effectiveUserId}_${pack.id}_${maxRound}`;
-
-        if (_optMatrixMemoryCache.has(matrixCacheKey)) {
-            packEvals.set(pack.id, _optMatrixMemoryCache.get(matrixCacheKey));
-            const packPct = Math.round(((pIdx + 1) / totalSteps) * 50);
-            if (progBar) progBar.style.width = `${packPct}%`;
-            if (progPct) progPct.innerText = `${packPct}%`;
-            continue;
+    const uncachedPacks = distinctPacks.filter(p => !_optMatrixMemoryCache.has(`core3b_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`));
+    distinctPacks.forEach(p => {
+        const mk = `core3b_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`;
+        if (_optMatrixMemoryCache.has(mk)) {
+            packEvals.set(p.id, _optMatrixMemoryCache.get(mk));
+        } else {
+            packEvals.set(p.id, new Array(maxRound + 1));
         }
+    });
 
+    let core6TotalHitsInRange = 0;
+    let pool16TotalHitsInRange = 0;
+    let pool16_4PlusRounds = 0;
+    let validDrawnRounds = 0;
+
+    if (uncachedPacks.length > 0 || true) {
+        const scoreCache = buildWalkForwardCore3BScoreCache(maxRound);
         if (rouletteEl) {
-            rouletteEl.innerText = pack.name;
-            rouletteEl.style.color = pack.color || '#fbbf24';
+            rouletteEl.innerText = '핵심 6수 · 보조 10수 30G 통합 휠';
+            rouletteEl.style.color = '#fbbf24';
         }
-        if (subEl) {
-            subEl.innerText = `1~${maxRound}회차 백테스팅 대조 중... [${pIdx + 1}/${distinctPacks.length}]`;
-        }
-        playOptTickSound();
-
-        const roundResults = new Array(maxRound + 1);
-
-        for (let r = maxRound; r >= 1; r--) {
-            if (r % 100 === 0) await new Promise(res => setTimeout(res, 0));
-            const draw = state.mergedHistory[r];
-            if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) {
-                roundResults[r] = { h1: 0, h2: 0, h3: 0, h4: 0, h5: 0, prize: 0 };
-                continue;
+        for (let r = maxRound; r >= startRound; r--) {
+            if ((maxRound - r) % 25 === 0) {
+                const pctDone = Math.round(((maxRound - r + 1) / evaluatedDrawCount) * 50);
+                if (progBar) progBar.style.width = `${pctDone}%`;
+                if (progPct) progPct.innerText = `${pctDone}%`;
+                if (subEl) subEl.innerText = `${startRound}~${maxRound}회 코어 16수 백테스트 중... (제 ${r}회)`;
+                await new Promise(res => setTimeout(res, 0));
             }
+            const draw = state.mergedHistory[r];
+            if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) continue;
+            validDrawnRounds++;
 
             const winningSet = new Set(draw.numbers);
             const bonusNum = draw.bonus;
+            const pf = generateCore3BPortfolioAtRound(r, effectiveUserId, scoreCache, true);
+            if (!pf) continue;
 
-            let combos = [];
-            if (pack.type === 'engine') {
-                const c = computeAbsoluteTop10Combinations(false, r, pack.version, true, effectiveUserId) || [];
-                combos = (pack.games === 5 ? c.slice(0, 5) : c);
-            } else if (pack.type === 'extra') {
-                const p = generateExtraAddonPack(pack.packId, r, effectiveUserId);
-                if (p && Array.isArray(p.combos)) combos = p.combos;
-            }
+            const c6Hit = (pf.top6Anchors || []).filter(n => winningSet.has(n)).length;
+            const p16Hit = (pf.pool16 || []).filter(n => winningSet.has(n)).length;
+            core6TotalHitsInRange += c6Hit;
+            pool16TotalHitsInRange += p16Hit;
+            if (p16Hit >= 4) pool16_4PlusRounds++;
 
-            let h1 = 0, h2 = 0, h3 = 0, h4 = 0, h5 = 0, prize = 0;
-            combos.forEach(combo => {
-                const nums = getComboNumbers(combo);
-                if (!Array.isArray(nums) || nums.length !== 6) return;
+            const p1Val = Number(draw.rank1Prize || draw.firstWinamnt || (draw.prizes && draw.prizes[1] && draw.prizes[1].prize) || 2000000000);
+            const p2Val = Number(draw.rank2Prize || (draw.prizes && draw.prizes[2] && draw.prizes[2].prize) || 50000000);
+            const p3Val = Number(draw.rank3Prize || (draw.prizes && draw.prizes[3] && draw.prizes[3].prize) || 1500000);
 
-                const matchCount = nums.filter(n => winningSet.has(n)).length;
-                const isBonus = nums.includes(bonusNum);
-
-                if (matchCount === 6) { h1++; prize += (draw.firstWinamnt || 2000000000); }
-                else if (matchCount === 5 && isBonus) { h2++; prize += 50000000; }
-                else if (matchCount === 5) { h3++; prize += 1500000; }
-                else if (matchCount === 4) { h4++; prize += 50000; }
-                else if (matchCount === 3) { h5++; prize += 5000; }
+            uncachedPacks.forEach(pack => {
+                const combos = (pack.id === 'v4') ? (pf.v4 || []) : (pack.id === 'v3' ? (pf.v3 || []) : (pf.ar3 || []));
+                let h1 = 0, h2 = 0, h3 = 0, h4 = 0, h5 = 0, prize = 0;
+                for (let ci = 0; ci < combos.length; ci++) {
+                    const nums = getComboNumbers(combos[ci]);
+                    if (!Array.isArray(nums) || nums.length !== 6) continue;
+                    const matchCount = nums.filter(n => winningSet.has(n)).length;
+                    const isBonus = nums.includes(bonusNum);
+                    if (matchCount === 6) { h1++; prize += p1Val; }
+                    else if (matchCount === 5 && isBonus) { h2++; prize += p2Val; }
+                    else if (matchCount === 5) { h3++; prize += p3Val; }
+                    else if (matchCount === 4) { h4++; prize += 50000; }
+                    else if (matchCount === 3) { h5++; prize += 5000; }
+                }
+                packEvals.get(pack.id)[r] = { h1, h2, h3, h4, h5, prize };
             });
-
-            roundResults[r] = { h1, h2, h3, h4, h5, prize };
         }
-
-        packEvals.set(pack.id, roundResults);
-        _optMatrixMemoryCache.set(matrixCacheKey, roundResults);
-
-        const packPct = Math.round(((pIdx + 1) / totalSteps) * 50);
-        if (progBar) progBar.style.width = `${packPct}%`;
-        if (progPct) progPct.innerText = `${packPct}%`;
-        await new Promise(r => requestAnimationFrame(r));
+        uncachedPacks.forEach(pack => {
+            _optMatrixMemoryCache.set(`core3b_${effectiveUserId}_${pack.id}_${startRound}_${maxRound}`, packEvals.get(pack.id));
+        });
+        if (progBar) progBar.style.width = '50%';
+        if (progPct) progPct.innerText = '50%';
+        playOptTickSound();
     }
 
     // Baseline metrics calculation for owned packs only
     let baselineHit1st = 0, baselineHit2nd = 0, baselineHit3rd = 0, baselineHit4th = 0, baselineHit5th = 0, baselinePrize = 0;
-    for (let r = maxRound; r >= 1; r--) {
+    for (let r = maxRound; r >= startRound; r--) {
         ownedPacks.forEach(p => {
             const pRes = packEvals.get(p.id);
             if (pRes && pRes[r]) {
@@ -554,7 +583,7 @@ export async function runBudgetOptimizationSimulation() {
         // Coverage computation for this candidate combination
         const candidateNumberSet = new Set(baselineNumberSet);
         newPacks.forEach(p => {
-            const combos = getPackUpcomingCombos(p, curUpcomingRound, effectiveUserId);
+            const combos = getPackUpcomingCombos(p, curUpcomingRound, effectiveUserId, upcomingPortfolio);
             combos.forEach(c => {
                 const nums = getComboNumbers(c);
                 if (Array.isArray(nums)) nums.forEach(n => candidateNumberSet.add(n));
@@ -567,7 +596,7 @@ export async function runBudgetOptimizationSimulation() {
             rouletteEl.style.color = newPacks[0].color || '#fbbf24';
         }
         if (subEl) {
-            subEl.innerText = `시너지 최적화 분석 [후보 ${cIdx + 1}/${candidateCombinations.length}]`;
+            subEl.innerText = `코어 시너지 최적화 분석 [후보 ${cIdx + 1}/${candidateCombinations.length}]`;
         }
         if (covVal) covVal.innerText = `${candidateCoverage}%`;
         if (covBar) covBar.style.width = `${candidateCoverage}%`;
@@ -577,7 +606,7 @@ export async function runBudgetOptimizationSimulation() {
         let hit1st = 0, hit2nd = 0, hit3rd = 0, hit4th = 0, hit5th = 0;
         let totalPrize = 0;
 
-        for (let r = maxRound; r >= 1; r--) {
+        for (let r = maxRound; r >= startRound; r--) {
             fullPortfolio.forEach(p => {
                 const pRes = packEvals.get(p.id);
                 if (pRes && pRes[r]) {
@@ -597,20 +626,21 @@ export async function runBudgetOptimizationSimulation() {
         const totalHits = hit1st + hit2nd + hit3rd + hit4th + hit5th;
         const totalCost = evaluatedDrawCount * actualPortfolioGames * 1000;
         const roi = totalCost > 0 ? ((totalPrize / totalCost) * 100).toFixed(1) : 0;
-        const hitScore = (hit1st * 5000000) + (hit2nd * 300000) + (hit3rd * 15000) + (hit4th * 200) + hit5th;
+        const hasV4Direct = fullPortfolio.some(p => p.id === 'v4');
+        const hitScore = (hit1st * 5000000) + (hit2nd * 300000) + (hit3rd * 15000) + (hit4th * 200) + hit5th + (hasV4Direct ? 5 : 0);
 
         const candidatePct = 50 + Math.round(((cIdx + 1) / candidateCombinations.length) * 50);
         if (progBar) progBar.style.width = `${candidatePct}%`;
         if (progPct) progPct.innerText = `${candidatePct}%`;
 
-        logTerminal(`[후보 ${cIdx + 1}/${candidateCombinations.length}] 기존 + <strong>[신규: ${newPackNames}]</strong> ➔ 1등: ${hit1st}회 | 2등: ${hit2nd}회 | 3등: ${hit3rd}회 | 누적: <strong>${totalHits}회</strong> (ROI: ${roi}%)`, '#cbd5e1');
+        logTerminal(`[후보 ${cIdx + 1}/${candidateCombinations.length}] 기존 + <strong>[신규: ${newPackNames}]</strong> ➔ 1~3등: ${hit1st + hit2nd + hit3rd}회 | 4등: ${hit4th}회 | 5등: ${hit5th}회 (ROI: ${roi}%)`, '#cbd5e1');
 
         if (liveFeed) {
             const feedItem = document.createElement('div');
             feedItem.style.cssText = 'display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; padding: 4px 6px; border-radius: 4px; background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.06); font-size: 0.68rem; line-height: 1.3; word-break: keep-all;';
             feedItem.innerHTML = `
                 <span style="color: ${newPacks[0].color || '#60a5fa'}; font-weight: 700;">[후보 ${cIdx + 1}] ${newPackNames}</span>
-                <span style="color: #fbbf24; font-weight: 800;">1등 ${hit1st}회 | 커버리지 ${candidateCoverage}% (ROI ${roi}%)</span>
+                <span style="color: #fbbf24; font-weight: 800;">4등 ${hit4th} · 5등 ${hit5th} (ROI ${roi}%)</span>
             `;
             liveFeed.insertBefore(feedItem, liveFeed.firstChild);
             if (liveFeed.children.length > 5) {
@@ -636,11 +666,18 @@ export async function runBudgetOptimizationSimulation() {
                 baselineTotalHits,
                 baselineRoi,
                 baselineCoverage,
-                combinedCoverage: candidateCoverage
+                combinedCoverage: candidateCoverage,
+                startRound,
+                maxRound,
+                evaluatedDrawCount,
+                hasV4Direct,
+                core6AvgHit: validDrawnRounds > 0 ? (core6TotalHitsInRange / validDrawnRounds).toFixed(2) : '0.00',
+                pool16AvgHit: validDrawnRounds > 0 ? (pool16TotalHitsInRange / validDrawnRounds).toFixed(2) : '0.00',
+                pool16_4PlusRounds
             };
         }
 
-        await new Promise(r => setTimeout(r, 40));
+        await new Promise(r => setTimeout(r, 30));
     }
 
     if (progBar) progBar.style.width = '100%';
@@ -703,9 +740,10 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
                             <span style="background: #fbbf24; color: #0f172a; padding: 1px 6px; border-radius: 5px; font-weight: 900; font-size: 0.68rem; text-transform: uppercase;">
                                 AI 1위 최적팩 확정
                             </span>
-                            <span style="color: #fde047; font-size: 0.72rem; font-weight: 800; font-family: monospace;">
-                                시너지 99.4점
+                            <span style="color: #38bdf8; font-size: 0.70rem; font-weight: 800;">
+                                ${metrics.startRound || 1}~${metrics.maxRound || ''}회 코어 16수 대조
                             </span>
+                            ${metrics.hasV4Direct ? '<span style="background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.45); color: #34d399; padding: 1px 6px; border-radius: 5px; font-size: 0.66rem; font-weight: 800;">✓ TOP6 1등 직결 포함</span>' : ''}
                         </div>
                         <h4 style="margin: 2px 0 0 0; color: #fff; font-size: clamp(0.85rem, 3.8vw, 1.02rem); font-weight: 900; word-break: keep-all; line-height: 1.25;">
                             제 ${curUpcomingRound}회차 추가 구매 추천 팩
@@ -807,6 +845,16 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
                     <div style="color: #94a3b8; font-size: 0.64rem;">환급 ROI</div>
                     <div style="color: #f43f5e; font-size: 0.88rem; font-weight: 800; font-family: monospace;">+${metrics.roi}%</div>
                 </div>
+            </div>
+
+            <!-- Core 16 Capture Performance Strip -->
+            <div style="margin-bottom: 10px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 7px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 0.72rem;">
+                <span style="color: #38bdf8; font-weight: 800;"><i class="fa-solid fa-bullseye"></i> 코어 16수 실측 포착 (${metrics.evaluatedDrawCount || 50}회):</span>
+                <span style="color: #e2e8f0; font-weight: 700;">
+                    핵심6 평균 <strong style="color: #fbbf24;">${metrics.core6AvgHit || '0.00'}수</strong> ·
+                    16풀 평균 <strong style="color: #38bdf8;">${metrics.pool16AvgHit || '0.00'}수</strong> ·
+                    4+포착 <strong style="color: #34d399;">${metrics.pool16_4PlusRounds || 0}회</strong>
+                </span>
             </div>
 
             <!-- Instant Apply Button with Pulse Glow -->
@@ -916,6 +964,7 @@ if (typeof window !== 'undefined') {
     window.closeBudgetOptimizerModal = closeBudgetOptimizerModal;
     window.clearOwnedPacksSelection = clearOwnedPacksSelection;
     window.setBudgetAmount = setBudgetAmount;
+    window.setOptBacktestRange = setOptBacktestRange;
     window.updateBudgetChipStyles = updateBudgetChipStyles;
     window.handleBudgetAmountInput = handleBudgetAmountInput;
     window.runBudgetOptimizationSimulation = runBudgetOptimizationSimulation;

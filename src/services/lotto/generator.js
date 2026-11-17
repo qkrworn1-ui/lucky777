@@ -269,7 +269,10 @@ function _selectBalancedPool16_3B(dynScore, rng) {
     return { pool16: picked.sort((a, b) => a - b), scoreMap };
 }
 
-function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null) {
+function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null, isPastHistoricalWinFn = null) {
+    const activeHistWinCheck = (typeof isPastHistoricalWinFn === 'function')
+        ? isPastHistoricalWinFn
+        : (k) => !!(state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(k));
     const numCnt = new Int16Array(16);
     const tCnt = new Uint16Array(4096);
     const qCnt = new Uint8Array(65536);
@@ -370,7 +373,7 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null)
             const nums = idxToSortedNums(picked);
             const key = nums.join(',');
             if (usedKeys.has(key)) continue;
-            if (state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(key)) continue;
+            if (activeHistWinCheck(key)) continue;
 
             let qOv = 0;
             for (const qk of gameQuads(picked)) qOv += qCnt[qk];
@@ -465,7 +468,7 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null)
             const cand = [targetT[0], targetT[1], targetT[2], sh[0], sh[1], sh[2]].sort((a, b) => a - b);
             const cKey = idxToSortedNums(cand).join(',');
             if (usedKeys.has(cKey)) continue;
-            if (state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(cKey)) continue;
+            if (activeHistWinCheck(cKey)) continue;
 
             let qOv = 0;
             for (const qk of gameQuads(cand)) qOv += qCnt[qk];
@@ -496,6 +499,306 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null)
     return gamesIdx.map(idxToSortedNums);
 }
 
+function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, crowdAvoidMap, maxKnownDrawnRound, isPastHistoricalWinFn = null, fastMode = false) {
+    const seed = getUserRoundSeed(effectiveUserId, roundForSeed, 'ar_3b_16wheel');
+    const rng = createDeterministicRng(seed);
+
+    // 1. 실증 비인기 EV + 구간 최소 하한 + 홀짝 균형 기반 16수 코어 풀 선별 (타이브레이커 난수 0.04)
+    const { pool16, scoreMap } = _selectBalancedPool16_3B(dynScore, rng);
+    const top6Ranked = [...pool16]
+        .sort((a, b) => (scoreMap[b] - scoreMap[a]) || (a - b))
+        .slice(0, 6);
+    const top6Anchors = [...top6Ranked].sort((a, b) => a - b);
+    const top6Set = new Set(top6Anchors);
+    const support10 = pool16.filter(n => !top6Set.has(n));
+
+    // 2. #1 슬롯 TOP 6 직결 고정 + 잔여 29게임 16수 커버링 2-opt 휠링
+    const rawGames = _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, top6Anchors, isPastHistoricalWinFn);
+
+    const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+    const poolStr = pool16.join(',');
+    const makeCombo = (nums, packIdx, idxInPack) => {
+        const isAnchorSlot = (packIdx === 1 && idxInPack === 0);
+        if (fastMode) {
+            if (packIdx === 1) {
+                return {
+                    id: `V4-G1-${idxInPack + 1}`,
+                    algoId: 'v4',
+                    isDirectTop6: isAnchorSlot,
+                    name: isAnchorSlot ? `TOP6 직결 휠` : `올라운더 1 휠`,
+                    numbers: nums,
+                    meta: { name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (올라운더 1)` }
+                };
+            }
+            if (packIdx === 2) {
+                return {
+                    id: `V4.2-G1-${idxInPack + 1}`,
+                    algoId: 'v3',
+                    name: `올라운더 2 EV 휠`,
+                    numbers: nums,
+                    meta: { name: `16수 초압축 EV 휠 (올라운더 2)` }
+                };
+            }
+            return {
+                id: `AR3-${idxInPack + 1}`,
+                algoId: 'extra_1',
+                name: `올라운더 3 완성 휠`,
+                numbers: nums,
+                meta: { name: `올라운더 3: 16수 초압축 완성 휠 #${idxInPack + 1}` }
+            };
+        }
+
+        const ac = _calcACLocal(nums);
+        const sum = nums.reduce((a, b) => a + b, 0);
+        const evMult = _calcEmpiricalEvMultiplier3B(nums, crowdAvoidMap);
+        const stats = calculateStats(nums);
+        stats.acValue = ac;
+        stats.evMultiplier = Number(evMult.toFixed(2));
+        const numReasons = nums.map(n => isAnchorSlot
+            ? `${n}번: 최핵심 앵커 TOP 6([${top6Anchors.join(',')}]) 직결 편입 수`
+            : `${n}번: 최신 회차 동적신호 상위 16수 압축 풀([${poolStr}]) 코어 휠링`);
+
+        if (packIdx === 1) {
+            return {
+                id: `V4-G1-${idxInPack + 1}`,
+                name: isAnchorSlot ? `[올라운더] 16수 초압축 TOP6 코어 직결 휠` : `[올라운더] 16수 초압축 다중·고액 휠`,
+                numbers: nums,
+                stats,
+                meta: {
+                    rankBadge: isAnchorSlot ? `TOP6 직결 1` : `16-WHEEL ${idxInPack + 1}`,
+                    rankClass: idxInPack < 4 ? 'top-1-badge' : (idxInPack < 7 ? 'top-4-badge' : 'badge-v3-engine'),
+                    badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
+                    name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (올라운더 1)`,
+                    tag: isAnchorSlot
+                        ? `TOP6 직결 | 16수 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`
+                        : `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                    desc: isAnchorSlot
+                        ? `최핵심 앵커 TOP 6([${top6Anchors.join(', ')}]) 조합을 그대로 1번 슬롯에 직결 편입해 6수 전원 적중 시 1등, 5수+보너스(TOP6 내) 적중 시 2등을 100% 보장합니다.`
+                        : `최신 회차(${maxKnownDrawnRound}회) 반영 동적 신호로 엄선된 16수 풀 내부에서 4수·3수 중복을 최소화해 다중·고액 당첨 밀도를 극대화합니다.`,
+                    lawName: isAnchorSlot ? '3안-B: 최핵심 앵커 TOP 6 1등·2등 직결 슬롯' : '3안-B: 16수 초압축 커버링 휠 (올라운더 1·2·3 연동)',
+                    probRationale: isAnchorSlot
+                        ? 'TOP 6 코어 6자리 전원 적중 시 1등, 5수+보너스(TOP 6 내) 적중 시 2등, 5수 적중 시 3등 확정 구조'
+                        : `50,000회 몬테카를로 검증 기준 3건+ 다중당첨 9.66%, 5건+ 대폭발 20배, 고액 EV 1.13x 달성 엔진`,
+                    targetBenefit: isAnchorSlot ? 'TOP 6 핵심 코어 적중 시 1등·2등 무누락 직결 포획' : '다중 적중(3건+·5건+) 및 3·4등 동시 포획 극대화',
+                    numReasons
+                }
+            };
+        }
+        if (packIdx === 2) {
+            return {
+                id: `V4.2-G1-${idxInPack + 1}`,
+                name: `[올라운더 2] 16수 초압축 EV 휠`,
+                customLabel: `올라운더2-${alphabet[idxInPack] || (idxInPack + 1)}`,
+                numbers: nums,
+                stats,
+                meta: {
+                    rankBadge: `16-WHEEL-2 ${idxInPack + 1}`,
+                    rankClass: 'top-4-badge',
+                    badgeClass: 'strategy-b',
+                    name: `16수 초압축 EV 휠 (올라운더 2)`,
+                    tag: `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                    desc: `올라운더 1과 동일한 16수 풀을 공유하되 4수·3수 트리플 충돌을 0에 가깝게 회피하며 고액 독식 기대값을 강화합니다.`,
+                    lawName: '3안-B: 16수 초압축 2슬롯 상호보완 휠',
+                    probRationale: '올라운더 1·2·3 합산 30게임의 쿼드·트리플 커버리지를 극대화합니다.',
+                    targetBenefit: '16수 풀 적중 시 다중·고액 당첨 폭발 시너지',
+                    numReasons
+                }
+            };
+        }
+        return {
+            id: `AR3-${idxInPack + 1}`,
+            name: `[올라운더 3] 16수 초압축 완성 휠 #${idxInPack + 1}`,
+            numbers: nums,
+            stats,
+            meta: {
+                rankBadge: `AR3-16W ${idxInPack + 1}`,
+                rankClass: idxInPack < 4 ? 'top-1-badge' : 'top-4-badge',
+                badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
+                name: `올라운더 3: 16수 초압축 완성 휠 #${idxInPack + 1}`,
+                tag: `16수 30G 완결 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                desc: `올라운더 1·2의 잔여 4수·3수 커버 빈틈을 메워 16수 초압축 30게임 휠을 완결합니다.`,
+                lawName: '3안-B: 16수 30게임 커버링 완결 블록',
+                probRationale: '16수 풀 내 번호 균등 배치 및 고액 EV 스코어링 완결.',
+                targetBenefit: '올라운더 1·2·3 통합 다중·고액 당첨 극대화',
+                numReasons
+            }
+        };
+    };
+
+    return {
+        round: roundForSeed,
+        userId: effectiveUserId,
+        algoRevision: ALGO_REVISION_3B,
+        pool16,
+        top6Anchors,
+        top6Ranked,
+        support10,
+        v4: rawGames.slice(0, 10).map((nums, i) => makeCombo(nums, 1, i)),
+        v3: rawGames.slice(10, 20).map((nums, i) => makeCombo(nums, 2, i)),
+        ar3: rawGames.slice(20, 30).map((nums, i) => makeCombo(nums, 3, i))
+    };
+}
+
+/**
+ * ⚡ O(N) 증분 워크포워드 코어 스코어 캐시 구축 (1회차 ~ maxRound까지 미래 데이터 0% 누수 없이 고속 계산)
+ * - statistics.js의 DYNAMIC_ROUND_SCORE 공식(역대빈도 40% + 전이확률 35% + 30회 EWMA 25% + 결손·이웃·이월 + 300회 군집회피)을
+ *   수학적으로 100% 동일하게 O(1)/회차 증분 업데이트로 계산합니다.
+ */
+export function buildWalkForwardCore3BScoreCache(maxRound = null) {
+    const history = state.mergedHistory || {};
+    const allRounds = Object.keys(history)
+        .filter(r => history[r] && Array.isArray(history[r].numbers) && history[r].numbers.length === 6)
+        .map(Number)
+        .sort((a, b) => a - b);
+    const limitR = maxRound || (allRounds.length ? allRounds[allRounds.length - 1] : 1250);
+
+    const decay = Math.exp(-Math.LN2 / 30.0);
+    const freq = new Int32Array(46);
+    const ewma = new Float64Array(46);
+    const lastSeen = new Int32Array(46);
+    const trans = Array.from({ length: 46 }, () => new Int32Array(46));
+    const winRoundMap = new Map();
+
+    // Rolling 300-round winner queue (w1 > 0 for rounds > (r-1) - 300)
+    const winnerWindow = []; // entries: { r, w1, nums }
+    const numWinnerSum = new Float64Array(46);
+    const numWinnerCnt = new Int32Array(46);
+    let totWinnerSum = 0;
+    let totWinnerCnt = 0;
+    let totalFreq = 0;
+    let totalEwma = 0;
+    let prevDraw = [];
+    let winQueueIdx = 0;
+
+    const roundSnapshots = new Array(limitR + 2);
+
+    for (let r = 1; r <= limitR + 1; r++) {
+        // Snapshot BEFORE round r draw occurs (knowing draws 1..r-1)
+        const maxKnown = r - 1;
+        while (winQueueIdx < winnerWindow.length && winnerWindow[winQueueIdx].r <= maxKnown - 300) {
+            const old = winnerWindow[winQueueIdx++];
+            totWinnerSum -= old.w1;
+            totWinnerCnt -= 1;
+            for (let i = 0; i < old.nums.length; i++) {
+                const bn = old.nums[i];
+                numWinnerSum[bn] -= old.w1;
+                numWinnerCnt[bn] -= 1;
+            }
+        }
+
+        const dynScore = new Float64Array(46);
+        const crowdAvoid = new Float64Array(46);
+
+        if (maxKnown <= 0) {
+            for (let n = 1; n <= 45; n++) {
+                dynScore[n] = 1.0 + (n >= 32 ? 0.015 : 0.0);
+                crowdAvoid[n] = 0.0;
+            }
+        } else {
+            const avgAllWinners = totWinnerCnt > 0 ? (totWinnerSum / totWinnerCnt) : 12.0;
+            const avgFreq = totalFreq / 45.0;
+            const avgEwma = totalEwma / 45.0;
+            const neighbors = new Set();
+            for (let i = 0; i < prevDraw.length; i++) {
+                const ln = prevDraw[i];
+                if (ln > 1) neighbors.add(ln - 1);
+                if (ln < 45) neighbors.add(ln + 1);
+            }
+            let totalM = 0;
+            for (let i = 0; i < prevDraw.length; i++) {
+                const row = trans[prevDraw[i]];
+                for (let k = 1; k <= 45; k++) totalM += row[k];
+            }
+            const avgM = prevDraw.length > 0 ? (totalM / 45.0) : 1.0;
+
+            for (let n = 1; n <= 45; n++) {
+                const shrunkAvgN = (numWinnerSum[n] + 20.0 * avgAllWinners) / (numWinnerCnt[n] + 20.0);
+                const ca = (avgAllWinners - shrunkAvgN) / Math.max(1.0, avgAllWinners);
+                crowdAvoid[n] = ca;
+
+                const fRatio = freq[n] / Math.max(1.0, avgFreq);
+                let mSum = 0;
+                for (let i = 0; i < prevDraw.length; i++) mSum += trans[prevDraw[i]][n];
+                const mRatio = (mSum + 2.0) / (avgM + 2.0);
+                const ewRatio = (ewma[n] + 1.0) / (avgEwma + 1.0);
+
+                const miss = maxKnown - lastSeen[n];
+                const ovBoost = 1.0 + Math.min(0.05, Math.max(0, miss - 8) * 0.004);
+                const nbBoost = neighbors.has(n) ? 1.02 : 1.0;
+                const coBoost = prevDraw.includes(n) ? 1.015 : 1.0;
+
+                const probScore = (0.40 * fRatio + 0.35 * mRatio + 0.25 * ewRatio) * ovBoost * nbBoost * coBoost;
+                dynScore[n] = probScore + ca * 0.06 + (n >= 32 ? 0.015 : 0.0);
+            }
+        }
+
+        roundSnapshots[r] = { dynScore, crowdAvoid, maxKnown };
+
+        if (r > limitR) break;
+
+        // Now incorporate draw r into accumulators for r+1
+        const d = history[r];
+        if (d && Array.isArray(d.numbers) && d.numbers.length === 6) {
+            const nums = d.numbers;
+            const sortedKey = [...nums].sort((a, b) => a - b).join(',');
+            if (!winRoundMap.has(sortedKey)) winRoundMap.set(sortedKey, r);
+
+            // Decay existing EWMA by 1 round step
+            let nextTotalEwma = 0;
+            for (let n = 1; n <= 45; n++) {
+                ewma[n] *= decay;
+                nextTotalEwma += ewma[n];
+            }
+            for (let i = 0; i < nums.length; i++) {
+                const bn = nums[i];
+                freq[bn] += 1;
+                totalFreq += 1;
+                ewma[bn] += 1.0;
+                nextTotalEwma += 1.0;
+                lastSeen[bn] = r;
+            }
+            totalEwma = nextTotalEwma;
+            if (prevDraw.length > 0) {
+                for (let i = 0; i < prevDraw.length; i++) {
+                    const pn = prevDraw[i];
+                    for (let j = 0; j < nums.length; j++) {
+                        trans[pn][nums[j]] += 1;
+                    }
+                }
+            }
+            prevDraw = [...nums];
+
+            const w1 = Number(d.rank1Winners || d.firstPrzwnerCo || 0);
+            if (w1 > 0) {
+                winnerWindow.push({ r, w1, nums });
+                totWinnerSum += w1;
+                totWinnerCnt += 1;
+                for (let i = 0; i < nums.length; i++) {
+                    const bn = nums[i];
+                    numWinnerSum[bn] += w1;
+                    numWinnerCnt[bn] += 1;
+                }
+            }
+        }
+    }
+
+    return { limitR, roundSnapshots, winRoundMap };
+}
+
+/**
+ * 🎯 시뮬레이션/백테스트 전용: 특정 회차(1..maxRound)의 현행 핵심·보조 코어 16수 및 30게임 휠 생성
+ */
+export function generateCore3BPortfolioAtRound(round, customUserId = null, scoreCache = null, fastMode = true) {
+    const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
+    if (scoreCache && scoreCache.roundSnapshots && scoreCache.roundSnapshots[round]) {
+        const snap = scoreCache.roundSnapshots[round];
+        const winMap = scoreCache.winRoundMap;
+        const histCheck = winMap ? (k) => (winMap.has(k) && winMap.get(k) < round) : null;
+        return _composePortfolio3BFromScores(round, effectiveUserId, snap.dynScore, snap.crowdAvoid, snap.maxKnown, histCheck, fastMode);
+    }
+    return computeAllRounder3BPortfolio(round, effectiveUserId);
+}
+
 /**
  * 🎯 3안-B: 16수 초압축 폭발 휠 (올라운더 1·2·3 통합 30게임)
  * - 최신 당첨번호(targetRound - 1)까지 반영된 DYNAMIC_ROUND_SCORE(실증 당첨자수 기반 EV·EWMA·완화된 동적신호) 기반
@@ -522,109 +825,7 @@ export function computeAllRounder3BPortfolio(targetRound = null, customUserId = 
         }
         const dynScore = state.DYNAMIC_ROUND_SCORE || {};
         const crowdAvoidMap = state.CROWD_AVOIDANCE_SCORE || {};
-        const seed = getUserRoundSeed(effectiveUserId, roundForSeed, 'ar_3b_16wheel');
-        const rng = createDeterministicRng(seed);
-
-        // 1. 실증 비인기 EV + 구간 최소 하한 + 홀짝 균형 기반 16수 코어 풀 선별 (타이브레이커 난수 0.04)
-        const { pool16, scoreMap } = _selectBalancedPool16_3B(dynScore, rng);
-        const top6Anchors = [...pool16]
-            .sort((a, b) => (scoreMap[b] - scoreMap[a]) || (a - b))
-            .slice(0, 6)
-            .sort((a, b) => a - b);
-
-        // 2. #1 슬롯 TOP 6 직결 고정 + 잔여 29게임 16수 커버링 2-opt 휠링
-        const rawGames = _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, top6Anchors);
-
-        const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
-        const poolStr = pool16.join(',');
-        const makeRichCombo = (nums, packIdx, idxInPack) => {
-            const ac = _calcACLocal(nums);
-            const sum = nums.reduce((a, b) => a + b, 0);
-            const evMult = _calcEmpiricalEvMultiplier3B(nums, crowdAvoidMap);
-            const stats = calculateStats(nums);
-            stats.acValue = ac;
-            stats.evMultiplier = Number(evMult.toFixed(2));
-            const isAnchorSlot = (packIdx === 1 && idxInPack === 0);
-            const numReasons = nums.map(n => isAnchorSlot
-                ? `${n}번: 최핵심 앵커 TOP 6([${top6Anchors.join(',')}]) 직결 편입 수`
-                : `${n}번: 최신 회차 동적신호 상위 16수 압축 풀([${poolStr}]) 코어 휠링`);
-
-            if (packIdx === 1) {
-                return {
-                    id: `V4-G1-${idxInPack + 1}`,
-                    name: isAnchorSlot ? `[올라운더] 16수 초압축 TOP6 코어 직결 휠` : `[올라운더] 16수 초압축 다중·고액 휠`,
-                    numbers: nums,
-                    stats,
-                    meta: {
-                        rankBadge: isAnchorSlot ? `TOP6 직결 1` : `16-WHEEL ${idxInPack + 1}`,
-                        rankClass: idxInPack < 4 ? 'top-1-badge' : (idxInPack < 7 ? 'top-4-badge' : 'badge-v3-engine'),
-                        badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
-                        name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (올라운더 1)`,
-                        tag: isAnchorSlot
-                            ? `TOP6 직결 | 16수 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`
-                            : `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
-                        desc: isAnchorSlot
-                            ? `최핵심 앵커 TOP 6([${top6Anchors.join(', ')}]) 조합을 그대로 1번 슬롯에 직결 편입해 6수 전원 적중 시 1등, 5수+보너스(TOP6 내) 적중 시 2등을 100% 보장합니다.`
-                            : `최신 회차(${maxKnownDrawnRound}회) 반영 동적 신호로 엄선된 16수 풀 내부에서 4수·3수 중복을 최소화해 다중·고액 당첨 밀도를 극대화합니다.`,
-                        lawName: isAnchorSlot ? '3안-B: 최핵심 앵커 TOP 6 1등·2등 직결 슬롯' : '3안-B: 16수 초압축 커버링 휠 (올라운더 1·2·3 연동)',
-                        probRationale: isAnchorSlot
-                            ? 'TOP 6 코어 6자리 전원 적중 시 1등, 5수+보너스(TOP 6 내) 적중 시 2등, 5수 적중 시 3등 확정 구조'
-                            : `50,000회 몬테카를로 검증 기준 3건+ 다중당첨 9.66%, 5건+ 대폭발 20배, 고액 EV 1.13x 달성 엔진`,
-                        targetBenefit: isAnchorSlot ? 'TOP 6 핵심 코어 적중 시 1등·2등 무누락 직결 포획' : '다중 적중(3건+·5건+) 및 3·4등 동시 포획 극대화',
-                        numReasons
-                    }
-                };
-            }
-            if (packIdx === 2) {
-                return {
-                    id: `V4.2-G1-${idxInPack + 1}`,
-                    name: `[올라운더 2] 16수 초압축 EV 휠`,
-                    customLabel: `올라운더2-${alphabet[idxInPack] || (idxInPack + 1)}`,
-                    numbers: nums,
-                    stats,
-                    meta: {
-                        rankBadge: `16-WHEEL-2 ${idxInPack + 1}`,
-                        rankClass: 'top-4-badge',
-                        badgeClass: 'strategy-b',
-                        name: `16수 초압축 EV 휠 (올라운더 2)`,
-                        tag: `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
-                        desc: `올라운더 1과 동일한 16수 풀을 공유하되 4수·3수 트리플 충돌을 0에 가깝게 회피하며 고액 독식 기대값을 강화합니다.`,
-                        lawName: '3안-B: 16수 초압축 2슬롯 상호보완 휠',
-                        probRationale: '올라운더 1·2·3 합산 30게임의 쿼드·트리플 커버리지를 극대화합니다.',
-                        targetBenefit: '16수 풀 적중 시 다중·고액 당첨 폭발 시너지',
-                        numReasons
-                    }
-                };
-            }
-            return {
-                id: `AR3-${idxInPack + 1}`,
-                name: `[올라운더 3] 16수 초압축 완성 휠 #${idxInPack + 1}`,
-                numbers: nums,
-                stats,
-                meta: {
-                    rankBadge: `AR3-16W ${idxInPack + 1}`,
-                    rankClass: idxInPack < 4 ? 'top-1-badge' : 'top-4-badge',
-                    badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
-                    name: `올라운더 3: 16수 초압축 완성 휠 #${idxInPack + 1}`,
-                    tag: `16수 30G 완결 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
-                    desc: `올라운더 1·2의 잔여 4수·3수 커버 빈틈을 메워 16수 초압축 30게임 휠을 완결합니다.`,
-                    lawName: '3안-B: 16수 30게임 커버링 완결 블록',
-                    probRationale: '16수 풀 내 번호 균등 배치 및 고액 EV 스코어링 완결.',
-                    targetBenefit: '올라운더 1·2·3 통합 다중·고액 당첨 극대화',
-                    numReasons
-                }
-            };
-        };
-
-        const portfolio = {
-            round: roundForSeed,
-            userId: effectiveUserId,
-            algoRevision: ALGO_REVISION_3B,
-            pool16,
-            v4: rawGames.slice(0, 10).map((nums, i) => makeRichCombo(nums, 1, i)),
-            v3: rawGames.slice(10, 20).map((nums, i) => makeRichCombo(nums, 2, i)),
-            ar3: rawGames.slice(20, 30).map((nums, i) => makeRichCombo(nums, 3, i))
-        };
+        const portfolio = _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, crowdAvoidMap, maxKnownDrawnRound, null, false);
         state.ar3bPortfolioCache[portfolioCacheKey] = portfolio;
         return portfolio;
     } finally {
@@ -3109,6 +3310,8 @@ if (typeof window !== 'undefined') {
     window.getUserWeeklyRecommendationSnapshotSync = getUserWeeklyRecommendationSnapshotSync;
     window.invalidateRecommendationRuntimeCaches = invalidateRecommendationRuntimeCaches;
     window.computeAllRounder3BPortfolio = computeAllRounder3BPortfolio;
+    window.buildWalkForwardCore3BScoreCache = buildWalkForwardCore3BScoreCache;
+    window.generateCore3BPortfolioAtRound = generateCore3BPortfolioAtRound;
     window.getWeeklyCoreNumbersSummary = getWeeklyCoreNumbersSummary;
     window.evaluateRoundCoreHitReport = evaluateRoundCoreHitReport;
     window.isRound1251UpgradePending = isRound1251UpgradePending;

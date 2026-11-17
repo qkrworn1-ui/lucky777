@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=700">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=700">
 
-    <link rel="stylesheet" href="styles.css?v=2026.11.17.1041">
+    <link rel="stylesheet" href="styles.css?v=2026.11.17.1059.41">
     <script>
         (function() {
             try {
@@ -141,7 +141,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.11.17.1041
+                        v2026.11.17.1059.41
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -200,7 +200,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.11.17.1041 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.11.17.1059.41 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -641,7 +641,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.11.17.1041
+                                v2026.11.17.1059.41
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -1146,9 +1146,16 @@
                     </div>
 
                     <div class="sim-run-row" style="display: flex; flex-direction: column; gap: 8px;">
-                        <!-- Top Bar: Sound & Speed Controls -->
+                        <!-- Range Selector & Sound/Speed Controls -->
                         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; padding: 0 2px;">
-                            <div style="display: flex; align-items: center; gap: 6px;">
+                            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <div id="simRangeChipGroup" style="display: inline-flex; align-items: center; gap: 3px; background: rgba(0,0,0,0.35); padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.25); font-size: 0.70rem; color: #94a3b8;">
+                                    <span style="color: #38bdf8; font-weight: 800;"><i class="fa-solid fa-crosshairs"></i> 구간:</span>
+                                    <button type="button" onclick="window.setSimRangeCount && window.setSimRangeCount(50, this)" class="sim-range-btn active" style="padding: 2px 7px; border-radius: 4px; font-weight: 800; border: none; cursor: pointer; background: #0284c7; color: #fff;">최근 50회</button>
+                                    <button type="button" onclick="window.setSimRangeCount && window.setSimRangeCount(100, this)" class="sim-range-btn" style="padding: 2px 7px; border-radius: 4px; font-weight: 800; border: none; cursor: pointer; background: transparent; color: #94a3b8;">100회</button>
+                                    <button type="button" onclick="window.setSimRangeCount && window.setSimRangeCount(300, this)" class="sim-range-btn" style="padding: 2px 7px; border-radius: 4px; font-weight: 800; border: none; cursor: pointer; background: transparent; color: #94a3b8;">300회</button>
+                                    <button type="button" onclick="window.setSimRangeCount && window.setSimRangeCount(0, this)" class="sim-range-btn" style="padding: 2px 7px; border-radius: 4px; font-weight: 800; border: none; cursor: pointer; background: transparent; color: #94a3b8;">전회차</button>
+                                </div>
                                 <button type="button" id="btnSimSoundToggle" onclick="window.toggleSimSound && window.toggleSimSound()" class="btn-dark-pill" style="padding: 3px 9px; font-size: 0.72rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; background: rgba(15,23,42,0.85); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; border-radius: 6px; cursor: pointer;">
                                     <i class="fa-solid fa-volume-high text-amber-400" id="simSoundIcon"></i>
                                     <span id="simSoundLabel">사운드 ON</span>
@@ -1160,13 +1167,13 @@
                                     <button type="button" onclick="window.setSimSpeed && window.setSimSpeed(8, this)" class="sim-speed-btn" style="padding: 1px 6px; border-radius: 4px; font-weight: 800; border: none; cursor: pointer; background: transparent; color: #94a3b8;">⚡터보</button>
                                 </div>
                             </div>
-                            <span style="font-size: 0.70rem; color: #94a3b8;">
-                                <i class="fa-solid fa-bolt text-amber-400"></i> 역대 전 회차 리얼 퀀트 대조 검증
+                            <span style="font-size: 0.70rem; color: #38bdf8; font-weight: 700;">
+                                <i class="fa-solid fa-bullseye"></i> 현행 핵심 6수·보조 10수 30G 공식 적용
                             </span>
                         </div>
 
                         <button id="btnRunRealSim" onclick="window.runRealHistoricalSimulation && window.runRealHistoricalSimulation()" class="sim-run-btn" style="width: 100%; height: 42px; font-size: 0.90rem; font-weight: 900; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #0f172a; border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.35); transition: all 0.2s;">
-                            <i class="fa-solid fa-play"></i> 1회~최신 전 회차 리얼 백테스팅 시작
+                            <i class="fa-solid fa-play"></i> 최근 50회 핵심·보조 코어 리얼 백테스팅 시작
                         </button>
                     </div>
 
@@ -1374,6 +1381,7 @@
                     <!-- 1. Algorithm Totals Section (Active by Default) -->
                     <div id="simAlgoTotalsSection" style="display:block;">
                         <div id="simGrandSummaryHeroCard" style="display:none; margin-bottom:14px;"></div>
+                        <div id="simCoreHitSummaryBox" style="display:none; margin-bottom:14px;"></div>
                         <div id="simAlgoTotalsGridContainer" class="sim-algo-totals-grid"></div>
                     </div>
 
@@ -2167,7 +2175,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.11.17.1041
+                        <i class="fa-solid fa-code-branch"></i> v2026.11.17.1059.41
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -3777,7 +3785,7 @@
                         </span>
                     </div>
                     <!-- Quick Budget Chips (2x2 Mobile Grid) -->
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-bottom: 8px;">
                         <button type="button" class="budget-chip-btn active-budget-chip" data-amount="10000" onclick="window.setBudgetAmount && window.setBudgetAmount(10000)">
                             1만원 <span style="font-size: 0.65rem; font-weight: 600; opacity: 0.85; display: block;">(+10게임 / 1팩)</span>
                         </button>
@@ -3790,6 +3798,15 @@
                         <button type="button" class="budget-chip-btn" data-amount="50000" onclick="window.setBudgetAmount && window.setBudgetAmount(50000)">
                             5만원 <span style="font-size: 0.65rem; font-weight: 600; opacity: 0.85; display: block;">(+50게임 / 5팩)</span>
                         </button>
+                    </div>
+                    <!-- Core 3B Verification Window Selector -->
+                    <div id="optRangeChipRow" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.72rem;">
+                        <span style="color: #94a3b8; font-weight: 700;"><i class="fa-solid fa-bullseye" style="color: #38bdf8;"></i> 현행 코어 16수 대조 구간:</span>
+                        <div style="display: inline-flex; gap: 4px;">
+                            <button type="button" onclick="window.setOptBacktestRange && window.setOptBacktestRange(50, this)" class="opt-range-btn active" style="padding: 2px 8px; border-radius: 6px; font-weight: 800; border: 1px solid #38bdf8; background: #0284c7; color: #fff; cursor: pointer;">최근 50회</button>
+                            <button type="button" onclick="window.setOptBacktestRange && window.setOptBacktestRange(300, this)" class="opt-range-btn" style="padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid #475569; background: transparent; color: #cbd5e1; cursor: pointer;">300회</button>
+                            <button type="button" onclick="window.setOptBacktestRange && window.setOptBacktestRange(0, this)" class="opt-range-btn" style="padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid #475569; background: transparent; color: #cbd5e1; cursor: pointer;">전회차</button>
+                        </div>
                     </div>
                 </div>
 
@@ -4170,7 +4187,7 @@
       }
     </script>
     <!-- jsQR: High-performance pure JavaScript QR Engine (Local fast load + CDN Fallback) -->
-    <script src="jsqr.min.js?v=2026.11.17.1041"></script>
+    <script src="jsqr.min.js?v=2026.11.17.1059.41"></script>
     <script>
       if (typeof jsQR === 'undefined') {
         document.write('<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"><\/script>');
@@ -4494,7 +4511,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.11.17.1041';
+        window.APP_VERSION = 'v2026.11.17.1059.41';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4565,7 +4582,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.11.17.1041';
+            var v = ver || window.APP_VERSION || 'v2026.11.17.1059.41';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4822,7 +4839,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.11.17.1041';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.11.17.1059.41';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4969,7 +4986,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.11.17.1041')
+                navigator.serviceWorker.register('./sw.js?v=2026.11.17.1059.41')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -5222,9 +5239,9 @@
         };
     </script>
 
-    <script src="data.js?v=2026.11.17.1041"></script>
+    <script src="data.js?v=2026.11.17.1059.41"></script>
     <script>try { if (typeof LOTTO_HISTORY !== 'undefined') window.LOTTO_HISTORY = LOTTO_HISTORY; } catch(e) {}</script>
-    <script src="app_v2.js?v=2026.11.17.1041"></script>
+    <script src="app_v2.js?v=2026.11.17.1059.41"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->

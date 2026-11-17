@@ -158,6 +158,16 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                         const sim6 = window.evaluateConditionalCoreHitScenario(6, 0, 'none');
                         window.closeWinProbComparisonModal();
                         return html.includes('핵심 코어 6수 맞춘 개수별 당첨확률') && html.includes('보조 코어 10수 맞춘 개수별 당첨확률') && sim6.rankAtLeastProbs[1] === 100;
+                    })(),
+                    walkForward3BParity: (() => {
+                        const cache = window.buildWalkForwardCore3BScoreCache(1252);
+                        const wfNext = window.generateCore3BPortfolioAtRound(1252, 'master', cache, false);
+                        const directNext = window.computeAllRounder3BPortfolio(1252, 'master');
+                        const wf1248 = window.generateCore3BPortfolioAtRound(1248, 'master', cache, true);
+                        return JSON.stringify(wfNext.pool16) === JSON.stringify(directNext.pool16) &&
+                               JSON.stringify(wfNext.v4[0].numbers) === JSON.stringify(directNext.v4[0].numbers) &&
+                               wf1248.top6Anchors.length === 6 && wf1248.support10.length === 10 &&
+                               wf1248.v4.length === 10 && wf1248.v3.length === 10 && wf1248.ar3.length === 10;
                     })()
                 };
             }""")
@@ -190,6 +200,7 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         self.assertTrue(res['pool1252Valid'])
         self.assertTrue(res['hitReportValid'])
         self.assertTrue(res['coreProbModalValid'])
+        self.assertTrue(res['walkForward3BParity'])
 
     def test_weekly_core_numbers_ui_wiring(self):
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
