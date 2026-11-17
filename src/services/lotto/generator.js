@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { calculateStats } from './scoring.js';
 import { calculateACValue, isSystemOrDummyUser } from '../../shared/utils.js';
-import { recalculateGroups } from './statistics.js';
+import { recalculateGroups, computeWalkForwardHedge8Snapshots } from './statistics.js';
 import { SafeAuth, getUserRealName, getUpcomingLottoRound, isAdminUser, isUserVerifiedAndPledged } from '../../shared/auth-mgmt.js';
 import { db } from '../../shared/db.js';
 
@@ -898,8 +898,7 @@ let _wfScoreCacheMemo = null;
 
 /**
  * ⚡ O(N) 증분 워크포워드 코어 스코어 캐시 구축 (1회차 ~ maxRound까지 미래 데이터 0% 누수 없이 고속 계산)
- * - statistics.js의 DYNAMIC_ROUND_SCORE 공식(역대빈도 40% + 전이확률 35% + 30회 EWMA 25% + 결손·이웃·이월 + 300회 군집회피)을
- *   수학적으로 100% 동일하게 O(1)/회차 증분 업데이트로 계산하며, 결과 스냅샷·포트폴리오를 세션 내 재사용합니다.
+ * - statistics.js의 V3_Hedge8_WheelEV 공식(8-전문가 온라인 헤지 앙상블 + EV 분리)을 단일 소스에서 생성하고 세션 내 재사용합니다.
  */
 export function buildWalkForwardCore3BScoreCache(maxRound = null) {
     const history = state.mergedHistory || {};
@@ -914,141 +913,15 @@ export function buildWalkForwardCore3BScoreCache(maxRound = null) {
         return _wfScoreCacheMemo.cache;
     }
 
-    const decay = Math.exp(-Math.LN2 / 30.0);
-    const freq = new Int32Array(46);
-    const ewma = new Float64Array(46);
-    const lastSeen = new Int32Array(46);
-    const trans = Array.from({ length: 46 }, () => new Int32Array(46));
-    const winRoundMap = new Map();
-    const winCodeMap = new Map();
-
-    // Rolling 300-round winner queue (w1 > 0 for rounds > (r-1) - 300)
-    const winnerWindow = []; // entries: { r, w1, nums }
-    const numWinnerSum = new Float64Array(46);
-    const numWinnerCnt = new Int32Array(46);
-    let totWinnerSum = 0;
-    let totWinnerCnt = 0;
-    let totalFreq = 0;
-    let totalEwma = 0;
-    let prevDraw = [];
-    let winQueueIdx = 0;
-
-    const roundSnapshots = new Array(limitR + 2);
-
-    for (let r = 1; r <= limitR + 1; r++) {
-        // Snapshot BEFORE round r draw occurs (knowing draws 1..r-1)
-        const maxKnown = r - 1;
-        while (winQueueIdx < winnerWindow.length && winnerWindow[winQueueIdx].r <= maxKnown - 300) {
-            const old = winnerWindow[winQueueIdx++];
-            totWinnerSum -= old.w1;
-            totWinnerCnt -= 1;
-            for (let i = 0; i < old.nums.length; i++) {
-                const bn = old.nums[i];
-                numWinnerSum[bn] -= old.w1;
-                numWinnerCnt[bn] -= 1;
-            }
-        }
-
-        const dynScore = new Float64Array(46);
-        const crowdAvoid = new Float64Array(46);
-
-        if (maxKnown <= 0) {
-            for (let n = 1; n <= 45; n++) {
-                dynScore[n] = 1.0 + (n >= 32 ? 0.015 : 0.0);
-                crowdAvoid[n] = 0.0;
-            }
-        } else {
-            const avgAllWinners = totWinnerCnt > 0 ? (totWinnerSum / totWinnerCnt) : 12.0;
-            const avgFreq = totalFreq / 45.0;
-            const avgEwma = totalEwma / 45.0;
-            const neighbors = new Set();
-            for (let i = 0; i < prevDraw.length; i++) {
-                const ln = prevDraw[i];
-                if (ln > 1) neighbors.add(ln - 1);
-                if (ln < 45) neighbors.add(ln + 1);
-            }
-            let totalM = 0;
-            for (let i = 0; i < prevDraw.length; i++) {
-                const row = trans[prevDraw[i]];
-                for (let k = 1; k <= 45; k++) totalM += row[k];
-            }
-            const avgM = prevDraw.length > 0 ? (totalM / 45.0) : 1.0;
-
-            for (let n = 1; n <= 45; n++) {
-                const shrunkAvgN = (numWinnerSum[n] + 20.0 * avgAllWinners) / (numWinnerCnt[n] + 20.0);
-                const ca = (avgAllWinners - shrunkAvgN) / Math.max(1.0, avgAllWinners);
-                crowdAvoid[n] = ca;
-
-                const fRatio = freq[n] / Math.max(1.0, avgFreq);
-                let mSum = 0;
-                for (let i = 0; i < prevDraw.length; i++) mSum += trans[prevDraw[i]][n];
-                const mRatio = (mSum + 2.0) / (avgM + 2.0);
-                const ewRatio = (ewma[n] + 1.0) / (avgEwma + 1.0);
-
-                const miss = maxKnown - lastSeen[n];
-                const ovBoost = 1.0 + Math.min(0.05, Math.max(0, miss - 8) * 0.004);
-                const nbBoost = neighbors.has(n) ? 1.02 : 1.0;
-                const coBoost = prevDraw.includes(n) ? 1.015 : 1.0;
-
-                const probScore = (0.40 * fRatio + 0.35 * mRatio + 0.25 * ewRatio) * ovBoost * nbBoost * coBoost;
-                dynScore[n] = probScore + ca * 0.06 + (n >= 32 ? 0.015 : 0.0);
-            }
-        }
-
-        roundSnapshots[r] = { dynScore, crowdAvoid, maxKnown };
-
-        if (r > limitR) break;
-
-        // Now incorporate draw r into accumulators for r+1
-        const d = history[r];
-        if (d && Array.isArray(d.numbers) && d.numbers.length === 6) {
-            const nums = d.numbers;
-            const sortedNums = [...nums].sort((a, b) => a - b);
-            const sortedKey = sortedNums.join(',');
-            if (!winRoundMap.has(sortedKey)) winRoundMap.set(sortedKey, r);
-            const winCode = _encodeLotto6Sorted(sortedNums[0], sortedNums[1], sortedNums[2], sortedNums[3], sortedNums[4], sortedNums[5]);
-            if (!winCodeMap.has(winCode)) winCodeMap.set(winCode, r);
-
-            // Decay existing EWMA by 1 round step
-            let nextTotalEwma = 0;
-            for (let n = 1; n <= 45; n++) {
-                ewma[n] *= decay;
-                nextTotalEwma += ewma[n];
-            }
-            for (let i = 0; i < nums.length; i++) {
-                const bn = nums[i];
-                freq[bn] += 1;
-                totalFreq += 1;
-                ewma[bn] += 1.0;
-                nextTotalEwma += 1.0;
-                lastSeen[bn] = r;
-            }
-            totalEwma = nextTotalEwma;
-            if (prevDraw.length > 0) {
-                for (let i = 0; i < prevDraw.length; i++) {
-                    const pn = prevDraw[i];
-                    for (let j = 0; j < nums.length; j++) {
-                        trans[pn][nums[j]] += 1;
-                    }
-                }
-            }
-            prevDraw = [...nums];
-
-            const w1 = Number(d.rank1Winners || d.firstPrzwnerCo || 0);
-            if (w1 > 0) {
-                winnerWindow.push({ r, w1, nums });
-                totWinnerSum += w1;
-                totWinnerCnt += 1;
-                for (let i = 0; i < nums.length; i++) {
-                    const bn = nums[i];
-                    numWinnerSum[bn] += w1;
-                    numWinnerCnt[bn] += 1;
-                }
-            }
-        }
-    }
-
-    const cache = { limitR, roundSnapshots, winRoundMap, winCodeMap, portfolioCache: new Map() };
+    const res = computeWalkForwardHedge8Snapshots(history, limitR);
+    const cache = {
+        limitR: res.limitR,
+        roundSnapshots: res.roundSnapshots,
+        winRoundMap: res.winRoundMap,
+        winCodeMap: res.winCodeMap,
+        expertWeights: res.expertWeights,
+        portfolioCache: new Map()
+    };
     _wfScoreCacheMemo = { latestSig, cache };
     return cache;
 }

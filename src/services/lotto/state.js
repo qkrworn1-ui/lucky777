@@ -20,6 +20,7 @@ export const state = {
     HISTORICAL_FREQUENCY: {},
     EWMA_FREQUENCY: {},
     DYNAMIC_ROUND_SCORE: {},
+    HEDGE8_EXPERT_WEIGHTS: {},
     CROWD_EV_RATIO: 1.07,
     CROWD_AVOIDANCE_SCORE: {},
     MISSING_WEEKS: {},
