@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1225.58 - BUILD_DATE: 2026-11-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1236 - BUILD_DATE: 2026-11-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.17.1225.58)
+ * Lucky777 Smart Bundle (v2026.11.17.1236)
  */
 
 
@@ -22703,7 +22703,7 @@ function exitHistoryIsolation(wasIsolated) {
     }
 }
 
-const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_prob_v2';
+const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_plana_v3';
 
 function hasConfirmedLedgerForRound(userId, roundNum) {
     const cleanU = String(userId || '').trim().toLowerCase();
@@ -25785,27 +25785,32 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     for (const cId of candidateIds) {
         const cKey = `${cId}_${roundNum}`;
         if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[cKey]) {
-            return hydrateLeanSnapshot(state.userRecommendationSnapshots[cKey]);
+            const memSnap = state.userRecommendationSnapshots[cKey];
+            if (!isRound1251UpgradePending(memSnap, roundNum, cId)) {
+                return hydrateLeanSnapshot(memSnap);
+            }
         }
         if (state.allUsersPurchasesMap && state.allUsersPurchasesMap[cId]) {
             const pDoc = state.allUsersPurchasesMap[cId];
             const pSnaps = pDoc.recommendationSnapshots;
-            if (pSnaps && (pSnaps[String(roundNum)] || pSnaps[roundNum])) {
-                return hydrateLeanSnapshot(pSnaps[String(roundNum)] || pSnaps[roundNum]);
+            const pSnap = pSnaps ? (pSnaps[String(roundNum)] || pSnaps[roundNum]) : null;
+            if (pSnap && !isRound1251UpgradePending(pSnap, roundNum, cId)) {
+                return hydrateLeanSnapshot(pSnap);
             }
         }
         if (state.allRegisteredUsersList && Array.isArray(state.allRegisteredUsersList)) {
             const u = state.allRegisteredUsersList.find(x => (x.id || '').toLowerCase().trim() === cId);
             const uSnaps = u ? u.recommendationSnapshots : null;
-            if (uSnaps && (uSnaps[String(roundNum)] || uSnaps[roundNum])) {
-                return hydrateLeanSnapshot(uSnaps[String(roundNum)] || uSnaps[roundNum]);
+            const uSnap = uSnaps ? (uSnaps[String(roundNum)] || uSnaps[roundNum]) : null;
+            if (uSnap && !isRound1251UpgradePending(uSnap, roundNum, cId)) {
+                return hydrateLeanSnapshot(uSnap);
             }
         }
         try {
             const raw = (typeof SafeLocalStorage !== 'undefined') ? SafeLocalStorage.getItem(`lotto_rec_snapshot_${cKey}`) : null;
             if (raw) {
                 const parsed = JSON.parse(raw);
-                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks)) {
+                if (parsed && (parsed.v4Combos || parsed.v3Combos || parsed.extraPacks) && !isRound1251UpgradePending(parsed, roundNum, cId)) {
                     const hydrated = hydrateLeanSnapshot(parsed);
                     if (!state.userRecommendationSnapshots) state.userRecommendationSnapshots = {};
                     state.userRecommendationSnapshots[cKey] = hydrated;
@@ -25816,7 +25821,10 @@ function getUserWeeklyRecommendationSnapshotSync(userId, round) {
     }
 
     if (state.userRecommendationSnapshots && state.userRecommendationSnapshots[String(roundNum)]) {
-        return hydrateLeanSnapshot(state.userRecommendationSnapshots[String(roundNum)]);
+        const fallbackSnap = state.userRecommendationSnapshots[String(roundNum)];
+        if (!isRound1251UpgradePending(fallbackSnap, roundNum, cleanUser)) {
+            return hydrateLeanSnapshot(fallbackSnap);
+        }
     }
 
     // 🔒 4순위: 박재구 회원 1246회차 불변 스냅샷 영구 보존 베이스라인

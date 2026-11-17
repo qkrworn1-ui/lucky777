@@ -25,7 +25,7 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         with open(modal_path, encoding='utf-8') as f:
             modal_js = f.read()
 
-        self.assertIn("ALGO_REVISION_3B = 'v2026.11_3b_16wheel_prob_v2'", gen_js)
+        self.assertIn("ALGO_REVISION_3B = 'v2026.11_3b_16wheel_plana_v3'", gen_js)
         self.assertIn("computeAllRounder3BPortfolio", gen_js)
         self.assertIn("isRound1251UpgradePending", gen_js)
         self.assertIn("roundForSeed >= 1251", gen_js)
@@ -93,8 +93,8 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
 
                 const g1250 = window.isRound1251UpgradePending({ algoRevision: 'v2026.10_3stage' }, 1250, 'master');
                 const g1251Old = window.isRound1251UpgradePending({ algoRevision: 'v2026.10_3stage' }, 1251, 'master');
-                const g1251Prev3B = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel_anchor1' }, 1251, 'master');
-                const g1251New = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel_prob_v2' }, 1251, 'master');
+                const g1251Prev3B = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel_prob_v2' }, 1251, 'master');
+                const g1251New = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel_plana_v3' }, 1251, 'master');
 
                 const p2Null = window.generateExtraAddonPack(2, 1251, 'master');
                 const p3Null = window.generateExtraAddonPack(3, 1251, 'master');
