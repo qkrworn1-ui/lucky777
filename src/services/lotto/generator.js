@@ -143,7 +143,7 @@ export function exitHistoryIsolation(wasIsolated) {
     }
 }
 
-export const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_plana_v3';
+export const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_plana_v4';
 
 export function hasConfirmedLedgerForRound(userId, roundNum) {
     const cleanU = String(userId || '').trim().toLowerCase();
@@ -304,10 +304,12 @@ function _calcEmpiricalEvMultiplier3B(nums, crowdAvoidMap = null) {
  * - 각 대역 최소 바닥(1~9:2, 10대:2, 20대:2, 30대:2, 40대:1 = 9수)만 보장하고 상한은 풀어서
  *   한 번호대 5수+ 쏠림 등 극단적 고액 독식 회차도 구조적으로 0% 차단 유지
  */
-function _selectBalancedPool16_3B(dynScore, rng) {
+function _selectBalancedPool16_3B(dynScore, rng, crowdAvoidMap = null) {
     const scoreMap = {};
     for (let n = 1; n <= 45; n++) {
-        scoreMap[n] = (dynScore[n] || 1.0) + (rng() * 0.04);
+        const ca = (crowdAvoidMap && crowdAvoidMap[n]) ? crowdAvoidMap[n] : 0;
+        const caBonus = Math.max(-0.04, Math.min(0.06, ca * 0.6));
+        scoreMap[n] = (dynScore[n] || 1.0) + caBonus + (rng() * 0.015);
     }
     const bands = [
         { minN: 1, maxN: 9, floor: 2 },
@@ -883,8 +885,8 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
     const seed = getUserRoundSeed(effectiveUserId, roundForSeed, 'ar_3b_16wheel');
     const rng = createDeterministicRng(seed);
 
-    // 1. 실증 비인기 EV + 구간 최소 하한 + 홀짝 균형 기반 16수 코어 풀 선별 (타이브레이커 난수 0.04)
-    const { pool16, scoreMap } = _selectBalancedPool16_3B(dynScore, rng);
+    // 1. 실증 비인기 EV + Hedge8 통합 + 구간 최소 하한 + 홀짝 균형 16수 코어 풀 선별 (타이브레이커 난수 0.015)
+    const { pool16, scoreMap } = _selectBalancedPool16_3B(dynScore, rng, crowdAvoidMap);
     const top6Ranked = [...pool16]
         .sort((a, b) => (scoreMap[b] - scoreMap[a]) || (a - b))
         .slice(0, 6);
@@ -3394,6 +3396,7 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
 
     const needHistoryIsolation = enterHistoryIsolation(curRound, maxKnownDrawnRound);
     let dynScore = {};
+    let crowdAvoidMap = {};
     let missWeeks = {};
     let prevDrawNums = [];
     try {
@@ -3401,6 +3404,7 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
             recalculateGroups();
         }
         dynScore = { ...(state.DYNAMIC_ROUND_SCORE || {}) };
+        crowdAvoidMap = { ...(state.CROWD_AVOIDANCE_SCORE || {}) };
         missWeeks = { ...(state.MISSING_WEEKS || {}) };
         prevDrawNums = (state.mergedHistory && state.mergedHistory[maxKnownDrawnRound] && Array.isArray(state.mergedHistory[maxKnownDrawnRound].numbers))
             ? [...state.mergedHistory[maxKnownDrawnRound].numbers]
@@ -3413,7 +3417,7 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
     const seed = getUserRoundSeed(effectiveUserId, curRound, 'ar_3b_16wheel');
     const tieRng = createDeterministicRng(seed);
     const tieNoise = {};
-    for (let n = 1; n <= 45; n++) tieNoise[n] = tieRng() * 0.04;
+    for (let n = 1; n <= 45; n++) tieNoise[n] = tieRng() * 0.015;
 
     let candidateNums = [];
     if (explicitPool16 && explicitPool16.length > 0) {
@@ -3424,18 +3428,22 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
         candidateNums = Object.keys(freq30).map(Number);
     }
 
-    const enriched = candidateNums.map(n => ({
-        n,
-        freq30: freq30[n] || 0,
-        v4Count: packCounts.v4[n] || 0,
-        v3Count: packCounts.v3[n] || 0,
-        extra1Count: packCounts.extra1[n] || 0,
-        dynScore: Number((dynScore[n] || 1.0).toFixed(2)),
-        rankScore: (dynScore[n] || 1.0) + (tieNoise[n] || 0),
-        missWeeks: missWeeks[n] || 0,
-        isCarryover: prevDrawNums.includes(n),
-        isHighEv: n >= 32
-    }));
+    const enriched = candidateNums.map(n => {
+        const ca = crowdAvoidMap[n] || 0;
+        const caBonus = Math.max(-0.04, Math.min(0.06, ca * 0.6));
+        return {
+            n,
+            freq30: freq30[n] || 0,
+            v4Count: packCounts.v4[n] || 0,
+            v3Count: packCounts.v3[n] || 0,
+            extra1Count: packCounts.extra1[n] || 0,
+            dynScore: Number((dynScore[n] || 1.0).toFixed(2)),
+            rankScore: (dynScore[n] || 1.0) + caBonus + (tieNoise[n] || 0),
+            missWeeks: missWeeks[n] || 0,
+            isCarryover: prevDrawNums.includes(n),
+            isHighEv: n >= 32
+        };
+    });
 
     if (is3BMode) {
         enriched.sort((a, b) => (b.rankScore - a.rankScore) || (a.n - b.n));

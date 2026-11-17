@@ -274,7 +274,10 @@ export function computeWalkForwardHedge8Snapshots(history, maxRound = null) {
             prevNums = [...nums];
             prevBonus = Number(d.bonus || 0);
 
-            const w1 = Number(d.rank1Winners || d.firstPrzwnerCo || 0);
+            const fallbackHistW1 = (typeof LOTTO_HISTORY !== 'undefined' && LOTTO_HISTORY[r])
+                ? Number(LOTTO_HISTORY[r].rank1Winners || LOTTO_HISTORY[r].firstPrzwnerCo || 0)
+                : 0;
+            const w1 = Number(d.rank1Winners || d.firstPrzwnerCo || fallbackHistW1 || 0);
             if (w1 > 0) {
                 winnerWindow.push({ r, w1, nums });
                 totWinnerSum += w1;
@@ -365,7 +368,10 @@ export function aggregateAllStatistics() {
         if (!data || !Array.isArray(data.numbers)) continue;
         const w = Math.pow(decay, maxRound - r);
         data.numbers.forEach(n => { ewmaMap[n] = (ewmaMap[n] || 0) + w; });
-        const w1 = Number(data.rank1Winners || data.firstPrzwnerCo || 0);
+        const fallbackHistW1 = (typeof LOTTO_HISTORY !== 'undefined' && LOTTO_HISTORY[r])
+            ? Number(LOTTO_HISTORY[r].rank1Winners || LOTTO_HISTORY[r].firstPrzwnerCo || 0)
+            : 0;
+        const w1 = Number(data.rank1Winners || data.firstPrzwnerCo || fallbackHistW1 || 0);
         if (w1 > 0 && r > maxRound - 300) {
             totWinnerSum += w1;
             totWinnerCnt += 1;
