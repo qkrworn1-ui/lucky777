@@ -151,6 +151,13 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                     hitReportValid: (() => {
                         const rep = window.evaluateRoundCoreHitReport(1251, 'test_user_demo');
                         return !!(rep && rep.round === 1251 && rep.top6Items.length === 6 && rep.support10Items.length === 10 && typeof rep.totalHits === 'number');
+                    })(),
+                    coreProbModalValid: (() => {
+                        window.openWinProbComparisonModal();
+                        const html = document.getElementById('winProbModalContent')?.innerHTML || '';
+                        const sim6 = window.evaluateConditionalCoreHitScenario(6, 0, 'none');
+                        window.closeWinProbComparisonModal();
+                        return html.includes('핵심 코어 6수 맞춘 개수별 당첨확률') && html.includes('보조 코어 10수 맞춘 개수별 당첨확률') && sim6.rankAtLeastProbs[1] === 100;
                     })()
                 };
             }""")
@@ -182,6 +189,7 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         self.assertEqual(res['afterScrapeLatest'], 1251)
         self.assertTrue(res['pool1252Valid'])
         self.assertTrue(res['hitReportValid'])
+        self.assertTrue(res['coreProbModalValid'])
 
     def test_weekly_core_numbers_ui_wiring(self):
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

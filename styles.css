@@ -26594,3 +26594,158 @@ html.theme-light .core-win-game-card {
     background: #f8fafc !important;
     border-color: #cbd5e1 !important;
 }
+
+/* ========================================================
+   🎯 핵심·보조 코어 맞춘 번호별 당첨확률 모달 UI
+   ======================================================== */
+.win-prob-tab-row-3 {
+    grid-template-columns: repeat(3, 1fr) !important;
+}
+
+.core-prob-sim-card {
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.88)) !important;
+    border: 1.5px solid rgba(56, 189, 248, 0.42) !important;
+    border-radius: 14px !important;
+    padding: 14px 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+}
+
+.core-prob-sim-head {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+}
+
+.core-prob-presets {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+}
+
+.core-preset-chip {
+    font-size: 0.72rem !important;
+    font-weight: 800 !important;
+    padding: 5px 9px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(148, 163, 184, 0.3) !important;
+    background: rgba(15, 23, 42, 0.8) !important;
+    color: #e2e8f0 !important;
+    cursor: pointer !important;
+}
+
+.core-preset-chip.gold { border-color: rgba(251, 191, 36, 0.5) !important; color: #fbbf24 !important; }
+.core-preset-chip.sky { border-color: rgba(56, 189, 248, 0.5) !important; color: #38bdf8 !important; }
+.core-preset-chip.emerald { border-color: rgba(16, 185, 129, 0.5) !important; color: #34d399 !important; }
+
+.core-prob-pickers {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    background: rgba(15, 23, 42, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+}
+
+.core-prob-picker-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+}
+
+.picker-lbl {
+    font-size: 0.76rem !important;
+    font-weight: 800 !important;
+    color: #cbd5e1 !important;
+}
+.picker-lbl.is-gold { color: #fbbf24 !important; }
+.picker-lbl.is-blue { color: #38bdf8 !important; }
+
+.picker-btns {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+}
+
+.core-prob-pill-btn {
+    padding: 4px 10px !important;
+    font-size: 0.74rem !important;
+    font-weight: 800 !important;
+    border-radius: 7px !important;
+    border: 1px solid rgba(148, 163, 184, 0.3) !important;
+    background: rgba(30, 41, 59, 0.75) !important;
+    color: #cbd5e1 !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease !important;
+}
+
+.core-prob-pill-btn.active-gold {
+    background: #fbbf24 !important;
+    color: #0f172a !important;
+    border-color: #fde047 !important;
+}
+
+.core-prob-pill-btn.active-blue {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: #38bdf8 !important;
+}
+
+.core-prob-pill-btn.active-neutral {
+    background: #475569 !important;
+    color: #ffffff !important;
+    border-color: #94a3b8 !important;
+}
+
+.core-prob-result-grid {
+    display: grid !important;
+    grid-template-columns: repeat(5, 1fr) !important;
+    gap: 8px !important;
+}
+
+.core-res-kpi {
+    background: rgba(15, 23, 42, 0.85) !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+    border-radius: 10px !important;
+    padding: 9px 10px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+}
+.core-res-kpi.highlight-gold { border-color: rgba(251, 191, 36, 0.55) !important; background: rgba(251, 191, 36, 0.08) !important; }
+.core-res-kpi.highlight-emerald { border-color: rgba(16, 185, 129, 0.55) !important; background: rgba(16, 185, 129, 0.08) !important; }
+.core-res-kpi.highlight-cyan { border-color: rgba(56, 189, 248, 0.65) !important; background: rgba(56, 189, 248, 0.1) !important; }
+
+.core-res-kpi .kpi-lbl { font-size: 0.68rem !important; color: #94a3b8 !important; font-weight: 700 !important; }
+.core-res-kpi .kpi-val { font-size: 0.96rem !important; font-weight: 900 !important; color: #f8fafc !important; }
+.core-res-kpi .kpi-sub { font-size: 0.66rem !important; color: #94a3b8 !important; }
+
+@media (max-width: 720px) {
+    .win-prob-tab-row-3 { grid-template-columns: 1fr !important; }
+    .core-prob-result-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+html[data-theme="light"] .core-prob-sim-card,
+html.theme-light .core-prob-sim-card {
+    background: #ffffff !important;
+    border-color: #3b82f6 !important;
+}
+html[data-theme="light"] .core-prob-pickers,
+html.theme-light .core-prob-pickers,
+html[data-theme="light"] .core-res-kpi,
+html.theme-light .core-res-kpi {
+    background: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+}
+html[data-theme="light"] .picker-lbl,
+html.theme-light .picker-lbl,
+html[data-theme="light"] .core-res-kpi .kpi-val,
+html.theme-light .core-res-kpi .kpi-val {
+    color: #0f172a !important;
+}
