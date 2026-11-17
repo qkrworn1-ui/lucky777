@@ -124,32 +124,35 @@ export function getSingleUserCombosForRound(round, cfg, userId, userName = null,
     };
 
     if (cfg.includeV4 && Array.isArray(pf.v4)) {
-        pf.v4.forEach(c => {
-            const clone = { ...c, meta: { ...(c.meta || {}) }, coreMeta };
-            if (userName) clone.meta.ownerName = userName;
+        for (let i = 0; i < pf.v4.length; i++) {
+            const c = pf.v4[i];
+            const clone = { ...c, coreMeta };
+            if (userName) clone.meta = { ...(c.meta || {}), ownerName: userName };
             clone.algoId = 'v4';
             clone.algoName = '올라운더 팩 1 (TOP6 직결·고액 휠)';
             combos.push(clone);
-        });
+        }
     }
     if (cfg.includeV3 && Array.isArray(pf.v3)) {
-        pf.v3.forEach(c => {
-            const clone = { ...c, meta: { ...(c.meta || {}) }, coreMeta };
-            if (userName) clone.meta.ownerName = userName;
+        for (let i = 0; i < pf.v3.length; i++) {
+            const c = pf.v3[i];
+            const clone = { ...c, coreMeta };
+            if (userName) clone.meta = { ...(c.meta || {}), ownerName: userName };
             clone.algoId = 'v3';
             clone.algoName = '올라운더 팩 2 (EV 상호보완 휠)';
             combos.push(clone);
-        });
+        }
     }
     if (cfg.selectedExtraPacks.includes(1) && Array.isArray(pf.ar3)) {
-        pf.ar3.forEach(c => {
-            const clone = { ...c, meta: { ...(c.meta || {}) }, coreMeta };
-            if (userName) clone.meta.ownerName = userName;
+        for (let i = 0; i < pf.ar3.length; i++) {
+            const c = pf.ar3[i];
+            const clone = { ...c, coreMeta };
+            if (userName) clone.meta = { ...(c.meta || {}), ownerName: userName };
             clone.algoId = 'extra_1';
             clone.packIdx = 1;
             clone.algoName = '기본 3: 올라운더 팩 3 (30G 완결 휠)';
             combos.push(clone);
-        });
+        }
     }
     return combos;
 }
@@ -1442,14 +1445,16 @@ export async function runRealHistoricalSimulation() {
                 return;
             }
 
-            const baseStep = (effectiveTarget === '__ALL__') ? 8 : 20;
-            const speedMultiplier = _simScanSpeed === 8 ? 4 : (_simScanSpeed === 3 ? 2 : 1);
-            const currentChunkSize = baseStep * speedMultiplier;
-            const end = Math.max(startRound, r - currentChunkSize + 1);
+            const chunkBudgetMs = _simScanSpeed >= 8 ? 34 : (_simScanSpeed >= 3 ? 22 : 14);
+            const minBatch = (effectiveTarget === '__ALL__') ? 6 : (_simScanSpeed >= 3 ? 24 : 14);
+            const tChunkStart = performance.now();
+            let processedInChunk = 0;
 
             let latestDrawForBalls = null;
 
-            for (; r >= end; r--) {
+            for (; r >= startRound; r--) {
+                if (processedInChunk >= minBatch && (performance.now() - tChunkStart) >= chunkBudgetMs) break;
+                processedInChunk++;
                 const drawData = getHistoricalDrawData(r);
                 if (!drawData || !Array.isArray(drawData.numbers) || drawData.numbers.length !== 6) continue;
                 latestDrawForBalls = drawData;
@@ -1464,22 +1469,34 @@ export async function runRealHistoricalSimulation() {
                 // Record Core 6 + Support 10 capture stats for this round
                 coreRoundStats.evaluatedRounds++;
                 const firstMeta = (simulatedCombos[0] && simulatedCombos[0].coreMeta) ? simulatedCombos[0].coreMeta : null;
+                let p16MainCached = 0;
                 if (firstMeta) {
-                    const c6Main = (firstMeta.top6 || []).filter(n => winningSet.has(n)).length;
-                    const p16Main = (firstMeta.pool16 || []).filter(n => winningSet.has(n)).length;
+                    let c6Main = 0;
+                    const t6 = firstMeta.top6 || [];
+                    for (let ti = 0; ti < t6.length; ti++) if (winningSet.has(t6[ti])) c6Main++;
+                    const p16 = firstMeta.pool16 || [];
+                    for (let pi = 0; pi < p16.length; pi++) if (winningSet.has(p16[pi])) p16MainCached++;
                     coreRoundStats.core6HitSum += c6Main;
                     if (c6Main >= 3) coreRoundStats.core6Hits3Plus++;
                     if (c6Main === 6) coreRoundStats.core6Hits6++;
-                    coreRoundStats.pool16HitSum += p16Main;
-                    if (p16Main >= 4) coreRoundStats.pool16Hits4Plus++;
-                    if (p16Main >= 5) coreRoundStats.pool16Hits5Plus++;
-                    if (p16Main === 6) coreRoundStats.pool16Hits6++;
+                    coreRoundStats.pool16HitSum += p16MainCached;
+                    if (p16MainCached >= 4) coreRoundStats.pool16Hits4Plus++;
+                    if (p16MainCached >= 5) coreRoundStats.pool16Hits5Plus++;
+                    if (p16MainCached === 6) coreRoundStats.pool16Hits6++;
                 }
 
-                simulatedCombos.forEach(combo => {
-                    let matchesList = (combo.numbers || []).filter(n => winningSet.has(n));
-                    let realMatchCount = matchesList.length;
-                    let isBonusMatch = (combo.numbers || []).includes(bonusNum);
+                for (let ci = 0; ci < simulatedCombos.length; ci++) {
+                    const combo = simulatedCombos[ci];
+                    const cNums = combo.numbers;
+                    if (!cNums || cNums.length !== 6) continue;
+                    let realMatchCount = 0;
+                    let isBonusMatch = false;
+                    for (let ni = 0; ni < 6; ni++) {
+                        const val = cNums[ni];
+                        if (winningSet.has(val)) realMatchCount++;
+                        else if (val === bonusNum) isBonusMatch = true;
+                    }
+                    if (realMatchCount < 3) continue;
 
                     let prizeRank = 0;
                     if (realMatchCount === 6) prizeRank = 1;
@@ -1520,14 +1537,13 @@ export async function runRealHistoricalSimulation() {
                             roundPrize += 5000;
                         }
                     }
-                });
+                }
 
                 if (roundWonAny) coreRoundStats.winningRounds++;
                 if (firstMeta) {
-                    const p16Main = (firstMeta.pool16 || []).filter(n => winningSet.has(n)).length;
                     const prevBest = coreRoundStats.bestCaptureRound;
-                    if (!prevBest || p16Main > prevBest.p16Main || (p16Main === prevBest.p16Main && roundPrize > prevBest.prize)) {
-                        coreRoundStats.bestCaptureRound = { round: r, p16Main, prize: roundPrize };
+                    if (!prevBest || p16MainCached > prevBest.p16Main || (p16MainCached === prevBest.p16Main && roundPrize > prevBest.prize)) {
+                        coreRoundStats.bestCaptureRound = { round: r, p16Main: p16MainCached, prize: roundPrize };
                     }
                 }
             }
@@ -1575,9 +1591,8 @@ export async function runRealHistoricalSimulation() {
             }
 
             if (r >= startRound) {
-                const delay = _simScanSpeed === 8 ? 0 : (_simScanSpeed === 3 ? 8 : 20);
-                if (delay > 0) {
-                    setTimeout(processChunk, delay);
+                if (_simScanSpeed >= 8) {
+                    setTimeout(processChunk, 0);
                 } else {
                     requestAnimationFrame(processChunk);
                 }

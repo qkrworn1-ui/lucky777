@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1059.41 - BUILD_DATE: 2026-11-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1111 - BUILD_DATE: 2026-11-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.17.1059.41)
+ * Lucky777 Smart Bundle (v2026.11.17.1111)
  */
 
 
@@ -22458,7 +22458,40 @@ function isRound1251UpgradePending(snap, roundNum, userId) {
     return true;
 }
 
+const _acStampArr = new Int32Array(46);
+let _acStampCounter = 0;
+
+function _calcAC6Fast(n0, n1, n2, n3, n4, n5) {
+    let stamp = ++_acStampCounter;
+    if (stamp >= 2000000000) {
+        _acStampArr.fill(0);
+        _acStampCounter = 1;
+        stamp = 1;
+    }
+    let uniq = 0;
+    let d;
+    d = n1 - n0; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n2 - n0; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n3 - n0; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n4 - n0; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n5 - n0; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n2 - n1; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n3 - n1; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n4 - n1; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n5 - n1; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n3 - n2; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n4 - n2; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n5 - n2; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n4 - n3; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n5 - n3; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    d = n5 - n4; if (_acStampArr[d] !== stamp) { _acStampArr[d] = stamp; uniq++; }
+    return uniq - 5;
+}
+
 function _calcACLocal(nums) {
+    if (nums && nums.length === 6) {
+        return _calcAC6Fast(nums[0], nums[1], nums[2], nums[3], nums[4], nums[5]);
+    }
     if (typeof calculateACValue === 'function') return calculateACValue(nums);
     const diffs = new Set();
     for (let i = 0; i < nums.length; i++) {
@@ -22467,6 +22500,62 @@ function _calcACLocal(nums) {
         }
     }
     return diffs.size - (nums.length - 1);
+}
+
+function _encodeLotto6Sorted(n0, n1, n2, n3, n4, n5) {
+    return ((((n0 * 46 + n1) * 46 + n2) * 46 + n3) * 46 + n4) * 46 + n5;
+}
+
+let _cachedHistCodeSize = -1;
+let _cachedHistCodeSetRef = null;
+const _histWinCodeSet = new Set();
+
+function _getLiveHistWinCodeSet() {
+    const src = state.HISTORICAL_WINNING_SETS;
+    if (!src) return _histWinCodeSet;
+    if (_cachedHistCodeSetRef !== src || _cachedHistCodeSize !== src.size) {
+        _histWinCodeSet.clear();
+        src.forEach(str => {
+            const parts = str.split(',');
+            if (parts.length === 6) {
+                _histWinCodeSet.add(_encodeLotto6Sorted(
+                    parseInt(parts[0], 10),
+                    parseInt(parts[1], 10),
+                    parseInt(parts[2], 10),
+                    parseInt(parts[3], 10),
+                    parseInt(parts[4], 10),
+                    parseInt(parts[5], 10)
+                ));
+            }
+        });
+        _cachedHistCodeSetRef = src;
+        _cachedHistCodeSize = src.size;
+    }
+    return _histWinCodeSet;
+}
+
+// Precompute 16C3 = 560 triple lookup tables once for zero-allocation covering wheels
+const _TRIPLES_16_COUNT = 560;
+const _TRIPLES_16_A = new Uint8Array(_TRIPLES_16_COUNT);
+const _TRIPLES_16_B = new Uint8Array(_TRIPLES_16_COUNT);
+const _TRIPLES_16_C = new Uint8Array(_TRIPLES_16_COUNT);
+const _TRIPLES_16_TK = new Uint16Array(_TRIPLES_16_COUNT);
+const _TKEY_TO_SLOT = new Int16Array(4096).fill(-1);
+{
+    let ti = 0;
+    for (let a = 0; a < 14; a++) {
+        for (let b = a + 1; b < 15; b++) {
+            for (let c = b + 1; c < 16; c++) {
+                const tk = (a << 8) | (b << 4) | c;
+                _TRIPLES_16_A[ti] = a;
+                _TRIPLES_16_B[ti] = b;
+                _TRIPLES_16_C[ti] = c;
+                _TRIPLES_16_TK[ti] = tk;
+                _TKEY_TO_SLOT[tk] = ti;
+                ti++;
+            }
+        }
+    }
 }
 
 function _calcEmpiricalEvMultiplier3B(nums, crowdAvoidMap = null) {
@@ -22553,159 +22642,269 @@ function _selectBalancedPool16_3B(dynScore, rng) {
 }
 
 function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null, isPastHistoricalWinFn = null) {
-    const activeHistWinCheck = (typeof isPastHistoricalWinFn === 'function')
-        ? isPastHistoricalWinFn
-        : (k) => !!(state.HISTORICAL_WINNING_SETS && state.HISTORICAL_WINNING_SETS.has(k));
+    const liveHistCodeSet = !isPastHistoricalWinFn ? _getLiveHistWinCodeSet() : null;
+    const isCodeCheckFn = !!(isPastHistoricalWinFn && isPastHistoricalWinFn.__isCodeFn);
+    const hasHistCheck = typeof isPastHistoricalWinFn === 'function';
+
     const numCnt = new Int16Array(16);
     const tCnt = new Uint16Array(4096);
     const qCnt = new Uint8Array(65536);
-    const usedKeys = new Set();
-    const gamesIdx = [];
+    const usedMasks = new Set();
+    const gamesIdx = new Array(30);
+    let gameCount = 0;
 
-    const tKey = (a, b, c) => (a << 8) | (b << 4) | c;
-    const qKey = (a, b, c, d) => (a << 12) | (b << 8) | (c << 4) | d;
-
-    const allTriples = [];
-    for (let a = 0; a < 14; a++) {
-        for (let b = a + 1; b < 15; b++) {
-            for (let c = b + 1; c < 16; c++) {
-                allTriples.push([a, b, c, tKey(a, b, c)]);
-            }
-        }
+    // Precompute pool16 lookups to eliminate per-trial array/property churn
+    const pNums = new Int32Array(16);
+    const pHigh32 = new Uint8Array(16);
+    const pCa = new Float64Array(16);
+    for (let i = 0; i < 16; i++) {
+        const n = pool16[i];
+        pNums[i] = n;
+        pHigh32[i] = n >= 32 ? 1 : 0;
+        pCa[i] = (crowdAvoidMap && crowdAvoidMap[n]) ? crowdAvoidMap[n] : 0;
     }
 
-    const gameTriples = (idxArr) => {
-        const res = [];
+    // O(1) incremental uncovered triple tracker over all 560 triples in 16C3
+    const uncovIdx = new Int16Array(_TRIPLES_16_COUNT);
+    const uncovPos = new Int16Array(_TRIPLES_16_COUNT);
+    for (let s = 0; s < _TRIPLES_16_COUNT; s++) {
+        uncovIdx[s] = s;
+        uncovPos[s] = s;
+    }
+    let uncovCount = _TRIPLES_16_COUNT;
+
+    const addGameCounts = (arr, delta) => {
+        for (let i = 0; i < 6; i++) numCnt[arr[i]] += delta;
         for (let a = 0; a < 4; a++) {
+            const ia = arr[a] << 8;
             for (let b = a + 1; b < 5; b++) {
+                const iab = ia | (arr[b] << 4);
                 for (let c = b + 1; c < 6; c++) {
-                    res.push(tKey(idxArr[a], idxArr[b], idxArr[c]));
-                }
-            }
-        }
-        return res;
-    };
-    const gameQuads = (idxArr) => {
-        const res = [];
-        for (let a = 0; a < 3; a++) {
-            for (let b = a + 1; b < 4; b++) {
-                for (let c = b + 1; c < 5; c++) {
-                    for (let d = c + 1; d < 6; d++) {
-                        res.push(qKey(idxArr[a], idxArr[b], idxArr[c], idxArr[d]));
+                    const tk = iab | arr[c];
+                    const prev = tCnt[tk];
+                    const next = prev + delta;
+                    tCnt[tk] = next;
+                    if (prev === 0 && next > 0) {
+                        const s = _TKEY_TO_SLOT[tk];
+                        const pos = uncovPos[s];
+                        if (pos >= 0) {
+                            const lastS = uncovIdx[--uncovCount];
+                            uncovIdx[pos] = lastS;
+                            uncovPos[lastS] = pos;
+                            uncovPos[s] = -1;
+                        }
+                    } else if (prev > 0 && next === 0) {
+                        const s = _TKEY_TO_SLOT[tk];
+                        if (uncovPos[s] < 0) {
+                            uncovPos[s] = uncovCount;
+                            uncovIdx[uncovCount++] = s;
+                        }
                     }
                 }
             }
         }
-        return res;
+        for (let a = 0; a < 3; a++) {
+            const qa = arr[a] << 12;
+            for (let b = a + 1; b < 4; b++) {
+                const qab = qa | (arr[b] << 8);
+                for (let c = b + 1; c < 5; c++) {
+                    const qabc = qab | (arr[c] << 4);
+                    for (let d = c + 1; d < 6; d++) {
+                        qCnt[qabc | arr[d]] += delta;
+                    }
+                }
+            }
+        }
     };
 
-    const addGameCounts = (idxArr, delta) => {
-        for (let i = 0; i < 6; i++) numCnt[idxArr[i]] += delta;
-        for (const tk of gameTriples(idxArr)) tCnt[tk] += delta;
-        for (const qk of gameQuads(idxArr)) qCnt[qk] += delta;
+    const isHistDuplicate = (n0, n1, n2, n3, n4, n5) => {
+        if (!hasHistCheck) {
+            return liveHistCodeSet.has(_encodeLotto6Sorted(n0, n1, n2, n3, n4, n5));
+        }
+        if (isCodeCheckFn) {
+            return isPastHistoricalWinFn(_encodeLotto6Sorted(n0, n1, n2, n3, n4, n5));
+        }
+        return isPastHistoricalWinFn(`${n0},${n1},${n2},${n3},${n4},${n5}`);
     };
 
-    const idxToSortedNums = (idxArr) => idxArr.map(i => pool16[i]).sort((a, b) => a - b);
+    const calcEvMult6 = (i0, i1, i2, i3, i4, i5, n0, n1, n2, n3, n4, n5, sum) => {
+        const high32 = pHigh32[i0] + pHigh32[i1] + pHigh32[i2] + pHigh32[i3] + pHigh32[i4] + pHigh32[i5];
+        const hasConsec = (n0 + 1 === n1) || (n1 + 1 === n2) || (n2 + 1 === n3) || (n3 + 1 === n4) || (n4 + 1 === n5);
+        let mult = 1.0;
+        if (high32 >= 3) mult *= 1.08;
+        else if (high32 <= 1) mult *= 0.94;
+        if (n0 >= 10) mult *= 1.07;
+        if (sum >= 160) mult *= 1.05;
+        else if (sum >= 120 && sum <= 150 && high32 <= 1) mult *= 0.92;
+        if (hasConsec) mult *= 1.04;
+        if (crowdAvoidMap) {
+            const avgCa = (pCa[i0] + pCa[i1] + pCa[i2] + pCa[i3] + pCa[i4] + pCa[i5]) / 6;
+            const caFactor = 1.0 + avgCa * 2.0;
+            mult *= (caFactor < 0.90 ? 0.90 : (caFactor > 1.15 ? 1.15 : caFactor));
+        }
+        return mult;
+    };
 
     // #1 고정 슬롯: TOP 6 최핵심 앵커 6수 직결 편입 (6수 적중 시 1등, 5수+보너스 시 2등 100% 보장)
     let hasPinnedSlot = false;
     if (Array.isArray(pinnedTop6) && pinnedTop6.length === 6) {
         const pinnedIdx = pinnedTop6.map(n => pool16.indexOf(n)).filter(i => i >= 0).sort((a, b) => a - b);
         if (pinnedIdx.length === 6) {
-            gamesIdx.push(pinnedIdx);
-            usedKeys.add(idxToSortedNums(pinnedIdx).join(','));
-            addGameCounts(pinnedIdx, 1);
+            const arr = new Int8Array(pinnedIdx);
+            gamesIdx[gameCount++] = arr;
+            usedMasks.add((1 << arr[0]) | (1 << arr[1]) | (1 << arr[2]) | (1 << arr[3]) | (1 << arr[4]) | (1 << arr[5]));
+            addGameCounts(arr, 1);
             hasPinnedSlot = true;
         }
     }
 
+    const weights = new Float64Array(16);
+    const wc = new Float64Array(16);
+    const pkBuf = new Int8Array(6);
+
     // Phase 1: Covering-aware Greedy Construction (remaining slots up to 30 games)
-    for (let gIdx = gamesIdx.length; gIdx < 30; gIdx++) {
-        let bestIdxArr = null;
+    for (let gIdx = gameCount; gIdx < 30; gIdx++) {
+        let b0 = -1, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0;
         let bestSc = 1e18;
         let minC = 9999;
         for (let i = 0; i < 16; i++) {
             if (numCnt[i] < minC) minC = numCnt[i];
         }
-        const weights = [];
+        let initTotW = 0;
         for (let i = 0; i < 16; i++) {
-            const n = pool16[i];
-            const baseW = 1.0 / Math.pow((numCnt[i] - minC + 1), 2.5);
-            const evBoost = 1.0 + Math.max(-0.15, Math.min(0.25, (crowdAvoidMap?.[n] || 0) * 2.5));
-            weights.push(baseW * evBoost * (n >= 32 ? 1.15 : 1.0));
+            const n = pNums[i];
+            const diff = numCnt[i] - minC + 1;
+            const baseW = 1.0 / (diff * diff * Math.sqrt(diff));
+            const ca25 = pCa[i] * 2.5;
+            const evBoost = 1.0 + (ca25 < -0.15 ? -0.15 : (ca25 > 0.25 ? 0.25 : ca25));
+            const w = baseW * evBoost * (n >= 32 ? 1.15 : 1.0);
+            weights[i] = w;
+            initTotW += w;
         }
 
         for (let t = 0; t < 220; t++) {
-            const picked = [];
-            const wc = [...weights];
-            while (picked.length < 6) {
-                let totW = 0;
-                for (let k = 0; k < 16; k++) totW += wc[k];
+            wc.set(weights);
+            let totW = initTotW;
+            let pCount = 0;
+            while (pCount < 6) {
                 if (totW <= 0) break;
                 let r = rng() * totW;
                 let pk = 15;
                 for (let k = 0; k < 16; k++) {
-                    r -= wc[k];
+                    const wk = wc[k];
+                    if (wk === 0) continue;
+                    r -= wk;
                     if (r <= 0) { pk = k; break; }
                 }
-                picked.push(pk);
+                pkBuf[pCount++] = pk;
+                totW -= wc[pk];
                 wc[pk] = 0;
             }
-            if (picked.length !== 6) continue;
-            picked.sort((a, b) => a - b);
-            const nums = idxToSortedNums(picked);
-            const key = nums.join(',');
-            if (usedKeys.has(key)) continue;
-            if (activeHistWinCheck(key)) continue;
+            if (pCount !== 6) continue;
 
-            let qOv = 0;
-            for (const qk of gameQuads(picked)) qOv += qCnt[qk];
-            let tOv = 0;
-            let newT = 0;
-            for (const tk of gameTriples(picked)) {
-                const c = tCnt[tk];
-                if (c === 0) newT++;
-                else tOv += c;
+            // Inline insertion sort of 6 elements
+            for (let i = 1; i < 6; i++) {
+                const v = pkBuf[i];
+                let j = i - 1;
+                while (j >= 0 && pkBuf[j] > v) {
+                    pkBuf[j + 1] = pkBuf[j];
+                    j--;
+                }
+                pkBuf[j + 1] = v;
             }
-            let bal = 0;
-            for (let i = 0; i < 6; i++) bal += numCnt[picked[i]];
-            const sum = nums.reduce((a, b) => a + b, 0);
-            // 고합계(185~230+) 독식 패턴은 감점하지 않고 초저합계(<85)만 미세 감점
+
+            const i0 = pkBuf[0], i1 = pkBuf[1], i2 = pkBuf[2], i3 = pkBuf[3], i4 = pkBuf[4], i5 = pkBuf[5];
+            const mask = (1 << i0) | (1 << i1) | (1 << i2) | (1 << i3) | (1 << i4) | (1 << i5);
+            if (usedMasks.has(mask)) continue;
+
+            const n0 = pNums[i0], n1 = pNums[i1], n2 = pNums[i2], n3 = pNums[i3], n4 = pNums[i4], n5 = pNums[i5];
+            if (isHistDuplicate(n0, n1, n2, n3, n4, n5)) continue;
+
+            // 15 quads inline
+            let qOv = 0;
+            qOv += qCnt[(i0 << 12) | (i1 << 8) | (i2 << 4) | i3] + qCnt[(i0 << 12) | (i1 << 8) | (i2 << 4) | i4] + qCnt[(i0 << 12) | (i1 << 8) | (i2 << 4) | i5];
+            qOv += qCnt[(i0 << 12) | (i1 << 8) | (i3 << 4) | i4] + qCnt[(i0 << 12) | (i1 << 8) | (i3 << 4) | i5] + qCnt[(i0 << 12) | (i1 << 8) | (i4 << 4) | i5];
+            qOv += qCnt[(i0 << 12) | (i2 << 8) | (i3 << 4) | i4] + qCnt[(i0 << 12) | (i2 << 8) | (i3 << 4) | i5] + qCnt[(i0 << 12) | (i2 << 8) | (i4 << 4) | i5];
+            qOv += qCnt[(i0 << 12) | (i3 << 8) | (i4 << 4) | i5] + qCnt[(i1 << 12) | (i2 << 8) | (i3 << 4) | i4] + qCnt[(i1 << 12) | (i2 << 8) | (i3 << 4) | i5];
+            qOv += qCnt[(i1 << 12) | (i2 << 8) | (i4 << 4) | i5] + qCnt[(i1 << 12) | (i3 << 8) | (i4 << 4) | i5] + qCnt[(i2 << 12) | (i3 << 8) | (i4 << 4) | i5];
+
+            // 20 triples inline
+            let tOv = 0, newT = 0, tc;
+            const i0s = i0 << 8, i1s = i1 << 8, i2s = i2 << 8, i3s = i3 << 8;
+            const tKeys0 = i0s | (i1 << 4);
+            tc = tCnt[tKeys0 | i2]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[tKeys0 | i3]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[tKeys0 | i4]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[tKeys0 | i5]; if (tc === 0) newT++; else tOv += tc;
+            const tKeys1 = i0s | (i2 << 4);
+            tc = tCnt[tKeys1 | i3]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[tKeys1 | i4]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[tKeys1 | i5]; if (tc === 0) newT++; else tOv += tc;
+            const tKeys2 = i0s | (i3 << 4);
+            tc = tCnt[tKeys2 | i4]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[tKeys2 | i5]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[i0s | (i4 << 4) | i5]; if (tc === 0) newT++; else tOv += tc;
+            const tKeys3 = i1s | (i2 << 4);
+            tc = tCnt[tKeys3 | i3]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[tKeys3 | i4]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[tKeys3 | i5]; if (tc === 0) newT++; else tOv += tc;
+            const tKeys4 = i1s | (i3 << 4);
+            tc = tCnt[tKeys4 | i4]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[tKeys4 | i5]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[i1s | (i4 << 4) | i5]; if (tc === 0) newT++; else tOv += tc;
+            const tKeys5 = i2s | (i3 << 4);
+            tc = tCnt[tKeys5 | i4]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[tKeys5 | i5]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[i2s | (i4 << 4) | i5]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[i3s | (i4 << 4) | i5]; if (tc === 0) newT++; else tOv += tc;
+
+            const bal = numCnt[i0] + numCnt[i1] + numCnt[i2] + numCnt[i3] + numCnt[i4] + numCnt[i5];
+            const sum = n0 + n1 + n2 + n3 + n4 + n5;
             const sPen = (sum >= 85) ? 0 : (85 - sum) * 0.5;
-            const ac = _calcACLocal(nums);
+            const ac = _calcAC6Fast(n0, n1, n2, n3, n4, n5);
             const acPen = (ac >= 5) ? 0 : (5 - ac) * 2;
-            const evMult = _calcEmpiricalEvMultiplier3B(nums, crowdAvoidMap);
+            const evMult = calcEvMult6(i0, i1, i2, i3, i4, i5, n0, n1, n2, n3, n4, n5, sum);
             const sc = qOv * 40000 + tOv * 600 - newT * 900 + bal * 3 + sPen + acPen - (evMult - 1.0) * 25;
             if (sc < bestSc) {
                 bestSc = sc;
-                bestIdxArr = picked;
+                b0 = i0; b1 = i1; b2 = i2; b3 = i3; b4 = i4; b5 = i5;
             }
         }
 
-        if (!bestIdxArr) {
-            const avail = Array.from({ length: 16 }, (_, i) => i);
-            bestIdxArr = seededShuffle(avail, rng).slice(0, 6).sort((a, b) => a - b);
+        let bestIdxArr;
+        if (b0 >= 0) {
+            bestIdxArr = new Int8Array([b0, b1, b2, b3, b4, b5]);
+        } else {
+            const avail = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+            const fallback = seededShuffle(avail, rng).slice(0, 6).sort((a, b) => a - b);
+            bestIdxArr = new Int8Array(fallback);
         }
-        gamesIdx.push(bestIdxArr);
-        usedKeys.add(idxToSortedNums(bestIdxArr).join(','));
+        gamesIdx[gameCount++] = bestIdxArr;
+        usedMasks.add((1 << bestIdxArr[0]) | (1 << bestIdxArr[1]) | (1 << bestIdxArr[2]) | (1 << bestIdxArr[3]) | (1 << bestIdxArr[4]) | (1 << bestIdxArr[5]));
         addGameCounts(bestIdxArr, 1);
     }
 
     // Phase 2: Fast 2-opt Covering Refinement (3수 커버리지 극대화 + 4수 중복 비증가, #1 TOP6 직결 슬롯 잠금)
     const startSwapPos = hasPinnedSlot ? 1 : 0;
+    const remPool = new Int8Array(13);
+    const candBuf = new Int8Array(6);
+
     for (let it = 0; it < 350; it++) {
-        let hasUncovered = false;
-        for (let i = 0; i < allTriples.length; i++) {
-            if (tCnt[allTriples[i][3]] === 0) { hasUncovered = true; break; }
-        }
-        if (!hasUncovered) break;
+        if (uncovCount === 0) break;
 
         let worstPos = -1;
         let worstUniq = 99;
         for (let pos = startSwapPos; pos < 30; pos++) {
+            const g = gamesIdx[pos];
             let uniq = 0;
-            for (const tk of gameTriples(gamesIdx[pos])) {
-                if (tCnt[tk] === 1) uniq++;
+            for (let a = 0; a < 4; a++) {
+                const ga = g[a] << 8;
+                for (let b = a + 1; b < 5; b++) {
+                    const gab = ga | (g[b] << 4);
+                    for (let c = b + 1; c < 6; c++) {
+                        if (tCnt[gab | g[c]] === 1) uniq++;
+                    }
+                }
             }
             if (uniq < worstUniq) {
                 worstUniq = uniq;
@@ -22715,71 +22914,127 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
         if (worstPos < 0) break;
 
         const oldArr = gamesIdx[worstPos];
-        const oldKey = idxToSortedNums(oldArr).join(',');
-        usedKeys.delete(oldKey);
+        const o0 = oldArr[0], o1 = oldArr[1], o2 = oldArr[2], o3 = oldArr[3], o4 = oldArr[4], o5 = oldArr[5];
+        const oldMask = (1 << o0) | (1 << o1) | (1 << o2) | (1 << o3) | (1 << o4) | (1 << o5);
+        usedMasks.delete(oldMask);
         addGameCounts(oldArr, -1);
 
-        const uncovered = [];
-        for (let i = 0; i < allTriples.length; i++) {
-            if (tCnt[allTriples[i][3]] === 0) uncovered.push(allTriples[i]);
-        }
-        if (uncovered.length === 0) {
-            usedKeys.add(oldKey);
+        if (uncovCount === 0) {
+            usedMasks.add(oldMask);
             addGameCounts(oldArr, 1);
             break;
         }
 
         let oldQOv = 0;
-        for (const qk of gameQuads(oldArr)) oldQOv += qCnt[qk];
+        for (let a = 0; a < 3; a++) {
+            const qa = oldArr[a] << 12;
+            for (let b = a + 1; b < 4; b++) {
+                const qab = qa | (oldArr[b] << 8);
+                for (let c = b + 1; c < 5; c++) {
+                    const qabc = qab | (oldArr[c] << 4);
+                    for (let d = c + 1; d < 6; d++) oldQOv += qCnt[qabc | oldArr[d]];
+                }
+            }
+        }
         let oldGain = 0;
-        for (const tk of gameTriples(oldArr)) if (tCnt[tk] === 0) oldGain++;
-        const oldEv = _calcEmpiricalEvMultiplier3B(idxToSortedNums(oldArr), crowdAvoidMap);
+        for (let a = 0; a < 4; a++) {
+            const ta = oldArr[a] << 8;
+            for (let b = a + 1; b < 5; b++) {
+                const tab = ta | (oldArr[b] << 4);
+                for (let c = b + 1; c < 6; c++) if (tCnt[tab | oldArr[c]] === 0) oldGain++;
+            }
+        }
+        const on0 = pNums[o0], on1 = pNums[o1], on2 = pNums[o2], on3 = pNums[o3], on4 = pNums[o4], on5 = pNums[o5];
+        const oldEv = calcEvMult6(o0, o1, o2, o3, o4, o5, on0, on1, on2, on3, on4, on5, on0 + on1 + on2 + on3 + on4 + on5);
 
-        const targetT = uncovered[Math.floor(rng() * uncovered.length)];
-        const remPool = [];
+        const targetSlot = uncovIdx[Math.floor(rng() * uncovCount)];
+        const ta0 = _TRIPLES_16_A[targetSlot];
+        const tb0 = _TRIPLES_16_B[targetSlot];
+        const tc0 = _TRIPLES_16_C[targetSlot];
+        let rp = 0;
         for (let i = 0; i < 16; i++) {
-            if (i !== targetT[0] && i !== targetT[1] && i !== targetT[2]) remPool.push(i);
+            if (i !== ta0 && i !== tb0 && i !== tc0) remPool[rp++] = i;
         }
 
-        let bestRep = null;
+        let br0 = -1, br1 = 0, br2 = 0, br3 = 0, br4 = 0, br5 = 0;
         let bestGain = oldGain;
         let bestQOv = oldQOv;
         let bestEv = oldEv;
 
         for (let c = 0; c < 45; c++) {
-            const sh = seededShuffle(remPool, rng);
-            const cand = [targetT[0], targetT[1], targetT[2], sh[0], sh[1], sh[2]].sort((a, b) => a - b);
-            const cKey = idxToSortedNums(cand).join(',');
-            if (usedKeys.has(cKey)) continue;
-            if (activeHistWinCheck(cKey)) continue;
+            // Partial Fisher-Yates for 3 draws out of 13 elements
+            for (let k = 12; k >= 10; k--) {
+                const j = Math.floor(rng() * (k + 1));
+                const tmp = remPool[j];
+                remPool[j] = remPool[k];
+                remPool[k] = tmp;
+            }
+            candBuf[0] = ta0; candBuf[1] = tb0; candBuf[2] = tc0;
+            candBuf[3] = remPool[12]; candBuf[4] = remPool[11]; candBuf[5] = remPool[10];
+            for (let i = 1; i < 6; i++) {
+                const v = candBuf[i];
+                let j = i - 1;
+                while (j >= 0 && candBuf[j] > v) {
+                    candBuf[j + 1] = candBuf[j];
+                    j--;
+                }
+                candBuf[j + 1] = v;
+            }
+            const c0 = candBuf[0], c1 = candBuf[1], c2 = candBuf[2], c3 = candBuf[3], c4 = candBuf[4], c5 = candBuf[5];
+            const cMask = (1 << c0) | (1 << c1) | (1 << c2) | (1 << c3) | (1 << c4) | (1 << c5);
+            if (usedMasks.has(cMask)) continue;
+
+            const cn0 = pNums[c0], cn1 = pNums[c1], cn2 = pNums[c2], cn3 = pNums[c3], cn4 = pNums[c4], cn5 = pNums[c5];
+            if (isHistDuplicate(cn0, cn1, cn2, cn3, cn4, cn5)) continue;
 
             let qOv = 0;
-            for (const qk of gameQuads(cand)) qOv += qCnt[qk];
+            for (let a = 0; a < 3; a++) {
+                const qa = candBuf[a] << 12;
+                for (let b = a + 1; b < 4; b++) {
+                    const qab = qa | (candBuf[b] << 8);
+                    for (let cc = b + 1; cc < 5; cc++) {
+                        const qabc = qab | (candBuf[cc] << 4);
+                        for (let d = cc + 1; d < 6; d++) qOv += qCnt[qabc | candBuf[d]];
+                    }
+                }
+            }
             if (qOv > oldQOv) continue;
 
             let gain = 0;
-            for (const tk of gameTriples(cand)) if (tCnt[tk] === 0) gain++;
-            const cEv = _calcEmpiricalEvMultiplier3B(idxToSortedNums(cand), crowdAvoidMap);
+            for (let a = 0; a < 4; a++) {
+                const xa = candBuf[a] << 8;
+                for (let b = a + 1; b < 5; b++) {
+                    const xab = xa | (candBuf[b] << 4);
+                    for (let cc = b + 1; cc < 6; cc++) if (tCnt[xab | candBuf[cc]] === 0) gain++;
+                }
+            }
+            const cEv = calcEvMult6(c0, c1, c2, c3, c4, c5, cn0, cn1, cn2, cn3, cn4, cn5, cn0 + cn1 + cn2 + cn3 + cn4 + cn5);
 
             if (gain > bestGain || (gain === bestGain && (qOv < bestQOv || (qOv === bestQOv && cEv > bestEv + 0.02)))) {
-                bestRep = cand;
+                br0 = c0; br1 = c1; br2 = c2; br3 = c3; br4 = c4; br5 = c5;
                 bestGain = gain;
                 bestQOv = qOv;
                 bestEv = cEv;
             }
         }
 
-        if (bestRep) {
-            gamesIdx[worstPos] = bestRep;
-            usedKeys.add(idxToSortedNums(bestRep).join(','));
-            addGameCounts(bestRep, 1);
+        if (br0 >= 0) {
+            const repArr = new Int8Array([br0, br1, br2, br3, br4, br5]);
+            gamesIdx[worstPos] = repArr;
+            usedMasks.add((1 << br0) | (1 << br1) | (1 << br2) | (1 << br3) | (1 << br4) | (1 << br5));
+            addGameCounts(repArr, 1);
         } else {
-            usedKeys.add(oldKey);
+            usedMasks.add(oldMask);
             addGameCounts(oldArr, 1);
         }
     }
 
-    return gamesIdx.map(idxToSortedNums);
+    const outGames = new Array(30);
+    for (let g = 0; g < 30; g++) {
+        const arr = gamesIdx[g];
+        outGames[g] = [pNums[arr[0]], pNums[arr[1]], pNums[arr[2]], pNums[arr[3]], pNums[arr[4]], pNums[arr[5]]];
+    }
+    return outGames;
 }
 
 function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, crowdAvoidMap, maxKnownDrawnRound, isPastHistoricalWinFn = null, fastMode = false) {
@@ -22922,10 +23177,12 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
     };
 }
 
+let _wfScoreCacheMemo = null;
+
 /**
  * ⚡ O(N) 증분 워크포워드 코어 스코어 캐시 구축 (1회차 ~ maxRound까지 미래 데이터 0% 누수 없이 고속 계산)
  * - statistics.js의 DYNAMIC_ROUND_SCORE 공식(역대빈도 40% + 전이확률 35% + 30회 EWMA 25% + 결손·이웃·이월 + 300회 군집회피)을
- *   수학적으로 100% 동일하게 O(1)/회차 증분 업데이트로 계산합니다.
+ *   수학적으로 100% 동일하게 O(1)/회차 증분 업데이트로 계산하며, 결과 스냅샷·포트폴리오를 세션 내 재사용합니다.
  */
 function buildWalkForwardCore3BScoreCache(maxRound = null) {
     const history = state.mergedHistory || {};
@@ -22934,6 +23191,11 @@ function buildWalkForwardCore3BScoreCache(maxRound = null) {
         .map(Number)
         .sort((a, b) => a - b);
     const limitR = maxRound || (allRounds.length ? allRounds[allRounds.length - 1] : 1250);
+    const latestHistR = allRounds.length ? allRounds[allRounds.length - 1] : 0;
+    const latestSig = latestHistR > 0 ? `${allRounds.length}_${latestHistR}_${history[latestHistR].numbers.join(',')}` : '0';
+    if (_wfScoreCacheMemo && _wfScoreCacheMemo.latestSig === latestSig && _wfScoreCacheMemo.cache.limitR >= limitR) {
+        return _wfScoreCacheMemo.cache;
+    }
 
     const decay = Math.exp(-Math.LN2 / 30.0);
     const freq = new Int32Array(46);
@@ -22941,6 +23203,7 @@ function buildWalkForwardCore3BScoreCache(maxRound = null) {
     const lastSeen = new Int32Array(46);
     const trans = Array.from({ length: 46 }, () => new Int32Array(46));
     const winRoundMap = new Map();
+    const winCodeMap = new Map();
 
     // Rolling 300-round winner queue (w1 > 0 for rounds > (r-1) - 300)
     const winnerWindow = []; // entries: { r, w1, nums }
@@ -23023,8 +23286,11 @@ function buildWalkForwardCore3BScoreCache(maxRound = null) {
         const d = history[r];
         if (d && Array.isArray(d.numbers) && d.numbers.length === 6) {
             const nums = d.numbers;
-            const sortedKey = [...nums].sort((a, b) => a - b).join(',');
+            const sortedNums = [...nums].sort((a, b) => a - b);
+            const sortedKey = sortedNums.join(',');
             if (!winRoundMap.has(sortedKey)) winRoundMap.set(sortedKey, r);
+            const winCode = _encodeLotto6Sorted(sortedNums[0], sortedNums[1], sortedNums[2], sortedNums[3], sortedNums[4], sortedNums[5]);
+            if (!winCodeMap.has(winCode)) winCodeMap.set(winCode, r);
 
             // Decay existing EWMA by 1 round step
             let nextTotalEwma = 0;
@@ -23065,7 +23331,9 @@ function buildWalkForwardCore3BScoreCache(maxRound = null) {
         }
     }
 
-    return { limitR, roundSnapshots, winRoundMap };
+    const cache = { limitR, roundSnapshots, winRoundMap, winCodeMap, portfolioCache: new Map() };
+    _wfScoreCacheMemo = { latestSig, cache };
+    return cache;
 }
 
 /**
@@ -23074,10 +23342,24 @@ function buildWalkForwardCore3BScoreCache(maxRound = null) {
 function generateCore3BPortfolioAtRound(round, customUserId = null, scoreCache = null, fastMode = true) {
     const effectiveUserId = getEffectiveGeneratorUserId(customUserId);
     if (scoreCache && scoreCache.roundSnapshots && scoreCache.roundSnapshots[round]) {
+        const pfCache = scoreCache.portfolioCache;
+        const cacheKey = `${effectiveUserId}_${round}_${fastMode ? 1 : 0}`;
+        if (pfCache && pfCache.has(cacheKey)) {
+            return pfCache.get(cacheKey);
+        }
         const snap = scoreCache.roundSnapshots[round];
-        const winMap = scoreCache.winRoundMap;
-        const histCheck = winMap ? (k) => (winMap.has(k) && winMap.get(k) < round) : null;
-        return _composePortfolio3BFromScores(round, effectiveUserId, snap.dynScore, snap.crowdAvoid, snap.maxKnown, histCheck, fastMode);
+        const codeMap = scoreCache.winCodeMap;
+        let histCheck = null;
+        if (codeMap) {
+            histCheck = (code) => {
+                const wr = codeMap.get(code);
+                return wr !== undefined && wr < round;
+            };
+            histCheck.__isCodeFn = true;
+        }
+        const pf = _composePortfolio3BFromScores(round, effectiveUserId, snap.dynScore, snap.crowdAvoid, snap.maxKnown, histCheck, fastMode);
+        if (pfCache) pfCache.set(cacheKey, pf);
+        return pf;
     }
     return computeAllRounder3BPortfolio(round, effectiveUserId);
 }
@@ -35262,6 +35544,7 @@ function playOptWinFanfare() {
 
 // Module-level persistent cache for distinct pack simulation results across rounds
 const _optMatrixMemoryCache = new Map();
+const _optCoreStatsMemoryCache = new Map();
 
 function toggleOptSound() {
     _optSoundEnabled = !_optSoundEnabled;
@@ -35601,10 +35884,7 @@ async function runBudgetOptimizationSimulation() {
 
     logTerminal(`📌 [기존 보유 팩] <strong>${ownedNames}</strong> (${ownedGames}게임 고정 포함, 번호 커버리지 ${baselineCoverage}%)`, '#60a5fa', true);
     logTerminal(`🚀 [추가 구매 예산] <strong>${additionalBudget.toLocaleString()}원 (${additionalGames}게임 추가)</strong> 시너지 1위 팩 탐색 시작...`, '#38bdf8', true);
-    await new Promise(r => setTimeout(r, 40));
-
     logTerminal(`📊 [현행 코어 16수 엔진] ${startRound}~${maxRound}회차 실당첨번호 & 워크포워드 동적 점수 로드 완료`, '#94a3b8');
-    await new Promise(r => setTimeout(r, 40));
 
     // 2. Determine Candidate Additional Packs (excluding already owned ones)
     let candidatePool = ALL_PACK_DEFS.filter(p => !ownedPacks.some(op => op.id === p.id));
@@ -35642,7 +35922,7 @@ async function runBudgetOptimizationSimulation() {
     }
 
     logTerminal(`🔍 [후보군 탐색] 총 ${candidateCombinations.length}개 추가팩 조합 (${startRound}~${maxRound}회) 백테스팅 대조 중...`, '#fbbf24', true);
-    await new Promise(r => setTimeout(r, 40));
+    await new Promise(r => requestAnimationFrame(r));
 
     const evaluatedDrawCount = maxRound - startRound + 1;
 
@@ -35651,6 +35931,8 @@ async function runBudgetOptimizationSimulation() {
     [...ownedPacks, ...candidatePool].forEach(p => distinctPacksMap.set(p.id, p));
     const distinctPacks = Array.from(distinctPacksMap.values());
 
+    const statsCacheKey = `core3b_stats_${effectiveUserId}_${startRound}_${maxRound}`;
+    const cachedCoreStats = _optCoreStatsMemoryCache.get(statsCacheKey) || null;
     const packEvals = new Map();
     const uncachedPacks = distinctPacks.filter(p => !_optMatrixMemoryCache.has(`core3b_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`));
     distinctPacks.forEach(p => {
@@ -35662,25 +35944,24 @@ async function runBudgetOptimizationSimulation() {
         }
     });
 
-    let core6TotalHitsInRange = 0;
-    let pool16TotalHitsInRange = 0;
-    let pool16_4PlusRounds = 0;
-    let validDrawnRounds = 0;
+    let core6TotalHitsInRange = cachedCoreStats ? cachedCoreStats.core6TotalHitsInRange : 0;
+    let pool16TotalHitsInRange = cachedCoreStats ? cachedCoreStats.pool16TotalHitsInRange : 0;
+    let pool16_4PlusRounds = cachedCoreStats ? cachedCoreStats.pool16_4PlusRounds : 0;
+    let validDrawnRounds = cachedCoreStats ? cachedCoreStats.validDrawnRounds : 0;
 
-    if (uncachedPacks.length > 0 || true) {
+    if (uncachedPacks.length > 0 || !cachedCoreStats) {
         const scoreCache = buildWalkForwardCore3BScoreCache(maxRound);
         if (rouletteEl) {
             rouletteEl.innerText = '핵심 6수 · 보조 10수 30G 통합 휠';
             rouletteEl.style.color = '#fbbf24';
         }
+        let lastYieldTs = performance.now();
+        core6TotalHitsInRange = 0;
+        pool16TotalHitsInRange = 0;
+        pool16_4PlusRounds = 0;
+        validDrawnRounds = 0;
+
         for (let r = maxRound; r >= startRound; r--) {
-            if ((maxRound - r) % 25 === 0) {
-                const pctDone = Math.round(((maxRound - r + 1) / evaluatedDrawCount) * 50);
-                if (progBar) progBar.style.width = `${pctDone}%`;
-                if (progPct) progPct.innerText = `${pctDone}%`;
-                if (subEl) subEl.innerText = `${startRound}~${maxRound}회 코어 16수 백테스트 중... (제 ${r}회)`;
-                await new Promise(res => setTimeout(res, 0));
-            }
             const draw = state.mergedHistory[r];
             if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) continue;
             validDrawnRounds++;
@@ -35690,8 +35971,12 @@ async function runBudgetOptimizationSimulation() {
             const pf = generateCore3BPortfolioAtRound(r, effectiveUserId, scoreCache, true);
             if (!pf) continue;
 
-            const c6Hit = (pf.top6Anchors || []).filter(n => winningSet.has(n)).length;
-            const p16Hit = (pf.pool16 || []).filter(n => winningSet.has(n)).length;
+            const top6 = pf.top6Anchors || [];
+            let c6Hit = 0;
+            for (let ti = 0; ti < top6.length; ti++) if (winningSet.has(top6[ti])) c6Hit++;
+            const p16 = pf.pool16 || [];
+            let p16Hit = 0;
+            for (let pi = 0; pi < p16.length; pi++) if (winningSet.has(p16[pi])) p16Hit++;
             core6TotalHitsInRange += c6Hit;
             pool16TotalHitsInRange += p16Hit;
             if (p16Hit >= 4) pool16_4PlusRounds++;
@@ -35700,14 +35985,21 @@ async function runBudgetOptimizationSimulation() {
             const p2Val = Number(draw.rank2Prize || (draw.prizes && draw.prizes[2] && draw.prizes[2].prize) || 50000000);
             const p3Val = Number(draw.rank3Prize || (draw.prizes && draw.prizes[3] && draw.prizes[3].prize) || 1500000);
 
-            uncachedPacks.forEach(pack => {
+            for (let ui = 0; ui < uncachedPacks.length; ui++) {
+                const pack = uncachedPacks[ui];
                 const combos = (pack.id === 'v4') ? (pf.v4 || []) : (pack.id === 'v3' ? (pf.v3 || []) : (pf.ar3 || []));
                 let h1 = 0, h2 = 0, h3 = 0, h4 = 0, h5 = 0, prize = 0;
                 for (let ci = 0; ci < combos.length; ci++) {
-                    const nums = getComboNumbers(combos[ci]);
+                    const nums = combos[ci].numbers || getComboNumbers(combos[ci]);
                     if (!Array.isArray(nums) || nums.length !== 6) continue;
-                    const matchCount = nums.filter(n => winningSet.has(n)).length;
-                    const isBonus = nums.includes(bonusNum);
+                    let matchCount = 0;
+                    let isBonus = false;
+                    for (let ni = 0; ni < 6; ni++) {
+                        const val = nums[ni];
+                        if (winningSet.has(val)) matchCount++;
+                        else if (val === bonusNum) isBonus = true;
+                    }
+                    if (matchCount < 3) continue;
                     if (matchCount === 6) { h1++; prize += p1Val; }
                     else if (matchCount === 5 && isBonus) { h2++; prize += p2Val; }
                     else if (matchCount === 5) { h3++; prize += p3Val; }
@@ -35715,10 +36007,25 @@ async function runBudgetOptimizationSimulation() {
                     else if (matchCount === 3) { h5++; prize += 5000; }
                 }
                 packEvals.get(pack.id)[r] = { h1, h2, h3, h4, h5, prize };
-            });
+            }
+
+            if ((performance.now() - lastYieldTs) >= 24) {
+                const pctDone = Math.round(((maxRound - r + 1) / evaluatedDrawCount) * 50);
+                if (progBar) progBar.style.width = `${pctDone}%`;
+                if (progPct) progPct.innerText = `${pctDone}%`;
+                if (subEl) subEl.innerText = `${startRound}~${maxRound}회 코어 16수 백테스트 중... (제 ${r}회)`;
+                await new Promise(res => setTimeout(res, 0));
+                lastYieldTs = performance.now();
+            }
         }
         uncachedPacks.forEach(pack => {
             _optMatrixMemoryCache.set(`core3b_${effectiveUserId}_${pack.id}_${startRound}_${maxRound}`, packEvals.get(pack.id));
+        });
+        _optCoreStatsMemoryCache.set(statsCacheKey, {
+            core6TotalHitsInRange,
+            pool16TotalHitsInRange,
+            pool16_4PlusRounds,
+            validDrawnRounds
         });
         if (progBar) progBar.style.width = '50%';
         if (progPct) progPct.innerText = '50%';
@@ -35852,9 +36159,9 @@ async function runBudgetOptimizationSimulation() {
                 pool16_4PlusRounds
             };
         }
-
-        await new Promise(r => setTimeout(r, 30));
     }
+
+    await new Promise(r => requestAnimationFrame(r));
 
     if (progBar) progBar.style.width = '100%';
     if (progPct) progPct.innerText = '100%';
@@ -36346,32 +36653,35 @@ function getSingleUserCombosForRound(round, cfg, userId, userName = null, scoreC
     };
 
     if (cfg.includeV4 && Array.isArray(pf.v4)) {
-        pf.v4.forEach(c => {
-            const clone = { ...c, meta: { ...(c.meta || {}) }, coreMeta };
-            if (userName) clone.meta.ownerName = userName;
+        for (let i = 0; i < pf.v4.length; i++) {
+            const c = pf.v4[i];
+            const clone = { ...c, coreMeta };
+            if (userName) clone.meta = { ...(c.meta || {}), ownerName: userName };
             clone.algoId = 'v4';
             clone.algoName = '올라운더 팩 1 (TOP6 직결·고액 휠)';
             combos.push(clone);
-        });
+        }
     }
     if (cfg.includeV3 && Array.isArray(pf.v3)) {
-        pf.v3.forEach(c => {
-            const clone = { ...c, meta: { ...(c.meta || {}) }, coreMeta };
-            if (userName) clone.meta.ownerName = userName;
+        for (let i = 0; i < pf.v3.length; i++) {
+            const c = pf.v3[i];
+            const clone = { ...c, coreMeta };
+            if (userName) clone.meta = { ...(c.meta || {}), ownerName: userName };
             clone.algoId = 'v3';
             clone.algoName = '올라운더 팩 2 (EV 상호보완 휠)';
             combos.push(clone);
-        });
+        }
     }
     if (cfg.selectedExtraPacks.includes(1) && Array.isArray(pf.ar3)) {
-        pf.ar3.forEach(c => {
-            const clone = { ...c, meta: { ...(c.meta || {}) }, coreMeta };
-            if (userName) clone.meta.ownerName = userName;
+        for (let i = 0; i < pf.ar3.length; i++) {
+            const c = pf.ar3[i];
+            const clone = { ...c, coreMeta };
+            if (userName) clone.meta = { ...(c.meta || {}), ownerName: userName };
             clone.algoId = 'extra_1';
             clone.packIdx = 1;
             clone.algoName = '기본 3: 올라운더 팩 3 (30G 완결 휠)';
             combos.push(clone);
-        });
+        }
     }
     return combos;
 }
@@ -37664,14 +37974,16 @@ async function runRealHistoricalSimulation() {
                 return;
             }
 
-            const baseStep = (effectiveTarget === '__ALL__') ? 8 : 20;
-            const speedMultiplier = _simScanSpeed === 8 ? 4 : (_simScanSpeed === 3 ? 2 : 1);
-            const currentChunkSize = baseStep * speedMultiplier;
-            const end = Math.max(startRound, r - currentChunkSize + 1);
+            const chunkBudgetMs = _simScanSpeed >= 8 ? 34 : (_simScanSpeed >= 3 ? 22 : 14);
+            const minBatch = (effectiveTarget === '__ALL__') ? 6 : (_simScanSpeed >= 3 ? 24 : 14);
+            const tChunkStart = performance.now();
+            let processedInChunk = 0;
 
             let latestDrawForBalls = null;
 
-            for (; r >= end; r--) {
+            for (; r >= startRound; r--) {
+                if (processedInChunk >= minBatch && (performance.now() - tChunkStart) >= chunkBudgetMs) break;
+                processedInChunk++;
                 const drawData = getHistoricalDrawData(r);
                 if (!drawData || !Array.isArray(drawData.numbers) || drawData.numbers.length !== 6) continue;
                 latestDrawForBalls = drawData;
@@ -37686,22 +37998,34 @@ async function runRealHistoricalSimulation() {
                 // Record Core 6 + Support 10 capture stats for this round
                 coreRoundStats.evaluatedRounds++;
                 const firstMeta = (simulatedCombos[0] && simulatedCombos[0].coreMeta) ? simulatedCombos[0].coreMeta : null;
+                let p16MainCached = 0;
                 if (firstMeta) {
-                    const c6Main = (firstMeta.top6 || []).filter(n => winningSet.has(n)).length;
-                    const p16Main = (firstMeta.pool16 || []).filter(n => winningSet.has(n)).length;
+                    let c6Main = 0;
+                    const t6 = firstMeta.top6 || [];
+                    for (let ti = 0; ti < t6.length; ti++) if (winningSet.has(t6[ti])) c6Main++;
+                    const p16 = firstMeta.pool16 || [];
+                    for (let pi = 0; pi < p16.length; pi++) if (winningSet.has(p16[pi])) p16MainCached++;
                     coreRoundStats.core6HitSum += c6Main;
                     if (c6Main >= 3) coreRoundStats.core6Hits3Plus++;
                     if (c6Main === 6) coreRoundStats.core6Hits6++;
-                    coreRoundStats.pool16HitSum += p16Main;
-                    if (p16Main >= 4) coreRoundStats.pool16Hits4Plus++;
-                    if (p16Main >= 5) coreRoundStats.pool16Hits5Plus++;
-                    if (p16Main === 6) coreRoundStats.pool16Hits6++;
+                    coreRoundStats.pool16HitSum += p16MainCached;
+                    if (p16MainCached >= 4) coreRoundStats.pool16Hits4Plus++;
+                    if (p16MainCached >= 5) coreRoundStats.pool16Hits5Plus++;
+                    if (p16MainCached === 6) coreRoundStats.pool16Hits6++;
                 }
 
-                simulatedCombos.forEach(combo => {
-                    let matchesList = (combo.numbers || []).filter(n => winningSet.has(n));
-                    let realMatchCount = matchesList.length;
-                    let isBonusMatch = (combo.numbers || []).includes(bonusNum);
+                for (let ci = 0; ci < simulatedCombos.length; ci++) {
+                    const combo = simulatedCombos[ci];
+                    const cNums = combo.numbers;
+                    if (!cNums || cNums.length !== 6) continue;
+                    let realMatchCount = 0;
+                    let isBonusMatch = false;
+                    for (let ni = 0; ni < 6; ni++) {
+                        const val = cNums[ni];
+                        if (winningSet.has(val)) realMatchCount++;
+                        else if (val === bonusNum) isBonusMatch = true;
+                    }
+                    if (realMatchCount < 3) continue;
 
                     let prizeRank = 0;
                     if (realMatchCount === 6) prizeRank = 1;
@@ -37742,14 +38066,13 @@ async function runRealHistoricalSimulation() {
                             roundPrize += 5000;
                         }
                     }
-                });
+                }
 
                 if (roundWonAny) coreRoundStats.winningRounds++;
                 if (firstMeta) {
-                    const p16Main = (firstMeta.pool16 || []).filter(n => winningSet.has(n)).length;
                     const prevBest = coreRoundStats.bestCaptureRound;
-                    if (!prevBest || p16Main > prevBest.p16Main || (p16Main === prevBest.p16Main && roundPrize > prevBest.prize)) {
-                        coreRoundStats.bestCaptureRound = { round: r, p16Main, prize: roundPrize };
+                    if (!prevBest || p16MainCached > prevBest.p16Main || (p16MainCached === prevBest.p16Main && roundPrize > prevBest.prize)) {
+                        coreRoundStats.bestCaptureRound = { round: r, p16Main: p16MainCached, prize: roundPrize };
                     }
                 }
             }
@@ -37797,9 +38120,8 @@ async function runRealHistoricalSimulation() {
             }
 
             if (r >= startRound) {
-                const delay = _simScanSpeed === 8 ? 0 : (_simScanSpeed === 3 ? 8 : 20);
-                if (delay > 0) {
-                    setTimeout(processChunk, delay);
+                if (_simScanSpeed >= 8) {
+                    setTimeout(processChunk, 0);
                 } else {
                     requestAnimationFrame(processChunk);
                 }

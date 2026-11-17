@@ -86,6 +86,7 @@ export function playOptWinFanfare() {
 
 // Module-level persistent cache for distinct pack simulation results across rounds
 const _optMatrixMemoryCache = new Map();
+const _optCoreStatsMemoryCache = new Map();
 
 export function toggleOptSound() {
     _optSoundEnabled = !_optSoundEnabled;
@@ -425,10 +426,7 @@ export async function runBudgetOptimizationSimulation() {
 
     logTerminal(`📌 [기존 보유 팩] <strong>${ownedNames}</strong> (${ownedGames}게임 고정 포함, 번호 커버리지 ${baselineCoverage}%)`, '#60a5fa', true);
     logTerminal(`🚀 [추가 구매 예산] <strong>${additionalBudget.toLocaleString()}원 (${additionalGames}게임 추가)</strong> 시너지 1위 팩 탐색 시작...`, '#38bdf8', true);
-    await new Promise(r => setTimeout(r, 40));
-
     logTerminal(`📊 [현행 코어 16수 엔진] ${startRound}~${maxRound}회차 실당첨번호 & 워크포워드 동적 점수 로드 완료`, '#94a3b8');
-    await new Promise(r => setTimeout(r, 40));
 
     // 2. Determine Candidate Additional Packs (excluding already owned ones)
     let candidatePool = ALL_PACK_DEFS.filter(p => !ownedPacks.some(op => op.id === p.id));
@@ -466,7 +464,7 @@ export async function runBudgetOptimizationSimulation() {
     }
 
     logTerminal(`🔍 [후보군 탐색] 총 ${candidateCombinations.length}개 추가팩 조합 (${startRound}~${maxRound}회) 백테스팅 대조 중...`, '#fbbf24', true);
-    await new Promise(r => setTimeout(r, 40));
+    await new Promise(r => requestAnimationFrame(r));
 
     const evaluatedDrawCount = maxRound - startRound + 1;
 
@@ -475,6 +473,8 @@ export async function runBudgetOptimizationSimulation() {
     [...ownedPacks, ...candidatePool].forEach(p => distinctPacksMap.set(p.id, p));
     const distinctPacks = Array.from(distinctPacksMap.values());
 
+    const statsCacheKey = `core3b_stats_${effectiveUserId}_${startRound}_${maxRound}`;
+    const cachedCoreStats = _optCoreStatsMemoryCache.get(statsCacheKey) || null;
     const packEvals = new Map();
     const uncachedPacks = distinctPacks.filter(p => !_optMatrixMemoryCache.has(`core3b_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`));
     distinctPacks.forEach(p => {
@@ -486,25 +486,24 @@ export async function runBudgetOptimizationSimulation() {
         }
     });
 
-    let core6TotalHitsInRange = 0;
-    let pool16TotalHitsInRange = 0;
-    let pool16_4PlusRounds = 0;
-    let validDrawnRounds = 0;
+    let core6TotalHitsInRange = cachedCoreStats ? cachedCoreStats.core6TotalHitsInRange : 0;
+    let pool16TotalHitsInRange = cachedCoreStats ? cachedCoreStats.pool16TotalHitsInRange : 0;
+    let pool16_4PlusRounds = cachedCoreStats ? cachedCoreStats.pool16_4PlusRounds : 0;
+    let validDrawnRounds = cachedCoreStats ? cachedCoreStats.validDrawnRounds : 0;
 
-    if (uncachedPacks.length > 0 || true) {
+    if (uncachedPacks.length > 0 || !cachedCoreStats) {
         const scoreCache = buildWalkForwardCore3BScoreCache(maxRound);
         if (rouletteEl) {
             rouletteEl.innerText = '핵심 6수 · 보조 10수 30G 통합 휠';
             rouletteEl.style.color = '#fbbf24';
         }
+        let lastYieldTs = performance.now();
+        core6TotalHitsInRange = 0;
+        pool16TotalHitsInRange = 0;
+        pool16_4PlusRounds = 0;
+        validDrawnRounds = 0;
+
         for (let r = maxRound; r >= startRound; r--) {
-            if ((maxRound - r) % 25 === 0) {
-                const pctDone = Math.round(((maxRound - r + 1) / evaluatedDrawCount) * 50);
-                if (progBar) progBar.style.width = `${pctDone}%`;
-                if (progPct) progPct.innerText = `${pctDone}%`;
-                if (subEl) subEl.innerText = `${startRound}~${maxRound}회 코어 16수 백테스트 중... (제 ${r}회)`;
-                await new Promise(res => setTimeout(res, 0));
-            }
             const draw = state.mergedHistory[r];
             if (!draw || !Array.isArray(draw.numbers) || draw.numbers.length !== 6) continue;
             validDrawnRounds++;
@@ -514,8 +513,12 @@ export async function runBudgetOptimizationSimulation() {
             const pf = generateCore3BPortfolioAtRound(r, effectiveUserId, scoreCache, true);
             if (!pf) continue;
 
-            const c6Hit = (pf.top6Anchors || []).filter(n => winningSet.has(n)).length;
-            const p16Hit = (pf.pool16 || []).filter(n => winningSet.has(n)).length;
+            const top6 = pf.top6Anchors || [];
+            let c6Hit = 0;
+            for (let ti = 0; ti < top6.length; ti++) if (winningSet.has(top6[ti])) c6Hit++;
+            const p16 = pf.pool16 || [];
+            let p16Hit = 0;
+            for (let pi = 0; pi < p16.length; pi++) if (winningSet.has(p16[pi])) p16Hit++;
             core6TotalHitsInRange += c6Hit;
             pool16TotalHitsInRange += p16Hit;
             if (p16Hit >= 4) pool16_4PlusRounds++;
@@ -524,14 +527,21 @@ export async function runBudgetOptimizationSimulation() {
             const p2Val = Number(draw.rank2Prize || (draw.prizes && draw.prizes[2] && draw.prizes[2].prize) || 50000000);
             const p3Val = Number(draw.rank3Prize || (draw.prizes && draw.prizes[3] && draw.prizes[3].prize) || 1500000);
 
-            uncachedPacks.forEach(pack => {
+            for (let ui = 0; ui < uncachedPacks.length; ui++) {
+                const pack = uncachedPacks[ui];
                 const combos = (pack.id === 'v4') ? (pf.v4 || []) : (pack.id === 'v3' ? (pf.v3 || []) : (pf.ar3 || []));
                 let h1 = 0, h2 = 0, h3 = 0, h4 = 0, h5 = 0, prize = 0;
                 for (let ci = 0; ci < combos.length; ci++) {
-                    const nums = getComboNumbers(combos[ci]);
+                    const nums = combos[ci].numbers || getComboNumbers(combos[ci]);
                     if (!Array.isArray(nums) || nums.length !== 6) continue;
-                    const matchCount = nums.filter(n => winningSet.has(n)).length;
-                    const isBonus = nums.includes(bonusNum);
+                    let matchCount = 0;
+                    let isBonus = false;
+                    for (let ni = 0; ni < 6; ni++) {
+                        const val = nums[ni];
+                        if (winningSet.has(val)) matchCount++;
+                        else if (val === bonusNum) isBonus = true;
+                    }
+                    if (matchCount < 3) continue;
                     if (matchCount === 6) { h1++; prize += p1Val; }
                     else if (matchCount === 5 && isBonus) { h2++; prize += p2Val; }
                     else if (matchCount === 5) { h3++; prize += p3Val; }
@@ -539,10 +549,25 @@ export async function runBudgetOptimizationSimulation() {
                     else if (matchCount === 3) { h5++; prize += 5000; }
                 }
                 packEvals.get(pack.id)[r] = { h1, h2, h3, h4, h5, prize };
-            });
+            }
+
+            if ((performance.now() - lastYieldTs) >= 24) {
+                const pctDone = Math.round(((maxRound - r + 1) / evaluatedDrawCount) * 50);
+                if (progBar) progBar.style.width = `${pctDone}%`;
+                if (progPct) progPct.innerText = `${pctDone}%`;
+                if (subEl) subEl.innerText = `${startRound}~${maxRound}회 코어 16수 백테스트 중... (제 ${r}회)`;
+                await new Promise(res => setTimeout(res, 0));
+                lastYieldTs = performance.now();
+            }
         }
         uncachedPacks.forEach(pack => {
             _optMatrixMemoryCache.set(`core3b_${effectiveUserId}_${pack.id}_${startRound}_${maxRound}`, packEvals.get(pack.id));
+        });
+        _optCoreStatsMemoryCache.set(statsCacheKey, {
+            core6TotalHitsInRange,
+            pool16TotalHitsInRange,
+            pool16_4PlusRounds,
+            validDrawnRounds
         });
         if (progBar) progBar.style.width = '50%';
         if (progPct) progPct.innerText = '50%';
@@ -676,9 +701,9 @@ export async function runBudgetOptimizationSimulation() {
                 pool16_4PlusRounds
             };
         }
-
-        await new Promise(r => setTimeout(r, 30));
     }
+
+    await new Promise(r => requestAnimationFrame(r));
 
     if (progBar) progBar.style.width = '100%';
     if (progPct) progPct.innerText = '100%';
