@@ -75,7 +75,7 @@ export function aggregateAllStatistics() {
         const w = Math.pow(decay, maxRound - r);
         data.numbers.forEach(n => { ewmaMap[n] = (ewmaMap[n] || 0) + w; });
         const w1 = Number(data.rank1Winners || data.firstPrzwnerCo || 0);
-        if (w1 > 0) {
+        if (w1 > 0 && r > maxRound - 300) {
             totWinnerSum += w1;
             totWinnerCnt += 1;
             data.numbers.forEach(n => {
@@ -101,7 +101,7 @@ export function aggregateAllStatistics() {
         state.CROWD_EV_RATIO = 1.07;
     }
 
-    const avgAllWinners = totWinnerCnt > 0 ? (totWinnerSum / totWinnerCnt) : 8.8;
+    const avgAllWinners = totWinnerCnt > 0 ? (totWinnerSum / totWinnerCnt) : 12.0;
     const avgFreq = rounds.length > 0 ? totalFreq / 45.0 : 1.0;
     const avgEwma = rounds.length > 0 ? totalEwma / 45.0 : 1.0;
     const prevDraw = state.PREVIOUS_DRAW || [];
@@ -118,24 +118,25 @@ export function aggregateAllStatistics() {
     const avgM = prevDraw.length > 0 ? (totalM / 45.0) : 1.0;
 
     state.allNumbers.forEach(n => {
-        // Empirical Bayesian-shrunk crowd avoidance index (>0 => fewer 1st-prize co-winners)
+        // Stationary rolling 300-round Bayesian-shrunk crowd avoidance index (>0 => fewer 1st-prize co-winners)
         const shrunkAvgN = (numWinnerSum[n] + 20.0 * avgAllWinners) / (numWinnerCnt[n] + 20.0);
         const crowdAvoid = (avgAllWinners - shrunkAvgN) / Math.max(1.0, avgAllWinners);
         state.CROWD_AVOIDANCE_SCORE[n] = crowdAvoid;
 
-        const fRatio = ((state.HISTORICAL_FREQUENCY[n] || 0) + 10.0) / (avgFreq + 10.0);
+        // True Probability-Driven Core Score:
+        // 40% Historical Cumulative Frequency + 35% Markov Transition from Prev Draw + 25% 30-Round Half-Life EWMA
+        const fRatio = (state.HISTORICAL_FREQUENCY[n] || 0) / Math.max(1.0, avgFreq);
         let mSum = 0;
         prevDraw.forEach(ln => { mSum += (state.TRANSITION_MATRIX[ln]?.[n] || 0); });
-        const mRatio = (mSum + 5.0) / (avgM + 5.0);
-        // Damped short-term signal to avoid overfitting noise, anchored by empirical crowd EV + gentle EWMA reversion
-        const ovBoost = 1.0 + Math.min(0.04, Math.max(0, (state.MISSING_WEEKS[n] || 0) - 8) * 0.004);
+        const mRatio = (mSum + 2.0) / (avgM + 2.0);
+        const ewRatio = ((state.EWMA_FREQUENCY[n] || 0) + 1.0) / (avgEwma + 1.0);
+
+        const ovBoost = 1.0 + Math.min(0.05, Math.max(0, (state.MISSING_WEEKS[n] || 0) - 8) * 0.004);
         const nbBoost = neighbors.has(n) ? 1.02 : 1.0;
-        const coBoost = prevDraw.includes(n) ? 1.01 : 1.0;
-        const softScore = (0.4 * fRatio + 0.6 * mRatio) * ovBoost * nbBoost * coBoost;
-        const ewRatio = ((state.EWMA_FREQUENCY[n] || 0) + 3.0) / (avgEwma + 3.0);
-        const baseStat = 0.7 * softScore + 0.3 * ewRatio;
-        const ewReversion = avgEwma > 0 ? ((avgEwma - (state.EWMA_FREQUENCY[n] || 0)) / Math.max(1.0, avgEwma)) : 0;
-        state.DYNAMIC_ROUND_SCORE[n] = 1.0 + (baseStat - 1.0) * 0.25 + crowdAvoid * 2.5 + ewReversion * 0.04 + (n >= 32 ? 0.03 : 0.0);
+        const coBoost = prevDraw.includes(n) ? 1.015 : 1.0;
+
+        const probScore = (0.40 * fRatio + 0.35 * mRatio + 0.25 * ewRatio) * ovBoost * nbBoost * coBoost;
+        state.DYNAMIC_ROUND_SCORE[n] = probScore + crowdAvoid * 0.06 + (n >= 32 ? 0.015 : 0.0);
     });
 }
 
