@@ -15,15 +15,15 @@ let _simBonusLocation = 'none'; // 'none' | 'core' | 'support'
 export const CORE_HIT_PROB_DATA = {
     core6: [
         { hits: 6, appearProb: '0.00001%', winProb: '100.00%', r1: '100.00%', r2p: '100.00%', r3p: '100.00%', r4p: '100.00%', avgGames: '9.00G', badge: '👑 1등 100% 직결 (#1 조합)', highlight: 'gold' },
-        { hits: 5, appearProb: '0.0029%', winProb: '100.00%', r1: '0.00%', r2p: '2.53% (코어내 보너스 100%)', r3p: '100.00%', r4p: '100.00%', avgGames: '6.47G', badge: '🥇 3등 이상 100% · 보너스시 2등', highlight: 'gold' },
-        { hits: 4, appearProb: '0.1365%', winProb: '100.00%', r1: '0.00%', r2p: '0.01%', r3p: '0.57%', r4p: '100.00%', avgGames: '4.75G', badge: '✨ 4등 이상 100% 확정', highlight: 'emerald' },
+        { hits: 5, appearProb: '0.0029%', winProb: '100.00%', r1: '3.33% (보조1일치)', r2p: '2.53% (코어내 보너스 100%)', r3p: '100.00%', r4p: '100.00%', avgGames: '6.47G', badge: '🥇 1등 3.33% · 3등+ 100% · 보너스시 2등', highlight: 'gold' },
+        { hits: 4, appearProb: '0.1365%', winProb: '100.00%', r1: '0.44% (보조2일치)', r2p: '0.01%', r3p: '33.60%', r4p: '100.00%', avgGames: '4.75G', badge: '✨ 1등 0.44% · 4등+ 100% 확정', highlight: 'emerald' },
         { hits: 3, appearProb: '2.2441%', winProb: '100.00%', r1: '0.00%', r2p: '0.03%', r3p: '0.62%', r4p: '16.91%', avgGames: '3.48G', badge: '⭐ 5등 이상 100% 확정', highlight: 'emerald' },
         { hits: 2, appearProb: '15.1474%', winProb: '61.70%', r1: '0.00%', r2p: '0.00%', r3p: '0.23%', r4p: '9.52%', avgGames: '1.50G', badge: '보조 1+개 합산 시 당첨', highlight: 'none' },
         { hits: 1, appearProb: '42.4127%', winProb: '33.91%', r1: '0.00%', r2p: '0.00%', r3p: '0.03%', r4p: '3.24%', avgGames: '0.71G', badge: '보조 2+개 합산 시 당첨', highlight: 'none' },
         { hits: 0, appearProb: '40.0565%', winProb: '14.06%', r1: '0.00%', r2p: '0.00%', r3p: '0.00%', r4p: '0.77%', avgGames: '0.24G', badge: '보조 3+개 단독 방어 시 당첨', highlight: 'none' }
     ],
     support10: [
-        { hits: 6, appearProb: '0.0026%', winProb: '100.00%', r3p: '18.69%', r4p: '100.00%', avgGames: '12.18G', badge: '🏆 4등 이상 100% · 평균 12G 동시당첨', highlight: 'gold' },
+        { hits: 6, appearProb: '0.0026%', winProb: '100.00%', r3p: '44.40%', r4p: '100.00%', avgGames: '12.18G', badge: '🏆 1등 1.43%(3슬롯) · 3등+ 44.4% · 4등+ 100%', highlight: 'gold' },
         { hits: 5, appearProb: '0.1083%', winProb: '100.00%', r3p: '6.62%', r4p: '79.36%', avgGames: '8.13G', badge: '🔥 4등+ 79.4% · 평균 8.1G 동시당첨', highlight: 'gold' },
         { hits: 4, appearProb: '1.5341%', winProb: '100.00%', r3p: '1.65%', r4p: '42.56%', avgGames: '4.87G', badge: '✨ 5등+ 100% · 4등+ 42.6%', highlight: 'emerald' },
         { hits: 3, appearProb: '9.6427%', winProb: '91.70%', r3p: '0.43%', r4p: '15.62%', avgGames: '2.45G', badge: '⭐ 5등 방어 91.7% (2.45G)', highlight: 'emerald' },

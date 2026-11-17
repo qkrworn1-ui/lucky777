@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1138 - BUILD_DATE: 2026-11-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1218 - BUILD_DATE: 2026-11-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.17.1138)
+ * Lucky777 Smart Bundle (v2026.11.17.1218)
  */
 
 
@@ -22918,6 +22918,13 @@ function _selectBalancedPool16_3B(dynScore, rng) {
     return { pool16: picked.sort((a, b) => a - b), scoreMap };
 }
 
+// Plan A (Balanced_All7) 30-slot quota: [C6+S0:1, C5+S1:2, C4+S2:3, C3+S3:7, C2+S4:10, C1+S5:4, C0+S6:3]
+const _PLAN_A_CORE_SLOTS_3B = new Int8Array([
+    6, 5, 5, 4, 4, 4, 3, 3, 3, 3,
+    3, 3, 3, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 1, 1, 1, 1, 0, 0, 0
+]);
+
 function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null, isPastHistoricalWinFn = null) {
     const liveHistCodeSet = !isPastHistoricalWinFn ? _getLiveHistWinCodeSet() : null;
     const isCodeCheckFn = !!(isPastHistoricalWinFn && isPastHistoricalWinFn.__isCodeFn);
@@ -23024,6 +23031,9 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
 
     // #1 고정 슬롯: TOP 6 최핵심 앵커 6수 직결 편입 (6수 적중 시 1등, 5수+보너스 시 2등 100% 보장)
     let hasPinnedSlot = false;
+    const isCoreIdx = new Uint8Array(16);
+    const coreIdxList = new Int8Array(6);
+    const supIdxList = new Int8Array(10);
     if (Array.isArray(pinnedTop6) && pinnedTop6.length === 6) {
         const pinnedIdx = pinnedTop6.map(n => pool16.indexOf(n)).filter(i => i >= 0).sort((a, b) => a - b);
         if (pinnedIdx.length === 6) {
@@ -23032,15 +23042,26 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             usedMasks.add((1 << arr[0]) | (1 << arr[1]) | (1 << arr[2]) | (1 << arr[3]) | (1 << arr[4]) | (1 << arr[5]));
             addGameCounts(arr, 1);
             hasPinnedSlot = true;
+            let ci = 0, si = 0;
+            for (let k = 0; k < 6; k++) isCoreIdx[arr[k]] = 1;
+            for (let k = 0; k < 16; k++) {
+                if (isCoreIdx[k]) coreIdxList[ci++] = k;
+                else supIdxList[si++] = k;
+            }
         }
     }
 
     const weights = new Float64Array(16);
     const wc = new Float64Array(16);
     const pkBuf = new Int8Array(6);
+    const coreRem = new Int8Array(6);
+    const supRem = new Int8Array(10);
 
-    // Phase 1: Covering-aware Greedy Construction (remaining slots up to 30 games)
+    // Phase 1: Plan A Quota-Guided Covering Greedy Construction (30 games across all Core+Support splits)
     for (let gIdx = gameCount; gIdx < 30; gIdx++) {
+        const needC = hasPinnedSlot ? _PLAN_A_CORE_SLOTS_3B[gIdx] : -1;
+        const needS = hasPinnedSlot ? (6 - needC) : -1;
+
         let b0 = -1, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0;
         let bestSc = 1e18;
         let minC = 9999;
@@ -23048,6 +23069,8 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             if (numCnt[i] < minC) minC = numCnt[i];
         }
         let initTotW = 0;
+        let initCoreW = 0;
+        let initSupW = 0;
         for (let i = 0; i < 16; i++) {
             const n = pNums[i];
             const diff = numCnt[i] - minC + 1;
@@ -23057,25 +23080,61 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             const w = baseW * evBoost * (n >= 32 ? 1.15 : 1.0);
             weights[i] = w;
             initTotW += w;
+            if (isCoreIdx[i]) initCoreW += w;
+            else initSupW += w;
         }
 
         for (let t = 0; t < 220; t++) {
-            wc.set(weights);
-            let totW = initTotW;
             let pCount = 0;
-            while (pCount < 6) {
-                if (totW <= 0) break;
-                let r = rng() * totW;
-                let pk = 15;
-                for (let k = 0; k < 16; k++) {
-                    const wk = wc[k];
-                    if (wk === 0) continue;
-                    r -= wk;
-                    if (r <= 0) { pk = k; break; }
+            if (hasPinnedSlot) {
+                coreRem.set(coreIdxList);
+                supRem.set(supIdxList);
+                let remCLen = 6, remSLen = 10;
+                let cW = initCoreW, sW = initSupW;
+
+                for (let step = 0; step < needC; step++) {
+                    if (cW <= 0) break;
+                    let r = rng() * cW;
+                    let selPos = remCLen - 1;
+                    for (let j = 0; j < remCLen; j++) {
+                        r -= weights[coreRem[j]];
+                        if (r <= 0) { selPos = j; break; }
+                    }
+                    const pk = coreRem[selPos];
+                    pkBuf[pCount++] = pk;
+                    cW -= weights[pk];
+                    coreRem[selPos] = coreRem[--remCLen];
                 }
-                pkBuf[pCount++] = pk;
-                totW -= wc[pk];
-                wc[pk] = 0;
+                for (let step = 0; step < needS; step++) {
+                    if (sW <= 0) break;
+                    let r = rng() * sW;
+                    let selPos = remSLen - 1;
+                    for (let j = 0; j < remSLen; j++) {
+                        r -= weights[supRem[j]];
+                        if (r <= 0) { selPos = j; break; }
+                    }
+                    const pk = supRem[selPos];
+                    pkBuf[pCount++] = pk;
+                    sW -= weights[pk];
+                    supRem[selPos] = supRem[--remSLen];
+                }
+            } else {
+                wc.set(weights);
+                let totW = initTotW;
+                while (pCount < 6) {
+                    if (totW <= 0) break;
+                    let r = rng() * totW;
+                    let pk = 15;
+                    for (let k = 0; k < 16; k++) {
+                        const wk = wc[k];
+                        if (wk === 0) continue;
+                        r -= wk;
+                        if (r <= 0) { pk = k; break; }
+                    }
+                    pkBuf[pCount++] = pk;
+                    totW -= wc[pk];
+                    wc[pk] = 0;
+                }
             }
             if (pCount !== 6) continue;
 
@@ -23151,6 +23210,10 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
         let bestIdxArr;
         if (b0 >= 0) {
             bestIdxArr = new Int8Array([b0, b1, b2, b3, b4, b5]);
+        } else if (hasPinnedSlot) {
+            const cShuf = seededShuffle(Array.from(coreIdxList), rng).slice(0, needC);
+            const sShuf = seededShuffle(Array.from(supIdxList), rng).slice(0, needS);
+            bestIdxArr = new Int8Array([...cShuf, ...sShuf].sort((a, b) => a - b));
         } else {
             const avail = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
             const fallback = seededShuffle(avail, rng).slice(0, 6).sort((a, b) => a - b);
@@ -23161,10 +23224,14 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
         addGameCounts(bestIdxArr, 1);
     }
 
-    // Phase 2: Fast 2-opt Covering Refinement (3수 커버리지 극대화 + 4수 중복 비증가, #1 TOP6 직결 슬롯 잠금)
+    // Phase 2: Quota-Preserving 2-opt Covering Refinement (3수 커버리지 극대화 + 4수 중복 비증가 + 7개 분할 쿼터 100% 유지)
     const startSwapPos = hasPinnedSlot ? 1 : 0;
     const remPool = new Int8Array(13);
+    const remCoreBuf = new Int8Array(6);
+    const remSupBuf = new Int8Array(10);
     const candBuf = new Int8Array(6);
+    const compatSlots = new Int16Array(_TRIPLES_16_COUNT);
+    const slotLocked = new Uint8Array(30);
 
     for (let it = 0; it < 350; it++) {
         if (uncovCount === 0) break;
@@ -23172,6 +23239,7 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
         let worstPos = -1;
         let worstUniq = 99;
         for (let pos = startSwapPos; pos < 30; pos++) {
+            if (slotLocked[pos]) continue;
             const g = gamesIdx[pos];
             let uniq = 0;
             for (let a = 0; a < 4; a++) {
@@ -23190,6 +23258,9 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
         }
         if (worstPos < 0) break;
 
+        const needC = hasPinnedSlot ? _PLAN_A_CORE_SLOTS_3B[worstPos] : -1;
+        const needS = hasPinnedSlot ? (6 - needC) : -1;
+
         const oldArr = gamesIdx[worstPos];
         const o0 = oldArr[0], o1 = oldArr[1], o2 = oldArr[2], o3 = oldArr[3], o4 = oldArr[4], o5 = oldArr[5];
         const oldMask = (1 << o0) | (1 << o1) | (1 << o2) | (1 << o3) | (1 << o4) | (1 << o5);
@@ -23200,6 +23271,27 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             usedMasks.add(oldMask);
             addGameCounts(oldArr, 1);
             break;
+        }
+
+        let targetSlot;
+        if (hasPinnedSlot) {
+            let compatLen = 0;
+            for (let ui = 0; ui < uncovCount; ui++) {
+                const s = uncovIdx[ui];
+                const tcC = isCoreIdx[_TRIPLES_16_A[s]] + isCoreIdx[_TRIPLES_16_B[s]] + isCoreIdx[_TRIPLES_16_C[s]];
+                if (tcC <= needC && (3 - tcC) <= needS) {
+                    compatSlots[compatLen++] = s;
+                }
+            }
+            if (compatLen === 0) {
+                usedMasks.add(oldMask);
+                addGameCounts(oldArr, 1);
+                slotLocked[worstPos] = 1;
+                continue;
+            }
+            targetSlot = compatSlots[Math.floor(rng() * compatLen)];
+        } else {
+            targetSlot = uncovIdx[Math.floor(rng() * uncovCount)];
         }
 
         let oldQOv = 0;
@@ -23224,13 +23316,27 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
         const on0 = pNums[o0], on1 = pNums[o1], on2 = pNums[o2], on3 = pNums[o3], on4 = pNums[o4], on5 = pNums[o5];
         const oldEv = calcEvMult6(o0, o1, o2, o3, o4, o5, on0, on1, on2, on3, on4, on5, on0 + on1 + on2 + on3 + on4 + on5);
 
-        const targetSlot = uncovIdx[Math.floor(rng() * uncovCount)];
         const ta0 = _TRIPLES_16_A[targetSlot];
         const tb0 = _TRIPLES_16_B[targetSlot];
         const tc0 = _TRIPLES_16_C[targetSlot];
-        let rp = 0;
-        for (let i = 0; i < 16; i++) {
-            if (i !== ta0 && i !== tb0 && i !== tc0) remPool[rp++] = i;
+        const tcCore = hasPinnedSlot ? (isCoreIdx[ta0] + isCoreIdx[tb0] + isCoreIdx[tc0]) : 0;
+        const addC = hasPinnedSlot ? (needC - tcCore) : 0;
+        const addS = hasPinnedSlot ? (needS - (3 - tcCore)) : 0;
+
+        let rcLen = 0, rsLen = 0, rp = 0;
+        if (hasPinnedSlot) {
+            for (let i = 0; i < 6; i++) {
+                const idx = coreIdxList[i];
+                if (idx !== ta0 && idx !== tb0 && idx !== tc0) remCoreBuf[rcLen++] = idx;
+            }
+            for (let i = 0; i < 10; i++) {
+                const idx = supIdxList[i];
+                if (idx !== ta0 && idx !== tb0 && idx !== tc0) remSupBuf[rsLen++] = idx;
+            }
+        } else {
+            for (let i = 0; i < 16; i++) {
+                if (i !== ta0 && i !== tb0 && i !== tc0) remPool[rp++] = i;
+            }
         }
 
         let br0 = -1, br1 = 0, br2 = 0, br3 = 0, br4 = 0, br5 = 0;
@@ -23239,15 +23345,32 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
         let bestEv = oldEv;
 
         for (let c = 0; c < 45; c++) {
-            // Partial Fisher-Yates for 3 draws out of 13 elements
-            for (let k = 12; k >= 10; k--) {
-                const j = Math.floor(rng() * (k + 1));
-                const tmp = remPool[j];
-                remPool[j] = remPool[k];
-                remPool[k] = tmp;
-            }
             candBuf[0] = ta0; candBuf[1] = tb0; candBuf[2] = tc0;
-            candBuf[3] = remPool[12]; candBuf[4] = remPool[11]; candBuf[5] = remPool[10];
+            if (hasPinnedSlot) {
+                let cp = 3;
+                for (let k = rcLen - 1; k >= rcLen - addC; k--) {
+                    const j = Math.floor(rng() * (k + 1));
+                    const tmp = remCoreBuf[j];
+                    remCoreBuf[j] = remCoreBuf[k];
+                    remCoreBuf[k] = tmp;
+                    candBuf[cp++] = tmp;
+                }
+                for (let k = rsLen - 1; k >= rsLen - addS; k--) {
+                    const j = Math.floor(rng() * (k + 1));
+                    const tmp = remSupBuf[j];
+                    remSupBuf[j] = remSupBuf[k];
+                    remSupBuf[k] = tmp;
+                    candBuf[cp++] = tmp;
+                }
+            } else {
+                for (let k = 12; k >= 10; k--) {
+                    const j = Math.floor(rng() * (k + 1));
+                    const tmp = remPool[j];
+                    remPool[j] = remPool[k];
+                    remPool[k] = tmp;
+                }
+                candBuf[3] = remPool[12]; candBuf[4] = remPool[11]; candBuf[5] = remPool[10];
+            }
             for (let i = 1; i < 6; i++) {
                 const v = candBuf[i];
                 let j = i - 1;
@@ -23300,9 +23423,11 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             gamesIdx[worstPos] = repArr;
             usedMasks.add((1 << br0) | (1 << br1) | (1 << br2) | (1 << br3) | (1 << br4) | (1 << br5));
             addGameCounts(repArr, 1);
+            slotLocked.fill(0);
         } else {
             usedMasks.add(oldMask);
             addGameCounts(oldArr, 1);
+            slotLocked[worstPos] = 1;
         }
     }
 
@@ -52257,15 +52382,15 @@ let _simBonusLocation = 'none'; // 'none' | 'core' | 'support'
 const CORE_HIT_PROB_DATA = {
     core6: [
         { hits: 6, appearProb: '0.00001%', winProb: '100.00%', r1: '100.00%', r2p: '100.00%', r3p: '100.00%', r4p: '100.00%', avgGames: '9.00G', badge: '👑 1등 100% 직결 (#1 조합)', highlight: 'gold' },
-        { hits: 5, appearProb: '0.0029%', winProb: '100.00%', r1: '0.00%', r2p: '2.53% (코어내 보너스 100%)', r3p: '100.00%', r4p: '100.00%', avgGames: '6.47G', badge: '🥇 3등 이상 100% · 보너스시 2등', highlight: 'gold' },
-        { hits: 4, appearProb: '0.1365%', winProb: '100.00%', r1: '0.00%', r2p: '0.01%', r3p: '0.57%', r4p: '100.00%', avgGames: '4.75G', badge: '✨ 4등 이상 100% 확정', highlight: 'emerald' },
+        { hits: 5, appearProb: '0.0029%', winProb: '100.00%', r1: '3.33% (보조1일치)', r2p: '2.53% (코어내 보너스 100%)', r3p: '100.00%', r4p: '100.00%', avgGames: '6.47G', badge: '🥇 1등 3.33% · 3등+ 100% · 보너스시 2등', highlight: 'gold' },
+        { hits: 4, appearProb: '0.1365%', winProb: '100.00%', r1: '0.44% (보조2일치)', r2p: '0.01%', r3p: '33.60%', r4p: '100.00%', avgGames: '4.75G', badge: '✨ 1등 0.44% · 4등+ 100% 확정', highlight: 'emerald' },
         { hits: 3, appearProb: '2.2441%', winProb: '100.00%', r1: '0.00%', r2p: '0.03%', r3p: '0.62%', r4p: '16.91%', avgGames: '3.48G', badge: '⭐ 5등 이상 100% 확정', highlight: 'emerald' },
         { hits: 2, appearProb: '15.1474%', winProb: '61.70%', r1: '0.00%', r2p: '0.00%', r3p: '0.23%', r4p: '9.52%', avgGames: '1.50G', badge: '보조 1+개 합산 시 당첨', highlight: 'none' },
         { hits: 1, appearProb: '42.4127%', winProb: '33.91%', r1: '0.00%', r2p: '0.00%', r3p: '0.03%', r4p: '3.24%', avgGames: '0.71G', badge: '보조 2+개 합산 시 당첨', highlight: 'none' },
         { hits: 0, appearProb: '40.0565%', winProb: '14.06%', r1: '0.00%', r2p: '0.00%', r3p: '0.00%', r4p: '0.77%', avgGames: '0.24G', badge: '보조 3+개 단독 방어 시 당첨', highlight: 'none' }
     ],
     support10: [
-        { hits: 6, appearProb: '0.0026%', winProb: '100.00%', r3p: '18.69%', r4p: '100.00%', avgGames: '12.18G', badge: '🏆 4등 이상 100% · 평균 12G 동시당첨', highlight: 'gold' },
+        { hits: 6, appearProb: '0.0026%', winProb: '100.00%', r3p: '44.40%', r4p: '100.00%', avgGames: '12.18G', badge: '🏆 1등 1.43%(3슬롯) · 3등+ 44.4% · 4등+ 100%', highlight: 'gold' },
         { hits: 5, appearProb: '0.1083%', winProb: '100.00%', r3p: '6.62%', r4p: '79.36%', avgGames: '8.13G', badge: '🔥 4등+ 79.4% · 평균 8.1G 동시당첨', highlight: 'gold' },
         { hits: 4, appearProb: '1.5341%', winProb: '100.00%', r3p: '1.65%', r4p: '42.56%', avgGames: '4.87G', badge: '✨ 5등+ 100% · 4등+ 42.6%', highlight: 'emerald' },
         { hits: 3, appearProb: '9.6427%', winProb: '91.70%', r3p: '0.43%', r4p: '15.62%', avgGames: '2.45G', badge: '⭐ 5등 방어 91.7% (2.45G)', highlight: 'emerald' },

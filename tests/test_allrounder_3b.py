@@ -167,7 +167,14 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                         const directNext = window.computeAllRounder3BPortfolio(1252, 'master');
                         const wf1248 = window.generateCore3BPortfolioAtRound(1248, 'master', cache, true);
                         const wKeys = Object.keys(window.state.HEDGE8_EXPERT_WEIGHTS || {});
+                        const top6Set = new Set(directNext.top6Anchors);
+                        const slotDist = [0, 0, 0, 0, 0, 0, 0];
+                        [...directNext.v4, ...directNext.v3, ...directNext.ar3].forEach(c => {
+                            const ch = c.numbers.filter(x => top6Set.has(x)).length;
+                            slotDist[ch]++;
+                        });
                         return wKeys.length === 8 &&
+                               JSON.stringify(slotDist) === JSON.stringify([3, 4, 10, 7, 3, 2, 1]) &&
                                JSON.stringify(wfNext.pool16) === JSON.stringify(directNext.pool16) &&
                                JSON.stringify(wfNext.v4[0].numbers) === JSON.stringify(directNext.v4[0].numbers) &&
                                wf1248.top6Anchors.length === 6 && wf1248.support10.length === 10 &&
