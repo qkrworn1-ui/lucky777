@@ -180,9 +180,9 @@ export function fireOptConfetti() {
 }
 
 export const ALL_PACK_DEFS = [
-    { id: 'v4', type: 'engine', version: 'v4', name: '기본 1: 올라운더 팩 (10게임)', shortName: '올라운더(10)', games: 10, color: '#10b981' },
-    { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 올라운더 팩 2 (10게임)', shortName: '올라운더2(10)', games: 10, color: '#3b82f6' },
-    { id: 'extra1', type: 'extra', packId: 1, name: '기본 3: 올라운더 팩 3 (10게임)', shortName: '올라운더3(10)', games: 10, color: '#10b981' }
+    { id: 'v4', type: 'engine', version: 'v4', name: '기본 1: 올라운더 팩 (10G · TOP6/고핵심)', shortName: '올라운더(10·고핵심)', slotDesc: '핵심6+0(1G)·5+1(2G)·4+2(3G)·3+3(4G)', coveredSplits: [6, 5, 4, 3], games: 10, color: '#10b981' },
+    { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 올라운더 팩 2 (10G · 중심혼합)', shortName: '올라운더2(10·중심)', slotDesc: '핵심3+3(3G)·2+4(7G)', coveredSplits: [3, 2], games: 10, color: '#3b82f6' },
+    { id: 'extra1', type: 'extra', packId: 1, name: '기본 3: 올라운더 팩 3 (10G · 보조6수 1등 3슬롯)', shortName: '올라운더3(10·보조6)', slotDesc: '핵심2+4(3G)·1+5(4G)·보조0+6(3G)', coveredSplits: [2, 1, 0], games: 10, color: '#10b981' }
 ];
 
 function getPackUpcomingCombos(pack, round, userId, pf = null) {
@@ -426,7 +426,7 @@ export async function runBudgetOptimizationSimulation() {
 
     logTerminal(`📌 [기존 보유 팩] <strong>${ownedNames}</strong> (${ownedGames}게임 고정 포함, 번호 커버리지 ${baselineCoverage}%)`, '#60a5fa', true);
     logTerminal(`🚀 [추가 구매 예산] <strong>${additionalBudget.toLocaleString()}원 (${additionalGames}게임 추가)</strong> 시너지 1위 팩 탐색 시작...`, '#38bdf8', true);
-    logTerminal(`📊 [현행 코어 16수 엔진] ${startRound}~${maxRound}회차 실당첨번호 & 워크포워드 동적 점수 로드 완료`, '#94a3b8');
+    logTerminal(`📊 [Plan A 7분할 코어 엔진] ${startRound}~${maxRound}회차 실당첨번호 & 온라인 헤지 동적 점수 로드 완료`, '#94a3b8');
 
     // 2. Determine Candidate Additional Packs (excluding already owned ones)
     let candidatePool = ALL_PACK_DEFS.filter(p => !ownedPacks.some(op => op.id === p.id));
@@ -473,12 +473,12 @@ export async function runBudgetOptimizationSimulation() {
     [...ownedPacks, ...candidatePool].forEach(p => distinctPacksMap.set(p.id, p));
     const distinctPacks = Array.from(distinctPacksMap.values());
 
-    const statsCacheKey = `core3b_stats_${effectiveUserId}_${startRound}_${maxRound}`;
+    const statsCacheKey = `core3b_plana_stats_${effectiveUserId}_${startRound}_${maxRound}`;
     const cachedCoreStats = _optCoreStatsMemoryCache.get(statsCacheKey) || null;
     const packEvals = new Map();
-    const uncachedPacks = distinctPacks.filter(p => !_optMatrixMemoryCache.has(`core3b_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`));
+    const uncachedPacks = distinctPacks.filter(p => !_optMatrixMemoryCache.has(`core3b_plana_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`));
     distinctPacks.forEach(p => {
-        const mk = `core3b_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`;
+        const mk = `core3b_plana_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`;
         if (_optMatrixMemoryCache.has(mk)) {
             packEvals.set(p.id, _optMatrixMemoryCache.get(mk));
         } else {
@@ -487,6 +487,7 @@ export async function runBudgetOptimizationSimulation() {
     });
 
     let core6TotalHitsInRange = cachedCoreStats ? cachedCoreStats.core6TotalHitsInRange : 0;
+    let sup10TotalHitsInRange = cachedCoreStats ? (cachedCoreStats.sup10TotalHitsInRange || 0) : 0;
     let pool16TotalHitsInRange = cachedCoreStats ? cachedCoreStats.pool16TotalHitsInRange : 0;
     let pool16_4PlusRounds = cachedCoreStats ? cachedCoreStats.pool16_4PlusRounds : 0;
     let validDrawnRounds = cachedCoreStats ? cachedCoreStats.validDrawnRounds : 0;
@@ -494,11 +495,12 @@ export async function runBudgetOptimizationSimulation() {
     if (uncachedPacks.length > 0 || !cachedCoreStats) {
         const scoreCache = buildWalkForwardCore3BScoreCache(maxRound);
         if (rouletteEl) {
-            rouletteEl.innerText = '핵심 6수 · 보조 10수 30G 통합 휠';
+            rouletteEl.innerText = 'Plan A 전 분할 코어 16수 30G 휠';
             rouletteEl.style.color = '#fbbf24';
         }
         let lastYieldTs = performance.now();
         core6TotalHitsInRange = 0;
+        sup10TotalHitsInRange = 0;
         pool16TotalHitsInRange = 0;
         pool16_4PlusRounds = 0;
         validDrawnRounds = 0;
@@ -516,10 +518,14 @@ export async function runBudgetOptimizationSimulation() {
             const top6 = pf.top6Anchors || [];
             let c6Hit = 0;
             for (let ti = 0; ti < top6.length; ti++) if (winningSet.has(top6[ti])) c6Hit++;
+            const sup10 = pf.support10 || [];
+            let s10Hit = 0;
+            for (let si = 0; si < sup10.length; si++) if (winningSet.has(sup10[si])) s10Hit++;
             const p16 = pf.pool16 || [];
             let p16Hit = 0;
             for (let pi = 0; pi < p16.length; pi++) if (winningSet.has(p16[pi])) p16Hit++;
             core6TotalHitsInRange += c6Hit;
+            sup10TotalHitsInRange += s10Hit;
             pool16TotalHitsInRange += p16Hit;
             if (p16Hit >= 4) pool16_4PlusRounds++;
 
@@ -555,16 +561,17 @@ export async function runBudgetOptimizationSimulation() {
                 const pctDone = Math.round(((maxRound - r + 1) / evaluatedDrawCount) * 50);
                 if (progBar) progBar.style.width = `${pctDone}%`;
                 if (progPct) progPct.innerText = `${pctDone}%`;
-                if (subEl) subEl.innerText = `${startRound}~${maxRound}회 코어 16수 백테스트 중... (제 ${r}회)`;
+                if (subEl) subEl.innerText = `${startRound}~${maxRound}회 Plan A 코어 16수 백테스트 중... (제 ${r}회)`;
                 await new Promise(res => setTimeout(res, 0));
                 lastYieldTs = performance.now();
             }
         }
         uncachedPacks.forEach(pack => {
-            _optMatrixMemoryCache.set(`core3b_${effectiveUserId}_${pack.id}_${startRound}_${maxRound}`, packEvals.get(pack.id));
+            _optMatrixMemoryCache.set(`core3b_plana_${effectiveUserId}_${pack.id}_${startRound}_${maxRound}`, packEvals.get(pack.id));
         });
         _optCoreStatsMemoryCache.set(statsCacheKey, {
             core6TotalHitsInRange,
+            sup10TotalHitsInRange,
             pool16TotalHitsInRange,
             pool16_4PlusRounds,
             validDrawnRounds
@@ -652,7 +659,13 @@ export async function runBudgetOptimizationSimulation() {
         const totalCost = evaluatedDrawCount * actualPortfolioGames * 1000;
         const roi = totalCost > 0 ? ((totalPrize / totalCost) * 100).toFixed(1) : 0;
         const hasV4Direct = fullPortfolio.some(p => p.id === 'v4');
-        const hitScore = (hit1st * 5000000) + (hit2nd * 300000) + (hit3rd * 15000) + (hit4th * 200) + hit5th + (hasV4Direct ? 5 : 0);
+        const hasSup6Direct = fullPortfolio.some(p => p.id === 'extra1');
+        const splitSet = new Set();
+        fullPortfolio.forEach(p => {
+            if (Array.isArray(p.coveredSplits)) p.coveredSplits.forEach(s => splitSet.add(s));
+        });
+        const coveredSplits = splitSet.size;
+        const hitScore = (hit1st * 5000000) + (hit2nd * 300000) + (hit3rd * 15000) + (hit4th * 200) + hit5th + (hasV4Direct ? 5 : 0) + (hasSup6Direct ? 3 : 0);
 
         const candidatePct = 50 + Math.round(((cIdx + 1) / candidateCombinations.length) * 50);
         if (progBar) progBar.style.width = `${candidatePct}%`;
@@ -696,7 +709,10 @@ export async function runBudgetOptimizationSimulation() {
                 maxRound,
                 evaluatedDrawCount,
                 hasV4Direct,
+                hasSup6Direct,
+                coveredSplits,
                 core6AvgHit: validDrawnRounds > 0 ? (core6TotalHitsInRange / validDrawnRounds).toFixed(2) : '0.00',
+                sup10AvgHit: validDrawnRounds > 0 ? (sup10TotalHitsInRange / validDrawnRounds).toFixed(2) : '0.00',
                 pool16AvgHit: validDrawnRounds > 0 ? (pool16TotalHitsInRange / validDrawnRounds).toFixed(2) : '0.00',
                 pool16_4PlusRounds
             };
@@ -766,9 +782,11 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
                                 AI 1위 최적팩 확정
                             </span>
                             <span style="color: #38bdf8; font-size: 0.70rem; font-weight: 800;">
-                                ${metrics.startRound || 1}~${metrics.maxRound || ''}회 코어 16수 대조
+                                ${metrics.startRound || 1}~${metrics.maxRound || ''}회 Plan A 코어 16수 대조
                             </span>
-                            ${metrics.hasV4Direct ? '<span style="background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.45); color: #34d399; padding: 1px 6px; border-radius: 5px; font-size: 0.66rem; font-weight: 800;">✓ TOP6 1등 직결 포함</span>' : ''}
+                            ${metrics.hasV4Direct ? '<span style="background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.45); color: #34d399; padding: 1px 6px; border-radius: 5px; font-size: 0.66rem; font-weight: 800;">✓ TOP6+고핵심 포함</span>' : ''}
+                            ${metrics.hasSup6Direct ? '<span style="background: rgba(52,211,153,0.2); border: 1px solid rgba(52,211,153,0.45); color: #6ee7b7; padding: 1px 6px; border-radius: 5px; font-size: 0.66rem; font-weight: 800;">✓ 보조6수 3슬롯 포함</span>' : ''}
+                            ${metrics.coveredSplits === 7 ? '<span style="background: rgba(251,191,36,0.2); border: 1px solid rgba(251,191,36,0.45); color: #fde047; padding: 1px 6px; border-radius: 5px; font-size: 0.66rem; font-weight: 800;">👑 7/7 전 분할 1등 완성</span>' : ''}
                         </div>
                         <h4 style="margin: 2px 0 0 0; color: #fff; font-size: clamp(0.85rem, 3.8vw, 1.02rem); font-weight: 900; word-break: keep-all; line-height: 1.25;">
                             제 ${curUpcomingRound}회차 추가 구매 추천 팩
@@ -874,11 +892,13 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
 
             <!-- Core 16 Capture Performance Strip -->
             <div style="margin-bottom: 10px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 7px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 0.72rem;">
-                <span style="color: #38bdf8; font-weight: 800;"><i class="fa-solid fa-bullseye"></i> 코어 16수 실측 포착 (${metrics.evaluatedDrawCount || 50}회):</span>
+                <span style="color: #38bdf8; font-weight: 800;"><i class="fa-solid fa-bullseye"></i> Plan A 코어 16수 실측 (${metrics.evaluatedDrawCount || 50}회):</span>
                 <span style="color: #e2e8f0; font-weight: 700;">
-                    핵심6 평균 <strong style="color: #fbbf24;">${metrics.core6AvgHit || '0.00'}수</strong> ·
-                    16풀 평균 <strong style="color: #38bdf8;">${metrics.pool16AvgHit || '0.00'}수</strong> ·
-                    4+포착 <strong style="color: #34d399;">${metrics.pool16_4PlusRounds || 0}회</strong>
+                    핵심6 <strong style="color: #fbbf24;">${metrics.core6AvgHit || '0.00'}수</strong> ·
+                    보조10 <strong style="color: #34d399;">${metrics.sup10AvgHit || '0.00'}수</strong> ·
+                    16풀 <strong style="color: #38bdf8;">${metrics.pool16AvgHit || '0.00'}수</strong> ·
+                    4+포착 <strong style="color: #34d399;">${metrics.pool16_4PlusRounds || 0}회</strong> ·
+                    7분할 <strong style="color: #fde047;">${metrics.coveredSplits || 0}/7 커버</strong>
                 </span>
             </div>
 

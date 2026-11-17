@@ -13,7 +13,7 @@ let _simAlgoSortMode = 'prize';
 let _simRangeCount = 50; // 50, 100, 300, or 0 (all rounds)
 
 export function getSimCfgKey(effectiveTarget, cfg) {
-    return `${effectiveTarget}_N${_simRangeCount}_${JSON.stringify(cfg)}`;
+    return `${effectiveTarget}_N${_simRangeCount}_PLANA_${JSON.stringify(cfg)}`;
 }
 
 export function setSimRangeCount(cnt, btnEl = null) {
@@ -621,7 +621,14 @@ export function renderAccumulatedWins(rankFilter) {
         if (cm && winningSet) {
             const cHits = (cm.top6 || []).filter(n => winningSet.has(n)).length;
             const sHits = (cm.support10 || []).filter(n => winningSet.has(n)).length;
-            coreBadgeHtml = `<span style="font-size:0.68rem; font-weight:800; color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); padding:1px 6px; border-radius:4px; white-space:nowrap;">핵심 ${cHits}/6 + 보조 ${sHits}/10 = ${cHits + sHits}/6</span>`;
+            const slotBadge = w.combo && w.combo.isDirectTop6
+                ? `<span style="font-size:0.65rem; font-weight:900; color:#fbbf24; background:rgba(251,191,36,0.18); border:1px solid rgba(251,191,36,0.45); padding:1px 5px; border-radius:4px; white-space:nowrap;">👑 TOP6 직결</span>`
+                : (w.combo && w.combo.isSup6Slot
+                    ? `<span style="font-size:0.65rem; font-weight:900; color:#34d399; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.45); padding:1px 5px; border-radius:4px; white-space:nowrap;">🛡️ 보조6 전용슬롯</span>`
+                    : (w.combo && w.combo.slotCoreCnt >= 4
+                        ? `<span style="font-size:0.65rem; font-weight:900; color:#a78bfa; background:rgba(167,139,250,0.18); border:1px solid rgba(167,139,250,0.45); padding:1px 5px; border-radius:4px; white-space:nowrap;">⚡ 고핵심 ${w.combo.slotCoreCnt}+${6 - w.combo.slotCoreCnt}</span>`
+                        : ''));
+            coreBadgeHtml = `${slotBadge}<span style="font-size:0.68rem; font-weight:800; color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); padding:1px 6px; border-radius:4px; white-space:nowrap;">핵심 ${cHits}/6 + 보조 ${sHits}/10 = ${cHits + sHits}/6</span>`;
         }
 
         const theme = rankThemes[w.prizeRank] || rankThemes[4];
@@ -864,10 +871,14 @@ export function renderAlgorithmPrizeTotals() {
     if (coreBox && coreStats) {
         coreBox.style.display = 'block';
         const c6Avg = (coreStats.core6HitSum / Math.max(1, coreStats.evaluatedRounds)).toFixed(2);
+        const s10Avg = ((coreStats.sup10HitSum || 0) / Math.max(1, coreStats.evaluatedRounds)).toFixed(2);
         const p16Avg = (coreStats.pool16HitSum / Math.max(1, coreStats.evaluatedRounds)).toFixed(2);
         const p16_4plus = coreStats.pool16Hits4Plus || 0;
         const p16_5plus = coreStats.pool16Hits5Plus || 0;
         const p16_6 = coreStats.pool16Hits6 || 0;
+        const s10_4plus = coreStats.sup10Hits4Plus || 0;
+        const s10_6 = coreStats.sup10Hits6 || 0;
+        const sup6SlotWins = coreStats.sup6SlotWins || 0;
         const winRoundPct = ((coreStats.winningRounds / Math.max(1, coreStats.evaluatedRounds)) * 100).toFixed(1);
         const bestRoundHtml = coreStats.bestCaptureRound
             ? `제 ${coreStats.bestCaptureRound.round}회 (${coreStats.bestCaptureRound.p16Main}/6 포착 · ${coreStats.bestCaptureRound.prize.toLocaleString()}원)`
@@ -876,8 +887,9 @@ export function renderAlgorithmPrizeTotals() {
         coreBox.innerHTML = `
             <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.42); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                    <span style="font-size: 0.82rem; font-weight: 900; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-bullseye"></i> 현행 핵심 코어(6수) · 보조 코어(10수) 실전 포착 성적표 (${startR}~${maxR}회)
+                    <span style="font-size: 0.82rem; font-weight: 900; color: #38bdf8; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <i class="fa-solid fa-bullseye"></i> Plan A 핵심·보조 코어 실전 포착 성적표 (${startR}~${maxR}회)
+                        <span style="font-size: 0.66rem; font-weight: 800; color: #34d399; background: rgba(16,185,129,0.16); border: 1px solid rgba(16,185,129,0.4); padding: 1px 6px; border-radius: 5px;">7분할 전구간 1등 쿼터 [1,2,3,7,10,4,3]</span>
                     </span>
                     <span style="font-size: 0.72rem; color: #94a3b8;">최고 포착: <strong style="color: #fbbf24;">${bestRoundHtml}</strong></span>
                 </div>
@@ -887,14 +899,14 @@ export function renderAlgorithmPrizeTotals() {
                         <div style="color: #fbbf24; font-size: 1.02rem; font-weight: 900; margin-top: 2px;">${c6Avg} / 6수</div>
                         <div style="color: #cbd5e1; font-size: 0.66rem;">3+적중 ${coreStats.core6Hits3Plus || 0}회 · 전원적중 ${coreStats.core6Hits6 || 0}회</div>
                     </div>
-                    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 9px; padding: 8px 10px;">
-                        <div style="color: #94a3b8; font-size: 0.68rem;">16수 풀 평균 포착률</div>
-                        <div style="color: #38bdf8; font-size: 1.02rem; font-weight: 900; margin-top: 2px;">${p16Avg} / 6수</div>
-                        <div style="color: #cbd5e1; font-size: 0.66rem;">무작위 평균(2.13) 대비 ${((Number(p16Avg) / 2.133) * 100 - 100).toFixed(1)}%</div>
+                    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 9px; padding: 8px 10px;">
+                        <div style="color: #94a3b8; font-size: 0.68rem;">보조 코어 10수 · 보조6슬롯</div>
+                        <div style="color: #34d399; font-size: 1.02rem; font-weight: 900; margin-top: 2px;">${s10Avg} / 6수</div>
+                        <div style="color: #cbd5e1; font-size: 0.66rem;">보조4+ ${s10_4plus}회 · 6전원 ${s10_6}회 · 보조6슬롯 ${sup6SlotWins}건</div>
                     </div>
-                    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 9px; padding: 8px 10px;">
+                    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 9px; padding: 8px 10px;">
                         <div style="color: #94a3b8; font-size: 0.68rem;">16수 풀 4개 이상 포착</div>
-                        <div style="color: #34d399; font-size: 1.02rem; font-weight: 900; margin-top: 2px;">${p16_4plus}회</div>
+                        <div style="color: #38bdf8; font-size: 1.02rem; font-weight: 900; margin-top: 2px;">${p16Avg} / 6수 · ${p16_4plus}회</div>
                         <div style="color: #cbd5e1; font-size: 0.66rem;">5/6 포착 ${p16_5plus}회 · 6/6 전원 ${p16_6}회</div>
                     </div>
                     <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(167, 139, 250, 0.35); border-radius: 9px; padding: 8px 10px;">
@@ -918,9 +930,9 @@ export function renderAlgorithmPrizeTotals() {
     const algoDefinitions = [
         {
             id: 'v4',
-            name: '올라운더 팩 (AI 4.0 딥뉴럴)',
+            name: '올라운더 팩 1 (고핵심 TOP6·5+1·4+2)',
             shortName: '올라운더 팩',
-            packType: '코어 앙상블',
+            packType: 'TOP6·고핵심 블록',
             icon: 'fa-bullseye',
             color: '#fbbf24',
             badgeBg: 'rgba(251, 191, 36, 0.2)',
@@ -930,9 +942,9 @@ export function renderAlgorithmPrizeTotals() {
         },
         {
             id: 'v3',
-            name: '올라운더 팩 2 (AI 3.0 베이지안)',
+            name: '올라운더 팩 2 (중심혼합 3+3·2+4)',
             shortName: '올라운더 팩 2',
-            packType: '코어 베이지안',
+            packType: '중심 커버 블록',
             icon: 'fa-layer-group',
             color: '#38bdf8',
             badgeBg: 'rgba(56, 189, 248, 0.2)',
@@ -942,9 +954,9 @@ export function renderAlgorithmPrizeTotals() {
         },
         {
             id: 'extra_1',
-            name: '기본 3: 올라운더 팩 3 (10게임)',
+            name: '기본 3: 올라운더 3 (보조6수 1등 3슬롯)',
             shortName: '기본3: 올라운더3',
-            packType: '기본 코어 #3',
+            packType: '보조6 포획 완결',
             icon: 'fa-shield-halved',
             color: '#10b981',
             badgeBg: 'rgba(16, 185, 129, 0.2)',
@@ -1407,6 +1419,10 @@ export async function runRealHistoricalSimulation() {
         core6HitSum: 0,
         core6Hits3Plus: 0,
         core6Hits6: 0,
+        sup10HitSum: 0,
+        sup10Hits4Plus: 0,
+        sup10Hits6: 0,
+        sup6SlotWins: 0,
         pool16HitSum: 0,
         pool16Hits4Plus: 0,
         pool16Hits5Plus: 0,
@@ -1474,11 +1490,17 @@ export async function runRealHistoricalSimulation() {
                     let c6Main = 0;
                     const t6 = firstMeta.top6 || [];
                     for (let ti = 0; ti < t6.length; ti++) if (winningSet.has(t6[ti])) c6Main++;
+                    let s10Main = 0;
+                    const s10 = firstMeta.support10 || [];
+                    for (let si = 0; si < s10.length; si++) if (winningSet.has(s10[si])) s10Main++;
                     const p16 = firstMeta.pool16 || [];
                     for (let pi = 0; pi < p16.length; pi++) if (winningSet.has(p16[pi])) p16MainCached++;
                     coreRoundStats.core6HitSum += c6Main;
                     if (c6Main >= 3) coreRoundStats.core6Hits3Plus++;
                     if (c6Main === 6) coreRoundStats.core6Hits6++;
+                    coreRoundStats.sup10HitSum += s10Main;
+                    if (s10Main >= 4) coreRoundStats.sup10Hits4Plus++;
+                    if (s10Main === 6) coreRoundStats.sup10Hits6++;
                     coreRoundStats.pool16HitSum += p16MainCached;
                     if (p16MainCached >= 4) coreRoundStats.pool16Hits4Plus++;
                     if (p16MainCached >= 5) coreRoundStats.pool16Hits5Plus++;
@@ -1507,6 +1529,7 @@ export async function runRealHistoricalSimulation() {
 
                     if (prizeRank > 0) {
                         roundWonAny = true;
+                        if (combo.isSup6Slot) coreRoundStats.sup6SlotWins++;
                         results.push({ round: r, combo: combo, prizeRank: prizeRank });
 
                         if (prizeRank === 1) {

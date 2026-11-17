@@ -899,32 +899,44 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
     const poolStr = pool16.join(',');
     const makeCombo = (nums, packIdx, idxInPack) => {
         const isAnchorSlot = (packIdx === 1 && idxInPack === 0);
+        const slotIdx = (packIdx - 1) * 10 + idxInPack;
+        const slotCoreCnt = _PLAN_A_CORE_SLOTS_3B[slotIdx];
+        const isSup6Slot = (slotCoreCnt === 0);
+        const isHighCoreSlot = (slotCoreCnt >= 4 && !isAnchorSlot);
+        const slotSplitLabel = `핵심${slotCoreCnt}+보조${6 - slotCoreCnt}`;
+
         if (fastMode) {
             if (packIdx === 1) {
                 return {
                     id: `V4-G1-${idxInPack + 1}`,
                     algoId: 'v4',
                     isDirectTop6: isAnchorSlot,
-                    name: isAnchorSlot ? `TOP6 직결 휠` : `올라운더 1 휠`,
+                    isSup6Slot,
+                    slotCoreCnt,
+                    name: isAnchorSlot ? `TOP6 직결 휠` : `올라운더 1 휠 (${slotSplitLabel})`,
                     numbers: nums,
-                    meta: { name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (올라운더 1)` }
+                    meta: { name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (${slotSplitLabel} · 올라운더 1)` }
                 };
             }
             if (packIdx === 2) {
                 return {
                     id: `V4.2-G1-${idxInPack + 1}`,
                     algoId: 'v3',
-                    name: `올라운더 2 EV 휠`,
+                    isSup6Slot,
+                    slotCoreCnt,
+                    name: `올라운더 2 EV 휠 (${slotSplitLabel})`,
                     numbers: nums,
-                    meta: { name: `16수 초압축 EV 휠 (올라운더 2)` }
+                    meta: { name: `16수 초압축 EV 휠 (${slotSplitLabel} · 올라운더 2)` }
                 };
             }
             return {
                 id: `AR3-${idxInPack + 1}`,
                 algoId: 'extra_1',
-                name: `올라운더 3 완성 휠`,
+                isSup6Slot,
+                slotCoreCnt,
+                name: isSup6Slot ? `올라운더 3 보조6수 1등슬롯` : `올라운더 3 완성 휠 (${slotSplitLabel})`,
                 numbers: nums,
-                meta: { name: `올라운더 3: 16수 초압축 완성 휠 #${idxInPack + 1}` }
+                meta: { name: isSup6Slot ? `올라운더 3: 보조 6수 직결 1등 포획 휠 (16수 초압축 #${idxInPack + 1})` : `올라운더 3: 16수 초압축 완성 휠 (${slotSplitLabel} #${idxInPack + 1})` }
             };
         }
 
@@ -936,30 +948,32 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
         stats.evMultiplier = Number(evMult.toFixed(2));
         const numReasons = nums.map(n => isAnchorSlot
             ? `${n}번: 최핵심 앵커 TOP 6([${top6Anchors.join(',')}]) 직결 편입 수`
-            : `${n}번: 최신 회차 동적신호 상위 16수 압축 풀([${poolStr}]) 코어 휠링`);
+            : (isSup6Slot
+                ? `${n}번: 보조 코어 10수([${support10.join(',')}]) 단독 1등 포획 슬롯 편입 수`
+                : `${n}번: Plan A ${slotSplitLabel} 쿼터 기반 16수 압축 풀([${poolStr}]) 코어 휠링`));
 
         if (packIdx === 1) {
             return {
                 id: `V4-G1-${idxInPack + 1}`,
-                name: isAnchorSlot ? `[올라운더] 16수 초압축 TOP6 코어 직결 휠` : `[올라운더] 16수 초압축 다중·고액 휠`,
+                name: isAnchorSlot ? `[올라운더] 16수 초압축 TOP6 코어 직결 휠` : `[올라운더] 16수 초압축 다중·고액 휠 (${slotSplitLabel})`,
                 numbers: nums,
                 stats,
                 meta: {
-                    rankBadge: isAnchorSlot ? `TOP6 직결 1` : `16-WHEEL ${idxInPack + 1}`,
+                    rankBadge: isAnchorSlot ? `TOP6 직결 1` : (isHighCoreSlot ? `고핵심 ${slotSplitLabel}` : `16-WHEEL ${idxInPack + 1}`),
                     rankClass: idxInPack < 4 ? 'top-1-badge' : (idxInPack < 7 ? 'top-4-badge' : 'badge-v3-engine'),
                     badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
-                    name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (올라운더 1)`,
+                    name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (${slotSplitLabel} · 올라운더 1)`,
                     tag: isAnchorSlot
                         ? `TOP6 직결 | 16수 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`
-                        : `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                        : `${slotSplitLabel} | 16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
                     desc: isAnchorSlot
                         ? `최핵심 앵커 TOP 6([${top6Anchors.join(', ')}]) 조합을 그대로 1번 슬롯에 직결 편입해 6수 전원 적중 시 1등, 5수+보너스(TOP6 내) 적중 시 2등을 100% 보장합니다.`
-                        : `최신 회차(${maxKnownDrawnRound}회) 반영 동적 신호로 엄선된 16수 풀 내부에서 4수·3수 중복을 최소화해 다중·고액 당첨 밀도를 극대화합니다.`,
-                    lawName: isAnchorSlot ? '3안-B: 최핵심 앵커 TOP 6 1등·2등 직결 슬롯' : '3안-B: 16수 초압축 커버링 휠 (올라운더 1·2·3 연동)',
+                        : `Plan A 고핵심 쿼터(${slotSplitLabel})에 맞춰 핵심 5+1/4+2 1등 사각지대 없이 16수 풀 내부 다중·고액 당첨을 포획합니다.`,
+                    lawName: isAnchorSlot ? '3안-B: 최핵심 앵커 TOP 6 1등·2등 직결 슬롯' : `Plan A 고핵심 쿼터 커버링 휠 (${slotSplitLabel})`,
                     probRationale: isAnchorSlot
                         ? 'TOP 6 코어 6자리 전원 적중 시 1등, 5수+보너스(TOP 6 내) 적중 시 2등, 5수 적중 시 3등 확정 구조'
-                        : `50,000회 몬테카를로 검증 기준 3건+ 다중당첨 9.66%, 5건+ 대폭발 20배, 고액 EV 1.13x 달성 엔진`,
-                    targetBenefit: isAnchorSlot ? 'TOP 6 핵심 코어 적중 시 1등·2등 무누락 직결 포획' : '다중 적중(3건+·5건+) 및 3·4등 동시 포획 극대화',
+                        : `핵심 5+1 적중 시 1등 3.33%, 핵심 4+2 적중 시 1등 0.44% · 3등+ 33.6% 커버 구조`,
+                    targetBenefit: isAnchorSlot ? 'TOP 6 핵심 코어 적중 시 1등·2등 무누락 직결 포획' : '고핵심(5+1/4+2) 1등 직결 보강 및 3·4등 동시 포획',
                     numReasons
                 }
             };
@@ -967,19 +981,19 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
         if (packIdx === 2) {
             return {
                 id: `V4.2-G1-${idxInPack + 1}`,
-                name: `[올라운더 2] 16수 초압축 EV 휠`,
+                name: `[올라운더 2] 16수 초압축 EV 휠 (${slotSplitLabel})`,
                 customLabel: `올라운더2-${alphabet[idxInPack] || (idxInPack + 1)}`,
                 numbers: nums,
                 stats,
                 meta: {
-                    rankBadge: `16-WHEEL-2 ${idxInPack + 1}`,
+                    rankBadge: `중심커버 ${slotSplitLabel}`,
                     rankClass: 'top-4-badge',
                     badgeClass: 'strategy-b',
-                    name: `16수 초압축 EV 휠 (올라운더 2)`,
-                    tag: `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
-                    desc: `올라운더 1과 동일한 16수 풀을 공유하되 4수·3수 트리플 충돌을 0에 가깝게 회피하며 고액 독식 기대값을 강화합니다.`,
-                    lawName: '3안-B: 16수 초압축 2슬롯 상호보완 휠',
-                    probRationale: '올라운더 1·2·3 합산 30게임의 쿼드·트리플 커버리지를 극대화합니다.',
+                    name: `16수 초압축 EV 휠 (${slotSplitLabel} · 올라운더 2)`,
+                    tag: `${slotSplitLabel} | 16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                    desc: `가장 빈도가 높은 중심 혼합 비율(${slotSplitLabel})에 배치되어 3·4·5등 다중당첨과 비인기 고액 기대값을 극대화합니다.`,
+                    lawName: `Plan A 중심 혼합 커버링 휠 (${slotSplitLabel})`,
+                    probRationale: '핵심 2~3개 + 보조 3~4개 최빈 혼합 당첨 구간 집중 커버.',
                     targetBenefit: '16수 풀 적중 시 다중·고액 당첨 폭발 시너지',
                     numReasons
                 }
@@ -987,19 +1001,21 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
         }
         return {
             id: `AR3-${idxInPack + 1}`,
-            name: `[올라운더 3] 16수 초압축 완성 휠 #${idxInPack + 1}`,
+            name: isSup6Slot ? `[올라운더 3] 16수 초압축 보조6수 직결 휠 #${idxInPack + 1}` : `[올라운더 3] 16수 초압축 완성 휠 (${slotSplitLabel}) #${idxInPack + 1}`,
             numbers: nums,
             stats,
             meta: {
-                rankBadge: `AR3-16W ${idxInPack + 1}`,
-                rankClass: idxInPack < 4 ? 'top-1-badge' : 'top-4-badge',
-                badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
-                name: `올라운더 3: 16수 초압축 완성 휠 #${idxInPack + 1}`,
-                tag: `16수 30G 완결 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
-                desc: `올라운더 1·2의 잔여 4수·3수 커버 빈틈을 메워 16수 초압축 30게임 휠을 완결합니다.`,
-                lawName: '3안-B: 16수 30게임 커버링 완결 블록',
-                probRationale: '16수 풀 내 번호 균등 배치 및 고액 EV 스코어링 완결.',
-                targetBenefit: '올라운더 1·2·3 통합 다중·고액 당첨 극대화',
+                rankBadge: isSup6Slot ? `보조6 1등슬롯` : `AR3 ${slotSplitLabel}`,
+                rankClass: idxInPack >= 7 ? 'top-1-badge' : (idxInPack < 4 ? 'top-1-badge' : 'top-4-badge'),
+                badgeClass: idxInPack >= 7 ? 'strategy-a' : 'strategy-b',
+                name: isSup6Slot ? `올라운더 3: 보조 6수 1등 포획 휠 (16수 초압축 #${idxInPack + 1})` : `올라운더 3: 16수 초압축 완성 휠 (${slotSplitLabel} #${idxInPack + 1})`,
+                tag: isSup6Slot ? `보조6 전용 | 1등 1.43%·3등+ 44.4% | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x` : `${slotSplitLabel} | 16수 30G 완결 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                desc: isSup6Slot
+                    ? `보조 코어 10수([${support10.join(', ')}])에서만 6자리를 조합하는 Plan A 전용 3슬롯 중 하나로, 보조 10수 내 1등 번호 6개 전원 포함 시 1등(1.43%)·3등+(44.4%)를 직접 포획합니다.`
+                    : `올라운더 1·2의 잔여 4수·3수 커버 빈틈을 메우고 보조 확장 슬롯(${slotSplitLabel})을 완성합니다.`,
+                lawName: isSup6Slot ? 'Plan A: 보조 10수 단독 1등 포획 3슬롯' : `Plan A: 16수 30게임 커버링 완결 (${slotSplitLabel})`,
+                probRationale: isSup6Slot ? '보조 10수 6개 전원 적중 시 1등 1.43%, 3등 이상 44.4%, 4등 이상 100% 달성 슬롯.' : '16수 풀 내 번호 균등 배치 및 고액 EV 스코어링 완결.',
+                targetBenefit: isSup6Slot ? '핵심 코어 미포함 회차에서도 보조 10수만으로 1등 직접 포획' : '올라운더 1·2·3 통합 7분할 1등·다중 당첨 완성',
                 numReasons
             }
         };

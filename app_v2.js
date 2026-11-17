@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1218 - BUILD_DATE: 2026-11-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1225.58 - BUILD_DATE: 2026-11-17] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.17.1218)
+ * Lucky777 Smart Bundle (v2026.11.17.1225.58)
  */
 
 
@@ -23459,32 +23459,44 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
     const poolStr = pool16.join(',');
     const makeCombo = (nums, packIdx, idxInPack) => {
         const isAnchorSlot = (packIdx === 1 && idxInPack === 0);
+        const slotIdx = (packIdx - 1) * 10 + idxInPack;
+        const slotCoreCnt = _PLAN_A_CORE_SLOTS_3B[slotIdx];
+        const isSup6Slot = (slotCoreCnt === 0);
+        const isHighCoreSlot = (slotCoreCnt >= 4 && !isAnchorSlot);
+        const slotSplitLabel = `핵심${slotCoreCnt}+보조${6 - slotCoreCnt}`;
+
         if (fastMode) {
             if (packIdx === 1) {
                 return {
                     id: `V4-G1-${idxInPack + 1}`,
                     algoId: 'v4',
                     isDirectTop6: isAnchorSlot,
-                    name: isAnchorSlot ? `TOP6 직결 휠` : `올라운더 1 휠`,
+                    isSup6Slot,
+                    slotCoreCnt,
+                    name: isAnchorSlot ? `TOP6 직결 휠` : `올라운더 1 휠 (${slotSplitLabel})`,
                     numbers: nums,
-                    meta: { name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (올라운더 1)` }
+                    meta: { name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (${slotSplitLabel} · 올라운더 1)` }
                 };
             }
             if (packIdx === 2) {
                 return {
                     id: `V4.2-G1-${idxInPack + 1}`,
                     algoId: 'v3',
-                    name: `올라운더 2 EV 휠`,
+                    isSup6Slot,
+                    slotCoreCnt,
+                    name: `올라운더 2 EV 휠 (${slotSplitLabel})`,
                     numbers: nums,
-                    meta: { name: `16수 초압축 EV 휠 (올라운더 2)` }
+                    meta: { name: `16수 초압축 EV 휠 (${slotSplitLabel} · 올라운더 2)` }
                 };
             }
             return {
                 id: `AR3-${idxInPack + 1}`,
                 algoId: 'extra_1',
-                name: `올라운더 3 완성 휠`,
+                isSup6Slot,
+                slotCoreCnt,
+                name: isSup6Slot ? `올라운더 3 보조6수 1등슬롯` : `올라운더 3 완성 휠 (${slotSplitLabel})`,
                 numbers: nums,
-                meta: { name: `올라운더 3: 16수 초압축 완성 휠 #${idxInPack + 1}` }
+                meta: { name: isSup6Slot ? `올라운더 3: 보조 6수 직결 1등 포획 휠 (16수 초압축 #${idxInPack + 1})` : `올라운더 3: 16수 초압축 완성 휠 (${slotSplitLabel} #${idxInPack + 1})` }
             };
         }
 
@@ -23496,30 +23508,32 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
         stats.evMultiplier = Number(evMult.toFixed(2));
         const numReasons = nums.map(n => isAnchorSlot
             ? `${n}번: 최핵심 앵커 TOP 6([${top6Anchors.join(',')}]) 직결 편입 수`
-            : `${n}번: 최신 회차 동적신호 상위 16수 압축 풀([${poolStr}]) 코어 휠링`);
+            : (isSup6Slot
+                ? `${n}번: 보조 코어 10수([${support10.join(',')}]) 단독 1등 포획 슬롯 편입 수`
+                : `${n}번: Plan A ${slotSplitLabel} 쿼터 기반 16수 압축 풀([${poolStr}]) 코어 휠링`));
 
         if (packIdx === 1) {
             return {
                 id: `V4-G1-${idxInPack + 1}`,
-                name: isAnchorSlot ? `[올라운더] 16수 초압축 TOP6 코어 직결 휠` : `[올라운더] 16수 초압축 다중·고액 휠`,
+                name: isAnchorSlot ? `[올라운더] 16수 초압축 TOP6 코어 직결 휠` : `[올라운더] 16수 초압축 다중·고액 휠 (${slotSplitLabel})`,
                 numbers: nums,
                 stats,
                 meta: {
-                    rankBadge: isAnchorSlot ? `TOP6 직결 1` : `16-WHEEL ${idxInPack + 1}`,
+                    rankBadge: isAnchorSlot ? `TOP6 직결 1` : (isHighCoreSlot ? `고핵심 ${slotSplitLabel}` : `16-WHEEL ${idxInPack + 1}`),
                     rankClass: idxInPack < 4 ? 'top-1-badge' : (idxInPack < 7 ? 'top-4-badge' : 'badge-v3-engine'),
                     badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
-                    name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (올라운더 1)`,
+                    name: isAnchorSlot ? `TOP 6 핵심 앵커 직결 휠 (올라운더 1)` : `16수 초압축 폭발 휠 (${slotSplitLabel} · 올라운더 1)`,
                     tag: isAnchorSlot
                         ? `TOP6 직결 | 16수 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`
-                        : `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                        : `${slotSplitLabel} | 16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
                     desc: isAnchorSlot
                         ? `최핵심 앵커 TOP 6([${top6Anchors.join(', ')}]) 조합을 그대로 1번 슬롯에 직결 편입해 6수 전원 적중 시 1등, 5수+보너스(TOP6 내) 적중 시 2등을 100% 보장합니다.`
-                        : `최신 회차(${maxKnownDrawnRound}회) 반영 동적 신호로 엄선된 16수 풀 내부에서 4수·3수 중복을 최소화해 다중·고액 당첨 밀도를 극대화합니다.`,
-                    lawName: isAnchorSlot ? '3안-B: 최핵심 앵커 TOP 6 1등·2등 직결 슬롯' : '3안-B: 16수 초압축 커버링 휠 (올라운더 1·2·3 연동)',
+                        : `Plan A 고핵심 쿼터(${slotSplitLabel})에 맞춰 핵심 5+1/4+2 1등 사각지대 없이 16수 풀 내부 다중·고액 당첨을 포획합니다.`,
+                    lawName: isAnchorSlot ? '3안-B: 최핵심 앵커 TOP 6 1등·2등 직결 슬롯' : `Plan A 고핵심 쿼터 커버링 휠 (${slotSplitLabel})`,
                     probRationale: isAnchorSlot
                         ? 'TOP 6 코어 6자리 전원 적중 시 1등, 5수+보너스(TOP 6 내) 적중 시 2등, 5수 적중 시 3등 확정 구조'
-                        : `50,000회 몬테카를로 검증 기준 3건+ 다중당첨 9.66%, 5건+ 대폭발 20배, 고액 EV 1.13x 달성 엔진`,
-                    targetBenefit: isAnchorSlot ? 'TOP 6 핵심 코어 적중 시 1등·2등 무누락 직결 포획' : '다중 적중(3건+·5건+) 및 3·4등 동시 포획 극대화',
+                        : `핵심 5+1 적중 시 1등 3.33%, 핵심 4+2 적중 시 1등 0.44% · 3등+ 33.6% 커버 구조`,
+                    targetBenefit: isAnchorSlot ? 'TOP 6 핵심 코어 적중 시 1등·2등 무누락 직결 포획' : '고핵심(5+1/4+2) 1등 직결 보강 및 3·4등 동시 포획',
                     numReasons
                 }
             };
@@ -23527,19 +23541,19 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
         if (packIdx === 2) {
             return {
                 id: `V4.2-G1-${idxInPack + 1}`,
-                name: `[올라운더 2] 16수 초압축 EV 휠`,
+                name: `[올라운더 2] 16수 초압축 EV 휠 (${slotSplitLabel})`,
                 customLabel: `올라운더2-${alphabet[idxInPack] || (idxInPack + 1)}`,
                 numbers: nums,
                 stats,
                 meta: {
-                    rankBadge: `16-WHEEL-2 ${idxInPack + 1}`,
+                    rankBadge: `중심커버 ${slotSplitLabel}`,
                     rankClass: 'top-4-badge',
                     badgeClass: 'strategy-b',
-                    name: `16수 초압축 EV 휠 (올라운더 2)`,
-                    tag: `16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
-                    desc: `올라운더 1과 동일한 16수 풀을 공유하되 4수·3수 트리플 충돌을 0에 가깝게 회피하며 고액 독식 기대값을 강화합니다.`,
-                    lawName: '3안-B: 16수 초압축 2슬롯 상호보완 휠',
-                    probRationale: '올라운더 1·2·3 합산 30게임의 쿼드·트리플 커버리지를 극대화합니다.',
+                    name: `16수 초압축 EV 휠 (${slotSplitLabel} · 올라운더 2)`,
+                    tag: `${slotSplitLabel} | 16수 코어 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                    desc: `가장 빈도가 높은 중심 혼합 비율(${slotSplitLabel})에 배치되어 3·4·5등 다중당첨과 비인기 고액 기대값을 극대화합니다.`,
+                    lawName: `Plan A 중심 혼합 커버링 휠 (${slotSplitLabel})`,
+                    probRationale: '핵심 2~3개 + 보조 3~4개 최빈 혼합 당첨 구간 집중 커버.',
                     targetBenefit: '16수 풀 적중 시 다중·고액 당첨 폭발 시너지',
                     numReasons
                 }
@@ -23547,19 +23561,21 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
         }
         return {
             id: `AR3-${idxInPack + 1}`,
-            name: `[올라운더 3] 16수 초압축 완성 휠 #${idxInPack + 1}`,
+            name: isSup6Slot ? `[올라운더 3] 16수 초압축 보조6수 직결 휠 #${idxInPack + 1}` : `[올라운더 3] 16수 초압축 완성 휠 (${slotSplitLabel}) #${idxInPack + 1}`,
             numbers: nums,
             stats,
             meta: {
-                rankBadge: `AR3-16W ${idxInPack + 1}`,
-                rankClass: idxInPack < 4 ? 'top-1-badge' : 'top-4-badge',
-                badgeClass: idxInPack < 4 ? 'strategy-a' : 'strategy-b',
-                name: `올라운더 3: 16수 초압축 완성 휠 #${idxInPack + 1}`,
-                tag: `16수 30G 완결 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
-                desc: `올라운더 1·2의 잔여 4수·3수 커버 빈틈을 메워 16수 초압축 30게임 휠을 완결합니다.`,
-                lawName: '3안-B: 16수 30게임 커버링 완결 블록',
-                probRationale: '16수 풀 내 번호 균등 배치 및 고액 EV 스코어링 완결.',
-                targetBenefit: '올라운더 1·2·3 통합 다중·고액 당첨 극대화',
+                rankBadge: isSup6Slot ? `보조6 1등슬롯` : `AR3 ${slotSplitLabel}`,
+                rankClass: idxInPack >= 7 ? 'top-1-badge' : (idxInPack < 4 ? 'top-1-badge' : 'top-4-badge'),
+                badgeClass: idxInPack >= 7 ? 'strategy-a' : 'strategy-b',
+                name: isSup6Slot ? `올라운더 3: 보조 6수 1등 포획 휠 (16수 초압축 #${idxInPack + 1})` : `올라운더 3: 16수 초압축 완성 휠 (${slotSplitLabel} #${idxInPack + 1})`,
+                tag: isSup6Slot ? `보조6 전용 | 1등 1.43%·3등+ 44.4% | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x` : `${slotSplitLabel} | 16수 30G 완결 | 합 ${sum} | AC ${ac} | EV ${evMult.toFixed(2)}x`,
+                desc: isSup6Slot
+                    ? `보조 코어 10수([${support10.join(', ')}])에서만 6자리를 조합하는 Plan A 전용 3슬롯 중 하나로, 보조 10수 내 1등 번호 6개 전원 포함 시 1등(1.43%)·3등+(44.4%)를 직접 포획합니다.`
+                    : `올라운더 1·2의 잔여 4수·3수 커버 빈틈을 메우고 보조 확장 슬롯(${slotSplitLabel})을 완성합니다.`,
+                lawName: isSup6Slot ? 'Plan A: 보조 10수 단독 1등 포획 3슬롯' : `Plan A: 16수 30게임 커버링 완결 (${slotSplitLabel})`,
+                probRationale: isSup6Slot ? '보조 10수 6개 전원 적중 시 1등 1.43%, 3등 이상 44.4%, 4등 이상 100% 달성 슬롯.' : '16수 풀 내 번호 균등 배치 및 고액 EV 스코어링 완결.',
+                targetBenefit: isSup6Slot ? '핵심 코어 미포함 회차에서도 보조 10수만으로 1등 직접 포획' : '올라운더 1·2·3 통합 7분할 1등·다중 당첨 완성',
                 numReasons
             }
         };
@@ -35913,9 +35929,9 @@ function fireOptConfetti() {
 }
 
 const ALL_PACK_DEFS = [
-    { id: 'v4', type: 'engine', version: 'v4', name: '기본 1: 올라운더 팩 (10게임)', shortName: '올라운더(10)', games: 10, color: '#10b981' },
-    { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 올라운더 팩 2 (10게임)', shortName: '올라운더2(10)', games: 10, color: '#3b82f6' },
-    { id: 'extra1', type: 'extra', packId: 1, name: '기본 3: 올라운더 팩 3 (10게임)', shortName: '올라운더3(10)', games: 10, color: '#10b981' }
+    { id: 'v4', type: 'engine', version: 'v4', name: '기본 1: 올라운더 팩 (10G · TOP6/고핵심)', shortName: '올라운더(10·고핵심)', slotDesc: '핵심6+0(1G)·5+1(2G)·4+2(3G)·3+3(4G)', coveredSplits: [6, 5, 4, 3], games: 10, color: '#10b981' },
+    { id: 'v3', type: 'engine', version: 'v3', name: '기본 2: 올라운더 팩 2 (10G · 중심혼합)', shortName: '올라운더2(10·중심)', slotDesc: '핵심3+3(3G)·2+4(7G)', coveredSplits: [3, 2], games: 10, color: '#3b82f6' },
+    { id: 'extra1', type: 'extra', packId: 1, name: '기본 3: 올라운더 팩 3 (10G · 보조6수 1등 3슬롯)', shortName: '올라운더3(10·보조6)', slotDesc: '핵심2+4(3G)·1+5(4G)·보조0+6(3G)', coveredSplits: [2, 1, 0], games: 10, color: '#10b981' }
 ];
 
 function getPackUpcomingCombos(pack, round, userId, pf = null) {
@@ -36159,7 +36175,7 @@ async function runBudgetOptimizationSimulation() {
 
     logTerminal(`📌 [기존 보유 팩] <strong>${ownedNames}</strong> (${ownedGames}게임 고정 포함, 번호 커버리지 ${baselineCoverage}%)`, '#60a5fa', true);
     logTerminal(`🚀 [추가 구매 예산] <strong>${additionalBudget.toLocaleString()}원 (${additionalGames}게임 추가)</strong> 시너지 1위 팩 탐색 시작...`, '#38bdf8', true);
-    logTerminal(`📊 [현행 코어 16수 엔진] ${startRound}~${maxRound}회차 실당첨번호 & 워크포워드 동적 점수 로드 완료`, '#94a3b8');
+    logTerminal(`📊 [Plan A 7분할 코어 엔진] ${startRound}~${maxRound}회차 실당첨번호 & 온라인 헤지 동적 점수 로드 완료`, '#94a3b8');
 
     // 2. Determine Candidate Additional Packs (excluding already owned ones)
     let candidatePool = ALL_PACK_DEFS.filter(p => !ownedPacks.some(op => op.id === p.id));
@@ -36206,12 +36222,12 @@ async function runBudgetOptimizationSimulation() {
     [...ownedPacks, ...candidatePool].forEach(p => distinctPacksMap.set(p.id, p));
     const distinctPacks = Array.from(distinctPacksMap.values());
 
-    const statsCacheKey = `core3b_stats_${effectiveUserId}_${startRound}_${maxRound}`;
+    const statsCacheKey = `core3b_plana_stats_${effectiveUserId}_${startRound}_${maxRound}`;
     const cachedCoreStats = _optCoreStatsMemoryCache.get(statsCacheKey) || null;
     const packEvals = new Map();
-    const uncachedPacks = distinctPacks.filter(p => !_optMatrixMemoryCache.has(`core3b_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`));
+    const uncachedPacks = distinctPacks.filter(p => !_optMatrixMemoryCache.has(`core3b_plana_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`));
     distinctPacks.forEach(p => {
-        const mk = `core3b_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`;
+        const mk = `core3b_plana_${effectiveUserId}_${p.id}_${startRound}_${maxRound}`;
         if (_optMatrixMemoryCache.has(mk)) {
             packEvals.set(p.id, _optMatrixMemoryCache.get(mk));
         } else {
@@ -36220,6 +36236,7 @@ async function runBudgetOptimizationSimulation() {
     });
 
     let core6TotalHitsInRange = cachedCoreStats ? cachedCoreStats.core6TotalHitsInRange : 0;
+    let sup10TotalHitsInRange = cachedCoreStats ? (cachedCoreStats.sup10TotalHitsInRange || 0) : 0;
     let pool16TotalHitsInRange = cachedCoreStats ? cachedCoreStats.pool16TotalHitsInRange : 0;
     let pool16_4PlusRounds = cachedCoreStats ? cachedCoreStats.pool16_4PlusRounds : 0;
     let validDrawnRounds = cachedCoreStats ? cachedCoreStats.validDrawnRounds : 0;
@@ -36227,11 +36244,12 @@ async function runBudgetOptimizationSimulation() {
     if (uncachedPacks.length > 0 || !cachedCoreStats) {
         const scoreCache = buildWalkForwardCore3BScoreCache(maxRound);
         if (rouletteEl) {
-            rouletteEl.innerText = '핵심 6수 · 보조 10수 30G 통합 휠';
+            rouletteEl.innerText = 'Plan A 전 분할 코어 16수 30G 휠';
             rouletteEl.style.color = '#fbbf24';
         }
         let lastYieldTs = performance.now();
         core6TotalHitsInRange = 0;
+        sup10TotalHitsInRange = 0;
         pool16TotalHitsInRange = 0;
         pool16_4PlusRounds = 0;
         validDrawnRounds = 0;
@@ -36249,10 +36267,14 @@ async function runBudgetOptimizationSimulation() {
             const top6 = pf.top6Anchors || [];
             let c6Hit = 0;
             for (let ti = 0; ti < top6.length; ti++) if (winningSet.has(top6[ti])) c6Hit++;
+            const sup10 = pf.support10 || [];
+            let s10Hit = 0;
+            for (let si = 0; si < sup10.length; si++) if (winningSet.has(sup10[si])) s10Hit++;
             const p16 = pf.pool16 || [];
             let p16Hit = 0;
             for (let pi = 0; pi < p16.length; pi++) if (winningSet.has(p16[pi])) p16Hit++;
             core6TotalHitsInRange += c6Hit;
+            sup10TotalHitsInRange += s10Hit;
             pool16TotalHitsInRange += p16Hit;
             if (p16Hit >= 4) pool16_4PlusRounds++;
 
@@ -36288,16 +36310,17 @@ async function runBudgetOptimizationSimulation() {
                 const pctDone = Math.round(((maxRound - r + 1) / evaluatedDrawCount) * 50);
                 if (progBar) progBar.style.width = `${pctDone}%`;
                 if (progPct) progPct.innerText = `${pctDone}%`;
-                if (subEl) subEl.innerText = `${startRound}~${maxRound}회 코어 16수 백테스트 중... (제 ${r}회)`;
+                if (subEl) subEl.innerText = `${startRound}~${maxRound}회 Plan A 코어 16수 백테스트 중... (제 ${r}회)`;
                 await new Promise(res => setTimeout(res, 0));
                 lastYieldTs = performance.now();
             }
         }
         uncachedPacks.forEach(pack => {
-            _optMatrixMemoryCache.set(`core3b_${effectiveUserId}_${pack.id}_${startRound}_${maxRound}`, packEvals.get(pack.id));
+            _optMatrixMemoryCache.set(`core3b_plana_${effectiveUserId}_${pack.id}_${startRound}_${maxRound}`, packEvals.get(pack.id));
         });
         _optCoreStatsMemoryCache.set(statsCacheKey, {
             core6TotalHitsInRange,
+            sup10TotalHitsInRange,
             pool16TotalHitsInRange,
             pool16_4PlusRounds,
             validDrawnRounds
@@ -36385,7 +36408,13 @@ async function runBudgetOptimizationSimulation() {
         const totalCost = evaluatedDrawCount * actualPortfolioGames * 1000;
         const roi = totalCost > 0 ? ((totalPrize / totalCost) * 100).toFixed(1) : 0;
         const hasV4Direct = fullPortfolio.some(p => p.id === 'v4');
-        const hitScore = (hit1st * 5000000) + (hit2nd * 300000) + (hit3rd * 15000) + (hit4th * 200) + hit5th + (hasV4Direct ? 5 : 0);
+        const hasSup6Direct = fullPortfolio.some(p => p.id === 'extra1');
+        const splitSet = new Set();
+        fullPortfolio.forEach(p => {
+            if (Array.isArray(p.coveredSplits)) p.coveredSplits.forEach(s => splitSet.add(s));
+        });
+        const coveredSplits = splitSet.size;
+        const hitScore = (hit1st * 5000000) + (hit2nd * 300000) + (hit3rd * 15000) + (hit4th * 200) + hit5th + (hasV4Direct ? 5 : 0) + (hasSup6Direct ? 3 : 0);
 
         const candidatePct = 50 + Math.round(((cIdx + 1) / candidateCombinations.length) * 50);
         if (progBar) progBar.style.width = `${candidatePct}%`;
@@ -36429,7 +36458,10 @@ async function runBudgetOptimizationSimulation() {
                 maxRound,
                 evaluatedDrawCount,
                 hasV4Direct,
+                hasSup6Direct,
+                coveredSplits,
                 core6AvgHit: validDrawnRounds > 0 ? (core6TotalHitsInRange / validDrawnRounds).toFixed(2) : '0.00',
+                sup10AvgHit: validDrawnRounds > 0 ? (sup10TotalHitsInRange / validDrawnRounds).toFixed(2) : '0.00',
                 pool16AvgHit: validDrawnRounds > 0 ? (pool16TotalHitsInRange / validDrawnRounds).toFixed(2) : '0.00',
                 pool16_4PlusRounds
             };
@@ -36499,9 +36531,11 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
                                 AI 1위 최적팩 확정
                             </span>
                             <span style="color: #38bdf8; font-size: 0.70rem; font-weight: 800;">
-                                ${metrics.startRound || 1}~${metrics.maxRound || ''}회 코어 16수 대조
+                                ${metrics.startRound || 1}~${metrics.maxRound || ''}회 Plan A 코어 16수 대조
                             </span>
-                            ${metrics.hasV4Direct ? '<span style="background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.45); color: #34d399; padding: 1px 6px; border-radius: 5px; font-size: 0.66rem; font-weight: 800;">✓ TOP6 1등 직결 포함</span>' : ''}
+                            ${metrics.hasV4Direct ? '<span style="background: rgba(16,185,129,0.2); border: 1px solid rgba(16,185,129,0.45); color: #34d399; padding: 1px 6px; border-radius: 5px; font-size: 0.66rem; font-weight: 800;">✓ TOP6+고핵심 포함</span>' : ''}
+                            ${metrics.hasSup6Direct ? '<span style="background: rgba(52,211,153,0.2); border: 1px solid rgba(52,211,153,0.45); color: #6ee7b7; padding: 1px 6px; border-radius: 5px; font-size: 0.66rem; font-weight: 800;">✓ 보조6수 3슬롯 포함</span>' : ''}
+                            ${metrics.coveredSplits === 7 ? '<span style="background: rgba(251,191,36,0.2); border: 1px solid rgba(251,191,36,0.45); color: #fde047; padding: 1px 6px; border-radius: 5px; font-size: 0.66rem; font-weight: 800;">👑 7/7 전 분할 1등 완성</span>' : ''}
                         </div>
                         <h4 style="margin: 2px 0 0 0; color: #fff; font-size: clamp(0.85rem, 3.8vw, 1.02rem); font-weight: 900; word-break: keep-all; line-height: 1.25;">
                             제 ${curUpcomingRound}회차 추가 구매 추천 팩
@@ -36607,11 +36641,13 @@ function renderOptimizationResult(ownedPacks, bestNewPacks, metrics) {
 
             <!-- Core 16 Capture Performance Strip -->
             <div style="margin-bottom: 10px; background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 8px; padding: 7px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 0.72rem;">
-                <span style="color: #38bdf8; font-weight: 800;"><i class="fa-solid fa-bullseye"></i> 코어 16수 실측 포착 (${metrics.evaluatedDrawCount || 50}회):</span>
+                <span style="color: #38bdf8; font-weight: 800;"><i class="fa-solid fa-bullseye"></i> Plan A 코어 16수 실측 (${metrics.evaluatedDrawCount || 50}회):</span>
                 <span style="color: #e2e8f0; font-weight: 700;">
-                    핵심6 평균 <strong style="color: #fbbf24;">${metrics.core6AvgHit || '0.00'}수</strong> ·
-                    16풀 평균 <strong style="color: #38bdf8;">${metrics.pool16AvgHit || '0.00'}수</strong> ·
-                    4+포착 <strong style="color: #34d399;">${metrics.pool16_4PlusRounds || 0}회</strong>
+                    핵심6 <strong style="color: #fbbf24;">${metrics.core6AvgHit || '0.00'}수</strong> ·
+                    보조10 <strong style="color: #34d399;">${metrics.sup10AvgHit || '0.00'}수</strong> ·
+                    16풀 <strong style="color: #38bdf8;">${metrics.pool16AvgHit || '0.00'}수</strong> ·
+                    4+포착 <strong style="color: #34d399;">${metrics.pool16_4PlusRounds || 0}회</strong> ·
+                    7분할 <strong style="color: #fde047;">${metrics.coveredSplits || 0}/7 커버</strong>
                 </span>
             </div>
 
@@ -36817,7 +36853,7 @@ let _simAlgoSortMode = 'prize';
 let _simRangeCount = 50; // 50, 100, 300, or 0 (all rounds)
 
 function getSimCfgKey(effectiveTarget, cfg) {
-    return `${effectiveTarget}_N${_simRangeCount}_${JSON.stringify(cfg)}`;
+    return `${effectiveTarget}_N${_simRangeCount}_PLANA_${JSON.stringify(cfg)}`;
 }
 
 function setSimRangeCount(cnt, btnEl = null) {
@@ -37425,7 +37461,14 @@ function renderAccumulatedWins(rankFilter) {
         if (cm && winningSet) {
             const cHits = (cm.top6 || []).filter(n => winningSet.has(n)).length;
             const sHits = (cm.support10 || []).filter(n => winningSet.has(n)).length;
-            coreBadgeHtml = `<span style="font-size:0.68rem; font-weight:800; color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); padding:1px 6px; border-radius:4px; white-space:nowrap;">핵심 ${cHits}/6 + 보조 ${sHits}/10 = ${cHits + sHits}/6</span>`;
+            const slotBadge = w.combo && w.combo.isDirectTop6
+                ? `<span style="font-size:0.65rem; font-weight:900; color:#fbbf24; background:rgba(251,191,36,0.18); border:1px solid rgba(251,191,36,0.45); padding:1px 5px; border-radius:4px; white-space:nowrap;">👑 TOP6 직결</span>`
+                : (w.combo && w.combo.isSup6Slot
+                    ? `<span style="font-size:0.65rem; font-weight:900; color:#34d399; background:rgba(16,185,129,0.18); border:1px solid rgba(16,185,129,0.45); padding:1px 5px; border-radius:4px; white-space:nowrap;">🛡️ 보조6 전용슬롯</span>`
+                    : (w.combo && w.combo.slotCoreCnt >= 4
+                        ? `<span style="font-size:0.65rem; font-weight:900; color:#a78bfa; background:rgba(167,139,250,0.18); border:1px solid rgba(167,139,250,0.45); padding:1px 5px; border-radius:4px; white-space:nowrap;">⚡ 고핵심 ${w.combo.slotCoreCnt}+${6 - w.combo.slotCoreCnt}</span>`
+                        : ''));
+            coreBadgeHtml = `${slotBadge}<span style="font-size:0.68rem; font-weight:800; color:#38bdf8; background:rgba(56,189,248,0.12); border:1px solid rgba(56,189,248,0.35); padding:1px 6px; border-radius:4px; white-space:nowrap;">핵심 ${cHits}/6 + 보조 ${sHits}/10 = ${cHits + sHits}/6</span>`;
         }
 
         const theme = rankThemes[w.prizeRank] || rankThemes[4];
@@ -37668,10 +37711,14 @@ function renderAlgorithmPrizeTotals() {
     if (coreBox && coreStats) {
         coreBox.style.display = 'block';
         const c6Avg = (coreStats.core6HitSum / Math.max(1, coreStats.evaluatedRounds)).toFixed(2);
+        const s10Avg = ((coreStats.sup10HitSum || 0) / Math.max(1, coreStats.evaluatedRounds)).toFixed(2);
         const p16Avg = (coreStats.pool16HitSum / Math.max(1, coreStats.evaluatedRounds)).toFixed(2);
         const p16_4plus = coreStats.pool16Hits4Plus || 0;
         const p16_5plus = coreStats.pool16Hits5Plus || 0;
         const p16_6 = coreStats.pool16Hits6 || 0;
+        const s10_4plus = coreStats.sup10Hits4Plus || 0;
+        const s10_6 = coreStats.sup10Hits6 || 0;
+        const sup6SlotWins = coreStats.sup6SlotWins || 0;
         const winRoundPct = ((coreStats.winningRounds / Math.max(1, coreStats.evaluatedRounds)) * 100).toFixed(1);
         const bestRoundHtml = coreStats.bestCaptureRound
             ? `제 ${coreStats.bestCaptureRound.round}회 (${coreStats.bestCaptureRound.p16Main}/6 포착 · ${coreStats.bestCaptureRound.prize.toLocaleString()}원)`
@@ -37680,8 +37727,9 @@ function renderAlgorithmPrizeTotals() {
         coreBox.innerHTML = `
             <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 41, 59, 0.9)); border: 1.5px solid rgba(56, 189, 248, 0.42); border-radius: 14px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
-                    <span style="font-size: 0.82rem; font-weight: 900; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-bullseye"></i> 현행 핵심 코어(6수) · 보조 코어(10수) 실전 포착 성적표 (${startR}~${maxR}회)
+                    <span style="font-size: 0.82rem; font-weight: 900; color: #38bdf8; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <i class="fa-solid fa-bullseye"></i> Plan A 핵심·보조 코어 실전 포착 성적표 (${startR}~${maxR}회)
+                        <span style="font-size: 0.66rem; font-weight: 800; color: #34d399; background: rgba(16,185,129,0.16); border: 1px solid rgba(16,185,129,0.4); padding: 1px 6px; border-radius: 5px;">7분할 전구간 1등 쿼터 [1,2,3,7,10,4,3]</span>
                     </span>
                     <span style="font-size: 0.72rem; color: #94a3b8;">최고 포착: <strong style="color: #fbbf24;">${bestRoundHtml}</strong></span>
                 </div>
@@ -37691,14 +37739,14 @@ function renderAlgorithmPrizeTotals() {
                         <div style="color: #fbbf24; font-size: 1.02rem; font-weight: 900; margin-top: 2px;">${c6Avg} / 6수</div>
                         <div style="color: #cbd5e1; font-size: 0.66rem;">3+적중 ${coreStats.core6Hits3Plus || 0}회 · 전원적중 ${coreStats.core6Hits6 || 0}회</div>
                     </div>
-                    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 9px; padding: 8px 10px;">
-                        <div style="color: #94a3b8; font-size: 0.68rem;">16수 풀 평균 포착률</div>
-                        <div style="color: #38bdf8; font-size: 1.02rem; font-weight: 900; margin-top: 2px;">${p16Avg} / 6수</div>
-                        <div style="color: #cbd5e1; font-size: 0.66rem;">무작위 평균(2.13) 대비 ${((Number(p16Avg) / 2.133) * 100 - 100).toFixed(1)}%</div>
+                    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(52, 211, 153, 0.35); border-radius: 9px; padding: 8px 10px;">
+                        <div style="color: #94a3b8; font-size: 0.68rem;">보조 코어 10수 · 보조6슬롯</div>
+                        <div style="color: #34d399; font-size: 1.02rem; font-weight: 900; margin-top: 2px;">${s10Avg} / 6수</div>
+                        <div style="color: #cbd5e1; font-size: 0.66rem;">보조4+ ${s10_4plus}회 · 6전원 ${s10_6}회 · 보조6슬롯 ${sup6SlotWins}건</div>
                     </div>
-                    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 9px; padding: 8px 10px;">
+                    <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 9px; padding: 8px 10px;">
                         <div style="color: #94a3b8; font-size: 0.68rem;">16수 풀 4개 이상 포착</div>
-                        <div style="color: #34d399; font-size: 1.02rem; font-weight: 900; margin-top: 2px;">${p16_4plus}회</div>
+                        <div style="color: #38bdf8; font-size: 1.02rem; font-weight: 900; margin-top: 2px;">${p16Avg} / 6수 · ${p16_4plus}회</div>
                         <div style="color: #cbd5e1; font-size: 0.66rem;">5/6 포착 ${p16_5plus}회 · 6/6 전원 ${p16_6}회</div>
                     </div>
                     <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(167, 139, 250, 0.35); border-radius: 9px; padding: 8px 10px;">
@@ -37722,9 +37770,9 @@ function renderAlgorithmPrizeTotals() {
     const algoDefinitions = [
         {
             id: 'v4',
-            name: '올라운더 팩 (AI 4.0 딥뉴럴)',
+            name: '올라운더 팩 1 (고핵심 TOP6·5+1·4+2)',
             shortName: '올라운더 팩',
-            packType: '코어 앙상블',
+            packType: 'TOP6·고핵심 블록',
             icon: 'fa-bullseye',
             color: '#fbbf24',
             badgeBg: 'rgba(251, 191, 36, 0.2)',
@@ -37734,9 +37782,9 @@ function renderAlgorithmPrizeTotals() {
         },
         {
             id: 'v3',
-            name: '올라운더 팩 2 (AI 3.0 베이지안)',
+            name: '올라운더 팩 2 (중심혼합 3+3·2+4)',
             shortName: '올라운더 팩 2',
-            packType: '코어 베이지안',
+            packType: '중심 커버 블록',
             icon: 'fa-layer-group',
             color: '#38bdf8',
             badgeBg: 'rgba(56, 189, 248, 0.2)',
@@ -37746,9 +37794,9 @@ function renderAlgorithmPrizeTotals() {
         },
         {
             id: 'extra_1',
-            name: '기본 3: 올라운더 팩 3 (10게임)',
+            name: '기본 3: 올라운더 3 (보조6수 1등 3슬롯)',
             shortName: '기본3: 올라운더3',
-            packType: '기본 코어 #3',
+            packType: '보조6 포획 완결',
             icon: 'fa-shield-halved',
             color: '#10b981',
             badgeBg: 'rgba(16, 185, 129, 0.2)',
@@ -38211,6 +38259,10 @@ async function runRealHistoricalSimulation() {
         core6HitSum: 0,
         core6Hits3Plus: 0,
         core6Hits6: 0,
+        sup10HitSum: 0,
+        sup10Hits4Plus: 0,
+        sup10Hits6: 0,
+        sup6SlotWins: 0,
         pool16HitSum: 0,
         pool16Hits4Plus: 0,
         pool16Hits5Plus: 0,
@@ -38278,11 +38330,17 @@ async function runRealHistoricalSimulation() {
                     let c6Main = 0;
                     const t6 = firstMeta.top6 || [];
                     for (let ti = 0; ti < t6.length; ti++) if (winningSet.has(t6[ti])) c6Main++;
+                    let s10Main = 0;
+                    const s10 = firstMeta.support10 || [];
+                    for (let si = 0; si < s10.length; si++) if (winningSet.has(s10[si])) s10Main++;
                     const p16 = firstMeta.pool16 || [];
                     for (let pi = 0; pi < p16.length; pi++) if (winningSet.has(p16[pi])) p16MainCached++;
                     coreRoundStats.core6HitSum += c6Main;
                     if (c6Main >= 3) coreRoundStats.core6Hits3Plus++;
                     if (c6Main === 6) coreRoundStats.core6Hits6++;
+                    coreRoundStats.sup10HitSum += s10Main;
+                    if (s10Main >= 4) coreRoundStats.sup10Hits4Plus++;
+                    if (s10Main === 6) coreRoundStats.sup10Hits6++;
                     coreRoundStats.pool16HitSum += p16MainCached;
                     if (p16MainCached >= 4) coreRoundStats.pool16Hits4Plus++;
                     if (p16MainCached >= 5) coreRoundStats.pool16Hits5Plus++;
@@ -38311,6 +38369,7 @@ async function runRealHistoricalSimulation() {
 
                     if (prizeRank > 0) {
                         roundWonAny = true;
+                        if (combo.isSup6Slot) coreRoundStats.sup6SlotWins++;
                         results.push({ round: r, combo: combo, prizeRank: prizeRank });
 
                         if (prizeRank === 1) {
