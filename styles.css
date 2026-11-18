@@ -27221,9 +27221,17 @@ html.theme-light .history-ctrl-btn {
 #appTopFixedShell #serverStatusBadge {
     display: none !important;
 }
-#appScrollableBody #latestDrawBanner {
-    margin-bottom: 12px !important;
-    padding: 10px 14px !important;
+#appTopFixedShell #latestDrawBanner {
+    margin: 4px 0 !important;
+    padding: 7px 12px !important;
+    gap: 8px !important;
+}
+#appTopFixedShell #latestDrawBanner .banner-tag {
+    display: none !important;
+}
+#appTopFixedShell #latestDrawBanner .prize-label,
+#appTopFixedShell #latestDrawBanner .prize-sub {
+    display: none !important;
 }
 
 
