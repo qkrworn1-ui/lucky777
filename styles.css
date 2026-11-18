@@ -27195,6 +27195,38 @@ html.theme-light .history-ctrl-btn {
     border-color: #cbd5e1 !important;
 }
 
+/* ============================================================
+ * 📐 메인메뉴 상단 고정부(#appTopFixedShell) 초슬림 다이어트
+ * ============================================================ */
+#appTopFixedShell {
+    padding-bottom: 4px !important;
+}
+#appTopFixedShell .app-header {
+    padding: 8px 14px !important;
+    min-height: 0 !important;
+    gap: 6px !important;
+}
+#appTopFixedShell .app-header .logo-emblem,
+#appTopFixedShell .app-header .logo-text .subtitle,
+#appTopFixedShell .app-header .header-right-group {
+    display: none !important;
+}
+#appTopFixedShell .app-header .header-top-row {
+    margin-bottom: 0 !important;
+}
+#appTopFixedShell .app-header .logo-text h1 {
+    font-size: 1.02rem !important;
+    margin: 0 !important;
+}
+#appTopFixedShell #serverStatusBadge {
+    display: none !important;
+}
+#appScrollableBody #latestDrawBanner {
+    margin-bottom: 12px !important;
+    padding: 10px 14px !important;
+}
+
+
 
 
 
