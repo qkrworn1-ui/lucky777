@@ -1295,22 +1295,22 @@ export function renderWinProbModalContent(tabId = 'core') {
                 <div class="pillar-card">
                     <div class="pillar-icon"><i class="fa-solid fa-filter-circle-xmark"></i></div>
                     <div class="pillar-content">
-                        <strong>1. 7-Point 퀀트 필터링 (쓰레기 조합 70% 사전 폐기)</strong>
-                        <p>편의점 자동은 한 대역 쏠림(1~10번에 6개), 4연번, 극단적 합계 등 역대 1등 출현 확률 0%에 수렴하는 비현실적 조합을 그대로 발급합니다. Lucky777은 AC값 8 이상, 합계 120~170 등 7중 필터로 비효율 조합을 100% 차단합니다.</p>
+                        <strong>1. 핵심 6수 소프트 구조 가드 (극단 결함 사전 교체)</strong>
+                        <p>핵심코어 TOP 6가 홀짝 0:6/6:0, AC 4 이하, 합계 극단(95 미만/185 초과), 역대 1등 동일 조합에 해당할 때만 16수 내 예비 7~10위 번호로 1자리를 교체해 핵심 6수의 실전 완성도를 유지합니다.</p>
                     </div>
                 </div>
                 <div class="pillar-card">
                     <div class="pillar-icon"><i class="fa-solid fa-circle-nodes"></i></div>
                     <div class="pillar-content">
-                        <strong>2. Maximal Clique (최대 클릭 앵커 결합)</strong>
-                        <p>개별 난수를 무작위로 뽑지 않고, 역대 당첨 데이터에서 동시 출현 결합 확률(Joint Probability)이 가장 높은 코어 군집을 앵커로 채택합니다. 1수가 맞으면 3·4수가 세트로 따라 나오는 '연쇄 적중 효과'를 창출합니다.</p>
+                        <strong>2. V3_Hedge8 8-전문가 온라인 헤지 &amp; 16수 코어 추출</strong>
+                        <p>디리클레 빈도, EWMA(10·30·80), 미출현·간격 위험률, 동반출현 중심성, 1·2차 전이 확률 8개 지표를 매 회차 온라인 학습하고 최근 300회 비인기 EV를 결합해 16수 코어(핵심 6 + 보조 10)를 선별합니다.</p>
                     </div>
                 </div>
                 <div class="pillar-card">
                     <div class="pillar-icon"><i class="fa-solid fa-shield-halved"></i></div>
                     <div class="pillar-content">
-                        <strong>3. 회원 간 상호보완 분산망 (멸구간 헷지)</strong>
-                        <p>회원들끼리 번호가 중복 낭비되지 않도록 대역을 분산 방어하는 동시에, 8~10번 치트키 슬롯에서는 가장 확률 밀도가 높은 코어를 집중 타격하는 '분산 + 집중' 투트랙 포트폴리오를 적용합니다.</p>
+                        <strong>3. Hypergeometric All-7 30게임 2-opt 초압축 휠링</strong>
+                        <p>1번 게임은 핵심 6수를 그대로 직결하고, 나머지 29게임은 핵심+보조 7대 혼합 구간([1,1,3,8,11,5,1])에 맞춰 16수 미커버 3·4튜플을 최소화하는 2-opt 휠링으로 연쇄 다중당첨 밀도를 극대화합니다.</p>
                     </div>
                 </div>
             </div>
