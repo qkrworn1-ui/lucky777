@@ -26837,40 +26837,105 @@ html.theme-light .lotto-subtab-btn.active {
 }
 
 /* ============================================================
- * 🏠 Lucky777 Dashboard (Landing) Simple Layout Diet
+ * 🏠 Lucky777 Dashboard (Landing) Simple Layout (Matches Preview)
  * ============================================================ */
+#landingPage {
+    padding-top: 10px !important;
+    gap: 10px !important;
+}
 #landingPage .lp-header {
     display: none !important;
 }
 #landingPage .lp-top-bar {
-    margin-bottom: 10px !important;
+    margin-bottom: 6px !important;
+    padding: 8px 14px !important;
 }
 #landingPage #btnDownloadManualTop span,
 #landingPage #btnPwaInstall span {
     display: none !important;
 }
+#landingPage .lp-countdown-container {
+    margin-bottom: 4px !important;
+}
+#landingPage .lp-ticker-container {
+    margin-bottom: 6px !important;
+}
 #landingPage .lp-service-grid {
+    display: grid !important;
     grid-template-columns: 1fr !important;
     gap: 10px !important;
-    margin-bottom: 12px !important;
+    margin-bottom: 10px !important;
+}
+#landingPage .lp-card {
+    min-height: 0 !important;
+    height: auto !important;
 }
 #landingPage .lp-card-lotto {
-    padding: 16px 18px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 14px !important;
+    padding: 16px 20px !important;
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(15, 23, 42, 0.94)) !important;
+    border: 1px solid rgba(16, 185, 129, 0.38) !important;
 }
 #landingPage .lp-card-lotto .lp-card-badge-row,
-#landingPage .lp-card-lotto .lp-card-features {
+#landingPage .lp-card-lotto .lp-card-features,
+#landingPage .lp-card-lotto .lp-card-glow-lotto {
     display: none !important;
 }
 #landingPage .lp-card-lotto .lp-card-header-flex {
-    margin-bottom: 12px !important;
+    margin-bottom: 0 !important;
+    align-items: center !important;
+    gap: 12px !important;
+    flex: 1 1 280px !important;
+}
+#landingPage .lp-card-lotto .lp-card-icon-lotto {
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 1.15rem !important;
+    flex-shrink: 0 !important;
+}
+#landingPage .lp-card-lotto .lp-card-toss-actions {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-top: 0 !important;
+    width: auto !important;
+    flex-wrap: wrap !important;
+}
+#landingPage .lp-card-lotto .lp-btn-toss-primary {
+    width: auto !important;
+    padding: 10px 16px !important;
+    font-size: 0.88rem !important;
+    white-space: nowrap !important;
+}
+#landingPage .lp-card-lotto .lp-toss-sub-actions-row {
+    width: auto !important;
+    display: flex !important;
+    gap: 8px !important;
+    margin-top: 0 !important;
+}
+#landingPage .lp-card-lotto .lp-toss-sub-actions-row .lp-btn-toss-sub:not(.lp-btn-qr-action) {
+    display: none !important;
+}
+#landingPage .lp-card-lotto .lp-btn-qr-action {
+    width: auto !important;
+    padding: 10px 14px !important;
+    font-size: 0.84rem !important;
+    white-space: nowrap !important;
 }
 #landingPage .lp-card-toto {
     display: flex !important;
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
-    padding: 10px 16px !important;
-    min-height: auto !important;
+    padding: 9px 16px !important;
+    min-height: 0 !important;
+    height: auto !important;
     gap: 12px !important;
 }
 #landingPage .lp-card-toto .lp-card-glow-stock,
@@ -26885,13 +26950,13 @@ html.theme-light .lotto-subtab-btn.active {
     gap: 10px !important;
 }
 #landingPage .lp-card-toto .lp-card-icon-toto {
-    width: 34px !important;
-    height: 34px !important;
-    font-size: 0.95rem !important;
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.9rem !important;
     flex-shrink: 0 !important;
 }
 #landingPage .lp-card-toto .lp-card-title {
-    font-size: 0.92rem !important;
+    font-size: 0.9rem !important;
     margin: 0 !important;
 }
 #landingPage .lp-card-toto .lp-card-toto-action-wrap {
@@ -26899,9 +26964,27 @@ html.theme-light .lotto-subtab-btn.active {
     flex-shrink: 0 !important;
 }
 #landingPage .lp-card-toto .lp-btn-toto-main {
-    padding: 7px 14px !important;
-    font-size: 0.8rem !important;
+    padding: 6px 12px !important;
+    font-size: 0.78rem !important;
     width: auto !important;
 }
+#landingPage #landingFortuneAdvisorContainer,
+#landingPage #lpServerSyncStrip {
+    display: none !important;
+}
+@media (max-width: 720px) {
+    #landingPage .lp-card-lotto {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 12px 14px !important;
+    }
+    #landingPage .lp-card-lotto .lp-card-toss-actions {
+        width: 100% !important;
+    }
+    #landingPage .lp-card-lotto .lp-btn-toss-primary {
+        flex: 1 1 auto !important;
+    }
+}
+
 
 
