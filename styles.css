@@ -26954,14 +26954,7 @@ html.theme-light .lotto-subtab-btn.active {
     white-space: nowrap !important;
 }
 #landingPage .lp-card-toto {
-    display: flex !important;
-    flex-direction: row !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    padding: 9px 16px !important;
-    min-height: 0 !important;
-    height: auto !important;
-    gap: 12px !important;
+    display: none !important;
 }
 #landingPage .lp-card-toto .lp-card-glow-stock,
 #landingPage .lp-card-toto .lp-card-badge-row,
