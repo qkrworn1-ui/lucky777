@@ -27222,16 +27222,20 @@ html.theme-light .history-ctrl-btn {
     display: none !important;
 }
 #appTopFixedShell #latestDrawBanner {
-    margin: 4px 0 !important;
-    padding: 7px 12px !important;
+    margin: 2px 0 !important;
+    padding: 6px 12px !important;
     gap: 8px !important;
 }
-#appTopFixedShell #latestDrawBanner .banner-tag {
+#appTopFixedShell #latestDrawBanner .banner-tag,
+#appTopFixedShell #latestDrawBanner .prize-label,
+#appTopFixedShell #latestDrawBanner .prize-sub,
+#appTopFixedShell #btnTogglePrizeDetails {
     display: none !important;
 }
-#appTopFixedShell #latestDrawBanner .prize-label,
-#appTopFixedShell #latestDrawBanner .prize-sub {
-    display: none !important;
+#appScrollableBody #latestDrawCoreHitPanel .banner-core-hit-wrap {
+    margin-top: 0 !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
 }
 
 
