@@ -27237,6 +27237,61 @@ html.theme-light .history-ctrl-btn {
     padding: 8px 12px !important;
     border-radius: 10px !important;
 }
+#appTopFixedShell #latestDrawBalls .lotto-ball {
+    position: relative !important;
+    overflow: visible !important;
+}
+#appTopFixedShell #latestDrawBalls .lotto-ball.banner-hit-core {
+    box-shadow: 0 0 0 2.5px #fbbf24, 0 0 8px rgba(251, 191, 36, 0.65) !important;
+}
+#appTopFixedShell #latestDrawBalls .lotto-ball.banner-hit-sup {
+    box-shadow: 0 0 0 2.5px #38bdf8, 0 0 8px rgba(56, 189, 248, 0.55) !important;
+}
+#appTopFixedShell #latestDrawBalls .banner-hit-tag {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+    padding: 1.5px 3.5px;
+    border-radius: 999px;
+    pointer-events: none;
+}
+#appTopFixedShell #latestDrawBalls .banner-hit-tag.tag-core {
+    background: #fbbf24;
+    color: #0f172a;
+}
+#appTopFixedShell #latestDrawBalls .banner-hit-tag.tag-sup {
+    background: #38bdf8;
+    color: #082f49;
+}
+#appTopFixedShell .banner-inline-core-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+#appTopFixedShell .banner-inline-core-chip .chip-core { color: #fbbf24; }
+#appTopFixedShell .banner-inline-core-chip .chip-sup { color: #38bdf8; }
+#appTopFixedShell .banner-inline-core-chip .chip-none { color: #94a3b8; }
+#appTopFixedShell .banner-inline-core-chip .chip-sep { color: #475569; }
+html[data-theme="light"] #appTopFixedShell .banner-inline-core-chip,
+html.theme-light #appTopFixedShell .banner-inline-core-chip {
+    background: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+}
+html[data-theme="light"] #appTopFixedShell .banner-inline-core-chip .chip-core,
+html.theme-light #appTopFixedShell .banner-inline-core-chip .chip-core { color: #b45309 !important; }
+html[data-theme="light"] #appTopFixedShell .banner-inline-core-chip .chip-sup,
+html.theme-light #appTopFixedShell .banner-inline-core-chip .chip-sup { color: #0369a1 !important; }
+
 
 
 

@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.18.1546 - BUILD_DATE: 2026-11-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.18.1558 - BUILD_DATE: 2026-11-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.18.1546)
+ * Lucky777 Smart Bundle (v2026.11.18.1558)
  */
 
 
@@ -26471,16 +26471,29 @@ function renderLatestDrawBanner() {
     const simTotalDraws = document.getElementById('simTotalDraws');
     if (simTotalDraws) simTotalDraws.textContent = `${state.latestDrawData.drwNo.toLocaleString()} 회`;
 
+    const coreReport = (typeof evaluateRoundCoreHitReport === 'function')
+        ? evaluateRoundCoreHitReport(state.latestDrawData.drwNo)
+        : null;
+    const core6Set = new Set((coreReport && Array.isArray(coreReport.top6Items)) ? coreReport.top6Items.map(x => x.n) : []);
+    const sup10Set = new Set((coreReport && Array.isArray(coreReport.support10Items)) ? coreReport.support10Items.map(x => x.n) : []);
+
     const ballsContainer = document.getElementById('latestDrawBalls');
     if (ballsContainer) {
-        const mainBallsHTML = state.latestDrawData.numbers.map(n => `
-            <div class="ball-mono lotto-ball sm-ball ${getBallColorClass(n)}">${n.toString().padStart(2, '0')}</div>
-        `).join('');
+        const formatBannerBall = (n, isBonus = false) => {
+            const isCore = core6Set.has(n);
+            const isSup = !isCore && sup10Set.has(n);
+            const hitCls = isCore ? 'banner-hit-core' : (isSup ? 'banner-hit-sup' : '');
+            const tagHtml = isCore
+                ? '<span class="banner-hit-tag tag-core">핵</span>'
+                : (isSup ? '<span class="banner-hit-tag tag-sup">보</span>' : '');
+            const titleAttr = isBonus
+                ? (isCore ? '보너스 (핵심코어 적중)' : (isSup ? '보너스 (보조코어 적중)' : '보너스 번호'))
+                : (isCore ? '핵심코어 6수 적중' : (isSup ? '보조코어 10수 적중' : ''));
+            return `<div class="ball-mono lotto-ball sm-ball ${getBallColorClass(n)} ${hitCls}" ${titleAttr ? `title="${titleAttr}"` : ''}>${n.toString().padStart(2, '0')}${tagHtml}</div>`;
+        };
 
-        const bonusBallHTML = `
-            <span class="plus-symbol">+</span>
-            <div class="ball-mono lotto-ball sm-ball ${getBallColorClass(state.latestDrawData.bonus)}" title="보너스 번호">${state.latestDrawData.bonus.toString().padStart(2, '0')}</div>
-        `;
+        const mainBallsHTML = state.latestDrawData.numbers.map(n => formatBannerBall(n, false)).join('');
+        const bonusBallHTML = `<span class="plus-symbol">+</span>` + formatBannerBall(state.latestDrawData.bonus, true);
 
         ballsContainer.innerHTML = mainBallsHTML + bonusBallHTML;
         ballsContainer.style.cursor = 'pointer';
@@ -26491,6 +26504,31 @@ function renderLatestDrawBanner() {
                 window.handleFetchLatestDrawClick();
             }
         };
+    }
+
+    const chipEl = document.getElementById('latestBannerCoreHitChip');
+    if (chipEl) {
+        if (coreReport) {
+            const cParts = [
+                ...(coreReport.core6MainHits || []).map(String),
+                ...(coreReport.core6BonusHits || []).map(n => `${n}+`)
+            ];
+            const sParts = [
+                ...(coreReport.support10MainHits || []).map(String),
+                ...(coreReport.support10BonusHits || []).map(n => `${n}+`)
+            ];
+            if (cParts.length === 0 && sParts.length === 0) {
+                chipEl.innerHTML = `<span class="chip-none">코어 미적중</span>`;
+            } else {
+                const segs = [];
+                if (cParts.length > 0) segs.push(`<span class="chip-core">핵심 ${cParts.join(',')}</span>`);
+                if (sParts.length > 0) segs.push(`<span class="chip-sup">보조 ${sParts.join(',')}</span>`);
+                chipEl.innerHTML = segs.join('<span class="chip-sep">·</span>');
+            }
+            chipEl.style.display = 'inline-flex';
+        } else {
+            chipEl.style.display = 'none';
+        }
     }
 
     const bannerCenter = document.querySelector('.latest-draw-banner .banner-center');
