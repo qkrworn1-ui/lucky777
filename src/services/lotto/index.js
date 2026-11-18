@@ -595,14 +595,28 @@ export function switchLottoTab(target) {
         }
     }
 
-    // 2. Update tab buttons active state (Instant 0ms)
+    // 2. Update tab buttons active state (Instant 0ms, supports 3-tab grouped nav)
     const tabBtns = document.querySelectorAll('.tab-btn');
     tabBtns.forEach(b => {
-        if (b.dataset.tab === target) {
+        const groupTabs = b.dataset.tabs ? b.dataset.tabs.split(',') : [];
+        if (b.dataset.tab === target || groupTabs.includes(target)) {
             b.classList.add('active');
         } else {
             b.classList.remove('active');
         }
+    });
+
+    // 2-1. Toggle contextual sub-navigation bars for grouped tabs
+    const subNavWin = document.getElementById('lottoSubNavWin');
+    const subNavLab = document.getElementById('lottoSubNavLab');
+    if (subNavWin) {
+        subNavWin.style.display = (target === 'tab-review' || target === 'tab-confirmed-list') ? 'flex' : 'none';
+    }
+    if (subNavLab) {
+        subNavLab.style.display = (target === 'tab-dashboard' || target === 'tab-algorithms' || target === 'tab-simulation') ? 'flex' : 'none';
+    }
+    document.querySelectorAll('.lotto-subtab-btn').forEach(sb => {
+        sb.classList.toggle('active', sb.dataset.subtab === target);
     });
 
     // 3. Update tab contents active state (Instant 0ms)
