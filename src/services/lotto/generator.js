@@ -143,7 +143,7 @@ export function exitHistoryIsolation(wasIsolated) {
     }
 }
 
-export const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_planb_v6';
+export const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_planb_v7';
 
 export function hasConfirmedLedgerForRound(userId, roundNum) {
     const cleanU = String(userId || '').trim().toLowerCase();
@@ -915,9 +915,44 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
 
     // 1. 실증 비인기 EV + Hedge8 통합 + 구간 최소 하한 + 홀짝 균형 16수 코어 풀 선별 (타이브레이커 난수 0.015)
     const { pool16, scoreMap } = _selectBalancedPool16_3B(dynScore, rng, crowdAvoidMap);
-    const top6Ranked = [...pool16]
-        .sort((a, b) => (scoreMap[b] - scoreMap[a]) || (a - b))
-        .slice(0, 6);
+    const rankedPool16 = [...pool16].sort((a, b) => (scoreMap[b] - scoreMap[a]) || (a - b));
+    let top6Ranked = rankedPool16.slice(0, 6);
+
+    // 1b. Core 6 소프트 구조 가드: 극단 결함(홀짝 0:6/6:0, AC<=4, 합계<95/>185, 역대 1등 중복) 시 6위(또는 5위) 1자리만 예비 7~10위와 교체
+    const liveHistCodes = !isPastHistoricalWinFn ? _getLiveHistWinCodeSet() : null;
+    const isCodeHistFn = !!(isPastHistoricalWinFn && isPastHistoricalWinFn.__isCodeFn);
+    const hasHistGuard = typeof isPastHistoricalWinFn === 'function';
+    const isCore6Extreme = (arr6) => {
+        const s = [...arr6].sort((a, b) => a - b);
+        const ac = _calcAC6Fast(s[0], s[1], s[2], s[3], s[4], s[5]);
+        let odd = 0, sum = 0;
+        for (let i = 0; i < 6; i++) {
+            odd += (s[i] & 1);
+            sum += s[i];
+        }
+        if (odd === 0 || odd === 6 || ac <= 4 || sum < 95 || sum > 185) return true;
+        if (hasHistGuard) {
+            return isCodeHistFn
+                ? isPastHistoricalWinFn(_encodeLotto6Sorted(s[0], s[1], s[2], s[3], s[4], s[5]))
+                : isPastHistoricalWinFn(s);
+        }
+        return liveHistCodes ? liveHistCodes.has(_encodeLotto6Sorted(s[0], s[1], s[2], s[3], s[4], s[5])) : false;
+    };
+    if (isCore6Extreme(top6Ranked)) {
+        const backups = rankedPool16.slice(6, 10);
+        let repaired = null;
+        for (let dropIdx = 5; dropIdx >= 4 && !repaired; dropIdx--) {
+            for (const rep of backups) {
+                const cand = top6Ranked.map((n, idx) => (idx === dropIdx ? rep : n));
+                if (!isCore6Extreme(cand)) {
+                    repaired = cand;
+                    break;
+                }
+            }
+        }
+        if (repaired) top6Ranked = repaired;
+    }
+
     const top6Anchors = [...top6Ranked].sort((a, b) => a - b);
     const top6Set = new Set(top6Anchors);
     const support10 = pool16.filter(n => !top6Set.has(n));
@@ -3456,6 +3491,10 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
         candidateNums = Object.keys(freq30).map(Number);
     }
 
+    const directTop6Nums = (is3BMode && v4Combos[0] && Array.isArray(v4Combos[0].numbers) && v4Combos[0].numbers.length === 6)
+        ? new Set(v4Combos[0].numbers)
+        : null;
+
     const enriched = candidateNums.map(n => {
         const ca = crowdAvoidMap[n] || 0;
         const caBonus = Math.max(-0.04, Math.min(0.06, ca * 0.6));
@@ -3469,12 +3508,13 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
             rankScore: (dynScore[n] || 1.0) + caBonus + (tieNoise[n] || 0),
             missWeeks: missWeeks[n] || 0,
             isCarryover: prevDrawNums.includes(n),
-            isHighEv: n >= 32
+            isHighEv: n >= 32,
+            isCorePinned: directTop6Nums ? (directTop6Nums.has(n) ? 1 : 0) : 0
         };
     });
 
     if (is3BMode) {
-        enriched.sort((a, b) => (b.rankScore - a.rankScore) || (a.n - b.n));
+        enriched.sort((a, b) => (b.isCorePinned - a.isCorePinned) || (b.rankScore - a.rankScore) || (a.n - b.n));
     } else {
         enriched.sort((a, b) => (b.freq30 - a.freq30) || (b.dynScore - a.dynScore) || (a.n - b.n));
     }
