@@ -2230,7 +2230,7 @@ export function renderWeeklyCoreNumbersCard(effectiveUserId = null, curUpcomingR
 
             <div class="weekly-core-group is-support">
                 <div class="weekly-core-group-head">
-                    <span class="group-label-support">🎯 코어 16수 적중으로 배출된 상위 당첨 게임 (30게임 중)</span>
+                    <span class="group-label-support">🎯 코어 17수 적중으로 배출된 상위 당첨 게임 (30게임 중)</span>
                     <span class="group-sub">노란 테두리 = 본번호 적중 · 하늘 테두리 = 보너스 적중</span>
                 </div>
                 <div class="core-win-games-grid">${gamesHtml}</div>

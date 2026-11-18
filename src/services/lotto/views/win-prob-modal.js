@@ -310,7 +310,7 @@ function ensureWinProbModalInDOM() {
                         </div>
                         <div class="win-prob-header-titles">
                             <div class="win-prob-header-badge-row">
-                                <span class="win-prob-title-badge"><i class="fa-solid fa-bullseye"></i> 코어 16수 · 30게임 휠 확률 분석</span>
+                                <span class="win-prob-title-badge"><i class="fa-solid fa-bullseye"></i> 코어 17수 · 30게임 휠 확률 분석</span>
                                 <span class="win-prob-sample-badge" id="winProbSampleBadge">적중 개수별 당첨확률표</span>
                             </div>
                             <h3 class="win-prob-title">핵심 코어(6수) · 보조 코어(10수) 맞춘 번호별 당첨확률</h3>
@@ -404,7 +404,7 @@ export function evaluateConditionalCoreHitScenario(coreHits = 3, supportHits = 1
     try {
         if (typeof window !== 'undefined' && typeof window.getWeeklyCoreNumbersSummary === 'function') {
             const summary = window.getWeeklyCoreNumbersSummary();
-            if (summary && Array.isArray(summary.topAnchors) && summary.topAnchors.length === 6 && summary.packGames) {
+            if (summary && Array.isArray(summary.topAnchors) && summary.topAnchors.length >= 6 && summary.packGames) {
                 top6 = summary.topAnchors.map(x => x.n);
                 sup10 = summary.supportPool.map(x => x.n);
                 games = [
@@ -452,7 +452,7 @@ export function evaluateConditionalCoreHitScenario(coreHits = 3, supportHits = 1
         return copy.slice(0, k);
     };
 
-    const isExactSingleCase = (c === 6 && bonusLoc === 'none');
+    const isExactSingleCase = (c === 6 && top6.length === 6 && bonusLoc === 'none');
     const trials = isExactSingleCase ? 1 : 1200;
     const atLeastRankCnt = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
     const rankHitTrials = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
@@ -747,7 +747,7 @@ export function renderWinProbModalContent(tabId = 'core') {
                     <table class="win-prob-table">
                         <thead>
                             <tr>
-                                <th>핵심 6수 적중</th>
+                                <th>핵심 7수 적중</th>
                                 <th>총 당첨률(5등+)</th>
                                 <th>1등 확률</th>
                                 <th>2등 이상</th>

@@ -143,7 +143,7 @@ export function exitHistoryIsolation(wasIsolated) {
     }
 }
 
-export const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_planb_v7';
+export const ALGO_REVISION_3B = 'v2026.11_3b_17wheel_core7_v8';
 
 export function hasConfirmedLedgerForRound(userId, roundNum) {
     const cleanU = String(userId || '').trim().toLowerCase();
@@ -251,19 +251,19 @@ function _getLiveHistWinCodeSet() {
     return _histWinCodeSet;
 }
 
-// Precompute 16C3 = 560 triple lookup tables once for zero-allocation covering wheels
-const _TRIPLES_16_COUNT = 560;
+// Precompute 17C3 = 680 triple lookup tables once for zero-allocation covering wheels (5-bit index packing: 0..16)
+const _TRIPLES_16_COUNT = 680;
 const _TRIPLES_16_A = new Uint8Array(_TRIPLES_16_COUNT);
 const _TRIPLES_16_B = new Uint8Array(_TRIPLES_16_COUNT);
 const _TRIPLES_16_C = new Uint8Array(_TRIPLES_16_COUNT);
 const _TRIPLES_16_TK = new Uint16Array(_TRIPLES_16_COUNT);
-const _TKEY_TO_SLOT = new Int16Array(4096).fill(-1);
+const _TKEY_TO_SLOT = new Int16Array(16384).fill(-1);
 {
     let ti = 0;
-    for (let a = 0; a < 14; a++) {
-        for (let b = a + 1; b < 15; b++) {
-            for (let c = b + 1; c < 16; c++) {
-                const tk = (a << 8) | (b << 4) | c;
+    for (let a = 0; a < 15; a++) {
+        for (let b = a + 1; b < 16; b++) {
+            for (let c = b + 1; c < 17; c++) {
+                const tk = (a << 10) | (b << 5) | c;
                 _TRIPLES_16_A[ti] = a;
                 _TRIPLES_16_B[ti] = b;
                 _TRIPLES_16_C[ti] = c;
@@ -339,20 +339,20 @@ function _selectBalancedPool16_3B(dynScore, rng, crowdAvoidMap = null) {
     let oddCnt = picked.filter(n => (n & 1) === 1).length;
 
     for (const n of restCandidates) {
-        if (picked.length >= 16) break;
-        const leftAfter = 16 - picked.length - 1;
+        if (picked.length >= 17) break;
+        const leftAfter = 17 - picked.length - 1;
         const nextOdd = oddCnt + (n & 1);
-        if (nextOdd > 9 || (nextOdd + leftAfter) < 7) continue;
+        if (nextOdd > 10 || (nextOdd + leftAfter) < 7) continue;
         picked.push(n);
         pickedSet.add(n);
         oddCnt = nextOdd;
     }
-    if (picked.length < 16) {
+    if (picked.length < 17) {
         for (const n of restCandidates) {
             if (!pickedSet.has(n)) {
                 picked.push(n);
                 pickedSet.add(n);
-                if (picked.length >= 16) break;
+                if (picked.length >= 17) break;
             }
         }
     }
@@ -360,37 +360,40 @@ function _selectBalancedPool16_3B(dynScore, rng, crowdAvoidMap = null) {
     return { pool16: picked.sort((a, b) => a - b), scoreMap };
 }
 
-// Hypergeometric All-7 30-slot quota (B): [C6+S0:1, C5+S1:1, C4+S2:3, C3+S3:8, C2+S4:11, C1+S5:5, C0+S6:1]
+// 17수(Core 7 + Sup 10) 30-slot quota: [C6+S0:3, C5+S1:2, C4+S2:4, C3+S3:9, C2+S4:9, C1+S5:2, C0+S6:1]
 const _PLAN_A_CORE_SLOTS_3B = new Int8Array([
-    6, 5, 4, 4, 4, 3, 3, 3, 3, 3,
-    3, 3, 3, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 1, 1, 1, 1, 1, 0
+    6, 6, 6, 5, 5, 4, 4, 4, 4, 3,
+    3, 3, 3, 3, 3, 3, 3, 3, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 1, 1, 0
 ]);
 
-function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null, isPastHistoricalWinFn = null) {
+function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTopCombos = null, isPastHistoricalWinFn = null, core7Nums = null) {
     const liveHistCodeSet = !isPastHistoricalWinFn ? _getLiveHistWinCodeSet() : null;
     const isCodeCheckFn = !!(isPastHistoricalWinFn && isPastHistoricalWinFn.__isCodeFn);
     const hasHistCheck = typeof isPastHistoricalWinFn === 'function';
 
-    const numCnt = new Int16Array(16);
-    const tCnt = new Uint16Array(4096);
-    const qCnt = new Uint8Array(65536);
+    const P_LEN = pool16.length; // 17
+    const numCnt = new Int16Array(P_LEN);
+    const tCnt = new Uint16Array(16384);
+    const qCnt = new Map();
+    const getQ = (k) => qCnt.get(k) || 0;
+    const addQ = (k, d) => qCnt.set(k, (qCnt.get(k) || 0) + d);
     const usedMasks = new Set();
     const gamesIdx = new Array(30);
     let gameCount = 0;
 
-    // Precompute pool16 lookups to eliminate per-trial array/property churn
-    const pNums = new Int32Array(16);
-    const pHigh32 = new Uint8Array(16);
-    const pCa = new Float64Array(16);
-    for (let i = 0; i < 16; i++) {
+    // Precompute pool17 lookups
+    const pNums = new Int32Array(P_LEN);
+    const pHigh32 = new Uint8Array(P_LEN);
+    const pCa = new Float64Array(P_LEN);
+    for (let i = 0; i < P_LEN; i++) {
         const n = pool16[i];
         pNums[i] = n;
         pHigh32[i] = n >= 32 ? 1 : 0;
         pCa[i] = (crowdAvoidMap && crowdAvoidMap[n]) ? crowdAvoidMap[n] : 0;
     }
 
-    // O(1) incremental uncovered triple tracker over all 560 triples in 16C3
+    // O(1) incremental uncovered triple tracker over all 680 triples in 17C3
     const uncovIdx = new Int16Array(_TRIPLES_16_COUNT);
     const uncovPos = new Int16Array(_TRIPLES_16_COUNT);
     for (let s = 0; s < _TRIPLES_16_COUNT; s++) {
@@ -402,9 +405,9 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
     const addGameCounts = (arr, delta) => {
         for (let i = 0; i < 6; i++) numCnt[arr[i]] += delta;
         for (let a = 0; a < 4; a++) {
-            const ia = arr[a] << 8;
+            const ia = arr[a] << 10;
             for (let b = a + 1; b < 5; b++) {
-                const iab = ia | (arr[b] << 4);
+                const iab = ia | (arr[b] << 5);
                 for (let c = b + 1; c < 6; c++) {
                     const tk = iab | arr[c];
                     const prev = tCnt[tk];
@@ -430,13 +433,13 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             }
         }
         for (let a = 0; a < 3; a++) {
-            const qa = arr[a] << 12;
+            const qa = arr[a] << 15;
             for (let b = a + 1; b < 4; b++) {
-                const qab = qa | (arr[b] << 8);
+                const qab = qa | (arr[b] << 10);
                 for (let c = b + 1; c < 5; c++) {
-                    const qabc = qab | (arr[c] << 4);
+                    const qabc = qab | (arr[c] << 5);
                     for (let d = c + 1; d < 6; d++) {
-                        qCnt[qabc | arr[d]] += delta;
+                        addQ(qabc | arr[d], delta);
                     }
                 }
             }
@@ -471,35 +474,45 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
         return mult;
     };
 
-    // #1 고정 슬롯: TOP 6 최핵심 앵커 6수 직결 편입 (6수 적중 시 1등, 5수+보너스 시 2등 100% 보장)
+    // #1~#3 고정 슬롯: 핵심 코어 7수(C(7,6)=7조합 중 3개) 직결 편입
     let hasPinnedSlot = false;
-    const isCoreIdx = new Uint8Array(16);
-    const coreIdxList = new Int8Array(6);
+    let pinnedCount = 0;
+    const isCoreIdx = new Uint8Array(P_LEN);
+    const coreIdxList = new Int8Array(7);
     const supIdxList = new Int8Array(10);
-    if (Array.isArray(pinnedTop6) && pinnedTop6.length === 6) {
-        const pinnedIdx = pinnedTop6.map(n => pool16.indexOf(n)).filter(i => i >= 0).sort((a, b) => a - b);
-        if (pinnedIdx.length === 6) {
-            const arr = new Int8Array(pinnedIdx);
-            gamesIdx[gameCount++] = arr;
-            usedMasks.add((1 << arr[0]) | (1 << arr[1]) | (1 << arr[2]) | (1 << arr[3]) | (1 << arr[4]) | (1 << arr[5]));
-            addGameCounts(arr, 1);
-            hasPinnedSlot = true;
-            let ci = 0, si = 0;
-            for (let k = 0; k < 6; k++) isCoreIdx[arr[k]] = 1;
-            for (let k = 0; k < 16; k++) {
-                if (isCoreIdx[k]) coreIdxList[ci++] = k;
-                else supIdxList[si++] = k;
+    if (Array.isArray(pinnedTopCombos) && pinnedTopCombos.length > 0 && Array.isArray(core7Nums) && core7Nums.length === 7) {
+        const coreIdxArr = core7Nums.map(n => pool16.indexOf(n)).filter(i => i >= 0);
+        if (coreIdxArr.length === 7) {
+            for (const combo of pinnedTopCombos) {
+                if (!Array.isArray(combo) || combo.length !== 6) continue;
+                const pIdx = combo.map(n => pool16.indexOf(n)).filter(i => i >= 0).sort((a, b) => a - b);
+                if (pIdx.length === 6) {
+                    const arr = new Int8Array(pIdx);
+                    gamesIdx[gameCount++] = arr;
+                    usedMasks.add((1 << arr[0]) | (1 << arr[1]) | (1 << arr[2]) | (1 << arr[3]) | (1 << arr[4]) | (1 << arr[5]));
+                    addGameCounts(arr, 1);
+                    pinnedCount++;
+                }
+            }
+            if (pinnedCount > 0) {
+                hasPinnedSlot = true;
+                for (let k = 0; k < 7; k++) isCoreIdx[coreIdxArr[k]] = 1;
+                let ci = 0, si = 0;
+                for (let k = 0; k < P_LEN; k++) {
+                    if (isCoreIdx[k]) coreIdxList[ci++] = k;
+                    else supIdxList[si++] = k;
+                }
             }
         }
     }
 
-    const weights = new Float64Array(16);
-    const wc = new Float64Array(16);
+    const weights = new Float64Array(P_LEN);
+    const wc = new Float64Array(P_LEN);
     const pkBuf = new Int8Array(6);
-    const coreRem = new Int8Array(6);
+    const coreRem = new Int8Array(7);
     const supRem = new Int8Array(10);
 
-    // Phase 1: Plan A Quota-Guided Covering Greedy Construction (30 games across all Core+Support splits)
+    // Phase 1: Quota-Guided Covering Greedy Construction (30 games across all Core+Support splits)
     for (let gIdx = gameCount; gIdx < 30; gIdx++) {
         const needC = hasPinnedSlot ? _PLAN_A_CORE_SLOTS_3B[gIdx] : -1;
         const needS = hasPinnedSlot ? (6 - needC) : -1;
@@ -507,13 +520,13 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
         let b0 = -1, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0;
         let bestSc = 1e18;
         let minC = 9999;
-        for (let i = 0; i < 16; i++) {
+        for (let i = 0; i < P_LEN; i++) {
             if (numCnt[i] < minC) minC = numCnt[i];
         }
         let initTotW = 0;
         let initCoreW = 0;
         let initSupW = 0;
-        for (let i = 0; i < 16; i++) {
+        for (let i = 0; i < P_LEN; i++) {
             const n = pNums[i];
             const diff = numCnt[i] - minC + 1;
             const baseW = 1.0 / (diff * diff * Math.sqrt(diff));
@@ -531,7 +544,7 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             if (hasPinnedSlot) {
                 coreRem.set(coreIdxList);
                 supRem.set(supIdxList);
-                let remCLen = 6, remSLen = 10;
+                let remCLen = 7, remSLen = 10;
                 let cW = initCoreW, sW = initSupW;
 
                 for (let step = 0; step < needC; step++) {
@@ -566,8 +579,8 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
                 while (pCount < 6) {
                     if (totW <= 0) break;
                     let r = rng() * totW;
-                    let pk = 15;
-                    for (let k = 0; k < 16; k++) {
+                    let pk = P_LEN - 1;
+                    for (let k = 0; k < P_LEN; k++) {
                         const wk = wc[k];
                         if (wk === 0) continue;
                         r -= wk;
@@ -598,43 +611,43 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             const n0 = pNums[i0], n1 = pNums[i1], n2 = pNums[i2], n3 = pNums[i3], n4 = pNums[i4], n5 = pNums[i5];
             if (isHistDuplicate(n0, n1, n2, n3, n4, n5)) continue;
 
-            // 15 quads inline
+            // 15 quads inline (5-bit packing)
             let qOv = 0;
-            qOv += qCnt[(i0 << 12) | (i1 << 8) | (i2 << 4) | i3] + qCnt[(i0 << 12) | (i1 << 8) | (i2 << 4) | i4] + qCnt[(i0 << 12) | (i1 << 8) | (i2 << 4) | i5];
-            qOv += qCnt[(i0 << 12) | (i1 << 8) | (i3 << 4) | i4] + qCnt[(i0 << 12) | (i1 << 8) | (i3 << 4) | i5] + qCnt[(i0 << 12) | (i1 << 8) | (i4 << 4) | i5];
-            qOv += qCnt[(i0 << 12) | (i2 << 8) | (i3 << 4) | i4] + qCnt[(i0 << 12) | (i2 << 8) | (i3 << 4) | i5] + qCnt[(i0 << 12) | (i2 << 8) | (i4 << 4) | i5];
-            qOv += qCnt[(i0 << 12) | (i3 << 8) | (i4 << 4) | i5] + qCnt[(i1 << 12) | (i2 << 8) | (i3 << 4) | i4] + qCnt[(i1 << 12) | (i2 << 8) | (i3 << 4) | i5];
-            qOv += qCnt[(i1 << 12) | (i2 << 8) | (i4 << 4) | i5] + qCnt[(i1 << 12) | (i3 << 8) | (i4 << 4) | i5] + qCnt[(i2 << 12) | (i3 << 8) | (i4 << 4) | i5];
+            qOv += getQ((i0 << 15) | (i1 << 10) | (i2 << 5) | i3) + getQ((i0 << 15) | (i1 << 10) | (i2 << 5) | i4) + getQ((i0 << 15) | (i1 << 10) | (i2 << 5) | i5);
+            qOv += getQ((i0 << 15) | (i1 << 10) | (i3 << 5) | i4) + getQ((i0 << 15) | (i1 << 10) | (i3 << 5) | i5) + getQ((i0 << 15) | (i1 << 10) | (i4 << 5) | i5);
+            qOv += getQ((i0 << 15) | (i2 << 10) | (i3 << 5) | i4) + getQ((i0 << 15) | (i2 << 10) | (i3 << 5) | i5) + getQ((i0 << 15) | (i2 << 10) | (i4 << 5) | i5);
+            qOv += getQ((i0 << 15) | (i3 << 10) | (i4 << 5) | i5) + getQ((i1 << 15) | (i2 << 10) | (i3 << 5) | i4) + getQ((i1 << 15) | (i2 << 10) | (i3 << 5) | i5);
+            qOv += getQ((i1 << 15) | (i2 << 10) | (i4 << 5) | i5) + getQ((i1 << 15) | (i3 << 10) | (i4 << 5) | i5) + getQ((i2 << 15) | (i3 << 10) | (i4 << 5) | i5);
 
-            // 20 triples inline
+            // 20 triples inline (5-bit packing)
             let tOv = 0, newT = 0, tc;
-            const i0s = i0 << 8, i1s = i1 << 8, i2s = i2 << 8, i3s = i3 << 8;
-            const tKeys0 = i0s | (i1 << 4);
+            const i0s = i0 << 10, i1s = i1 << 10, i2s = i2 << 10, i3s = i3 << 10;
+            const tKeys0 = i0s | (i1 << 5);
             tc = tCnt[tKeys0 | i2]; if (tc === 0) newT++; else tOv += tc;
             tc = tCnt[tKeys0 | i3]; if (tc === 0) newT++; else tOv += tc;
             tc = tCnt[tKeys0 | i4]; if (tc === 0) newT++; else tOv += tc;
             tc = tCnt[tKeys0 | i5]; if (tc === 0) newT++; else tOv += tc;
-            const tKeys1 = i0s | (i2 << 4);
+            const tKeys1 = i0s | (i2 << 5);
             tc = tCnt[tKeys1 | i3]; if (tc === 0) newT++; else tOv += tc;
             tc = tCnt[tKeys1 | i4]; if (tc === 0) newT++; else tOv += tc;
             tc = tCnt[tKeys1 | i5]; if (tc === 0) newT++; else tOv += tc;
-            const tKeys2 = i0s | (i3 << 4);
+            const tKeys2 = i0s | (i3 << 5);
             tc = tCnt[tKeys2 | i4]; if (tc === 0) newT++; else tOv += tc;
             tc = tCnt[tKeys2 | i5]; if (tc === 0) newT++; else tOv += tc;
-            tc = tCnt[i0s | (i4 << 4) | i5]; if (tc === 0) newT++; else tOv += tc;
-            const tKeys3 = i1s | (i2 << 4);
+            tc = tCnt[i0s | (i4 << 5) | i5]; if (tc === 0) newT++; else tOv += tc;
+            const tKeys3 = i1s | (i2 << 5);
             tc = tCnt[tKeys3 | i3]; if (tc === 0) newT++; else tOv += tc;
             tc = tCnt[tKeys3 | i4]; if (tc === 0) newT++; else tOv += tc;
             tc = tCnt[tKeys3 | i5]; if (tc === 0) newT++; else tOv += tc;
-            const tKeys4 = i1s | (i3 << 4);
+            const tKeys4 = i1s | (i3 << 5);
             tc = tCnt[tKeys4 | i4]; if (tc === 0) newT++; else tOv += tc;
             tc = tCnt[tKeys4 | i5]; if (tc === 0) newT++; else tOv += tc;
-            tc = tCnt[i1s | (i4 << 4) | i5]; if (tc === 0) newT++; else tOv += tc;
-            const tKeys5 = i2s | (i3 << 4);
+            tc = tCnt[i1s | (i4 << 5) | i5]; if (tc === 0) newT++; else tOv += tc;
+            const tKeys5 = i2s | (i3 << 5);
             tc = tCnt[tKeys5 | i4]; if (tc === 0) newT++; else tOv += tc;
             tc = tCnt[tKeys5 | i5]; if (tc === 0) newT++; else tOv += tc;
-            tc = tCnt[i2s | (i4 << 4) | i5]; if (tc === 0) newT++; else tOv += tc;
-            tc = tCnt[i3s | (i4 << 4) | i5]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[i2s | (i4 << 5) | i5]; if (tc === 0) newT++; else tOv += tc;
+            tc = tCnt[i3s | (i4 << 5) | i5]; if (tc === 0) newT++; else tOv += tc;
 
             const bal = numCnt[i0] + numCnt[i1] + numCnt[i2] + numCnt[i3] + numCnt[i4] + numCnt[i5];
             const sum = n0 + n1 + n2 + n3 + n4 + n5;
@@ -657,7 +670,7 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             const sShuf = seededShuffle(Array.from(supIdxList), rng).slice(0, needS);
             bestIdxArr = new Int8Array([...cShuf, ...sShuf].sort((a, b) => a - b));
         } else {
-            const avail = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
+            const avail = Array.from({ length: P_LEN }, (_, idx) => idx);
             const fallback = seededShuffle(avail, rng).slice(0, 6).sort((a, b) => a - b);
             bestIdxArr = new Int8Array(fallback);
         }
@@ -667,9 +680,9 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
     }
 
     // Phase 2: Quota-Preserving 2-opt Covering Refinement (3수 커버리지 극대화 + 4수 중복 비증가 + 7개 분할 쿼터 100% 유지)
-    const startSwapPos = hasPinnedSlot ? 1 : 0;
-    const remPool = new Int8Array(13);
-    const remCoreBuf = new Int8Array(6);
+    const startSwapPos = hasPinnedSlot ? pinnedCount : 0;
+    const remPool = new Int8Array(14);
+    const remCoreBuf = new Int8Array(7);
     const remSupBuf = new Int8Array(10);
     const candBuf = new Int8Array(6);
     const compatSlots = new Int16Array(_TRIPLES_16_COUNT);
@@ -685,9 +698,9 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             const g = gamesIdx[pos];
             let uniq = 0;
             for (let a = 0; a < 4; a++) {
-                const ga = g[a] << 8;
+                const ga = g[a] << 10;
                 for (let b = a + 1; b < 5; b++) {
-                    const gab = ga | (g[b] << 4);
+                    const gab = ga | (g[b] << 5);
                     for (let c = b + 1; c < 6; c++) {
                         if (tCnt[gab | g[c]] === 1) uniq++;
                     }
@@ -738,20 +751,20 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
 
         let oldQOv = 0;
         for (let a = 0; a < 3; a++) {
-            const qa = oldArr[a] << 12;
+            const qa = oldArr[a] << 15;
             for (let b = a + 1; b < 4; b++) {
-                const qab = qa | (oldArr[b] << 8);
+                const qab = qa | (oldArr[b] << 10);
                 for (let c = b + 1; c < 5; c++) {
-                    const qabc = qab | (oldArr[c] << 4);
-                    for (let d = c + 1; d < 6; d++) oldQOv += qCnt[qabc | oldArr[d]];
+                    const qabc = qab | (oldArr[c] << 5);
+                    for (let d = c + 1; d < 6; d++) oldQOv += getQ(qabc | oldArr[d]);
                 }
             }
         }
         let oldGain = 0;
         for (let a = 0; a < 4; a++) {
-            const ta = oldArr[a] << 8;
+            const ta = oldArr[a] << 10;
             for (let b = a + 1; b < 5; b++) {
-                const tab = ta | (oldArr[b] << 4);
+                const tab = ta | (oldArr[b] << 5);
                 for (let c = b + 1; c < 6; c++) if (tCnt[tab | oldArr[c]] === 0) oldGain++;
             }
         }
@@ -767,7 +780,7 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
 
         let rcLen = 0, rsLen = 0, rp = 0;
         if (hasPinnedSlot) {
-            for (let i = 0; i < 6; i++) {
+            for (let i = 0; i < 7; i++) {
                 const idx = coreIdxList[i];
                 if (idx !== ta0 && idx !== tb0 && idx !== tc0) remCoreBuf[rcLen++] = idx;
             }
@@ -776,7 +789,7 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
                 if (idx !== ta0 && idx !== tb0 && idx !== tc0) remSupBuf[rsLen++] = idx;
             }
         } else {
-            for (let i = 0; i < 16; i++) {
+            for (let i = 0; i < P_LEN; i++) {
                 if (i !== ta0 && i !== tb0 && i !== tc0) remPool[rp++] = i;
             }
         }
@@ -805,12 +818,12 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
 
             let qOv = 0;
             for (let a = 0; a < 3; a++) {
-                const qa = candBuf[a] << 12;
+                const qa = candBuf[a] << 15;
                 for (let b = a + 1; b < 4; b++) {
-                    const qab = qa | (candBuf[b] << 8);
+                    const qab = qa | (candBuf[b] << 10);
                     for (let cc = b + 1; cc < 5; cc++) {
-                        const qabc = qab | (candBuf[cc] << 4);
-                        for (let d = cc + 1; d < 6; d++) qOv += qCnt[qabc | candBuf[d]];
+                        const qabc = qab | (candBuf[cc] << 5);
+                        for (let d = cc + 1; d < 6; d++) qOv += getQ(qabc | candBuf[d]);
                     }
                 }
             }
@@ -818,9 +831,9 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
 
             let gain = 0;
             for (let a = 0; a < 4; a++) {
-                const xa = candBuf[a] << 8;
+                const xa = candBuf[a] << 10;
                 for (let b = a + 1; b < 5; b++) {
-                    const xab = xa | (candBuf[b] << 4);
+                    const xab = xa | (candBuf[b] << 5);
                     for (let cc = b + 1; cc < 6; cc++) if (tCnt[xab | candBuf[cc]] === 0) gain++;
                 }
             }
@@ -839,7 +852,7 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
             for (let oi = 0; oi < 6; oi++) {
                 const ov = oldArr[oi];
                 if (isCoreIdx[ov]) {
-                    for (let ci = 0; ci < 6; ci++) {
+                    for (let ci = 0; ci < 7; ci++) {
                         const nc = coreIdxList[ci];
                         if (oldMask & (1 << nc)) continue;
                         for (let k = 0; k < 6; k++) candBuf[k] = oldArr[k];
@@ -877,13 +890,13 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
                     candBuf[cp++] = tmp;
                 }
             } else {
-                for (let k = 12; k >= 10; k--) {
+                for (let k = rp - 1; k >= rp - 3; k--) {
                     const j = Math.floor(rng() * (k + 1));
                     const tmp = remPool[j];
                     remPool[j] = remPool[k];
                     remPool[k] = tmp;
                 }
-                candBuf[3] = remPool[12]; candBuf[4] = remPool[11]; candBuf[5] = remPool[10];
+                candBuf[3] = remPool[rp - 1]; candBuf[4] = remPool[rp - 2]; candBuf[5] = remPool[rp - 3];
             }
             evaluateCand();
         }
@@ -955,10 +968,31 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
 
     const top6Anchors = [...top6Ranked].sort((a, b) => a - b);
     const top6Set = new Set(top6Anchors);
-    const support10 = pool16.filter(n => !top6Set.has(n));
+    const core7th = rankedPool16.find(n => !top6Set.has(n));
+    const core7Ranked = core7th !== undefined ? [...top6Ranked, core7th] : [...top6Ranked];
+    const top7Anchors = [...core7Ranked].sort((a, b) => a - b);
+    const top7Set = new Set(top7Anchors);
+    const support10 = pool16.filter(n => !top7Set.has(n));
 
-    // 2. #1 슬롯 TOP 6 직결 고정 + 잔여 29게임 16수 커버링 2-opt 휠링
-    const rawGames = _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, top6Anchors, isPastHistoricalWinFn);
+    // 2. #1~3 슬롯 Core 7 직결 고정(3개 조합) + 잔여 27게임 17수 커버링 2-opt 휠링
+    const pinned3Combos = [top6Anchors];
+    if (core7th !== undefined) {
+        const rot = Math.abs(seed) % 6;
+        const dropCandidates = [];
+        for (let i = 0; i < 6; i++) dropCandidates.push((rot + i) % 6);
+        const nonExtremeDrops = [];
+        const fallbackDrops = [];
+        for (const dIdx of dropCandidates) {
+            const combo6 = [...top6Ranked.filter((_, idx) => idx !== dIdx), core7th].sort((a, b) => a - b);
+            if (!isCore6Extreme(combo6)) nonExtremeDrops.push(combo6);
+            else fallbackDrops.push(combo6);
+        }
+        const extras = [...nonExtremeDrops, ...fallbackDrops];
+        for (let k = 0; k < 2 && k < extras.length; k++) {
+            pinned3Combos.push(extras[k]);
+        }
+    }
+    const rawGames = _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinned3Combos, isPastHistoricalWinFn, top7Anchors);
 
     const alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const poolStr = pool16.join(',');
@@ -1092,6 +1126,7 @@ function _composePortfolio3BFromScores(roundForSeed, effectiveUserId, dynScore, 
         algoRevision: ALGO_REVISION_3B,
         pool16,
         top6Anchors,
+        top7Anchors,
         top6Ranked,
         support10,
         v4: rawGames.slice(0, 10).map((nums, i) => makeCombo(nums, 1, i)),
@@ -3491,8 +3526,12 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
         candidateNums = Object.keys(freq30).map(Number);
     }
 
-    const directTop6Nums = (is3BMode && v4Combos[0] && Array.isArray(v4Combos[0].numbers) && v4Combos[0].numbers.length === 6)
-        ? new Set(v4Combos[0].numbers)
+    const directCore7Nums = is3BMode
+        ? new Set([
+            ...(v4Combos[0] && Array.isArray(v4Combos[0].numbers) ? v4Combos[0].numbers : []),
+            ...(v4Combos[1] && Array.isArray(v4Combos[1].numbers) ? v4Combos[1].numbers : []),
+            ...(v4Combos[2] && Array.isArray(v4Combos[2].numbers) ? v4Combos[2].numbers : [])
+        ])
         : null;
 
     const enriched = candidateNums.map(n => {
@@ -3509,7 +3548,7 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
             missWeeks: missWeeks[n] || 0,
             isCarryover: prevDrawNums.includes(n),
             isHighEv: n >= 32,
-            isCorePinned: directTop6Nums ? (directTop6Nums.has(n) ? 1 : 0) : 0
+            isCorePinned: directCore7Nums ? (directCore7Nums.has(n) ? 1 : 0) : 0
         };
     });
 
@@ -3519,9 +3558,10 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
         enriched.sort((a, b) => (b.freq30 - a.freq30) || (b.dynScore - a.dynScore) || (a.n - b.n));
     }
 
+    const coreCount = is3BMode ? 7 : 6;
     const capped = is3BMode ? enriched : enriched.slice(0, 16);
-    const topAnchors = capped.slice(0, 6).sort((a, b) => a.n - b.n);
-    const supportPool = capped.slice(6).sort((a, b) => a.n - b.n);
+    const topAnchors = capped.slice(0, coreCount).sort((a, b) => a.n - b.n);
+    const supportPool = capped.slice(coreCount).sort((a, b) => a.n - b.n);
     const topAnchorSet = new Set(topAnchors.map(x => x.n));
 
     return {

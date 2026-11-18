@@ -25,7 +25,7 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         with open(modal_path, encoding='utf-8') as f:
             modal_js = f.read()
 
-        self.assertIn("ALGO_REVISION_3B = 'v2026.11_3b_16wheel_planb_v7'", gen_js)
+        self.assertIn("ALGO_REVISION_3B = 'v2026.11_3b_17wheel_core7_v8'", gen_js)
         self.assertIn("computeAllRounder3BPortfolio", gen_js)
         self.assertIn("isRound1251UpgradePending", gen_js)
         self.assertIn("roundForSeed >= 1251", gen_js)
@@ -93,8 +93,8 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
 
                 const g1250 = window.isRound1251UpgradePending({ algoRevision: 'v2026.10_3stage' }, 1250, 'master');
                 const g1251Old = window.isRound1251UpgradePending({ algoRevision: 'v2026.10_3stage' }, 1251, 'master');
-                const g1251Prev3B = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel_planb_v6' }, 1251, 'master');
-                const g1251New = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel_planb_v7' }, 1251, 'master');
+                const g1251Prev3B = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel_planb_v7' }, 1251, 'master');
+                const g1251New = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_17wheel_core7_v8' }, 1251, 'master');
 
                 const p2Null = window.generateExtraAddonPack(2, 1251, 'master');
                 const p3Null = window.generateExtraAddonPack(3, 1251, 'master');
@@ -109,12 +109,17 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                 const frozen = window.getParkJaeGoo1246FrozenSnapshot();
                 const coreSummary = window.getWeeklyCoreNumbersSummary(1251, 'master');
 
-                const top6Sorted = coreSummary ? coreSummary.topAnchors.map(x => x.n).sort((a,b) => a-b) : [];
-                const top6DirectIncluded = top6Sorted.length === 6 && JSON.stringify([...v4_1251[0].numbers].sort((a,b) => a-b)) === JSON.stringify(top6Sorted);
-                const rank1OnTop6 = all30.some(c => JSON.stringify([...c.numbers].sort((a,b) => a-b)) === JSON.stringify(top6Sorted));
-                const bonTop6 = top6Sorted[0];
-                const outsideNum = [1,2,3,4,5,6,7,8,9,10].find(n => !top6Sorted.includes(n));
-                const main5PlusOutside = [...top6Sorted.slice(1), outsideNum];
+                const top7Sorted = coreSummary ? coreSummary.topAnchors.map(x => x.n).sort((a,b) => a-b) : [];
+                const top7Set = new Set(top7Sorted);
+                const direct3Valid = top7Sorted.length === 7 &&
+                    [0, 1, 2].every(i => v4_1251[i].numbers.every(x => top7Set.has(x))) &&
+                    new Set([0, 1, 2].map(i => [...v4_1251[i].numbers].sort((a,b) => a-b).join(','))).size === 3;
+                const slot0Sorted = [...v4_1251[0].numbers].sort((a,b) => a-b);
+                const top6DirectIncluded = direct3Valid;
+                const rank1OnTop6 = all30.some(c => JSON.stringify([...c.numbers].sort((a,b) => a-b)) === JSON.stringify(slot0Sorted));
+                const bonTop6 = slot0Sorted[0];
+                const outsideNum = [1,2,3,4,5,6,7,8,9,10].find(n => !slot0Sorted.includes(n));
+                const main5PlusOutside = [...slot0Sorted.slice(1), outsideNum];
                 const rank2OnTop6Bonus = all30.some(c => {
                     const m = c.numbers.filter(x => main5PlusOutside.includes(x)).length;
                     return m === 5 && c.numbers.includes(bonTop6);
@@ -149,17 +154,17 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                     coreMatchesPool: coreSummary ? JSON.stringify(coreSummary.poolNumbers) === JSON.stringify(Array.from(pool).sort((a,b) => a-b)) : false,
                     coreFreqTotal: coreSummary ? coreSummary.itemsSortedAsc.reduce((a, x) => a + x.freq30, 0) : 0,
                     afterScrapeLatest: window.state.latestRoundNum,
-                    pool1252Valid: pool1252.size <= 16 && pool1252.size >= 10,
+                    pool1252Valid: pool1252.size <= 17 && pool1252.size >= 10,
                     hitReportValid: (() => {
                         const rep = window.evaluateRoundCoreHitReport(1251, 'test_user_demo');
-                        return !!(rep && rep.round === 1251 && rep.top6Items.length === 6 && rep.support10Items.length === 10 && typeof rep.totalHits === 'number');
+                        return !!(rep && rep.round === 1251 && rep.top6Items.length === 7 && rep.support10Items.length === 10 && typeof rep.totalHits === 'number');
                     })(),
                     coreProbModalValid: (() => {
                         window.openWinProbComparisonModal();
                         const html = document.getElementById('winProbModalContent')?.innerHTML || '';
                         const sim6 = window.evaluateConditionalCoreHitScenario(6, 0, 'none');
                         window.closeWinProbComparisonModal();
-                        return html.includes('핵심 코어 6수 맞춘 개수별 당첨확률') && html.includes('보조 코어 10수 맞춘 개수별 당첨확률') && sim6.rankAtLeastProbs[1] === 100;
+                        return html.includes('핵심 코어 6수 맞춘 개수별 당첨확률') && html.includes('보조 코어 10수 맞춘 개수별 당첨확률') && sim6.rankAtLeastProbs[1] >= 40 && sim6.rankAtLeastProbs[3] === 100;
                     })(),
                     walkForward3BParity: (() => {
                         const cache = window.buildWalkForwardCore3BScoreCache(1252);
@@ -167,19 +172,19 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                         const directNext = window.computeAllRounder3BPortfolio(1252, 'master');
                         const wf1248 = window.generateCore3BPortfolioAtRound(1248, 'master', cache, true);
                         const wKeys = Object.keys(window.state.HEDGE8_EXPERT_WEIGHTS || {});
-                        const top6Set = new Set(directNext.top6Anchors);
+                        const top7Set = new Set(directNext.top7Anchors || directNext.top6Anchors);
                         const slotDist = [0, 0, 0, 0, 0, 0, 0];
                         [...directNext.v4, ...directNext.v3, ...directNext.ar3].forEach(c => {
-                            const ch = c.numbers.filter(x => top6Set.has(x)).length;
+                            const ch = c.numbers.filter(x => top7Set.has(x)).length;
                             slotDist[ch]++;
                         });
                         return wKeys.length === 8 &&
                                window.state.HEDGE8_EXPERT_WEIGHTS.overdue <= 0.1801 &&
                                window.state.HEDGE8_EXPERT_WEIGHTS.ewma10 >= 0.0599 &&
-                               JSON.stringify(slotDist) === JSON.stringify([1, 5, 11, 8, 3, 1, 1]) &&
+                               JSON.stringify(slotDist) === JSON.stringify([1, 2, 9, 9, 4, 2, 3]) &&
                                JSON.stringify(wfNext.pool16) === JSON.stringify(directNext.pool16) &&
                                JSON.stringify(wfNext.v4[0].numbers) === JSON.stringify(directNext.v4[0].numbers) &&
-                               wf1248.top6Anchors.length === 6 && wf1248.support10.length === 10 &&
+                               (wf1248.top7Anchors || wf1248.top6Anchors).length === 7 && wf1248.support10.length === 10 &&
                                wf1248.v4.length === 10 && wf1248.v3.length === 10 && wf1248.ar3.length === 10;
                     })()
                 };
@@ -188,7 +193,7 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
 
         self.assertTrue(res['r1250IsLegacy'])
         self.assertTrue(res['r1251Is3B'])
-        self.assertEqual(res['poolSize'], 16)
+        self.assertEqual(res['poolSize'], 17)
         self.assertEqual(res['uniqueCount'], 30)
         self.assertFalse(res['g1250'])
         self.assertTrue(res['g1251Old'])
@@ -204,8 +209,8 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         self.assertEqual(res['hydratedKeys'], ['1'])
         self.assertEqual(res['frozenTotalGames'], 30)
         self.assertEqual(res['frozenKeys'], ['1'])
-        self.assertEqual(res['corePoolSize'], 16)
-        self.assertEqual(res['coreTop6Len'], 6)
+        self.assertEqual(res['corePoolSize'], 17)
+        self.assertEqual(res['coreTop6Len'], 7)
         self.assertEqual(res['coreSupportLen'], 10)
         self.assertTrue(res['coreMatchesPool'])
         self.assertEqual(res['coreFreqTotal'], 180)
