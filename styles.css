@@ -26836,3 +26836,72 @@ html.theme-light .lotto-subtab-btn.active {
     border-color: #7dd3fc !important;
 }
 
+/* ============================================================
+ * 🏠 Lucky777 Dashboard (Landing) Simple Layout Diet
+ * ============================================================ */
+#landingPage .lp-header {
+    display: none !important;
+}
+#landingPage .lp-top-bar {
+    margin-bottom: 10px !important;
+}
+#landingPage #btnDownloadManualTop span,
+#landingPage #btnPwaInstall span {
+    display: none !important;
+}
+#landingPage .lp-service-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+}
+#landingPage .lp-card-lotto {
+    padding: 16px 18px !important;
+}
+#landingPage .lp-card-lotto .lp-card-badge-row,
+#landingPage .lp-card-lotto .lp-card-features {
+    display: none !important;
+}
+#landingPage .lp-card-lotto .lp-card-header-flex {
+    margin-bottom: 12px !important;
+}
+#landingPage .lp-card-toto {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 16px !important;
+    min-height: auto !important;
+    gap: 12px !important;
+}
+#landingPage .lp-card-toto .lp-card-glow-stock,
+#landingPage .lp-card-toto .lp-card-badge-row,
+#landingPage .lp-card-toto .lp-card-desc,
+#landingPage .lp-card-toto .lp-card-features {
+    display: none !important;
+}
+#landingPage .lp-card-toto .lp-card-header-flex {
+    margin-bottom: 0 !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+#landingPage .lp-card-toto .lp-card-icon-toto {
+    width: 34px !important;
+    height: 34px !important;
+    font-size: 0.95rem !important;
+    flex-shrink: 0 !important;
+}
+#landingPage .lp-card-toto .lp-card-title {
+    font-size: 0.92rem !important;
+    margin: 0 !important;
+}
+#landingPage .lp-card-toto .lp-card-toto-action-wrap {
+    margin-top: 0 !important;
+    flex-shrink: 0 !important;
+}
+#landingPage .lp-card-toto .lp-btn-toto-main {
+    padding: 7px 14px !important;
+    font-size: 0.8rem !important;
+    width: auto !important;
+}
+
+
