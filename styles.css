@@ -26847,8 +26847,12 @@ html.theme-light .lotto-subtab-btn.active {
     display: none !important;
 }
 #landingPage .lp-top-bar {
-    margin-bottom: 6px !important;
-    padding: 8px 14px !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 900px !important;
+    margin: 0 auto 8px auto !important;
+    padding: 4px 0 !important;
+    justify-content: flex-end !important;
 }
 #landingPage #btnDownloadManualTop span,
 #landingPage #btnPwaInstall span {
@@ -27007,6 +27011,11 @@ html.theme-light .lotto-subtab-btn.active {
         flex-direction: column !important;
         align-items: stretch !important;
         padding: 12px 14px !important;
+        gap: 10px !important;
+    }
+    #landingPage .lp-card-lotto .lp-card-header-flex {
+        flex: 0 0 auto !important;
+        width: 100% !important;
     }
     #landingPage .lp-card-lotto .lp-card-toss-actions {
         width: 100% !important;
@@ -27015,6 +27024,15 @@ html.theme-light .lotto-subtab-btn.active {
         flex: 1 1 auto !important;
     }
 }
+html[data-theme="light"] #landingPage .lp-brand-name-text,
+html.theme-light #landingPage .lp-brand-name-text,
+html[data-theme="light"] #landingPage .lp-mobile-user-badge,
+html.theme-light #landingPage .lp-mobile-user-badge,
+html[data-theme="light"] #landingPage .lp-toss-fin-title,
+html.theme-light #landingPage .lp-toss-fin-title {
+    color: #0f172a !important;
+}
+
 
 
 
