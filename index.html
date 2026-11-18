@@ -89,7 +89,7 @@
     <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png?v=700">
     <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png?v=700">
 
-    <link rel="stylesheet" href="styles.css?v=2026.11.18.1452">
+    <link rel="stylesheet" href="styles.css?v=2026.11.18.1459">
     <script>
         (function() {
             try {
@@ -141,7 +141,7 @@
                     <span class="lp-brand-icon-7">7</span>
                     <span class="lp-brand-name-text">운도실력</span>
                     <span class="app-version-badge lp-mobile-ver-tag" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" title="클릭 시 최신 버전 새로고침">
-                        v2026.11.18.1452
+                        v2026.11.18.1459
                     </span>
                 </div>
                 <button type="button" id="serverStatusPillLanding" class="server-status-pill online" onclick="event.stopPropagation(); window.toggleUserProfilePopover && window.toggleUserProfilePopover(this);" title="서버 연결상태 확인 (클릭 시 세부 정보)">
@@ -200,7 +200,7 @@
             <div class="lp-brand-badge lp-brand-badge-compact" style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; justify-content: center; white-space: nowrap; overflow: hidden;">
                 <span class="lp-brand-badge-text"><i class="fa-solid fa-star"></i> Smart Life Finance Platform</span>
                 <span id="appVersionBadgeLanding" class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 0 10px rgba(59, 130, 246, 0.25); white-space: nowrap; flex-shrink: 0;" title="클릭 시 캐시 비우기 및 최신 버전 새로고침">
-                    <i class="fa-solid fa-code-branch"></i> v2026.11.18.1452 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                    <i class="fa-solid fa-code-branch"></i> v2026.11.18.1459 <i class="fa-solid fa-rotate" style="font-size: 0.65rem; opacity: 0.8;"></i>
                 </span>
             </div>
             <h1 class="lp-header-title">운도 <span class="lp-accent">실력</span></h1>
@@ -641,7 +641,7 @@
                         <h1 style="display: flex; align-items: center; gap: 8px;">
                             <span><span class="logo-word-1">운도</span><span class="logo-word-2">실력</span></span>
                             <span class="app-version-badge" onclick="event.stopPropagation(); window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(59, 130, 246, 0.25); border: 1px solid rgba(96, 165, 250, 0.6); color: #93c5fd; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                                v2026.11.18.1452
+                                v2026.11.18.1459
                             </span>
                         </h1>
                         <p class="subtitle"><span class="subtitle-ai">AI</span> 통계 알고리즘 · 로또 추천 서비스</p>
@@ -820,7 +820,7 @@
                     <span class="tab-text-short">당첨·구매</span>
                 </button>
 
-                <button class="tab-btn" data-tab="tab-dashboard" data-tabs="tab-dashboard,tab-algorithms,tab-simulation" onclick="switchTab('tab-dashboard'); if(typeof window.renderFortuneAdvisorCard === 'function') window.renderFortuneAdvisorCard(); if(typeof window.renderJackpotRadar === 'function') window.renderJackpotRadar();" title="통계분석 · 알고리즘 · 시뮬레이션">
+                <button class="tab-btn" data-tab="tab-dashboard" data-tabs="tab-dashboard,tab-algorithms,tab-simulation,tab-history" onclick="switchTab('tab-dashboard'); if(typeof window.renderFortuneAdvisorCard === 'function') window.renderFortuneAdvisorCard(); if(typeof window.renderJackpotRadar === 'function') window.renderJackpotRadar();" title="통계분석 · 알고리즘 · 시뮬레이션 · 역대 당첨번호">
                     <i class="fa-solid fa-chart-pie"></i>
                     <span class="tab-text-full">분석·실험실</span>
                     <span class="tab-text-short">분석·실험</span>
@@ -847,6 +847,9 @@
                 </button>
                 <button type="button" class="lotto-subtab-btn" data-subtab="tab-simulation" onclick="switchTab('tab-simulation')">
                     <i class="fa-solid fa-desktop"></i> 시뮬레이션
+                </button>
+                <button type="button" class="lotto-subtab-btn" data-subtab="tab-history" onclick="switchTab('tab-history')">
+                    <i class="fa-solid fa-clock-rotate-left"></i> 역대 당첨번호
                 </button>
             </div>
         </div>
@@ -2110,6 +2113,32 @@
 
             </section>
 
+            <!-- TAB: 역대 로또 1등 당첨번호 & 당첨금 조회 -->
+            <section id="tab-history" class="tab-content">
+                <div class="history-panel-card">
+                    <div class="history-toolbar">
+                        <div>
+                            <h3 class="history-heading"><i class="fa-solid fa-clock-rotate-left"></i> 역대 로또 1등 당첨번호</h3>
+                            <p id="historySummaryText" class="history-summary-sub">데이터를 불러오는 중...</p>
+                        </div>
+                        <div class="history-controls">
+                            <input type="text" id="historySearchInput" class="history-search-input" placeholder="회차(예: 1249) 또는 번호(예: 7, 16)" />
+                            <button type="button" id="btnHistorySortToggle" class="history-ctrl-btn">
+                                <i class="fa-solid fa-arrow-down-9-1"></i> 최신순
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="historyListContainer" class="history-list-container"></div>
+
+                    <div class="history-pagination">
+                        <button type="button" id="btnHistoryPrevPage" class="history-ctrl-btn">이전</button>
+                        <span id="historyPageInfo" class="history-page-info">1 / 1 페이지</span>
+                        <button type="button" id="btnHistoryNextPage" class="history-ctrl-btn">다음</button>
+                    </div>
+                </div>
+            </section>
+
         </main>
 
         <!-- Enterprise Compliance & Legal Disclaimer Footer -->
@@ -2179,7 +2208,7 @@
                 <h2 style="color: #fff; margin: 0 0 4px 0; font-size: 1.35rem; font-weight: 900; letter-spacing: -0.5px; display: flex; align-items: center; justify-content: center; gap: 8px;">
                     <span>운도실력</span>
                     <span class="app-version-badge" onclick="window.handleVersionBadgeClick && window.handleVersionBadgeClick(event)" style="cursor: pointer; background: rgba(251, 191, 36, 0.2); border: 1px solid rgba(251, 191, 36, 0.5); color: #fbbf24; padding: 2px 7px; border-radius: 10px; font-size: 0.72rem; font-weight: 800; display: inline-flex; align-items: center; gap: 3px;" title="클릭 시 최신 버전 새로고침">
-                        <i class="fa-solid fa-code-branch"></i> v2026.11.18.1452
+                        <i class="fa-solid fa-code-branch"></i> v2026.11.18.1459
                     </span>
                 </h2>
                 <p style="color: #94a3b8; font-size: 0.78rem; margin: 0; letter-spacing: 0.2px;">프라이빗 통계 퀀트 알고리즘 플랫폼</p>
@@ -4191,7 +4220,7 @@
       }
     </script>
     <!-- jsQR: High-performance pure JavaScript QR Engine (Local fast load + CDN Fallback) -->
-    <script src="jsqr.min.js?v=2026.11.18.1452"></script>
+    <script src="jsqr.min.js?v=2026.11.18.1459"></script>
     <script>
       if (typeof jsQR === 'undefined') {
         document.write('<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"><\/script>');
@@ -4515,7 +4544,7 @@
         // ========================================================
         // 📱 App Version, 2-Track (Firebase + Hosting) Live Cross-Check Controller
         // ========================================================
-        window.APP_VERSION = 'v2026.11.18.1452';
+        window.APP_VERSION = 'v2026.11.18.1459';
         window.LATEST_SERVER_VERSION = null;
         window.FIREBASE_LATEST_VERSION = null;
         window.HOSTING_LATEST_VERSION = null;
@@ -4586,7 +4615,7 @@
         }
 
         window.updateAppVersionBadges = function(ver, serverVer) {
-            var v = ver || window.APP_VERSION || 'v2026.11.18.1452';
+            var v = ver || window.APP_VERSION || 'v2026.11.18.1459';
             var sVer = serverVer || getHighestKnownVersion();
             var hasUpdate = compareVersions(sVer, v) > 0;
 
@@ -4843,7 +4872,7 @@
         };
 
         window.forceReloadCache = async function() {
-            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.11.18.1452';
+            var vStr = window.LATEST_SERVER_VERSION || window.APP_VERSION || 'v2026.11.18.1459';
             try {
                 if ('caches' in window) {
                     var cacheNames = await caches.keys();
@@ -4990,7 +5019,7 @@
             });
 
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./sw.js?v=2026.11.18.1452')
+                navigator.serviceWorker.register('./sw.js?v=2026.11.18.1459')
                     .then(function(reg) { 
                         console.log('[PWA] Service Worker Registered:', reg.scope);
                         if (typeof reg.update === 'function') reg.update();
@@ -5243,9 +5272,9 @@
         };
     </script>
 
-    <script src="data.js?v=2026.11.18.1452"></script>
+    <script src="data.js?v=2026.11.18.1459"></script>
     <script>try { if (typeof LOTTO_HISTORY !== 'undefined') window.LOTTO_HISTORY = LOTTO_HISTORY; } catch(e) {}</script>
-    <script src="app_v2.js?v=2026.11.18.1452"></script>
+    <script src="app_v2.js?v=2026.11.18.1459"></script>
 
 
     <!-- 📢 맞춤형 실구매 당첨 리포트 카카오톡 발송 제어 모달 (Kakao Batch Send Console Modal) -->

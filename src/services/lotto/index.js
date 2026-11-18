@@ -9,6 +9,7 @@ import { populateSimRoundSelector, renderSimulationTab, setupSimulationEvents } 
 import { renderWheelingSelector, renderWheelingResults, setupWheelingTab } from './views/wheeling.js';
 import { renderVerificationTab, setupEvolutionButton } from './views/verification.js';
 import { renderDashboardCharts, renderFortuneAdvisorCard } from './views/dashboard-tab.js';
+import { renderHistoryTab, setupHistoryTabEvents } from './views/history-tab.js';
 import { renderReviewTab, renderReviewDetail, resetReviewAdminViewingUser } from './views/review-tab.js';
 import { renderAlgorithmsTab, resetAlgoAdminViewingUser } from './views/algorithms-tab.js';
 import { renderConfirmedPurchasesList } from './views/confirmed-tab.js';
@@ -613,7 +614,7 @@ export function switchLottoTab(target) {
         subNavWin.style.display = (target === 'tab-review' || target === 'tab-confirmed-list') ? 'flex' : 'none';
     }
     if (subNavLab) {
-        subNavLab.style.display = (target === 'tab-dashboard' || target === 'tab-algorithms' || target === 'tab-simulation') ? 'flex' : 'none';
+        subNavLab.style.display = (target === 'tab-dashboard' || target === 'tab-algorithms' || target === 'tab-simulation' || target === 'tab-history') ? 'flex' : 'none';
     }
     document.querySelectorAll('.lotto-subtab-btn').forEach(sb => {
         sb.classList.toggle('active', sb.dataset.subtab === target);
@@ -699,6 +700,9 @@ export function switchLottoTab(target) {
                         if (typeof renderVerificationTab === 'function') renderVerificationTab();
                     } else if (target === 'tab-dashboard') {
                         if (typeof renderDashboardCharts === 'function') renderDashboardCharts();
+                    } else if (target === 'tab-history') {
+                        if (typeof setupHistoryTabEvents === 'function') setupHistoryTabEvents();
+                        if (typeof renderHistoryTab === 'function') renderHistoryTab();
                     } else if (target === 'tab-review') {
                         if (typeof renderReviewTab === 'function') renderReviewTab();
                     } else if (target === 'tab-confirmed-list') {
@@ -731,6 +735,9 @@ export function switchLottoTab(target) {
                     if (typeof renderVerificationTab === 'function') renderVerificationTab();
                 } else if (target === 'tab-dashboard') {
                     if (typeof renderDashboardCharts === 'function') renderDashboardCharts();
+                } else if (target === 'tab-history') {
+                    if (typeof setupHistoryTabEvents === 'function') setupHistoryTabEvents();
+                    if (typeof renderHistoryTab === 'function') renderHistoryTab();
                 } else if (target === 'tab-review') {
                     if (typeof renderReviewTab === 'function') renderReviewTab();
                 } else if (target === 'tab-confirmed-list') {
