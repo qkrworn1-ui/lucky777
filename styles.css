@@ -27278,9 +27278,19 @@ html.theme-light .history-ctrl-btn {
     color: #60a5fa !important;
     white-space: nowrap !important;
 }
+#appTopFixedShell #latestDrawBanner .prize-amount-3 {
+    font-size: 0.76rem !important;
+    font-weight: 800 !important;
+    color: #fb923c !important;
+    white-space: nowrap !important;
+}
 html[data-theme="light"] #appTopFixedShell #latestDrawBanner .prize-amount-2,
 html.theme-light #appTopFixedShell #latestDrawBanner .prize-amount-2 {
     color: #2563eb !important;
+}
+html[data-theme="light"] #appTopFixedShell #latestDrawBanner .prize-amount-3,
+html.theme-light #appTopFixedShell #latestDrawBanner .prize-amount-3 {
+    color: #c2410c !important;
 }
 
 

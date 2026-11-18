@@ -1,17 +1,9 @@
 {
-  "version": "v2026.11.18.1602",
+  "version": "v2026.11.18.1604",
   "buildDate": "2026-11-18",
   "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)",
-  "buildTimestamp": "2026-11-18T16:02:59.765711",
+  "buildTimestamp": "2026-11-18T16:04:57.595849",
   "buildHistory": [
-    {
-      "version": "v2026.11.18.1150",
-      "buildDate": "2026-11-18",
-      "buildTime": "11:50",
-      "buildDateTime": "2026-11-18 11:50",
-      "buildTimestamp": "2026-11-18T11:50:46.271015",
-      "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)"
-    },
     {
       "version": "v2026.11.18.1208",
       "buildDate": "2026-11-18",
@@ -123,8 +115,16 @@
       "buildDateTime": "2026-11-18 16:02",
       "buildTimestamp": "2026-11-18T16:02:59.765711",
       "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)"
+    },
+    {
+      "version": "v2026.11.18.1604",
+      "buildDate": "2026-11-18",
+      "buildTime": "16:04",
+      "buildDateTime": "2026-11-18 16:04",
+      "buildTimestamp": "2026-11-18T16:04:57.595849",
+      "description": "All-Rounder 123 3B 16-number wheel upgrade (1251+)"
     }
   ],
-  "buildTime": "16:02",
-  "buildDateTime": "2026-11-18 16:02"
+  "buildTime": "16:04",
+  "buildDateTime": "2026-11-18 16:04"
 }

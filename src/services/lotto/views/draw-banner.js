@@ -124,6 +124,7 @@ export function renderLatestDrawBanner() {
 
     const el_latestPrizeAmount = document.getElementById('latestPrizeAmount');
     const el_latestPrize2Amount = document.getElementById('latestPrize2Amount');
+    const el_latestPrize3Amount = document.getElementById('latestPrize3Amount');
     const el_latestWinnersCount = document.getElementById('latestWinnersCount');
     const btnToggle = document.getElementById('btnTogglePrizeDetails');
     const detailsPanel = document.getElementById('latestDrawPrizeDetails');
@@ -137,11 +138,21 @@ export function renderLatestDrawBanner() {
         || histRow.rank2Prize
         || (histRow.prizes && histRow.prizes['2'] && histRow.prizes['2'].prize)
         || 0;
+    const thirdPrize = state.latestDrawData.rank3Prize
+        || (state.latestDrawData.prizes && state.latestDrawData.prizes['3'] && state.latestDrawData.prizes['3'].prize)
+        || histRow.rank3Prize
+        || (histRow.prizes && histRow.prizes['3'] && histRow.prizes['3'].prize)
+        || 0;
     const isManualEntry = state.latestDrawData.isManual === true || firstPrize === 0;
+
+    const formatSubPrize = (amt) => (amt >= 100000000
+        ? `${(amt / 100000000).toFixed(1)}억`
+        : `${Math.round(amt / 10000).toLocaleString()}만`);
 
     if (isManualEntry) {
         if (el_latestPrizeAmount) el_latestPrizeAmount.textContent = `- 억원`;
         if (el_latestPrize2Amount) { el_latestPrize2Amount.textContent = ''; el_latestPrize2Amount.style.display = 'none'; }
+        if (el_latestPrize3Amount) { el_latestPrize3Amount.textContent = ''; el_latestPrize3Amount.style.display = 'none'; }
         if (el_latestWinnersCount) el_latestWinnersCount.textContent = `당첨금 정보 없음 (수동 등록 회차)`;
         if (btnToggle) btnToggle.style.display = 'none';
         if (detailsPanel) detailsPanel.style.display = 'none';
@@ -150,14 +161,20 @@ export function renderLatestDrawBanner() {
         if (el_latestPrizeAmount) el_latestPrizeAmount.textContent = `1등 ${eon}억`;
         if (el_latestPrize2Amount) {
             if (secondPrize > 0) {
-                const p2Txt = secondPrize >= 100000000
-                    ? `${(secondPrize / 100000000).toFixed(1)}억`
-                    : `${Math.round(secondPrize / 10000).toLocaleString()}만`;
-                el_latestPrize2Amount.textContent = `· 2등 ${p2Txt}`;
+                el_latestPrize2Amount.textContent = `· 2등 ${formatSubPrize(secondPrize)}`;
                 el_latestPrize2Amount.style.display = 'inline';
             } else {
                 el_latestPrize2Amount.textContent = '';
                 el_latestPrize2Amount.style.display = 'none';
+            }
+        }
+        if (el_latestPrize3Amount) {
+            if (thirdPrize > 0) {
+                el_latestPrize3Amount.textContent = `· 3등 ${formatSubPrize(thirdPrize)}`;
+                el_latestPrize3Amount.style.display = 'inline';
+            } else {
+                el_latestPrize3Amount.textContent = '';
+                el_latestPrize3Amount.style.display = 'none';
             }
         }
         const winners = state.latestDrawData.firstPrzwnerCo || state.latestDrawData.rank1Winners || 0;
