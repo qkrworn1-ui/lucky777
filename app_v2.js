@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.17.1357 - BUILD_DATE: 2026-11-17] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.18.1150 - BUILD_DATE: 2026-11-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.17.1357)
+ * Lucky777 Smart Bundle (v2026.11.18.1150)
  */
 
 
@@ -22743,7 +22743,7 @@ function exitHistoryIsolation(wasIsolated) {
     }
 }
 
-const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_plana_v5';
+const ALGO_REVISION_3B = 'v2026.11_3b_16wheel_planb_v6';
 
 function hasConfirmedLedgerForRound(userId, roundNum) {
     const cleanU = String(userId || '').trim().toLowerCase();
@@ -22960,11 +22960,11 @@ function _selectBalancedPool16_3B(dynScore, rng, crowdAvoidMap = null) {
     return { pool16: picked.sort((a, b) => a - b), scoreMap };
 }
 
-// Plan A (Balanced_All7) 30-slot quota: [C6+S0:1, C5+S1:2, C4+S2:3, C3+S3:7, C2+S4:10, C1+S5:4, C0+S6:3]
+// Hypergeometric All-7 30-slot quota (B): [C6+S0:1, C5+S1:1, C4+S2:3, C3+S3:8, C2+S4:11, C1+S5:5, C0+S6:1]
 const _PLAN_A_CORE_SLOTS_3B = new Int8Array([
-    6, 5, 5, 4, 4, 4, 3, 3, 3, 3,
+    6, 5, 4, 4, 4, 3, 3, 3, 3, 3,
     3, 3, 3, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 1, 1, 1, 1, 0, 0, 0
+    2, 2, 2, 2, 1, 1, 1, 1, 1, 0
 ]);
 
 function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null, isPastHistoricalWinFn = null) {
@@ -23386,6 +23386,78 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
         let bestQOv = oldQOv;
         let bestEv = oldEv;
 
+        const evaluateCand = () => {
+            for (let i = 1; i < 6; i++) {
+                const v = candBuf[i];
+                let j = i - 1;
+                while (j >= 0 && candBuf[j] > v) {
+                    candBuf[j + 1] = candBuf[j];
+                    j--;
+                }
+                candBuf[j + 1] = v;
+            }
+            const c0 = candBuf[0], c1 = candBuf[1], c2 = candBuf[2], c3 = candBuf[3], c4 = candBuf[4], c5 = candBuf[5];
+            const cMask = (1 << c0) | (1 << c1) | (1 << c2) | (1 << c3) | (1 << c4) | (1 << c5);
+            if (usedMasks.has(cMask)) return;
+
+            const cn0 = pNums[c0], cn1 = pNums[c1], cn2 = pNums[c2], cn3 = pNums[c3], cn4 = pNums[c4], cn5 = pNums[c5];
+            if (isHistDuplicate(cn0, cn1, cn2, cn3, cn4, cn5)) return;
+
+            let qOv = 0;
+            for (let a = 0; a < 3; a++) {
+                const qa = candBuf[a] << 12;
+                for (let b = a + 1; b < 4; b++) {
+                    const qab = qa | (candBuf[b] << 8);
+                    for (let cc = b + 1; cc < 5; cc++) {
+                        const qabc = qab | (candBuf[cc] << 4);
+                        for (let d = cc + 1; d < 6; d++) qOv += qCnt[qabc | candBuf[d]];
+                    }
+                }
+            }
+            if (qOv > oldQOv) return;
+
+            let gain = 0;
+            for (let a = 0; a < 4; a++) {
+                const xa = candBuf[a] << 8;
+                for (let b = a + 1; b < 5; b++) {
+                    const xab = xa | (candBuf[b] << 4);
+                    for (let cc = b + 1; cc < 6; cc++) if (tCnt[xab | candBuf[cc]] === 0) gain++;
+                }
+            }
+            const cEv = calcEvMult6(c0, c1, c2, c3, c4, c5, cn0, cn1, cn2, cn3, cn4, cn5, cn0 + cn1 + cn2 + cn3 + cn4 + cn5);
+
+            if (gain > bestGain || (gain === bestGain && (qOv < bestQOv || (qOv === bestQOv && cEv > bestEv + 0.02)))) {
+                br0 = c0; br1 = c1; br2 = c2; br3 = c3; br4 = c4; br5 = c5;
+                bestGain = gain;
+                bestQOv = qOv;
+                bestEv = cEv;
+            }
+        };
+
+        // Exact 1-swap neighborhood within same Core/Sup partition
+        if (hasPinnedSlot) {
+            for (let oi = 0; oi < 6; oi++) {
+                const ov = oldArr[oi];
+                if (isCoreIdx[ov]) {
+                    for (let ci = 0; ci < 6; ci++) {
+                        const nc = coreIdxList[ci];
+                        if (oldMask & (1 << nc)) continue;
+                        for (let k = 0; k < 6; k++) candBuf[k] = oldArr[k];
+                        candBuf[oi] = nc;
+                        evaluateCand();
+                    }
+                } else {
+                    for (let si = 0; si < 10; si++) {
+                        const ns = supIdxList[si];
+                        if (oldMask & (1 << ns)) continue;
+                        for (let k = 0; k < 6; k++) candBuf[k] = oldArr[k];
+                        candBuf[oi] = ns;
+                        evaluateCand();
+                    }
+                }
+            }
+        }
+
         for (let c = 0; c < 45; c++) {
             candBuf[0] = ta0; candBuf[1] = tb0; candBuf[2] = tc0;
             if (hasPinnedSlot) {
@@ -23413,51 +23485,7 @@ function _buildCoveringWheel30_3B(pool16, rng, crowdAvoidMap, pinnedTop6 = null,
                 }
                 candBuf[3] = remPool[12]; candBuf[4] = remPool[11]; candBuf[5] = remPool[10];
             }
-            for (let i = 1; i < 6; i++) {
-                const v = candBuf[i];
-                let j = i - 1;
-                while (j >= 0 && candBuf[j] > v) {
-                    candBuf[j + 1] = candBuf[j];
-                    j--;
-                }
-                candBuf[j + 1] = v;
-            }
-            const c0 = candBuf[0], c1 = candBuf[1], c2 = candBuf[2], c3 = candBuf[3], c4 = candBuf[4], c5 = candBuf[5];
-            const cMask = (1 << c0) | (1 << c1) | (1 << c2) | (1 << c3) | (1 << c4) | (1 << c5);
-            if (usedMasks.has(cMask)) continue;
-
-            const cn0 = pNums[c0], cn1 = pNums[c1], cn2 = pNums[c2], cn3 = pNums[c3], cn4 = pNums[c4], cn5 = pNums[c5];
-            if (isHistDuplicate(cn0, cn1, cn2, cn3, cn4, cn5)) continue;
-
-            let qOv = 0;
-            for (let a = 0; a < 3; a++) {
-                const qa = candBuf[a] << 12;
-                for (let b = a + 1; b < 4; b++) {
-                    const qab = qa | (candBuf[b] << 8);
-                    for (let cc = b + 1; cc < 5; cc++) {
-                        const qabc = qab | (candBuf[cc] << 4);
-                        for (let d = cc + 1; d < 6; d++) qOv += qCnt[qabc | candBuf[d]];
-                    }
-                }
-            }
-            if (qOv > oldQOv) continue;
-
-            let gain = 0;
-            for (let a = 0; a < 4; a++) {
-                const xa = candBuf[a] << 8;
-                for (let b = a + 1; b < 5; b++) {
-                    const xab = xa | (candBuf[b] << 4);
-                    for (let cc = b + 1; cc < 6; cc++) if (tCnt[xab | candBuf[cc]] === 0) gain++;
-                }
-            }
-            const cEv = calcEvMult6(c0, c1, c2, c3, c4, c5, cn0, cn1, cn2, cn3, cn4, cn5, cn0 + cn1 + cn2 + cn3 + cn4 + cn5);
-
-            if (gain > bestGain || (gain === bestGain && (qOv < bestQOv || (qOv === bestQOv && cEv > bestEv + 0.02)))) {
-                br0 = c0; br1 = c1; br2 = c2; br3 = c3; br4 = c4; br5 = c5;
-                bestGain = gain;
-                bestQOv = qOv;
-                bestEv = cEv;
-            }
+            evaluateCand();
         }
 
         if (br0 >= 0) {
