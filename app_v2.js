@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.18.1558 - BUILD_DATE: 2026-11-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.18.1602 - BUILD_DATE: 2026-11-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.18.1558)
+ * Lucky777 Smart Bundle (v2026.11.18.1602)
  */
 
 
@@ -26506,31 +26506,6 @@ function renderLatestDrawBanner() {
         };
     }
 
-    const chipEl = document.getElementById('latestBannerCoreHitChip');
-    if (chipEl) {
-        if (coreReport) {
-            const cParts = [
-                ...(coreReport.core6MainHits || []).map(String),
-                ...(coreReport.core6BonusHits || []).map(n => `${n}+`)
-            ];
-            const sParts = [
-                ...(coreReport.support10MainHits || []).map(String),
-                ...(coreReport.support10BonusHits || []).map(n => `${n}+`)
-            ];
-            if (cParts.length === 0 && sParts.length === 0) {
-                chipEl.innerHTML = `<span class="chip-none">코어 미적중</span>`;
-            } else {
-                const segs = [];
-                if (cParts.length > 0) segs.push(`<span class="chip-core">핵심 ${cParts.join(',')}</span>`);
-                if (sParts.length > 0) segs.push(`<span class="chip-sup">보조 ${sParts.join(',')}</span>`);
-                chipEl.innerHTML = segs.join('<span class="chip-sep">·</span>');
-            }
-            chipEl.style.display = 'inline-flex';
-        } else {
-            chipEl.style.display = 'none';
-        }
-    }
-
     const bannerCenter = document.querySelector('.latest-draw-banner .banner-center');
     if (bannerCenter) {
         bannerCenter.style.cursor = 'pointer';
@@ -26556,22 +26531,43 @@ function renderLatestDrawBanner() {
     }
 
     const el_latestPrizeAmount = document.getElementById('latestPrizeAmount');
+    const el_latestPrize2Amount = document.getElementById('latestPrize2Amount');
     const el_latestWinnersCount = document.getElementById('latestWinnersCount');
     const btnToggle = document.getElementById('btnTogglePrizeDetails');
     const detailsPanel = document.getElementById('latestDrawPrizeDetails');
     const tableBody = document.getElementById('latestDrawPrizeTableBody');
 
-    const firstPrize = state.latestDrawData.firstWinamnt || state.latestDrawData.rank1Prize || 0;
+    const curR = state.latestDrawData.drwNo;
+    const histRow = (state.mergedHistory && state.mergedHistory[curR]) ? state.mergedHistory[curR] : {};
+    const firstPrize = state.latestDrawData.firstWinamnt || state.latestDrawData.rank1Prize || histRow.rank1Prize || 0;
+    const secondPrize = state.latestDrawData.rank2Prize
+        || (state.latestDrawData.prizes && state.latestDrawData.prizes['2'] && state.latestDrawData.prizes['2'].prize)
+        || histRow.rank2Prize
+        || (histRow.prizes && histRow.prizes['2'] && histRow.prizes['2'].prize)
+        || 0;
     const isManualEntry = state.latestDrawData.isManual === true || firstPrize === 0;
 
     if (isManualEntry) {
         if (el_latestPrizeAmount) el_latestPrizeAmount.textContent = `- 억원`;
+        if (el_latestPrize2Amount) { el_latestPrize2Amount.textContent = ''; el_latestPrize2Amount.style.display = 'none'; }
         if (el_latestWinnersCount) el_latestWinnersCount.textContent = `당첨금 정보 없음 (수동 등록 회차)`;
         if (btnToggle) btnToggle.style.display = 'none';
         if (detailsPanel) detailsPanel.style.display = 'none';
     } else {
         const eon = (firstPrize / 100000000).toFixed(1);
-        if (el_latestPrizeAmount) el_latestPrizeAmount.textContent = `${eon} 억원`;
+        if (el_latestPrizeAmount) el_latestPrizeAmount.textContent = `1등 ${eon}억`;
+        if (el_latestPrize2Amount) {
+            if (secondPrize > 0) {
+                const p2Txt = secondPrize >= 100000000
+                    ? `${(secondPrize / 100000000).toFixed(1)}억`
+                    : `${Math.round(secondPrize / 10000).toLocaleString()}만`;
+                el_latestPrize2Amount.textContent = `· 2등 ${p2Txt}`;
+                el_latestPrize2Amount.style.display = 'inline';
+            } else {
+                el_latestPrize2Amount.textContent = '';
+                el_latestPrize2Amount.style.display = 'none';
+            }
+        }
         const winners = state.latestDrawData.firstPrzwnerCo || state.latestDrawData.rank1Winners || 0;
         if (el_latestWinnersCount) el_latestWinnersCount.textContent = `1등 당첨자 ${winners}명`;
         if (btnToggle) btnToggle.style.display = 'inline-block';

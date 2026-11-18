@@ -27266,31 +27266,22 @@ html.theme-light .history-ctrl-btn {
     background: #38bdf8;
     color: #082f49;
 }
-#appTopFixedShell .banner-inline-core-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    flex-wrap: wrap;
-    background: rgba(15, 23, 42, 0.72);
-    border: 1px solid rgba(148, 163, 184, 0.25);
-    border-radius: 999px;
-    padding: 2px 9px;
-    font-size: 0.72rem;
-    font-weight: 800;
+#appTopFixedShell #latestDrawBanner .prize-info {
+    display: inline-flex !important;
+    align-items: baseline !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
 }
-#appTopFixedShell .banner-inline-core-chip .chip-core { color: #fbbf24; }
-#appTopFixedShell .banner-inline-core-chip .chip-sup { color: #38bdf8; }
-#appTopFixedShell .banner-inline-core-chip .chip-none { color: #94a3b8; }
-#appTopFixedShell .banner-inline-core-chip .chip-sep { color: #475569; }
-html[data-theme="light"] #appTopFixedShell .banner-inline-core-chip,
-html.theme-light #appTopFixedShell .banner-inline-core-chip {
-    background: #f1f5f9 !important;
-    border-color: #cbd5e1 !important;
+#appTopFixedShell #latestDrawBanner .prize-amount-2 {
+    font-size: 0.78rem !important;
+    font-weight: 800 !important;
+    color: #60a5fa !important;
+    white-space: nowrap !important;
 }
-html[data-theme="light"] #appTopFixedShell .banner-inline-core-chip .chip-core,
-html.theme-light #appTopFixedShell .banner-inline-core-chip .chip-core { color: #b45309 !important; }
-html[data-theme="light"] #appTopFixedShell .banner-inline-core-chip .chip-sup,
-html.theme-light #appTopFixedShell .banner-inline-core-chip .chip-sup { color: #0369a1 !important; }
+html[data-theme="light"] #appTopFixedShell #latestDrawBanner .prize-amount-2,
+html.theme-light #appTopFixedShell #latestDrawBanner .prize-amount-2 {
+    color: #2563eb !important;
+}
 
 
 
