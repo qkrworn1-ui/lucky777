@@ -25,7 +25,7 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
         with open(modal_path, encoding='utf-8') as f:
             modal_js = f.read()
 
-        self.assertIn("ALGO_REVISION_3B = 'v2026.11_3b_17wheel_core7_v8'", gen_js)
+        self.assertIn("ALGO_REVISION_3B = 'v2026.11_3b_17wheel_core7_v9'", gen_js)
         self.assertIn("computeAllRounder3BPortfolio", gen_js)
         self.assertIn("isRound1251UpgradePending", gen_js)
         self.assertIn("roundForSeed >= 1251", gen_js)
@@ -93,8 +93,8 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
 
                 const g1250 = window.isRound1251UpgradePending({ algoRevision: 'v2026.10_3stage' }, 1250, 'master');
                 const g1251Old = window.isRound1251UpgradePending({ algoRevision: 'v2026.10_3stage' }, 1251, 'master');
-                const g1251Prev3B = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_16wheel_planb_v7' }, 1251, 'master');
-                const g1251New = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_17wheel_core7_v8' }, 1251, 'master');
+                const g1251Prev3B = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_17wheel_core7_v8' }, 1251, 'master');
+                const g1251New = window.isRound1251UpgradePending({ algoRevision: 'v2026.11_3b_17wheel_core7_v9' }, 1251, 'master');
 
                 const p2Null = window.generateExtraAddonPack(2, 1251, 'master');
                 const p3Null = window.generateExtraAddonPack(3, 1251, 'master');
@@ -181,7 +181,7 @@ class TestAllRounder3BUpgrade(unittest.TestCase):
                         return wKeys.length === 8 &&
                                window.state.HEDGE8_EXPERT_WEIGHTS.overdue <= 0.1801 &&
                                window.state.HEDGE8_EXPERT_WEIGHTS.ewma10 >= 0.0599 &&
-                               JSON.stringify(slotDist) === JSON.stringify([1, 2, 9, 9, 4, 2, 3]) &&
+                               JSON.stringify(slotDist) === JSON.stringify([0, 3, 8, 9, 5, 2, 3]) &&
                                JSON.stringify(wfNext.pool16) === JSON.stringify(directNext.pool16) &&
                                JSON.stringify(wfNext.v4[0].numbers) === JSON.stringify(directNext.v4[0].numbers) &&
                                (wf1248.top7Anchors || wf1248.top6Anchors).length === 7 && wf1248.support10.length === 10 &&
