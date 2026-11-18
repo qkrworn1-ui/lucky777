@@ -3520,7 +3520,7 @@ export function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = n
     }
 
     const capped = is3BMode ? enriched : enriched.slice(0, 16);
-    const topAnchors = capped.slice(0, 6);
+    const topAnchors = capped.slice(0, 6).sort((a, b) => a.n - b.n);
     const supportPool = capped.slice(6).sort((a, b) => a.n - b.n);
     const topAnchorSet = new Set(topAnchors.map(x => x.n));
 

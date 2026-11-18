@@ -1,9 +1,9 @@
-/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.18.1208 - BUILD_DATE: 2026-11-18] */
+/* [LUCKY777 APP BUNDLE - BUILD_VERSION: v2026.11.18.1223 - BUILD_DATE: 2026-11-18] */
 
 try {
 
 /**
- * Lucky777 Smart Bundle (v2026.11.18.1208)
+ * Lucky777 Smart Bundle (v2026.11.18.1223)
  */
 
 
@@ -26120,7 +26120,7 @@ function getWeeklyCoreNumbersSummary(targetRound = null, customUserId = null) {
     }
 
     const capped = is3BMode ? enriched : enriched.slice(0, 16);
-    const topAnchors = capped.slice(0, 6);
+    const topAnchors = capped.slice(0, 6).sort((a, b) => a.n - b.n);
     const supportPool = capped.slice(6).sort((a, b) => a.n - b.n);
     const topAnchorSet = new Set(topAnchors.map(x => x.n));
 
